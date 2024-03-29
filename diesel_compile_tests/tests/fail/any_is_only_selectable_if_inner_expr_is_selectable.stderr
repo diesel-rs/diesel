@@ -44,10 +44,13 @@ error[E0277]: the trait bound `stuff::table: TableNotEqual<more_stuff::table>` i
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
+             <Tablesample<pg::metadata_lookup::pg_namespace::table, TSM> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
+             <Tablesample<pg::metadata_lookup::pg_type::table, TSM> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
              <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
+             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Tablesample<pg::metadata_lookup::pg_type::table, TSM>>>
              <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
+           and $N others
    = note: required for `stuff::table` to implement `AppearsInFromClause<more_stuff::table>`
 note: required for `more_stuff::columns::names` to implement `AppearsOnTable<stuff::table>`
   --> tests/fail/any_is_only_selectable_if_inner_expr_is_selectable.rs:15:9

@@ -37,6 +37,7 @@ pub enum PgNumeric {
 }
 
 #[derive(Debug, Clone, Copy)]
+#[allow(dead_code)] // that's used by debug in the error impl
 struct InvalidNumericSign(u16);
 
 impl ::std::fmt::Display for InvalidNumericSign {
@@ -62,14 +63,14 @@ impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
 
         match sign {
             0 => Ok(PgNumeric::Positive {
-                weight: weight,
-                scale: scale,
-                digits: digits,
+                weight,
+                scale,
+                digits,
             }),
             0x4000 => Ok(PgNumeric::Negative {
-                weight: weight,
-                scale: scale,
-                digits: digits,
+                weight,
+                scale,
+                digits,
             }),
             0xC000 => Ok(PgNumeric::NaN),
             invalid => Err(Box::new(InvalidNumericSign(invalid))),

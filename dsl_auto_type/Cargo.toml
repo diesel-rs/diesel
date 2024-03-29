@@ -6,7 +6,7 @@ description = "Automatically expand query fragment types for factoring as functi
 documentation = "https://docs.rs/crate/diesel_migrations"
 homepage = "https://diesel.rs"
 edition = "2021"
-rust-version = "1.66.0"
+rust-version.workspace = true
 
 [dependencies]
 darling = "0.20"

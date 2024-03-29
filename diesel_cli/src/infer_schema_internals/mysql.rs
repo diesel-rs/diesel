@@ -1,16 +1,16 @@
-use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
-use diesel::mysql::{Mysql, MysqlConnection};
+use diesel::deserialize::FromStaticSqlRow;
+use diesel::mysql::Mysql;
 use diesel::*;
 use heck::ToUpperCamelCase;
+use std::borrow::Cow;
 use std::collections::HashMap;
-use std::{borrow::Cow, error::Error};
 
 use super::data_structures::*;
 use super::information_schema::DefaultSchema;
 use super::table_data::TableName;
 use crate::print_schema::ColumnSorting;
 
-diesel::sql_function! {
+diesel::define_sql_function! {
     #[sql_name = "NULLIF"]
     fn null_if_text(lhs: sql_types::Text, rhs: sql_types::Text) -> sql_types::Nullable<sql_types::Text>
 }
@@ -206,9 +206,8 @@ pub fn load_foreign_key_constraints(
     Ok(constraints)
 }
 
-pub fn determine_column_type(
-    attr: &ColumnInformation,
-) -> Result<ColumnType, Box<dyn Error + Send + Sync + 'static>> {
+#[tracing::instrument]
+pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, crate::errors::Error> {
     let tpe = determine_type_name(&attr.type_name)?;
     let unsigned = determine_unsigned(&attr.type_name);
 
@@ -247,9 +246,7 @@ pub fn get_table_comment(
     }
 }
 
-fn determine_type_name(
-    sql_type_name: &str,
-) -> Result<String, Box<dyn Error + Send + Sync + 'static>> {
+fn determine_type_name(sql_type_name: &str) -> Result<String, crate::errors::Error> {
     let result = if sql_type_name == "tinyint(1)" {
         "bool"
     } else if sql_type_name.starts_with("int") {
@@ -267,7 +264,7 @@ fn determine_type_name(
             .trim()
             .to_owned())
     } else if result.contains(' ') {
-        Err(format!("unrecognized type {result:?}").into())
+        Err(crate::errors::Error::UnsupportedType(result.into()))
     } else {
         Ok(result.to_owned())
     }

@@ -45,7 +45,7 @@ impl ProjectBuilder {
         File::create(tempdir.path().join("Cargo.toml")).unwrap();
 
         for folder in self.folders {
-            fs::create_dir(tempdir.path().join(folder)).unwrap();
+            fs::create_dir_all(tempdir.path().join(folder)).unwrap();
         }
 
         for (file, contents) in self.files {

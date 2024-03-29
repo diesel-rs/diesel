@@ -20,6 +20,7 @@ use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use super::SqliteAggregateFunction;
+use crate::connection::instrumentation::StrQueryHelper;
 use crate::connection::statement_cache::StatementCache;
 use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
@@ -122,6 +123,7 @@ pub struct SqliteConnection {
     statement_cache: StatementCache<Sqlite, Statement>,
     raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
+    instrumentation: Option<Box<dyn Instrumentation>>,
 }
 
 // This relies on the invariant that RawConnection or Statement are never
@@ -132,7 +134,17 @@ unsafe impl Send for SqliteConnection {}
 
 impl SimpleConnection for SqliteConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
-        self.raw_connection.exec(query)
+        self.instrumentation
+            .on_connection_event(InstrumentationEvent::StartQuery {
+                query: &StrQueryHelper::new(query),
+            });
+        let resp = self.raw_connection.exec(query);
+        self.instrumentation
+            .on_connection_event(InstrumentationEvent::FinishQuery {
+                query: &StrQueryHelper::new(query),
+                error: resp.as_ref().err(),
+            });
+        resp
     }
 }
 
@@ -149,16 +161,18 @@ impl Connection for SqliteConnection {
     /// If the database does not exist, this method will try to
     /// create a new database and then establish a connection to it.
     fn establish(database_url: &str) -> ConnectionResult<Self> {
-        use crate::result::ConnectionError::CouldntSetupConfiguration;
+        let mut instrumentation = crate::connection::instrumentation::get_default_instrumentation();
+        instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
+            url: database_url,
+        });
 
-        let raw_connection = RawConnection::establish(database_url)?;
-        let conn = Self {
-            statement_cache: StatementCache::new(),
-            raw_connection,
-            transaction_state: AnsiTransactionManager::default(),
-        };
-        conn.register_diesel_sql_functions()
-            .map_err(CouldntSetupConfiguration)?;
+        let establish_result = Self::establish_inner(database_url);
+        instrumentation.on_connection_event(InstrumentationEvent::FinishEstablishConnection {
+            url: database_url,
+            error: establish_result.as_ref().err(),
+        });
+        let mut conn = establish_result?;
+        conn.instrumentation = instrumentation;
         Ok(conn)
     }
 
@@ -167,9 +181,9 @@ impl Connection for SqliteConnection {
         T: QueryFragment<Self::Backend> + QueryId,
     {
         let statement_use = self.prepared_query(source)?;
-        statement_use.run()?;
-
-        Ok(self.raw_connection.rows_affected_by_last_query())
+        statement_use
+            .run()
+            .map(|_| self.raw_connection.rows_affected_by_last_query())
     }
 
     fn transaction_state(&mut self) -> &mut AnsiTransactionManager
@@ -177,6 +191,14 @@ impl Connection for SqliteConnection {
         Self: Sized,
     {
         &mut self.transaction_state
+    }
+
+    fn instrumentation(&mut self) -> &mut dyn Instrumentation {
+        &mut self.instrumentation
+    }
+
+    fn set_instrumentation(&mut self, instrumentation: impl Instrumentation) {
+        self.instrumentation = Some(Box::new(instrumentation));
     }
 }
 
@@ -192,9 +214,9 @@ impl LoadConnection<DefaultLoadingMode> for SqliteConnection {
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        let statement_use = self.prepared_query(source)?;
+        let statement = self.prepared_query(source)?;
 
-        Ok(StatementIterator::new(statement_use))
+        Ok(StatementIterator::new(statement))
     }
 }
 
@@ -302,21 +324,39 @@ impl SqliteConnection {
         }
     }
 
-    fn prepared_query<'a, 'b, T>(&'a mut self, source: T) -> QueryResult<StatementUse<'a, 'b>>
+    fn prepared_query<'conn, 'query, T>(
+        &'conn mut self,
+        source: T,
+    ) -> QueryResult<StatementUse<'conn, 'query>>
     where
-        T: QueryFragment<Sqlite> + QueryId + 'b,
+        T: QueryFragment<Sqlite> + QueryId + 'query,
     {
+        self.instrumentation
+            .on_connection_event(InstrumentationEvent::StartQuery {
+                query: &crate::debug_query(&source),
+            });
         let raw_connection = &self.raw_connection;
         let cache = &mut self.statement_cache;
-        let statement = cache.cached_statement(
-            T::query_id(),
+        let statement = match cache.cached_statement(
             &source,
             &Sqlite,
             &[],
-            &mut |sql, is_cached| Statement::prepare(raw_connection, sql, is_cached),
-        )?;
+            |sql, is_cached| Statement::prepare(raw_connection, sql, is_cached),
+            &mut self.instrumentation,
+        ) {
+            Ok(statement) => statement,
+            Err(e) => {
+                self.instrumentation
+                    .on_connection_event(InstrumentationEvent::FinishQuery {
+                        query: &crate::debug_query(&source),
+                        error: Some(&e),
+                    });
 
-        StatementUse::bind(statement, source)
+                return Err(e);
+            }
+        };
+
+        StatementUse::bind(statement, source, &mut self.instrumentation)
     }
 
     #[doc(hidden)]
@@ -481,6 +521,20 @@ impl SqliteConnection {
             },
         )
     }
+
+    fn establish_inner(database_url: &str) -> Result<SqliteConnection, ConnectionError> {
+        use crate::result::ConnectionError::CouldntSetupConfiguration;
+        let raw_connection = RawConnection::establish(database_url)?;
+        let conn = Self {
+            statement_cache: StatementCache::new(),
+            raw_connection,
+            transaction_state: AnsiTransactionManager::default(),
+            instrumentation: None,
+        };
+        conn.register_diesel_sql_functions()
+            .map_err(CouldntSetupConfiguration)?;
+        Ok(conn)
+    }
 }
 
 fn error_message(err_code: libc::c_int) -> &'static str {
@@ -579,12 +633,12 @@ mod tests {
     }
 
     use crate::sql_types::Text;
-    sql_function!(fn fun_case(x: Text) -> Text);
+    define_sql_function!(fn fun_case(x: Text) -> Text);
 
     #[test]
     fn register_custom_function() {
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        fun_case::register_impl(connection, |x: String| {
+        fun_case_utils::register_impl(connection, |x: String| {
             x.chars()
                 .enumerate()
                 .map(|(i, c)| {
@@ -604,23 +658,23 @@ mod tests {
         assert_eq!("fOoBaR", mapped_string);
     }
 
-    sql_function!(fn my_add(x: Integer, y: Integer) -> Integer);
+    define_sql_function!(fn my_add(x: Integer, y: Integer) -> Integer);
 
     #[test]
     fn register_multiarg_function() {
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        my_add::register_impl(connection, |x: i32, y: i32| x + y).unwrap();
+        my_add_utils::register_impl(connection, |x: i32, y: i32| x + y).unwrap();
 
         let added = crate::select(my_add(1, 2)).get_result::<i32>(connection);
         assert_eq!(Ok(3), added);
     }
 
-    sql_function!(fn answer() -> Integer);
+    define_sql_function!(fn answer() -> Integer);
 
     #[test]
     fn register_noarg_function() {
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        answer::register_impl(connection, || 42).unwrap();
+        answer_utils::register_impl(connection, || 42).unwrap();
 
         let answer = crate::select(answer()).get_result::<i32>(connection);
         assert_eq!(Ok(42), answer);
@@ -629,19 +683,19 @@ mod tests {
     #[test]
     fn register_nondeterministic_noarg_function() {
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        answer::register_nondeterministic_impl(connection, || 42).unwrap();
+        answer_utils::register_nondeterministic_impl(connection, || 42).unwrap();
 
         let answer = crate::select(answer()).get_result::<i32>(connection);
         assert_eq!(Ok(42), answer);
     }
 
-    sql_function!(fn add_counter(x: Integer) -> Integer);
+    define_sql_function!(fn add_counter(x: Integer) -> Integer);
 
     #[test]
     fn register_nondeterministic_function() {
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         let mut y = 0;
-        add_counter::register_nondeterministic_impl(connection, move |x: i32| {
+        add_counter_utils::register_nondeterministic_impl(connection, move |x: i32| {
             y += 1;
             x + y
         })
@@ -652,9 +706,7 @@ mod tests {
         assert_eq!(Ok((2, 3, 4)), added);
     }
 
-    use crate::sqlite::SqliteAggregateFunction;
-
-    sql_function! {
+    define_sql_function! {
         #[aggregate]
         fn my_sum(expr: Integer) -> Integer;
     }
@@ -697,7 +749,7 @@ mod tests {
             .execute(connection)
             .unwrap();
 
-        my_sum::register_impl::<MySum, _>(connection).unwrap();
+        my_sum_utils::register_impl::<MySum, _>(connection).unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
@@ -716,7 +768,7 @@ mod tests {
         .execute(connection)
         .unwrap();
 
-        my_sum::register_impl::<MySum, _>(connection).unwrap();
+        my_sum_utils::register_impl::<MySum, _>(connection).unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
@@ -724,7 +776,7 @@ mod tests {
         assert_eq!(Ok(0), result);
     }
 
-    sql_function! {
+    define_sql_function! {
         #[aggregate]
         fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Nullable<Integer>;
     }
@@ -788,7 +840,7 @@ mod tests {
         .execute(connection)
         .unwrap();
 
-        range_max::register_impl::<RangeMax<i32>, _, _, _>(connection).unwrap();
+        range_max_utils::register_impl::<RangeMax<i32>, _, _, _>(connection).unwrap();
         let result = range_max_example
             .select(range_max(value1, value2, value3))
             .get_result::<Option<i32>>(connection)

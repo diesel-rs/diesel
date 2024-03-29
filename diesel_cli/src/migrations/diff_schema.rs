@@ -4,19 +4,18 @@ use diesel::query_builder::QueryBuilder;
 use diesel::QueryResult;
 use diesel_table_macro_syntax::{ColumnDef, TableDecl};
 use std::collections::HashMap;
-use std::error::Error;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use syn::visit::Visit;
 
-use crate::config::Config;
+use crate::config::PrintSchema;
 use crate::database::InferConnection;
 use crate::infer_schema_internals::{
     filter_table_names, load_table_names, ColumnDefinition, ColumnType, ForeignKeyConstraint,
     TableData, TableName,
 };
-use crate::print_schema::DocConfig;
+use crate::print_schema::{ColumnSorting, DocConfig};
 
 fn compatible_type_list() -> HashMap<&'static str, Vec<&'static str>> {
     let mut map = HashMap::new();
@@ -27,12 +26,13 @@ fn compatible_type_list() -> HashMap<&'static str, Vec<&'static str>> {
     map
 }
 
+#[tracing::instrument]
 pub fn generate_sql_based_on_diff_schema(
-    config: Config,
+    config: PrintSchema,
     matches: &ArgMatches,
     schema_file_path: &Path,
-) -> Result<(String, String), Box<dyn Error + Send + Sync>> {
-    let config = config.set_filter(matches)?;
+) -> Result<(String, String), crate::errors::Error> {
+    let mut config = config.set_filter(matches)?;
 
     let project_root = crate::find_project_root()?;
 
@@ -45,11 +45,7 @@ pub fn generate_sql_based_on_diff_schema(
     let mut tables_from_schema = SchemaCollector::default();
 
     tables_from_schema.visit_file(&syn_file);
-    let mut conn = InferConnection::from_matches(matches);
-    let tables_from_database = filter_table_names(
-        load_table_names(&mut conn, None)?,
-        &config.print_schema.filter,
-    );
+    let mut conn = InferConnection::from_matches(matches)?;
 
     let foreign_keys =
         crate::infer_schema_internals::load_foreign_key_constraints(&mut conn, None)?;
@@ -73,42 +69,44 @@ pub fn generate_sql_based_on_diff_schema(
         },
     )?;
 
-    let table_pk_key_list = tables_from_schema
-        .table_decls
-        .iter()
-        .map(|t| {
-            let t = t.as_ref().unwrap();
-            Ok((
-                t.table_name.to_string(),
-                t.primary_keys.as_ref().map(|keys| {
-                    keys.keys
-                        .iter()
-                        .map(ToString::to_string)
-                        .collect::<Vec<_>>()
-                }),
-            ))
-        })
-        .collect::<Result<HashMap<_, _>, &syn::Error>>()?;
+    let mut table_pk_key_list = HashMap::new();
+    let mut expected_schema_map = HashMap::new();
 
-    let mut expected_schema_map = tables_from_schema
-        .table_decls
-        .into_iter()
-        .map(|t| {
-            let t = t?;
-            Ok((t.table_name.to_string().to_lowercase(), t))
-        })
-        .collect::<Result<HashMap<_, _>, syn::Error>>()?;
+    for t in tables_from_schema.table_decls {
+        let t = t?;
+        let keys = t.primary_keys.as_ref().map(|keys| {
+            keys.keys
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+        });
+        table_pk_key_list.insert(t.table_name.to_string(), keys);
+        expected_schema_map.insert(t.table_name.to_string(), t);
+    }
+    config.with_docs = DocConfig::NoDocComments;
+    config.column_sorting = ColumnSorting::OrdinalPosition;
+
+    // Parameter `sqlite_integer_primary_key_is_bigint` is only used for a SQLite connection
+    match conn {
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(_) => config.sqlite_integer_primary_key_is_bigint = None,
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(_) => (),
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(_) => {
+            config.sqlite_integer_primary_key_is_bigint = None;
+        }
+    }
 
     let mut schema_diff = Vec::new();
-
+    let table_names = load_table_names(&mut conn, None)?;
+    let tables_from_database = filter_table_names(table_names.clone(), &config.filter);
     for table in tables_from_database {
-        let columns = crate::infer_schema_internals::load_table_data(
-            &mut conn,
-            table.clone(),
-            &crate::print_schema::ColumnSorting::OrdinalPosition,
-            DocConfig::NoDocComments,
-        )?;
+        tracing::info!(?table, "Diff for existing table");
+        let columns =
+            crate::infer_schema_internals::load_table_data(&mut conn, table.clone(), &config)?;
         if let Some(t) = expected_schema_map.remove(&table.sql_name.to_lowercase()) {
+            tracing::info!(table = ?t.sql_name, "Table exists in schema.rs");
             let mut primary_keys_in_db =
                 crate::infer_schema_internals::get_primary_keys(&mut conn, &table)?;
             primary_keys_in_db.sort();
@@ -118,7 +116,14 @@ pub fn generate_sql_based_on_diff_schema(
                 .unwrap_or_else(|| vec!["id".into()]);
             primary_keys_in_schema.sort();
             if primary_keys_in_db != primary_keys_in_schema {
-                return Err("Cannot change primary keys with --diff-schema yet".into());
+                tracing::debug!(
+                    ?primary_keys_in_schema,
+                    ?primary_keys_in_db,
+                    "Primary keys changed"
+                );
+                return Err(crate::errors::Error::UnsupportedFeature(
+                    "Cannot change primary keys with --diff-schema yet".into(),
+                ));
             }
 
             let mut expected_column_map = t
@@ -135,13 +140,22 @@ pub fn generate_sql_based_on_diff_schema(
                 if let Some(def) = expected_column_map.remove(&c.sql_name.to_lowercase()) {
                     let tpe = ColumnType::for_column_def(&def)?;
                     if !is_same_type(&c.ty, tpe) {
+                        tracing::info!(old = ?c, new = ?def.sql_name, "Column changed type");
                         changed_columns.push((c, def));
                     }
                 } else {
+                    tracing::info!(column = ?c, "Column was removed");
                     removed_columns.push(c);
                 }
             }
 
+            if !expected_column_map.is_empty() {
+                let columns = expected_column_map
+                    .values()
+                    .map(|v| v.column_name.to_string())
+                    .collect::<Vec<_>>();
+                tracing::info!(added = ?columns, "Added columns");
+            }
             added_columns.extend(expected_column_map.into_values());
 
             schema_diff.push(SchemaDiff::ChangeTable {
@@ -151,6 +165,7 @@ pub fn generate_sql_based_on_diff_schema(
                 changed_columns,
             });
         } else {
+            tracing::info!("Table does not exist yet");
             let foreign_keys = foreign_key_map
                 .get(&table.rust_name)
                 .cloned()
@@ -159,9 +174,9 @@ pub fn generate_sql_based_on_diff_schema(
                 .iter()
                 .any(|fk| fk.foreign_key_columns.len() != 1 || fk.primary_key_columns.len() != 1)
             {
-                return Err(
+                return Err(crate::errors::Error::UnsupportedFeature(
                     "Tables with composite foreign keys are not supported by --diff-schema".into(),
-                );
+                ));
             }
             schema_diff.push(SchemaDiff::DropTable {
                 table,
@@ -172,6 +187,7 @@ pub fn generate_sql_based_on_diff_schema(
     }
 
     schema_diff.extend(expected_schema_map.into_values().map(|t| {
+        tracing::info!(table = ?t.sql_name, "Tables does not exist in database");
         let foreign_keys = expected_fk_map
             .remove(&t.table_name.to_string())
             .unwrap_or_default()
@@ -199,19 +215,19 @@ pub fn generate_sql_based_on_diff_schema(
             #[cfg(feature = "postgres")]
             InferConnection::Pg(_) => {
                 let mut qb = diesel::pg::PgQueryBuilder::default();
-                diff.generate_up_sql(&mut qb)?;
+                diff.generate_up_sql(&mut qb, &config)?;
                 qb.finish()
             }
             #[cfg(feature = "sqlite")]
             InferConnection::Sqlite(_) => {
                 let mut qb = diesel::sqlite::SqliteQueryBuilder::default();
-                diff.generate_up_sql(&mut qb)?;
+                diff.generate_up_sql(&mut qb, &config)?;
                 qb.finish()
             }
             #[cfg(feature = "mysql")]
             InferConnection::Mysql(_) => {
                 let mut qb = diesel::mysql::MysqlQueryBuilder::default();
-                diff.generate_up_sql(&mut qb)?;
+                diff.generate_up_sql(&mut qb, &config)?;
                 qb.finish()
             }
         };
@@ -220,19 +236,19 @@ pub fn generate_sql_based_on_diff_schema(
             #[cfg(feature = "postgres")]
             InferConnection::Pg(_) => {
                 let mut qb = diesel::pg::PgQueryBuilder::default();
-                diff.generate_down_sql(&mut qb)?;
+                diff.generate_down_sql(&mut qb, &config)?;
                 qb.finish()
             }
             #[cfg(feature = "sqlite")]
             InferConnection::Sqlite(_) => {
                 let mut qb = diesel::sqlite::SqliteQueryBuilder::default();
-                diff.generate_down_sql(&mut qb)?;
+                diff.generate_down_sql(&mut qb, &config)?;
                 qb.finish()
             }
             #[cfg(feature = "mysql")]
             InferConnection::Mysql(_) => {
                 let mut qb = diesel::mysql::MysqlQueryBuilder::default();
-                diff.generate_down_sql(&mut qb)?;
+                diff.generate_down_sql(&mut qb, &config)?;
                 qb.finish()
             }
         };
@@ -299,7 +315,11 @@ enum SchemaDiff {
 }
 
 impl SchemaDiff {
-    fn generate_up_sql<DB>(&self, query_builder: &mut impl QueryBuilder<DB>) -> QueryResult<()>
+    fn generate_up_sql<DB>(
+        &self,
+        query_builder: &mut impl QueryBuilder<DB>,
+        config: &PrintSchema,
+    ) -> Result<(), crate::errors::Error>
     where
         DB: Backend,
     {
@@ -321,8 +341,7 @@ impl SchemaDiff {
                     .column_defs
                     .iter()
                     .map(|c| {
-                        let ty = ColumnType::for_column_def(c)
-                            .map_err(diesel::result::Error::QueryBuilderError)?;
+                        let ty = ColumnType::for_column_def(c)?;
                         Ok(ColumnDefinition {
                             sql_name: c.sql_name.to_lowercase(),
                             rust_name: c.sql_name.clone(),
@@ -330,7 +349,7 @@ impl SchemaDiff {
                             comment: None,
                         })
                     })
-                    .collect::<QueryResult<Vec<_>>>()?;
+                    .collect::<Result<Vec<_>, crate::errors::Error>>()?;
                 let foreign_keys = foreign_keys
                     .iter()
                     .map(|(f, pk)| {
@@ -341,12 +360,18 @@ impl SchemaDiff {
                         )
                     })
                     .collect::<Vec<_>>();
+
+                let sqlite_integer_primary_key_is_bigint = config
+                    .sqlite_integer_primary_key_is_bigint
+                    .unwrap_or_default();
+
                 generate_create_table(
                     query_builder,
                     table,
                     &column_data,
                     &primary_keys,
                     &foreign_keys,
+                    sqlite_integer_primary_key_is_bigint,
                 )?;
             }
             SchemaDiff::ChangeTable {
@@ -370,8 +395,7 @@ impl SchemaDiff {
                         query_builder,
                         &table.to_lowercase(),
                         &c.column_name.to_string().to_lowercase(),
-                        &ColumnType::for_column_def(c)
-                            .map_err(diesel::result::Error::QueryBuilderError)?,
+                        &ColumnType::for_column_def(c)?,
                     )?;
                     query_builder.push_sql("\n");
                 }
@@ -380,7 +404,11 @@ impl SchemaDiff {
         Ok(())
     }
 
-    fn generate_down_sql<DB>(&self, query_builder: &mut impl QueryBuilder<DB>) -> QueryResult<()>
+    fn generate_down_sql<DB>(
+        &self,
+        query_builder: &mut impl QueryBuilder<DB>,
+        config: &PrintSchema,
+    ) -> QueryResult<()>
     where
         DB: Backend,
     {
@@ -401,12 +429,17 @@ impl SchemaDiff {
                     })
                     .collect::<Vec<_>>();
 
+                let sqlite_integer_primary_key_is_bigint = config
+                    .sqlite_integer_primary_key_is_bigint
+                    .unwrap_or_default();
+
                 generate_create_table(
                     query_builder,
                     &table.sql_name.to_lowercase(),
                     &columns.column_data,
                     &columns.primary_key,
                     &fk,
+                    sqlite_integer_primary_key_is_bigint,
                 )?;
             }
             SchemaDiff::CreateTable { to_create, .. } => {
@@ -418,6 +451,9 @@ impl SchemaDiff {
                 removed_columns,
                 changed_columns,
             } => {
+                // We don't need to check the `sqlite_integer_primary_key_is_bigint` parameter here
+                // since `ÀLTER TABLE` queries cannot modify primary key columns in SQLite.
+                // See https://www.sqlite.org/lang_altertable.html#alter_table_add_column for more information.
                 for c in added_columns
                     .iter()
                     .chain(changed_columns.iter().map(|(_, b)| b))
@@ -488,6 +524,7 @@ fn generate_create_table<DB>(
     column_data: &[ColumnDefinition],
     primary_keys: &[String],
     foreign_keys: &[(String, String, String)],
+    sqlite_integer_primary_key_is_bigint: bool,
 ) -> QueryResult<()>
 where
     DB: Backend,
@@ -504,11 +541,35 @@ where
             query_builder.push_sql(",\n");
         }
         query_builder.push_sql("\t");
+
+        let is_only_primary_key =
+            primary_keys.contains(&column.rust_name) && primary_keys.len() == 1;
+
         query_builder.push_identifier(&column.sql_name)?;
-        generate_column_type_name(query_builder, &column.ty);
-        if primary_keys.contains(&column.rust_name) && primary_keys.len() == 1 {
+
+        // When the `sqlite_integer_primary_key_is_bigint` config parameter is used,
+        // if a column is the only primary key and its type is `BigInt`,
+        // we consider it equivalent to the `rowid` column in order to be compatible
+        // with the `print-schema` command using the same config parameter.
+        // See https://www.sqlite.org/lang_createtable.html#rowid for more information.
+        if sqlite_integer_primary_key_is_bigint
+            && is_only_primary_key
+            && column.ty.sql_name.eq_ignore_ascii_case("BigInt")
+        {
+            let ty = ColumnType {
+                rust_name: "Integer".into(),
+                sql_name: "Integer".into(),
+                ..column.ty.clone()
+            };
+            generate_column_type_name(query_builder, &ty);
+        } else {
+            generate_column_type_name(query_builder, &column.ty);
+        }
+
+        if is_only_primary_key {
             query_builder.push_sql(" PRIMARY KEY");
         }
+
         if let Some((table, _, pk)) = foreign_keys.iter().find(|(_, k, _)| k == &column.rust_name) {
             foreign_key_list.push((column, table, pk));
         }

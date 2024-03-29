@@ -6,9 +6,9 @@ error[E0277]: the trait bound `str: diesel::Expression` is not satisfied
    |
    = help: the following other types implement trait `diesel::Expression`:
              columns::name
+             Box<T>
              columns::id
              columns::star
-             Box<T>
              diesel::expression::ops::numeric::Add<Lhs, Rhs>
              diesel::expression::ops::numeric::Sub<Lhs, Rhs>
              diesel::expression::ops::numeric::Mul<Lhs, Rhs>

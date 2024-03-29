@@ -1,11 +1,9 @@
 use std::marker::PhantomData;
 
 use crate::backend::sql_dialect::on_conflict_clause;
-use crate::backend::Backend;
 use crate::expression::{AppearsOnTable, Expression};
 use crate::query_builder::*;
 use crate::query_source::*;
-use crate::result::QueryResult;
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, QueryId)]

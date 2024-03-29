@@ -5,6 +5,7 @@ use super::array_comparison::{AsInExpression, In, NotIn};
 use super::grouped::Grouped;
 use super::select_by::SelectBy;
 use super::{AsExpression, Expression};
+use crate::expression;
 use crate::expression_methods::PreferredBoolSqlType;
 use crate::sql_types;
 
@@ -25,6 +26,9 @@ pub type Eq<Lhs, Rhs> = Grouped<super::operators::Eq<Lhs, AsExpr<Rhs, Lhs>>>;
 /// [`lhs.ne(rhs)`](crate::expression_methods::ExpressionMethods::ne())
 pub type NotEq<Lhs, Rhs> = Grouped<super::operators::NotEq<Lhs, AsExpr<Rhs, Lhs>>>;
 
+#[doc(hidden)] // required for `#[auto_type]`
+pub type Ne<Lhs, Rhs> = NotEq<Lhs, Rhs>;
+
 /// The return type of
 /// [`lhs.eq_any(rhs)`](crate::expression_methods::ExpressionMethods::eq_any())
 pub type EqAny<Lhs, Rhs> = Grouped<In<Lhs, <Rhs as AsInExpression<SqlTypeOf<Lhs>>>::InExpression>>;
@@ -33,6 +37,9 @@ pub type EqAny<Lhs, Rhs> = Grouped<In<Lhs, <Rhs as AsInExpression<SqlTypeOf<Lhs>
 /// [`lhs.ne_all(rhs)`](crate::expression_methods::ExpressionMethods::ne_all())
 pub type NeAny<Lhs, Rhs> =
     Grouped<NotIn<Lhs, <Rhs as AsInExpression<SqlTypeOf<Lhs>>>::InExpression>>;
+
+#[doc(hidden)] // required for `#[auto_type]`
+pub type NeAll<Lhs, Rhs> = NeAny<Lhs, Rhs>;
 
 /// The return type of
 /// [`expr.is_null()`](crate::expression_methods::ExpressionMethods::is_null())
@@ -50,6 +57,9 @@ pub type Gt<Lhs, Rhs> = Grouped<super::operators::Gt<Lhs, AsExpr<Rhs, Lhs>>>;
 /// [`lhs.ge(rhs)`](crate::expression_methods::ExpressionMethods::ge())
 pub type GtEq<Lhs, Rhs> = Grouped<super::operators::GtEq<Lhs, AsExpr<Rhs, Lhs>>>;
 
+#[doc(hidden)] // required for `#[auto_type]`
+pub type Ge<Lhs, Rhs> = GtEq<Lhs, Rhs>;
+
 /// The return type of
 /// [`lhs.lt(rhs)`](crate::expression_methods::ExpressionMethods::lt())
 pub type Lt<Lhs, Rhs> = Grouped<super::operators::Lt<Lhs, AsExpr<Rhs, Lhs>>>;
@@ -57,6 +67,9 @@ pub type Lt<Lhs, Rhs> = Grouped<super::operators::Lt<Lhs, AsExpr<Rhs, Lhs>>>;
 /// The return type of
 /// [`lhs.le(rhs)`](crate::expression_methods::ExpressionMethods::le())
 pub type LtEq<Lhs, Rhs> = Grouped<super::operators::LtEq<Lhs, AsExpr<Rhs, Lhs>>>;
+
+#[doc(hidden)] // required for `#[auto_type]`
+pub type Le<Lhs, Rhs> = LtEq<Lhs, Rhs>;
 
 /// The return type of
 /// [`lhs.between(lower, upper)`](crate::expression_methods::ExpressionMethods::between())
@@ -119,6 +132,27 @@ pub type Like<Lhs, Rhs> = Grouped<super::operators::Like<Lhs, AsExprOf<Rhs, SqlT
 /// The return type of
 /// [`lhs.not_like(rhs)`](crate::expression_methods::TextExpressionMethods::not_like())
 pub type NotLike<Lhs, Rhs> = Grouped<super::operators::NotLike<Lhs, AsExprOf<Rhs, SqlTypeOf<Lhs>>>>;
+
+/// The return type of [`case_when()`](expression::case_when::case_when)
+#[allow(non_camel_case_types)] // required for `#[auto_type]`
+pub type case_when<C, T, ST = <T as Expression>::SqlType> = expression::case_when::CaseWhen<
+    expression::case_when::CaseWhenConditionsLeaf<Grouped<C>, Grouped<AsExprOf<T, ST>>>,
+    expression::case_when::NoElseExpression,
+>;
+/// The return type of [`case_when(...).when(...)`](expression::CaseWhen::when)
+pub type When<W, C, T> = expression::case_when::CaseWhen<
+    expression::case_when::CaseWhenConditionsIntermediateNode<
+        Grouped<C>,
+        Grouped<AsExprOf<T, <W as expression::case_when::CaseWhenTypesExtractor>::OutputExpressionSpecifiedSqlType>>,
+        <W as expression::case_when::CaseWhenTypesExtractor>::Whens,
+    >,
+    <W as expression::case_when::CaseWhenTypesExtractor>::Else,
+>;
+/// The return type of [`case_when(...).otherwise(...)`](expression::case_when::CaseWhen::otherwise)
+pub type Otherwise<W, E> = expression::case_when::CaseWhen<
+    <W as expression::case_when::CaseWhenTypesExtractor>::Whens,
+    expression::case_when::ElseExpression<Grouped<AsExprOf<E, <W as expression::case_when::CaseWhenTypesExtractor>::OutputExpressionSpecifiedSqlType>>>,
+>;
 
 /// Represents the return type of [`.as_select()`](crate::prelude::SelectableHelper::as_select)
 pub type AsSelect<Source, DB> = SelectBy<Source, DB>;

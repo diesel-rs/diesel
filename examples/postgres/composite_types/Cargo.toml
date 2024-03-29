@@ -1,0 +1,10 @@
+[package]
+name = "diesel-postgres-composite-type"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+diesel = { version = "2.1", path = "../../../diesel", features = ["postgres" ] }
+dotenvy = "0.15"

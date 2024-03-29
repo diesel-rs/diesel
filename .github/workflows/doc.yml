@@ -14,13 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Cache cargo registry
-      uses: actions/cache@v3
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
         key: cargo-doc-cargo-${{ hashFiles('**/Cargo.toml') }}
     - name: Get the branch name
       id: current_branch
@@ -41,7 +38,7 @@ jobs:
 
     - name: Publish documentation
       if: success()
-      uses: JamesIves/github-pages-deploy-action@v4.2.5
+      uses: JamesIves/github-pages-deploy-action@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         branch: gh-pages # The branch the action should deploy to.

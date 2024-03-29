@@ -1,4 +1,4 @@
-use super::{HasTable, Identifiable};
+use super::HasTable;
 use crate::dsl::{Eq, EqAny, Filter, FindBy};
 use crate::expression::array_comparison::AsInExpression;
 use crate::expression::AsExpression;

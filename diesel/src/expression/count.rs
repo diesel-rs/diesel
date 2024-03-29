@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use super::functions::sql_function;
+use super::functions::define_sql_function;
 use super::{is_aggregate, AsExpression};
 use super::{Expression, ValidGrouping};
 use crate::backend::Backend;
@@ -9,7 +9,7 @@ use crate::result::QueryResult;
 use crate::sql_types::{BigInt, DieselNumericOps, SingleValue, SqlType};
 use crate::{AppearsOnTable, SelectableExpression};
 
-sql_function! {
+define_sql_function! {
     /// Creates a SQL `COUNT` expression
     ///
     /// As with most bare functions, this is not exported by default. You can import

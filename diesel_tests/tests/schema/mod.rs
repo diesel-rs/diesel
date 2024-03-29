@@ -318,7 +318,7 @@ pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
         .unwrap();
 }
 
-sql_function!(fn nextval(a: sql_types::VarChar) -> sql_types::BigInt);
+define_sql_function!(fn nextval(a: sql_types::VarChar) -> sql_types::BigInt);
 
 pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
     let mut connection = connection();
@@ -328,6 +328,19 @@ pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
 
 pub fn insert_sean_and_tess_into_users_table(connection: &mut TestConnection) {
     diesel::sql_query("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
+        .execute(connection)
+        .unwrap();
+    ensure_primary_key_seq_greater_than(2, connection);
+}
+
+pub fn connection_with_gilbert_and_jonathan_in_users_table() -> TestConnection {
+    let mut connection = connection();
+    insert_gilbert_and_jonathan_into_users_table(&mut connection);
+    connection
+}
+
+pub fn insert_gilbert_and_jonathan_into_users_table(connection: &mut TestConnection) {
+    diesel::sql_query("INSERT INTO users (id, name, hair_color) VALUES (1, 'Gilbert', 'brown'), (2, 'Jonathan', 'electric-blue')")
         .execute(connection)
         .unwrap();
     ensure_primary_key_seq_greater_than(2, connection);

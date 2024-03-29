@@ -4,7 +4,7 @@ pub(crate) mod prelude {
         allow(deprecated)
     )]
     // This is a false positive, we reexport it later
-    #[allow(unreachable_pub)]
+    #[allow(unreachable_pub, unused_imports)]
     #[doc(inline)]
     pub use crate::{
         allow_columns_to_appear_in_same_group_by_clause, allow_tables_to_appear_in_same_query,
@@ -241,6 +241,34 @@ macro_rules! __diesel_internal_backend_specific_allow_tables_to_appear_in_same_q
         }
         impl $crate::query_source::TableNotEqual<$crate::query_builder::Only<$right::table>>
             for $left::table
+        {
+        }
+        impl<TSM> $crate::query_source::TableNotEqual<$left::table>
+            for $crate::query_builder::Tablesample<$right::table, TSM>
+        where
+            TSM: $crate::internal::table_macro::TablesampleMethod,
+        {
+        }
+        impl<TSM> $crate::query_source::TableNotEqual<$right::table>
+            for $crate::query_builder::Tablesample<$left::table, TSM>
+        where
+            TSM: $crate::internal::table_macro::TablesampleMethod,
+        {
+        }
+        impl<TSM>
+            $crate::query_source::TableNotEqual<
+                $crate::query_builder::Tablesample<$left::table, TSM>,
+            > for $right::table
+        where
+            TSM: $crate::internal::table_macro::TablesampleMethod,
+        {
+        }
+        impl<TSM>
+            $crate::query_source::TableNotEqual<
+                $crate::query_builder::Tablesample<$right::table, TSM>,
+            > for $left::table
+        where
+            TSM: $crate::internal::table_macro::TablesampleMethod,
         {
         }
     };

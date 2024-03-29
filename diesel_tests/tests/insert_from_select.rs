@@ -11,7 +11,10 @@ fn insert_from_table() {
         .execute(conn)
         .unwrap();
 
-    let data = posts.select((user_id, title, body)).load(conn);
+    let data = posts
+        .select((user_id, title, body))
+        .order(user_id)
+        .load(conn);
     let expected = vec![
         (1, String::from("Sean"), None::<String>),
         (2, String::from("Tess"), None),
@@ -29,7 +32,10 @@ fn insert_from_table_reference() {
         .execute(conn)
         .unwrap();
 
-    let data = posts.select((user_id, title, body)).load(conn);
+    let data = posts
+        .select((user_id, title, body))
+        .order(user_id)
+        .load(conn);
     let expected = vec![
         (1, String::from("Sean"), None::<String>),
         (2, String::from("Tess"), None),
@@ -50,7 +56,11 @@ fn insert_from_select() {
         .execute(conn)
         .unwrap();
 
-    let data = posts.select(title).load::<String>(conn).unwrap();
+    let data = posts
+        .select(title)
+        .order(title)
+        .load::<String>(conn)
+        .unwrap();
     let expected = vec!["Sean says hi", "Tess says hi"];
     assert_eq!(expected, data);
 }
@@ -68,7 +78,11 @@ fn insert_from_select_reference() {
         .execute(conn)
         .unwrap();
 
-    let data = posts.select(title).load::<String>(conn).unwrap();
+    let data = posts
+        .select(title)
+        .order(title)
+        .load::<String>(conn)
+        .unwrap();
     let expected = vec!["Sean says hi", "Tess says hi"];
     assert_eq!(expected, data);
 }
@@ -87,7 +101,11 @@ fn insert_from_boxed() {
         .execute(conn)
         .unwrap();
 
-    let data = posts.select(title).load::<String>(conn).unwrap();
+    let data = posts
+        .select(title)
+        .order(title)
+        .load::<String>(conn)
+        .unwrap();
     let expected = vec!["Sean says hi", "Tess says hi"];
     assert_eq!(expected, data);
 }
@@ -105,7 +123,11 @@ fn insert_from_boxed_reference() {
         .execute(conn)
         .unwrap();
 
-    let data = posts.select(title).load::<String>(conn).unwrap();
+    let data = posts
+        .select(title)
+        .order(title)
+        .load::<String>(conn)
+        .unwrap();
     let expected = vec!["Sean says hi", "Tess says hi"];
     assert_eq!(expected, data);
 }
@@ -255,7 +277,11 @@ fn on_conflict_do_nothing_with_select() {
         assert_eq!(0, inserted_rows);
     }
 
-    let data = posts.select(title).load::<String>(conn).unwrap();
+    let data = posts
+        .select(title)
+        .order(title)
+        .load::<String>(conn)
+        .unwrap();
     let expected = vec!["Sean says hi", "Tess says hi"];
     assert_eq!(expected, data);
 }
@@ -316,11 +342,15 @@ fn on_conflict_do_update_with_select() {
 
     query.execute(conn).unwrap();
 
-    let data = posts.select((title, body)).load(conn).unwrap();
+    let data = posts
+        .select((title, body))
+        .order_by(title)
+        .load(conn)
+        .unwrap();
     let expected = vec![
+        (String::from("Ruby says hi"), None),
         (String::from("Sean says hi"), Some(String::from("updated"))),
         (String::from("Tess says hi"), Some(String::from("updated"))),
-        (String::from("Ruby says hi"), None),
     ];
     assert_eq!(expected, data);
 }
@@ -365,6 +395,7 @@ fn on_conflict_do_update_with_boxed_select() {
 
     users
         .select((id, name.concat(" says hi")))
+        .order(id)
         .into_boxed()
         .insert_into(posts)
         .into_columns((user_id, title))
@@ -381,6 +412,7 @@ fn on_conflict_do_update_with_boxed_select() {
 
     users
         .select((id, name.concat(" says hi")))
+        .order(id)
         .into_boxed()
         .insert_into(posts)
         .into_columns((user_id, title))

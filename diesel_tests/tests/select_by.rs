@@ -19,7 +19,11 @@ fn selecting_basic_data() {
             hair_color: None,
         },
     ];
-    let actual_data: Vec<_> = users.select(User::as_select()).load(connection).unwrap();
+    let actual_data: Vec<_> = users
+        .select(User::as_select())
+        .order(id)
+        .load(connection)
+        .unwrap();
     assert_eq!(expected_data, actual_data);
 }
 
@@ -109,7 +113,11 @@ fn selecting_columns_with_different_definition_order() {
 #[test]
 fn selection_using_subselect() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
-    let ids: Vec<i32> = users::table.select(users::id).load(connection).unwrap();
+    let ids: Vec<i32> = users::table
+        .select(users::id)
+        .order(users::id)
+        .load(connection)
+        .unwrap();
     let query = format!(
         "INSERT INTO posts (user_id, title) VALUES ({}, 'Hello'), ({}, 'World')",
         ids[0], ids[1]
@@ -213,6 +221,7 @@ fn mixed_selectable_and_plain_select() {
     ];
     let actual_data: Vec<_> = users
         .select((User::as_select(), name))
+        .order(id)
         .load(connection)
         .unwrap();
     assert_eq!(expected_data, actual_data);

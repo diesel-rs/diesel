@@ -734,7 +734,6 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-    use super::MysqlValue;
     use super::*;
     use crate::connection::statement_cache::MaybeCached;
     use crate::deserialize::FromSql;
@@ -862,6 +861,7 @@ mod tests {
             ),
             &mut conn.statement_cache,
             &mut conn.raw_connection,
+            &mut conn.instrumentation,
         ).unwrap();
 
         let metadata = stmt.metadata().unwrap();

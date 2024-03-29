@@ -5,9 +5,9 @@ error[E0277]: the trait bound `std::string::String: diesel::Expression` is not s
    |     ^^ the trait `diesel::Expression` is not implemented for `std::string::String`
    |
    = help: the following other types implement trait `diesel::Expression`:
+             Box<T>
              columns::name
              columns::id
-             Box<T>
              columns::star
              diesel::expression::ops::numeric::Add<Lhs, Rhs>
              diesel::expression::ops::numeric::Sub<Lhs, Rhs>
@@ -23,9 +23,9 @@ error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
    |     ^^^^ the trait `diesel::Expression` is not implemented for `i32`
    |
    = help: the following other types implement trait `diesel::Expression`:
+             Box<T>
              columns::name
              columns::id
-             Box<T>
              columns::star
              diesel::expression::ops::numeric::Add<Lhs, Rhs>
              diesel::expression::ops::numeric::Sub<Lhs, Rhs>
@@ -41,9 +41,9 @@ error[E0277]: the trait bound `std::string::String: diesel::Expression` is not s
    |     ^^ the trait `diesel::Expression` is not implemented for `std::string::String`
    |
    = help: the following other types implement trait `diesel::Expression`:
+             Box<T>
              columns::name
              columns::id
-             Box<T>
              columns::star
              diesel::expression::ops::numeric::Add<Lhs, Rhs>
              diesel::expression::ops::numeric::Sub<Lhs, Rhs>
@@ -60,9 +60,9 @@ error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
    |     ^^^^ the trait `diesel::Expression` is not implemented for `i32`
    |
    = help: the following other types implement trait `diesel::Expression`:
+             Box<T>
              columns::name
              columns::id
-             Box<T>
              columns::star
              diesel::expression::ops::numeric::Add<Lhs, Rhs>
              diesel::expression::ops::numeric::Sub<Lhs, Rhs>

@@ -3,7 +3,7 @@ use super::information_schema::DefaultSchema;
 use super::TableName;
 use crate::print_schema::ColumnSorting;
 use diesel::connection::DefaultLoadingMode;
-use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
+use diesel::deserialize::{self, FromStaticSqlRow};
 use diesel::dsl::AsExprOf;
 use diesel::expression::AsExpression;
 use diesel::pg::Pg;
@@ -11,13 +11,12 @@ use diesel::prelude::*;
 use diesel::sql_types::{self, Array, Text};
 use heck::ToUpperCamelCase;
 use std::borrow::Cow;
-use std::error::Error;
-use std::io::{stderr, Write};
 
+#[tracing::instrument]
 pub fn determine_column_type(
     attr: &ColumnInformation,
     default_schema: String,
-) -> Result<ColumnType, Box<dyn Error + Send + Sync + 'static>> {
+) -> Result<ColumnType, crate::errors::Error> {
     let is_array = attr.type_name.starts_with('_');
     let tpe = if is_array {
         &attr.type_name[1..]
@@ -33,12 +32,12 @@ pub fn determine_column_type(
     // Postgres doesn't coerce varchar[] to text[] so print out a message to inform
     // the user.
     if let (true, Some(tpe)) = (is_array, diesel_alias_without_postgres_coercion) {
-        writeln!(
-            &mut stderr(),
+        tracing::info!("Cannot coerce varchar[] into text[]");
+        eprintln!(
             "The column `{}` is of type `{}[]`. This will cause problems when using Diesel. You should consider changing the column type to `text[]`.",
             attr.column_name,
             tpe
-        )?;
+        );
     }
 
     Ok(ColumnType {
@@ -71,7 +70,7 @@ fn regclass(table: &TableName) -> Regclass<AsExprOf<String, sql_types::Text>> {
     ))
 }
 
-diesel::sql_function!(fn col_description(table: sql_types::Oid, column_number: sql_types::BigInt) -> sql_types::Nullable<sql_types::Text>);
+diesel::define_sql_function!(fn col_description(table: sql_types::Oid, column_number: sql_types::BigInt) -> sql_types::Nullable<sql_types::Text>);
 
 pub fn get_table_data(
     conn: &mut PgConnection,
@@ -140,7 +139,7 @@ where
     }
 }
 
-sql_function!(fn obj_description(oid: sql_types::Oid, catalog: sql_types::Text) -> Nullable<Text>);
+define_sql_function!(fn obj_description(oid: sql_types::Oid, catalog: sql_types::Text) -> Nullable<Text>);
 
 pub fn get_table_comment(
     conn: &mut PgConnection,
@@ -167,7 +166,7 @@ mod information_schema {
     }
 }
 
-sql_function! {
+define_sql_function! {
     #[aggregate]
     fn array_agg(input: diesel::sql_types::Text) -> diesel::sql_types::Array<diesel::sql_types::Text>;
 }

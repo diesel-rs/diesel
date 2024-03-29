@@ -21,24 +21,21 @@ concurrency:
 jobs:
   check_and_test:
     name: Check
-    needs: [sqlite_bundled, rustfmt_and_clippy]
+    needs: [sqlite_bundled, rustfmt_and_clippy, postgres_bundled]
     strategy:
       fail-fast: false
       matrix:
         rust: ["stable", "beta", "nightly"]
         backend: ["postgres", "sqlite", "mysql"]
-        os: [ubuntu-latest, macos-latest, windows-2019]
+        os: [ubuntu-latest, macos-latest, macos-14, windows-2019]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Cache cargo registry
-        uses: actions/cache@v3
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
           key: ${{ runner.os }}-${{ matrix.backend }}-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Set environment variables
@@ -121,10 +118,19 @@ jobs:
           echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root:root@localhost/diesel_unit_test" >> $GITHUB_ENV
 
       - name: Install postgres (MacOS)
-        if: runner.os == 'macOS' && matrix.backend == 'postgres'
+        if: matrix.os == 'macos-latest' && matrix.backend == 'postgres'
         run: |
           initdb -D /usr/local/var/postgres
           pg_ctl -D /usr/local/var/postgres start
+          sleep 3
+          createuser -s postgres
+          echo "PG_DATABASE_URL=postgres://postgres@localhost/" >> $GITHUB_ENV
+          echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres@localhost/diesel_example" >> $GITHUB_ENV
+      - name: Install postgres (MacOS M1)
+        if: matrix.os == 'macos-14' && matrix.backend == 'postgres'
+        run: |
+          brew install postgresql
+          brew services start postgresql@14
           sleep 3
           createuser -s postgres
           echo "PG_DATABASE_URL=postgres://postgres@localhost/" >> $GITHUB_ENV
@@ -137,7 +143,7 @@ jobs:
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS)
-        if: runner.os == 'macOS' && matrix.backend == 'mysql'
+        if: matrix.os == 'macos-latest' && matrix.backend == 'mysql'
         run: |
           brew install mariadb@10.5
           /usr/local/opt/mariadb@10.5/bin/mysql_install_db
@@ -148,6 +154,20 @@ jobs:
           echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://runner@localhost/diesel_example" >> $GITHUB_ENV
           echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@localhost/diesel_unit_test" >> $GITHUB_ENV
           echo "MYSQLCLIENT_LIB_DIR=/usr/local/opt/mariadb@10.5/lib" >> $GITHUB_ENV
+
+      - name: Install mysql (MacOS M1)
+        if: matrix.os == 'macos-14' && matrix.backend == 'mysql'
+        run: |
+          brew install mariadb@10.5
+          ls /opt/homebrew/opt/mariadb@10.5
+          /opt/homebrew/opt/mariadb@10.5/bin/mysql_install_db
+          /opt/homebrew/opt/mariadb@10.5/bin/mysql.server start
+          sleep 3
+          /opt/homebrew/opt/mariadb@10.5/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'runner'@'localhost';" -urunner
+          echo "MYSQL_DATABASE_URL=mysql://runner@localhost/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://runner@localhost/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@localhost/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=/opt/homebrew/opt/mariadb@10.5/lib" >> $GITHUB_ENV
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'
@@ -194,6 +214,7 @@ jobs:
           echo "MYSQLCLIENT_LIB_DIR=C:\tools\mysql\current\lib" >> $GITHUB_ENV
           echo "C:\tools\mysql\current\lib" >> $GITHUB_PATH
           echo "C:\tools\mysql\current\bin" >> $GITHUB_PATH
+          dir "C:\tools\mysql\current\lib"
 
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@master
@@ -239,7 +260,7 @@ jobs:
         env:
           BACKEND: ${{ matrix.backend }}
         run: |
-           (cd examples/${{ matrix.backend }} && rustup run ${{ matrix.rust }} bash test_all)
+          (cd examples/${{ matrix.backend }} && rustup run ${{ matrix.rust }} bash test_all)
 
       - name: Test migrations-internals
         shell: bash
@@ -299,16 +320,13 @@ jobs:
     name: Compiletests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly-2023-09-21
       - name: Cache cargo registry
-        uses: actions/cache@v3
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
           key: compile_test-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Install dependencies
@@ -324,16 +342,13 @@ jobs:
     name: Check rustfmt style && run clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
       - name: Cache cargo registry
-        uses: actions/cache@v3
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
           key: clippy-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Install dependencies
@@ -370,6 +385,7 @@ jobs:
           cargo +stable clippy --tests --manifest-path examples/postgres/all_about_inserts/Cargo.toml
           cargo +stable clippy --tests --manifest-path examples/postgres/all_about_updates/Cargo.toml
           cargo +stable clippy --tests --manifest-path examples/postgres/custom_types/Cargo.toml
+          cargo +stable clippy --tests --manifest-path examples/postgres/composite_types/Cargo.toml
           cargo +stable clippy --tests --manifest-path examples/postgres/relations/Cargo.toml
 
           cargo +stable clippy --tests --manifest-path diesel_derives/Cargo.toml --features "sqlite diesel/sqlite"
@@ -403,16 +419,14 @@ jobs:
     name: Check sqlite bundled + Sqlite with asan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: nightly
           components: "rust-src"
       - name: Cache cargo registry
-        uses: actions/cache@v3
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
           key: sqlite_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Test diesel-cli
@@ -430,37 +444,72 @@ jobs:
           RUSTFLAGS: -Zsanitizer=address
           ASAN_OPTIONS: detect_stack_use_after_return=1
         run: cargo +nightly -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "sqlite extras libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
-
-  minimal_rust_version:
-    name: Check Minimal supported rust version (1.66.0)
+  postgres_bundled:
+    name: Check postgres bundled + Postgres with asan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@1.66.0
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: "rust-src"
+      - name: Cache cargo registry
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: postgres_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - name: Install postgres (Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev postgresql valgrind
+          echo "host    all             all             127.0.0.1/32            md5" > sudo tee -a /etc/postgresql/10/main/pg_hba.conf
+          sudo service postgresql restart && sleep 3
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+          sudo service postgresql restart && sleep 3
+          echo "PG_DATABASE_URL=postgres://postgres:postgres@localhost/" >> $GITHUB_ENV
+          echo $PG_DATABASE_URL
+
+      - name: Test diesel-cli
+        run: cargo +nightly test --manifest-path diesel_cli/Cargo.toml --no-default-features --features "postgres-bundled"
+
+      - name: Run diesel_tests with ASAN enabled
+        env:
+          RUSTFLAGS: -Zsanitizer=address
+          ASAN_OPTIONS: detect_stack_use_after_return=1
+        run: cargo +nightly -Z build-std test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "postgres pq-sys pq-sys/bundled pq-src/with-asan" --target x86_64-unknown-linux-gnu
+
+      - name: Run diesel tests with ASAN enabled
+        env:
+          RUSTDOCFLAGS: -Zsanitizer=address
+          RUSTFLAGS: -Zsanitizer=address
+          ASAN_OPTIONS: detect_stack_use_after_return=1
+        run: cargo +nightly -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "postgres pq-sys pq-sys/bundled pq-src/with-asan" --target x86_64-unknown-linux-gnu
+
+  minimal_rust_version:
+    name: Check Minimal supported rust version (1.70.0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.70.0
       - uses: dtolnay/rust-toolchain@nightly
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@cargo-minimal-versions
       - name: Cache cargo registry
-        uses: actions/cache@v3
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
           key: minimal_rust_version-cargo-${{ hashFiles('**/Cargo.toml') }}
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       - name: Check diesel_derives
-        run: cargo +1.66.0 minimal-versions check -p diesel_derives --features "postgres sqlite mysql 32-column-tables 64-column-tables 128-column-tables without-deprecated with-deprecated r2d2"
+        run: cargo +1.70.0 minimal-versions check -p diesel_derives --features "postgres sqlite mysql 32-column-tables 64-column-tables 128-column-tables without-deprecated with-deprecated r2d2"
       - name: Check diesel
-        run: cargo +1.66.0 minimal-versions check -p diesel --features "postgres mysql sqlite extras"
+        run: cargo +1.70.0 minimal-versions check -p diesel --features "postgres mysql sqlite extras"
       - name: Check diesel_dynamic_schema
-        run: cargo +1.66.0 minimal-versions check -p diesel-dynamic-schema --all-features
+        run: cargo +1.70.0 minimal-versions check -p diesel-dynamic-schema --all-features
       - name: Check diesel_migrations
-        run: cargo +1.66.0 minimal-versions check -p diesel_migrations --all-features
+        run: cargo +1.70.0 minimal-versions check -p diesel_migrations --all-features
       - name: Check diesel_cli
-        run: cargo +1.66.0 minimal-versions check -p diesel_cli --all-features
+        run: cargo +1.70.0 minimal-versions check -p diesel_cli --features "default sqlite-bundled"
 
   typos:
     name: Spell Check with Typos
@@ -469,7 +518,7 @@ jobs:
 
     steps:
       - name: Checkout Actions Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check the spelling of the files in our repo
         uses: crate-ci/typos@master

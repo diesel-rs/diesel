@@ -1,7 +1,5 @@
 use diesel_table_macro_syntax::ColumnDef;
 
-use std::error::Error;
-
 use super::table_data::TableName;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -26,16 +24,14 @@ pub struct ColumnType {
 }
 
 impl ColumnType {
-    pub(crate) fn for_column_def(c: &ColumnDef) -> Result<Self, Box<dyn Error + Send + Sync>> {
+    pub(crate) fn for_column_def(c: &ColumnDef) -> Result<Self, crate::errors::Error> {
         Ok(Self::for_type_path(
             &c.tpe,
             c.max_length
                 .as_ref()
                 .map(|l| {
                     l.base10_parse::<u64>()
-                        .map_err(|e| -> Box<dyn Error + Send + Sync> {
-                            format!("Column length literal can't be parsed as u64: {e}").into()
-                        })
+                        .map_err(crate::errors::Error::ColumnLiteralParseError)
                 })
                 .transpose()?,
         ))

@@ -1,7 +1,7 @@
 [package]
 name = "diesel_bench"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 build = "build.rs"
 autobenches = false
 
@@ -10,21 +10,38 @@ autobenches = false
 
 [dependencies]
 dotenvy = "0.15"
-criterion = {version = "0.5", default-features = false, features = ["csv_output", "cargo_bench_support"]}
-sqlx = {version = "0.7", features = ["runtime-tokio-rustls"], optional = true}
-tokio = {version = "1", optional = true}
-rusqlite = {version = "0.29", optional = true}
-rust_postgres = {version = "0.19", optional = true, package = "postgres"}
-rust_mysql = {version = "23.0", optional = true, package = "mysql"}
-rustorm = {version = "0.20", optional = true}
-rustorm_dao = {version = "0.20", optional = true}
-quaint = {version = "=0.2.0-alpha.13", optional = true, features = ["uuid"]}
-serde = {version = "1", optional = true, features = ["derive"]}
-sea-orm = {  git = "https://github.com/SeaQL/sea-orm/", branch = "master", optional = true, features = ["runtime-tokio-rustls"]}
-futures = {version = "0.3", optional = true}
-diesel-async = {version = "0.2", optional = true, default-features = false}
-criterion-perf-events = { version = "0.4", optional = true}
-perfcnt = {version = "0.8", optional = true}
+criterion = { version = "0.5", default-features = false, features = [
+  "csv_output",
+  "cargo_bench_support",
+] }
+sqlx = { version = "0.7.3", features = [
+  "runtime-tokio-rustls",
+], optional = true }
+tokio = { version = "1", optional = true, features = ["rt-multi-thread"] }
+rusqlite = { version = "0.30", optional = true }
+rust_postgres = { version = "0.19.7", optional = true, package = "postgres" }
+tokio_postgres = { version = "0.7.10", optional = true, package = "tokio-postgres" }
+rust_mysql = { version = "23.0", optional = true, package = "mysql" }
+rustorm = { version = "0.20", optional = true }
+rustorm_dao = { version = "0.20", optional = true }
+quaint = { version = "0.2.0-alpha.13", optional = true, default-features = false }
+serde = { version = "1", optional = true, features = ["derive"] }
+sea-orm = { version = "0.12.14", optional = true, features = [
+  "runtime-tokio-rustls",
+] }
+futures = { version = "0.3", optional = true }
+futures-util = { version = "0.3", optional = true }
+diesel-async = { version = "0.4.1", optional = true, default-features = false }
+criterion-perf-events = { version = "0.4", optional = true }
+perfcnt = { version = "0.8", optional = true }
+wtx = { default-features = false, features = [
+  "atoi",
+  "memchr",
+  "postgres",
+  "simdutf8",
+  "std",
+  "tokio",
+], optional = true, version = "0.14" }
 
 [dependencies.diesel]
 path = "../diesel"
@@ -52,8 +69,11 @@ sqlx-bench = ["sqlx", "tokio", "sqlx/runtime-tokio-rustls"]
 instruction_count = ["criterion-perf-events", "perfcnt"]
 fast_run = []
 
+[profile.release]
+lto = true
+codegen-units = 1
 
 [patch.crates-io]
-quaint = {git = "https://github.com/prisma/prisma-engines", rev = "8f088bb"}
-diesel-async = { git = "https://github.com/weiznich/diesel_async", rev = "d9e219578a7e034c2714550a5a156c8e004896bc"}
-diesel = { path = "../diesel"}
+quaint = { git = "https://github.com/prisma/prisma-engines", branch = "main" }
+diesel-async = { git = "https://github.com/weiznich/diesel_async", branch = "main" }
+diesel = { path = "../diesel" }

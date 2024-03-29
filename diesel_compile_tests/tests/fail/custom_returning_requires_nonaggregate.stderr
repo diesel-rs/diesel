@@ -30,8 +30,8 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
    = help: the following other types implement trait `MixedAggregates<Other>`:
              <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::No>>
              <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
-   = note: required for `(columns::name, diesel::expression::count::count::count<diesel::sql_types::Text, columns::name>)` to implement `ValidGrouping<()>`
-   = note: required for `(columns::name, diesel::expression::count::count::count<diesel::sql_types::Text, columns::name>)` to implement `NonAggregate`
+   = note: required for `(columns::name, diesel::expression::count::count_utils::count<diesel::sql_types::Text, columns::name>)` to implement `ValidGrouping<()>`
+   = note: required for `(columns::name, diesel::expression::count::count_utils::count<diesel::sql_types::Text, columns::name>)` to implement `NonAggregate`
    = note: required for `InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<...>,), ...>, ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
   --> $DIESEL/src/query_builder/insert_statement/mod.rs

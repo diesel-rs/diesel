@@ -8,6 +8,8 @@ use self::stmt::iterator::StatementIterator;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
+use crate::connection::instrumentation::DebugQuery;
+use crate::connection::instrumentation::StrQueryHelper;
 use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
@@ -109,6 +111,7 @@ pub struct MysqlConnection {
     raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
     statement_cache: StatementCache<Mysql, Statement>,
+    instrumentation: Option<Box<dyn Instrumentation>>,
 }
 
 // mysql connection can be shared between threads according to libmysqlclients documentation
@@ -117,8 +120,19 @@ unsafe impl Send for MysqlConnection {}
 
 impl SimpleConnection for MysqlConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
-        self.raw_connection
-            .enable_multi_statements(|| self.raw_connection.execute(query))
+        self.instrumentation
+            .on_connection_event(InstrumentationEvent::StartQuery {
+                query: &StrQueryHelper::new(query),
+            });
+        let r = self
+            .raw_connection
+            .enable_multi_statements(|| self.raw_connection.execute(query));
+        self.instrumentation
+            .on_connection_event(InstrumentationEvent::FinishQuery {
+                query: &StrQueryHelper::new(query),
+                error: r.as_ref().err(),
+            });
+        r
     }
 }
 
@@ -142,18 +156,18 @@ impl Connection for MysqlConnection {
     /// * `ssl_mode` expects a value defined for MySQL client command option `--ssl-mode`
     /// See <https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode>
     fn establish(database_url: &str) -> ConnectionResult<Self> {
-        use crate::result::ConnectionError::CouldntSetupConfiguration;
+        let mut instrumentation = crate::connection::instrumentation::get_default_instrumentation();
+        instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
+            url: database_url,
+        });
 
-        let raw_connection = RawConnection::new();
-        let connection_options = ConnectionOptions::parse(database_url)?;
-        raw_connection.connect(&connection_options)?;
-        let mut conn = MysqlConnection {
-            raw_connection,
-            transaction_state: AnsiTransactionManager::default(),
-            statement_cache: StatementCache::new(),
-        };
-        conn.set_config_options()
-            .map_err(CouldntSetupConfiguration)?;
+        let establish_result = Self::establish_inner(database_url);
+        instrumentation.on_connection_event(InstrumentationEvent::FinishEstablishConnection {
+            url: database_url,
+            error: establish_result.as_ref().err(),
+        });
+        let mut conn = establish_result?;
+        conn.instrumentation = instrumentation;
         Ok(conn)
     }
 
@@ -163,20 +177,34 @@ impl Connection for MysqlConnection {
     {
         #[allow(unsafe_code)] // call to unsafe function
         update_transaction_manager_status(
-            prepared_query(&source, &mut self.statement_cache, &mut self.raw_connection).and_then(
-                |stmt| {
-                    // we have not called result yet, so calling `execute` is
-                    // fine
-                    let stmt_use = unsafe { stmt.execute() }?;
-                    Ok(stmt_use.affected_rows())
-                },
-            ),
+            prepared_query(
+                &source,
+                &mut self.statement_cache,
+                &mut self.raw_connection,
+                &mut self.instrumentation,
+            )
+            .and_then(|stmt| {
+                // we have not called result yet, so calling `execute` is
+                // fine
+                let stmt_use = unsafe { stmt.execute() }?;
+                Ok(stmt_use.affected_rows())
+            }),
             &mut self.transaction_state,
+            &mut self.instrumentation,
+            &crate::debug_query(source),
         )
     }
 
     fn transaction_state(&mut self) -> &mut AnsiTransactionManager {
         &mut self.transaction_state
+    }
+
+    fn instrumentation(&mut self) -> &mut dyn Instrumentation {
+        &mut self.instrumentation
+    }
+
+    fn set_instrumentation(&mut self, instrumentation: impl Instrumentation) {
+        self.instrumentation = Some(Box::new(instrumentation));
     }
 }
 
@@ -184,12 +212,18 @@ impl Connection for MysqlConnection {
 fn update_transaction_manager_status<T>(
     query_result: QueryResult<T>,
     transaction_manager: &mut AnsiTransactionManager,
+    instrumentation: &mut Option<Box<dyn Instrumentation>>,
+    query: &dyn DebugQuery,
 ) -> QueryResult<T> {
     if let Err(Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)) = query_result {
         transaction_manager
             .status
             .set_requires_rollback_maybe_up_to_top_level(true)
     }
+    instrumentation.on_connection_event(InstrumentationEvent::FinishQuery {
+        query,
+        error: query_result.as_ref().err(),
+    });
     query_result
 }
 
@@ -206,14 +240,20 @@ impl LoadConnection<DefaultLoadingMode> for MysqlConnection {
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         update_transaction_manager_status(
-            prepared_query(&source, &mut self.statement_cache, &mut self.raw_connection).and_then(
-                |stmt| {
-                    let mut metadata = Vec::new();
-                    Mysql::row_metadata(&mut (), &mut metadata);
-                    StatementIterator::from_stmt(stmt, &metadata)
-                },
-            ),
+            prepared_query(
+                &source,
+                &mut self.statement_cache,
+                &mut self.raw_connection,
+                &mut self.instrumentation,
+            )
+            .and_then(|stmt| {
+                let mut metadata = Vec::new();
+                Mysql::row_metadata(&mut (), &mut metadata);
+                StatementIterator::from_stmt(stmt, &metadata)
+            }),
             &mut self.transaction_state,
+            &mut self.instrumentation,
+            &crate::debug_query(&source),
         )
     }
 }
@@ -247,11 +287,19 @@ fn prepared_query<'a, T: QueryFragment<Mysql> + QueryId>(
     source: &'_ T,
     statement_cache: &'a mut StatementCache<Mysql, Statement>,
     raw_connection: &'a mut RawConnection,
+    instrumentation: &mut dyn Instrumentation,
 ) -> QueryResult<MaybeCached<'a, Statement>> {
-    let mut stmt =
-        statement_cache.cached_statement(T::query_id(), source, &Mysql, &[], &mut |sql, _| {
-            raw_connection.prepare(sql)
-        })?;
+    instrumentation.on_connection_event(InstrumentationEvent::StartQuery {
+        query: &crate::debug_query(source),
+    });
+    let mut stmt = statement_cache.cached_statement(
+        source,
+        &Mysql,
+        &[],
+        |sql, _| raw_connection.prepare(sql),
+        instrumentation,
+    )?;
+
     let mut bind_collector = RawBytesBindCollector::new();
     source.collect_binds(&mut bind_collector, &mut (), &Mysql)?;
     let binds = bind_collector
@@ -269,6 +317,23 @@ impl MysqlConnection {
         crate::sql_query("SET character_set_connection = 'utf8mb4'").execute(self)?;
         crate::sql_query("SET character_set_results = 'utf8mb4'").execute(self)?;
         Ok(())
+    }
+
+    fn establish_inner(database_url: &str) -> Result<MysqlConnection, ConnectionError> {
+        use crate::ConnectionError::CouldntSetupConfiguration;
+
+        let raw_connection = RawConnection::new();
+        let connection_options = ConnectionOptions::parse(database_url)?;
+        raw_connection.connect(&connection_options)?;
+        let mut conn = MysqlConnection {
+            raw_connection,
+            transaction_state: AnsiTransactionManager::default(),
+            statement_cache: StatementCache::new(),
+            instrumentation: None,
+        };
+        conn.set_config_options()
+            .map_err(CouldntSetupConfiguration)?;
+        Ok(conn)
     }
 }
 

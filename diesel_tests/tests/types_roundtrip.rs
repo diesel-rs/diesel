@@ -3,9 +3,9 @@ use diesel::query_dsl::LoadQuery;
 pub use quickcheck::quickcheck;
 
 pub use crate::schema::{connection_without_transaction, TestConnection};
+#[cfg(not(feature = "sqlite"))]
 pub use diesel::data_types::*;
 pub use diesel::result::Error;
-pub use diesel::serialize::ToSql;
 pub use diesel::sql_types::{HasSqlType, SingleValue, SqlType};
 pub use diesel::*;
 
@@ -465,7 +465,7 @@ mod mysql_types {
             t.hour(),
             t.minute(),
             t.second(),
-            t.timestamp_subsec_micros() as _,
+            t.and_utc().timestamp_subsec_micros() as _,
             false,
             MysqlTimestampType::MYSQL_TIMESTAMP_DATETIME,
             0,
@@ -481,7 +481,7 @@ mod mysql_types {
             t.hour(),
             t.minute(),
             t.second(),
-            t.timestamp_subsec_micros() as _,
+            t.and_utc().timestamp_subsec_micros() as _,
             false,
             MysqlTimestampType::MYSQL_TIMESTAMP_DATETIME,
             0,
@@ -508,10 +508,12 @@ mod mysql_types {
             .unwrap();
 
         if seconds != 0 {
-            seconds = earliest_mysql_date.timestamp()
-                + ((latest_mysql_date.timestamp() - earliest_mysql_date.timestamp()) % seconds);
+            seconds = earliest_mysql_date.and_utc().timestamp()
+                + ((latest_mysql_date.and_utc().timestamp()
+                    - earliest_mysql_date.and_utc().timestamp())
+                    % seconds);
         } else {
-            seconds = earliest_mysql_date.timestamp();
+            seconds = earliest_mysql_date.and_utc().timestamp();
         }
 
         let r = mk_naive_datetime((seconds, nanos));
@@ -607,7 +609,7 @@ pub fn mk_naive_datetime((mut secs, mut nano): (i64, u32)) -> NaiveDateTime {
         break;
     }
 
-    NaiveDateTime::from_timestamp_opt(secs, nano).unwrap()
+    DateTime::from_timestamp(secs, nano).unwrap().naive_utc()
 }
 
 pub fn mk_naive_time((mut seconds, mut nano): (u32, u32)) -> NaiveTime {
@@ -647,7 +649,7 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
     let num_days_representable = latest_chrono_date
         .signed_duration_since(earliest_pg_date)
         .num_days();
-    earliest_pg_date + Duration::days(days as i64 % num_days_representable)
+    earliest_pg_date + Duration::try_days(days as i64 % num_days_representable).unwrap()
 }
 
 #[cfg(feature = "mysql")]
@@ -657,7 +659,7 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
     let num_days_representable = latest_mysql_date
         .signed_duration_since(earliest_mysql_date)
         .num_days();
-    earliest_mysql_date + Duration::days(days as i64 % num_days_representable)
+    earliest_mysql_date + Duration::try_days(days as i64 % num_days_representable).unwrap()
 }
 
 #[cfg(feature = "sqlite")]
@@ -667,7 +669,7 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
     let num_days_representable = latest_sqlite_date
         .signed_duration_since(earliest_sqlite_date)
         .num_days();
-    earliest_sqlite_date + Duration::days(days as i64 % num_days_representable)
+    earliest_sqlite_date + Duration::try_days(days as i64 % num_days_representable).unwrap()
 }
 
 #[derive(Debug, Clone, Copy)]

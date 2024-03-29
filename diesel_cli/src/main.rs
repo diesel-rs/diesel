@@ -1,6 +1,5 @@
 // Built-in Lints
 // Clippy lints
-#![allow(clippy::map_unwrap_or)]
 #![warn(
     clippy::if_not_else,
     clippy::items_after_statements,
@@ -11,14 +10,14 @@
     clippy::used_underscore_binding,
     missing_copy_implementations
 )]
-#![cfg_attr(test, allow(clippy::unwrap_used))]
+#![cfg_attr(not(test), warn(clippy::unwrap_used))]
 
 mod config;
 
-mod database_error;
 #[macro_use]
 mod database;
 mod cli;
+mod errors;
 mod infer_schema_internals;
 mod migrations;
 mod print_schema;
@@ -32,39 +31,54 @@ use diesel::backend::Backend;
 use diesel::Connection;
 use diesel_migrations::{FileBasedMigrations, HarnessWithOutput, MigrationHarness};
 use std::error::Error;
-use std::fmt::Display;
 use std::io::stdout;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::EnvFilter;
 
 use self::config::Config;
-use self::database_error::{DatabaseError, DatabaseResult};
 pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
 
 fn main() {
-    use dotenvy::dotenv;
-
-    match dotenv() {
-        Err(e) if !matches!(e, dotenvy::Error::Io(ref i) if i.kind() == std::io::ErrorKind::NotFound) =>
-        {
-            eprintln!("Initializing `.env` file failed: {}", e);
-            std::process::exit(1);
-        }
-        _ => {}
+    if let Err(e) = inner_main() {
+        eprintln!("{e}");
+        std::process::exit(1)
     }
+}
+
+fn inner_main() -> Result<(), crate::errors::Error> {
+    let filter = EnvFilter::from_default_env();
+    let fmt = tracing_subscriber::fmt::layer();
+
+    tracing_subscriber::Registry::default()
+        .with(filter)
+        .with(fmt)
+        .init();
+
+    dotenvy::dotenv().map(|_| ()).or_else(|e| {
+        if matches!(e, dotenvy::Error::Io(ref i) if i.kind() == std::io::ErrorKind::NotFound) {
+            Ok(())
+        } else {
+            Err(e)
+        }
+    })?;
 
     let matches = cli::build_cli().get_matches();
 
-    match matches.subcommand().unwrap() {
-        ("migration", matches) => {
-            self::migrations::run_migration_command(matches).unwrap_or_else(handle_error)
-        }
-        ("setup", matches) => run_setup_command(matches),
-        ("database", matches) => run_database_command(matches).unwrap_or_else(handle_error),
+    match matches
+        .subcommand()
+        .expect("Clap should prevent reaching this without subcommand")
+    {
+        ("migration", matches) => self::migrations::run_migration_command(matches)?,
+        ("setup", matches) => run_setup_command(matches)?,
+        ("database", matches) => run_database_command(matches)?,
         ("completions", matches) => generate_completions_command(matches),
-        ("print-schema", matches) => run_infer_schema(matches).unwrap_or_else(handle_error),
+        ("print-schema", matches) => run_infer_schema(matches)?,
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
+    Ok(())
 }
 
 fn run_migrations_with_output<Conn, DB>(
@@ -80,21 +94,21 @@ where
         .map(|_| ())
 }
 
-fn run_setup_command(matches: &ArgMatches) {
-    create_config_file(matches).unwrap_or_else(handle_error);
-    let migrations_dir = create_migrations_dir(matches).unwrap_or_else(handle_error);
+#[tracing::instrument]
+fn run_setup_command(matches: &ArgMatches) -> Result<(), crate::errors::Error> {
+    let migrations_dir = create_migrations_dir(matches)?;
+    create_config_file(matches, &migrations_dir)?;
 
-    database::setup_database(matches, &migrations_dir).unwrap_or_else(handle_error);
+    database::setup_database(matches, &migrations_dir)?;
+    Ok(())
 }
 
 /// Checks if the migration directory exists, else creates it.
 /// For more information see the `migrations_dir` function.
-fn create_migrations_dir(matches: &ArgMatches) -> DatabaseResult<PathBuf> {
+fn create_migrations_dir(matches: &ArgMatches) -> Result<PathBuf, crate::errors::Error> {
     let dir = match self::migrations::migrations_dir(matches) {
         Ok(dir) => dir,
-        Err(_) => find_project_root()
-            .unwrap_or_else(handle_error)
-            .join("migrations"),
+        Err(_) => find_project_root()?.join("migrations"),
     };
 
     if dir.exists() {
@@ -122,30 +136,40 @@ fn create_migrations_dir(matches: &ArgMatches) -> DatabaseResult<PathBuf> {
     Ok(dir)
 }
 
-fn create_config_file(matches: &ArgMatches) -> DatabaseResult<()> {
+fn create_config_file(
+    matches: &ArgMatches,
+    migrations_dir: &Path,
+) -> Result<(), crate::errors::Error> {
     use std::io::Write;
     let path = Config::file_path(matches);
     if !path.exists() {
+        let source_content = include_str!("default_files/diesel.toml").to_string();
+        // convert the path to a valid toml string (escaping backslashes on windows)
+        let migrations_dir_toml_string = migrations_dir.display().to_string().replace('\\', "\\\\");
+        let modified_content = source_content.replace(
+            "dir = \"migrations\"",
+            &format!("dir = \"{}\"", migrations_dir_toml_string),
+        );
         let mut file = fs::File::create(path)?;
-        file.write_all(include_bytes!("default_files/diesel.toml"))?;
+        file.write_all(modified_content.as_bytes())?;
     }
 
     Ok(())
 }
 
-fn run_database_command(
-    matches: &ArgMatches,
-) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-    match matches.subcommand().unwrap() {
+#[tracing::instrument]
+fn run_database_command(matches: &ArgMatches) -> Result<(), crate::errors::Error> {
+    match matches
+        .subcommand()
+        .expect("Clap should prevent reaching this without subcommand")
+    {
         ("setup", args) => {
-            let migrations_dir =
-                self::migrations::migrations_dir(matches).unwrap_or_else(handle_error);
+            let migrations_dir = self::migrations::migrations_dir(matches)?;
             database::setup_database(args, &migrations_dir)?;
             regenerate_schema_if_file_specified(matches)?;
         }
         ("reset", args) => {
-            let migrations_dir =
-                self::migrations::migrations_dir(matches).unwrap_or_else(handle_error);
+            let migrations_dir = self::migrations::migrations_dir(matches)?;
             database::reset_database(args, &migrations_dir)?;
             regenerate_schema_if_file_specified(matches)?;
         }
@@ -155,6 +179,7 @@ fn run_database_command(
     Ok(())
 }
 
+#[tracing::instrument]
 fn generate_completions_command(matches: &ArgMatches) {
     let shell: &Shell = matches.get_one("SHELL").expect("Shell is set here?");
     let mut app = cli::build_cli();
@@ -166,14 +191,14 @@ fn generate_completions_command(matches: &ArgMatches) {
 /// and creates one in the same directory as the Cargo.toml if it can't find
 /// one. It also sticks a .keep in the directory so git will pick it up.
 /// Returns a `DatabaseError::ProjectRootNotFound` if no Cargo.toml is found.
-fn create_migrations_directory(path: &Path) -> DatabaseResult<PathBuf> {
+fn create_migrations_directory(path: &Path) -> Result<PathBuf, crate::errors::Error> {
     println!("Creating migrations directory at: {}", path.display());
-    fs::create_dir(path)?;
+    fs::create_dir_all(path)?;
     fs::File::create(path.join(".keep"))?;
     Ok(path.to_owned())
 }
 
-fn find_project_root() -> DatabaseResult<PathBuf> {
+fn find_project_root() -> Result<PathBuf, crate::errors::Error> {
     let current_dir = env::current_dir()?;
     search_for_directory_containing_file(&current_dir, "diesel.toml")
         .or_else(|_| search_for_directory_containing_file(&current_dir, "Cargo.toml"))
@@ -181,22 +206,19 @@ fn find_project_root() -> DatabaseResult<PathBuf> {
 
 /// Searches for the directory that holds the project's Cargo.toml, and returns
 /// the path if it found it, or returns a `DatabaseError::ProjectRootNotFound`.
-fn search_for_directory_containing_file(path: &Path, file: &str) -> DatabaseResult<PathBuf> {
+fn search_for_directory_containing_file(
+    path: &Path,
+    file: &str,
+) -> Result<PathBuf, crate::errors::Error> {
     let toml_path = path.join(file);
     if toml_path.is_file() {
         Ok(path.to_owned())
     } else {
         path.parent()
             .map(|p| search_for_directory_containing_file(p, file))
-            .unwrap_or_else(|| Err(DatabaseError::ProjectRootNotFound(path.into())))
-            .map_err(|_| DatabaseError::ProjectRootNotFound(path.into()))
+            .unwrap_or_else(|| Err(crate::errors::Error::ProjectRootNotFound(path.into())))
+            .map_err(|_| crate::errors::Error::ProjectRootNotFound(path.into()))
     }
-}
-
-#[allow(clippy::needless_pass_by_value)]
-fn handle_error<E: Display, T>(error: E) -> T {
-    eprintln!("{error}");
-    ::std::process::exit(1);
 }
 
 // Converts an absolute path to a relative path, with the restriction that the
@@ -212,93 +234,67 @@ fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path
         }
     }
 
-    result.join(target_path.strip_prefix(current_path).unwrap())
+    result.join(
+        target_path
+            .strip_prefix(current_path)
+            .expect("Paths have the same base"),
+    )
 }
 
-fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+#[tracing::instrument]
+fn run_infer_schema(matches: &ArgMatches) -> Result<(), crate::errors::Error> {
     use crate::print_schema::*;
 
-    let mut conn = InferConnection::from_matches(matches);
-    let mut config = Config::read(matches)?.set_filter(matches)?.print_schema;
-
-    if let Some(schema_name) = matches.get_one::<String>("schema") {
-        config.schema = Some(schema_name.clone())
+    tracing::info!("Infer schema");
+    let mut conn = InferConnection::from_matches(matches)?;
+    let root_config = Config::read(matches)?
+        .set_filter(matches)?
+        .update_config(matches)?
+        .print_schema;
+    for config in root_config.all_configs.values() {
+        run_print_schema(&mut conn, config, &mut stdout())?;
     }
 
-    if matches.get_flag("with-docs") {
-        config.with_docs = DocConfig::DatabaseCommentsFallbackToAutoGeneratedDocComment;
-    }
-
-    if let Some(sorting) = matches.get_one::<String>("with-docs-config") {
-        config.with_docs = sorting.parse()?;
-    }
-
-    if let Some(sorting) = matches.get_one::<String>("column-sorting") {
-        match sorting as &str {
-            "ordinal_position" => config.column_sorting = ColumnSorting::OrdinalPosition,
-            "name" => config.column_sorting = ColumnSorting::Name,
-            _ => return Err(format!("Invalid column sorting mode: {sorting}").into()),
-        }
-    }
-
-    if let Some(path) = matches.get_one::<PathBuf>("patch-file") {
-        config.patch_file = Some(path.clone());
-    }
-
-    if let Some(types) = matches.get_many("import-types") {
-        let types = types.cloned().collect();
-        config.import_types = Some(types);
-    }
-
-    if matches.get_flag("generate-custom-type-definitions") {
-        config.generate_missing_sql_type_definitions = Some(false);
-    }
-
-    if let Some(derives) = matches.get_many("custom-type-derives") {
-        let derives = derives.cloned().collect();
-        config.custom_type_derives = Some(derives);
-    }
-
-    run_print_schema(&mut conn, &config, &mut stdout())?;
     Ok(())
 }
 
-fn regenerate_schema_if_file_specified(
-    matches: &ArgMatches,
-) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+#[tracing::instrument]
+fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), crate::errors::Error> {
     use std::io::Read;
 
+    tracing::debug!("Regenerate schema if required");
+
     let config = Config::read(matches)?.print_schema;
-    if let Some(ref path) = config.file {
-        let mut connection = InferConnection::from_matches(matches);
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-
-        if matches.get_flag("LOCKED_SCHEMA") {
-            let mut buf = Vec::new();
-            print_schema::run_print_schema(&mut connection, &config, &mut buf)?;
-
-            let mut old_buf = Vec::new();
-            let mut file = fs::File::open(path)?;
-            file.read_to_end(&mut old_buf)?;
-
-            if buf != old_buf {
-                return Err(format!(
-                    "Command would result in changes to {}. \
-                     Rerun the command locally, and commit the changes.",
-                    path.display()
-                )
-                .into());
+    for config in config.all_configs.values() {
+        if let Some(ref path) = config.file {
+            let mut connection = InferConnection::from_matches(matches)?;
+            if let Some(parent) = path.parent() {
+                fs::create_dir_all(parent)?;
             }
-        } else {
-            use std::io::Write;
 
-            let mut file = fs::File::create(path)?;
-            let schema = print_schema::output_schema(&mut connection, &config)?;
-            file.write_all(schema.as_bytes())?;
+            if matches.get_flag("LOCKED_SCHEMA") {
+                let mut buf = Vec::new();
+                print_schema::run_print_schema(&mut connection, config, &mut buf)?;
+
+                let mut old_buf = Vec::new();
+                let mut file = fs::File::open(path)?;
+                file.read_to_end(&mut old_buf)?;
+
+                if buf != old_buf {
+                    return Err(crate::errors::Error::SchemaWouldChange(
+                        path.display().to_string(),
+                    ));
+                }
+            } else {
+                use std::io::Write;
+
+                let mut file = fs::File::create(path)?;
+                let schema = print_schema::output_schema(&mut connection, config)?;
+                file.write_all(schema.as_bytes())?;
+            }
         }
     }
+
     Ok(())
 }
 
@@ -319,8 +315,6 @@ fn supported_backends() -> String {
 mod tests {
     extern crate tempfile;
 
-    use crate::database_error::DatabaseError;
-
     use self::tempfile::Builder;
 
     use std::fs;
@@ -337,10 +331,9 @@ mod tests {
 
         fs::File::create(toml_path.as_path()).unwrap();
 
-        assert_eq!(
-            Ok(temp_path.clone()),
-            search_for_directory_containing_file(&temp_path, "Cargo.toml")
-        );
+        let res = search_for_directory_containing_file(&temp_path, "Cargo.toml");
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), temp_path);
     }
 
     #[test]
@@ -348,10 +341,10 @@ mod tests {
         let dir = Builder::new().prefix("diesel").tempdir().unwrap();
         let temp_path = dir.path().canonicalize().unwrap();
 
-        assert_eq!(
-            Err(DatabaseError::ProjectRootNotFound(temp_path.clone())),
-            search_for_directory_containing_file(&temp_path, "Cargo.toml")
-        );
+        assert!(matches!(
+            search_for_directory_containing_file(&temp_path, "Cargo.toml"),
+            Err(crate::errors::Error::ProjectRootNotFound(p)) if p == temp_path,
+        ));
     }
 
     #[test]

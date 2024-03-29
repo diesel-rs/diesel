@@ -13,29 +13,35 @@ use std::fs::{self};
 use std::path::{Path, PathBuf};
 
 use crate::database::InferConnection;
-use crate::{config::Config, handle_error, regenerate_schema_if_file_specified};
+use crate::{config::Config, regenerate_schema_if_file_specified};
 
 mod diff_schema;
 
-pub(super) fn run_migration_command(
-    matches: &ArgMatches,
-) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-    match matches.subcommand().unwrap() {
+#[tracing::instrument]
+pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::errors::Error> {
+    match matches
+        .subcommand()
+        .expect("Clap ensures a subcommand is set")
+    {
         ("run", _) => {
-            let mut conn = InferConnection::from_matches(matches);
-            let dir = migrations_dir(matches).unwrap_or_else(handle_error);
-            let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
+            let mut conn = InferConnection::from_matches(matches)?;
+            let dir = migrations_dir(matches)?;
+            let dir = FileBasedMigrations::from_path(dir)
+                .map_err(|e| crate::errors::Error::MigrationError(Box::new(e)))?;
             run_migrations_with_output(&mut conn, dir)?;
             regenerate_schema_if_file_specified(matches)?;
         }
         ("revert", args) => {
-            let mut conn = InferConnection::from_matches(matches);
-            let dir = migrations_dir(matches).unwrap_or_else(handle_error);
-            let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
+            let mut conn = InferConnection::from_matches(matches)?;
+            let dir = migrations_dir(matches)?;
+            let dir = FileBasedMigrations::from_path(dir)
+                .map_err(|e| crate::errors::Error::MigrationError(Box::new(e)))?;
             if args.get_flag("REVERT_ALL") {
                 revert_all_migrations_with_output(&mut conn, dir)?;
             } else {
-                let number = args.get_one::<u64>("REVERT_NUMBER").unwrap();
+                let number = args
+                    .get_one::<u64>("REVERT_NUMBER")
+                    .expect("Clap ensure this argument is set");
                 for _ in 0..*number {
                     match revert_migration_with_output(&mut conn, dir.clone()) {
                         Ok(_) => {}
@@ -44,10 +50,10 @@ pub(super) fn run_migration_command(
                                 // If n is larger then the actual number of migrations,
                                 // just stop reverting them
                                 Some(MigrationError::NoMigrationRun) => break,
-                                _ => return Err(e),
+                                _ => return Err(crate::errors::Error::MigrationError(e)),
                             }
                         }
-                        Err(e) => return Err(e),
+                        Err(e) => return Err(crate::errors::Error::MigrationError(e)),
                     }
                 }
             }
@@ -55,39 +61,63 @@ pub(super) fn run_migration_command(
             regenerate_schema_if_file_specified(matches)?;
         }
         ("redo", args) => {
-            let mut conn = InferConnection::from_matches(matches);
-            let dir = migrations_dir(matches).unwrap_or_else(handle_error);
-            let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
-            redo_migrations(&mut conn, dir, args);
+            let mut conn = InferConnection::from_matches(matches)?;
+            let dir = migrations_dir(matches)?;
+            let dir = FileBasedMigrations::from_path(dir)
+                .map_err(|e| crate::errors::Error::MigrationError(Box::new(e)))?;
+            redo_migrations(&mut conn, dir, args)?;
             regenerate_schema_if_file_specified(matches)?;
         }
         ("list", _) => {
-            let mut conn = InferConnection::from_matches(matches);
-            let dir = migrations_dir(matches).unwrap_or_else(handle_error);
-            let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
+            let mut conn = InferConnection::from_matches(matches)?;
+            let dir = migrations_dir(matches)?;
+            let dir = FileBasedMigrations::from_path(dir)
+                .map_err(|e| crate::errors::Error::MigrationError(Box::new(e)))?;
             list_migrations(&mut conn, dir)?;
         }
         ("pending", _) => {
-            let mut conn = InferConnection::from_matches(matches);
-            let dir = migrations_dir(matches).unwrap_or_else(handle_error);
-            let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
-            let result = MigrationHarness::has_pending_migration(&mut conn, dir)?;
+            let mut conn = InferConnection::from_matches(matches)?;
+            let dir = migrations_dir(matches)?;
+            let dir = FileBasedMigrations::from_path(dir)
+                .map_err(|e| crate::errors::Error::MigrationError(Box::new(e)))?;
+            let result = MigrationHarness::has_pending_migration(&mut conn, dir)
+                .map_err(crate::errors::Error::MigrationError)?;
             println!("{result:?}");
         }
         ("generate", args) => {
-            let migration_name = args.get_one::<String>("MIGRATION_NAME").unwrap();
+            let migration_name = args
+                .get_one::<String>("MIGRATION_NAME")
+                .expect("Clap ensure this argument is set");
 
             let (up_sql, down_sql) = if let Some(diff_schema) = args.get_one::<String>("SCHEMA_RS")
             {
                 let config = Config::read(matches)?;
+                let mut print_schema =
+                    if let Some(schema_key) = args.get_one::<String>("schema-key") {
+                        config
+                            .print_schema
+                            .all_configs
+                            .get(schema_key)
+                            .ok_or(crate::errors::Error::NoSchemaKeyFound(schema_key.clone()))?
+                    } else {
+                        config
+                            .print_schema
+                            .all_configs
+                            .get("default")
+                            .ok_or(crate::errors::Error::NoSchemaKeyFound("default".into()))?
+                    }
+                    .clone();
                 let diff_schema = if diff_schema == "NOT_SET" {
-                    config.print_schema.file.clone()
+                    print_schema.file.clone()
                 } else {
                     Some(PathBuf::from(diff_schema))
                 };
+                if args.get_flag("sqlite-integer-primary-key-is-bigint") {
+                    print_schema.sqlite_integer_primary_key_is_bigint = Some(true);
+                }
                 if let Some(diff_schema) = diff_schema {
                     self::diff_schema::generate_sql_based_on_diff_schema(
-                        config,
+                        print_schema,
                         args,
                         &diff_schema,
                     )?
@@ -99,10 +129,8 @@ pub(super) fn run_migration_command(
             };
             let version = migration_version(args);
             let versioned_name = format!("{version}_{migration_name}");
-            let migration_dir = migrations_dir(matches)
-                .unwrap_or_else(handle_error)
-                .join(versioned_name);
-            fs::create_dir(&migration_dir).unwrap();
+            let migration_dir = migrations_dir(matches)?.join(versioned_name);
+            fs::create_dir(&migration_dir)?;
 
             match args
                 .get_one::<String>("MIGRATION_FORMAT")
@@ -113,8 +141,12 @@ pub(super) fn run_migration_command(
                     !args.get_flag("MIGRATION_NO_DOWN_FILE"),
                     up_sql,
                     down_sql,
-                ),
-                Some(x) => return Err(format!("Unrecognized migration format `{x}`").into()),
+                )?,
+                Some(x) => {
+                    return Err(crate::errors::Error::UnsupportedFeature(format!(
+                        "Unrecognized migration format `{x}`"
+                    )))
+                }
                 None => unreachable!("MIGRATION_FORMAT has a default value"),
             }
         }
@@ -124,20 +156,25 @@ pub(super) fn run_migration_command(
     Ok(())
 }
 
-fn generate_sql_migration(path: &Path, with_down: bool, up_sql: String, down_sql: String) {
+fn generate_sql_migration(
+    path: &Path,
+    with_down: bool,
+    up_sql: String,
+    down_sql: String,
+) -> Result<(), crate::errors::Error> {
     use std::io::Write;
 
     let migration_dir_relative =
-        crate::convert_absolute_path_to_relative(path, &env::current_dir().unwrap());
+        crate::convert_absolute_path_to_relative(path, &env::current_dir()?);
 
     let up_path = path.join("up.sql");
     println!(
         "Creating {}",
         migration_dir_relative.join("up.sql").display()
     );
-    let mut up = fs::File::create(up_path).unwrap();
-    up.write_all(b"-- Your SQL goes here\n").unwrap();
-    up.write_all(up_sql.as_bytes()).unwrap();
+    let mut up = fs::File::create(up_path)?;
+    up.write_all(b"-- Your SQL goes here\n")?;
+    up.write_all(up_sql.as_bytes())?;
 
     if with_down {
         let down_path = path.join("down.sql");
@@ -145,11 +182,11 @@ fn generate_sql_migration(path: &Path, with_down: bool, up_sql: String, down_sql
             "Creating {}",
             migration_dir_relative.join("down.sql").display()
         );
-        let mut down = fs::File::create(down_path).unwrap();
-        down.write_all(b"-- This file should undo anything in `up.sql`\n")
-            .unwrap();
-        down.write_all(down_sql.as_bytes()).unwrap();
+        let mut down = fs::File::create(down_path)?;
+        down.write_all(b"-- This file should undo anything in `up.sql`\n")?;
+        down.write_all(down_sql.as_bytes())?;
     }
+    Ok(())
 }
 
 fn migration_version<'a>(matches: &'a ArgMatches) -> Box<dyn Display + 'a> {
@@ -170,7 +207,7 @@ fn migrations_dir_from_cli(matches: &ArgMatches) -> Option<PathBuf> {
 pub fn run_migrations_with_output<Conn, DB>(
     conn: &mut Conn,
     migrations: FileBasedMigrations,
-) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
+) -> Result<(), crate::errors::Error>
 where
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
     DB: Backend,
@@ -178,12 +215,13 @@ where
     HarnessWithOutput::write_to_stdout(conn)
         .run_pending_migrations(migrations)
         .map(|_| ())
+        .map_err(crate::errors::Error::MigrationError)
 }
 
 fn revert_all_migrations_with_output<Conn, DB>(
     conn: &mut Conn,
     migrations: FileBasedMigrations,
-) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
+) -> Result<(), crate::errors::Error>
 where
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
     DB: Backend,
@@ -191,6 +229,7 @@ where
     HarnessWithOutput::write_to_stdout(conn)
         .revert_all_migrations(migrations)
         .map(|_| ())
+        .map_err(crate::errors::Error::MigrationError)
 }
 
 fn revert_migration_with_output<Conn, DB>(
@@ -209,17 +248,19 @@ where
 fn list_migrations<Conn, DB>(
     conn: &mut Conn,
     migrations: FileBasedMigrations,
-) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
+) -> Result<(), crate::errors::Error>
 where
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
     DB: Backend,
 {
     let applied_migrations = conn
-        .applied_migrations()?
+        .applied_migrations()
+        .map_err(crate::errors::Error::MigrationError)?
         .into_iter()
         .collect::<HashSet<_>>();
 
-    let mut migrations = MigrationSource::<DB>::migrations(&migrations)?;
+    let mut migrations = MigrationSource::<DB>::migrations(&migrations)
+        .map_err(crate::errors::Error::MigrationError)?;
     migrations.sort_unstable_by(|a, b| a.name().version().cmp(&b.name().version()));
     println!("Migrations:");
     for migration in migrations {
@@ -242,21 +283,26 @@ where
 ///
 /// Returns a `MigrationError::MigrationDirectoryNotFound` if
 /// no path to the migration directory is found.
-pub fn migrations_dir(matches: &ArgMatches) -> Result<PathBuf, MigrationError> {
+pub fn migrations_dir(matches: &ArgMatches) -> Result<PathBuf, crate::errors::Error> {
     let migrations_dir = migrations_dir_from_cli(matches)
-        .or_else(|| env::var("MIGRATION_DIRECTORY").map(PathBuf::from).ok())
+        .map(Ok)
         .or_else(|| {
-            Some(
-                Config::read(matches)
-                    .unwrap_or_else(handle_error)
-                    .migrations_directory?
-                    .dir,
-            )
+            env::var("MIGRATION_DIRECTORY")
+                .map(PathBuf::from)
+                .ok()
+                .map(Ok)
+        })
+        .or_else(|| {
+            Config::read(matches)
+                .map(|m| Some(m.migrations_directory?.dir))
+                .transpose()
         });
 
     match migrations_dir {
-        Some(dir) => Ok(dir),
-        None => FileBasedMigrations::find_migrations_directory().map(|p| p.path().to_path_buf()),
+        Some(dir) => dir,
+        None => FileBasedMigrations::find_migrations_directory()
+            .map(|p| p.path().to_path_buf())
+            .map_err(|e| crate::errors::Error::MigrationError(Box::new(e))),
     }
 }
 
@@ -272,20 +318,25 @@ fn redo_migrations<Conn, DB>(
     conn: &mut Conn,
     migrations_dir: FileBasedMigrations,
     args: &ArgMatches,
-) where
+) -> Result<(), crate::errors::Error>
+where
     DB: Backend,
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
 {
     let migrations = MigrationSource::<DB>::migrations(&migrations_dir)
-        .unwrap_or_else(handle_error)
+        .map_err(crate::errors::Error::MigrationError)?
         .into_iter()
         .map(|m| (m.name().version().as_owned(), m))
         .collect::<HashMap<_, _>>();
-    let applied_migrations = conn.applied_migrations().unwrap_or_else(handle_error);
+    let applied_migrations = conn
+        .applied_migrations()
+        .map_err(crate::errors::Error::MigrationError)?;
     let versions_to_revert = if args.get_flag("REDO_ALL") {
         &applied_migrations
     } else {
-        let number = args.get_one::<u64>("REDO_NUMBER").unwrap();
+        let number = args
+            .get_one::<u64>("REDO_NUMBER")
+            .expect("Clap ensures this value is set");
         let number = std::cmp::min(*number as usize, applied_migrations.len());
         &applied_migrations[..number]
     };
@@ -303,7 +354,7 @@ fn redo_migrations<Conn, DB>(
             let reverted_versions = if args.get_flag("REDO_ALL") {
                 harness.revert_all_migrations(migrations_dir.clone())?
             } else {
-                let number = args.get_one::<u64>("REDO_NUMBER").unwrap();
+                let number = args.get_one::<u64>("REDO_NUMBER").expect("Clap should ensure this value is set");
                 (0..*number)
                     .filter_map(|_| {
                         match harness.revert_last_migration(migrations_dir.clone()) {
@@ -324,7 +375,7 @@ fn redo_migrations<Conn, DB>(
 
             // get a mapping between migrations and migration versions
              let mut migrations = MigrationSource::<DB>::migrations(&migrations_dir)
-                 .unwrap_or_else(handle_error)
+                .map_err(crate::errors::Error::MigrationError)?
                  .into_iter()
                  .map(|m| (m.name().version().as_owned(), m))
                  .collect::<HashMap<_, _>>();
@@ -350,10 +401,10 @@ fn redo_migrations<Conn, DB>(
 
     if !should_use_not_use_transaction && should_redo_migration_in_transaction(conn) {
         conn.transaction(|conn| migrations_inner(&mut HarnessWithOutput::write_to_stdout(conn)))
-            .unwrap_or_else(handle_error);
+            .map_err(crate::errors::Error::MigrationError)
     } else {
         migrations_inner(&mut HarnessWithOutput::write_to_stdout(conn))
-            .unwrap_or_else(handle_error);
+            .map_err(crate::errors::Error::MigrationError)
     }
 }
 

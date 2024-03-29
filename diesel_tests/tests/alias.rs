@@ -20,6 +20,7 @@ fn selecting_basic_data() {
             user_alias.field(users::name),
             user_alias.field(users::hair_color),
         ))
+        .order(user_alias.field(users::name))
         .load(connection)
         .unwrap();
 

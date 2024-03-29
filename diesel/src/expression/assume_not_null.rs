@@ -1,12 +1,10 @@
-use crate::backend::Backend;
-use crate::expression::TypedExpressionType;
 use crate::expression::*;
 use crate::query_builder::*;
 use crate::query_source::joins::ToInnerJoin;
 use crate::result::QueryResult;
 use crate::sql_types::{DieselNumericOps, IntoNotNullable};
 
-#[derive(Debug, Copy, Clone, DieselNumericOps, ValidGrouping)]
+#[derive(Default, Debug, Copy, Clone, DieselNumericOps, ValidGrouping)]
 pub struct AssumeNotNull<T>(T);
 
 impl<T> AssumeNotNull<T> {

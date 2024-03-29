@@ -200,6 +200,8 @@ impl RawConnection {
     }
 
     pub(super) fn deserialize(&mut self, data: &[u8]) -> QueryResult<()> {
+        // the cast for `ffi::SQLITE_DESERIALIZE_READONLY` is required for old libsqlite3-sys versions
+        #[allow(clippy::unnecessary_cast)]
         unsafe {
             let result = ffi::sqlite3_deserialize(
                 self.internal_connection.as_ptr(),
@@ -259,7 +261,7 @@ impl Drop for RawConnection {
 enum SqliteCallbackError {
     Abort(&'static str),
     DieselError(crate::result::Error),
-    Panic(Box<dyn std::any::Any + Send>, String),
+    Panic(String),
 }
 
 impl SqliteCallbackError {
@@ -271,7 +273,7 @@ impl SqliteCallbackError {
                 s = e.to_string();
                 &s
             }
-            SqliteCallbackError::Panic(_, msg) => msg,
+            SqliteCallbackError::Panic(msg) => msg,
         };
         unsafe {
             context_error_str(ctx, msg);
@@ -345,12 +347,7 @@ extern "C" fn run_custom_function<F, Ret, RetSqlType>(
         }
         Ok(())
     })
-    .unwrap_or_else(|p| {
-        Err(SqliteCallbackError::Panic(
-            p,
-            data_ptr.function_name.clone(),
-        ))
-    });
+    .unwrap_or_else(|p| Err(SqliteCallbackError::Panic(data_ptr.function_name.clone())));
     if let Err(e) = result {
         e.emit(ctx);
     }
@@ -381,10 +378,10 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
         run_aggregator_step::<A, Args, ArgsSqlType>(ctx, args)
     })
     .unwrap_or_else(|e| {
-        Err(SqliteCallbackError::Panic(
-            e,
-            format!("{}::step() panicked", std::any::type_name::<A>()),
-        ))
+        Err(SqliteCallbackError::Panic(format!(
+            "{}::step() panicked",
+            std::any::type_name::<A>()
+        )))
     });
 
     match result {
@@ -494,11 +491,11 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
         }
         Ok(())
     })
-    .unwrap_or_else(|e| {
-        Err(SqliteCallbackError::Panic(
-            e,
-            format!("{}::finalize() panicked", std::any::type_name::<A>()),
-        ))
+    .unwrap_or_else(|_e| {
+        Err(SqliteCallbackError::Panic(format!(
+            "{}::finalize() panicked",
+            std::any::type_name::<A>()
+        )))
     });
     if let Err(e) = result {
         e.emit(ctx);
@@ -568,7 +565,6 @@ where
     })
     .unwrap_or_else(|p| {
         Err(SqliteCallbackError::Panic(
-            p,
             user_ptr
                 .map(|u| u.collation_name.clone())
                 .unwrap_or_default(),
@@ -599,7 +595,7 @@ where
             );
             std::process::abort()
         }
-        Err(SqliteCallbackError::Panic(_, msg)) => {
+        Err(SqliteCallbackError::Panic(msg)) => {
             eprintln!("Collation function {} panicked", msg);
             std::process::abort()
         }

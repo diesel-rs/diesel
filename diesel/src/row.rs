@@ -265,6 +265,7 @@ pub(crate) mod private {
     // These impls are only there for backward compatibility reasons
     // Remove them on the next breaking release
     #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    #[allow(unreachable_pub)]
     pub trait RowLifetimeHelper<DB>: for<'a> super::Row<'a, DB>
     where
         DB: Backend,

@@ -3,7 +3,6 @@ use crate::mysql::{Mysql, MysqlValue, NumericRepresentation};
 use crate::result::Error::DeserializationError;
 use crate::sql_types::{BigInt, Binary, Double, Float, Integer, SmallInt, Text};
 use crate::Queryable;
-use std::convert::TryInto;
 use std::error::Error;
 use std::str::{self, FromStr};
 

@@ -412,7 +412,7 @@ fn not_affects_arguments_passed_when_they_contain_higher_operator_precedence() {
 }
 
 use diesel::sql_types::VarChar;
-sql_function!(fn lower(x: VarChar) -> VarChar);
+define_sql_function!(fn lower(x: VarChar) -> VarChar);
 
 #[test]
 fn filter_by_boxed_predicate() {
@@ -430,6 +430,19 @@ fn filter_by_boxed_predicate() {
 
     assert_eq!(Ok(sean), queried_sean);
     assert_eq!(Ok(tess), queried_tess);
+}
+
+#[test]
+fn filter_like_nullable_column() {
+    use crate::schema::users::dsl::*;
+
+    let conn = &mut connection_with_gilbert_and_jonathan_in_users_table();
+    let jonathan = find_user_by_name("Jonathan", conn);
+
+    let data = users.filter(hair_color.like("%blue%")).load(conn);
+
+    let expected = Ok(vec![jonathan]);
+    assert_eq!(expected, data);
 }
 
 #[test]

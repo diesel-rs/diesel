@@ -4,7 +4,7 @@ version = "2.1.0"
 license = "MIT OR Apache-2.0"
 description = "Internal implementation of diesels migration mechanism"
 homepage = "https://diesel.rs"
-rust-version = "1.66.0"
+rust-version.workspace = true
 edition = "2021"
 
 [dependencies]

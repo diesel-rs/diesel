@@ -64,6 +64,7 @@ error[E0277]: the trait bound `BoxedSelectStatement<'_, diesel::sql_types::Text,
              posts::table
              users::table
              Only<S>
+             Tablesample<S, TSM>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
    = note: required for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>` to implement `JoinTo<query_source::joins::OnClauseWrapper<_, _>>`
@@ -128,6 +129,7 @@ error[E0277]: the trait bound `BoxedSelectStatement<'_, (diesel::sql_types::Inte
              posts::table
              users::table
              Only<S>
+             Tablesample<S, TSM>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
    = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>` to implement `GroupByDsl<_>`

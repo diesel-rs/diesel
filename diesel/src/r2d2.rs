@@ -100,7 +100,6 @@ pub use r2d2::*;
 /// [`r2d2::Pool`]: r2d2::Pool
 pub type PoolError = r2d2::Error;
 
-use std::convert::Into;
 use std::fmt;
 use std::marker::PhantomData;
 
@@ -247,6 +246,14 @@ where
         &mut self,
     ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData {
         (**self).transaction_state()
+    }
+
+    fn instrumentation(&mut self) -> &mut dyn crate::connection::Instrumentation {
+        (**self).instrumentation()
+    }
+
+    fn set_instrumentation(&mut self, instrumentation: impl crate::connection::Instrumentation) {
+        (**self).set_instrumentation(instrumentation)
     }
 }
 

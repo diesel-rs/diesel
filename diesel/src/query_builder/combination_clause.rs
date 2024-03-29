@@ -234,12 +234,10 @@ pub trait SupportsCombinationClause<Combinator, Rule> {}
 /// Wrapper used to wrap rhs sql in parenthesis when supported by backend
 pub struct ParenthesisWrapper<T>(T);
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 mod postgres {
     use super::*;
     use crate::pg::Pg;
-    use crate::query_builder::{AstPass, QueryFragment};
-    use crate::QueryResult;
 
     impl<T: QueryFragment<Pg>> QueryFragment<Pg> for ParenthesisWrapper<T> {
         fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
@@ -262,8 +260,6 @@ mod postgres {
 mod mysql {
     use super::*;
     use crate::mysql::Mysql;
-    use crate::query_builder::{AstPass, QueryFragment};
-    use crate::QueryResult;
 
     impl<T: QueryFragment<Mysql>> QueryFragment<Mysql> for ParenthesisWrapper<T> {
         fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
@@ -281,9 +277,7 @@ mod mysql {
 #[cfg(feature = "sqlite")]
 mod sqlite {
     use super::*;
-    use crate::query_builder::{AstPass, QueryFragment};
     use crate::sqlite::Sqlite;
-    use crate::QueryResult;
 
     impl<T: QueryFragment<Sqlite>> QueryFragment<Sqlite> for ParenthesisWrapper<T> {
         fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {

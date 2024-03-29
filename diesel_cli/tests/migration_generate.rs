@@ -221,6 +221,14 @@ fn migration_generate_from_diff_add_table() {
 }
 
 #[test]
+fn migration_generate_from_diff_add_table_sqlite_rowid_column() {
+    test_generate_migration(
+        "diff_add_table_sqlite_rowid_column",
+        vec!["--sqlite-integer-primary-key-is-bigint"],
+    );
+}
+
+#[test]
 fn migration_generate_from_diff_drop_alter_table_add_column() {
     test_generate_migration("diff_alter_table_add_column", Vec::new());
 }

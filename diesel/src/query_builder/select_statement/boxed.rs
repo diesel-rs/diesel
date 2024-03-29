@@ -1,13 +1,12 @@
 use std::marker::PhantomData;
 
-use crate::backend::{sql_dialect, Backend, DieselReserveSpecialization};
+use crate::backend::{sql_dialect, DieselReserveSpecialization};
 use crate::dsl::AsExprOf;
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
 use crate::insertable::Insertable;
 use crate::query_builder::combination_clause::*;
 use crate::query_builder::distinct_clause::DistinctClause;
-use crate::query_builder::from_clause::FromClause;
 use crate::query_builder::group_by_clause::ValidGroupByClause;
 use crate::query_builder::having_clause::HavingClause;
 use crate::query_builder::insert_statement::InsertFromSelect;
@@ -21,7 +20,6 @@ use crate::query_dsl::methods::*;
 use crate::query_dsl::*;
 use crate::query_source::joins::*;
 use crate::query_source::{QuerySource, Table};
-use crate::result::QueryResult;
 use crate::sql_types::{BigInt, BoolOrNullableBool, IntoNullable};
 
 // This is used by the table macro internally
@@ -507,8 +505,9 @@ where
 }
 
 impl<'a, ST, QS, DB, GB, Predicate> HavingDsl<Predicate>
-    for BoxedSelectStatement<'a, ST, QS, DB, GB>
+    for BoxedSelectStatement<'a, ST, FromClause<QS>, DB, GB>
 where
+    QS: QuerySource,
     DB: Backend,
     GB: Expression,
     HavingClause<Predicate>: QueryFragment<DB> + Send + 'a,

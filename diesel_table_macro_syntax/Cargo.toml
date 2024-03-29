@@ -5,10 +5,10 @@ description = "Internal diesel crate"
 license = "MIT OR Apache-2.0"
 documentation = "https://diesel.rs/guides/"
 homepage = "https://diesel.rs"
-repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_table_macro_syntax"
+repository = "https://github.com/diesel-rs/diesel/"
 autotests = false
 include = ["src/**/*", "LICENSE-*"]
-rust-version = "1.66.0"
+rust-version.workspace = true
 edition = "2021"
 
 

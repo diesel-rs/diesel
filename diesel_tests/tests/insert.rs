@@ -452,6 +452,45 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
     assert_eq!(1, second_count);
 }
 
+#[test]
+#[cfg(not(any(feature = "mysql", feature = "sqlite")))]
+fn insert_with_generated_column() {
+    use crate::schema::user_with_last_names::table as users;
+    #[derive(Debug, Queryable, Insertable, Selectable, Default)]
+    struct UserWithLastName {
+        first_name: String,
+        last_name: String,
+        #[diesel(skip_insertion)]
+        full_name: String,
+    }
+
+    let connection = &mut connection();
+    diesel::sql_query(
+        "CREATE TABLE user_with_last_names (
+        first_name VARCHAR NOT NULL PRIMARY KEY,
+        last_name VARCHAR NOT NULL,
+        full_name VARCHAR GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED
+    )",
+    )
+    .execute(connection)
+    .unwrap();
+    let new_users: &[_] = &[UserWithLastName {
+        first_name: "Sean".to_string(),
+        last_name: "Black".to_string(),
+        full_name: "This field not inserted".to_string(),
+    }];
+    let count = insert_into(users)
+        .values(new_users)
+        .execute(connection)
+        .unwrap();
+
+    assert_eq!(1, count);
+
+    let sean_black: UserWithLastName = users.first(connection).unwrap();
+
+    assert_eq!("Sean Black", sean_black.full_name.as_str());
+}
+
 #[derive(Insertable)]
 #[diesel(table_name = users)]
 struct BaldUser {
@@ -825,4 +864,71 @@ fn mixed_defaultable_insert() {
     let expected_data = vec![("Bob".to_string(), Some("Green".to_string()))];
 
     assert_eq!(Ok(expected_data), actual_data);
+}
+
+// regression test for https://github.com/diesel-rs/diesel/issues/3872
+#[test]
+fn upsert_with_composite_primary_key_do_nothing() {
+    table! {
+        users (id, name) {
+            id -> Integer,
+            name -> Text,
+            hair_color -> Nullable<Text>,
+        }
+    }
+
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+
+    diesel::insert_into(users::table)
+        .values((users::id.eq(1), users::name.eq("John")))
+        .on_conflict_do_nothing()
+        .execute(conn)
+        .unwrap();
+    let users = users::table
+        .select(users::name)
+        .load::<String>(conn)
+        .unwrap();
+
+    assert_eq!(users[0], "Sean");
+    assert_eq!(users[1], "Tess");
+}
+
+// regression test for https://github.com/diesel-rs/diesel/issues/3872
+#[test]
+fn upsert_with_composite_primary_key_do_update() {
+    table! {
+        users (id, name) {
+            id -> Integer,
+            name -> Text,
+            hair_color -> Nullable<Text>,
+        }
+    }
+
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+
+    #[cfg(feature = "mysql")]
+    diesel::insert_into(users::table)
+        .values((users::id.eq(1), users::name.eq("John")))
+        .on_conflict(diesel::dsl::DuplicatedKeys)
+        .do_update()
+        .set(users::name.eq("Jane"))
+        .execute(conn)
+        .unwrap();
+
+    #[cfg(not(feature = "mysql"))]
+    diesel::insert_into(users::table)
+        .values((users::id.eq(1), users::name.eq("John")))
+        .on_conflict(users::id)
+        .do_update()
+        .set(users::name.eq("Jane"))
+        .execute(conn)
+        .unwrap();
+    let users = users::table
+        .select(users::name)
+        .order(users::id)
+        .load::<String>(conn)
+        .unwrap();
+
+    assert_eq!(users[0], "Jane");
+    assert_eq!(users[1], "Tess");
 }

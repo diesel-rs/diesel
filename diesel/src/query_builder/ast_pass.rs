@@ -256,7 +256,7 @@ where
     #[cfg_attr(
         not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
         doc(hidden)
-    )] // This is used by the `sql_function` macro
+    )] // This is used by the `define_sql_function` macro
     #[cfg_attr(
         doc_cfg,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
