@@ -331,14 +331,14 @@ pub struct Time;
 /// - [`std::time::SystemTime`][SystemTime] (PG only)
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
 /// - [`time::PrimitiveDateTime`] with `feature = "time"`
-/// - [`time::OffsetDateTime`] with `feature = "time"` (MySQL only)
+/// - [`time::OffsetDateTime`] with `feature = "time"`
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`std::time::SystemTime`][SystemTime] (PG only)
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
 /// - [`time::PrimitiveDateTime`] with `feature = "time"`
-/// - [`time::OffsetDateTime`] with `feature = "time"` (MySQL only)
+/// - [`time::OffsetDateTime`] with `feature = "time"`
 ///
 /// [SystemTime]: std::time::SystemTime
 #[cfg_attr(

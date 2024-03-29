@@ -17,6 +17,11 @@ use crate::sql_types::{Date, Time, Timestamp, Timestamptz};
 // Postgres timestamps start from January 1st 2000.
 const PG_EPOCH: PrimitiveDateTime = datetime!(2000-1-1 0:00:00);
 
+fn to_primitive_datetime(dt: OffsetDateTime) -> PrimitiveDateTime {
+    let dt = dt.to_offset(UtcOffset::UTC);
+    PrimitiveDateTime::new(dt.date(), dt.time())
+}
+
 #[cfg(all(feature = "time", feature = "postgres_backend"))]
 impl FromSql<Timestamp, Pg> for PrimitiveDateTime {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
@@ -41,6 +46,23 @@ impl ToSql<Timestamp, Pg> for PrimitiveDateTime {
         }
         let micros = micros as i64;
         ToSql::<Timestamp, Pg>::to_sql(&PgTimestamp(micros), &mut out.reborrow())
+    }
+}
+
+// Delegate offset datetimes in terms of UTC primitive datetimes; this stores everything in the DB as UTC
+#[cfg(all(feature = "time", feature = "postgres_backend"))]
+impl ToSql<Timestamp, Pg> for OffsetDateTime {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        let prim = to_primitive_datetime(*self);
+        <PrimitiveDateTime as ToSql<Timestamp, Pg>>::to_sql(&prim, &mut out.reborrow())
+    }
+}
+
+#[cfg(all(feature = "time", feature = "postgres_backend"))]
+impl FromSql<Timestamp, Pg> for OffsetDateTime {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        let prim = <PrimitiveDateTime as FromSql<Timestamp, Pg>>::from_sql(bytes)?;
+        Ok(prim.assume_utc())
     }
 }
 
