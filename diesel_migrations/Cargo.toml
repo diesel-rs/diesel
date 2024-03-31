@@ -5,6 +5,7 @@ license = "MIT OR Apache-2.0"
 description = "Migration management for diesel"
 documentation = "https://docs.rs/crate/diesel_migrations"
 homepage = "https://diesel.rs"
+repository = "https://github.com/diesel-rs/diesel"
 edition = "2021"
 rust-version.workspace = true
 
