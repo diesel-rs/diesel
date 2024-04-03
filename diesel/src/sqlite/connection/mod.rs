@@ -28,7 +28,7 @@ use crate::expression::QueryMetadata;
 use crate::query_builder::*;
 use crate::result::*;
 use crate::serialize::ToSql;
-use crate::sql_types::HasSqlType;
+use crate::sql_types::{HasSqlType, TypeMetadata};
 use crate::sqlite::Sqlite;
 
 /// Connections for the SQLite backend. Unlike other backends, SQLite supported
@@ -217,6 +217,15 @@ impl LoadConnection<DefaultLoadingMode> for SqliteConnection {
         let statement = self.prepared_query(source)?;
 
         Ok(StatementIterator::new(statement))
+    }
+}
+
+static mut SQLITE_METADATA_LOOKUP: () = ();
+
+impl WithMetadataLookup for SqliteConnection {
+    fn metadata_lookup(&mut self) -> &mut <Sqlite as TypeMetadata>::MetadataLookup {
+        // safe since it's a unit type
+        unsafe { &mut SQLITE_METADATA_LOOKUP }
     }
 }
 

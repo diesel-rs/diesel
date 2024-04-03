@@ -14,6 +14,7 @@ use crate::backend::Backend;
 use crate::expression::QueryMetadata;
 use crate::query_builder::{Query, QueryFragment, QueryId};
 use crate::result::*;
+use crate::sql_types::TypeMetadata;
 use std::fmt::Debug;
 
 #[doc(inline)]
@@ -442,6 +443,15 @@ pub trait LoadConnection<B = DefaultLoadingMode>: Connection {
     where
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>;
+}
+
+/// Describes a connection with an underlying [`crate::sql_types::TypeMetadata::MetadataLookup`]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub trait WithMetadataLookup: Connection {
+    /// Retrieves the underlying metadata lookup
+    fn metadata_lookup(&mut self) -> &mut <Self::Backend as TypeMetadata>::MetadataLookup;
 }
 
 /// A variant of the [`Connection`](trait.Connection.html) trait that is
