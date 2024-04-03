@@ -7,6 +7,7 @@ use std::{slice, str};
 
 use crate::sqlite::SqliteType;
 
+use super::owned_row::OwnedSqliteRow;
 use super::row::PrivateSqliteRow;
 
 /// Raw sqlite value as received from the database
@@ -18,7 +19,7 @@ pub struct SqliteValue<'row, 'stmt, 'query> {
     // This field exists to ensure that nobody
     // can modify the underlying row while we are
     // holding a reference to some row value here
-    _row: Ref<'row, PrivateSqliteRow<'stmt, 'query>>,
+    _row: Option<Ref<'row, PrivateSqliteRow<'stmt, 'query>>>,
     // we extract the raw value pointer as part of the constructor
     // to safe the match statements for each method
     // According to benchmarks this leads to a ~20-30% speedup
@@ -29,6 +30,7 @@ pub struct SqliteValue<'row, 'stmt, 'query> {
     value: NonNull<ffi::sqlite3_value>,
 }
 
+#[derive(Debug)]
 #[repr(transparent)]
 pub(super) struct OwnedSqliteValue {
     pub(super) value: NonNull<ffi::sqlite3_value>,
@@ -39,6 +41,10 @@ impl Drop for OwnedSqliteValue {
         unsafe { ffi::sqlite3_value_free(self.value.as_ptr()) }
     }
 }
+
+// Unsafe Send impl safe since sqlite3_value is built with sqlite3_value_dup
+// see https://www.sqlite.org/c3ref/value.html
+unsafe impl Send for OwnedSqliteValue {}
 
 impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
     pub(super) fn new(
@@ -52,7 +58,27 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
             }
         };
 
-        let ret = Self { _row: row, value };
+        let ret = Self {
+            _row: Some(row),
+            value,
+        };
+        if ret.value_type().is_none() {
+            None
+        } else {
+            Some(ret)
+        }
+    }
+
+    pub(super) fn from_owned_row(
+        row: &'row OwnedSqliteRow,
+        col_idx: i32,
+    ) -> Option<SqliteValue<'row, 'stmt, 'query>> {
+        let value = row
+            .values
+            .get(col_idx as usize)
+            .and_then(|v| v.as_ref())?
+            .value;
+        let ret = Self { _row: None, value };
         if ret.value_type().is_none() {
             None
         } else {

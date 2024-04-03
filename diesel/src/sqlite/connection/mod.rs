@@ -2,6 +2,7 @@ extern crate libsqlite3_sys as ffi;
 
 mod bind_collector;
 mod functions;
+mod owned_row;
 mod raw;
 mod row;
 mod serialized_database;
