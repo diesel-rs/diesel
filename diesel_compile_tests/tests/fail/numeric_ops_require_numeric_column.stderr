@@ -12,4 +12,4 @@ note: an implementation of `std::ops::Add` might be missing for `columns::name`
 8  |         name -> VarChar,
    |         ^^^^ must implement `std::ops::Add`
 note: the trait `std::ops::Add` must be implemented
-  --> /rustc/3223b0b5e8dadda3f76c3fd1a8d6c5addc09599e/library/core/src/ops/arith.rs:76:1
+  --> /rustc/30dfb9e046aeb878db04332c74de76e52fb7db10/library/core/src/ops/arith.rs:76:1

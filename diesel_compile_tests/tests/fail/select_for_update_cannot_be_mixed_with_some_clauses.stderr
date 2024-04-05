@@ -12,7 +12,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:15:24
    |
 15 |     users.for_update().distinct();
-   |                        ^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>`
+   |                        ^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>`
    |
    = help: the following other types implement trait `Table`:
              users::table
@@ -26,7 +26,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<SelectStatement<FromCl
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:15:24
    |
 15 |     users.for_update().distinct();
-   |                        ^^^^^^^^ the trait `DistinctDsl` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>>>`
+   |                        ^^^^^^^^ the trait `DistinctDsl` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ..., ..., ...>>>`
    |
    = help: the trait `DistinctDsl` is implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`
 
@@ -44,7 +44,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:16:22
    |
 16 |     users.distinct().for_update();
-   |                      ^^^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::DistinctClause>`
+   |                      ^^^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctClause>`
    |
    = help: the following other types implement trait `Table`:
              users::table
@@ -58,7 +58,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<SelectStatement<FromCl
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:16:22
    |
 16 |     users.distinct().for_update();
-   |                      ^^^^^^^^^^ the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::DistinctClause>>>`
+   |                      ^^^^^^^^^^ the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ...>>>`
    |
    = help: the trait `LockingDsl<Lock>` is implemented for `SelectStatement<F, S, diesel::query_builder::distinct_clause::NoDistinctClause, W, O, LOf>`
 
@@ -76,7 +76,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:17:24
    |
 17 |     users.for_update().distinct_on(id);
-   |                        ^^^^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>`
+   |                        ^^^^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>`
    |
    = help: the following other types implement trait `Table`:
              users::table
@@ -90,7 +90,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<SelectStatement<FromCl
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:17:24
    |
 17 |     users.for_update().distinct_on(id);
-   |                        ^^^^^^^^^^^ the trait `DistinctOnDsl<_>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>>>`
+   |                        ^^^^^^^^^^^ the trait `DistinctOnDsl<_>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ..., ..., ...>>>`
    |
    = help: the trait `DistinctOnDsl<Selection>` is implemented for `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>`
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>` to implement `DistinctOnDsl<_>`
@@ -99,7 +99,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<SelectStatement<FromCl
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:17:36
    |
 17 |     users.for_update().distinct_on(id);
-   |                        ----------- ^^ the trait `DistinctOnDsl<_>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>>>`
+   |                        ----------- ^^ the trait `DistinctOnDsl<_>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ..., ..., ...>>>`
    |                        |
    |                        required by a bound introduced by this call
    |
@@ -155,7 +155,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:18:27
    |
 18 |     users.distinct_on(id).for_update();
-   |                           ^^^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::id>>`
+   |                           ^^^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<id>>`
    |
    = help: the following other types implement trait `Table`:
              users::table
@@ -169,7 +169,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<SelectStatement<FromCl
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:18:27
    |
 18 |     users.distinct_on(id).for_update();
-   |                           ^^^^^^^^^^ the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::id>>>>`
+   |                           ^^^^^^^^^^ the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ...>>>`
    |
    = help: the trait `LockingDsl<Lock>` is implemented for `SelectStatement<F, S, diesel::query_builder::distinct_clause::NoDistinctClause, W, O, LOf>`
 
@@ -187,7 +187,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:20:24
    |
 20 |     users.for_update().group_by(id);
-   |                        ^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>`
+   |                        ^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>`
    |
    = help: the following other types implement trait `Table`:
              users::table
@@ -201,7 +201,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<SelectStatement<FromCl
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:20:24
    |
 20 |     users.for_update().group_by(id);
-   |                        ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>>>`
+   |                        ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ..., ..., ...>>>`
    |
    = help: the trait `GroupByDsl<Expr>` is implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`
 
@@ -219,7 +219,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:21:24
    |
 21 |     users.group_by(id).for_update();
-   |                        ^^^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::id>>`
+   |                        ^^^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ...>`
    |
    = help: the following other types implement trait `Table`:
              users::table
@@ -233,7 +233,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<SelectStatement<FromCl
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:21:24
    |
 21 |     users.group_by(id).for_update();
-   |                        ^^^^^^^^^^ the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::id>>>>`
+   |                        ^^^^^^^^^^ the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>>>`
    |
    = help: the trait `LockingDsl<Lock>` is implemented for `SelectStatement<F, S, diesel::query_builder::distinct_clause::NoDistinctClause, W, O, LOf>`
 
@@ -283,7 +283,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:24:24
    |
 24 |     users.for_update().into_boxed();
-   |                        ^^^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>`
+   |                        ^^^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>`
    |
    = help: the following other types implement trait `Table`:
              users::table
@@ -297,7 +297,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<SelectStatement<FromCl
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:24:24
    |
 24 |     users.for_update().into_boxed();
-   |                        ^^^^^^^^^^ the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>>>`
+   |                        ^^^^^^^^^^ the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ..., ..., ...>>>`
    |
    = help: the following other types implement trait `BoxedDsl<'a, DB>`:
              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -308,7 +308,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<SelectStatement<FromCl
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:24:24
    |
 24 |     users.for_update().into_boxed();
-   |                        ^^^^^^^^^^ the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>>>`
+   |                        ^^^^^^^^^^ the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ..., ..., ...>>>`
    |
    = help: the following other types implement trait `BoxedDsl<'a, DB>`:
              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -337,7 +337,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:26:24
    |
 26 |     users.for_update().group_by(id).having(id.gt(1));
-   |                        ^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>`
+   |                        ^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>`
    |
    = help: the following other types implement trait `Table`:
              users::table
@@ -351,7 +351,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<SelectStatement<FromCl
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:26:24
    |
 26 |     users.for_update().group_by(id).having(id.gt(1));
-   |                        ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>>>`
+   |                        ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ..., ..., ...>>>`
    |
    = help: the trait `GroupByDsl<Expr>` is implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`
 
@@ -369,7 +369,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:27:41
    |
 27 |     users.group_by(id).having(id.gt(1)).for_update();
-   |                                         ^^^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::id>, diesel::query_builder::having_clause::HavingClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Gt<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
+   |                                         ^^^^^^^^^^ the trait `Table` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ...>`
    |
    = help: the following other types implement trait `Table`:
              users::table
@@ -383,6 +383,6 @@ error[E0277]: the trait bound `SelectStatement<FromClause<SelectStatement<FromCl
   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:27:41
    |
 27 |     users.group_by(id).having(id.gt(1)).for_update();
-   |                                         ^^^^^^^^^^ the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::id>, diesel::query_builder::having_clause::HavingClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Gt<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>>>`
+   |                                         ^^^^^^^^^^ the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ..., ...>>>`
    |
    = help: the trait `LockingDsl<Lock>` is implemented for `SelectStatement<F, S, diesel::query_builder::distinct_clause::NoDistinctClause, W, O, LOf>`

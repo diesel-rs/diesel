@@ -24,7 +24,7 @@ error[E0277]: the trait bound `BatchInsert<Vec<diesel::query_builder::insert_sta
   --> tests/fail/upsert_with_multiple_values_not_supported_on_sqlite.rs:17:18
    |
 17 |         .execute(&mut connection);
-   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite, sqlite::backend::SqliteBatchInsert>` is not implemented for `BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>>, users::table, (), false>`
+   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite, sqlite::backend::SqliteBatchInsert>` is not implemented for `BatchInsert<Vec<ValuesClause<ColumnInsertValue<id, Bound<Integer, i32>>, table>>, table, (), false>`
    |          |
    |          required by a bound introduced by this call
    |

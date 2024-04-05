@@ -6,7 +6,8 @@ error[E0277]: the trait bound `diesel::pg::expression::operators::ILike<columns:
    |                                                     |
    |                                                     required by a bound introduced by this call
    |
-   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::ILike<T, U>`
+   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>`
+   = help: for that trait implementation, expected `Pg`, found `Sqlite`
    = note: required for `Grouped<ILike<name, Bound<Text, &str>>>` to implement `QueryFragment<Sqlite>`
    = note: 3 redundant requirements hidden
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `QueryFragment<Sqlite>`
@@ -28,7 +29,8 @@ error[E0277]: the trait bound `diesel::pg::expression::operators::ILike<columns:
    |                                                     |
    |                                                     required by a bound introduced by this call
    |
-   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::ILike<T, U>`
+   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>`
+   = help: for that trait implementation, expected `Pg`, found `Mysql`
    = note: required for `Grouped<ILike<name, Bound<Text, &str>>>` to implement `QueryFragment<Mysql>`
    = note: 3 redundant requirements hidden
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `QueryFragment<Mysql>`
