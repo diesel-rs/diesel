@@ -28,7 +28,7 @@ error[E0277]: the trait bound `diesel::MysqlConnection: pg::query_builder::copy:
 note: required by a bound in `CopyToQuery::<T, pg::query_builder::copy::copy_to::NotSet>::load`
   --> $DIESEL/src/pg/query_builder/copy/copy_to.rs
    |
-   |     pub fn load<'a, U, C>(
+   |     pub fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
    |            ---- required by a bound in this associated function
 ...
    |         C: ExecuteCopyToConnection,
@@ -64,7 +64,7 @@ error[E0277]: the trait bound `diesel::SqliteConnection: pg::query_builder::copy
 note: required by a bound in `CopyToQuery::<T, pg::query_builder::copy::copy_to::NotSet>::load`
   --> $DIESEL/src/pg/query_builder/copy/copy_to.rs
    |
-   |     pub fn load<'a, U, C>(
+   |     pub fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
    |            ---- required by a bound in this associated function
 ...
    |         C: ExecuteCopyToConnection,
