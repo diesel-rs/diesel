@@ -421,7 +421,11 @@ impl PgConnection {
                 let mut copy_in = CopyFromSink::new(&mut conn.raw_connection);
                 let r = source.target.callback(&mut copy_in);
                 copy_in.finish(r.as_ref().err().map(|e| e.to_string()))?;
-                let next_res = conn.raw_connection.get_next_result()?.expect("exists");
+                let next_res = conn.raw_connection.get_next_result()?.ok_or_else(|| {
+                    crate::result::Error::DeserializationError(
+                        "Failed to receive result from the database".into(),
+                    )
+                })?;
                 let rows = next_res.rows_affected();
                 while let Some(_r) = conn.raw_connection.get_next_result()? {}
                 r?;

@@ -39,7 +39,7 @@ impl QueryFragment<Pg> for CopyToOptions {
         if self.any_set() {
             let mut comma = "";
             pass.push_sql(" WITH (");
-            self.common.walk_ast(pass.reborrow(), &mut comma)?;
+            self.common.walk_ast(pass.reborrow(), &mut comma);
             if let Some(header_is_set) = self.header {
                 pass.push_sql(comma);
                 // commented out because rustc complains otherwise

@@ -73,7 +73,7 @@ impl CommonOptions {
         &'b self,
         mut pass: crate::query_builder::AstPass<'_, 'b, Pg>,
         comma: &mut &'static str,
-    ) -> crate::QueryResult<()> {
+    ) {
         if let Some(format) = self.format {
             pass.push_sql(comma);
             *comma = ", ";
@@ -104,7 +104,6 @@ impl CommonOptions {
             pass.push_sql(&format!("{comma}ESCAPE '{escape}'"));
             *comma = ", ";
         }
-        Ok(())
     }
 }
 

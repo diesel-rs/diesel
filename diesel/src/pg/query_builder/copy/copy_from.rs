@@ -50,7 +50,7 @@ impl QueryFragment<Pg> for CopyFromOptions {
         if self.any_set() {
             let mut comma = "";
             pass.push_sql(" WITH (");
-            self.common.walk_ast(pass.reborrow(), &mut comma)?;
+            self.common.walk_ast(pass.reborrow(), &mut comma);
             if let Some(ref default) = self.default {
                 pass.push_sql(comma);
                 comma = ", ";
@@ -126,7 +126,6 @@ where
         self.target.walk_target(pass.reborrow())?;
         pass.push_sql(" FROM STDIN");
         self.target.options().walk_ast(pass.reborrow())?;
-        // todo: where?
         Ok(())
     }
 }
