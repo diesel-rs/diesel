@@ -1,0 +1,71 @@
+error[E0308]: mismatched types
+  --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:52:18
+   |
+52 |         .execute(conn)
+   |          ------- ^^^^ expected `&mut PgConnection`, found `&mut MysqlConnection`
+   |          |
+   |          arguments to this method are incorrect
+   |
+   = note: expected mutable reference `&mut diesel::PgConnection`
+              found mutable reference `&mut diesel::MysqlConnection`
+note: method defined here
+  --> $DIESEL/src/pg/query_builder/copy/copy_from.rs
+   |
+   |     fn execute(self, conn: &mut C) -> Result<usize, Self::Error>;
+   |        ^^^^^^^
+
+error[E0277]: the trait bound `diesel::MysqlConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
+  --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:54:48
+   |
+54 |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
+   |                                   ----         ^ the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::MysqlConnection`
+   |                                   |
+   |                                   required by a bound introduced by this call
+   |
+   = help: the following other types implement trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection`:
+             PooledConnection<diesel::r2d2::ConnectionManager<C>>
+             diesel::PgConnection
+note: required by a bound in `CopyToQuery::<T, pg::query_builder::copy::copy_to::NotSet>::load`
+  --> $DIESEL/src/pg/query_builder/copy/copy_to.rs
+   |
+   |     pub fn load<'a, U, C>(
+   |            ---- required by a bound in this associated function
+...
+   |         C: ExecuteCopyToConnection,
+   |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
+
+error[E0308]: mismatched types
+  --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:61:18
+   |
+61 |         .execute(conn)
+   |          ------- ^^^^ expected `&mut PgConnection`, found `&mut SqliteConnection`
+   |          |
+   |          arguments to this method are incorrect
+   |
+   = note: expected mutable reference `&mut diesel::PgConnection`
+              found mutable reference `&mut diesel::SqliteConnection`
+note: method defined here
+  --> $DIESEL/src/pg/query_builder/copy/copy_from.rs
+   |
+   |     fn execute(self, conn: &mut C) -> Result<usize, Self::Error>;
+   |        ^^^^^^^
+
+error[E0277]: the trait bound `diesel::SqliteConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
+  --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:63:48
+   |
+63 |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
+   |                                   ----         ^ the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::SqliteConnection`
+   |                                   |
+   |                                   required by a bound introduced by this call
+   |
+   = help: the following other types implement trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection`:
+             PooledConnection<diesel::r2d2::ConnectionManager<C>>
+             diesel::PgConnection
+note: required by a bound in `CopyToQuery::<T, pg::query_builder::copy::copy_to::NotSet>::load`
+  --> $DIESEL/src/pg/query_builder/copy/copy_to.rs
+   |
+   |     pub fn load<'a, U, C>(
+   |            ---- required by a bound in this associated function
+...
+   |         C: ExecuteCopyToConnection,
+   |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
