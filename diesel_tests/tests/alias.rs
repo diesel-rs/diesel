@@ -27,6 +27,25 @@ fn selecting_basic_data() {
 }
 
 #[test]
+fn ops_with_aliases() {
+    // This test should fail to compile if the std::ops::{Add, Sub, ...} impls are missing for AliasedField.
+    let likes_alias = alias!(likes as likes_alias);
+    let pokes_alias = alias!(pokes as pokes_alias);
+
+    // Using pokes::poke_count and comment_id as they are columns of the same type
+    let _unaliased = likes::table
+        .inner_join(pokes::table.on(likes::user_id.eq(pokes::user_id)))
+        .select(pokes::poke_count + likes::comment_id);
+    let _aliased = likes_alias
+        .inner_join(
+            pokes_alias.on(likes_alias
+                .field(likes::user_id)
+                .eq(pokes_alias.field(pokes::user_id))),
+        )
+        .select(pokes_alias.field(pokes::poke_count) + likes_alias.field(likes::comment_id));
+}
+
+#[test]
 fn select_multiple_from_join() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 

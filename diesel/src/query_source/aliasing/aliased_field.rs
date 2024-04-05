@@ -1,3 +1,5 @@
+use diesel_derives::DieselNumericOps;
+
 use super::{Alias, AliasSource};
 
 use crate::backend::Backend;
@@ -13,7 +15,7 @@ use crate::sql_types;
 
 use std::marker::PhantomData;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, DieselNumericOps)]
 /// Represents an aliased field (column) within diesel's query builder
 ///
 /// See [`alias!`](crate::alias) for more details.
