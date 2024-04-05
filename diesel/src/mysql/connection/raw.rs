@@ -175,7 +175,7 @@ impl RawConnection {
     }
 
     fn more_results(&self) -> bool {
-        unsafe { ffi::mysql_more_results(self.0.as_ptr()) != 0 }
+        unsafe { ffi::mysql_more_results(self.0.as_ptr()) != false }
     }
 
     fn next_result(&self) -> QueryResult<()> {
