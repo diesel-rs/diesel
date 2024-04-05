@@ -161,8 +161,8 @@ pub(super) struct BindData {
     length: libc::c_ulong,
     capacity: usize,
     flags: Flags,
-    is_null: ffi::my_bool,
-    is_truncated: Option<ffi::my_bool>,
+    is_null: bool,
+    is_truncated: Option<bool>,
 }
 
 // We need to write a manual clone impl
@@ -222,7 +222,7 @@ impl Drop for BindData {
 impl BindData {
     fn for_input((tpe, data): (MysqlType, Option<Vec<u8>>)) -> Self {
         let (tpe, flags) = tpe.into();
-        let is_null = ffi::my_bool::from(data.is_none());
+        let is_null = bool::from(data.is_none());
         let mut bytes = data.unwrap_or_default();
         let ptr = NonNull::new(bytes.as_mut_ptr());
         let len = bytes.len() as libc::c_ulong;
@@ -389,13 +389,13 @@ impl BindData {
             length,
             capacity,
             flags,
-            is_null: 0,
-            is_truncated: Some(0),
+            is_null: false,
+            is_truncated: Some(false),
         }
     }
 
     fn is_truncated(&self) -> bool {
-        self.is_truncated.unwrap_or(0) != 0
+        self.is_truncated.unwrap_or(false) != false
     }
 
     fn is_fixed_size_buffer(&self) -> bool {
@@ -423,7 +423,7 @@ impl BindData {
     }
 
     pub(super) fn is_null(&self) -> bool {
-        self.is_null != 0
+        self.is_null != false
     }
 
     fn update_buffer_length(&mut self) {
@@ -452,7 +452,7 @@ impl BindData {
         addr_of_mut!((*ptr).length).write(&mut self.length);
         addr_of_mut!((*ptr).is_null).write(&mut self.is_null);
         addr_of_mut!((*ptr).is_unsigned)
-            .write(self.flags.contains(Flags::UNSIGNED_FLAG) as ffi::my_bool);
+            .write(self.flags.contains(Flags::UNSIGNED_FLAG) as bool);
 
         if let Some(ref mut is_truncated) = self.is_truncated {
             addr_of_mut!((*ptr).error).write(is_truncated);
@@ -710,6 +710,20 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
                  only used on the server side, so if you see this error \
                  something has gone wrong. Please open an issue at \
                  the diesel github repo."
+            ),
+
+            enum_field_types::MYSQL_TYPE_INVALID => unreachable!(
+                "Used for replication only"
+            ),
+
+            // Currently just a placeholder
+            enum_field_types::MYSQL_TYPE_BOOL => unreachable!(
+                "Currently just a placeholder"
+            ),
+
+            // Used for replication only
+            enum_field_types::MYSQL_TYPE_TYPED_ARRAY => unreachable!(
+                "Used for replication only"
             ),
         }
     }
