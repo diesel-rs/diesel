@@ -136,7 +136,7 @@ fn copy_from_csv_all_options() {
         .with_null("<!NULL!>")
         .with_quote('"')
         .with_escape('\\')
-        .with_header(CopyHeader::Match)
+        .with_header(CopyHeader::Set(true))
         // that option is new in postgres 16,
         // so just skip testing it for now
         //.set_default("default")
