@@ -378,6 +378,7 @@ where
     /// `target` specifies the column selection that is the target of the `COPY FROM` statement
     /// `action` expects a callback which accepts a [`std::io::Write`] argument. The necessary format
     /// accepted by this writer sink depends on the options provided via the `with_*` methods
+    #[allow(clippy::wrong_self_convention)] // the sql struct is named that way
     pub fn from_raw_data<F, C, E>(self, _target: C, action: F) -> CopyFromQuery<T, CopyFrom<C, F>>
     where
         C: CopyTarget<Table = T>,
@@ -402,6 +403,7 @@ where
     ///
     /// This uses the binary format. It internally configures the correct
     /// set of settings and does not allow to set other options
+    #[allow(clippy::wrong_self_convention)] // the sql struct is named that way
     pub fn from_insertable<I>(self, insertable: I) -> CopyFromQuery<T, InsertableWrapper<I>>
     where
         InsertableWrapper<I>: CopyFromExpression<T>,

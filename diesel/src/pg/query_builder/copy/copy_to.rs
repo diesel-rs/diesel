@@ -222,10 +222,7 @@ pub trait ExecuteCopyToConnection: Connection<Backend = Pg> {
 
     fn get_buffer<'a>(out: &'a Self::CopyToBuffer<'_>) -> &'a [u8];
 
-    fn execute<'conn, T>(
-        &'conn mut self,
-        command: CopyToCommand<T>,
-    ) -> QueryResult<Self::CopyToBuffer<'conn>>
+    fn execute<T>(&mut self, command: CopyToCommand<T>) -> QueryResult<Self::CopyToBuffer<'_>>
     where
         T: CopyTarget;
 }
@@ -247,10 +244,7 @@ impl ExecuteCopyToConnection for PgConnection {
         out.data_slice()
     }
 
-    fn execute<'conn, T>(
-        &'conn mut self,
-        command: CopyToCommand<T>,
-    ) -> QueryResult<Self::CopyToBuffer<'conn>>
+    fn execute<T>(&mut self, command: CopyToCommand<T>) -> QueryResult<Self::CopyToBuffer<'_>>
     where
         T: CopyTarget,
     {
@@ -297,10 +291,7 @@ where
     /// It does **not** allow to configure any settings via the `with_*` method, as it internally
     /// sets the required options itself. It will use the binary format to deserialize the result
     /// into the specified type `U`. Column selection is performed via [`Selectable`].
-    pub fn load<'a, U, C>(
-        self,
-        conn: &'a mut C,
-    ) -> QueryResult<impl Iterator<Item = QueryResult<U>> + 'a>
+    pub fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
     where
         U: FromSqlRow<<U::SelectExpression as Expression>::SqlType, Pg> + Selectable<Pg>,
         U::SelectExpression: AppearsOnTable<T::Table> + CopyTarget<Table = T::Table>,
@@ -325,7 +316,7 @@ where
 
         let mut out = ExecuteCopyToConnection::execute(conn, command)?;
         let buffer = out.fill_buf().map_err(io_result_mapper)?;
-        if &buffer[..super::COPY_MAGIC_HEADER.len()] != super::COPY_MAGIC_HEADER {
+        if buffer[..super::COPY_MAGIC_HEADER.len()] != super::COPY_MAGIC_HEADER {
             return Err(crate::result::Error::DeserializationError(
                 "Unexpected protocol header".into(),
             ));
@@ -395,7 +386,7 @@ where
     /// This function returns a type that implements [`std::io::BufRead`] which allows to directly read
     /// the data as provided by the database. The exact format depends on what options are
     /// set via the various `with_*` methods.
-    pub fn load_raw<'conn, C>(self, conn: &'conn mut C) -> QueryResult<impl BufRead + 'conn>
+    pub fn load_raw<C>(self, conn: &mut C) -> QueryResult<impl BufRead + '_>
     where
         C: ExecuteCopyToConnection,
     {

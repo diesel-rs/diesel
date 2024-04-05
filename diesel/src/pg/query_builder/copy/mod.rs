@@ -38,7 +38,7 @@ pub enum CopyFormat {
 }
 
 impl CopyFormat {
-    fn to_sql_format(&self) -> &'static str {
+    fn to_sql_format(self) -> &'static str {
         match self {
             CopyFormat::Text => "text",
             CopyFormat::Csv => "csv",
@@ -73,7 +73,7 @@ impl CommonOptions {
         comma: &mut &'static str,
     ) -> crate::QueryResult<()> {
         if let Some(format) = self.format {
-            pass.push_sql(*comma);
+            pass.push_sql(comma);
             *comma = ", ";
             pass.push_sql("FORMAT ");
             pass.push_sql(format.to_sql_format());
@@ -87,7 +87,7 @@ impl CommonOptions {
             *comma = ", ";
         }
         if let Some(ref null) = self.null {
-            pass.push_sql(*comma);
+            pass.push_sql(comma);
             *comma = ", ";
             pass.push_sql("NULL '");
             // we cannot use binds here :(
@@ -116,7 +116,7 @@ pub trait CopyTarget {
     type SqlType: SqlType;
 
     #[doc(hidden)]
-    fn walk_target<'b>(pass: crate::query_builder::AstPass<'_, 'b, Pg>) -> crate::QueryResult<()>;
+    fn walk_target(pass: crate::query_builder::AstPass<'_, '_, Pg>) -> crate::QueryResult<()>;
 }
 
 impl<T> CopyTarget for T
@@ -129,9 +129,7 @@ where
     type Table = Self;
     type SqlType = T::SqlType;
 
-    fn walk_target<'b>(
-        mut pass: crate::query_builder::AstPass<'_, 'b, Pg>,
-    ) -> crate::QueryResult<()> {
+    fn walk_target(mut pass: crate::query_builder::AstPass<'_, '_, Pg>) -> crate::QueryResult<()> {
         T::STATIC_COMPONENT.walk_ast(pass.reborrow())?;
         pass.push_sql("(");
         T::all_columns().walk_ast(pass.reborrow())?;
@@ -158,8 +156,8 @@ macro_rules! copy_target_for_columns {
                 type Table = T;
                 type SqlType = crate::dsl::SqlTypeOf<Self>;
 
-                fn walk_target<'b>(
-                    mut pass: crate::query_builder::AstPass<'_, 'b, Pg>,
+                fn walk_target(
+                    mut pass: crate::query_builder::AstPass<'_, '_, Pg>,
                 ) -> crate::QueryResult<()> {
                     T::STATIC_COMPONENT.walk_ast(pass.reborrow())?;
                     pass.push_sql("(");
