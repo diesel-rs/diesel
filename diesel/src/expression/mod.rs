@@ -563,7 +563,7 @@ where
 /// The select expression is specified via the `select_expression` parameter.
 /// For more complex expressions, it may be required to also specify the result type
 /// of the expression with `select_expression_type`, However, for most query fragments
-/// this can be inferred and is not needed to be specified.
+/// this can be inferred and does not need to be specified.
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
