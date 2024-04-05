@@ -11,7 +11,7 @@ use std::{slice, str};
 use super::raw::{RawConnection, RawResult};
 use super::row::PgRow;
 use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
-use crate::util::OnceCell;
+use std::cell::OnceCell;
 
 #[allow(missing_debug_implementations)]
 pub struct PgResult {
