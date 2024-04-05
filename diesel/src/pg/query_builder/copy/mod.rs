@@ -9,7 +9,9 @@ use crate::{Column, Table};
 pub(crate) mod copy_from;
 pub(crate) mod copy_to;
 
+#[cfg(feature = "postgres")]
 pub(crate) use self::copy_from::{CopyFromExpression, InternalCopyFromQuery};
+#[cfg(feature = "postgres")]
 pub(crate) use self::copy_to::CopyToCommand;
 
 pub use self::copy_from::{CopyFromQuery, CopyHeader, ExecuteCopyFromDsl};

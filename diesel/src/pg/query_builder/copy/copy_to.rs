@@ -5,23 +5,17 @@ use super::CommonOptions;
 use super::CopyFormat;
 use super::CopyTarget;
 use crate::deserialize::FromSqlRow;
-use crate::pg::connection::copy::CopyToBuffer;
-use crate::pg::connection::PgResult;
+#[cfg(feature = "postgres")]
 use crate::pg::value::TypeOidLookup;
 use crate::pg::Pg;
-use crate::pg::PgValue;
 use crate::query_builder::QueryFragment;
 use crate::query_builder::QueryId;
-use crate::row;
-use crate::row::Field;
-use crate::row::PartialRow;
 use crate::row::Row;
-use crate::row::RowIndex;
-use crate::row::RowSealed;
+#[cfg(feature = "postgres")]
+use crate::row::{self, Field, PartialRow, RowIndex, RowSealed};
 use crate::AppearsOnTable;
 use crate::Connection;
 use crate::Expression;
-use crate::PgConnection;
 use crate::QueryResult;
 use crate::Selectable;
 
@@ -132,17 +126,20 @@ pub struct CopyToQuery<T, O> {
     options: O,
 }
 
+#[cfg(feature = "postgres")]
 struct CopyRow<'a> {
     buffers: Vec<Option<&'a [u8]>>,
-    result: &'a PgResult,
+    result: &'a crate::pg::connection::PgResult,
 }
 
+#[cfg(feature = "postgres")]
 struct CopyField<'a> {
     field: &'a Option<&'a [u8]>,
-    result: &'a PgResult,
+    result: &'a crate::pg::connection::PgResult,
     col_idx: usize,
 }
 
+#[cfg(feature = "postgres")]
 impl<'f> Field<'f, Pg> for CopyField<'f> {
     fn field_name(&self) -> Option<&str> {
         None
@@ -150,18 +147,21 @@ impl<'f> Field<'f, Pg> for CopyField<'f> {
 
     fn value(&self) -> Option<<Pg as crate::backend::Backend>::RawValue<'_>> {
         let value = self.field.as_deref()?;
-        Some(PgValue::new_internal(value, self))
+        Some(crate::pg::PgValue::new_internal(value, self))
     }
 }
 
+#[cfg(feature = "postgres")]
 impl<'a> TypeOidLookup for CopyField<'a> {
     fn lookup(&self) -> std::num::NonZeroU32 {
         self.result.column_type(self.col_idx)
     }
 }
 
+#[cfg(feature = "postgres")]
 impl RowSealed for CopyRow<'_> {}
 
+#[cfg(feature = "postgres")]
 impl RowIndex<usize> for CopyRow<'_> {
     fn idx(&self, idx: usize) -> Option<usize> {
         if idx < self.field_count() {
@@ -172,12 +172,14 @@ impl RowIndex<usize> for CopyRow<'_> {
     }
 }
 
+#[cfg(feature = "postgres")]
 impl<'a> RowIndex<&'a str> for CopyRow<'_> {
     fn idx(&self, _idx: &'a str) -> Option<usize> {
         None
     }
 }
 
+#[cfg(feature = "postgres")]
 impl<'a> Row<'a, Pg> for CopyRow<'_> {
     type Field<'f> = CopyField<'f>
     where
@@ -227,8 +229,9 @@ pub trait ExecuteCopyToConnection: Connection<Backend = Pg> {
         T: CopyTarget;
 }
 
-impl ExecuteCopyToConnection for PgConnection {
-    type CopyToBuffer<'a> = CopyToBuffer<'a>;
+#[cfg(feature = "postgres")]
+impl ExecuteCopyToConnection for crate::PgConnection {
+    type CopyToBuffer<'a> = crate::pg::connection::copy::CopyToBuffer<'a>;
 
     fn make_row<'a, 'b>(
         out: &'a Self::CopyToBuffer<'_>,

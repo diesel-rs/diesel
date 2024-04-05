@@ -333,7 +333,7 @@ pub mod dsl {
     };
 
     #[doc(inline)]
-    #[cfg(feature = "postgres")]
+    #[cfg(feature = "postgres_backend")]
     pub use crate::query_builder::functions::{copy_from, copy_to};
 
     #[doc(inline)]
@@ -723,7 +723,7 @@ pub mod prelude {
     #[doc(inline)]
     pub use crate::mysql::MysqlConnection;
     #[doc(inline)]
-    #[cfg(feature = "postgres")]
+    #[cfg(feature = "postgres_backend")]
     pub use crate::pg::query_builder::copy::ExecuteCopyFromDsl;
     #[cfg(feature = "postgres")]
     #[doc(inline)]

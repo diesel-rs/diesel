@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::io::Write;
 use std::marker::PhantomData;
 
 use byteorder::NetworkEndian;
@@ -11,7 +10,6 @@ use super::CopyTarget;
 use crate::expression::bound::Bound;
 use crate::insertable::ColumnInsertValue;
 use crate::pg::backend::FailedToLookupTypeError;
-use crate::pg::connection::copy::CopyFromSink;
 use crate::pg::metadata_lookup::PgMetadataCacheKey;
 use crate::pg::Pg;
 use crate::pg::PgMetadataLookup;
@@ -23,7 +21,6 @@ use crate::serialize::IsNull;
 use crate::serialize::ToSql;
 use crate::Connection;
 use crate::Insertable;
-use crate::PgConnection;
 use crate::QueryResult;
 use crate::{Column, Table};
 
@@ -98,6 +95,7 @@ pub(crate) struct InternalCopyFromQuery<S, T> {
     p: PhantomData<T>,
 }
 
+#[cfg(feature = "postgres")]
 impl<S, T> InternalCopyFromQuery<S, T> {
     pub(crate) fn new(target: S) -> Self {
         Self {
@@ -136,7 +134,7 @@ where
 pub trait CopyFromExpression<T> {
     type Error: From<crate::result::Error> + std::error::Error;
 
-    fn callback(&mut self, copy: &mut CopyFromSink<'_>) -> Result<(), Self::Error>;
+    fn callback(&mut self, copy: &mut impl std::io::Write) -> Result<(), Self::Error>;
 
     fn walk_target<'b>(
         &'b self,
@@ -154,7 +152,7 @@ where
 {
     type Error = E;
 
-    fn callback(&mut self, copy: &mut CopyFromSink<'_>) -> Result<(), Self::Error> {
+    fn callback(&mut self, copy: &mut impl std::io::Write) -> Result<(), Self::Error> {
         (self.copy_callback)(copy)
     }
 
@@ -273,7 +271,7 @@ where
 {
     type Error = crate::result::Error;
 
-    fn callback(&mut self, copy: &mut CopyFromSink<'_>) -> Result<(), Self::Error> {
+    fn callback(&mut self, copy: &mut impl std::io::Write) -> Result<(), Self::Error> {
         let io_result_mapper = |e| crate::result::Error::DeserializationError(Box::new(e));
         // see https://www.postgresql.org/docs/current/sql-copy.html for
         // a description of the binary format
@@ -509,14 +507,33 @@ where
     fn execute(self, conn: &mut C) -> Result<usize, Self::Error>;
 }
 
-impl<T, A> ExecuteCopyFromDsl<PgConnection> for CopyFromQuery<T, A>
+#[cfg(feature = "postgres")]
+impl<T, A> ExecuteCopyFromDsl<crate::PgConnection> for CopyFromQuery<T, A>
 where
     A: CopyFromExpression<T>,
 {
     type Error = A::Error;
 
-    fn execute(self, conn: &mut PgConnection) -> Result<usize, A::Error> {
+    fn execute(self, conn: &mut crate::PgConnection) -> Result<usize, A::Error> {
         conn.copy_from::<A, T>(self.action)
+    }
+}
+
+#[cfg(feature = "r2d2")]
+impl<T, A, C> ExecuteCopyFromDsl<crate::r2d2::PooledConnection<crate::r2d2::ConnectionManager<C>>>
+    for CopyFromQuery<T, A>
+where
+    A: CopyFromExpression<T>,
+    C: crate::r2d2::R2D2Connection<Backend = Pg> + 'static,
+    Self: ExecuteCopyFromDsl<C>,
+{
+    type Error = <Self as ExecuteCopyFromDsl<C>>::Error;
+
+    fn execute(
+        self,
+        conn: &mut crate::r2d2::PooledConnection<crate::r2d2::ConnectionManager<C>>,
+    ) -> Result<usize, Self::Error> {
+        self.execute(&mut **conn)
     }
 }
 
