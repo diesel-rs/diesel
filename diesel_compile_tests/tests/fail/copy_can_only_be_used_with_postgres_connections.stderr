@@ -1,18 +1,31 @@
-error[E0308]: mismatched types
+error[E0271]: type mismatch resolving `<MysqlConnection as Connection>::Backend == Pg`
   --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:52:18
    |
 52 |         .execute(conn)
-   |          ------- ^^^^ expected `&mut PgConnection`, found `&mut MysqlConnection`
+   |          ------- ^^^^ expected `Pg`, found `Mysql`
    |          |
-   |          arguments to this method are incorrect
+   |          required by a bound introduced by this call
    |
-   = note: expected mutable reference `&mut diesel::PgConnection`
-              found mutable reference `&mut diesel::MysqlConnection`
-note: method defined here
+note: required by a bound in `diesel::ExecuteCopyFromDsl::execute`
   --> $DIESEL/src/pg/query_builder/copy/copy_from.rs
    |
+   |     C: Connection<Backend = Pg>,
+   |                   ^^^^^^^^^^^^ required by this bound in `ExecuteCopyFromDsl::execute`
+...
    |     fn execute(self, conn: &mut C) -> Result<usize, Self::Error>;
-   |        ^^^^^^^
+   |        ------- required by a bound in this associated function
+
+error[E0277]: the trait bound `CopyFromQuery<users::table, pg::query_builder::copy::copy_from::InsertableWrapper<Vec<NewUser>>>: diesel::ExecuteCopyFromDsl<diesel::MysqlConnection>` is not satisfied
+  --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:52:18
+   |
+52 |         .execute(conn)
+   |          ------- ^^^^ the trait `diesel::ExecuteCopyFromDsl<diesel::MysqlConnection>` is not implemented for `CopyFromQuery<users::table, pg::query_builder::copy::copy_from::InsertableWrapper<Vec<NewUser>>>`
+   |          |
+   |          required by a bound introduced by this call
+   |
+   = help: the following other types implement trait `diesel::ExecuteCopyFromDsl<C>`:
+             <CopyFromQuery<T, A> as diesel::ExecuteCopyFromDsl<PooledConnection<diesel::r2d2::ConnectionManager<C>>>>
+             <CopyFromQuery<T, A> as diesel::ExecuteCopyFromDsl<diesel::PgConnection>>
 
 error[E0277]: the trait bound `diesel::MysqlConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
   --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:54:48
@@ -34,21 +47,34 @@ note: required by a bound in `CopyToQuery::<T, pg::query_builder::copy::copy_to:
    |         C: ExecuteCopyToConnection,
    |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
 
-error[E0308]: mismatched types
+error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
   --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:61:18
    |
 61 |         .execute(conn)
-   |          ------- ^^^^ expected `&mut PgConnection`, found `&mut SqliteConnection`
+   |          ------- ^^^^ expected `Pg`, found `Sqlite`
    |          |
-   |          arguments to this method are incorrect
+   |          required by a bound introduced by this call
    |
-   = note: expected mutable reference `&mut diesel::PgConnection`
-              found mutable reference `&mut diesel::SqliteConnection`
-note: method defined here
+note: required by a bound in `diesel::ExecuteCopyFromDsl::execute`
   --> $DIESEL/src/pg/query_builder/copy/copy_from.rs
    |
+   |     C: Connection<Backend = Pg>,
+   |                   ^^^^^^^^^^^^ required by this bound in `ExecuteCopyFromDsl::execute`
+...
    |     fn execute(self, conn: &mut C) -> Result<usize, Self::Error>;
-   |        ^^^^^^^
+   |        ------- required by a bound in this associated function
+
+error[E0277]: the trait bound `CopyFromQuery<users::table, pg::query_builder::copy::copy_from::InsertableWrapper<Vec<NewUser>>>: diesel::ExecuteCopyFromDsl<diesel::SqliteConnection>` is not satisfied
+  --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:61:18
+   |
+61 |         .execute(conn)
+   |          ------- ^^^^ the trait `diesel::ExecuteCopyFromDsl<diesel::SqliteConnection>` is not implemented for `CopyFromQuery<users::table, pg::query_builder::copy::copy_from::InsertableWrapper<Vec<NewUser>>>`
+   |          |
+   |          required by a bound introduced by this call
+   |
+   = help: the following other types implement trait `diesel::ExecuteCopyFromDsl<C>`:
+             <CopyFromQuery<T, A> as diesel::ExecuteCopyFromDsl<PooledConnection<diesel::r2d2::ConnectionManager<C>>>>
+             <CopyFromQuery<T, A> as diesel::ExecuteCopyFromDsl<diesel::PgConnection>>
 
 error[E0277]: the trait bound `diesel::SqliteConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
   --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:63:48
