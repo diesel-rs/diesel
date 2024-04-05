@@ -485,11 +485,11 @@ jobs:
         run: cargo +nightly-2024-04-05 -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "postgres pq-sys pq-sys/bundled pq-src/with-asan" --target x86_64-unknown-linux-gnu
 
   minimal_rust_version:
-    name: Check Minimal supported rust version (1.76.0)
+    name: Check Minimal supported rust version (1.75.0)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.76.0
+      - uses: dtolnay/rust-toolchain@1.75.0
       - uses: dtolnay/rust-toolchain@nightly
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@cargo-minimal-versions
@@ -510,7 +510,7 @@ jobs:
       - name: Check diesel_migrations
         run: cargo +1.76.0 minimal-versions check -p diesel_migrations --all-features
       - name: Check diesel_cli
-        run: cargo +1.76.0 minimal-versions check -p diesel_cli --features "default sqlite-bundled"
+        run: cargo +1.75.0 minimal-versions check -p diesel_cli --features "default sqlite-bundled"
 
   typos:
     name: Spell Check with Typos

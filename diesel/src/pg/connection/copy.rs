@@ -24,7 +24,9 @@ impl<'conn> CopyFromSink<'conn> {
 
 impl<'conn> Write for CopyFromSink<'conn> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        self.conn.put_copy_data(buf).unwrap();
+        self.conn
+            .put_copy_data(buf)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         Ok(buf.len())
     }
 
