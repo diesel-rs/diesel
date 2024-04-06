@@ -183,7 +183,7 @@ impl RawConnection {
         self.did_an_error_occur()
     }
 
-    fn set_ssl_mode(&self, ssl_mode: mysqlclient_sys::mysql_ssl_mode) {
+    fn set_ssl_mode(&self, ssl_mode: mysqlclient_sys::z_mysql_ssl_mode) {
         let v = ssl_mode as u32;
         let v_ptr: *const u32 = &v;
         let n = ptr::NonNull::new(v_ptr as *mut u32).expect("NonNull::new failed");

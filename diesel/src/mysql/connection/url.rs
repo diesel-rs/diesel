@@ -8,7 +8,7 @@ use std::ffi::{CStr, CString};
 
 use crate::result::{ConnectionError, ConnectionResult};
 
-use mysqlclient_sys::mysql_ssl_mode;
+use mysqlclient_sys::z_mysql_ssl_mode;
 
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
@@ -49,7 +49,7 @@ pub(super) struct ConnectionOptions {
     port: Option<u16>,
     unix_socket: Option<CString>,
     client_flags: CapabilityFlags,
-    ssl_mode: Option<mysql_ssl_mode>,
+    ssl_mode: Option<z_mysql_ssl_mode>,
     ssl_ca: Option<CString>,
     ssl_cert: Option<CString>,
     ssl_key: Option<CString>,
@@ -98,11 +98,11 @@ impl ConnectionOptions {
         let ssl_mode = match query_pairs.get("ssl_mode") {
             Some(v) => {
                 let ssl_mode = match v.to_lowercase().as_str() {
-                    "disabled" => mysql_ssl_mode::SSL_MODE_DISABLED,
-                    "preferred" => mysql_ssl_mode::SSL_MODE_PREFERRED,
-                    "required" => mysql_ssl_mode::SSL_MODE_REQUIRED,
-                    "verify_ca" => mysql_ssl_mode::SSL_MODE_VERIFY_CA,
-                    "verify_identity" => mysql_ssl_mode::SSL_MODE_VERIFY_IDENTITY,
+                    "disabled" => z_mysql_ssl_mode::SSL_MODE_DISABLED,
+                    "preferred" => z_mysql_ssl_mode::SSL_MODE_PREFERRED,
+                    "required" => z_mysql_ssl_mode::SSL_MODE_REQUIRED,
+                    "verify_ca" => z_mysql_ssl_mode::SSL_MODE_VERIFY_CA,
+                    "verify_identity" => z_mysql_ssl_mode::SSL_MODE_VERIFY_IDENTITY,
                     _ => {
                         let msg = "unknown ssl_mode";
                         return Err(ConnectionError::InvalidConnectionUrl(msg.into()));
@@ -188,7 +188,7 @@ impl ConnectionOptions {
         self.client_flags
     }
 
-    pub(super) fn ssl_mode(&self) -> Option<mysql_ssl_mode> {
+    pub(super) fn ssl_mode(&self) -> Option<z_mysql_ssl_mode> {
         self.ssl_mode
     }
 }
@@ -402,22 +402,22 @@ fn ssl_mode() {
     assert_eq!(ssl_mode("mysql://localhost"), None);
     assert_eq!(
         ssl_mode("mysql://localhost?ssl_mode=disabled"),
-        Some(mysql_ssl_mode::SSL_MODE_DISABLED)
+        Some(z_mysql_ssl_mode::SSL_MODE_DISABLED)
     );
     assert_eq!(
         ssl_mode("mysql://localhost?ssl_mode=PREFERRED"),
-        Some(mysql_ssl_mode::SSL_MODE_PREFERRED)
+        Some(z_mysql_ssl_mode::SSL_MODE_PREFERRED)
     );
     assert_eq!(
         ssl_mode("mysql://localhost?ssl_mode=required"),
-        Some(mysql_ssl_mode::SSL_MODE_REQUIRED)
+        Some(z_mysql_ssl_mode::SSL_MODE_REQUIRED)
     );
     assert_eq!(
         ssl_mode("mysql://localhost?ssl_mode=VERIFY_CA"),
-        Some(mysql_ssl_mode::SSL_MODE_VERIFY_CA)
+        Some(z_mysql_ssl_mode::SSL_MODE_VERIFY_CA)
     );
     assert_eq!(
         ssl_mode("mysql://localhost?ssl_mode=verify_identity"),
-        Some(mysql_ssl_mode::SSL_MODE_VERIFY_IDENTITY)
+        Some(z_mysql_ssl_mode::SSL_MODE_VERIFY_IDENTITY)
     );
 }
