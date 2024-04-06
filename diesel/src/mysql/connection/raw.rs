@@ -13,7 +13,7 @@ pub(super) struct RawConnection(NonNull<ffi::MYSQL>);
 
 #[cfg(target_os = "linux")]
 static FALSE: ffi::my_bool = 0;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 static FALSE: ffi::my_bool = false;
 
 impl RawConnection {
