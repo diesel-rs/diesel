@@ -154,6 +154,11 @@ impl From<u32> for Flags {
     }
 }
 
+#[cfg(target_os = "linux")]
+static FALSE: ffi::my_bool = 0;
+#[cfg(target_os = "macos")]
+static FALSE: ffi::my_bool = false;
+
 #[derive(Debug)]
 pub(super) struct BindData {
     tpe: ffi::enum_field_types,
@@ -161,8 +166,8 @@ pub(super) struct BindData {
     length: libc::c_ulong,
     capacity: usize,
     flags: Flags,
-    is_null: bool,
-    is_truncated: Option<bool>,
+    is_null: ffi::my_bool,
+    is_truncated: Option<ffi::my_bool>,
 }
 
 // We need to write a manual clone impl
@@ -222,7 +227,7 @@ impl Drop for BindData {
 impl BindData {
     fn for_input((tpe, data): (MysqlType, Option<Vec<u8>>)) -> Self {
         let (tpe, flags) = tpe.into();
-        let is_null = bool::from(data.is_none());
+        let is_null = ffi::my_bool::from(data.is_none());
         let mut bytes = data.unwrap_or_default();
         let ptr = NonNull::new(bytes.as_mut_ptr());
         let len = bytes.len() as libc::c_ulong;
@@ -389,13 +394,13 @@ impl BindData {
             length,
             capacity,
             flags,
-            is_null: false,
-            is_truncated: Some(false),
+            is_null: FALSE,
+            is_truncated: Some(FALSE),
         }
     }
 
     fn is_truncated(&self) -> bool {
-        self.is_truncated.unwrap_or(false) != false
+        self.is_truncated.unwrap_or(FALSE) != FALSE
     }
 
     fn is_fixed_size_buffer(&self) -> bool {
@@ -423,7 +428,7 @@ impl BindData {
     }
 
     pub(super) fn is_null(&self) -> bool {
-        self.is_null != false
+        self.is_null != FALSE
     }
 
     fn update_buffer_length(&mut self) {
@@ -452,7 +457,7 @@ impl BindData {
         addr_of_mut!((*ptr).length).write(&mut self.length);
         addr_of_mut!((*ptr).is_null).write(&mut self.is_null);
         addr_of_mut!((*ptr).is_unsigned)
-            .write(self.flags.contains(Flags::UNSIGNED_FLAG) as bool);
+            .write(self.flags.contains(Flags::UNSIGNED_FLAG) as ffi::my_bool);
 
         if let Some(ref mut is_truncated) = self.is_truncated {
             addr_of_mut!((*ptr).error).write(is_truncated);
