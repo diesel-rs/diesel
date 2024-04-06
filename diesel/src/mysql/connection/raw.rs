@@ -11,6 +11,11 @@ use crate::result::{ConnectionError, ConnectionResult, QueryResult};
 
 pub(super) struct RawConnection(NonNull<ffi::MYSQL>);
 
+#[cfg(target_os = "linux")]
+static FALSE: ffi::my_bool = 0;
+#[cfg(target_os = "macos")]
+static FALSE: ffi::my_bool = false;
+
 impl RawConnection {
     pub(super) fn new() -> Self {
         perform_thread_unsafe_library_initialization();
@@ -175,7 +180,7 @@ impl RawConnection {
     }
 
     fn more_results(&self) -> bool {
-        unsafe { ffi::mysql_more_results(self.0.as_ptr()) != false }
+        unsafe { ffi::mysql_more_results(self.0.as_ptr()) != FALSE }
     }
 
     fn next_result(&self) -> QueryResult<()> {
@@ -183,7 +188,7 @@ impl RawConnection {
         self.did_an_error_occur()
     }
 
-    fn set_ssl_mode(&self, ssl_mode: mysqlclient_sys::z_mysql_ssl_mode) {
+    fn set_ssl_mode(&self, ssl_mode: mysqlclient_sys::mysql_ssl_mode) {
         let v = ssl_mode as u32;
         let v_ptr: *const u32 = &v;
         let n = ptr::NonNull::new(v_ptr as *mut u32).expect("NonNull::new failed");
