@@ -712,18 +712,10 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
                  the diesel github repo."
             ),
 
-            enum_field_types::MYSQL_TYPE_INVALID => unreachable!(
-                "Used for replication only"
-            ),
-
-            // Currently just a placeholder
-            enum_field_types::MYSQL_TYPE_BOOL => unreachable!(
-                "Currently just a placeholder"
-            ),
-
-            // Used for replication only
-            enum_field_types::MYSQL_TYPE_TYPED_ARRAY => unreachable!(
-                "Used for replication only"
+            _ => unreachable!(
+                "MYSQL_TYPE_INVALID enumerate value is 243 \
+                 MYSQL_TYPE_BOOL Currently just a placeholder \
+                 MYSQL_TYPE_TYPED_ARRAY Used for replication only."
             ),
         }
     }
