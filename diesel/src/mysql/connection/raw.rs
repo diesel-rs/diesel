@@ -11,11 +11,6 @@ use crate::result::{ConnectionError, ConnectionResult, QueryResult};
 
 pub(super) struct RawConnection(NonNull<ffi::MYSQL>);
 
-#[cfg(target_os = "linux")]
-static FALSE: ffi::my_bool = 0;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-static FALSE: ffi::my_bool = false;
-
 impl RawConnection {
     pub(super) fn new() -> Self {
         perform_thread_unsafe_library_initialization();
@@ -180,7 +175,7 @@ impl RawConnection {
     }
 
     fn more_results(&self) -> bool {
-        unsafe { ffi::mysql_more_results(self.0.as_ptr()) != FALSE }
+        unsafe { ffi::mysql_more_results(self.0.as_ptr()) != ffi::my_bool::default() }
     }
 
     fn next_result(&self) -> QueryResult<()> {
