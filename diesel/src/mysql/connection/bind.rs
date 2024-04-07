@@ -154,11 +154,6 @@ impl From<u32> for Flags {
     }
 }
 
-#[cfg(target_os = "linux")]
-static FALSE: ffi::my_bool = 0;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-static FALSE: ffi::my_bool = false;
-
 #[derive(Debug)]
 pub(super) struct BindData {
     tpe: ffi::enum_field_types,
@@ -394,13 +389,13 @@ impl BindData {
             length,
             capacity,
             flags,
-            is_null: FALSE,
-            is_truncated: Some(FALSE),
+            is_null: ffi::my_bool::default(),
+            is_truncated: Some(ffi::my_bool::default()),
         }
     }
 
     fn is_truncated(&self) -> bool {
-        self.is_truncated.unwrap_or(FALSE) != FALSE
+        self.is_truncated.unwrap_or(ffi::my_bool::default()) != ffi::my_bool::default()
     }
 
     fn is_fixed_size_buffer(&self) -> bool {
@@ -428,7 +423,7 @@ impl BindData {
     }
 
     pub(super) fn is_null(&self) -> bool {
-        self.is_null != FALSE
+        self.is_null != ffi::my_bool::default()
     }
 
     fn update_buffer_length(&mut self) {
