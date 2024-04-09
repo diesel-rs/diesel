@@ -1,12 +1,10 @@
-#[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+#[cfg(feature = "diesel-async")]
 mod diesel_async_benches;
 mod diesel_benches;
 #[cfg(all(feature = "mysql", feature = "rust_mysql"))]
 mod mysql_benches;
 #[cfg(all(feature = "postgres", feature = "rust_postgres"))]
 mod postgres_benches;
-#[cfg(all(feature = "postgres", feature = "tokio_postgres"))]
-mod tokio_postgres_benches;
 #[cfg(feature = "quaint")]
 mod quaint_benches;
 #[cfg(all(feature = "rusqlite", feature = "sqlite"))]
@@ -17,6 +15,8 @@ mod rust_orm_benches;
 mod sea_orm_benches;
 #[cfg(feature = "sqlx-bench")]
 mod sqlx_benches;
+#[cfg(all(feature = "postgres", feature = "tokio_postgres"))]
+mod tokio_postgres_benches;
 #[cfg(feature = "wtx")]
 mod wtx;
 
@@ -76,12 +76,12 @@ fn bench_trivial_query(c: &mut CriterionType) {
             |b, i| crate::diesel_benches::bench_trivial_query_raw(b, *i),
         );
 
-        #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+        #[cfg(all(feature = "diesel-async"))]
         group.bench_with_input(BenchmarkId::new("diesel_async", size), size, |b, i| {
             crate::diesel_async_benches::bench_trivial_query(b, *i);
         });
 
-        #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+        #[cfg(all(feature = "diesel-async"))]
         group.bench_with_input(
             BenchmarkId::new("diesel_async_boxed", size),
             size,
@@ -90,7 +90,7 @@ fn bench_trivial_query(c: &mut CriterionType) {
             },
         );
 
-        #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+        #[cfg(all(feature = "diesel-async"))]
         group.bench_with_input(
             BenchmarkId::new("diesel_async_queryable_by_name", size),
             size,
@@ -145,14 +145,22 @@ fn bench_trivial_query(c: &mut CriterionType) {
         });
 
         #[cfg(all(feature = "postgres", feature = "tokio_postgres"))]
-        group.bench_with_input(BenchmarkId::new("tokio_postgres_by_id", size), size, |b, i| {
-            crate::tokio_postgres_benches::bench_trivial_query_by_id(b, *i);
-        });
+        group.bench_with_input(
+            BenchmarkId::new("tokio_postgres_by_id", size),
+            size,
+            |b, i| {
+                crate::tokio_postgres_benches::bench_trivial_query_by_id(b, *i);
+            },
+        );
 
         #[cfg(all(feature = "postgres", feature = "tokio_postgres"))]
-        group.bench_with_input(BenchmarkId::new("tokio_postgres_by_name", size), size, |b, i| {
-            crate::tokio_postgres_benches::bench_trivial_query_by_name(b, *i);
-        });
+        group.bench_with_input(
+            BenchmarkId::new("tokio_postgres_by_name", size),
+            size,
+            |b, i| {
+                crate::tokio_postgres_benches::bench_trivial_query_by_name(b, *i);
+            },
+        );
 
         #[cfg(all(feature = "mysql", feature = "rust_mysql"))]
         group.bench_with_input(BenchmarkId::new("mysql_by_id", size), size, |b, i| {
@@ -194,17 +202,17 @@ fn bench_medium_complex_query(c: &mut CriterionType) {
             |b, i| crate::diesel_benches::bench_medium_complex_query_queryable_by_name(b, *i),
         );
 
-        #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+        #[cfg(all(feature = "diesel-async"))]
         group.bench_with_input(BenchmarkId::new("diesel_async", size), size, |b, i| {
             crate::diesel_async_benches::bench_medium_complex_query(b, *i)
         });
-        #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+        #[cfg(all(feature = "diesel-async"))]
         group.bench_with_input(
             BenchmarkId::new("diesel_async_boxed", size),
             size,
             |b, i| crate::diesel_async_benches::bench_medium_complex_query_boxed(b, *i),
         );
-        #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+        #[cfg(all(feature = "diesel-async"))]
         group.bench_with_input(
             BenchmarkId::new("diesel_async_queryable_by_name", size),
             size,
@@ -258,14 +266,22 @@ fn bench_medium_complex_query(c: &mut CriterionType) {
         });
 
         #[cfg(all(feature = "postgres", feature = "tokio_postgres"))]
-        group.bench_with_input(BenchmarkId::new("tokio_postgres_by_id", size), size, |b, i| {
-            crate::tokio_postgres_benches::bench_medium_complex_query_by_id(b, *i);
-        });
+        group.bench_with_input(
+            BenchmarkId::new("tokio_postgres_by_id", size),
+            size,
+            |b, i| {
+                crate::tokio_postgres_benches::bench_medium_complex_query_by_id(b, *i);
+            },
+        );
 
         #[cfg(all(feature = "postgres", feature = "tokio_postgres"))]
-        group.bench_with_input(BenchmarkId::new("tokio_postgres_by_name", size), size, |b, i| {
-            crate::tokio_postgres_benches::bench_medium_complex_query_by_name(b, *i);
-        });
+        group.bench_with_input(
+            BenchmarkId::new("tokio_postgres_by_name", size),
+            size,
+            |b, i| {
+                crate::tokio_postgres_benches::bench_medium_complex_query_by_name(b, *i);
+            },
+        );
 
         #[cfg(all(feature = "mysql", feature = "rust_mysql"))]
         group.bench_with_input(BenchmarkId::new("mysql_by_id", size), size, |b, i| {
@@ -298,7 +314,7 @@ fn bench_loading_associations_sequentially(c: &mut CriterionType) {
         crate::diesel_benches::loading_associations_sequentially(b)
     });
 
-    #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+    #[cfg(all(feature = "diesel-async"))]
     group.bench_function(
         "diesel_async/bench_loading_associations_sequentially",
         |b| crate::diesel_async_benches::loading_associations_sequentially(b),
@@ -360,7 +376,7 @@ fn bench_insert(c: &mut CriterionType) {
             crate::diesel_benches::bench_insert(b, *i);
         });
 
-        #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+        #[cfg(all(feature = "diesel-async"))]
         group.bench_with_input(BenchmarkId::new("diesel_async", size), size, |b, i| {
             crate::diesel_async_benches::bench_insert(b, *i);
         });
