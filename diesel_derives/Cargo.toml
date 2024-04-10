@@ -22,7 +22,6 @@ cfg-if = "1"
 dotenvy = "0.15"
 
 [dev-dependencies.diesel]
-version = "~2.1.0"
 path = "../diesel"
 
 [lib]

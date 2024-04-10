@@ -21,12 +21,10 @@ dotenvy = "0.15"
 cfg-if = "1.0.0"
 
 [dev-dependencies.diesel]
-version = "~2.1.0"
 path = "../../diesel"
 default-features = false
 
 [dev-dependencies.diesel_migrations]
-version = "~2.1.0"
 path = "../"
 default-features = false
 
