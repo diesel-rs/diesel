@@ -73,7 +73,7 @@ error: expected identifier
 113 | #[belongs_to(Bar, foreign_key = "1")]
     |                                 ^^^
 
-error: unexpected expression: `Bar`
+error: attribute value must be a literal
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:36:16
    |
 36 | #[belongs_to = Bar]

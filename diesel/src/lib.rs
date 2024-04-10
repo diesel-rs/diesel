@@ -333,6 +333,10 @@ pub mod dsl {
     };
 
     #[doc(inline)]
+    #[cfg(feature = "postgres_backend")]
+    pub use crate::query_builder::functions::{copy_from, copy_to};
+
+    #[doc(inline)]
     pub use diesel_derives::auto_type;
 
     #[cfg(feature = "postgres_backend")]
@@ -718,6 +722,9 @@ pub mod prelude {
     #[cfg(feature = "mysql")]
     #[doc(inline)]
     pub use crate::mysql::MysqlConnection;
+    #[doc(inline)]
+    #[cfg(feature = "postgres_backend")]
+    pub use crate::pg::query_builder::copy::ExecuteCopyFromDsl;
     #[cfg(feature = "postgres")]
     #[doc(inline)]
     pub use crate::pg::PgConnection;
@@ -731,6 +738,9 @@ pub use crate::macros::table;
 pub use crate::prelude::*;
 #[doc(inline)]
 pub use crate::query_builder::debug_query;
+#[doc(inline)]
+#[cfg(feature = "postgres")]
+pub use crate::query_builder::functions::{copy_from, copy_to};
 #[doc(inline)]
 pub use crate::query_builder::functions::{
     delete, insert_into, insert_or_ignore_into, replace_into, select, sql_query, update,

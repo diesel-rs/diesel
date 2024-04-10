@@ -28,6 +28,8 @@ pub use self::query_builder::OrderDecorator;
 #[doc(inline)]
 pub use self::query_builder::PgQueryBuilder;
 #[doc(inline)]
+pub use self::query_builder::{CopyFormat, CopyFromQuery, CopyHeader, CopyTarget, CopyToQuery};
+#[doc(inline)]
 pub use self::transaction::TransactionBuilder;
 #[doc(inline)]
 pub use self::value::PgValue;

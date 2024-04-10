@@ -88,7 +88,8 @@ error[E0277]: the trait bound `Only<foo::table>: QueryFragment<Sqlite>` is not s
    |                       |
    |                       required by a bound introduced by this call
    |
-   = help: the trait `QueryFragment<Pg>` is implemented for `Only<S>`
+   = help: the trait `QueryFragment<Pg>` is implemented for `Only<foo::table>`
+   = help: for that trait implementation, expected `Pg`, found `Sqlite`
    = note: required for `FromClause<Only<foo::table>>` to implement `QueryFragment<Sqlite>`
    = note: 2 redundant requirements hidden
    = note: required for `SelectStatement<FromClause<Only<foo::table>>>` to implement `QueryFragment<Sqlite>`
@@ -110,7 +111,8 @@ error[E0277]: the trait bound `Only<foo::table>: QueryFragment<Mysql>` is not sa
    |                       |
    |                       required by a bound introduced by this call
    |
-   = help: the trait `QueryFragment<Pg>` is implemented for `Only<S>`
+   = help: the trait `QueryFragment<Pg>` is implemented for `Only<foo::table>`
+   = help: for that trait implementation, expected `Pg`, found `Mysql`
    = note: required for `FromClause<Only<foo::table>>` to implement `QueryFragment<Mysql>`
    = note: 2 redundant requirements hidden
    = note: required for `SelectStatement<FromClause<Only<foo::table>>>` to implement `QueryFragment<Mysql>`

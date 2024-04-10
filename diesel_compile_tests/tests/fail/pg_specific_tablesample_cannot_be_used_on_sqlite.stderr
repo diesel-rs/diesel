@@ -6,7 +6,8 @@ error[E0277]: the trait bound `Tablesample<users::table, pg::query_builder::tabl
    |          |
    |          required by a bound introduced by this call
    |
-   = help: the trait `QueryFragment<Pg>` is implemented for `Tablesample<S, TSM>`
+   = help: the trait `QueryFragment<Pg>` is implemented for `Tablesample<users::table, pg::query_builder::tablesample::SystemMethod>`
+   = help: for that trait implementation, expected `Pg`, found `Sqlite`
    = note: required for `FromClause<Tablesample<users::table, pg::query_builder::tablesample::SystemMethod>>` to implement `QueryFragment<Sqlite>`
    = note: 2 redundant requirements hidden
    = note: required for `SelectStatement<FromClause<Tablesample<users::table, pg::query_builder::tablesample::SystemMethod>>>` to implement `QueryFragment<Sqlite>`

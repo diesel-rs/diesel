@@ -12,7 +12,8 @@ error[E0277]: the trait bound `dyn diesel::BoxableExpression<users::table, Pg, S
 71 |         .select(some_ungrouped_expression(true))
    |          ^^^^^^ the trait `ValidGrouping<columns::id>` is not implemented for `dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>`
    |
-   = help: the trait `ValidGrouping<GB>` is implemented for `(dyn diesel::BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a)`
+   = help: the trait `ValidGrouping<()>` is implemented for `dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>`
+   = help: for that trait implementation, expected `()`, found `columns::id`
    = note: required for `Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>` to implement `ValidGrouping<columns::id>`
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ...>` to implement `SelectDsl<Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>>`
 
@@ -24,7 +25,8 @@ error[E0277]: the trait bound `dyn diesel::BoxableExpression<users::table, Pg, S
    |          |
    |          required by a bound introduced by this call
    |
-   = help: the trait `ValidGrouping<GB>` is implemented for `(dyn diesel::BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a)`
+   = help: the trait `ValidGrouping<()>` is implemented for `dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>`
+   = help: for that trait implementation, expected `()`, found `columns::id`
    = note: required for `Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>` to implement `ValidGrouping<columns::id>`
    = note: required for `SelectStatement<FromClause<table>, SelectClause<Box<...>>, ..., ..., ..., ..., ...>` to implement `Query`
    = note: required for `SelectStatement<FromClause<table>, SelectClause<Box<...>>, ..., ..., ..., ..., ...>` to implement `LoadQuery<'_, _, i32>`

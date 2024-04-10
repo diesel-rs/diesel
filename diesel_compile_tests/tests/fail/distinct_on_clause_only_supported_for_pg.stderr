@@ -6,7 +6,8 @@ error[E0277]: the trait bound `DistinctOnClause<columns::name>: QueryFragment<Sq
    |                             |
    |                             required by a bound introduced by this call
    |
-   = help: the trait `QueryFragment<Pg>` is implemented for `DistinctOnClause<T>`
+   = help: the trait `QueryFragment<Pg>` is implemented for `DistinctOnClause<columns::name>`
+   = help: for that trait implementation, expected `Pg`, found `Sqlite`
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<name>>` to implement `QueryFragment<Sqlite, AnsiSqlSelectStatement>`
    = note: 1 redundant requirement hidden
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<name>>` to implement `QueryFragment<Sqlite>`
@@ -28,7 +29,8 @@ error[E0277]: the trait bound `DistinctOnClause<columns::name>: QueryFragment<My
    |                             |
    |                             required by a bound introduced by this call
    |
-   = help: the trait `QueryFragment<Pg>` is implemented for `DistinctOnClause<T>`
+   = help: the trait `QueryFragment<Pg>` is implemented for `DistinctOnClause<columns::name>`
+   = help: for that trait implementation, expected `Pg`, found `Mysql`
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<name>>` to implement `QueryFragment<Mysql, AnsiSqlSelectStatement>`
    = note: 1 redundant requirement hidden
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<name>>` to implement `QueryFragment<Mysql>`

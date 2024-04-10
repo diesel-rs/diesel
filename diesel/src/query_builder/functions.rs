@@ -603,3 +603,8 @@ pub fn replace_into<T: Table>(target: T) -> IncompleteReplaceStatement<T> {
 pub fn sql_query<T: Into<String>>(query: T) -> SqlQuery {
     SqlQuery::from_sql(query.into())
 }
+
+#[cfg(feature = "postgres_backend")]
+pub use crate::pg::query_builder::copy::copy_from::copy_from;
+#[cfg(feature = "postgres_backend")]
+pub use crate::pg::query_builder::copy::copy_to::copy_to;

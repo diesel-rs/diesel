@@ -44,7 +44,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:39:10
    |
 39 |         .into_boxed::<Pg>();
-   |          ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
+   |          ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>`
    |
    = help: the following other types implement trait `BoxedDsl<'a, DB>`:
              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -96,7 +96,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:51:10
    |
 51 |         .into_boxed::<Pg>();
-   |          ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>`
+   |          ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>`
    |
    = help: the following other types implement trait `BoxedDsl<'a, DB>`:
              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>

@@ -31,7 +31,7 @@ members = [
 ]
 
 [workspace.package]
-rust-version = "1.70.0"
+rust-version = "1.75.0"
 
 # Config for 'cargo dist'
 [workspace.metadata.dist]

@@ -2,7 +2,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/boxed_queries_and_group_by.rs:55:40
    |
 55 |     users::table.group_by(users::name).into_boxed();
-   |                                        ^^^^^^^^^^ the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>`
+   |                                        ^^^^^^^^^^ the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ...>`
    |
    = help: the following other types implement trait `BoxedDsl<'a, DB>`:
              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -30,7 +30,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/boxed_queries_and_group_by.rs:60:10
    |
 60 |         .into_boxed();
-   |          ^^^^^^^^^^ the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>`
+   |          ^^^^^^^^^^ the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<FromClause<table>, SelectClause<id>, NoDistinctClause, NoWhereClause, NoOrderClause, ..., ...>`
    |
    = help: the following other types implement trait `BoxedDsl<'a, DB>`:
              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
