@@ -4,9 +4,12 @@
 extern crate time;
 
 use self::time::{
-    error::ComponentRange, format_description::FormatItem, macros::format_description,
-    Date as NaiveDate, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime, UtcOffset,
+    error::ComponentRange, macros::format_description, Date as NaiveDate, OffsetDateTime,
+    PrimitiveDateTime, Time as NaiveTime, UtcOffset,
 };
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
+use self::time::format_description::FormatItem;
 
 use crate::backend::Backend;
 use crate::deserialize::{self, FromSql};
@@ -21,13 +24,23 @@ use crate::sqlite::Sqlite;
 /// since there is no format option to forgo the dot.
 /// We always print as many subsecond as his given to us,
 /// this means the subsecond part can be between 1 and 9 digits.
+///
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
 
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const ENCODE_TIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] =
     format_description!("[hour]:[minute]:[second]");
+
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const ENCODE_TIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
     format_description!("[hour]:[minute]:[second].[subsecond]");
 
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const TIME_FORMATS: [&[FormatItem<'_>]; 9] = [
     // Most likely formats
     format_description!("[hour]:[minute]:[second].[subsecond]"),
@@ -44,17 +57,29 @@ const TIME_FORMATS: [&[FormatItem<'_>]; 9] = [
     ),
 ];
 
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const ENCODE_PRIMITIVE_DATETIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] =
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
+
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const ENCODE_PRIMITIVE_DATETIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]");
 
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const ENCODE_DATETIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] = format_description!(
     "[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"
 );
+
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const ENCODE_DATETIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]");
 
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const PRIMITIVE_DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
     // Most likely formats
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]"),
@@ -78,6 +103,8 @@ const PRIMITIVE_DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
 ];
 
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const DATETIME_FORMATS: [&[FormatItem<'_>]; 12] = [
     // Most likely formats
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
