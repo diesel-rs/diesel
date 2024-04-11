@@ -4,6 +4,7 @@ use crate::backend::Backend;
 use crate::deserialize;
 use deserialize::FromSql;
 use std::ops::Range;
+use std::sync::Arc;
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
@@ -157,7 +158,7 @@ pub trait IntoOwnedRow<'a, DB: Backend>: Row<'a, DB> {
     type OwnedRow: Row<'a, DB> + Send + 'static;
 
     /// Turn the row into its owned version
-    fn into_owned(self) -> Self::OwnedRow;
+    fn into_owned(self, column_name_cache: &mut Option<Arc<[Option<String>]>>) -> Self::OwnedRow;
 }
 
 // These traits are not part of the public API
