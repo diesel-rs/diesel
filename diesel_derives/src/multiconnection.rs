@@ -1189,6 +1189,35 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
     ])
     .map(|t| generate_queryfragment_impls(t, &query_fragment_bounds));
 
+    let insert_values_impl_variants = connection_types.iter().map(|c| {
+        let ident = c.name;
+        let lower_ident = syn::Ident::new(&ident.to_string().to_lowercase(), c.name.span());
+        let ty = c.ty;
+        quote::quote! {
+            super::backend::MultiBackend::#ident(_) => {
+                <Self as diesel::insertable::InsertValues<Col::Table, <#ty as diesel::connection::Connection>::Backend>>::column_names(
+                    &self,
+                    out.cast_database(
+                        super::bind_collector::MultiBindCollector::#lower_ident,
+                        super::query_builder::MultiQueryBuilder::#lower_ident,
+                        super::backend::MultiBackend::#lower_ident,
+                        |l| {
+                            <#ty as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(l)
+                                .expect("It's possible to downcast the metadata lookup type to the correct type")
+                        },
+                    ),
+                )
+            }
+        }
+    });
+
+    let insert_values_backend_bounds = connection_types.iter().map(|c| {
+        let ty = c.ty;
+        quote::quote! {
+            diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<Col, Expr>>: diesel::insertable::InsertValues<Col::Table, <#ty as diesel::connection::Connection>::Backend>
+        }
+    });
+
     quote::quote! {
         pub enum MultiQueryBuilder {
             #(#variants,)*
@@ -1375,6 +1404,27 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
                 }
             }
         }
+
+        impl<Col, Expr> diesel::insertable::InsertValues<Col::Table, super::multi_connection_impl::backend::MultiBackend>
+            for diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<Col, Expr>>
+        where
+            Col: diesel::prelude::Column,
+            Expr: diesel::prelude::Expression<SqlType = Col::SqlType>,
+            Expr: diesel::prelude::AppearsOnTable<diesel::internal::derives::multiconnection::NoFromClause>,
+            Self: diesel::query_builder::QueryFragment<super::multi_connection_impl::backend::MultiBackend>,
+            #(#insert_values_backend_bounds,)*
+        {
+            fn column_names(
+                &self,
+                mut out: diesel::query_builder::AstPass<'_, '_, super::multi_connection_impl::backend::MultiBackend>
+            ) -> QueryResult<()> {
+                use diesel::internal::derives::multiconnection::AstPassHelper;
+
+                match out.backend() {
+                    #(#insert_values_impl_variants,)*
+                }
+            }
+        }
     }
 }
 
@@ -1424,7 +1474,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         let ident = c.name;
         let lower_ident = syn::Ident::new(&ident.to_string().to_lowercase(), ident.span());
         quote::quote! {
-            fn #lower_ident(&self) -> &<#ty as diesel::Connection>::Backend {
+            pub(super) fn #lower_ident(&self) -> &<#ty as diesel::Connection>::Backend {
                 match self {
                     Self::#ident(b) => b,
                     _ => unreachable!(),
