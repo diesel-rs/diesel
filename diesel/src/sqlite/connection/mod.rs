@@ -2,6 +2,7 @@ extern crate libsqlite3_sys as ffi;
 
 mod bind_collector;
 mod functions;
+mod owned_row;
 mod raw;
 mod row;
 mod serialized_database;
@@ -28,7 +29,7 @@ use crate::expression::QueryMetadata;
 use crate::query_builder::*;
 use crate::result::*;
 use crate::serialize::ToSql;
-use crate::sql_types::HasSqlType;
+use crate::sql_types::{HasSqlType, TypeMetadata};
 use crate::sqlite::Sqlite;
 
 /// Connections for the SQLite backend. Unlike other backends, SQLite supported
@@ -123,6 +124,9 @@ pub struct SqliteConnection {
     statement_cache: StatementCache<Sqlite, Statement>,
     raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
+    // this exists for the sole purpose of implementing `WithMetadataLookup` trait
+    // and avoiding static mut which will be deprecated in 2024 edition
+    metadata_lookup: (),
     instrumentation: Option<Box<dyn Instrumentation>>,
 }
 
@@ -217,6 +221,12 @@ impl LoadConnection<DefaultLoadingMode> for SqliteConnection {
         let statement = self.prepared_query(source)?;
 
         Ok(StatementIterator::new(statement))
+    }
+}
+
+impl WithMetadataLookup for SqliteConnection {
+    fn metadata_lookup(&mut self) -> &mut <Sqlite as TypeMetadata>::MetadataLookup {
+        &mut self.metadata_lookup
     }
 }
 
@@ -529,6 +539,7 @@ impl SqliteConnection {
             statement_cache: StatementCache::new(),
             raw_connection,
             transaction_state: AnsiTransactionManager::default(),
+            metadata_lookup: (),
             instrumentation: None,
         };
         conn.register_diesel_sql_functions()

@@ -1,10 +1,11 @@
 use std::cell::{Ref, RefCell};
 use std::rc::Rc;
 
+use super::owned_row::OwnedSqliteRow;
 use super::sqlite_value::{OwnedSqliteValue, SqliteValue};
 use super::stmt::StatementUse;
 use crate::backend::Backend;
-use crate::row::{Field, PartialRow, Row, RowIndex, RowSealed};
+use crate::row::{Field, IntoOwnedRow, PartialRow, Row, RowIndex, RowSealed};
 use crate::sqlite::Sqlite;
 
 #[allow(missing_debug_implementations)]
@@ -19,6 +20,14 @@ pub(super) enum PrivateSqliteRow<'stmt, 'query> {
         values: Vec<Option<OwnedSqliteValue>>,
         column_names: Rc<[Option<String>]>,
     },
+}
+
+impl<'stmt> IntoOwnedRow<'stmt, Sqlite> for SqliteRow<'stmt, '_> {
+    type OwnedRow = OwnedSqliteRow;
+
+    fn into_owned(self) -> Self::OwnedRow {
+        self.inner.borrow().moveable()
+    }
 }
 
 impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
@@ -56,6 +65,37 @@ impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
                     .collect(),
                 column_names: column_names.clone(),
             },
+        }
+    }
+
+    pub(super) fn moveable(&self) -> OwnedSqliteRow {
+        match self {
+            PrivateSqliteRow::Direct(stmt) => {
+                let column_names: Box<[Option<String>]> = (0..stmt.column_count())
+                    .map(|idx| stmt.field_name(idx).map(|s| s.to_owned()))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice();
+                OwnedSqliteRow::new(
+                    (0..stmt.column_count())
+                        .map(|idx| stmt.copy_value(idx))
+                        .collect(),
+                    column_names,
+                )
+            }
+            PrivateSqliteRow::Duplicated {
+                values,
+                column_names,
+            } => OwnedSqliteRow::new(
+                values
+                    .iter()
+                    .map(|v| v.as_ref().map(|v| v.duplicate()))
+                    .collect(),
+                (*column_names)
+                    .iter()
+                    .map(|s| s.to_owned())
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
         }
     }
 }

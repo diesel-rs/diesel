@@ -11,6 +11,7 @@ mod clause_macro;
 
 pub(crate) mod ast_pass;
 pub mod bind_collector;
+mod collected_query;
 pub(crate) mod combination_clause;
 mod debug_query;
 mod delete_statement;
@@ -37,7 +38,9 @@ pub(crate) mod where_clause;
 #[doc(inline)]
 pub use self::ast_pass::AstPass;
 #[doc(inline)]
-pub use self::bind_collector::BindCollector;
+pub use self::bind_collector::{BindCollector, MoveableBindCollector};
+#[doc(inline)]
+pub use self::collected_query::CollectedQuery;
 #[doc(inline)]
 pub use self::debug_query::DebugQuery;
 #[doc(inline)]
