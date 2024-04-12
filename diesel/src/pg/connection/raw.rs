@@ -146,8 +146,8 @@ impl RawConnection {
             let res = unsafe {
                 pq_sys::PQputCopyData(
                     self.internal_connection.as_ptr(),
-                    c.as_ptr() as *const i8,
-                    c.len() as i32,
+                    c.as_ptr() as *const libc::c_char,
+                    c.len() as libc::c_int,
                 )
             };
             if res != 1 {
