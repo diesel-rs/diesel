@@ -20,7 +20,7 @@ use std::marker::PhantomData;
 
 pub(crate) use self::private::InsertAutoTypeHelper;
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "sqlite_backend")]
 mod insert_with_default_for_sqlite;
 
 /// The structure returned by [`insert_into`].
@@ -493,7 +493,7 @@ mod private {
     #[derive(Debug, Copy, Clone, QueryId)]
     pub struct InsertOrIgnore;
 
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "sqlite_backend")]
     impl QueryFragment<crate::sqlite::Sqlite> for InsertOrIgnore {
         fn walk_ast<'b>(
             &'b self,
@@ -518,7 +518,7 @@ mod private {
     #[derive(Debug, Copy, Clone, QueryId)]
     pub struct Replace;
 
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "sqlite_backend")]
     impl QueryFragment<crate::sqlite::Sqlite> for Replace {
         fn walk_ast<'b>(
             &'b self,

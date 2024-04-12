@@ -4,7 +4,14 @@
 //! However, if you are writing code specifically to extend Diesel on
 //! SQLite, you may need to work with this module directly.
 
+mod bind_collector;
+#[cfg(feature = "sqlite")]
+mod sqlite_value;
+#[cfg(not(feature = "sqlite"))]
+mod sqlite_value_no_ffi;
+
 pub(crate) mod backend;
+#[cfg(feature = "sqlite")]
 mod connection;
 pub(crate) mod expression;
 
@@ -13,10 +20,21 @@ pub mod query_builder;
 mod types;
 
 pub use self::backend::{Sqlite, SqliteType};
+#[cfg(feature = "sqlite")]
 pub use self::connection::SerializedDatabase;
+#[cfg(feature = "sqlite")]
 pub use self::connection::SqliteBindValue;
+#[cfg(feature = "sqlite")]
 pub use self::connection::SqliteConnection;
-pub use self::connection::SqliteValue;
+
+#[cfg(feature = "sqlite")]
+pub use sqlite_value::SqliteValue;
+
+pub use bind_collector::SqliteBindCollector;
+
+#[cfg(not(feature = "sqlite"))]
+pub use sqlite_value_no_ffi::SqliteValue;
+
 pub use self::query_builder::SqliteQueryBuilder;
 
 /// Trait for the implementation of a SQLite aggregate function

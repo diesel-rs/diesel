@@ -1,5 +1,3 @@
-#![cfg(feature = "bigdecimal")]
-
 use bigdecimal::{BigDecimal, FromPrimitive};
 
 use crate::deserialize::{self, FromSql};

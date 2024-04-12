@@ -217,7 +217,7 @@ where
     }
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "sqlite_backend")]
 impl<Col, Expr> InsertValues<Col::Table, crate::sqlite::Sqlite>
     for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
@@ -233,7 +233,7 @@ where
     }
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "sqlite_backend")]
 impl<Col, Expr>
     QueryFragment<
         crate::sqlite::Sqlite,

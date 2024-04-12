@@ -179,6 +179,6 @@ pub use super::functions::helper_types::*;
 pub use crate::pg::expression::helper_types::*;
 
 #[doc(inline)]
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "sqlite_backend")]
 #[allow(unreachable_pub)]
 pub use crate::sqlite::expression::helper_types::*;

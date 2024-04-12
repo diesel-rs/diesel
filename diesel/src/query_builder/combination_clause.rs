@@ -274,7 +274,7 @@ mod mysql {
     impl SupportsCombinationClause<Union, All> for Mysql {}
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "sqlite_backend")]
 mod sqlite {
     use super::*;
     use crate::sqlite::Sqlite;

@@ -124,6 +124,7 @@ impl std::fmt::Display for InternalSqliteBindValue<'_> {
 }
 
 impl InternalSqliteBindValue<'_> {
+    #[cfg(sqlite)]
     #[allow(unsafe_code)] // ffi function calls
     pub(in crate::sqlite) fn result_of(self, ctx: &mut libsqlite3_sys::sqlite3_context) {
         use libsqlite3_sys as ffi;

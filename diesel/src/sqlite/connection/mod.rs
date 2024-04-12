@@ -1,18 +1,16 @@
 extern crate libsqlite3_sys as ffi;
 
-mod bind_collector;
 mod functions;
 mod raw;
 mod row;
 mod serialized_database;
-mod sqlite_value;
 mod statement_iterator;
 mod stmt;
 
-pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
-pub use self::bind_collector::SqliteBindValue;
+pub(in crate::sqlite) use super::bind_collector::SqliteBindCollector;
+pub use super::bind_collector::SqliteBindValue;
 pub use self::serialized_database::SerializedDatabase;
-pub use self::sqlite_value::SqliteValue;
+pub use super::sqlite_value::SqliteValue;
 
 use std::os::raw as libc;
 
@@ -115,7 +113,6 @@ use crate::sqlite::Sqlite;
 /// # }
 /// ```
 #[allow(missing_debug_implementations)]
-#[cfg(feature = "sqlite")]
 pub struct SqliteConnection {
     // statement_cache needs to be before raw_connection
     // otherwise we will get errors about open statements before closing the

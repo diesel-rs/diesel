@@ -300,7 +300,7 @@ pub mod row;
 pub mod mysql;
 #[cfg(feature = "postgres_backend")]
 pub mod pg;
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "sqlite_backend")]
 pub mod sqlite;
 
 mod type_impls;

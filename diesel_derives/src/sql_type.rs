@@ -43,7 +43,7 @@ fn sqlite_tokens(item: &DeriveInput, model: &Model) -> Option<TokenStream> {
         .as_ref()
         .map(|sqlite_type| Ident::new(&sqlite_type.name.value(), Span::call_site()))
         .and_then(|ty| {
-            if cfg!(not(feature = "sqlite")) {
+            if cfg!(not(feature = "sqlite_backend")) {
                 return None;
             }
 
