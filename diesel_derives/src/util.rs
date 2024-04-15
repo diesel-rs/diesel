@@ -117,8 +117,17 @@ pub fn is_option_ty(ty: &Type) -> bool {
     option_ty_arg(ty).is_some()
 }
 
-fn option_ty_arg(ty: &Type) -> Option<&Type> {
+fn option_ty_arg(mut ty: &Type) -> Option<&Type> {
     use syn::PathArguments::AngleBracketed;
+
+    // Check the inner equivalent type
+    loop {
+        match ty {
+            Type::Group(group) => ty = &group.elem,
+            Type::Paren(paren) => ty = &paren.elem,
+            _ => break,
+        }
+    }
 
     match *ty {
         Type::Path(ref ty) => {

@@ -525,3 +525,33 @@ fn option_fields_are_assigned_null_when_specified() {
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
 }
+
+#[test]
+#[allow(unused_parens)]
+fn option_fields_are_correctly_detected() {
+    diesel::table! {
+        test_table (id) {
+            id -> Int8,
+            test -> Text,
+        }
+    }
+
+    macro_rules! define {
+        ($field_ty:ty) => {
+            #[derive(diesel::AsChangeset)]
+            #[diesel(table_name = test_table)]
+            pub struct S1 {
+                pub test: (($field_ty)),
+            }
+
+            #[derive(diesel::AsChangeset)]
+            #[diesel(table_name = test_table)]
+            pub struct S2 {
+                pub test: (((Option<String>))),
+            }
+        };
+    }
+
+    // Causes a compile error if the field is not detected as `Option<T>`
+    define!((((Option<String>))));
+}
