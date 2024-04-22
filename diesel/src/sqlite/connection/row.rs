@@ -26,7 +26,9 @@ pub(super) enum PrivateSqliteRow<'stmt, 'query> {
 impl<'stmt> IntoOwnedRow<'stmt, Sqlite> for SqliteRow<'stmt, '_> {
     type OwnedRow = OwnedSqliteRow;
 
-    fn into_owned(self, column_name_cache: &mut Option<Arc<[Option<String>]>>) -> Self::OwnedRow {
+    type Cache = Option<Arc<[Option<String>]>>;
+
+    fn into_owned(self, column_name_cache: &mut Self::Cache) -> Self::OwnedRow {
         self.inner.borrow().moveable(column_name_cache)
     }
 }
