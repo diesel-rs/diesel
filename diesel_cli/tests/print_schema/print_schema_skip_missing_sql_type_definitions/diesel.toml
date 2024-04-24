@@ -1,0 +1,4 @@
+[print_schema]
+file = "src/schema.rs"
+generate_missing_sql_type_definitions = true
+skip_missing_sql_type_definitions = ["MyType2"]

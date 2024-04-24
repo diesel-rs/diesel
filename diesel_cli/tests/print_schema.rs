@@ -11,6 +11,11 @@ fn run_infer_schema_without_docs() {
 }
 
 #[test]
+fn run_skip_missing_sql_types_definitions() {
+    test_print_schema("print_schema_skip_missing_sql_type_definitions", vec![]);
+}
+
+#[test]
 fn run_infer_schema() {
     test_print_schema("print_schema_simple", vec!["--with-docs"]);
 }
