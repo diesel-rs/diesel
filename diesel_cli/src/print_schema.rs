@@ -185,28 +185,33 @@ pub fn output_schema(
                             Some(&c.ty)
                                 .filter(|ty| !diesel_provided_types.contains(ty.rust_name.as_str()))
                                 // Skip types that are that match the regexes in the configuration
-                                .filter(|ty| !config.skip_missing_sql_type_definitions.iter().any(|rx| rx.is_match(ty.rust_name.as_str())))
-                                    .map(|ty| match backend {
-                                        #[cfg(feature = "postgres")]
-                                        Backend::Pg => ty.clone(),
-                                        #[cfg(feature = "sqlite")]
-                                        Backend::Sqlite => ty.clone(),
-                                        #[cfg(feature = "mysql")]
-                                        Backend::Mysql => {
-                                            // For MySQL we generate custom types for unknown types that
-                                            // are dedicated to the column
-                                            use heck::ToUpperCamelCase;
+                                .filter(|ty| {
+                                    !config
+                                        .skip_missing_sql_type_definitions
+                                        .iter()
+                                        .any(|rx| rx.is_match(ty.rust_name.as_str()))
+                                })
+                                .map(|ty| match backend {
+                                    #[cfg(feature = "postgres")]
+                                    Backend::Pg => ty.clone(),
+                                    #[cfg(feature = "sqlite")]
+                                    Backend::Sqlite => ty.clone(),
+                                    #[cfg(feature = "mysql")]
+                                    Backend::Mysql => {
+                                        // For MySQL we generate custom types for unknown types that
+                                        // are dedicated to the column
+                                        use heck::ToUpperCamelCase;
 
-                                            ColumnType {
-                                                rust_name: format!(
-                                                    "{} {} {}",
-                                                    &t.name.rust_name, &c.rust_name, &ty.rust_name
-                                                )
-                                                    .to_upper_camel_case(),
-                                                ..ty.clone()
-                                            }
+                                        ColumnType {
+                                            rust_name: format!(
+                                                "{} {} {}",
+                                                &t.name.rust_name, &c.rust_name, &ty.rust_name
+                                            )
+                                            .to_upper_camel_case(),
+                                            ..ty.clone()
                                         }
-                                    })
+                                    }
+                                })
                         })
                         .collect::<Vec<Option<ColumnType>>>()
                 })
