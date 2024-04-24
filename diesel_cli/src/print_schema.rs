@@ -244,7 +244,7 @@ pub fn output_schema(
                 "{}",
                 CustomTypesForTablesForDisplay {
                     custom_types: custom_types_for_tables,
-                    tables: &definitions.tables,
+                    tables: &definitions.tables
                 }
             )?;
         }
@@ -459,7 +459,7 @@ impl<'a> Display for ModuleDefinition<'a> {
                     "{}",
                     CustomTypesForTablesForDisplay {
                         custom_types: custom_types_for_tables,
-                        tables: &self.1.tables,
+                        tables: &self.1.tables
                     }
                 )?;
             }
@@ -497,7 +497,7 @@ impl<'a> Display for TableDefinitions<'a> {
                     custom_type_overrides: self
                         .custom_types_for_tables
                         .as_ref()
-                        .map(|cts| cts.types_overrides_sorted[table_idx].as_slice()),
+                        .map(|cts| cts.types_overrides_sorted[table_idx].as_slice())
                 }
             )?;
         }
