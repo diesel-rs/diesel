@@ -415,6 +415,8 @@ pub struct PrintSchema {
     #[serde(default)]
     pub generate_missing_sql_type_definitions: Option<bool>,
     #[serde(default)]
+    pub skip_missing_sql_type_definitions: Vec<Regex>,
+    #[serde(default)]
     pub custom_type_derives: Option<Vec<String>>,
     #[serde(default)]
     pub sqlite_integer_primary_key_is_bigint: Option<bool>,

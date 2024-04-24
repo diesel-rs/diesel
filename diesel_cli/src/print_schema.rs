@@ -184,27 +184,29 @@ pub fn output_schema(
                         .map(|c| {
                             Some(&c.ty)
                                 .filter(|ty| !diesel_provided_types.contains(ty.rust_name.as_str()))
-                                .map(|ty| match backend {
-                                    #[cfg(feature = "postgres")]
-                                    Backend::Pg => ty.clone(),
-                                    #[cfg(feature = "sqlite")]
-                                    Backend::Sqlite => ty.clone(),
-                                    #[cfg(feature = "mysql")]
-                                    Backend::Mysql => {
-                                        // For MySQL we generate custom types for unknown types that
-                                        // are dedicated to the column
-                                        use heck::ToUpperCamelCase;
+                                // Skip types that are that match the regexes in the configuration
+                                .filter(|ty| !config.skip_missing_sql_type_definitions.iter().any(|rx| rx.is_match(ty.rust_name.as_str())))
+                                    .map(|ty| match backend {
+                                        #[cfg(feature = "postgres")]
+                                        Backend::Pg => ty.clone(),
+                                        #[cfg(feature = "sqlite")]
+                                        Backend::Sqlite => ty.clone(),
+                                        #[cfg(feature = "mysql")]
+                                        Backend::Mysql => {
+                                            // For MySQL we generate custom types for unknown types that
+                                            // are dedicated to the column
+                                            use heck::ToUpperCamelCase;
 
-                                        ColumnType {
-                                            rust_name: format!(
-                                                "{} {} {}",
-                                                &t.name.rust_name, &c.rust_name, &ty.rust_name
-                                            )
-                                            .to_upper_camel_case(),
-                                            ..ty.clone()
+                                            ColumnType {
+                                                rust_name: format!(
+                                                    "{} {} {}",
+                                                    &t.name.rust_name, &c.rust_name, &ty.rust_name
+                                                )
+                                                    .to_upper_camel_case(),
+                                                ..ty.clone()
+                                            }
                                         }
-                                    }
-                                })
+                                    })
                         })
                         .collect::<Vec<Option<ColumnType>>>()
                 })
@@ -242,7 +244,7 @@ pub fn output_schema(
                 "{}",
                 CustomTypesForTablesForDisplay {
                     custom_types: custom_types_for_tables,
-                    tables: &definitions.tables
+                    tables: &definitions.tables,
                 }
             )?;
         }
@@ -457,7 +459,7 @@ impl<'a> Display for ModuleDefinition<'a> {
                     "{}",
                     CustomTypesForTablesForDisplay {
                         custom_types: custom_types_for_tables,
-                        tables: &self.1.tables
+                        tables: &self.1.tables,
                     }
                 )?;
             }
@@ -495,7 +497,7 @@ impl<'a> Display for TableDefinitions<'a> {
                     custom_type_overrides: self
                         .custom_types_for_tables
                         .as_ref()
-                        .map(|cts| cts.types_overrides_sorted[table_idx].as_slice())
+                        .map(|cts| cts.types_overrides_sorted[table_idx].as_slice()),
                 }
             )?;
         }
