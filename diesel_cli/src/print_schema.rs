@@ -175,8 +175,6 @@ pub fn output_schema(
             Backend::Mysql => mysql_diesel_types(),
         };
 
-        dbg!(config);
-
         Some(
             table_data
                 .iter()
