@@ -175,6 +175,8 @@ pub fn output_schema(
             Backend::Mysql => mysql_diesel_types(),
         };
 
+        dbg!(config);
+
         Some(
             table_data
                 .iter()
@@ -187,7 +189,7 @@ pub fn output_schema(
                                 // Skip types that are that match the regexes in the configuration
                                 .filter(|ty| {
                                     !config
-                                        .skip_missing_sql_type_definitions
+                                        .except_custom_type_definitions
                                         .iter()
                                         .any(|rx| rx.is_match(ty.rust_name.as_str()))
                                 })

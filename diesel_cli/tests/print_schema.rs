@@ -11,8 +11,8 @@ fn run_infer_schema_without_docs() {
 }
 
 #[test]
-fn run_skip_missing_sql_types_definitions() {
-    test_print_schema("print_schema_skip_missing_sql_type_definitions", vec![]);
+fn run_except_custom_type_definitions() {
+    test_print_schema("print_schema_except_custom_type_definitions", vec!["--except-custom-type-definitions=MyType2"]);
 }
 
 #[test]
