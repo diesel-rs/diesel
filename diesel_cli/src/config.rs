@@ -183,7 +183,7 @@ impl Config {
                 let except_custom_type_definitions_with_indices =
                     get_values_with_indices::<Vec<Regex>>(
                         matches,
-                        "except_custom_type_definitions",
+                        "except-custom-type-definitions",
                     )?;
 
                 for (key, boundary) in selected_schema_keys.values().cloned().zip(
