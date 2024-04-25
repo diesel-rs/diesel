@@ -1,11 +1,11 @@
 ---
 source: diesel_cli/tests/print_schema.rs
-description: "Test: print_schema_custom_types_check_default_derives"
+description: "Test: print_schema_except_custom_type_definitions"
 ---
 // @generated automatically by Diesel CLI.
 
 pub mod sql_types {
-    #[derive(diesel::sql_types::SqlType)]
+    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "my_type"))]
     pub struct MyType;
 }

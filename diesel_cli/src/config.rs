@@ -180,6 +180,12 @@ impl Config {
                         matches,
                         "sqlite-integer-primary-key-is-bigint",
                     )?;
+                let except_custom_type_definitions_with_indices =
+                    get_values_with_indices::<Vec<Regex>>(
+                        matches,
+                        "except_custom_type_definitions",
+                    )?;
+
                 for (key, boundary) in selected_schema_keys.values().cloned().zip(
                     selected_schema_keys
                         .keys()
@@ -239,7 +245,7 @@ impl Config {
                             _ => {
                                 return Err(crate::errors::Error::UnsupportedFeature(format!(
                                     "Invalid column sorting mode: {sorting}"
-                                )))
+                                )));
                             }
                         }
                     }
@@ -270,6 +276,12 @@ impl Config {
                         .unwrap_or(false)
                     {
                         print_schema.generate_missing_sql_type_definitions = Some(false)
+                    }
+
+                    if let Some(except_rules) = &except_custom_type_definitions_with_indices {
+                        if let Some(rules) = except_rules.range(boundary).nth(0) {
+                            print_schema.except_custom_type_definitions = rules.1.clone();
+                        }
                     }
 
                     let custom_type_derives = custom_type_derives_with_indices
@@ -317,7 +329,7 @@ impl Config {
                     _ => {
                         return Err(crate::errors::Error::UnsupportedFeature(format!(
                             "Invalid column sorting mode: {sorting}"
-                        )))
+                        )));
                     }
                 }
             }
@@ -329,6 +341,14 @@ impl Config {
             if let Some(types) = matches.get_many("import-types") {
                 let types = types.cloned().collect();
                 config.import_types = Some(types);
+            }
+
+            if let Some(except_rules) = matches.get_many("except-custom-type-definitions") {
+                let regexes: Vec<String> = except_rules.cloned().collect();
+                config.except_custom_type_definitions = regexes
+                    .into_iter()
+                    .map(|x| regex::Regex::new(&x).map(Into::into))
+                    .collect::<Result<Vec<Regex>, _>>()?;
             }
 
             if matches.get_flag("generate-custom-type-definitions") {
@@ -570,7 +590,7 @@ impl<'de> Deserialize<'de> for Filtering {
                             return Err(de::Error::unknown_field(
                                 &key,
                                 &["only_tables", "except_tables"],
-                            ))
+                            ));
                         }
                     }
                 }

@@ -308,9 +308,11 @@ pub fn build_cli() -> Command {
                 .help("Generate SQL type definitions for types not provided by diesel"),
         )
         .arg(
-            Arg::new("except-custom-type-definitions").action(ArgAction::Append)
+            Arg::new("except-custom-type-definitions")
+                .action(ArgAction::Append)
                 .long("except-custom-type-definitions")
                 .num_args(1..)
+                .action(ArgAction::Append)
                 .help("A list of regexes to filter the custom types definitions generated")
         )
         .arg(
