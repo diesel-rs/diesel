@@ -12,7 +12,10 @@ fn run_infer_schema_without_docs() {
 
 #[test]
 fn run_except_custom_type_definitions() {
-    test_print_schema("print_schema_except_custom_type_definitions", vec!["--except-custom-type-definitions=MyType2"]);
+    test_print_schema(
+        "print_schema_except_custom_type_definitions",
+        vec!["--except-custom-type-definitions=MyType2"],
+    );
 }
 
 #[test]
