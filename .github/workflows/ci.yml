@@ -25,9 +25,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust: ["stable", "beta", "nightly-2024-04-05"]
+        rust: ["stable", "beta", "nightly"]
         backend: ["postgres", "sqlite", "mysql"]
-        os: [ubuntu-latest, macos-latest, macos-14, windows-2019]
+        os: [ubuntu-latest, macos-13, macos-14, windows-2019]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
@@ -53,7 +53,7 @@ jobs:
 
       - name: Set environment variables
         shell: bash
-        if: matrix.rust != 'nightly-2024-04-05'
+        if: matrix.rust != 'nightly'
         run: |
           echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
           echo "RUSTDOCFLAGS=-D warnings" >> $GITHUB_ENV
@@ -118,18 +118,19 @@ jobs:
           echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root:root@localhost/diesel_unit_test" >> $GITHUB_ENV
 
       - name: Install postgres (MacOS)
-        if: matrix.os == 'macos-latest' && matrix.backend == 'postgres'
+        if: matrix.os == 'macos-13' && matrix.backend == 'postgres'
         run: |
-          initdb -D /usr/local/var/postgres
-          pg_ctl -D /usr/local/var/postgres start
+          brew install postgresql@14
+          brew services start postgresql@14
           sleep 3
           createuser -s postgres
           echo "PG_DATABASE_URL=postgres://postgres@localhost/" >> $GITHUB_ENV
           echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres@localhost/diesel_example" >> $GITHUB_ENV
+
       - name: Install postgres (MacOS M1)
         if: matrix.os == 'macos-14' && matrix.backend == 'postgres'
         run: |
-          brew install postgresql
+          brew install postgresql@14
           brew services start postgresql@14
           sleep 3
           createuser -s postgres
@@ -143,7 +144,7 @@ jobs:
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS)
-        if: matrix.os == 'macos-latest' && matrix.backend == 'mysql'
+        if: matrix.os == 'macos-13' && matrix.backend == 'mysql'
         run: |
           brew install mariadb@10.5
           /usr/local/opt/mariadb@10.5/bin/mysql_install_db
@@ -422,7 +423,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2024-04-05
+          toolchain: nightly
           components: "rust-src"
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@v2
@@ -430,20 +431,20 @@ jobs:
           key: sqlite_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Test diesel-cli
-        run: cargo +nightly-2024-04-05 test --manifest-path diesel_cli/Cargo.toml --no-default-features --features "sqlite-bundled"
+        run: cargo +nightly test --manifest-path diesel_cli/Cargo.toml --no-default-features --features "sqlite-bundled"
 
       - name: Run diesel_tests with ASAN enabled
         env:
           RUSTFLAGS: -Zsanitizer=address
           ASAN_OPTIONS: detect_stack_use_after_return=1
-        run: cargo +nightly-2024-04-05 -Z build-std test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "sqlite libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
+        run: cargo +nightly -Z build-std test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "sqlite libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
 
       - name: Run diesel tests with ASAN enabled
         env:
           RUSTDOCFLAGS: -Zsanitizer=address
           RUSTFLAGS: -Zsanitizer=address
           ASAN_OPTIONS: detect_stack_use_after_return=1
-        run: cargo +nightly-2024-04-05 -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "sqlite extras libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
+        run: cargo +nightly -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "sqlite extras libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
   postgres_bundled:
     name: Check postgres bundled + Postgres with asan
     runs-on: ubuntu-latest
@@ -451,7 +452,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2024-04-05
+          toolchain: nightly
           components: "rust-src"
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@v2
@@ -469,20 +470,20 @@ jobs:
           echo $PG_DATABASE_URL
 
       - name: Test diesel-cli
-        run: cargo +nightly-2024-04-05 test --manifest-path diesel_cli/Cargo.toml --no-default-features --features "postgres-bundled"
+        run: cargo +nightly test --manifest-path diesel_cli/Cargo.toml --no-default-features --features "postgres-bundled"
 
       - name: Run diesel_tests with ASAN enabled
         env:
           RUSTFLAGS: -Zsanitizer=address
           ASAN_OPTIONS: detect_stack_use_after_return=1
-        run: cargo +nightly-2024-04-05 -Z build-std test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "postgres pq-sys pq-sys/bundled pq-src/with-asan" --target x86_64-unknown-linux-gnu
+        run: cargo +nightly -Z build-std test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "postgres pq-sys pq-sys/bundled pq-src/with-asan" --target x86_64-unknown-linux-gnu
 
       - name: Run diesel tests with ASAN enabled
         env:
           RUSTDOCFLAGS: -Zsanitizer=address
           RUSTFLAGS: -Zsanitizer=address
           ASAN_OPTIONS: detect_stack_use_after_return=1
-        run: cargo +nightly-2024-04-05 -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "postgres pq-sys pq-sys/bundled pq-src/with-asan" --target x86_64-unknown-linux-gnu
+        run: cargo +nightly -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "postgres pq-sys pq-sys/bundled pq-src/with-asan" --target x86_64-unknown-linux-gnu
 
   minimal_rust_version:
     name: Check Minimal supported rust version (1.75.0)
