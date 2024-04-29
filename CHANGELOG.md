@@ -12,7 +12,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
-d* Support `[print_schema] exclude_custom_type_definitions=["Vector"]`. If a `custom type` matches one element on the list it's skipped.
+* Support `[print_schema] exclude_custom_type_definitions=["Vector"]`. If a `custom type` matches one element on the list it's skipped.
 * Added automatic usage of all sqlite `rowid` aliases when no explicit primary key is defined for `print-schema`
 * Added a `#[dsl::auto_type]` attribute macro, allowing to infer type of query fragment functions
 * Added the same type inference on `Selectable` derives, which allows skipping specifying `select_expression_type` most of the time, in turn enabling most queries to be written using just a `Selectable` derive.
