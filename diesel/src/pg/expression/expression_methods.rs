@@ -2408,7 +2408,7 @@ pub(in crate::pg) mod private {
     /// this trait.
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Array<_>` nor `diesel::sql_types::Nullable<Array<_>>`",
-        note = "Try to provide an expression that produces one of the expected sql types"
+        note = "try to provide an expression that produces one of the expected sql types"
     )]
     pub trait ArrayOrNullableArray {}
 
@@ -2418,7 +2418,7 @@ pub(in crate::pg) mod private {
     /// Marker trait used to implement `PgNetExpressionMethods` on the appropriate types.
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Inet`, `diesel::sql_types::Cidr`, `diesel::sql_types::Nullable<Inet>` nor `diesel::sql_types::Nullable<Cidr>",
-        note = "Try to provide an expression that produces one of the expected sql types"
+        note = "try to provide an expression that produces one of the expected sql types"
     )]
     pub trait InetOrCidr {}
 
@@ -2432,7 +2432,7 @@ pub(in crate::pg) mod private {
     /// this trait.
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Text` nor `diesel::sql_types::Nullable<Text>`",
-        note = "Try to provide an expression that produces one of the expected sql types"
+        note = "try to provide an expression that produces one of the expected sql types"
     )]
     pub trait TextOrNullableText {}
 
@@ -2457,7 +2457,7 @@ pub(in crate::pg) mod private {
     /// this trait.
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Nullable<Range<_>>`",
-        note = "Try to provide an expression that produces one of the expected sql types"
+        note = "try to provide an expression that produces one of the expected sql types"
     )]
     pub trait RangeOrNullableRange {}
 
@@ -2467,7 +2467,7 @@ pub(in crate::pg) mod private {
     /// Marker trait used to implement `PgJsonbExpressionMethods` on the appropriate types.
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Jsonb` nor `diesel::sql_types::Nullable<Jsonb>`",
-        note = "Try to provide an expression that produces one of the expected sql types"
+        note = "try to provide an expression that produces one of the expected sql types"
     )]
     pub trait JsonbOrNullableJsonb {}
 
@@ -2545,7 +2545,7 @@ pub(in crate::pg) mod private {
 
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Text`, `diesel::sql_types::Integer` nor `diesel::sql_types::Array<Text>`",
-        note = "Try to provide an expression that produces one of the expected sql types"
+        note = "try to provide an expression that produces one of the expected sql types"
     )]
     pub trait TextArrayOrTextOrInteger {}
 
@@ -2556,7 +2556,7 @@ pub(in crate::pg) mod private {
     /// Marker trait used to implement `PgAnyJsonExpressionMethods` on the appropriate types.
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Json`, `diesel::sql_types::Jsonb`, `diesel::sql_types::Nullable<Json>` nor `diesel::sql_types::Nullable<Jsonb>`",
-        note = "Try to provide an expression that produces one of the expected sql types"
+        note = "try to provide an expression that produces one of the expected sql types"
     )]
     pub trait JsonOrNullableJsonOrJsonbOrNullableJsonb {}
     impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Json {}
@@ -2608,7 +2608,7 @@ pub(in crate::pg) mod private {
 
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Text` nor `diesel::sql_types::Integer`",
-        note = "Try to provide an expression that produces one of the expected sql types"
+        note = "try to provide an expression that produces one of the expected sql types"
     )]
     pub trait TextOrInteger {}
     impl TextOrInteger for Text {}
@@ -2616,7 +2616,7 @@ pub(in crate::pg) mod private {
 
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Binary` nor `diesel::sql_types::Nullable<Binary>`",
-        note = "Try to provide an expression that produces one of the expected sql types"
+        note = "try to provide an expression that produces one of the expected sql types"
     )]
     pub trait BinaryOrNullableBinary {}
 

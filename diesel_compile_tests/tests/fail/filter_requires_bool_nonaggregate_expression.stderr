@@ -6,7 +6,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Bool` nor
    |                          |
    |                          required by a bound introduced by this call
    |
-   = note: Try to provide an expression that produces one of the expected sql types
+   = note: try to provide an expression that produces one of the expected sql types
    = help: the following other types implement trait `BoolOrNullableBool`:
              Bool
              Nullable<Bool>
