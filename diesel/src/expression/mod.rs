@@ -65,7 +65,7 @@ pub(crate) mod dsl {
     #[doc(inline)]
     pub use super::functions::date_and_time::*;
     #[doc(inline)]
-    pub use super::helper_types::{case_when, Otherwise, When};
+    pub use super::helper_types::{case_when, IntoSql, Otherwise, When};
     #[doc(inline)]
     pub use super::not::not;
     #[doc(inline)]

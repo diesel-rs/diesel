@@ -364,6 +364,14 @@ pub mod helper_types {
     pub type Select<Source, Selection> = <Source as SelectDsl<Selection>>::Output;
 
     /// Represents the return type of [`diesel::select(selection)`](crate::select)
+    #[allow(non_camel_case_types)] // required for `#[auto_type]`
+    pub type select<Selection> = crate::query_builder::SelectStatement<
+        crate::query_builder::NoFromClause,
+        SelectClause<Selection>,
+    >;
+
+    #[doc(hidden)]
+    #[deprecated(note = "Use `select` instead")]
     pub type BareSelect<Selection> = crate::query_builder::SelectStatement<
         crate::query_builder::NoFromClause,
         SelectClause<Selection>,
@@ -680,6 +688,11 @@ pub mod prelude {
     pub use crate::expression::{
         AppearsOnTable, BoxableExpression, Expression, IntoSql, Selectable, SelectableExpression,
     };
+    // If [`IntoSql`](crate::expression::helper_types::IntoSql) the type gets imported at the
+    // same time as IntoSql the trait (this one) gets imported via the prelude, then
+    // methods of the trait won't be resolved because the type may take priority over the trait.
+    // That issue can be avoided by also importing it anonymously:
+    pub use crate::expression::IntoSql as _;
 
     #[doc(inline)]
     pub use crate::expression::functions::define_sql_function;

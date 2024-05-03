@@ -2,6 +2,7 @@
 use diesel::dsl::*;
 use diesel::helper_types::*;
 use diesel::prelude::*;
+use diesel::sql_types;
 
 table! {
     users {
@@ -172,10 +173,11 @@ fn test_insert1() -> _ {
     insert_into(users::table).values(users::id.eq(42_i32))
 }
 
-/*
-#[auto_type]
+/*#[auto_type]
 fn test_insert2() -> _ {
-    users::table.insert_into(users::table).into_columns(users::all_columns)
+    users::table
+        .insert_into(users::table)
+        .into_columns(users::all_columns)
 }*/
 
 #[auto_type]
@@ -188,11 +190,10 @@ fn test_insert_or_replace() -> _ {
     replace_into(users::table).values(users::id.eq(42_i32))
 }
 
-/*
 #[auto_type]
 fn test_bare_select() -> _ {
-    select(1_i32.into_sql::<Integer>())
-}*/
+    select(1_i32.into_sql::<sql_types::Integer>())
+}
 
 #[cfg(feature = "postgres")]
 #[auto_type]
