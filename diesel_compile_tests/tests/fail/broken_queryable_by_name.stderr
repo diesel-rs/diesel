@@ -4,6 +4,7 @@ error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is 
 17 |     name: i32,
    |     ^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, Pg>` is not implemented for `i32`, which is required by `i32: FromSqlRow<diesel::sql_types::Text, Pg>`
    |
+   = note: double check your type mappings via the documentation of `diesel::sql_types::Text`
    = note: `diesel::sql_query` requires the loading target to column names for loading values.
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
    = help: the following other types implement trait `FromSql<A, DB>`:
@@ -14,13 +15,13 @@ error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is 
    = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Pg>`
    = help: see issue #48214
 
-error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types::Integer` as `*const str`
+error[E0277]: cannot deserialize a value of the database type `diesel::sql_types::Integer` as `*const str`
   --> tests/fail/broken_queryable_by_name.rs:16:5
    |
 16 |     id: String,
    |     ^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `*const str`, which is required by `std::string::String: FromSqlRow<diesel::sql_types::Integer, Pg>`
    |
-   = note: Double check your type mappings via the documentation of `diesel::sql_types::Integer`
+   = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`
    = help: the following other types implement trait `FromSql<A, DB>`:
              <*const str as FromSql<diesel::sql_types::Text, Mysql>>
              <*const str as FromSql<diesel::sql_types::Text, Pg>>
@@ -36,6 +37,7 @@ error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is 
 26 |     name: i32,
    |     ^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, Pg>` is not implemented for `i32`, which is required by `i32: FromSqlRow<diesel::sql_types::Text, Pg>`
    |
+   = note: double check your type mappings via the documentation of `diesel::sql_types::Text`
    = note: `diesel::sql_query` requires the loading target to column names for loading values.
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
    = help: the following other types implement trait `FromSql<A, DB>`:
@@ -46,13 +48,13 @@ error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is 
    = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Pg>`
    = help: see issue #48214
 
-error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types::Integer` as `*const str`
+error[E0277]: cannot deserialize a value of the database type `diesel::sql_types::Integer` as `*const str`
   --> tests/fail/broken_queryable_by_name.rs:24:5
    |
 24 |     id: String,
    |     ^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `*const str`, which is required by `std::string::String: FromSqlRow<diesel::sql_types::Integer, Pg>`
    |
-   = note: Double check your type mappings via the documentation of `diesel::sql_types::Integer`
+   = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`
    = help: the following other types implement trait `FromSql<A, DB>`:
              <*const str as FromSql<diesel::sql_types::Text, Mysql>>
              <*const str as FromSql<diesel::sql_types::Text, Pg>>
@@ -70,8 +72,9 @@ error[E0277]: the trait bound `Untyped: load_dsl::private::CompatibleType<User, 
    |                                    |
    |                                    required by a bound introduced by this call
    |
-   = note: This is a mismatch between what your query returns and what your type expects the query to return
-           Consider using `#[derive(Selectable)]` + `#[diesel(check_for_backend(_))]` on your struct `User` and
+   = note: this is a mismatch between what your query returns and what your type expects the query to return
+   = note: the fields in your struct need to match the fields returned by your query in count, order and type
+   = note: consider using `#[derive(Selectable)]` + `#[diesel(check_for_backend(_))]` on your struct `User` and
            in your query `.select(User::as_select())` to get a better error message
    = help: the trait `load_dsl::private::CompatibleType<U, DB>` is implemented for `Untyped`
    = note: required for `SqlQuery` to implement `LoadQuery<'_, _, User>`
@@ -92,6 +95,7 @@ error[E0277]: the trait bound `User: FromSqlRow<_, _>` is not satisfied
    |                                    |
    |                                    required by a bound introduced by this call
    |
+   = note: double check your type mappings via the documentation of `_`
    = note: `diesel::sql_query` requires the loading target to column names for loading values.
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
    = help: the following other types implement trait `FromSqlRow<ST, DB>`:

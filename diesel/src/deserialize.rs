@@ -419,8 +419,8 @@ pub use diesel_derives::QueryableByName;
 /// }
 /// ```
 #[diagnostic::on_unimplemented(
-    message = "Cannot deserialize a value of the database type `{A}` as `{Self}`",
-    note = "Double check your type mappings via the documentation of `{A}`"
+    message = "cannot deserialize a value of the database type `{A}` as `{Self}`",
+    note = "double check your type mappings via the documentation of `{A}`"
 )]
 pub trait FromSql<A, DB: Backend>: Sized {
     /// See the trait documentation.
@@ -449,8 +449,9 @@ pub trait FromSql<A, DB: Backend>: Sized {
 ///    * [`Queryable`]
 ///    * [`QueryableByName`]
 #[diagnostic::on_unimplemented(
+    note = "double check your type mappings via the documentation of `{ST}`",
     note = "`diesel::sql_query` requires the loading target to column names for loading values.\n\
-                 You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`"
+             You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`"
 )]
 pub trait FromSqlRow<ST, DB: Backend>: Sized {
     /// See the trait documentation.
