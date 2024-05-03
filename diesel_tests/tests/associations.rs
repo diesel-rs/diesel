@@ -278,7 +278,10 @@ fn conn_with_test_data() -> (TestConnection, User, User, User) {
 }
 
 #[test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+// FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(feature = "mysql"))]
+// https://github.com/rust-lang/rust/issues/124396
+#[allow(unknown_lints, non_local_definitions)]
 fn custom_foreign_key() {
     use diesel::connection::SimpleConnection;
     use diesel::*;

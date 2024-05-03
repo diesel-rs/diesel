@@ -27,6 +27,13 @@ pub struct Post {
     pub visit_count: i32,
 }
 
+#[derive(AsChangeset)]
+#[diesel(table_name = posts)]
+struct PostForm<'a> {
+    title: Option<&'a str>,
+    body: Option<&'a str>,
+}
+
 pub fn publish_all_posts(conn: &mut PgConnection) -> QueryResult<usize> {
     use crate::posts::dsl::*;
 
@@ -175,13 +182,6 @@ fn examine_sql_from_update_post_fields() {
 }
 
 pub fn update_with_option(conn: &mut PgConnection) -> QueryResult<usize> {
-    #[derive(AsChangeset)]
-    #[diesel(table_name = posts)]
-    struct PostForm<'a> {
-        title: Option<&'a str>,
-        body: Option<&'a str>,
-    }
-
     diesel::update(posts::table)
         .set(&PostForm {
             title: None,
