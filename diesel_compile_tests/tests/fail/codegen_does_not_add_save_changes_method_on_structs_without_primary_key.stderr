@@ -2,13 +2,7 @@ error[E0599]: the method `save_changes` exists for struct `User`, but its trait 
   --> tests/fail/codegen_does_not_add_save_changes_method_on_structs_without_primary_key.rs:26:10
    |
 15 | pub struct User {
-   | ---------------
-   | |
-   | method `save_changes` not found for this struct
-   | doesn't satisfy `User: Copy`
-   | doesn't satisfy `User: HasTable`
-   | doesn't satisfy `User: IntoUpdateTarget`
-   | doesn't satisfy `User: diesel::SaveChangesDsl<_>`
+   | --------------- method `save_changes` not found for this struct because it doesn't satisfy `User: Copy`, `User: HasTable`, `User: IntoUpdateTarget` or `User: diesel::SaveChangesDsl<_>`
 ...
 26 |     user.save_changes(&mut connection);
    |          ^^^^^^^^^^^^ method cannot be called on `User` due to unsatisfied trait bounds

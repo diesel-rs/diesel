@@ -1,11 +1,13 @@
-error[E0277]: the trait bound `diesel::query_builder::update_statement::SetNotCalled: QueryFragment<_>` is not satisfied
+error[E0277]: `diesel::query_builder::update_statement::SetNotCalled` is no valid SQL fragment for the `_` backend
   --> tests/fail/update_requires_set.rs:14:18
    |
 14 |         .execute(&mut conn);
-   |          ------- ^^^^^^^^^ the trait `QueryFragment<_>` is not implemented for `diesel::query_builder::update_statement::SetNotCalled`
+   |          ------- ^^^^^^^^^ the trait `QueryFragment<_>` is not implemented for `diesel::query_builder::update_statement::SetNotCalled`, which is required by `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>: ExecuteDsl<_, _>`
    |          |
    |          required by a bound introduced by this call
    |
+   = note: this usually means that the `_` database system does not support
+           this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <columns::id as QueryFragment<DB>>
              <columns::star as QueryFragment<DB>>

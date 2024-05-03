@@ -1,12 +1,12 @@
-error[E0277]: Cannot deserialize a value of the database type `BigInt` as `*const str`
-  --> tests/fail/select_sql_still_ensures_result_type.rs:17:51
+error[E0277]: cannot deserialize a value of the database type `BigInt` as `*const str`
+  --> tests/fail/select_sql_still_ensures_result_type.rs:16:51
    |
-17 |     let count = select_count.get_result::<String>(&mut connection).unwrap();
-   |                              ----------           ^^^^^^^^^^^^^^^ the trait `FromSql<BigInt, _>` is not implemented for `*const str`
+16 |     let count = select_count.get_result::<String>(&mut connection).unwrap();
+   |                              ----------           ^^^^^^^^^^^^^^^ the trait `FromSql<BigInt, _>` is not implemented for `*const str`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<SqlLiteral<BigInt>>>: LoadQuery<'_, _, std::string::String>`
    |                              |
    |                              required by a bound introduced by this call
    |
-   = note: Double check your type mappings via the documentation of `BigInt`
+   = note: double check your type mappings via the documentation of `BigInt`
    = help: the following other types implement trait `FromSql<A, DB>`:
              <*const str as FromSql<diesel::sql_types::Text, Mysql>>
              <*const str as FromSql<diesel::sql_types::Text, Pg>>

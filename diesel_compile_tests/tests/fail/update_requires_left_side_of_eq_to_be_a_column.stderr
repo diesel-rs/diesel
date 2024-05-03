@@ -2,7 +2,7 @@ error[E0277]: the trait bound `diesel::expression::bound::Bound<diesel::sql_type
   --> tests/fail/update_requires_left_side_of_eq_to_be_a_column.rs:16:33
    |
 16 |     let command = update(users).set(foo.eq(name));
-   |                                 ^^^ the trait `Column` is not implemented for `diesel::expression::bound::Bound<diesel::sql_types::Text, &str>`
+   |                                 ^^^ the trait `Column` is not implemented for `diesel::expression::bound::Bound<diesel::sql_types::Text, &str>`, which is required by `diesel::expression::operators::Eq<diesel::expression::bound::Bound<diesel::sql_types::Text, &str>, columns::name>: AsChangeset`
    |
    = help: the following other types implement trait `Column`:
              columns::name

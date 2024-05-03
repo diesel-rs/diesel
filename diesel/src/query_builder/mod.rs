@@ -210,6 +210,11 @@ pub trait SelectQuery {
 ///
 /// [`ExecuteDsl`]: crate::query_dsl::methods::ExecuteDsl
 /// [`LoadQuery`]: crate::query_dsl::methods::LoadQuery
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is no valid SQL fragment for the `{DB}` backend",
+    note = "this usually means that the `{DB}` database system does not support \n\
+            this SQL syntax"
+)]
 pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     /// Walk over this `QueryFragment` for all passes.
     ///

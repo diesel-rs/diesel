@@ -1,72 +1,82 @@
 error: unexpected end of input, expected `=`
        help: The correct format looks like `#[diesel(sql_type = Foo)]`
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:11:3
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:10:3
    |
-11 | #[sql_type]
+10 | #[sql_type]
    |   ^^^^^^^^
 
 error: expected `=`
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:15:11
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:14:11
    |
-15 | #[sql_type()]
+14 | #[sql_type()]
    |           ^^
 
 error: expected string literal
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:19:14
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:18:14
    |
-19 | #[sql_type = 1]
+18 | #[sql_type = 1]
    |              ^
 
 error: expected identifier
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:23:14
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:22:14
    |
-23 | #[sql_type = "1"]
+22 | #[sql_type = "1"]
    |              ^^^
 
 error: unexpected end of input, expected `=`
        help: The correct format looks like `#[diesel(sql_type = Foo)]`
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:34:7
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:33:7
    |
-34 |     #[sql_type]
+33 |     #[sql_type]
    |       ^^^^^^^^
 
 error: expected `=`
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:40:15
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:39:15
    |
-40 |     #[sql_type()]
+39 |     #[sql_type()]
    |               ^^
 
 error: expected string literal
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:46:18
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:45:18
    |
-46 |     #[sql_type = 1]
+45 |     #[sql_type = 1]
    |                  ^
 
 error: expected identifier
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:52:18
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:51:18
    |
-52 |     #[sql_type = "1"]
+51 |     #[sql_type = "1"]
    |                  ^^^
 
 error[E0412]: cannot find type `foo` in this scope
- --> tests/fail/derive_deprecated/deprecated_sql_type.rs:7:14
+ --> tests/fail/derive_deprecated/deprecated_sql_type.rs:6:14
   |
-7 | #[sql_type = "foo"]
+6 | #[sql_type = "foo"]
   |              ^^^^^ not found in this scope
 
 error[E0412]: cannot find type `foo` in this scope
- --> tests/fail/derive_deprecated/deprecated_sql_type.rs:7:14
-  |
-7 | #[sql_type = "foo"]
-  |              ^^^^^ not found in this scope
-  |
-help: you might be missing a type parameter
-  |
-6 | #[derive(Debug, AsExpression<foo>)]
-  |                             +++++
-
-error[E0412]: cannot find type `foo` in this scope
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:28:18
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:27:18
    |
-28 |     #[sql_type = "foo"]
+27 |     #[sql_type = "foo"]
    |                  ^^^^^ not found in this scope
+
+error[E0277]: cannot deserialize a value of the database type `_` as `i32`
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:25:10
+   |
+25 | #[derive(QueryableByName)]
+   |          ^^^^^^^^^^^^^^^ the trait `FromSql<_, __DB>` is not implemented for `i32`
+   |
+   = note: double check your type mappings via the documentation of `_`
+   = help: the following other types implement trait `FromSql<A, DB>`:
+             <i32 as FromSql<diesel::sql_types::Integer, Mysql>>
+             <i32 as FromSql<diesel::sql_types::Integer, Pg>>
+             <i32 as FromSql<diesel::sql_types::Integer, Sqlite>>
+note: required by a bound in `diesel::row::NamedRow::get`
+  --> $DIESEL/src/row.rs
+   |
+   |     fn get<ST, T>(&self, column_name: &str) -> deserialize::Result<T>
+   |        --- required by a bound in this associated function
+   |     where
+   |         T: FromSql<ST, DB>;
+   |            ^^^^^^^^^^^^^^^ required by this bound in `NamedRow::get`
+   = note: this error originates in the derive macro `QueryableByName` (in Nightly builds, run with -Z macro-backtrace for more info)

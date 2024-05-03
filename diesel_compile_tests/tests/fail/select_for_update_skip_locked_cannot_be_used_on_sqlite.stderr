@@ -1,11 +1,13 @@
-error[E0277]: the trait bound `diesel::query_builder::locking_clause::ForUpdate: QueryFragment<Sqlite>` is not satisfied
+error[E0277]: `diesel::query_builder::locking_clause::ForUpdate` is no valid SQL fragment for the `Sqlite` backend
   --> tests/fail/select_for_update_skip_locked_cannot_be_used_on_sqlite.rs:17:15
    |
 17 |         .load(&mut conn)
-   |          ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::ForUpdate`
+   |          ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::ForUpdate`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause<diesel::query_builder::locking_clause::ForUpdate, diesel::query_builder::locking_clause::SkipLocked>>: LoadQuery<'_, _, _>`
    |          |
    |          required by a bound introduced by this call
    |
+   = note: this usually means that the `Sqlite` database system does not support
+           this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <diesel::query_builder::locking_clause::ForUpdate as QueryFragment<Mysql>>
              <diesel::query_builder::locking_clause::ForUpdate as QueryFragment<Pg>>
@@ -21,15 +23,19 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: consider using `--verbose` to print the full type name to the console
 
-error[E0277]: the trait bound `diesel::query_builder::locking_clause::SkipLocked: QueryFragment<Sqlite>` is not satisfied
+error[E0277]: `diesel::query_builder::locking_clause::SkipLocked` is no valid SQL fragment for the `Sqlite` backend
   --> tests/fail/select_for_update_skip_locked_cannot_be_used_on_sqlite.rs:17:15
    |
 17 |         .load(&mut conn)
-   |          ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::SkipLocked`
+   |          ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::SkipLocked`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause<diesel::query_builder::locking_clause::ForUpdate, diesel::query_builder::locking_clause::SkipLocked>>: LoadQuery<'_, _, _>`
    |          |
    |          required by a bound introduced by this call
    |
+   = note: this usually means that the `Sqlite` database system does not support
+           this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <diesel::query_builder::locking_clause::SkipLocked as QueryFragment<Mysql>>
              <diesel::query_builder::locking_clause::SkipLocked as QueryFragment<Pg>>
@@ -45,3 +51,5 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: consider using `--verbose` to print the full type name to the console

@@ -493,7 +493,10 @@ fn filter_subselect_with_boxed_query() {
 }
 
 #[test]
-#[cfg(not(feature = "mysql"))] // FIXME: this test shouldn't need to modify schema each run
+// FIXME: this test shouldn't need to modify schema each run
+#[cfg(not(feature = "mysql"))]
+// https://github.com/rust-lang/rust/issues/124396
+#[allow(unknown_lints, non_local_definitions)]
 fn filter_subselect_with_nullable_column() {
     use crate::schema_dsl::*;
     table! {

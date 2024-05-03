@@ -1,9 +1,13 @@
 [package]
 name = "diesel_compile_tests"
 version = "0.1.0"
+edition = "2021"
 
 [dependencies]
-diesel = { version = "2.0.0", default-features = false, features = ["extras", "sqlite", "postgres", "mysql", "with-deprecated", "nightly-error-messages"], path = "../diesel" }
+diesel = { version = "2.0.0", default-features = false, features = ["extras", "sqlite", "postgres", "mysql", "with-deprecated"], path = "../diesel" }
 trybuild = "1.0.75"
 
 [workspace]
+
+[patch.crates-io]
+trybuild = { git = "https://github.com/weiznich/trybuild/", rev = "8f99e5a" }

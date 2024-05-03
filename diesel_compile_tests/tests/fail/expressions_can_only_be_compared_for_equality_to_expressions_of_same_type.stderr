@@ -2,13 +2,13 @@ error[E0277]: the trait bound `str: diesel::Expression` is not satisfied
   --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:15:19
    |
 15 |     let pred = id.eq("string");
-   |                   ^^ the trait `diesel::Expression` is not implemented for `str`
+   |                   ^^ the trait `diesel::Expression` is not implemented for `str`, which is required by `&str: AsExpression<diesel::sql_types::Integer>`
    |
    = help: the following other types implement trait `diesel::Expression`:
              columns::name
              columns::id
-             Box<T>
              columns::star
+             Box<T>
              diesel::expression::ops::numeric::Add<Lhs, Rhs>
              diesel::expression::ops::numeric::Sub<Lhs, Rhs>
              diesel::expression::ops::numeric::Mul<Lhs, Rhs>

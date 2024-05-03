@@ -2,4 +2,4 @@ error: `#[diesel(embed)]` cannot be combined with `#[diesel(serialize_as)]`
   --> tests/fail/derive/embed_and_serialize_as_cannot_be_mixed.rs:22:7
    |
 22 |     #[diesel(embed, serialize_as = SomeType)]
-   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |       ^^^^^^

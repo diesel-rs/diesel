@@ -1,8 +1,8 @@
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:20:31
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:19:31
    |
-20 |     let source = users::table.select(sum(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+19 |     let source = users::table.select(sum(posts::id));
+   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
@@ -17,27 +17,32 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:20:31
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:19:31
    |
-20 |     let source = users::table.select(sum(posts::id));
+19 |     let source = users::table.select(sum(posts::id));
    |                               ^^^^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:14:9
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
    |
-14 |         id -> Integer,
+13 |         id -> Integer,
    |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
    = note: required for `diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:20:31
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:19:31
    |
-20 |     let source = users::table.select(sum(posts::id));
-   |                               ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+19 |     let source = users::table.select(sum(posts::id));
+   |                               ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
    |
+   = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!`
+           call if both are tables
+   = note: double check that `posts::table` and `users::table` appear in the same `alias!` call if both
+           are aliases to the same table
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
@@ -50,9 +55,9 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
            and $N others
    = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:14:9
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
    |
-14 |         id -> Integer,
+13 |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
    = note: required for `diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
@@ -60,10 +65,10 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:20:31
    |
-21 |     let source = users::table.select(avg(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+20 |     let source = users::table.select(avg(posts::id));
+   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
@@ -78,27 +83,32 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:20:31
    |
-21 |     let source = users::table.select(avg(posts::id));
+20 |     let source = users::table.select(avg(posts::id));
    |                               ^^^^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:14:9
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
    |
-14 |         id -> Integer,
+13 |         id -> Integer,
    |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
    = note: required for `diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:20:31
    |
-21 |     let source = users::table.select(avg(posts::id));
-   |                               ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+20 |     let source = users::table.select(avg(posts::id));
+   |                               ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
    |
+   = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!`
+           call if both are tables
+   = note: double check that `posts::table` and `users::table` appear in the same `alias!` call if both
+           are aliases to the same table
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
@@ -111,9 +121,9 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
            and $N others
    = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:14:9
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
    |
-14 |         id -> Integer,
+13 |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
    = note: required for `diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
@@ -121,10 +131,10 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
    |
-22 |     let source = users::table.select(max(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+21 |     let source = users::table.select(max(posts::id));
+   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
@@ -139,27 +149,32 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
    |
-22 |     let source = users::table.select(max(posts::id));
+21 |     let source = users::table.select(max(posts::id));
    |                               ^^^^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:14:9
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
    |
-14 |         id -> Integer,
+13 |         id -> Integer,
    |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
    = note: required for `diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
    |
-22 |     let source = users::table.select(max(posts::id));
-   |                               ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+21 |     let source = users::table.select(max(posts::id));
+   |                               ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
    |
+   = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!`
+           call if both are tables
+   = note: double check that `posts::table` and `users::table` appear in the same `alias!` call if both
+           are aliases to the same table
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
@@ -172,9 +187,9 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
            and $N others
    = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:14:9
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
    |
-14 |         id -> Integer,
+13 |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
    = note: required for `diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
@@ -182,10 +197,10 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:23:31
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
    |
-23 |     let source = users::table.select(min(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+22 |     let source = users::table.select(min(posts::id));
+   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
@@ -200,27 +215,32 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:23:31
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
    |
-23 |     let source = users::table.select(min(posts::id));
+22 |     let source = users::table.select(min(posts::id));
    |                               ^^^^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:14:9
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
    |
-14 |         id -> Integer,
+13 |         id -> Integer,
    |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
    = note: required for `diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:23:31
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
    |
-23 |     let source = users::table.select(min(posts::id));
-   |                               ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+22 |     let source = users::table.select(min(posts::id));
+   |                               ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
    |
+   = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!`
+           call if both are tables
+   = note: double check that `posts::table` and `users::table` appear in the same `alias!` call if both
+           are aliases to the same table
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
@@ -233,9 +253,9 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
            and $N others
    = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:14:9
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
    |
-14 |         id -> Integer,
+13 |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
    = note: required for `diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`

@@ -1,10 +1,10 @@
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:24:30
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:24:22
    |
-24 |     users::table.distinct_on(posts::id).get_results(&mut connection);
-   |                  ----------- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
-   |                  |
-   |                  required by a bound introduced by this call
+24 |         .distinct_on(posts::id)
+   |          ----------- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `users::table: DistinctOnDsl<_>`
+   |          |
+   |          required by a bound introduced by this call
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
@@ -26,10 +26,10 @@ note: required by a bound in `diesel::QueryDsl::distinct_on`
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
 
 error[E0277]: Cannot select `users::columns::name` from `posts::table`
-  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:26:18
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:28:10
    |
-26 |     posts::table.distinct_on((posts::name, users::name)).get_result(&mut connection);
-   |                  ^^^^^^^^^^^ the trait `SelectableExpression<posts::table>` is not implemented for `users::columns::name`
+28 |         .distinct_on((posts::name, users::name))
+   |          ^^^^^^^^^^^ the trait `SelectableExpression<posts::table>` is not implemented for `users::columns::name`, which is required by `posts::table: DistinctOnDsl<_>`
    |
    = note: `users::columns::name` is no valid selection for `posts::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
@@ -44,27 +44,32 @@ error[E0277]: Cannot select `users::columns::name` from `posts::table`
    = note: required for `posts::table` to implement `DistinctOnDsl<(posts::columns::name, users::columns::name)>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:26:18
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:28:10
    |
-26 |     posts::table.distinct_on((posts::name, users::name)).get_result(&mut connection);
-   |                  ^^^^^^^^^^^ expected `Never`, found `Once`
+28 |         .distinct_on((posts::name, users::name))
+   |          ^^^^^^^^^^^ expected `Never`, found `Once`
    |
 note: required for `users::columns::name` to implement `AppearsOnTable<posts::table>`
-  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:9:9
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:8:9
    |
-9  |         name -> VarChar,
+8  |         name -> VarChar,
    |         ^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `(posts::columns::name, users::columns::name)` to implement `AppearsOnTable<posts::table>`
    = note: required for `(posts::columns::name, users::columns::name)` to implement `SelectableExpression<posts::table>`
    = note: required for `posts::table` to implement `DistinctOnDsl<(posts::columns::name, users::columns::name)>`
 
 error[E0277]: the trait bound `posts::table: TableNotEqual<users::table>` is not satisfied
-  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:26:18
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:28:10
    |
-26 |     posts::table.distinct_on((posts::name, users::name)).get_result(&mut connection);
-   |                  ^^^^^^^^^^^ the trait `TableNotEqual<users::table>` is not implemented for `posts::table`
+28 |         .distinct_on((posts::name, users::name))
+   |          ^^^^^^^^^^^ the trait `TableNotEqual<users::table>` is not implemented for `posts::table`, which is required by `posts::table: DistinctOnDsl<_>`
    |
+   = note: double check that `users::table` and `posts::table` appear in the same `allow_tables_to_appear_in_same_query!`
+           call if both are tables
+   = note: double check that `users::table` and `posts::table` appear in the same `alias!` call if both
+           are aliases to the same table
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
@@ -77,9 +82,9 @@ error[E0277]: the trait bound `posts::table: TableNotEqual<users::table>` is not
            and $N others
    = note: required for `posts::table` to implement `AppearsInFromClause<users::table>`
 note: required for `users::columns::name` to implement `AppearsOnTable<posts::table>`
-  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:9:9
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:8:9
    |
-9  |         name -> VarChar,
+8  |         name -> VarChar,
    |         ^^^^
    = note: 1 redundant requirement hidden
    = note: required for `(posts::columns::name, users::columns::name)` to implement `AppearsOnTable<posts::table>`

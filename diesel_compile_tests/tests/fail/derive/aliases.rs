@@ -1,4 +1,3 @@
-#![feature(diagnostic_namespace)]
 #[macro_use]
 extern crate diesel;
 

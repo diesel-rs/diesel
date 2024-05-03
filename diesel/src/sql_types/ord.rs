@@ -1,6 +1,9 @@
 use crate::sql_types::{self, is_nullable, SqlType};
 
 /// Marker trait for types which can be used with `MAX` and `MIN`
+#[diagnostic::on_unimplemented(
+    message = "expressions of the type `{Self}` cannot be ordered by the database"
+)]
 pub trait SqlOrd: SqlType {}
 
 impl SqlOrd for sql_types::SmallInt {}

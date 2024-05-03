@@ -1,12 +1,12 @@
-error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types::Text` as `i32`
-  --> tests/fail/select_carries_correct_result_type_info.rs:20:39
+error[E0277]: cannot deserialize a value of the database type `diesel::sql_types::Text` as `i32`
+  --> tests/fail/select_carries_correct_result_type_info.rs:19:39
    |
-20 |     let ids = select_name.load::<i32>(&mut connection);
-   |                           ----        ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, _>` is not implemented for `i32`
+19 |     let ids = select_name.load::<i32>(&mut connection);
+   |                           ----        ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, _>` is not implemented for `i32`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::name>>: LoadQuery<'_, _, i32>`
    |                           |
    |                           required by a bound introduced by this call
    |
-   = note: Double check your type mappings via the documentation of `diesel::sql_types::Text`
+   = note: double check your type mappings via the documentation of `diesel::sql_types::Text`
    = help: the following other types implement trait `FromSql<A, DB>`:
              <i32 as FromSql<diesel::sql_types::Integer, Mysql>>
              <i32 as FromSql<diesel::sql_types::Integer, Pg>>
@@ -24,15 +24,15 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types::Integer` as `*const str`
-  --> tests/fail/select_carries_correct_result_type_info.rs:21:42
+error[E0277]: cannot deserialize a value of the database type `diesel::sql_types::Integer` as `*const str`
+  --> tests/fail/select_carries_correct_result_type_info.rs:20:42
    |
-21 |     let names = select_id.load::<String>(&mut connection);
-   |                           ----           ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, _>` is not implemented for `*const str`
+20 |     let names = select_id.load::<String>(&mut connection);
+   |                           ----           ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, _>` is not implemented for `*const str`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>: LoadQuery<'_, _, std::string::String>`
    |                           |
    |                           required by a bound introduced by this call
    |
-   = note: Double check your type mappings via the documentation of `diesel::sql_types::Integer`
+   = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`
    = help: the following other types implement trait `FromSql<A, DB>`:
              <*const str as FromSql<diesel::sql_types::Text, Mysql>>
              <*const str as FromSql<diesel::sql_types::Text, Pg>>

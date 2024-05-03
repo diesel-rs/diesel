@@ -55,14 +55,19 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
    |
 15 |         title -> VarChar,
    |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>` to implement `AsChangeset`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
   --> tests/fail/update_requires_column_be_from_same_table.rs:23:33
    |
 23 |     let command = update(users).set(name.eq(posts::title));
-   |                                 ^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+   |                                 ^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`, which is required by `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>: AsChangeset`
    |
+   = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!`
+           call if both are tables
+   = note: double check that `posts::table` and `users::table` appear in the same `alias!` call if both
+           are aliases to the same table
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
