@@ -139,6 +139,14 @@ impl<T> ConnectionManager<T> {
             _marker: PhantomData,
         }
     }
+
+    /// Modifies the URL which was supplied at initialization.
+    ///
+    /// This does not update any state for existing connections,
+    /// but this new URL is used for new connections that are created.
+    pub fn update_database_url<S: Into<String>>(&mut self, database_url: S) {
+        self.database_url = database_url.into();
+    }
 }
 
 /// The error used when managing connections with `r2d2`.
