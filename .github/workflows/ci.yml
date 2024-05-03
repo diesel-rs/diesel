@@ -324,7 +324,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2024-01-15
+          toolchain: stable
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@v2
         with:
@@ -337,7 +337,7 @@ jobs:
 
       - name: Run compile tests
         shell: bash
-        run: cargo +nightly-2024-01-15  test --manifest-path diesel_compile_tests/Cargo.toml
+        run: cargo +stable  test --manifest-path diesel_compile_tests/Cargo.toml
 
   rustfmt_and_clippy:
     name: Check rustfmt style && run clippy
