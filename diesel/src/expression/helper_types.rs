@@ -157,6 +157,9 @@ pub type Otherwise<W, E> = expression::case_when::CaseWhen<
 /// Represents the return type of [`.as_select()`](crate::prelude::SelectableHelper::as_select)
 pub type AsSelect<Source, DB> = SelectBy<Source, DB>;
 
+/// Represents the return type of [`.into_sql()`](crate::expression::IntoSql::into_sql)
+pub type IntoSql<Item, SqlType> = AsExprOf<Item, SqlType>;
+
 /// The return type of [`alias.field(field)`](crate::query_source::Alias::field)
 pub type Field<Alias, Field> = Fields<Alias, Field>;
 

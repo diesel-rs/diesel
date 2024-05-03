@@ -26,7 +26,7 @@ where
         + Clone
         + ::std::fmt::Debug
         + 'static,
-    for<'a> dsl::BareSelect<<T as AsExpression<ST>>::Expression>:
+    for<'a> dsl::select<<T as AsExpression<ST>>::Expression>:
         AsQuery + LoadQuery<'a, TestConnection, T>,
 {
     let connection = &mut connection_without_transaction();
