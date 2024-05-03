@@ -1,5 +1,6 @@
 use std::cell::{Ref, RefCell};
 use std::rc::Rc;
+use std::sync::Arc;
 
 use super::owned_row::OwnedSqliteRow;
 use super::sqlite_value::{OwnedSqliteValue, SqliteValue};
@@ -25,8 +26,10 @@ pub(super) enum PrivateSqliteRow<'stmt, 'query> {
 impl<'stmt> IntoOwnedRow<'stmt, Sqlite> for SqliteRow<'stmt, '_> {
     type OwnedRow = OwnedSqliteRow;
 
-    fn into_owned(self) -> Self::OwnedRow {
-        self.inner.borrow().moveable()
+    type Cache = Option<Arc<[Option<String>]>>;
+
+    fn into_owned(self, column_name_cache: &mut Self::Cache) -> Self::OwnedRow {
+        self.inner.borrow().moveable(column_name_cache)
     }
 }
 
@@ -68,13 +71,25 @@ impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
         }
     }
 
-    pub(super) fn moveable(&self) -> OwnedSqliteRow {
+    pub(super) fn moveable(
+        &self,
+        column_name_cache: &mut Option<Arc<[Option<String>]>>,
+    ) -> OwnedSqliteRow {
         match self {
             PrivateSqliteRow::Direct(stmt) => {
-                let column_names: Box<[Option<String>]> = (0..stmt.column_count())
-                    .map(|idx| stmt.field_name(idx).map(|s| s.to_owned()))
-                    .collect::<Vec<_>>()
-                    .into_boxed_slice();
+                if column_name_cache.is_none() {
+                    *column_name_cache = Some(
+                        (0..stmt.column_count())
+                            .map(|idx| stmt.field_name(idx).map(|s| s.to_owned()))
+                            .collect::<Vec<_>>()
+                            .into(),
+                    );
+                }
+                let column_names = Arc::clone(
+                    column_name_cache
+                        .as_ref()
+                        .expect("This is initialized above"),
+                );
                 OwnedSqliteRow::new(
                     (0..stmt.column_count())
                         .map(|idx| stmt.copy_value(idx))
@@ -85,17 +100,29 @@ impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
             PrivateSqliteRow::Duplicated {
                 values,
                 column_names,
-            } => OwnedSqliteRow::new(
-                values
-                    .iter()
-                    .map(|v| v.as_ref().map(|v| v.duplicate()))
-                    .collect(),
-                (*column_names)
-                    .iter()
-                    .map(|s| s.to_owned())
-                    .collect::<Vec<_>>()
-                    .into_boxed_slice(),
-            ),
+            } => {
+                if column_name_cache.is_none() {
+                    *column_name_cache = Some(
+                        (*column_names)
+                            .iter()
+                            .map(|s| s.to_owned())
+                            .collect::<Vec<_>>()
+                            .into(),
+                    );
+                }
+                let column_names = Arc::clone(
+                    column_name_cache
+                        .as_ref()
+                        .expect("This is initialized above"),
+                );
+                OwnedSqliteRow::new(
+                    values
+                        .iter()
+                        .map(|v| v.as_ref().map(|v| v.duplicate()))
+                        .collect(),
+                    column_names,
+                )
+            }
         }
     }
 }

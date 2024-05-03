@@ -3,6 +3,7 @@
 use crate::backend::Backend;
 use crate::deserialize;
 use deserialize::FromSql;
+use std::default::Default;
 use std::ops::Range;
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
@@ -156,8 +157,11 @@ pub trait IntoOwnedRow<'a, DB: Backend>: Row<'a, DB> {
     /// The owned version of the row
     type OwnedRow: Row<'a, DB> + Send + 'static;
 
+    /// A store for cached information between rows for faster access
+    type Cache: Default + 'static;
+
     /// Turn the row into its owned version
-    fn into_owned(self) -> Self::OwnedRow;
+    fn into_owned(self, cache: &mut Self::Cache) -> Self::OwnedRow;
 }
 
 // These traits are not part of the public API

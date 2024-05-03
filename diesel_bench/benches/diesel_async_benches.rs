@@ -15,6 +15,10 @@ type TestConnection = diesel_async::AsyncPgConnection;
 #[cfg(feature = "mysql")]
 type TestConnection = diesel_async::AsyncMysqlConnection;
 
+#[cfg(feature = "sqlite")]
+type TestConnection =
+    diesel_async::sync_connection_wrapper::SyncConnectionWrapper<diesel::SqliteConnection>;
+
 table! {
     users {
         id -> Integer,
@@ -170,6 +174,36 @@ async fn connection() -> TestConnection {
     conn
 }
 
+#[cfg(feature = "sqlite")]
+async fn connection() -> TestConnection {
+    dotenvy::dotenv().ok();
+    let mut conn = diesel_async::sync_connection_wrapper::SyncConnectionWrapper::<
+        diesel::SqliteConnection,
+    >::establish(":memory:")
+    .await
+    .unwrap();
+    for migration in super::SQLITE_MIGRATION_SQL {
+        diesel::sql_query(*migration)
+            .execute(&mut conn)
+            .await
+            .unwrap();
+    }
+    diesel::sql_query("DELETE FROM comments")
+        .execute(&mut conn)
+        .await
+        .unwrap();
+    diesel::sql_query("DELETE FROM posts")
+        .execute(&mut conn)
+        .await
+        .unwrap();
+    diesel::sql_query("DELETE FROM users")
+        .execute(&mut conn)
+        .await
+        .unwrap();
+    conn
+}
+
+#[cfg(not(feature = "sqlite"))]
 async fn insert_users<F: Fn(usize) -> Option<&'static str>, const N: usize>(
     conn: &mut TestConnection,
     hair_color_init: F,
@@ -205,6 +239,31 @@ async fn insert_users<F: Fn(usize) -> Option<&'static str>, const N: usize>(
             .await
             .unwrap();
     }
+}
+
+#[cfg(feature = "sqlite")]
+async fn insert_users<F: Fn(usize) -> Option<&'static str> + Send, const N: usize>(
+    conn: &mut TestConnection,
+    hair_color_init: F,
+) {
+    use diesel_async::scoped_futures::ScopedFutureExt;
+
+    conn.transaction(|conn| {
+        async move {
+            for idx in 0..N {
+                let user = NewUser::new(&format!("User {}", idx), hair_color_init(idx));
+                insert_into(users::table)
+                    .values(user)
+                    .execute(conn)
+                    .await
+                    .unwrap();
+            }
+            diesel::result::QueryResult::Ok(())
+        }
+        .scope_boxed()
+    })
+    .await
+    .unwrap();
 }
 
 pub fn bench_trivial_query(b: &mut Bencher, size: usize) {
@@ -354,7 +413,7 @@ pub fn bench_medium_complex_query_queryable_by_name(b: &mut Bencher, size: usize
     });
     #[cfg(feature = "postgres")]
     let bind = "$1";
-    #[cfg(feature = "mysql")]
+    #[cfg(any(feature = "mysql", feature = "sqlite"))]
     let bind = "?";
 
     let query = format!(
@@ -421,6 +480,15 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                 })
             })
             .collect();
+        #[cfg(feature = "sqlite")]
+        for data in data {
+            insert_into(posts::table)
+                .values(data)
+                .execute(&mut conn)
+                .await
+                .unwrap();
+        }
+        #[cfg(not(feature = "sqlite"))]
         insert_into(posts::table)
             .values(&data)
             .execute(&mut conn)
@@ -441,6 +509,15 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
             .iter()
             .map(|&(ref title, post_id)| NewComment(post_id, &title))
             .collect();
+        #[cfg(feature = "sqlite")]
+        for data in comment_data {
+            insert_into(comments::table)
+                .values(data)
+                .execute(&mut conn)
+                .await
+                .unwrap();
+        }
+        #[cfg(not(feature = "sqlite"))]
         insert_into(comments::table)
             .values(&comment_data)
             .execute(&mut conn)

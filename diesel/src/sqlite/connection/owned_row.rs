@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::sqlite_value::{OwnedSqliteValue, SqliteValue};
 use crate::backend::Backend;
 use crate::row::{Field, PartialRow, Row, RowIndex, RowSealed};
@@ -6,13 +8,13 @@ use crate::sqlite::Sqlite;
 #[derive(Debug)]
 pub struct OwnedSqliteRow {
     pub(super) values: Vec<Option<OwnedSqliteValue>>,
-    column_names: Box<[Option<String>]>,
+    column_names: Arc<[Option<String>]>,
 }
 
 impl OwnedSqliteRow {
     pub(super) fn new(
         values: Vec<Option<OwnedSqliteValue>>,
-        column_names: Box<[Option<String>]>,
+        column_names: Arc<[Option<String>]>,
     ) -> Self {
         OwnedSqliteRow {
             values,
