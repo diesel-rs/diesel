@@ -78,6 +78,10 @@ pub trait Table: QuerySource + AsQuery + Sized {
 /// context where referencing that table would be ambiguous (depending on the
 /// context and backend being used, this may or may not be something that would
 /// otherwise result in a runtime error).
+#[diagnostic::on_unimplemented(
+    note = "double check that `{QS}` and `{Self}` appear in the same `allow_tables_to_appear_in_same_query!` \ncall if both are tables",
+    note = "double check that any two aliases to the same table in `{QS}` and `{Self}` appear in the same `alias!` call"
+)]
 pub trait AppearsInFromClause<QS> {
     /// How many times does `Self` appear in `QS`?
     type Count;
@@ -97,8 +101,7 @@ pub trait AppearsInFromClause<QS> {
 /// - You are attempting to use two aliases to the same table in the same query, but they
 ///   were declared through different calls to [`alias!`](crate::alias)
 #[diagnostic::on_unimplemented(
-    note = "double check that `{T}` and `{Self}` appear in the same `allow_tables_to_appear_in_same_query!` \ncall if both are tables",
-    note = "double check that `{T}` and `{Self}` appear in the same `alias!` call if both \nare aliases to the same table"
+    note = "double check that `{T}` and `{Self}` appear in the same `allow_tables_to_appear_in_same_query!` \ncall if both are tables"
 )]
 pub trait TableNotEqual<T: Table>: Table {}
 

@@ -24,7 +24,7 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(users, posts);
+allow_tables_to_appear_in_same_query!(users, posts, pets);
 joinable!(posts -> users (author));
 
 pub fn check(conn: &mut PgConnection) {
@@ -54,6 +54,18 @@ pub fn check(conn: &mut PgConnection) {
         .inner_join(user_alias)
         .select(pets::id)
         .load::<i32>(conn)
+        .unwrap();
+
+    // Check how error message looks when aliases to the same table are declared separately
+    let post_alias_2 = alias!(posts as posts3);
+    let posts = post_alias
+        .inner_join(
+            post_alias_2.on(post_alias
+                .field(posts::author)
+                .eq(post_alias_2.field(posts::author))),
+        )
+        .select((post_alias.field(posts::id), post_alias_2.field(posts::id)))
+        .load::<(i32, i32)>(conn)
         .unwrap();
 }
 

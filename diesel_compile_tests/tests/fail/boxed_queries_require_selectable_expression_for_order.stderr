@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/boxed_queries_require_selectable_expression_for_order.rs:21:37
+  --> tests/fail/boxed_queries_require_selectable_expression_for_order.rs:23:37
    |
-21 |     users::table.into_boxed::<Pg>().order(posts::title.desc());
+23 |     users::table.into_boxed::<Pg>().order(posts::title.desc());
    |                                     ^^^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
@@ -10,36 +10,6 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
 16 |         title -> VarChar,
    |         ^^^^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::operators::Desc<posts::columns::title>` to implement `AppearsOnTable<users::table>`
-   = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>` to implement `OrderDsl<diesel::expression::operators::Desc<posts::columns::title>>`
-
-error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-  --> tests/fail/boxed_queries_require_selectable_expression_for_order.rs:21:37
-   |
-21 |     users::table.into_boxed::<Pg>().order(posts::title.desc());
-   |                                     ^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`, which is required by `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>: OrderDsl<_>`
-   |
-   = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!`
-           call if both are tables
-   = note: double check that `posts::table` and `users::table` appear in the same `alias!` call if both
-           are aliases to the same table
-   = help: the following other types implement trait `TableNotEqual<T>`:
-             <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-             <Tablesample<pg::metadata_lookup::pg_namespace::table, TSM> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <Tablesample<pg::metadata_lookup::pg_type::table, TSM> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Tablesample<pg::metadata_lookup::pg_type::table, TSM>>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
-           and $N others
-   = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
-note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/boxed_queries_require_selectable_expression_for_order.rs:16:9
-   |
-16 |         title -> VarChar,
-   |         ^^^^^
    = note: 1 redundant requirement hidden
    = note: required for `diesel::expression::operators::Desc<posts::columns::title>` to implement `AppearsOnTable<users::table>`
    = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>` to implement `OrderDsl<diesel::expression::operators::Desc<posts::columns::title>>`

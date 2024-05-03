@@ -17,6 +17,8 @@ table! {
     }
 }
 
+allow_tables_to_appear_in_same_query!(users, posts);
+
 #[derive(Insertable)]
 #[diesel(table_name = users)]
 pub struct NewUser(#[diesel(column_name = name)] &'static str);
@@ -71,5 +73,7 @@ fn main() {
 
     // Excluded is only valid in upsert
     // FIXME: This should not compile
-    update(users).set(name.eq(excluded(name))).execute(&mut connection);
+    update(users)
+        .set(name.eq(excluded(name)))
+        .execute(&mut connection);
 }

@@ -1,7 +1,7 @@
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:21:30
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
    |
-21 |     let stuff = users::table.select((posts::id, posts::user_id));
+23 |     let stuff = users::table.select((posts::id, posts::user_id));
    |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
@@ -17,9 +17,9 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
 
 error[E0277]: Cannot select `posts::columns::user_id` from `users::table`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:21:30
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
    |
-21 |     let stuff = users::table.select((posts::id, posts::user_id));
+23 |     let stuff = users::table.select((posts::id, posts::user_id));
    |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::user_id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
    |
    = note: `posts::columns::user_id` is no valid selection for `users::table`
@@ -35,9 +35,9 @@ error[E0277]: Cannot select `posts::columns::user_id` from `users::table`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:21:30
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
    |
-21 |     let stuff = users::table.select((posts::id, posts::user_id));
+23 |     let stuff = users::table.select((posts::id, posts::user_id));
    |                              ^^^^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
@@ -51,41 +51,10 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
 
-error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:21:30
-   |
-21 |     let stuff = users::table.select((posts::id, posts::user_id));
-   |                              ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
-   |
-   = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!`
-           call if both are tables
-   = note: double check that `posts::table` and `users::table` appear in the same `alias!` call if both
-           are aliases to the same table
-   = help: the following other types implement trait `TableNotEqual<T>`:
-             <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-             <Tablesample<pg::metadata_lookup::pg_namespace::table, TSM> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <Tablesample<pg::metadata_lookup::pg_type::table, TSM> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Tablesample<pg::metadata_lookup::pg_type::table, TSM>>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
-           and $N others
-   = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
-note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:14:9
-   |
-14 |         id -> Integer,
-   |         ^^
-   = note: 1 redundant requirement hidden
-   = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `AppearsOnTable<users::table>`
-   = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
-
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:22:30
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:24:30
    |
-22 |     let stuff = users::table.select((posts::id, users::name));
+24 |     let stuff = users::table.select((posts::id, users::name));
    |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
@@ -101,9 +70,9 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, users::columns::name)>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:22:30
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:24:30
    |
-22 |     let stuff = users::table.select((posts::id, users::name));
+24 |     let stuff = users::table.select((posts::id, users::name));
    |                              ^^^^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
@@ -112,37 +81,6 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 14 |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: 1 redundant requirement hidden
-   = note: required for `(posts::columns::id, users::columns::name)` to implement `AppearsOnTable<users::table>`
-   = note: required for `(posts::columns::id, users::columns::name)` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, users::columns::name)>`
-
-error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:22:30
-   |
-22 |     let stuff = users::table.select((posts::id, users::name));
-   |                              ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
-   |
-   = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!`
-           call if both are tables
-   = note: double check that `posts::table` and `users::table` appear in the same `alias!` call if both
-           are aliases to the same table
-   = help: the following other types implement trait `TableNotEqual<T>`:
-             <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-             <Tablesample<pg::metadata_lookup::pg_namespace::table, TSM> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <Tablesample<pg::metadata_lookup::pg_type::table, TSM> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Tablesample<pg::metadata_lookup::pg_type::table, TSM>>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
-           and $N others
-   = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
-note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:14:9
-   |
-14 |         id -> Integer,
-   |         ^^
    = note: 1 redundant requirement hidden
    = note: required for `(posts::columns::id, users::columns::name)` to implement `AppearsOnTable<users::table>`
    = note: required for `(posts::columns::id, users::columns::name)` to implement `SelectableExpression<users::table>`
