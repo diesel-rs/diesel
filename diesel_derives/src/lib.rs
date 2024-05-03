@@ -1778,12 +1778,11 @@ pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
 /// ```
 /// # Limitations
 ///
-/// While this attribute tries to support as much of diesels built-in DSL as possible it's unfortunally not
-/// possible to support everything. Notable unsupported types are:
+/// While this attribute tries to support as much of diesels built-in DSL as possible it's
+/// unfortunately not possible to support everything. Notable unsupported types are:
 ///
 /// * Update statements
 /// * Insert from select statements
-/// * Select statements without from clause
 /// * Query constructed by `diesel::sql_query`
 /// * Expressions using `diesel::dsl::sql`
 ///
