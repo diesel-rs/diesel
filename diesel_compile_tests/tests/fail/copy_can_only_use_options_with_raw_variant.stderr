@@ -26,10 +26,7 @@ error[E0599]: the method `load` exists for struct `CopyToQuery<table, CopyToOpti
   ::: $DIESEL/src/pg/query_builder/copy/copy_to.rs
    |
    |   pub struct CopyToQuery<T, O> {
-   |   ----------------------------
-   |   |
-   |   doesn't satisfy `_: RunQueryDsl<_>`
-   |   doesn't satisfy `_: Table`
+   |   ---------------------------- doesn't satisfy `_: RunQueryDsl<_>` or `_: Table`
    |
    = note: the following trait bounds were not satisfied:
            `CopyToQuery<users::table, pg::query_builder::copy::copy_to::CopyToOptions>: Table`

@@ -1,4 +1,3 @@
-#![feature(diagnostic_namespace)]
 extern crate diesel;
 
 use diesel::prelude::*;
@@ -19,7 +18,5 @@ struct User {
 fn main() {
     let mut conn = PgConnection::establish("...").unwrap();
 
-    users::table
-        .load::<User>(&mut conn)
-        .unwrap();
+    users::table.load::<User>(&mut conn).unwrap();
 }

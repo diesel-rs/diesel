@@ -3,7 +3,7 @@ error: References are not supported in `Queryable` types
   --> tests/fail/derive/selectable.rs:48:11
    |
 48 |     name: &'a str,
-   |           ^^^^^^^
+   |           ^
 
 error[E0412]: cannot find type `non_existing` in module `users`
   --> tests/fail/derive/selectable.rs:26:5

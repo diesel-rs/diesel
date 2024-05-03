@@ -9,15 +9,17 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
    |
 16 |         title -> VarChar,
    |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<title, Bound<Text, &str>>>` to implement `AppearsOnTable<users::table>`
    = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
   --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:21:37
    |
 21 |     users::table.into_boxed::<Pg>().filter(posts::title.eq("Hello"));
-   |                                     ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+   |                                     ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`, which is required by `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>: FilterDsl<_>`
    |
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
@@ -38,3 +40,4 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<title, Bound<Text, &str>>>` to implement `AppearsOnTable<users::table>`
    = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>`
+   = note: consider using `--verbose` to print the full type name to the console

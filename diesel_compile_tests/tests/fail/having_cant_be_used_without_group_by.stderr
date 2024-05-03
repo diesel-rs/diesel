@@ -4,13 +4,14 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
 26 |     users::table.select(users::name).having(users::id.gt(1)).load(&mut conn);
    |                                      ^^^^^^ the trait `HavingDsl<_>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>>`
    |
-   = help: the trait `HavingDsl<Predicate>` is implemented for `SelectStatement<FromClause<F>, S, D, W, O, LOf, diesel::query_builder::group_by_clause::GroupByClause<G>, H>`
+   = help: the trait `HavingDsl<_>` is implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<_>, _>`
+   = help: for that trait implementation, expected `diesel::query_builder::group_by_clause::GroupByClause<_>`, found `diesel::query_builder::group_by_clause::NoGroupByClause`
 
 error[E0277]: the trait bound `(): diesel::Expression` is not satisfied
   --> tests/fail/having_cant_be_used_without_group_by.rs:28:31
    |
 28 |     users::table.into_boxed().having(users::id.gt(1)).load(&mut conn);
-   |                               ^^^^^^ the trait `diesel::Expression` is not implemented for `()`
+   |                               ^^^^^^ the trait `diesel::Expression` is not implemented for `()`, which is required by `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>: HavingDsl<_>`
    |
    = help: the following other types implement trait `diesel::Expression`:
              (T0,)
@@ -35,9 +36,12 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
    |
 14 |         id -> Integer,
    |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
    = note: required for `SelectStatement<FromClause<table>, SelectClause<name>, NoDistinctClause, NoWhereClause, ..., ..., ...>` to implement `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/having_cant_be_used_without_group_by.rs:32:71
@@ -50,6 +54,8 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
    |
 14 |         id -> Integer,
    |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
    = note: required for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::id>` to implement `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
+   = note: consider using `--verbose` to print the full type name to the console

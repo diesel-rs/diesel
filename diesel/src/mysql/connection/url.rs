@@ -71,7 +71,7 @@ impl ConnectionOptions {
         }
 
         let query_pairs = url.query_pairs().into_owned().collect::<HashMap<_, _>>();
-        if query_pairs.get("database").is_some() {
+        if query_pairs.contains_key("database") {
             return Err(connection_url_error());
         }
 

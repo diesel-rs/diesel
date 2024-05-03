@@ -2,7 +2,7 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
   --> tests/fail/derive/queryable_type_mismatch.rs:59:54
    |
 59 |     let _ = users::table.load::<UserWithToFewFields>(conn);
-   |                          ----                        ^^^^ the trait `load_dsl::private::CompatibleType<UserWithToFewFields, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+   |                          ----                        ^^^^ the trait `load_dsl::private::CompatibleType<UserWithToFewFields, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`, which is required by `users::table: LoadQuery<'_, _, UserWithToFewFields>`
    |                          |
    |                          required by a bound introduced by this call
    |
@@ -33,7 +33,7 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
   --> tests/fail/derive/queryable_type_mismatch.rs:61:55
    |
 61 |     let _ = users::table.load::<UserWithToManyFields>(conn);
-   |                          ----                         ^^^^ the trait `load_dsl::private::CompatibleType<UserWithToManyFields, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+   |                          ----                         ^^^^ the trait `load_dsl::private::CompatibleType<UserWithToManyFields, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`, which is required by `users::table: LoadQuery<'_, _, UserWithToManyFields>`
    |                          |
    |                          required by a bound introduced by this call
    |
@@ -64,7 +64,7 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
   --> tests/fail/derive/queryable_type_mismatch.rs:63:49
    |
 63 |     let _ = users::table.load::<UserWrongOrder>(conn);
-   |                          ----                   ^^^^ the trait `load_dsl::private::CompatibleType<UserWrongOrder, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+   |                          ----                   ^^^^ the trait `load_dsl::private::CompatibleType<UserWrongOrder, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`, which is required by `users::table: LoadQuery<'_, _, UserWrongOrder>`
    |                          |
    |                          required by a bound introduced by this call
    |
@@ -95,7 +95,7 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
   --> tests/fail/derive/queryable_type_mismatch.rs:65:51
    |
 65 |     let _ = users::table.load::<UserTypeMismatch>(conn);
-   |                          ----                     ^^^^ the trait `load_dsl::private::CompatibleType<UserTypeMismatch, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+   |                          ----                     ^^^^ the trait `load_dsl::private::CompatibleType<UserTypeMismatch, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`, which is required by `users::table: LoadQuery<'_, _, UserTypeMismatch>`
    |                          |
    |                          required by a bound introduced by this call
    |

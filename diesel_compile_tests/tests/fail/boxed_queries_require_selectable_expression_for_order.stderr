@@ -9,6 +9,7 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
    |
 16 |         title -> VarChar,
    |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `diesel::expression::operators::Desc<posts::columns::title>` to implement `AppearsOnTable<users::table>`
    = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>` to implement `OrderDsl<diesel::expression::operators::Desc<posts::columns::title>>`
@@ -17,7 +18,7 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
   --> tests/fail/boxed_queries_require_selectable_expression_for_order.rs:21:37
    |
 21 |     users::table.into_boxed::<Pg>().order(posts::title.desc());
-   |                                     ^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+   |                                     ^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`, which is required by `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>: OrderDsl<_>`
    |
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>

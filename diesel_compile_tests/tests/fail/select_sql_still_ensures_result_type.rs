@@ -1,8 +1,7 @@
-#![feature(diagnostic_namespace)]
 extern crate diesel;
 
-use diesel::*;
 use diesel::dsl::sql;
+use diesel::*;
 
 table! {
     users {

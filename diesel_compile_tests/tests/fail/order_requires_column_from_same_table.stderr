@@ -9,13 +9,14 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
    |
 13 |         id -> Integer,
    |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `OrderDsl<posts::columns::id>`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
   --> tests/fail/order_requires_column_from_same_table.rs:18:31
    |
 18 |     let source = users::table.order(posts::id);
-   |                               ^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+   |                               ^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`, which is required by `SelectStatement<FromClause<users::table>>: OrderDsl<_>`
    |
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>

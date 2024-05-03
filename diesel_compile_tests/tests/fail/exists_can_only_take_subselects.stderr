@@ -2,7 +2,7 @@ error[E0277]: the trait bound `bool: SelectQuery` is not satisfied
   --> tests/fail/exists_can_only_take_subselects.rs:23:18
    |
 23 |     users::table.filter(exists(true));
-   |                  ^^^^^^ the trait `SelectQuery` is not implemented for `bool`
+   |                  ^^^^^^ the trait `SelectQuery` is not implemented for `bool`, which is required by `SelectStatement<FromClause<users::table>>: FilterDsl<_>`
    |
    = help: the following other types implement trait `SelectQuery`:
              diesel::query_builder::combination_clause::CombinationClause<Combinator, Rule, Source, Rhs>
@@ -17,7 +17,7 @@ error[E0277]: the trait bound `users::columns::id: SelectQuery` is not satisfied
   --> tests/fail/exists_can_only_take_subselects.rs:24:18
    |
 24 |     users::table.filter(exists(users::id));
-   |                  ^^^^^^ the trait `SelectQuery` is not implemented for `users::columns::id`
+   |                  ^^^^^^ the trait `SelectQuery` is not implemented for `users::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: FilterDsl<_>`
    |
    = help: the following other types implement trait `SelectQuery`:
              diesel::query_builder::combination_clause::CombinationClause<Combinator, Rule, Source, Rhs>

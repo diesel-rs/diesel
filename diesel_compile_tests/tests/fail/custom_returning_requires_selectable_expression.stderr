@@ -1,10 +1,10 @@
 error[E0277]: Cannot select `bad::columns::age` from `users::table`
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:29:78
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:30:20
    |
-29 |     let stmt = update(users.filter(id.eq(1))).set(name.eq("Bill")).returning(bad::age);
-   |                                                                    --------- ^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
-   |                                                                    |
-   |                                                                    required by a bound introduced by this call
+30 |         .returning(bad::age);
+   |          --------- ^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`, which is required by `UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<users::columns::name>, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<_>>: Query`
+   |          |
+   |          required by a bound introduced by this call
    |
    = note: `bad::columns::age` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
@@ -24,14 +24,15 @@ note: required by a bound in `UpdateStatement::<T, U, V>::returning`
 ...
    |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: Cannot select `bad::columns::age` from `users::table`
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:34:63
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:37:20
    |
-34 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
-   |                                                     --------- ^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
-   |                                                     |
-   |                                                     required by a bound introduced by this call
+37 |         .returning((name, bad::age));
+   |          --------- ^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`, which is required by `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, ReturningClause<_>>: Query`
+   |          |
+   |          required by a bound introduced by this call
    |
    = note: `bad::columns::age` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
@@ -52,20 +53,22 @@ note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    |     where
    |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:34:63
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:37:20
    |
-34 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
-   |                                                     --------- ^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
-   |                                                     |
-   |                                                     required by a bound introduced by this call
+37 |         .returning((name, bad::age));
+   |          --------- ^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
+   |          |
+   |          required by a bound introduced by this call
    |
 note: required for `bad::columns::age` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:16:7
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
    |
-16 |       age -> Integer,
+15 |       age -> Integer,
    |       ^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `(users::columns::name, bad::columns::age)` to implement `AppearsOnTable<users::table>`
    = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<users::table>`
@@ -78,14 +81,15 @@ note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    |     where
    |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: the trait bound `users::table: TableNotEqual<bad::table>` is not satisfied
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:34:63
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:37:20
    |
-34 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
-   |                                                     --------- ^^^^^^^^^^^^^^^^ the trait `TableNotEqual<bad::table>` is not implemented for `users::table`
-   |                                                     |
-   |                                                     required by a bound introduced by this call
+37 |         .returning((name, bad::age));
+   |          --------- ^^^^^^^^^^^^^^^^ the trait `TableNotEqual<bad::table>` is not implemented for `users::table`, which is required by `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, ReturningClause<_>>: Query`
+   |          |
+   |          required by a bound introduced by this call
    |
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
@@ -99,9 +103,9 @@ error[E0277]: the trait bound `users::table: TableNotEqual<bad::table>` is not s
            and $N others
    = note: required for `users::table` to implement `AppearsInFromClause<bad::table>`
 note: required for `bad::columns::age` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:16:7
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
    |
-16 |       age -> Integer,
+15 |       age -> Integer,
    |       ^^^
    = note: 1 redundant requirement hidden
    = note: required for `(users::columns::name, bad::columns::age)` to implement `AppearsOnTable<users::table>`
@@ -115,3 +119,4 @@ note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    |     where
    |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
+   = note: consider using `--verbose` to print the full type name to the console

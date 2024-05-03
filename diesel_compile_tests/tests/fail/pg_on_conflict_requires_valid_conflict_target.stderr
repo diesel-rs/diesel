@@ -46,7 +46,7 @@ error[E0277]: the trait bound `lower_utils::lower<posts::columns::title>: Column
   --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:42:22
    |
 42 |         .on_conflict(lower(posts::title));
-   |          ----------- ^^^^^^^^^^^^^^^^^^^ the trait `Column` is not implemented for `lower_utils::lower<posts::columns::title>`
+   |          ----------- ^^^^^^^^^^^^^^^^^^^ the trait `Column` is not implemented for `lower_utils::lower<posts::columns::title>`, which is required by `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<lower_utils::lower<posts::columns::title>>: diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>`
    |          |
    |          required by a bound introduced by this call
    |
@@ -74,7 +74,7 @@ error[E0277]: the trait bound `&str: Column` is not satisfied
   --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:46:22
    |
 46 |         .on_conflict("id");
-   |          ----------- ^^^^ the trait `Column` is not implemented for `&str`
+   |          ----------- ^^^^ the trait `Column` is not implemented for `&str`, which is required by `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<&str>: diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>`
    |          |
    |          required by a bound introduced by this call
    |
