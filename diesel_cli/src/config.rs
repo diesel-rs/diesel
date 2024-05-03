@@ -280,7 +280,9 @@ impl Config {
 
                     if let Some(except_rules) = &except_custom_type_definitions_with_indices {
                         if let Some(rules) = except_rules.range(boundary).nth(0) {
-                            print_schema.except_custom_type_definitions = rules.1.clone();
+                            print_schema
+                                .except_custom_type_definitions
+                                .clone_from(rules.1);
                         }
                     }
 
