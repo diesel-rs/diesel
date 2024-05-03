@@ -558,13 +558,22 @@ where
 ///    or a custom SQL function.
 ///
 /// The select expression is specified via the `select_expression` parameter.
-/// For more complex expressions, it may be required to also specify the result type
-/// of the expression with `select_expression_type`, However, for most query fragments
-/// this can be inferred and does not need to be specified.
+///
+/// Query fragments created using [`dsl::auto_type`](crate::dsl::auto_type) are supported, which
+/// may be useful as the select expression gets large: it may not be practical to inline it in
+/// the attribute then.
+///
+/// The type of the expression is usually inferred. If it can't be fully inferred automatically,
+/// one may either:
+/// - Put type annotations in inline blocks in the query fragment itself
+/// - Use a dedicated [`dsl::auto_type`](crate::dsl::auto_type) function as `select_expression`
+///   and use [`dsl::auto_type`'s type annotation features](crate::dsl::auto_type)
+/// - Specify the type of the expression using the `select_expression_type` attribute
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
 /// use schema::{users, posts};
+/// use diesel::dsl;
 ///
 /// #[derive(Debug, PartialEq, Queryable, Selectable)]
 /// struct User {
@@ -585,11 +594,19 @@ where
 ///     id: i32,
 ///     #[diesel(select_expression = users::columns::name)]
 ///     name: String,
-///     #[diesel(select_expression = posts::columns::title)]
+///     #[diesel(select_expression = complex_fragment_for_title())]
 ///     title: String,
 /// #   #[cfg(feature = "chrono")]
 ///     #[diesel(select_expression = diesel::dsl::now)]
 ///     access_time: chrono::NaiveDateTime,
+///     #[diesel(select_expression = users::columns::id.eq({let id: i32 = FOO; id}))]
+///     user_id_is_foo: bool,
+/// }
+/// const FOO: i32 = 42; // Type of FOO can't be inferred automatically in the select_expression
+/// #[dsl::auto_type]
+/// fn complex_fragment_for_title() -> _ {
+///     // See the `#[dsl::auto_type]` documentation for examples of more complex usage
+///     posts::columns::title
 /// }
 ///
 /// # fn main() -> QueryResult<()> {
@@ -606,6 +623,7 @@ where
 ///     title: "My first post".into(),
 /// #   #[cfg(feature = "chrono")]
 ///     access_time: first_user_post.access_time,
+///     user_id_is_foo: false,
 /// };
 /// assert_eq!(expected_user_post, first_user_post);
 /// #
