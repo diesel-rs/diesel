@@ -165,39 +165,6 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0277]: the trait bound `Alias<users2>: AppearsInFromClause<pets::table>` is not satisfied
-  --> tests/fail/derive/aliases.rs:54:21
-   |
-54 |         .inner_join(user_alias)
-   |          ---------- ^^^^^^^^^^ the trait `AppearsInFromClause<pets::table>` is not implemented for `Alias<users2>`, which is required by `pets::table: JoinWithImplicitOnClause<_, Inner>`
-   |          |
-   |          required by a bound introduced by this call
-   |
-   = help: the trait `AppearsInFromClause<QS>` is implemented for `Alias<S>`
-   = note: required for `query_source::joins::Join<pets::table, Alias<users2>, Inner>` to implement `AppearsInFromClause<pets::table>`
-note: required for `pets::columns::id` to implement `AppearsOnTable<query_source::joins::Join<pets::table, Alias<users2>, Inner>>`
-  --> tests/fail/derive/aliases.rs:23:9
-   |
-23 |         id -> Integer,
-   |         ^^
-   = note: 2 redundant requirements hidden
-   = note: required for `((pets::columns::id,), (AliasedField<users2, users::columns::id>, AliasedField<users2, users::columns::name>))` to implement `AppearsOnTable<query_source::joins::Join<pets::table, Alias<users2>, Inner>>`
-   = note: required for `query_source::joins::Join<pets::table, Alias<users2>, Inner>` to implement `QuerySource`
-   = note: 1 redundant requirement hidden
-   = note: required for `JoinOn<query_source::joins::Join<pets::table, Alias<users2>, Inner>, _>` to implement `QuerySource`
-   = note: required for `SelectStatement<FromClause<pets::table>>` to implement `InternalJoinDsl<Alias<users2>, Inner, _>`
-   = note: 1 redundant requirement hidden
-   = note: required for `pets::table` to implement `InternalJoinDsl<Alias<users2>, Inner, _>`
-   = note: required for `pets::table` to implement `JoinWithImplicitOnClause<Alias<users2>, Inner>`
-note: required by a bound in `inner_join`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
-   |        ---------- required by a bound in this associated function
-   |     where
-   |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
-
 error[E0277]: the trait bound `users::table: JoinTo<pets::table>` is not satisfied
   --> tests/fail/derive/aliases.rs:54:10
    |
@@ -216,18 +183,98 @@ error[E0277]: the trait bound `users::table: JoinTo<pets::table>` is not satisfi
    = note: required for `Alias<users2>` to implement `JoinTo<pets::table>`
    = note: required for `pets::table` to implement `JoinWithImplicitOnClause<Alias<users2>, Inner>`
 
-error[E0599]: the method `select` exists for struct `SelectStatement<FromClause<JoinOn<Join<table, Alias<users2>, Inner>, _>>>`, but its trait bounds were not satisfied
-  --> tests/fail/derive/aliases.rs:55:10
+error[E0277]: the trait bound `Alias<posts3>: AppearsInFromClause<Alias<posts2>>` is not satisfied
+  --> tests/fail/derive/aliases.rs:63:13
    |
-53 | /     pets::table
-54 | |         .inner_join(user_alias)
-55 | |         .select(pets::id)
+62 |           .inner_join(
+   |            ---------- required by a bound introduced by this call
+63 | /             post_alias_2.on(post_alias
+64 | |                 .field(posts::author)
+65 | |                 .eq(post_alias_2.field(posts::author))),
+   | |_______________________________________________________^ the trait `AppearsInFromClause<Alias<posts2>>` is not implemented for `Alias<posts3>`, which is required by `Alias<posts2>: JoinWithImplicitOnClause<_, Inner>`
+   |
+   = note: double check that `Alias<posts2>` and `Alias<posts3>` appear in the same `allow_tables_to_appear_in_same_query!`
+           call if both are tables
+   = note: double check that any two aliases to the same table in `Alias<posts2>` and `Alias<posts3>` appear in the same `alias!` call
+   = help: the trait `AppearsInFromClause<QS>` is implemented for `Alias<S>`
+   = note: required for `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>` to implement `AppearsInFromClause<Alias<posts2>>`
+   = note: required for `AliasedField<posts2, posts::columns::id>` to implement `AppearsOnTable<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>>`
+   = note: 2 redundant requirements hidden
+   = note: required for `((AliasedField<posts2, id>, AliasedField<posts2, author>, AliasedField<posts2, title>), (..., ..., ...))` to implement `AppearsOnTable<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>>`
+   = note: required for `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>` to implement `QuerySource`
+   = note: 1 redundant requirement hidden
+   = note: required for `JoinOn<Join<Alias<posts2>, Alias<posts3>, Inner>, Grouped<Eq<AliasedField<posts2, author>, ...>>>` to implement `QuerySource`
+   = note: required for `SelectStatement<FromClause<Alias<posts2>>>` to implement `InternalJoinDsl<Alias<posts3>, Inner, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>`
+   = note: 1 redundant requirement hidden
+   = note: required for `Alias<posts2>` to implement `InternalJoinDsl<Alias<posts3>, Inner, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>`
+   = note: required for `Alias<posts2>` to implement `JoinWithImplicitOnClause<query_source::joins::OnClauseWrapper<Alias<posts3>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>, Inner>`
+note: required by a bound in `inner_join`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |     fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
+   |        ---------- required by a bound in this associated function
+   |     where
+   |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>: AppearsInFromClause<Alias<posts3>>` is not satisfied
+  --> tests/fail/derive/aliases.rs:62:10
+   |
+62 |         .inner_join(
+   |          ^^^^^^^^^^ the trait `AppearsInFromClause<Alias<posts3>>` is not implemented for `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>`, which is required by `SelectStatement<FromClause<Alias<posts2>>>: InternalJoinDsl<_, Inner, _>`
+   |
+   = note: double check that `Alias<posts3>` and `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>` appear in the same `allow_tables_to_appear_in_same_query!`
+           call if both are tables
+   = note: double check that any two aliases to the same table in `Alias<posts3>` and `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>` appear in the same `alias!` call
+   = help: the trait `AppearsInFromClause<T>` is implemented for `query_source::joins::Join<Left, Right, Kind>`
+   = note: required for `AliasedField<posts3, posts::columns::id>` to implement `AppearsOnTable<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>>`
+   = note: 2 redundant requirements hidden
+   = note: required for `((AliasedField<posts2, id>, AliasedField<posts2, author>, AliasedField<posts2, title>), (..., ..., ...))` to implement `AppearsOnTable<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>>`
+   = note: required for `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>` to implement `QuerySource`
+   = note: 1 redundant requirement hidden
+   = note: required for `JoinOn<Join<Alias<posts2>, Alias<posts3>, Inner>, Grouped<Eq<AliasedField<posts2, author>, ...>>>` to implement `QuerySource`
+   = note: required for `SelectStatement<FromClause<Alias<posts2>>>` to implement `InternalJoinDsl<Alias<posts3>, Inner, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>`
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>: AppearsInFromClause<Alias<posts2>>` is not satisfied
+  --> tests/fail/derive/aliases.rs:62:10
+   |
+62 |         .inner_join(
+   |          ^^^^^^^^^^ the trait `AppearsInFromClause<Alias<posts2>>` is not implemented for `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>`, which is required by `SelectStatement<FromClause<Alias<posts2>>>: InternalJoinDsl<_, Inner, _>`
+   |
+   = note: double check that `Alias<posts2>` and `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>` appear in the same `allow_tables_to_appear_in_same_query!`
+           call if both are tables
+   = note: double check that any two aliases to the same table in `Alias<posts2>` and `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>` appear in the same `alias!` call
+   = help: the trait `AppearsInFromClause<T>` is implemented for `query_source::joins::Join<Left, Right, Kind>`
+   = note: required for `AliasedField<posts2, posts::columns::author>` to implement `AppearsOnTable<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>>`
+   = note: 2 redundant requirements hidden
+   = note: required for `Grouped<Eq<AliasedField<posts2, author>, AliasedField<posts3, author>>>` to implement `AppearsOnTable<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>>`
+   = note: required for `JoinOn<Join<Alias<posts2>, Alias<posts3>, Inner>, Grouped<Eq<AliasedField<posts2, author>, ...>>>` to implement `QuerySource`
+   = note: required for `SelectStatement<FromClause<Alias<posts2>>>` to implement `InternalJoinDsl<Alias<posts3>, Inner, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>`
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: the method `select` exists for struct `SelectStatement<FromClause<JoinOn<Join<Alias<posts2>, Alias<posts3>, Inner>, Grouped<Eq<..., ...>>>>>`, but its trait bounds were not satisfied
+  --> tests/fail/derive/aliases.rs:67:10
+   |
+61 |       let posts = post_alias
+   |  _________________-
+62 | |         .inner_join(
+63 | |             post_alias_2.on(post_alias
+64 | |                 .field(posts::author)
+65 | |                 .eq(post_alias_2.field(posts::author))),
+66 | |         )
+67 | |         .select((post_alias.field(posts::id), post_alias_2.field(posts::id)))
    | |         -^^^^^^ private field, not a method
    | |_________|
    |
    |
+   = note: consider using `--verbose` to print the full type name to the console
    = note: the following trait bounds were not satisfied:
-           `&SelectStatement<FromClause<JoinOn<query_source::joins::Join<pets::table, Alias<users2>, Inner>, _>>>: Table`
-           which is required by `&SelectStatement<FromClause<JoinOn<query_source::joins::Join<pets::table, Alias<users2>, Inner>, _>>>: diesel::QueryDsl`
-           `&mut SelectStatement<FromClause<JoinOn<query_source::joins::Join<pets::table, Alias<users2>, Inner>, _>>>: Table`
-           which is required by `&mut SelectStatement<FromClause<JoinOn<query_source::joins::Join<pets::table, Alias<users2>, Inner>, _>>>: diesel::QueryDsl`
+           `&SelectStatement<FromClause<JoinOn<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>>>: Table`
+           which is required by `&SelectStatement<FromClause<JoinOn<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>>>: diesel::QueryDsl`
+           `&mut SelectStatement<FromClause<JoinOn<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>>>: Table`
+           which is required by `&mut SelectStatement<FromClause<JoinOn<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>>>: diesel::QueryDsl`

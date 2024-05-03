@@ -1,7 +1,7 @@
 extern crate diesel;
 
-use diesel::*;
 use diesel::pg::Pg;
+use diesel::*;
 
 table! {
     users {
@@ -17,6 +17,10 @@ table! {
     }
 }
 
+allow_tables_to_appear_in_same_query!(users, posts);
+
 fn main() {
-    users::table.into_boxed::<Pg>().filter(posts::title.eq("Hello"));
+    users::table
+        .into_boxed::<Pg>()
+        .filter(posts::title.eq("Hello"));
 }

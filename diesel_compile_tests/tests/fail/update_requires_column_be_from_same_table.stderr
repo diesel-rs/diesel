@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<Grouped<Eq<title, Bound<Text, &str>>> as AsChangeset>::Target == table`
-  --> tests/fail/update_requires_column_be_from_same_table.rs:22:37
+  --> tests/fail/update_requires_column_be_from_same_table.rs:24:37
    |
-22 |     let command = update(users).set(posts::title.eq("Hello"));
+24 |     let command = update(users).set(posts::title.eq("Hello"));
    |                                 --- ^^^^^^^^^^^^^^^^^^^^^^^^ expected `users::table`, found `posts::table`
    |                                 |
    |                                 required by a bound introduced by this call
@@ -28,9 +28,9 @@ note: `users::table` is defined in module `crate::users` of the current crate
 10 | | }
    | |_^
 note: the method call chain might not have had the expected associated types
-  --> tests/fail/update_requires_column_be_from_same_table.rs:22:50
+  --> tests/fail/update_requires_column_be_from_same_table.rs:24:50
    |
-22 |     let command = update(users).set(posts::title.eq("Hello"));
+24 |     let command = update(users).set(posts::title.eq("Hello"));
    |                                     ------------ ^^^^^^^^^^^ `AsChangeset::Target` is `table` here
    |                                     |
    |                                     this expression has type `title`
@@ -45,9 +45,9 @@ note: required by a bound in `UpdateStatement::<T, U>::set`
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/update_requires_column_be_from_same_table.rs:23:33
+  --> tests/fail/update_requires_column_be_from_same_table.rs:25:33
    |
-23 |     let command = update(users).set(name.eq(posts::title));
+25 |     let command = update(users).set(name.eq(posts::title));
    |                                 ^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
@@ -56,32 +56,4 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
 15 |         title -> VarChar,
    |         ^^^^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>` to implement `AsChangeset`
-
-error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-  --> tests/fail/update_requires_column_be_from_same_table.rs:23:33
-   |
-23 |     let command = update(users).set(name.eq(posts::title));
-   |                                 ^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`, which is required by `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>: AsChangeset`
-   |
-   = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!`
-           call if both are tables
-   = note: double check that `posts::table` and `users::table` appear in the same `alias!` call if both
-           are aliases to the same table
-   = help: the following other types implement trait `TableNotEqual<T>`:
-             <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-             <Tablesample<pg::metadata_lookup::pg_namespace::table, TSM> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <Tablesample<pg::metadata_lookup::pg_type::table, TSM> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Tablesample<pg::metadata_lookup::pg_type::table, TSM>>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
-           and $N others
-   = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
-note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/update_requires_column_be_from_same_table.rs:15:9
-   |
-15 |         title -> VarChar,
-   |         ^^^^^
    = note: required for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>` to implement `AsChangeset`
