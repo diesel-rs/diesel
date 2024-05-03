@@ -308,6 +308,14 @@ pub fn build_cli() -> Command {
                 .help("Generate SQL type definitions for types not provided by diesel"),
         )
         .arg(
+            Arg::new("except-custom-type-definitions")
+                .action(ArgAction::Append)
+                .long("except-custom-type-definitions")
+                .num_args(1..)
+                .action(ArgAction::Append)
+                .help("A list of regexes to filter the custom types definitions generated")
+        )
+        .arg(
             Arg::new("custom-type-derives")
                 .long("custom-type-derives")
                 .num_args(1..)
@@ -322,15 +330,15 @@ pub fn build_cli() -> Command {
                 .default_values(["default"])
                 .help("select schema key from diesel.toml, use 'default' for print_schema without key."),
         ).arg(
-            position_sensitive_flag(Arg::new("sqlite-integer-primary-key-is-bigint"))
-                .long("sqlite-integer-primary-key-is-bigint")
-                .action(ArgAction::Append)
-                .help(
-                    "For SQLite 3.37 and above, detect `INTEGER PRIMARY KEY` columns as `BigInt`, \
+        position_sensitive_flag(Arg::new("sqlite-integer-primary-key-is-bigint"))
+            .long("sqlite-integer-primary-key-is-bigint")
+            .action(ArgAction::Append)
+            .help(
+                "For SQLite 3.37 and above, detect `INTEGER PRIMARY KEY` columns as `BigInt`, \
                      when the table isn't declared with `WITHOUT ROWID`.\n\
                      See https://www.sqlite.org/lang_createtable.html#rowid for more information."
-                ),
-        );
+            ),
+    );
 
     let config_arg = Arg::new("CONFIG_FILE")
         .value_parser(clap::value_parser!(std::path::PathBuf))

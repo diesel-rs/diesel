@@ -1,0 +1,4 @@
+[print_schema]
+file = "src/schema.rs"
+except_custom_type_definitions = ["MyType2"]
+custom_type_derives = ["diesel::query_builder::QueryId", "Clone"]
