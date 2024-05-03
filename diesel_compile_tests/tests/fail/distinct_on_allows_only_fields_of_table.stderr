@@ -66,6 +66,10 @@ error[E0277]: the trait bound `posts::table: TableNotEqual<users::table>` is not
 28 |         .distinct_on((posts::name, users::name))
    |          ^^^^^^^^^^^ the trait `TableNotEqual<users::table>` is not implemented for `posts::table`, which is required by `posts::table: DistinctOnDsl<_>`
    |
+   = note: Double check that `users::table` and `posts::table` appear in the same `allow_tables_to_appear_in_same_query!`
+           call if both are tables
+   = note: Double check that `users::table` and `posts::table` appear in the same `alias!` call if both
+           are aliases to the same table
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>

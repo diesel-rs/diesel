@@ -64,6 +64,10 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
 23 |     let command = update(users).set(name.eq(posts::title));
    |                                 ^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`, which is required by `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>: AsChangeset`
    |
+   = note: Double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!`
+           call if both are tables
+   = note: Double check that `posts::table` and `users::table` appear in the same `alias!` call if both
+           are aliases to the same table
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>

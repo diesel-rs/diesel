@@ -20,6 +20,10 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
 21 |     users::table.into_boxed::<Pg>().order(posts::title.desc());
    |                                     ^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`, which is required by `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>: OrderDsl<_>`
    |
+   = note: Double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!`
+           call if both are tables
+   = note: Double check that `posts::table` and `users::table` appear in the same `alias!` call if both
+           are aliases to the same table
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>

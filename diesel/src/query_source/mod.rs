@@ -96,6 +96,10 @@ pub trait AppearsInFromClause<QS> {
 ///   (no call to [`allow_tables_to_appear_in_same_query!`] was made)
 /// - You are attempting to use two aliases to the same table in the same query, but they
 ///   were declared through different calls to [`alias!`](crate::alias)
+#[diagnostic::on_unimplemented(
+    note = "Double check that `{T}` and `{Self}` appear in the same `allow_tables_to_appear_in_same_query!` \ncall if both are tables",
+    note = "Double check that `{T}` and `{Self}` appear in the same `alias!` call if both \nare aliases to the same table"
+)]
 pub trait TableNotEqual<T: Table>: Table {}
 
 impl<T1, T2> AppearsInFromClause<T2> for T1
