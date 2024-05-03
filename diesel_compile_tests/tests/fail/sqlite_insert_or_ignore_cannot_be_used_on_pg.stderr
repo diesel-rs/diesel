@@ -1,4 +1,4 @@
-error[E0277]: the trait bound `diesel::query_builder::insert_statement::private::InsertOrIgnore: QueryFragment<Pg>` is not satisfied
+error[E0277]: `diesel::query_builder::insert_statement::private::InsertOrIgnore` is no valid SQL fragment for the `Pg` backend
   --> tests/fail/sqlite_insert_or_ignore_cannot_be_used_on_pg.rs:21:18
    |
 21 |         .execute(&mut connection)
@@ -6,6 +6,8 @@ error[E0277]: the trait bound `diesel::query_builder::insert_statement::private:
    |          |
    |          required by a bound introduced by this call
    |
+   = note: this usually means that the `Pg` database system does not support
+           this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <diesel::query_builder::insert_statement::private::InsertOrIgnore as QueryFragment<Mysql>>
              <diesel::query_builder::insert_statement::private::InsertOrIgnore as QueryFragment<Sqlite>>

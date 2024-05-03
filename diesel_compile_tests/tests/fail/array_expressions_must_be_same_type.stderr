@@ -177,7 +177,7 @@ note: required by a bound in `get_result`
    = note: consider using `--verbose` to print the full type name to the console
    = note: consider using `--verbose` to print the full type name to the console
 
-error[E0277]: the trait bound `f64: QueryFragment<Pg>` is not satisfied
+error[E0277]: `f64` is no valid SQL fragment for the `Pg` backend
   --> tests/fail/array_expressions_must_be_same_type.rs:16:33
    |
 16 |         .get_result::<Vec<i32>>(&mut connection)
@@ -185,6 +185,8 @@ error[E0277]: the trait bound `f64: QueryFragment<Pg>` is not satisfied
    |          |
    |          required by a bound introduced by this call
    |
+   = note: this usually means that the `Pg` database system does not support
+           this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <Box<T> as QueryFragment<DB>>
              <DeleteStatement<T, U, Ret> as QueryFragment<DB>>
@@ -418,7 +420,7 @@ note: required by a bound in `get_result`
    = note: consider using `--verbose` to print the full type name to the console
    = note: consider using `--verbose` to print the full type name to the console
 
-error[E0277]: the trait bound `{integer}: QueryFragment<Pg>` is not satisfied
+error[E0277]: `{integer}` is no valid SQL fragment for the `Pg` backend
   --> tests/fail/array_expressions_must_be_same_type.rs:19:33
    |
 19 |         .get_result::<Vec<f64>>(&mut connection)
@@ -426,6 +428,8 @@ error[E0277]: the trait bound `{integer}: QueryFragment<Pg>` is not satisfied
    |          |
    |          required by a bound introduced by this call
    |
+   = note: this usually means that the `Pg` database system does not support
+           this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <Box<T> as QueryFragment<DB>>
              <DeleteStatement<T, U, Ret> as QueryFragment<DB>>

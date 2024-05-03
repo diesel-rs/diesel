@@ -1,4 +1,4 @@
-error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<columns::name>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>: QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not satisfied
+error[E0277]: `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
   --> tests/fail/mysql_on_conflict_tests.rs:43:18
    |
 43 |         .execute(&mut connection);
@@ -6,6 +6,9 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_clause
    |          |
    |          required by a bound introduced by this call
    |
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: this usually means that the `Mysql` database system does not support
+           this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
@@ -26,7 +29,7 @@ note: required by a bound in `diesel::RunQueryDsl::execute`
    = note: consider using `--verbose` to print the full type name to the console
    = note: consider using `--verbose` to print the full type name to the console
 
-error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(columns::id, columns::name)>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>: QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not satisfied
+error[E0277]: `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
   --> tests/fail/mysql_on_conflict_tests.rs:49:18
    |
 49 |         .execute(&mut connection);
@@ -34,6 +37,9 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_clause
    |          |
    |          required by a bound introduced by this call
    |
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: this usually means that the `Mysql` database system does not support
+           this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
@@ -81,7 +87,7 @@ note: required by a bound in `diesel::upsert::on_conflict_extension::<impl Inser
    |         ConflictTarget<Target>: OnConflictTarget<T>,
    |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
 
-error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(DuplicatedKeys, columns::name)>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>: QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not satisfied
+error[E0277]: `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
   --> tests/fail/mysql_on_conflict_tests.rs:55:18
    |
 55 |         .execute(&mut connection);
@@ -89,6 +95,9 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_clause
    |          |
    |          required by a bound introduced by this call
    |
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: this usually means that the `Mysql` database system does not support
+           this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
@@ -109,7 +118,7 @@ note: required by a bound in `diesel::RunQueryDsl::execute`
    = note: consider using `--verbose` to print the full type name to the console
    = note: consider using `--verbose` to print the full type name to the console
 
-error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<SqlLiteral<_>>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>: QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not satisfied
+error[E0277]: `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
   --> tests/fail/mysql_on_conflict_tests.rs:62:18
    |
 62 |         .execute(&mut connection);
@@ -117,6 +126,9 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_clause
    |          |
    |          required by a bound introduced by this call
    |
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: this usually means that the `Mysql` database system does not support
+           this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
@@ -137,7 +149,7 @@ note: required by a bound in `diesel::RunQueryDsl::execute`
    = note: consider using `--verbose` to print the full type name to the console
    = note: consider using `--verbose` to print the full type name to the console
 
-error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>, diesel::query_builder::upsert::on_conflict_actions::DoUpdate<diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<columns::name>, diesel::query_builder::upsert::on_conflict_actions::Excluded<columns::name>>, users::table>>: QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not satisfied
+error[E0277]: `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
   --> tests/fail/mysql_on_conflict_tests.rs:70:18
    |
 70 |         .execute(&mut connection);
@@ -145,6 +157,9 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_clause
    |          |
    |          required by a bound introduced by this call
    |
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: this usually means that the `Mysql` database system does not support
+           this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
@@ -165,7 +180,7 @@ note: required by a bound in `diesel::RunQueryDsl::execute`
    = note: consider using `--verbose` to print the full type name to the console
    = note: consider using `--verbose` to print the full type name to the console
 
-error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>: QueryFragment<Pg>` is not satisfied
+error[E0277]: `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>` is no valid SQL fragment for the `Pg` backend
   --> tests/fail/mysql_on_conflict_tests.rs:79:18
    |
 79 |         .execute(&mut connection);
@@ -173,6 +188,8 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target
    |          |
    |          required by a bound introduced by this call
    |
+   = note: this usually means that the `Pg` database system does not support
+           this SQL syntax
    = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>`
    = note: required for `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` to implement `QueryFragment<Pg, pg::backend::PgOnConflictClause>`
    = note: 2 redundant requirements hidden
@@ -216,7 +233,7 @@ note: required by a bound in `diesel::upsert::on_conflict_extension::<impl Inser
    |         ConflictTarget<Target>: OnConflictTarget<T>,
    |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
 
-error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(columns::name, DuplicatedKeys)>: QueryFragment<Pg>` is not satisfied
+error[E0277]: `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(columns::name, DuplicatedKeys)>` is no valid SQL fragment for the `Pg` backend
   --> tests/fail/mysql_on_conflict_tests.rs:85:18
    |
 85 |         .execute(&mut connection);
@@ -224,6 +241,8 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target
    |          |
    |          required by a bound introduced by this call
    |
+   = note: this usually means that the `Pg` database system does not support
+           this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<SqlLiteral<ST>> as QueryFragment<DB, SP>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
@@ -276,7 +295,7 @@ note: required by a bound in `diesel::upsert::on_conflict_extension::<impl Inser
    |         ConflictTarget<Target>: OnConflictTarget<T>,
    |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
 
-error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(DuplicatedKeys, columns::name)>: QueryFragment<Pg>` is not satisfied
+error[E0277]: `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(DuplicatedKeys, columns::name)>` is no valid SQL fragment for the `Pg` backend
   --> tests/fail/mysql_on_conflict_tests.rs:91:18
    |
 91 |         .execute(&mut connection);
@@ -284,6 +303,8 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target
    |          |
    |          required by a bound introduced by this call
    |
+   = note: this usually means that the `Pg` database system does not support
+           this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<SqlLiteral<ST>> as QueryFragment<DB, SP>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
