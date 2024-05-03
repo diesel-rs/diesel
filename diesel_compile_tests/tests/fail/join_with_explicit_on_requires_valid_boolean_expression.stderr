@@ -16,7 +16,7 @@ note: required for `comments::columns::id` to implement `AppearsOnTable<query_so
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<posts::table, Inner, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>>`
    = note: consider using `--verbose` to print the full type name to the console
 
-error[E0277]: the trait bound `diesel::sql_types::Integer: BoolOrNullableBool` is not satisfied
+error[E0277]: `diesel::sql_types::Integer` is neither `diesel::sql_types::Bool` nor `diesel::sql_types::Nullable<Bool>`
   --> tests/fail/join_with_explicit_on_requires_valid_boolean_expression.rs:33:37
    |
 33 |     let _ = users::table.inner_join(posts::table.on(users::id));
@@ -24,6 +24,7 @@ error[E0277]: the trait bound `diesel::sql_types::Integer: BoolOrNullableBool` i
    |                          |
    |                          required by a bound introduced by this call
    |
+   = note: Try to provide an expression that produces one of the expected sql types
    = help: the following other types implement trait `BoolOrNullableBool`:
              Bool
              Nullable<Bool>

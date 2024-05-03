@@ -656,6 +656,10 @@ pub mod is_nullable {
 
 /// A marker trait for accepting expressions of the type `Bool` and
 /// `Nullable<Bool>` in the same place
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is neither `diesel::sql_types::Bool` nor `diesel::sql_types::Nullable<Bool>`",
+    note = "Try to provide an expression that produces one of the expected sql types"
+)]
 pub trait BoolOrNullableBool {}
 
 impl BoolOrNullableBool for Bool {}
