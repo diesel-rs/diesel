@@ -155,7 +155,11 @@ fn test_delete() -> _ {
 
 #[auto_type]
 fn test_delete_2() -> _ {
-    delete(users::table.find(1_i32))
+    delete(users::table.find({
+        // Test that type ascriptions via nested blocks work
+        let id: i32 = 1;
+        id
+    }))
 }
 
 #[auto_type]

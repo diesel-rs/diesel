@@ -1,15 +1,35 @@
 use super::*;
 
-pub(crate) struct LocalVariablesMap<'a> {
+/// The map itself, + some settings to run the inferrer with
+pub(crate) struct LocalVariablesMap<'a, 'p> {
     pub(crate) inferrer_settings: &'a InferrerSettings,
+    /// The map, with an optional parent (to support nested blocks)
+    pub(crate) inner: LocalVariablesMapInner<'a, 'p>,
+}
+/// The map, with an optional parent (to support nested blocks)
+pub(crate) struct LocalVariablesMapInner<'a, 'p> {
     pub(crate) map: HashMap<&'a Ident, LetStatementInferredType>,
+    pub(crate) parent: Option<&'p LocalVariablesMapInner<'a, 'p>>,
 }
 pub(crate) struct LetStatementInferredType {
     pub(crate) type_: Type,
     pub(crate) errors: Vec<Rc<syn::Error>>,
 }
+impl<'a, 'p> LocalVariablesMapInner<'a, 'p> {
+    /// Lookup in this map, and if not found, in the parent map
+    /// This is to support nested blocks
+    pub(crate) fn get(&self, ident: &Ident) -> Option<&LetStatementInferredType> {
+        match self.map.get(ident) {
+            Some(inferred_type) => Some(inferred_type),
+            None => match self.parent {
+                Some(parent) => parent.get(ident),
+                None => None,
+            },
+        }
+    }
+}
 
-impl<'a> LocalVariablesMap<'a> {
+impl<'a, 'p> LocalVariablesMap<'a, 'p> {
     pub(crate) fn process_pat(
         &mut self,
         pat: &'a syn::Pat,
@@ -35,7 +55,7 @@ impl<'a> LocalVariablesMap<'a> {
                 )?;
             }
             syn::Pat::Ident(pat_ident) => {
-                self.map.insert(
+                self.inner.map.insert(
                     &pat_ident.ident,
                     match (type_ascription, local_init_expression) {
                         (opt_type_ascription, Some(expr)) => {
@@ -94,5 +114,62 @@ impl<'a> LocalVariablesMap<'a> {
             }
         };
         Ok(())
+    }
+
+    /// Finishes a block inference for this map.
+    /// It may be initialized with `pat`s before (such as function parameters),
+    /// then this function is used to infer the type of the last expression in the block.
+    ///
+    /// It takes the last expression of the block as a `block_last_expr`
+    /// parameter, because depending on where this is called,
+    /// `return`/`let`,`function_call();` will or not be tolerated, so this is
+    /// matched before calling this function.
+    ///
+    /// Expects that the block has at least one statement (it is assumed that
+    /// the last statement is provided as `block_last_expr`)
+    pub(crate) fn infer_block_expression_type(
+        mut self,
+        block_last_expr: &'a syn::Expr,
+        block_type_hint: Option<&'a syn::Type>,
+        block: &'a syn::Block,
+        errors: &mut Vec<Rc<syn::Error>>,
+    ) -> syn::Type {
+        for statement in &block.stmts[0..block
+            .stmts
+            .len()
+            .checked_sub(1)
+            .expect("Block should have at least one statement, provided as `block_last_expr`")]
+        {
+            if let syn::Stmt::Local(local) = statement {
+                match self.process_pat(
+                    &local.pat,
+                    None,
+                    local.init.as_ref().map(|local_init| &*local_init.expr),
+                ) {
+                    Ok(()) => {}
+                    Err(e) => {
+                        errors.push(Rc::new(e));
+                    }
+                }
+            };
+        }
+
+        if errors.is_empty() {
+            // We haven't encountered any error so the local variables map is
+            // properly initialized.
+            // If there are no such "syntax errors", we may attempt parsing.
+            let inferrer = self.inferrer();
+            let block_output_type =
+                inferrer.infer_expression_type(block_last_expr, block_type_hint);
+            errors.extend(inferrer.into_errors());
+            block_output_type
+        } else {
+            // We don't attempt inference if there are already errors because `process_pat`
+            // is already pretty tolerant, and we don't want to only show these errors
+            // once another error starts happening, as they may be confusing to
+            // the user.
+            let block_span = block.span();
+            parse_quote_spanned!(block_span=> _)
+        }
     }
 }
