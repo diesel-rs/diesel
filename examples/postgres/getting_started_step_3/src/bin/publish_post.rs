@@ -9,7 +9,7 @@ fn main() {
     let id = args()
         .nth(1)
         .expect("publish_post requires a post id")
-        .parse::<i32>()
+        .parse::<u32>()
         .expect("Invalid ID");
     let connection = &mut establish_connection();
 
