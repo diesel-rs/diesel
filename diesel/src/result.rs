@@ -273,7 +273,7 @@ pub trait OptionalExtension<T> {
     /// # Example
     ///
     /// ```rust
-    /// use diesel::{QueryResult, NotFound, OptionalExtension, QueryBuilderError};
+    /// use diesel::{QueryResult, NotFound, OptionalExtension, result::Error::QueryBuilderError};
     ///
     /// let result: QueryResult<i32> = Ok(1);
     /// assert_eq!(Ok(Some(1)), result.optional());
