@@ -235,6 +235,28 @@ fn update_with_no_changes() {
 }
 
 #[test]
+fn update_with_empty_changes_and_optional() {
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    struct Changes {
+        name: Option<String>,
+        hair_color: Option<String>,
+    }
+
+    let connection = &mut connection();
+    let changes = Changes {
+        name: None,
+        hair_color: None,
+    };
+    let update_result = update(users::table)
+        .set(&changes)
+        .execute(connection)
+        .optional()
+        .unwrap();
+    assert_eq!(None, update_result);
+}
+
+#[test]
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn upsert_with_no_changes_executes_do_nothing() {
     #[derive(AsChangeset)]

@@ -45,6 +45,8 @@ pub enum Error {
     /// An example of when this error could occur is if you are attempting to
     /// construct an update statement with no changes (e.g. all fields on the
     /// struct are `None`).
+    ///
+    /// When using [`optional`], this error is turned into `None`.
     QueryBuilderError(Box<dyn StdError + Send + Sync>),
 
     /// An error occurred deserializing the data being sent to the database.
@@ -265,15 +267,21 @@ pub trait OptionalExtension<T> {
     /// [`get_result`]: crate::query_dsl::RunQueryDsl::get_result()
     /// [`first`]: crate::query_dsl::RunQueryDsl::first()
     ///
+    /// Also by default, Diesel treats an empty update as a `QueryBuilderError`. This method will
+    /// convert that error into `None`.
+    ///
     /// # Example
     ///
     /// ```rust
-    /// use diesel::{QueryResult, NotFound, OptionalExtension};
+    /// use diesel::{QueryResult, NotFound, OptionalExtension, QueryBuilderError};
     ///
     /// let result: QueryResult<i32> = Ok(1);
     /// assert_eq!(Ok(Some(1)), result.optional());
     ///
     /// let result: QueryResult<i32> = Err(NotFound);
+    /// assert_eq!(Ok(None), result.optional());
+
+    /// let result: QueryResult<i32> = Err(QueryBuilderError);
     /// assert_eq!(Ok(None), result.optional());
     /// ```
     fn optional(self) -> Result<Option<T>, Error>;
@@ -284,6 +292,7 @@ impl<T> OptionalExtension<T> for QueryResult<T> {
         match self {
             Ok(value) => Ok(Some(value)),
             Err(Error::NotFound) => Ok(None),
+            Err(Error::QueryBuilderError(_)) => Ok(None),
             Err(e) => Err(e),
         }
     }
