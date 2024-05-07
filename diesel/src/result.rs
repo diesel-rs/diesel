@@ -281,7 +281,7 @@ pub trait OptionalExtension<T> {
     /// let result: QueryResult<i32> = Err(NotFound);
     /// assert_eq!(Ok(None), result.optional());
 
-    /// let result: QueryResult<i32> = Err(QueryBuilderError);
+    /// let result: QueryResult<i32> = Err(QueryBuilderError("No changes to save"));
     /// assert_eq!(Ok(None), result.optional());
     /// ```
     fn optional(self) -> Result<Option<T>, Error>;
