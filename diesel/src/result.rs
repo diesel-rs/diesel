@@ -46,7 +46,7 @@ pub enum Error {
     /// construct an update statement with no changes (e.g. all fields on the
     /// struct are `None`).
     ///
-    /// When using [`optional`], this error is turned into `None`.
+    /// When using `optional`, this error is turned into `None`.
     QueryBuilderError(Box<dyn StdError + Send + Sync>),
 
     /// An error occurred deserializing the data being sent to the database.
