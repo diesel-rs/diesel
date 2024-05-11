@@ -692,6 +692,10 @@ fn pg_specific_option_to_sql() {
         "NULL::bool",
         None
     ));
+    assert!(query_to_sql_equality::<Nullable<Citext>, Option<String>>(
+        "NULL::citext",
+        None
+    ));
 }
 
 #[test]
@@ -1507,4 +1511,66 @@ fn cchar_to_sql() {
     assert!(query_to_sql_equality::<CChar, u8>(r#"'ä'::"char""#, 195u8));
     assert!(query_to_sql_equality::<CChar, u8>(r#"0::"char""#, b'\0'));
     assert!(query_to_sql_equality::<CChar, u8>(r#"'0'::"char""#, b'0'));
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn citext_fields() {
+    let connection = &mut connection();
+
+    // Enable the CIText extension
+    diesel::sql_query("CREATE EXTENSION IF NOT EXISTS citext")
+        .execute(connection)
+        .unwrap();
+
+    diesel::sql_query(
+        "CREATE TABLE case_insensitive (
+            id SERIAL PRIMARY KEY,
+            non_null_ci citext NOT NULL,
+            nullable_ci citext NULL,
+            null_value citext NULL)",
+    )
+    .execute(connection)
+    .unwrap();
+
+    table! {
+        case_insensitive (id) {
+            id -> Int4,
+            non_null_ci -> Citext,
+            nullable_ci -> Nullable<Citext>,
+            null_value -> Nullable<Citext>,
+        }
+    }
+
+    let rows_inserted = insert_into(case_insensitive::table)
+        .values((
+            case_insensitive::non_null_ci.eq("UPPERCASE_VALUE".to_string()),
+            case_insensitive::nullable_ci.eq("lowercase_value".to_string()),
+            // Explicitly insert NULL
+            case_insensitive::null_value.eq(None::<String>.into_sql()),
+        ))
+        .execute(connection)
+        .unwrap();
+
+    // Demonstrates that a query for the uppercase value in the database will succeed when
+    // the search value is the lower cased version of that value
+    // Also verifies that a null value can be deserialised
+    let (uppercase_in_db, null_value): (String, Option<String>) = case_insensitive::table
+        .filter(case_insensitive::non_null_ci.eq("UPPERCASE_VALUE".to_lowercase()))
+        .select((case_insensitive::non_null_ci, case_insensitive::null_value))
+        .first(connection)
+        .unwrap();
+
+    assert_eq!(uppercase_in_db, "UPPERCASE_VALUE");
+    assert_eq!(null_value, Option::None);
+
+    // Demonstrates that a query for the lowercase value in the database will succeed when
+    // the search value is the upper cased version of that value
+    let (lowercase_in_db): (Option<String>) = case_insensitive::table
+        .filter(case_insensitive::nullable_ci.eq("lowercase_value".to_uppercase()))
+        .select((case_insensitive::nullable_ci))
+        .first(connection)
+        .unwrap();
+
+    assert_eq!(lowercase_in_db, Some("lowercase_value".to_string()));
 }

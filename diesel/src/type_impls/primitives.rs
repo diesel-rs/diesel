@@ -93,6 +93,7 @@ mod foreign_impls {
     #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Date))]
     #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Time))]
     #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Timestamp))]
+    #[cfg_attr(feature = "postgres_backend", diesel(sql_type = crate::sql_types::Citext))]
     struct StringProxy(String);
 
     #[derive(AsExpression)]
@@ -101,6 +102,7 @@ mod foreign_impls {
     #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Date))]
     #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Time))]
     #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Timestamp))]
+    #[cfg_attr(feature = "postgres_backend", diesel(sql_type = crate::sql_types::Citext))]
     struct StrProxy(str);
 
     #[derive(FromSqlRow)]
