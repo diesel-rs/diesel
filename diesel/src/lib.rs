@@ -216,7 +216,7 @@
 //! - `32-column-tables`
 
 #![cfg_attr(feature = "unstable", feature(trait_alias))]
-#![cfg_attr(doc_cfg, feature(doc_cfg, doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![cfg_attr(feature = "128-column-tables", recursion_limit = "256")]
 // Built-in Lints
 #![warn(
