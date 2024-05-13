@@ -1545,7 +1545,7 @@ fn citext_fields() {
     let rows_inserted = insert_into(case_insensitive::table)
         .values((
             case_insensitive::non_null_ci.eq("UPPERCASE_VALUE".to_string()),
-            case_insensitive::nullable_ci.eq("lowercase_value".to_string()),
+            case_insensitive::nullable_ci.eq("lowercase_value"),
             // Explicitly insert NULL
             case_insensitive::null_value.eq(None::<String>.into_sql()),
         ))
