@@ -288,7 +288,7 @@ pub trait OptionalExtension<T> {
     /// ```rust
     /// use diesel::{QueryResult, OptionalExtension, result::Error::QueryBuilderError, result::EmptyChangeset};
     /// let result: QueryResult<i32> = Err(QueryBuilderError(Box::new(EmptyChangeset)));
-    /// assert_eq!(Ok(None), result.optional());
+    /// assert_eq!(Ok(None), result.optional_empty_changeset());
     /// ```
     fn optional_empty_changeset(self) -> Result<Option<T>, Error>;
 }
