@@ -267,9 +267,6 @@ pub trait OptionalExtension<T> {
     /// [`get_result`]: crate::query_dsl::RunQueryDsl::get_result()
     /// [`first`]: crate::query_dsl::RunQueryDsl::first()
     ///
-    /// Also by default, Diesel treats an empty update as a `QueryBuilderError`. This method will
-    /// convert that error into `None`.
-    ///
     /// # Example
     ///
     /// ```rust
@@ -280,11 +277,21 @@ pub trait OptionalExtension<T> {
     ///
     /// let result: QueryResult<i32> = Err(NotFound);
     /// assert_eq!(Ok(None), result.optional());
-
-    /// let result: QueryResult<i32> = Err(QueryBuilderError("No changes to save".into()));
-    /// assert_eq!(Ok(None), result.optional());
     /// ```
     fn optional(self) -> Result<Option<T>, Error>;
+
+    /// By default, Diesel treats an empty update as a `QueryBuilderError`. This method will
+    /// convert that error into `None`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::{QueryResult, OptionalExtension, result::Error::QueryBuilderError, result::EmptyChangeset};
+    /// let result: QueryResult<i32> = Err(QueryBuilderError(Box::new(EmptyChangeset)));
+    /// assert_eq!(Ok(None), result.optional());
+    /// ```
+    ///
+    fn optional_empty_changeset(self) -> Result<Option<T>, Error>;
 }
 
 impl<T> OptionalExtension<T> for QueryResult<T> {
@@ -292,7 +299,13 @@ impl<T> OptionalExtension<T> for QueryResult<T> {
         match self {
             Ok(value) => Ok(Some(value)),
             Err(Error::NotFound) => Ok(None),
-            Err(Error::QueryBuilderError(_)) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+    fn optional_empty_changeset(self) -> Result<Option<T>, Error> {
+        match self {
+            Ok(value) => Ok(Some(value)),
+            Err(Error::QueryBuilderError(e)) if e.is::<EmptyChangeset>() => Ok(None),
             Err(e) => Err(e),
         }
     }
@@ -422,3 +435,18 @@ impl fmt::Display for UnexpectedEndOfRow {
 }
 
 impl StdError for UnexpectedEndOfRow {}
+
+/// Expected when an update has no changes to save
+#[derive(Debug, Clone, Copy)]
+pub struct EmptyChangeset;
+
+impl fmt::Display for EmptyChangeset {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "There are no changes to save. This query cannot be built"
+        )
+    }
+}
+
+impl StdError for EmptyChangeset {}
