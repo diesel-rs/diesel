@@ -290,7 +290,6 @@ pub trait OptionalExtension<T> {
     /// let result: QueryResult<i32> = Err(QueryBuilderError(Box::new(EmptyChangeset)));
     /// assert_eq!(Ok(None), result.optional());
     /// ```
-    ///
     fn optional_empty_changeset(self) -> Result<Option<T>, Error>;
 }
 
