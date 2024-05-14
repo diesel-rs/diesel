@@ -22,6 +22,9 @@ pub type AsExprOf<Item, Type> = <Item as AsExpression<Type>>::Expression;
 /// [`lhs.eq(rhs)`](crate::expression_methods::ExpressionMethods::eq())
 pub type Eq<Lhs, Rhs> = Grouped<super::operators::Eq<Lhs, AsExpr<Rhs, Lhs>>>;
 
+/// The return type of [`lhs.eq_coerce(rhs)`](crate::expression_methods::ExpressionMethods::eq_coerce())
+pub type EqCoerce<Lhs, Rhs> = Grouped<super::operators::Eq<Lhs, Rhs>>;
+
 /// The return type of
 /// [`lhs.ne(rhs)`](crate::expression_methods::ExpressionMethods::ne())
 pub type NotEq<Lhs, Rhs> = Grouped<super::operators::NotEq<Lhs, AsExpr<Rhs, Lhs>>>;
