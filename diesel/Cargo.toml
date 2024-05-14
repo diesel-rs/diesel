@@ -74,5 +74,5 @@ time = ["diesel_derives/time", "dep:time"]
 [package.metadata.docs.rs]
 features = ["postgres", "mysql", "sqlite", "extras"]
 no-default-features = true
-rustc-args = ["--cfg", "doc_cfg"]
-rustdoc-args = ["--cfg", "doc_cfg"]
+rustc-args = ["--cfg", "docsrs"]
+rustdoc-args = ["--cfg", "docsrs"]

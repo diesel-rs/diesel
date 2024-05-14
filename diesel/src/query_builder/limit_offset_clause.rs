@@ -6,7 +6,7 @@ use crate::query_builder::QueryId;
 /// This type is only relevant for implementing custom backends
 #[derive(Debug, Clone, Copy, QueryId)]
 #[cfg_attr(
-    doc_cfg,
+    docsrs,
     doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
 )]
 pub struct LimitOffsetClause<Limit, Offset> {
@@ -21,7 +21,7 @@ pub struct LimitOffsetClause<Limit, Offset> {
 /// This type is only relevant for implementing custom backends
 #[allow(missing_debug_implementations)]
 #[cfg_attr(
-    doc_cfg,
+    docsrs,
     doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
 )]
 pub struct BoxedLimitOffsetClause<'a, DB> {

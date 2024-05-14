@@ -108,7 +108,7 @@ use super::Instrumentation;
 /// A prepared statement cache
 #[allow(missing_debug_implementations, unreachable_pub)]
 #[cfg_attr(
-    doc_cfg,
+    docsrs,
     doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
 )]
 pub struct StatementCache<DB: Backend, Statement> {
@@ -123,7 +123,7 @@ pub struct StatementCache<DB: Backend, Statement> {
 /// preparing the statement
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(
-    doc_cfg,
+    docsrs,
     doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
 )]
 #[allow(unreachable_pub)]
@@ -162,7 +162,7 @@ where
         all(feature = "sqlite", test)
     ))]
     #[cfg_attr(
-        doc_cfg,
+        docsrs,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub fn len(&self) -> usize {
@@ -251,7 +251,7 @@ where
 /// function as a function that simply returns a constant `String`.
 #[allow(unreachable_pub)]
 #[cfg_attr(
-    doc_cfg,
+    docsrs,
     doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
 )]
 pub trait QueryFragmentForCachedStatement<DB> {
@@ -283,7 +283,7 @@ where
 /// that does not depend on [`ToOwned`]
 #[allow(missing_debug_implementations, unreachable_pub)]
 #[cfg_attr(
-    doc_cfg,
+    docsrs,
     doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
 )]
 #[non_exhaustive]
@@ -323,7 +323,7 @@ impl<'a, T> DerefMut for MaybeCached<'a, T> {
 #[allow(missing_debug_implementations, unreachable_pub)]
 #[derive(Hash, PartialEq, Eq)]
 #[cfg_attr(
-    doc_cfg,
+    docsrs,
     doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
 )]
 pub enum StatementCacheKey<DB: Backend> {

@@ -562,7 +562,7 @@ pub(crate) mod private {
     ///
     /// [`QueryFragment`]: crate::query_builder::QueryFragment
     #[cfg_attr(
-        doc_cfg,
+        docsrs,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub trait DieselReserveSpecialization {}
@@ -572,7 +572,7 @@ pub(crate) mod private {
     /// `i-implement-a-third-party-backend-and-opt-into-breaking-changes`
     /// feature flag.
     #[cfg_attr(
-        doc_cfg,
+        docsrs,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub trait TrustedBackend {}

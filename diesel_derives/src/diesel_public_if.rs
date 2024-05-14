@@ -120,7 +120,7 @@ impl EntryWithVisibility {
             EntryWithVisibility::TraitFunction { meta, tail } if field_list.is_empty() => quote! {
                 #(#meta)*
                 #[cfg_attr(not(#cfg), doc(hidden))]
-                #[cfg_attr(doc_cfg, doc(cfg(#cfg)))]
+                #[cfg_attr(docsrs, doc(cfg(#cfg)))]
                 #tail
             },
             EntryWithVisibility::Item { meta, vis, tail } if field_list.is_empty() => {
