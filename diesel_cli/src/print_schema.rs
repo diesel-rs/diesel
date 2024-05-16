@@ -93,6 +93,7 @@ fn common_diesel_types(types: &mut HashSet<&str>) {
 fn pg_diesel_types() -> HashSet<&'static str> {
     let mut types = HashSet::new();
     types.insert("Cidr");
+    types.insert("Citext");
     types.insert("Inet");
     types.insert("Jsonb");
     types.insert("MacAddr");
