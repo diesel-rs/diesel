@@ -279,7 +279,20 @@ pub trait OptionalExtension<T> {
     /// assert_eq!(Ok(None), result.optional());
     /// ```
     fn optional(self) -> Result<Option<T>, Error>;
+}
 
+impl<T> OptionalExtension<T> for QueryResult<T> {
+    fn optional(self) -> Result<Option<T>, Error> {
+        match self {
+            Ok(value) => Ok(Some(value)),
+            Err(Error::NotFound) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+/// See the [method documentation](OptionalEmptyChangesetExtension::optional_empty_changeset).
+pub trait OptionalEmptyChangesetExtension<T> {
     /// By default, Diesel treats an empty update as a `QueryBuilderError`. This method will
     /// convert that error into `None`.
     ///
@@ -293,14 +306,7 @@ pub trait OptionalExtension<T> {
     fn optional_empty_changeset(self) -> Result<Option<T>, Error>;
 }
 
-impl<T> OptionalExtension<T> for QueryResult<T> {
-    fn optional(self) -> Result<Option<T>, Error> {
-        match self {
-            Ok(value) => Ok(Some(value)),
-            Err(Error::NotFound) => Ok(None),
-            Err(e) => Err(e),
-        }
-    }
+impl<T> OptionalEmptyChangesetExtension<T> for QueryResult<T> {
     fn optional_empty_changeset(self) -> Result<Option<T>, Error> {
         match self {
             Ok(value) => Ok(Some(value)),
