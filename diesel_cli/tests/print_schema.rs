@@ -364,6 +364,12 @@ fn print_schema_quoted_schema_and_table_name() {
     )
 }
 
+#[cfg(feature = "postgres")]
+#[test]
+fn print_schema_citext() {
+    test_print_schema("print_schema_citext", vec![])
+}
+
 #[test]
 fn print_schema_with_multiple_schema() {
     test_multiple_print_schema(
