@@ -45,8 +45,6 @@ pub enum Error {
     /// An example of when this error could occur is if you are attempting to
     /// construct an update statement with no changes (e.g. all fields on the
     /// struct are `None`).
-    ///
-    /// When using `optional_empty_changeset`, this error is turned into `None`.
     QueryBuilderError(Box<dyn StdError + Send + Sync>),
 
     /// An error occurred deserializing the data being sent to the database.
@@ -441,7 +439,9 @@ impl fmt::Display for UnexpectedEndOfRow {
 
 impl StdError for UnexpectedEndOfRow {}
 
-/// Expected when an update has no changes to save
+/// Expected when an update has no changes to save.
+///
+/// When using `optional_empty_changeset`, this error is turned into `None`.
 #[derive(Debug, Clone, Copy)]
 pub struct EmptyChangeset;
 
