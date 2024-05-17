@@ -299,7 +299,7 @@ pub trait OptionalEmptyChangesetExtension<T> {
     /// # Example
     ///
     /// ```rust
-    /// use diesel::{QueryResult, OptionalExtension, result::Error::QueryBuilderError, result::EmptyChangeset};
+    /// use diesel::{QueryResult, OptionalEmptyChangesetExtension, result::Error::QueryBuilderError, result::EmptyChangeset};
     /// let result: QueryResult<i32> = Err(QueryBuilderError(Box::new(EmptyChangeset)));
     /// assert_eq!(Ok(None), result.optional_empty_changeset());
     /// ```
