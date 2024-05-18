@@ -10,12 +10,14 @@ fn simple_struct_definition() {
     struct NewUser {
         name: String,
         hair_color: String,
+        r#type: String,
     }
 
     let conn = &mut connection();
     let new_user = NewUser {
         name: "Sean".into(),
         hair_color: "Black".into(),
+        r#type: "regular".into(),
     };
     insert_into(users::table)
         .values(new_user)
@@ -23,9 +25,13 @@ fn simple_struct_definition() {
         .unwrap();
 
     let saved = users::table
-        .select((users::name, users::hair_color))
-        .load::<(String, Option<String>)>(conn);
-    let expected = vec![("Sean".to_string(), Some("Black".to_string()))];
+        .select((users::name, users::hair_color, users::r#type))
+        .load::<(String, Option<String>, Option<String>)>(conn);
+    let expected = vec![(
+        "Sean".to_string(),
+        Some("Black".to_string()),
+        Some("regular".to_string()),
+    )];
     assert_eq!(Ok(expected), saved);
 }
 
@@ -35,12 +41,14 @@ fn with_implicit_table_name() {
     struct User {
         name: String,
         hair_color: String,
+        r#type: String,
     }
 
     let conn = &mut connection();
     let new_user = User {
         name: "Sean".into(),
         hair_color: "Black".into(),
+        r#type: "regular".into(),
     };
     insert_into(users::table)
         .values(new_user)
@@ -48,9 +56,13 @@ fn with_implicit_table_name() {
         .unwrap();
 
     let saved = users::table
-        .select((users::name, users::hair_color))
-        .load::<(String, Option<String>)>(conn);
-    let expected = vec![("Sean".to_string(), Some("Black".to_string()))];
+        .select((users::name, users::hair_color, users::r#type))
+        .load::<(String, Option<String>, Option<String>)>(conn);
+    let expected = vec![(
+        "Sean".to_string(),
+        Some("Black".to_string()),
+        Some("regular".to_string()),
+    )];
     assert_eq!(Ok(expected), saved);
 }
 
@@ -61,12 +73,14 @@ fn with_path_in_table_name() {
     struct NewUser {
         name: String,
         hair_color: String,
+        r#type: String,
     }
 
     let conn = &mut connection();
     let new_user = NewUser {
         name: "Sean".into(),
         hair_color: "Black".into(),
+        r#type: "regular".into(),
     };
     insert_into(users::table)
         .values(new_user)
@@ -74,9 +88,13 @@ fn with_path_in_table_name() {
         .unwrap();
 
     let saved = users::table
-        .select((users::name, users::hair_color))
-        .load::<(String, Option<String>)>(conn);
-    let expected = vec![("Sean".to_string(), Some("Black".to_string()))];
+        .select((users::name, users::hair_color, users::r#type))
+        .load::<(String, Option<String>, Option<String>)>(conn);
+    let expected = vec![(
+        "Sean".to_string(),
+        Some("Black".to_string()),
+        Some("regular".to_string()),
+    )];
     assert_eq!(Ok(expected), saved);
 }
 
@@ -87,12 +105,14 @@ fn simple_reference_definition() {
     struct NewUser {
         name: String,
         hair_color: String,
+        r#type: String,
     }
 
     let conn = &mut connection();
     let new_user = NewUser {
         name: "Sean".into(),
         hair_color: "Black".into(),
+        r#type: "regular".into(),
     };
     insert_into(users::table)
         .values(&new_user)
@@ -100,9 +120,13 @@ fn simple_reference_definition() {
         .unwrap();
 
     let saved = users::table
-        .select((users::name, users::hair_color))
-        .load::<(String, Option<String>)>(conn);
-    let expected = vec![("Sean".to_string(), Some("Black".to_string()))];
+        .select((users::name, users::hair_color, users::r#type))
+        .load::<(String, Option<String>, Option<String>)>(conn);
+    let expected = vec![(
+        "Sean".to_string(),
+        Some("Black".to_string()),
+        Some("regular".to_string()),
+    )];
     assert_eq!(Ok(expected), saved);
 }
 
@@ -114,12 +138,14 @@ fn multiple_tables() {
     struct NewUser {
         name: String,
         hair_color: String,
+        r#type: String,
     }
 
     let conn = &mut connection();
     let new_user = NewUser {
         name: "Sean".into(),
         hair_color: "Black".into(),
+        r#type: "regular".into(),
     };
     insert_into(users::table)
         .values(new_user.clone())
@@ -127,9 +153,13 @@ fn multiple_tables() {
         .unwrap();
 
     let saved = users::table
-        .select((users::name, users::hair_color))
-        .load::<(String, Option<String>)>(conn);
-    let expected = vec![("Sean".to_string(), Some("Black".to_string()))];
+        .select((users::name, users::hair_color, users::r#type))
+        .load::<(String, Option<String>, Option<String>)>(conn);
+    let expected = vec![(
+        "Sean".to_string(),
+        Some("Black".to_string()),
+        Some("regular".to_string()),
+    )];
     assert_eq!(Ok(expected.clone()), saved);
 
     insert_into(users_::table)
@@ -138,8 +168,8 @@ fn multiple_tables() {
         .unwrap();
 
     let saved = users_::table
-        .select((users_::name, users_::hair_color))
-        .load::<(String, Option<String>)>(conn);
+        .select((users_::name, users_::hair_color, users_::r#type))
+        .load::<(String, Option<String>, Option<String>)>(conn);
     assert_eq!(Ok(expected), saved);
 }
 
@@ -152,12 +182,12 @@ macro_rules! test_struct_definition {
             $struct_def
 
             let conn = &mut connection();
-            let new_user = NewUser { name: "Sean".into(), hair_color: None };
+            let new_user = NewUser { name: "Sean".into(), hair_color: None, r#type: Some("regular".into()) };
             insert_into(users::table).values(&new_user).execute(conn).unwrap();
 
-            let saved = users::table.select((users::name, users::hair_color))
-                .load::<(String, Option<String>)>(conn);
-            let expected = vec![("Sean".to_string(), Some("Green".to_string()))];
+            let saved = users::table.select((users::name, users::hair_color, users::r#type))
+                .load::<(String, Option<String>, Option<String>)>(conn);
+            let expected = vec![("Sean".to_string(), Some("Green".to_string()), Some("regular".to_string()))];
             assert_eq!(Ok(expected), saved);
         }
     }
@@ -168,6 +198,7 @@ test_struct_definition! {
     struct NewUser {
         name: String,
         hair_color: Option<String>,
+        r#type: Option<String>,
     }
 }
 
@@ -176,6 +207,7 @@ test_struct_definition! {
     pub struct NewUser {
         name: String,
         hair_color: Option<String>,
+        r#type: Option<String>,
     }
 }
 
@@ -184,6 +216,7 @@ test_struct_definition! {
     pub struct NewUser {
         pub name: String,
         hair_color: Option<String>,
+        r#type: Option<String>,
     }
 }
 
@@ -192,6 +225,7 @@ test_struct_definition! {
     pub struct NewUser {
         name: String,
         pub hair_color: Option<String>,
+        r#type: Option<String>,
     }
 }
 
@@ -200,6 +234,7 @@ test_struct_definition! {
     struct NewUser<'a> {
         name: &'a str,
         hair_color: Option<&'a str>,
+        r#type: Option<&'a str>,
     }
 }
 
@@ -211,12 +246,14 @@ fn named_struct_with_renamed_field() {
         #[diesel(column_name = name)]
         my_name: String,
         hair_color: String,
+        r#type: String,
     }
 
     let conn = &mut connection();
     let new_user = NewUser {
         my_name: "Sean".into(),
         hair_color: "Black".into(),
+        r#type: "regular".into(),
     };
     insert_into(users::table)
         .values(&new_user)
@@ -224,9 +261,13 @@ fn named_struct_with_renamed_field() {
         .unwrap();
 
     let saved = users::table
-        .select((users::name, users::hair_color))
-        .load::<(String, Option<String>)>(conn);
-    let expected = vec![("Sean".to_string(), Some("Black".to_string()))];
+        .select((users::name, users::hair_color, users::r#type))
+        .load::<(String, Option<String>, Option<String>)>(conn);
+    let expected = vec![(
+        "Sean".to_string(),
+        Some("Black".to_string()),
+        Some("regular".to_string()),
+    )];
     assert_eq!(Ok(expected), saved);
 }
 
@@ -239,12 +280,15 @@ fn named_struct_with_renamed_option_field() {
         my_name: String,
         #[diesel(column_name = hair_color)]
         my_hair_color: Option<String>,
+        #[diesel(column_name = "type")]
+        my_type: String,
     }
 
     let conn = &mut connection();
     let new_user = NewUser {
         my_name: "Sean".into(),
         my_hair_color: None,
+        my_type: "regular".into(),
     };
     insert_into(users::table)
         .values(&new_user)
@@ -252,9 +296,48 @@ fn named_struct_with_renamed_option_field() {
         .unwrap();
 
     let saved = users::table
-        .select((users::name, users::hair_color))
-        .load::<(String, Option<String>)>(conn);
-    let expected = vec![("Sean".to_string(), Some("Green".to_string()))];
+        .select((users::name, users::hair_color, users::r#type))
+        .load::<(String, Option<String>, Option<String>)>(conn);
+    let expected = vec![(
+        "Sean".to_string(),
+        Some("Green".to_string()),
+        Some("regular".to_string()),
+    )];
+    assert_eq!(Ok(expected), saved);
+}
+
+#[test]
+fn named_struct_with_renamed_option_field_raw_type() {
+    #[derive(Insertable)]
+    #[diesel(table_name = users)]
+    struct NewUser {
+        #[diesel(column_name = name)]
+        my_name: String,
+        #[diesel(column_name = hair_color)]
+        my_hair_color: Option<String>,
+        #[diesel(column_name = r#type)]
+        my_type: String,
+    }
+
+    let conn = &mut connection();
+    let new_user = NewUser {
+        my_name: "Sean".into(),
+        my_hair_color: None,
+        my_type: "regular".into(),
+    };
+    insert_into(users::table)
+        .values(&new_user)
+        .execute(conn)
+        .unwrap();
+
+    let saved = users::table
+        .select((users::name, users::hair_color, users::r#type))
+        .load::<(String, Option<String>, Option<String>)>(conn);
+    let expected = vec![(
+        "Sean".to_string(),
+        Some("Green".to_string()),
+        Some("regular".to_string()),
+    )];
     assert_eq!(Ok(expected), saved);
 }
 
@@ -265,19 +348,52 @@ fn tuple_struct() {
     struct NewUser<'a>(
         #[diesel(column_name = name)] &'a str,
         #[diesel(column_name = hair_color)] Option<&'a str>,
+        #[diesel(column_name = "type")] Option<&'a str>,
     );
 
     let conn = &mut connection();
-    let new_user = NewUser("Sean", None);
+    let new_user = NewUser("Sean", None, Some("regular"));
     insert_into(users::table)
         .values(&new_user)
         .execute(conn)
         .unwrap();
 
     let saved = users::table
-        .select((users::name, users::hair_color))
-        .load::<(String, Option<String>)>(conn);
-    let expected = vec![("Sean".to_string(), Some("Green".to_string()))];
+        .select((users::name, users::hair_color, users::r#type))
+        .load::<(String, Option<String>, Option<String>)>(conn);
+    let expected = vec![(
+        "Sean".to_string(),
+        Some("Green".to_string()),
+        Some("regular".to_string()),
+    )];
+    assert_eq!(Ok(expected), saved);
+}
+
+#[test]
+fn tuple_struct_raw_type() {
+    #[derive(Insertable)]
+    #[diesel(table_name = users)]
+    struct NewUser<'a>(
+        #[diesel(column_name = name)] &'a str,
+        #[diesel(column_name = hair_color)] Option<&'a str>,
+        #[diesel(column_name = r#type)] Option<&'a str>,
+    );
+
+    let conn = &mut connection();
+    let new_user = NewUser("Sean", None, Some("regular"));
+    insert_into(users::table)
+        .values(&new_user)
+        .execute(conn)
+        .unwrap();
+
+    let saved = users::table
+        .select((users::name, users::hair_color, users::r#type))
+        .load::<(String, Option<String>, Option<String>)>(conn);
+    let expected = vec![(
+        "Sean".to_string(),
+        Some("Green".to_string()),
+        Some("regular".to_string()),
+    )];
     assert_eq!(Ok(expected), saved);
 }
 
@@ -288,14 +404,17 @@ fn named_struct_with_unusual_reference_type() {
     struct NewUser<'a> {
         name: &'a String,
         hair_color: Option<&'a String>,
+        r#type: Option<&'a String>,
     }
 
     let conn = &mut connection();
     let sean = "Sean".to_string();
     let black = "Black".to_string();
+    let regular = "regular".to_string();
     let new_user = NewUser {
         name: &sean,
         hair_color: Some(&black),
+        r#type: Some(&regular),
     };
     insert_into(users::table)
         .values(&new_user)
@@ -303,9 +422,9 @@ fn named_struct_with_unusual_reference_type() {
         .unwrap();
 
     let saved = users::table
-        .select((users::name, users::hair_color))
+        .select((users::name, users::hair_color, users::r#type))
         .load(conn);
-    let expected = vec![(sean.clone(), Some(black.clone()))];
+    let expected = vec![(sean.clone(), Some(black.clone()), Some(regular.clone()))];
     assert_eq!(Ok(expected), saved);
 }
 
@@ -349,24 +468,26 @@ fn insertable_with_slice_of_borrowed() {
 fn embedded_struct() {
     #[derive(Insertable)]
     #[diesel(table_name = users)]
-    struct NameAndHairColor<'a> {
+    struct UserAttributes<'a> {
         name: &'a str,
         hair_color: &'a str,
+        r#type: &'a str,
     }
 
     #[derive(Insertable)]
     struct User<'a> {
         id: i32,
         #[diesel(embed)]
-        name_and_hair_color: NameAndHairColor<'a>,
+        attributes: UserAttributes<'a>,
     }
 
     let conn = &mut connection();
     let new_user = User {
         id: 1,
-        name_and_hair_color: NameAndHairColor {
+        attributes: UserAttributes {
             name: "Sean",
             hair_color: "Black",
+            r#type: "regular",
         },
     };
     insert_into(users::table)
@@ -374,8 +495,13 @@ fn embedded_struct() {
         .execute(conn)
         .unwrap();
 
-    let saved = users::table.load::<(i32, String, Option<String>)>(conn);
-    let expected = vec![(1, "Sean".to_string(), Some("Black".to_string()))];
+    let saved = users::table.load::<(i32, String, Option<String>, Option<String>)>(conn);
+    let expected = vec![(
+        1,
+        "Sean".to_string(),
+        Some("Black".to_string()),
+        Some("regular".to_string()),
+    )];
     assert_eq!(Ok(expected), saved);
 }
 

@@ -17,14 +17,14 @@ error: expected string literal
 30 |     #[diesel(column_name = true)]
    |                            ^^^^
 
-error: Expected valid identifier, found `type`. Diesel automatically renames invalid identifiers, perhaps you meant to write `type_`?
+error: Expected valid identifier, found `spa ce`. Diesel automatically renames invalid identifiers, perhaps you meant to write `spa ce_`?
   --> tests/fail/derive/bad_column_name.rs:38:28
    |
-38 |     #[diesel(column_name = "type")]
-   |                            ^^^^^^
+38 |     #[diesel(column_name = "spa ce")]
+   |                            ^^^^^^^^
 
-error: Expected valid identifier, found `type`. Diesel automatically renames invalid identifiers, perhaps you meant to write `type_`?
+error: Expected valid identifier, found `spa ce`. Diesel automatically renames invalid identifiers, perhaps you meant to write `spa ce_`?
   --> tests/fail/derive/bad_column_name.rs:46:28
    |
-46 |     #[diesel(column_name = "type")]
-   |                            ^^^^^^
+46 |     #[diesel(column_name = "spa ce")]
+   |                            ^^^^^^^^

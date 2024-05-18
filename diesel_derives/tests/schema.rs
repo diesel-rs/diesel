@@ -3,6 +3,7 @@ table! {
         id -> Integer,
         name -> Text,
         hair_color -> Nullable<Text>,
+        r#type -> Nullable<Text>,
     }
 }
 
@@ -11,5 +12,6 @@ table! {
         id -> Integer,
         name -> Text,
         hair_color -> Nullable<Text>,
+        r#type -> Nullable<Text>,
     }
 }

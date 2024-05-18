@@ -120,7 +120,7 @@ fn sql_type(field: &Field, model: &Model) -> Result<Type> {
     match field.sql_type {
         Some(AttributeSpanWrapper { item: ref st, .. }) => Ok(st.clone()),
         None => {
-            let column_name = field.column_name()?;
+            let column_name = field.column_name()?.to_ident()?;
             Ok(parse_quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>))
         }
     }
