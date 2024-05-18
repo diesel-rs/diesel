@@ -214,7 +214,6 @@ fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
 }
 
 #[test]
-#[should_panic(expected = "There are no changes to save.")]
 fn update_with_no_changes() {
     #[derive(AsChangeset)]
     #[diesel(table_name = users)]
@@ -228,10 +227,30 @@ fn update_with_no_changes() {
         name: None,
         hair_color: None,
     };
-    update(users::table)
+    let update_result = update(users::table).set(&changes).execute(connection);
+    assert!(update_result.is_err());
+}
+
+#[test]
+fn update_with_optional_empty_changeset() {
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    struct Changes {
+        name: Option<String>,
+        hair_color: Option<String>,
+    }
+
+    let connection = &mut connection();
+    let changes = Changes {
+        name: None,
+        hair_color: None,
+    };
+    let update_result = update(users::table)
         .set(&changes)
         .execute(connection)
+        .optional_empty_changeset()
         .unwrap();
+    assert_eq!(None, update_result);
 }
 
 #[test]

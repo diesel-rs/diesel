@@ -289,6 +289,31 @@ impl<T> OptionalExtension<T> for QueryResult<T> {
     }
 }
 
+/// See the [method documentation](OptionalEmptyChangesetExtension::optional_empty_changeset).
+pub trait OptionalEmptyChangesetExtension<T> {
+    /// By default, Diesel treats an empty update as a `QueryBuilderError`. This method will
+    /// convert that error into `None`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::{QueryResult, OptionalEmptyChangesetExtension, result::Error::QueryBuilderError, result::EmptyChangeset};
+    /// let result: QueryResult<i32> = Err(QueryBuilderError(Box::new(EmptyChangeset)));
+    /// assert_eq!(Ok(None), result.optional_empty_changeset());
+    /// ```
+    fn optional_empty_changeset(self) -> Result<Option<T>, Error>;
+}
+
+impl<T> OptionalEmptyChangesetExtension<T> for QueryResult<T> {
+    fn optional_empty_changeset(self) -> Result<Option<T>, Error> {
+        match self {
+            Ok(value) => Ok(Some(value)),
+            Err(Error::QueryBuilderError(e)) if e.is::<EmptyChangeset>() => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+}
+
 impl From<NulError> for ConnectionError {
     fn from(e: NulError) -> Self {
         ConnectionError::InvalidCString(e)
@@ -413,3 +438,20 @@ impl fmt::Display for UnexpectedEndOfRow {
 }
 
 impl StdError for UnexpectedEndOfRow {}
+
+/// Expected when an update has no changes to save.
+///
+/// When using `optional_empty_changeset`, this error is turned into `None`.
+#[derive(Debug, Clone, Copy)]
+pub struct EmptyChangeset;
+
+impl fmt::Display for EmptyChangeset {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "There are no changes to save. This query cannot be built"
+        )
+    }
+}
+
+impl StdError for EmptyChangeset {}

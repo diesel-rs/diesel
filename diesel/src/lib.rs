@@ -719,7 +719,10 @@ pub mod prelude {
     #[doc(inline)]
     pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
     #[doc(inline)]
-    pub use crate::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
+    pub use crate::result::{
+        ConnectionError, ConnectionResult, OptionalEmptyChangesetExtension, OptionalExtension,
+        QueryResult,
+    };
     #[doc(inline)]
     pub use diesel_derives::table_proc as table;
 
