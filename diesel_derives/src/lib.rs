@@ -218,7 +218,7 @@ pub fn derive_diesel_numeric_ops(input: TokenStream) -> TokenStream {
     diesel_numeric_ops::derive(parse_macro_input!(input)).into()
 }
 
-/// Implements `Queryable` for primitive types
+/// Implements `Queryable` for types that correspond to a single SQL type. The type must implement `FromSql`.
 ///
 /// This derive is mostly useful to implement support deserializing
 /// into rust types not supported by Diesel itself.
