@@ -165,6 +165,22 @@ fn print_schema_custom_types() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_custom_types_custom_schema() {
+    test_print_schema(
+        "print_schema_custom_types_custom_schema",
+        vec![
+            "--schema",
+            "v2",
+            "--custom-type-derives",
+            "diesel::query_builder::QueryId",
+            "--custom-type-derives",
+            "Clone",
+        ],
+    );
+}
+
+#[test]
 fn print_schema_with_unmappable_names() {
     test_print_schema("print_schema_with_unmappable_names", vec!["--with-docs"]);
 }
