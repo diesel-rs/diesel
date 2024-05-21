@@ -356,9 +356,9 @@ checksum = "6c8640c5d730cb13ebd907d8d04b52f55ac9a2eec55b440c8892f40d56c76c1d"
 
 [[package]]
 name = "mysqlclient-sys"
-version = "0.2.5"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f61b381528ba293005c42a409dd73d034508e273bf90481f17ec2e964a6e969b"
+checksum = "bd59c034806974df483883503e8a019b1a0137b0e60dd64811537ab56312ad2d"
 dependencies = [
  "pkg-config",
  "vcpkg",

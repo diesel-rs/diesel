@@ -375,9 +375,9 @@ impl BindData {
     }
 
     fn from_tpe_and_flags((tpe, flags): (ffi::enum_field_types, Flags)) -> Self {
-        let mut bytes = known_buffer_size_for_ffi_type(tpe)
-            .map(|len| vec![0; len])
-            .unwrap_or_default();
+        // newer mysqlclient versions do not accept a zero sized buffer
+        let len = known_buffer_size_for_ffi_type(tpe).unwrap_or(1);
+        let mut bytes = vec![0; len];
         let length = bytes.len() as libc::c_ulong;
         let capacity = bytes.capacity();
         let ptr = NonNull::new(bytes.as_mut_ptr());
@@ -389,13 +389,13 @@ impl BindData {
             length,
             capacity,
             flags,
-            is_null: 0,
-            is_truncated: Some(0),
+            is_null: ffi::FALSE,
+            is_truncated: Some(ffi::FALSE),
         }
     }
 
     fn is_truncated(&self) -> bool {
-        self.is_truncated.unwrap_or(0) != 0
+        self.is_truncated.unwrap_or(ffi::FALSE) != ffi::FALSE
     }
 
     fn is_fixed_size_buffer(&self) -> bool {
@@ -423,7 +423,7 @@ impl BindData {
     }
 
     pub(super) fn is_null(&self) -> bool {
-        self.is_null != 0
+        self.is_null != ffi::my_bool::default()
     }
 
     fn update_buffer_length(&mut self) {
@@ -710,6 +710,13 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
                  only used on the server side, so if you see this error \
                  something has gone wrong. Please open an issue at \
                  the diesel github repo."
+            ),
+
+            t => unreachable!(
+                "Unsupported type encountered: {t:?}. \
+                 If you ever see this error, something has gone wrong. \
+                 Please open an issue at the diesel github \
+                 repo in this case."
             ),
         }
     }
@@ -1261,7 +1268,7 @@ mod tests {
             capacity,
             length,
             flags,
-            is_null: 0,
+            is_null: ffi::FALSE,
             is_truncated: None,
         };
 
@@ -1277,7 +1284,7 @@ mod tests {
             capacity,
             length,
             flags: Flags::empty(),
-            is_null: 0,
+            is_null: ffi::FALSE,
             is_truncated: None,
         };
 

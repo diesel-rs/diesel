@@ -37,6 +37,7 @@ url = { version = "2.2.2" }
 libsqlite3-sys = { version = ">=0.17.2, <0.29.0", optional = true }
 pq-sys = { version = ">=0.4, <0.7.0", optional = true }
 openssl-sys = { version = "0.9.93", features = ["vendored"], optional = true }
+mysqlclient-sys = { version = ">=0.2.5, <0.4.0", optional = true }
 diffy = "0.3.0"
 regex = "1.0.6"
 serde_regex = "1.1"
@@ -66,7 +67,8 @@ postgres = ["diesel/postgres", "uses_information_schema"]
 sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql", "uses_information_schema"]
 sqlite-bundled = ["sqlite", "libsqlite3-sys/bundled"]
-postgres-bundled = ["postgres", "pq-sys/bundled", "openssl-sys"]
+postgres-bundled = ["postgres", "pq-sys/bundled"]
+mysql-bundled = ["mysql", "mysqlclient-sys/bundled"]
 uses_information_schema = []
 
 [[test]]

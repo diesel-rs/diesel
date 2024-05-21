@@ -24,6 +24,8 @@ rand = "0.8.4"
 libsqlite3-sys = { version = "0.28", optional = true }
 pq-sys = { version = "0.5", optional = true }
 pq-src = { version = "0.1.1", optional = true }
+mysqlclient-sys = { version = ">=0.2.5, <0.4.0", optional = true }
+mysqlclient-src = { version = "0.1.0", optional = true }
 
 [features]
 default = []
