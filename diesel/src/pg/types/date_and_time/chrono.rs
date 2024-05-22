@@ -142,6 +142,7 @@ impl FromSql<Date, Pg> for NaiveDate {
 const DAYS_PER_MONTH: i32 = 30;
 const SECONDS_PER_DAY: i64 = 60 * 60 * 24;
 const MICROSECONDS_PER_SECOND: i64 = 1_000_000;
+const NANOSECONDS_PER_MICROSECOND: u32 = 1_000;
 
 #[cfg(all(feature = "chrono", feature = "postgres_backend"))]
 impl ToSql<Interval, Pg> for Duration {
@@ -149,7 +150,7 @@ impl ToSql<Interval, Pg> for Duration {
         let microseconds: i64 = if let Some(v) = self.num_microseconds() {
             v % (MICROSECONDS_PER_SECOND * SECONDS_PER_DAY)
         } else {
-            0
+            return Err("Failed to create microseconds by overflow".into());
         };
         let days: i32 = self
             .num_days()
@@ -180,7 +181,7 @@ impl FromSql<Interval, Pg> for Duration {
         let seconds =
             (days as i64) * SECONDS_PER_DAY + interval.microseconds / MICROSECONDS_PER_SECOND;
         let microseconds = (interval.microseconds % MICROSECONDS_PER_SECOND) as u32;
-        if let Some(v) = Duration::new(seconds, microseconds) {
+        if let Some(v) = Duration::new(seconds, microseconds * NANOSECONDS_PER_MICROSECOND) {
             Ok(v)
         } else {
             Err(format!(
