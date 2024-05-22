@@ -200,8 +200,6 @@ mod tests {
 
     use self::chrono::{Duration, FixedOffset, NaiveDate, NaiveTime, TimeZone, Utc};
 
-    use super::{DAYS_PER_MONTH, NANOSECONDS_PER_MICROSECOND, SECONDS_PER_DAY};
-
     use crate::dsl::{now, sql};
     use crate::prelude::*;
     use crate::select;
@@ -388,28 +386,27 @@ mod tests {
         );
     }
 
-    const TEST_DURATION: Option<Duration> = Duration::new(
-        // 2 months, 1 minute and 123456 microseconds;
-        2 * SECONDS_PER_DAY * (DAYS_PER_MONTH as i64) + 60,
-        123456 * NANOSECONDS_PER_MICROSECOND,
-    );
+    /// Get test duration.
+    fn get_test_duration() -> Duration {
+        Duration::days(60) + Duration::minutes(1) + Duration::microseconds(123456)
+    }
 
     #[test]
     fn duration_encode_correctly() {
         let connection = &mut connection();
         let query = select(
             sql::<Interval>("'60 days 1 minute 123456 microseconds'::interval")
-                .eq(TEST_DURATION.unwrap()),
+                .eq(get_test_duration()),
         );
         assert!(query.get_result::<bool>(connection).unwrap());
         let query = select(
             sql::<Interval>("'2 months 1 minute 123456 microseconds'::interval")
-                .eq(TEST_DURATION.unwrap()),
+                .eq(get_test_duration()),
         );
         assert!(query.get_result::<bool>(connection).unwrap());
         let query = select(
             sql::<Interval>("'5184060 seconds 123456 microseconds'::interval")
-                .eq(TEST_DURATION.unwrap()),
+                .eq(get_test_duration()),
         );
         assert!(query.get_result::<bool>(connection).unwrap());
     }
@@ -417,26 +414,25 @@ mod tests {
     #[test]
     fn duration_decode_correctly() {
         let connection = &mut connection();
-
         let query = select(sql::<Interval>(
             "'60 days 1 minute 123456 microseconds'::interval",
         ));
         assert_eq!(
-            Ok(TEST_DURATION.unwrap()),
+            Ok(get_test_duration()),
             query.get_result::<Duration>(connection)
         );
         let query = select(sql::<Interval>(
             "'2 months 1 minute 123456 microseconds'::interval",
         ));
         assert_eq!(
-            Ok(TEST_DURATION.unwrap()),
+            Ok(get_test_duration()),
             query.get_result::<Duration>(connection)
         );
         let query = select(sql::<Interval>(
             "'5184060 seconds 123456 microseconds'::interval",
         ));
         assert_eq!(
-            Ok(TEST_DURATION.unwrap()),
+            Ok(get_test_duration()),
             query.get_result::<Duration>(connection)
         );
     }
