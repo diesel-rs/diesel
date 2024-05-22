@@ -4,11 +4,11 @@
 extern crate chrono;
 use self::chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 
-use super::{PgDate, PgTime, PgTimestamp};
+use super::{PgDate, PgInterval, PgTime, PgTimestamp};
 use crate::deserialize::{self, FromSql};
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, Output, ToSql};
-use crate::sql_types::{Date, Time, Timestamp, Timestamptz};
+use crate::sql_types::{Date, Interval, Time, Timestamp, Timestamptz};
 
 // Postgres timestamps start from January 1st 2000.
 fn pg_epoch() -> NaiveDateTime {
@@ -135,6 +135,59 @@ impl FromSql<Date, Pg> for NaiveDate {
                 );
                 Err(error_message.into())
             }
+        }
+    }
+}
+
+const DAYS_PER_MONTH: i32 = 30;
+const SECONDS_PER_DAY: i64 = 60 * 60 * 24;
+const MICROSECONDS_PER_SECOND: i64 = 1_000_000;
+
+#[cfg(all(feature = "chrono", feature = "postgres_backend"))]
+impl ToSql<Interval, Pg> for Duration {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        let microseconds: i64 = if let Some(v) = self.num_microseconds() {
+            v % (MICROSECONDS_PER_SECOND * SECONDS_PER_DAY)
+        } else {
+            0
+        };
+        let days: i32 = self
+            .num_days()
+            .try_into()
+            .expect("Failed to get i32 days from i64");
+        // We don't use months here, because in PostgreSQL
+        // `timestamp - timestamp` returns interval where
+        // every delta is contained in days and microseconds, and 0 months.
+        // https://www.postgresql.org/docs/current/functions-datetime.html
+        let interval = PgInterval {
+            microseconds,
+            days,
+            months: 0,
+        };
+        <PgInterval as ToSql<Interval, Pg>>::to_sql(&interval, &mut out.reborrow())
+    }
+}
+
+#[cfg(all(feature = "chrono", feature = "postgres_backend"))]
+impl FromSql<Interval, Pg> for Duration {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        let interval: PgInterval = FromSql::<Interval, Pg>::from_sql(bytes)?;
+        // We use 1 month = 30 days and 1 day = 24 hours, as postgres
+        // use those ratios as default when explicitly converted.
+        // For reference, please read `justify_interval` from this page.
+        // https://www.postgresql.org/docs/current/functions-datetime.html
+        let days = interval.months * DAYS_PER_MONTH + interval.days;
+        let seconds =
+            (days as i64) * SECONDS_PER_DAY + interval.microseconds / MICROSECONDS_PER_SECOND;
+        let microseconds = (interval.microseconds % MICROSECONDS_PER_SECOND) as u32;
+        if let Some(v) = Duration::new(seconds, microseconds) {
+            Ok(v)
+        } else {
+            Err(format!(
+                "Failed to create duration from given time numbers; {} seconds, {} microseconds",
+                seconds, microseconds
+            )
+            .into())
         }
     }
 }
