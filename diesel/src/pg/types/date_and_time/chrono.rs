@@ -374,54 +374,35 @@ mod tests {
         );
     }
 
-    /// Get test duration.
-    fn get_test_duration() -> Duration {
-        Duration::days(60) + Duration::minutes(1) + Duration::microseconds(123456)
+    /// Get test duration and corresponding literal SQL strings.
+    fn get_test_duration_and_literal_strings() -> (Duration, Vec<&'static str>) {
+        (
+            Duration::days(60) + Duration::minutes(1) + Duration::microseconds(123456),
+            vec![
+                "60 days 1 minute 123456 microseconds",
+                "2 months 1 minute 123456 microseconds",
+                "5184060 seconds 123456 microseconds",
+            ],
+        )
     }
 
     #[test]
     fn duration_encode_correctly() {
         let connection = &mut connection();
-        let query = select(
-            sql::<Interval>("'60 days 1 minute 123456 microseconds'::interval")
-                .eq(get_test_duration()),
-        );
-        assert!(query.get_result::<bool>(connection).unwrap());
-        let query = select(
-            sql::<Interval>("'2 months 1 minute 123456 microseconds'::interval")
-                .eq(get_test_duration()),
-        );
-        assert!(query.get_result::<bool>(connection).unwrap());
-        let query = select(
-            sql::<Interval>("'5184060 seconds 123456 microseconds'::interval")
-                .eq(get_test_duration()),
-        );
-        assert!(query.get_result::<bool>(connection).unwrap());
+        let (duration, literal_strings) = get_test_duration_and_literal_strings();
+        for literal in literal_strings {
+            let query = select(sql::<Interval>(&format!("'{}'::interval", literal)).eq(duration));
+            assert!(query.get_result::<bool>(connection).unwrap());
+        }
     }
 
     #[test]
     fn duration_decode_correctly() {
         let connection = &mut connection();
-        let query = select(sql::<Interval>(
-            "'60 days 1 minute 123456 microseconds'::interval",
-        ));
-        assert_eq!(
-            Ok(get_test_duration()),
-            query.get_result::<Duration>(connection)
-        );
-        let query = select(sql::<Interval>(
-            "'2 months 1 minute 123456 microseconds'::interval",
-        ));
-        assert_eq!(
-            Ok(get_test_duration()),
-            query.get_result::<Duration>(connection)
-        );
-        let query = select(sql::<Interval>(
-            "'5184060 seconds 123456 microseconds'::interval",
-        ));
-        assert_eq!(
-            Ok(get_test_duration()),
-            query.get_result::<Duration>(connection)
-        );
+        let (duration, literal_strings) = get_test_duration_and_literal_strings();
+        for literal in literal_strings {
+            let query = select(sql::<Interval>(&format!("'{}'::interval", literal)));
+            assert_eq!(Ok(duration), query.get_result::<Duration>(connection));
+        }
     }
 }
