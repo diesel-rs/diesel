@@ -293,13 +293,16 @@ pub struct Date;
 /// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
+/// - [`chrono::Duration`][Duration] with `feature = "chrono"`
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
+/// - [`chrono::Duration`][Duration] with `feature = "chrono"`
 ///
 /// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
 /// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
+/// [`Duration`]: https://docs.rs/chrono/*/chrono/type.Duration.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 1186, array_oid = 1187))]
 pub struct Interval;
