@@ -75,16 +75,4 @@ uses_information_schema = []
 name = "tests"
 
 [package.metadata.dist]
-features = ["sqlite-bundled", "postgres-bundled"]
-
-[package.metadata.dist.dependencies.apt]
-libpq-dev = '*'
-libmysqlclient-dev = '*'
-
-[package.metadata.dist.dependencies.homebrew]
-libpq = '*'
-mysql-client = '*'
-
-[package.metadata.dist.dependencies.chocolatey]
-postgresql12 = '*'
-mysql = '*'
+features = ["sqlite-bundled", "postgres-bundled", "mysql-bundled"]
