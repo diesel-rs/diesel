@@ -382,6 +382,15 @@ mod tests {
                 "60 days 1 minute 123456 microseconds",
                 "2 months 1 minute 123456 microseconds",
                 "5184060 seconds 123456 microseconds",
+                "60 days 60123456 microseconds",
+                "59 days 24 hours 60.123456 seconds",
+                "60 0:01:00.123456",
+                "58 48:01:00.123456",
+                "P0Y2M0DT0H1M0.123456S",
+                "0-2 0:01:00.123456",
+                "P0000-02-00T00:01:00.123456",
+                "1440:01:00.123456",
+                "1 month 30 days 0.5 minutes 30.123456 seconds",
             ],
         )
     }
