@@ -142,7 +142,6 @@ impl FromSql<Date, Pg> for NaiveDate {
 const DAYS_PER_MONTH: i32 = 30;
 const SECONDS_PER_DAY: i64 = 60 * 60 * 24;
 const MICROSECONDS_PER_SECOND: i64 = 1_000_000;
-const NANOSECONDS_PER_MICROSECOND: u32 = 1_000;
 
 #[cfg(all(feature = "chrono", feature = "postgres_backend"))]
 impl ToSql<Interval, Pg> for Duration {
@@ -178,18 +177,7 @@ impl FromSql<Interval, Pg> for Duration {
         // For reference, please read `justify_interval` from this page.
         // https://www.postgresql.org/docs/current/functions-datetime.html
         let days = interval.months * DAYS_PER_MONTH + interval.days;
-        let seconds =
-            (days as i64) * SECONDS_PER_DAY + interval.microseconds / MICROSECONDS_PER_SECOND;
-        let microseconds = (interval.microseconds % MICROSECONDS_PER_SECOND) as u32;
-        if let Some(v) = Duration::new(seconds, microseconds * NANOSECONDS_PER_MICROSECOND) {
-            Ok(v)
-        } else {
-            Err(format!(
-                "Failed to create duration from given time numbers; {} seconds, {} microseconds",
-                seconds, microseconds
-            )
-            .into())
-        }
+        Ok(Duration::days(days as i64) + Duration::microseconds(interval.microseconds))
     }
 }
 
