@@ -302,7 +302,7 @@ pub struct Date;
 ///
 /// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
 /// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
-/// [`Duration`]: https://docs.rs/chrono/*/chrono/type.Duration.html
+/// [Duration]: https://docs.rs/chrono/*/chrono/type.Duration.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 1186, array_oid = 1187))]
 pub struct Interval;
