@@ -1,5 +1,6 @@
 use crate::helpers::*;
 use crate::schema::*;
+use diesel::serialize::Output;
 use diesel::*;
 
 #[test]
@@ -370,6 +371,67 @@ fn embedded_struct() {
     };
     insert_into(users::table)
         .values(&new_user)
+        .execute(conn)
+        .unwrap();
+
+    let saved = users::table.load::<(i32, String, Option<String>)>(conn);
+    let expected = vec![(1, "Sean".to_string(), Some("Black".to_string()))];
+    assert_eq!(Ok(expected), saved);
+}
+
+#[test]
+fn serialize_as_with_option() {
+    use diesel::backend::Backend;
+    use diesel::serialize::ToSql;
+    use diesel::sql_types::Text;
+
+    struct OptionalString(Option<&'static str>);
+
+    impl From<OptionalString> for Option<&'static str> {
+        fn from(s: OptionalString) -> Self {
+            s.0
+        }
+    }
+
+    struct OtherString(&'static str);
+
+    impl From<Option<OtherString>> for MyString {
+        fn from(value: Option<OtherString>) -> Self {
+            MyString(value.unwrap().0.to_owned())
+        }
+    }
+
+    #[derive(Debug, AsExpression)]
+    #[diesel(sql_type = Text)]
+    struct MyString(String);
+
+    impl<DB> ToSql<Text, DB> for MyString
+    where
+        String: ToSql<Text, DB>,
+        DB: Backend,
+    {
+        fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> diesel::serialize::Result {
+            <String as ToSql<Text, DB>>::to_sql(&self.0, out)
+        }
+    }
+
+    #[derive(Insertable)]
+    struct User {
+        id: i32,
+        #[diesel(serialize_as = MyString)]
+        name: Option<OtherString>,
+        #[diesel(serialize_as = Option<&'static str>)]
+        hair_color: OptionalString,
+    }
+
+    let conn = &mut connection();
+    let new_user = User {
+        id: 1,
+        name: Some(OtherString("Sean")),
+        hair_color: OptionalString(Some("Black")),
+    };
+    insert_into(users::table)
+        .values(new_user)
         .execute(conn)
         .unwrap();
 
