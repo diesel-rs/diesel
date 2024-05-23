@@ -228,7 +228,7 @@ fn field_expr_serialize_as(
     let column = quote!(#table_name::#column_name);
     if treat_none_as_default_value {
         if is_option_ty(ty) {
-            Ok(quote!(self.#field_name.map(|x| #column.eq(::std::convert::Into::<#ty>::into(x)))))
+            Ok(quote!(::std::convert::Into::<#ty>::into(self.#field_name).map(|v| #column.eq(v))))
         } else {
             Ok(
                 quote!(std::option::Option::Some(#column.eq(::std::convert::Into::<#ty>::into(self.#field_name)))),
