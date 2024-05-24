@@ -62,7 +62,7 @@ impl SqlIdentifier {
                 ident.set_span(self.span);
                 Ok(ident)
             }
-            Err(_e) if self.field_name.contains(" ") => Err(syn::Error::new(
+            Err(_e) if self.field_name.contains(' ') => Err(syn::Error::new(
                 self.span(),
                 format!(
                     "Expected valid identifier, found `{0}`. \
