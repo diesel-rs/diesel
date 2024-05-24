@@ -455,3 +455,47 @@ impl fmt::Display for EmptyChangeset {
 }
 
 impl StdError for EmptyChangeset {}
+
+/// An error occurred while deserializing a field
+#[derive(Debug)]
+#[non_exhaustive]
+pub struct DeserializeFieldError {
+    /// The name of the field that failed to deserialize
+    pub field_name: Option<String>,
+    /// The error that occurred while deserializing the field
+    pub error: Box<dyn StdError + Send + Sync>,
+}
+
+impl DeserializeFieldError {
+    #[cold]
+    pub(crate) fn new<'a, F, DB>(field: F, error: Box<dyn std::error::Error + Send + Sync>) -> Self
+    where
+        DB: crate::backend::Backend,
+        F: crate::row::Field<'a, DB>,
+    {
+        DeserializeFieldError {
+            field_name: field.field_name().map(|s| s.to_string()),
+            error,
+        }
+    }
+}
+
+impl StdError for DeserializeFieldError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        Some(&*self.error)
+    }
+}
+
+impl fmt::Display for DeserializeFieldError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(ref field_name) = self.field_name {
+            write!(
+                f,
+                "Error deserializing field '{}': {}",
+                field_name, self.error
+            )
+        } else {
+            write!(f, "Error deserializing field: {}", self.error)
+        }
+    }
+}

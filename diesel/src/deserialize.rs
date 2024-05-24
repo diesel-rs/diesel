@@ -540,7 +540,13 @@ where
         use crate::row::Field;
 
         let field = row.get(0).ok_or(crate::result::UnexpectedEndOfRow)?;
-        T::from_nullable_sql(field.value())
+        T::from_nullable_sql(field.value()).map_err(|e| {
+            if e.is::<crate::result::UnexpectedNullError>() {
+                e
+            } else {
+                Box::new(crate::result::DeserializeFieldError::new(field, e))
+            }
+        })
     }
 }
 
