@@ -561,7 +561,9 @@ fn serialize_as_with_option() {
         .execute(conn)
         .unwrap();
 
-    let saved = users::table.load::<(i32, String, Option<String>)>(conn);
+    let saved = users::table
+        .select((users::id, users::name, users::hair_color))
+        .load::<(i32, String, Option<String>)>(conn);
     let expected = vec![(1, "Sean".to_string(), Some("Black".to_string()))];
     assert_eq!(Ok(expected), saved);
 }
