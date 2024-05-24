@@ -15,7 +15,7 @@ mod chrono {
     use self::chrono::*;
     use crate::deserialize::FromSqlRow;
     use crate::expression::AsExpression;
-    use crate::sql_types::{Date, Time, Timestamp};
+    use crate::sql_types::{Date, Interval, Time, Timestamp};
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
@@ -49,6 +49,11 @@ mod chrono {
     )]
     #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::TimestamptzSqlite))]
     struct DateTimeProxy<Tz: TimeZone>(DateTime<Tz>);
+
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = Interval)]
+    struct DurationProxy(Duration);
 }
 
 #[cfg(feature = "time")]
