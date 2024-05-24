@@ -10,6 +10,7 @@ fn named_ref_struct() {
     struct User {
         name: String,
         hair_color: String,
+        r#type: String,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -18,13 +19,24 @@ fn named_ref_struct() {
         .set(&User {
             name: String::from("Jim"),
             hair_color: String::from("blue"),
+            r#type: String::from("super"),
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("blue"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -36,6 +48,7 @@ fn named_struct() {
     struct User {
         name: String,
         hair_color: String,
+        r#type: String,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -44,13 +57,24 @@ fn named_struct() {
         .set(User {
             name: String::from("Jim"),
             hair_color: String::from("blue"),
+            r#type: String::from("super"),
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("blue"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -63,6 +87,7 @@ fn with_explicit_table_name() {
     struct UserForm {
         name: String,
         hair_color: String,
+        r#type: String,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -71,13 +96,24 @@ fn with_explicit_table_name() {
         .set(&UserForm {
             name: String::from("Jim"),
             hair_color: String::from("blue"),
+            r#type: String::from("super"),
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("blue"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -90,6 +126,7 @@ fn with_path_in_table_name() {
     struct UserForm {
         name: String,
         hair_color: String,
+        r#type: String,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -98,13 +135,24 @@ fn with_path_in_table_name() {
         .set(&UserForm {
             name: String::from("Jim"),
             hair_color: String::from("blue"),
+            r#type: String::from("super"),
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("blue"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -117,6 +165,7 @@ fn with_lifetime() {
     struct UserForm<'a> {
         name: &'a str,
         hair_color: &'a str,
+        r#type: &'a str,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -125,13 +174,24 @@ fn with_lifetime() {
         .set(&UserForm {
             name: "Jim",
             hair_color: "blue",
+            r#type: "super",
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("blue"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -141,9 +201,10 @@ fn with_lifetime() {
 fn with_multiple_lifetimes() {
     #[derive(AsChangeset)]
     #[diesel(table_name = users)]
-    struct UserForm<'a, 'b> {
+    struct UserForm<'a, 'b, 'c> {
         name: &'a str,
         hair_color: &'b str,
+        r#type: &'c str,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -152,13 +213,24 @@ fn with_multiple_lifetimes() {
         .set(&UserForm {
             name: "Jim",
             hair_color: "blue",
+            r#type: "super",
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("blue"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -168,9 +240,10 @@ fn with_multiple_lifetimes() {
 fn with_lifetime_constraints() {
     #[derive(AsChangeset)]
     #[diesel(table_name = users)]
-    struct UserForm<'a, 'b: 'a> {
+    struct UserForm<'a, 'b: 'a, 'c: 'b> {
         name: &'a str,
         hair_color: &'b str,
+        r#type: &'c str,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -179,13 +252,24 @@ fn with_lifetime_constraints() {
         .set(&UserForm {
             name: "Jim",
             hair_color: "blue",
+            r#type: "super",
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("blue"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -200,6 +284,8 @@ fn with_explicit_column_names() {
         nombre: &'a str,
         #[diesel(column_name = hair_color)]
         color_de_pelo: &'a str,
+        #[diesel(column_name = "type")]
+        tipe: &'a str,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -208,13 +294,66 @@ fn with_explicit_column_names() {
         .set(&UserForm {
             nombre: "Jim",
             color_de_pelo: "blue",
+            tipe: "super",
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("blue"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
+    ];
+    let actual = users::table.order(users::id).load(connection);
+    assert_eq!(Ok(expected), actual);
+}
+
+#[test]
+fn with_explicit_column_names_raw_type() {
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    struct UserForm<'a> {
+        #[diesel(column_name = name)]
+        nombre: &'a str,
+        #[diesel(column_name = hair_color)]
+        color_de_pelo: &'a str,
+        #[diesel(column_name = r#type)]
+        tipe: &'a str,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    update(users::table.find(1))
+        .set(&UserForm {
+            nombre: "Jim",
+            color_de_pelo: "blue",
+            tipe: "super",
+        })
+        .execute(connection)
+        .unwrap();
+
+    let expected = vec![
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -248,6 +387,8 @@ fn with_serialize_as() {
         name: String,
         #[diesel(serialize_as = UppercaseString)]
         hair_color: Option<String>,
+        #[diesel(serialize_as = UppercaseString)]
+        r#type: Option<String>,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -256,13 +397,24 @@ fn with_serialize_as() {
         .set(User {
             name: String::from("Jim"),
             hair_color: Some(String::from("blue")),
+            r#type: Some(String::from("super")),
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("JIM"), Some(String::from("BLUE"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("JIM"),
+            Some(String::from("BLUE")),
+            Some(String::from("SUPER")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -275,18 +427,64 @@ fn tuple_struct() {
     struct UserForm<'a>(
         #[diesel(column_name = name)] &'a str,
         #[diesel(column_name = hair_color)] &'a str,
+        #[diesel(column_name = "type")] &'a str,
     );
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
     update(users::table.find(1))
-        .set(&UserForm("Jim", "blue"))
+        .set(&UserForm("Jim", "blue", "super"))
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("blue"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
+    ];
+    let actual = users::table.order(users::id).load(connection);
+    assert_eq!(Ok(expected), actual);
+}
+
+#[test]
+fn tuple_struct_raw_type() {
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    struct UserForm<'a>(
+        #[diesel(column_name = name)] &'a str,
+        #[diesel(column_name = hair_color)] &'a str,
+        #[diesel(column_name = r#type)] &'a str,
+    );
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    update(users::table.find(1))
+        .set(&UserForm("Jim", "blue", "super"))
+        .execute(connection)
+        .unwrap();
+
+    let expected = vec![
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -308,8 +506,18 @@ fn struct_containing_single_field() {
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("black"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("black")),
+            Some(String::from("regular")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -329,8 +537,18 @@ fn tuple_struct_containing_single_field() {
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("black"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("black")),
+            Some(String::from("regular")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -345,6 +563,7 @@ fn primary_key_is_not_updated() {
         id: i32,
         name: &'a str,
         hair_color: &'a str,
+        r#type: &'a str,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -354,13 +573,24 @@ fn primary_key_is_not_updated() {
             id: 3,
             name: "Jim",
             hair_color: "blue",
+            r#type: "super",
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("blue"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -375,6 +605,7 @@ fn primary_key_is_based_on_column_name() {
         _id: i32,
         name: &'a str,
         hair_color: &'a str,
+        r#type: &'a str,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -384,13 +615,24 @@ fn primary_key_is_based_on_column_name() {
             _id: 3,
             name: "Jim",
             hair_color: "blue",
+            r#type: "super",
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("blue"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -405,6 +647,7 @@ fn primary_key_is_not_updated_with_custom_pk() {
         #[allow(dead_code)]
         name: &'a str,
         hair_color: &'a str,
+        r#type: &'a str,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -413,13 +656,24 @@ fn primary_key_is_not_updated_with_custom_pk() {
         .set(&UserForm {
             name: "Jim",
             hair_color: "blue",
+            r#type: "super",
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Sean"), Some(String::from("blue"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Sean"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -435,6 +689,7 @@ fn primary_key_is_not_updated_with_custom_composite_pk() {
         id: i32,
         name: &'a str,
         hair_color: &'a str,
+        r#type: &'a str,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -444,13 +699,24 @@ fn primary_key_is_not_updated_with_custom_composite_pk() {
             id: 3,
             name: "Jim",
             hair_color: "blue",
+            r#type: "super",
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Sean"), Some(String::from("blue"))),
-        (2, String::from("Tess"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Sean"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -463,6 +729,7 @@ fn option_fields_are_skipped() {
     struct UserForm<'a> {
         name: &'a str,
         hair_color: Option<&'a str>,
+        r#type: Option<&'a str>,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -471,6 +738,7 @@ fn option_fields_are_skipped() {
         .set(&UserForm {
             name: "Jim",
             hair_color: Some("blue"),
+            r#type: Some("super"),
         })
         .execute(connection)
         .unwrap();
@@ -478,13 +746,24 @@ fn option_fields_are_skipped() {
         .set(&UserForm {
             name: "Ruby",
             hair_color: None,
+            r#type: None,
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("blue"))),
-        (2, String::from("Ruby"), Some(String::from("brown"))),
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Ruby"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
@@ -499,6 +778,8 @@ fn option_fields_are_assigned_null_when_specified() {
         #[diesel(treat_none_as_null = false)]
         name: Option<&'a str>,
         hair_color: Option<&'a str>,
+        #[diesel(treat_none_as_null = false)]
+        r#type: Option<&'a str>,
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -507,6 +788,7 @@ fn option_fields_are_assigned_null_when_specified() {
         .set(&UserForm {
             name: None,
             hair_color: Some("blue"),
+            r#type: None,
         })
         .execute(connection)
         .unwrap();
@@ -514,13 +796,19 @@ fn option_fields_are_assigned_null_when_specified() {
         .set(&UserForm {
             name: Some("Ruby"),
             hair_color: None,
+            r#type: None,
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Sean"), Some(String::from("blue"))),
-        (2, String::from("Ruby"), None),
+        (
+            1,
+            String::from("Sean"),
+            Some(String::from("blue")),
+            Some(String::from("regular")),
+        ),
+        (2, String::from("Ruby"), None, Some(String::from("admin"))),
     ];
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
