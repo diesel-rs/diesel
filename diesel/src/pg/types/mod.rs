@@ -428,20 +428,35 @@ pub mod sql_types {
     ///
     /// ### [`ToSql`] impls
     ///
-    #[cfg_attr(feature = "ipnetwork", doc = " - [`ipnetwork::IpNetwork`][IpNetwork]")]
-    #[cfg_attr(feature = "ipnet", doc = " - [`ipnet::IpNet`][IpNet]")]
-    #[cfg_attr(not(any(feature = "ipnetwork", feature = "ipnet")), doc = "N/A")]
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(
+        not(any(feature = "network-address", feature = "ipnet-address")),
+        doc = "N/A"
+    )]
     ///
     /// ### [`FromSql`] impls
     ///
-    #[cfg_attr(feature = "ipnetwork", doc = " - [`ipnetwork::IpNetwork`][IpNetwork]")]
-    #[cfg_attr(feature = "ipnet", doc = " - [`ipnet::IpNet`][IpNet]")]
-    #[cfg_attr(not(any(feature = "ipnetwork", feature = "ipnet")), doc = "N/A")]
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(
+        not(any(feature = "network-address", feature = "ipnet-address")),
+        doc = "N/A"
+    )]
     ///
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
-    #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
-    #[cfg_attr(feature = "ipnet", doc = " [IpNet]: ipnet::IpNet")]
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " [IpNetwork]: ipnetwork::IpNetwork"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " [IpNet]: ipnet::IpNet")]
     ///
     /// # Examples
     ///
@@ -487,20 +502,35 @@ pub mod sql_types {
     ///
     /// ### [`ToSql`] impls
     ///
-    #[cfg_attr(feature = "ipnetwork", doc = " - [`ipnetwork::IpNetwork`][IpNetwork]")]
-    #[cfg_attr(feature = "ipnet", doc = " - [`ipnet::IpNet`][IpNet]")]
-    #[cfg_attr(not(any(feature = "ipnetwork", feature = "ipnet")), doc = "N/A")]
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(
+        not(any(feature = "network-address", feature = "ipnet-address")),
+        doc = "N/A"
+    )]
     ///
     /// ### [`FromSql`] impls
     ///
-    #[cfg_attr(feature = "ipnetwork", doc = " - [`ipnetwork::IpNetwork`][IpNetwork]")]
-    #[cfg_attr(feature = "ipnet", doc = " - [`ipnet::IpNet`][IpNet]")]
-    #[cfg_attr(not(any(feature = "ipnetwork", feature = "ipnet")), doc = "N/A")]
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(
+        not(any(feature = "network-address", feature = "ipnet-address")),
+        doc = "N/A"
+    )]
     ///
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
-    #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
-    #[cfg_attr(feature = "ipnet", doc = " [IpNet]: ipnet::IpNet")]
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " [IpNetwork]: ipnetwork::IpNetwork"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " [IpNet]: ipnet::IpNet")]
     ///
     /// # Examples
     ///

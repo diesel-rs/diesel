@@ -1,4 +1,4 @@
-#[cfg(feature = "bigdecimal")]
+#[cfg(feature = "numeric")]
 mod bigdecimal {
     extern crate bigdecimal;
     extern crate num_bigint;
@@ -36,7 +36,7 @@ mod bigdecimal {
         }
     }
 
-    #[cfg(all(feature = "postgres_backend", feature = "bigdecimal"))]
+    #[cfg(all(feature = "postgres_backend", feature = "numeric"))]
     impl<'a> TryFrom<&'a PgNumeric> for BigDecimal {
         type Error = Box<dyn Error + Send + Sync>;
 
@@ -71,7 +71,7 @@ mod bigdecimal {
         }
     }
 
-    #[cfg(all(feature = "postgres_backend", feature = "bigdecimal"))]
+    #[cfg(all(feature = "postgres_backend", feature = "numeric"))]
     impl TryFrom<PgNumeric> for BigDecimal {
         type Error = Box<dyn Error + Send + Sync>;
 
@@ -80,7 +80,7 @@ mod bigdecimal {
         }
     }
 
-    #[cfg(all(feature = "postgres_backend", feature = "bigdecimal"))]
+    #[cfg(all(feature = "postgres_backend", feature = "numeric"))]
     impl<'a> From<&'a BigDecimal> for PgNumeric {
         // NOTE(clippy): No `std::ops::MulAssign` impl for `BigInt`
         // NOTE(clippy): Clippy suggests to replace the `.take_while(|i| i.is_zero())`
@@ -139,14 +139,14 @@ mod bigdecimal {
         }
     }
 
-    #[cfg(all(feature = "postgres_backend", feature = "bigdecimal"))]
+    #[cfg(all(feature = "postgres_backend", feature = "numeric"))]
     impl From<BigDecimal> for PgNumeric {
         fn from(bigdecimal: BigDecimal) -> Self {
             (&bigdecimal).into()
         }
     }
 
-    #[cfg(all(feature = "postgres_backend", feature = "bigdecimal"))]
+    #[cfg(all(feature = "postgres_backend", feature = "numeric"))]
     impl ToSql<Numeric, Pg> for BigDecimal {
         fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
             let numeric = PgNumeric::from(self);
@@ -154,7 +154,7 @@ mod bigdecimal {
         }
     }
 
-    #[cfg(all(feature = "postgres_backend", feature = "bigdecimal"))]
+    #[cfg(all(feature = "postgres_backend", feature = "numeric"))]
     impl FromSql<Numeric, Pg> for BigDecimal {
         fn from_sql(numeric: PgValue<'_>) -> deserialize::Result<Self> {
             PgNumeric::from_sql(numeric)?.try_into()

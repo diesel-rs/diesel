@@ -747,7 +747,7 @@ mod tests {
     use crate::mysql::connection::stmt::Statement;
     use crate::prelude::*;
     use crate::sql_types::*;
-    #[cfg(feature = "bigdecimal")]
+    #[cfg(feature = "numeric")]
     use std::str::FromStr;
 
     fn to_value<ST, T>(

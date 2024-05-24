@@ -1,13 +1,15 @@
 [package]
 name = "migrations_internals"
-version = "2.1.0"
+version = "2.2.0"
 license = "MIT OR Apache-2.0"
 description = "Internal implementation of diesels migration mechanism"
 homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
 rust-version.workspace = true
+include = ["src/**.rs", "tests/**.rs", "LICENSE-*"]
 edition = "2021"
+keywords = ["diesel", "internal"]
 
 [dependencies]
-serde = {version = "1", features = ["derive"]}
+serde = {version = "1.0.0", features = ["derive"]}
 toml = "0.8"

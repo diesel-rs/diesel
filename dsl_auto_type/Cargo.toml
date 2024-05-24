@@ -7,11 +7,12 @@ documentation = "https://docs.rs/crate/diesel_migrations"
 homepage = "https://diesel.rs"
 edition = "2021"
 rust-version.workspace = true
+include = ["src/**.rs", "tests/**.rs", "LICENSE-*"]
 
 [dependencies]
 darling = "0.20"
 either = "1"
-heck = "0.4"
+heck = "0.5"
 proc-macro2 = "1"
 quote = "1"
 syn = { version = "2", features = ["extra-traits", "full", "derive", "parsing"] }
