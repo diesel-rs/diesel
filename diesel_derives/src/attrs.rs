@@ -62,6 +62,14 @@ impl SqlIdentifier {
                 ident.set_span(self.span);
                 Ok(ident)
             }
+            Err(_e) if self.field_name.contains(" ") => Err(syn::Error::new(
+                self.span(),
+                format!(
+                    "Expected valid identifier, found `{0}`. \
+                 Diesel does not support column names with whitespaces yet",
+                    self.field_name
+                ),
+            )),
             Err(_e) => Err(syn::Error::new(
                 self.span(),
                 format!(
