@@ -235,7 +235,7 @@ where
     T: Table + Copy + QueryId + 'static,
     T::FromClause: QueryFragment<Sqlite>,
     Op: Copy + QueryId + QueryFragment<Sqlite>,
-    V: InsertValues<T, Sqlite> + CanInsertInSingleQuery<Sqlite> + QueryId,
+    V: InsertValues<Sqlite, T> + CanInsertInSingleQuery<Sqlite> + QueryId,
 {
     fn execute((Yes, query): Self, conn: &mut C) -> QueryResult<usize> {
         conn.transaction(|conn| {

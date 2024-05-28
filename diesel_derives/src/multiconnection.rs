@@ -1195,7 +1195,7 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
         let ty = c.ty;
         quote::quote! {
             super::backend::MultiBackend::#ident(_) => {
-                <Self as diesel::insertable::InsertValues<Col::Table, <#ty as diesel::connection::Connection>::Backend>>::column_names(
+                <Self as diesel::insertable::InsertValues<<#ty as diesel::connection::Connection>::Backend, Col::Table>>::column_names(
                     &self,
                     out.cast_database(
                         super::bind_collector::MultiBindCollector::#lower_ident,
@@ -1214,7 +1214,7 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
     let insert_values_backend_bounds = connection_types.iter().map(|c| {
         let ty = c.ty;
         quote::quote! {
-            diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<Col, Expr>>: diesel::insertable::InsertValues<Col::Table, <#ty as diesel::connection::Connection>::Backend>
+            diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<Col, Expr>>: diesel::insertable::InsertValues<<#ty as diesel::connection::Connection>::Backend, Col::Table>
         }
     });
 
@@ -1405,7 +1405,7 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
             }
         }
 
-        impl<Col, Expr> diesel::insertable::InsertValues<Col::Table, super::multi_connection_impl::backend::MultiBackend>
+        impl<Col, Expr> diesel::insertable::InsertValues<super::multi_connection_impl::backend::MultiBackend, Col::Table>
             for diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<Col, Expr>>
         where
             Col: diesel::prelude::Column,
