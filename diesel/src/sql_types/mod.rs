@@ -299,7 +299,7 @@ pub struct Date;
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
 /// - [`chrono::Duration`][Duration] with `feature = "chrono"`
-///     (There might be some information loss due to special behavior on `month` property;
+///     (There might be some information loss due to special behavior for literal `month` (or longer) intervals;
 ///      Please read official documentation of [PostgreSQL Interval].)
 ///
 /// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
