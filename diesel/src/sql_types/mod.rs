@@ -299,10 +299,13 @@ pub struct Date;
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
 /// - [`chrono::Duration`][Duration] with `feature = "chrono"`
+///     (There might be some information loss due to special behavior for literal `month` (or longer) intervals;
+///      Please read official documentation of [PostgreSQL Interval].)
 ///
 /// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
 /// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
 /// [Duration]: https://docs.rs/chrono/*/chrono/type.Duration.html
+/// [PostgreSQL Interval]: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 1186, array_oid = 1187))]
 pub struct Interval;
