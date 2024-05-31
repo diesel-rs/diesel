@@ -1,0 +1,49 @@
+error: `#[auto_type]` requires named lifetimes
+  --> tests/fail/auto_type_life_times.rs:12:25
+   |
+12 | fn with_lifetime(name: &'_ str) -> _ {
+   |                         ^^
+
+error: `#[auto_type]` requires named lifetimes
+  --> tests/fail/auto_type_life_times.rs:17:25
+   |
+17 | fn with_lifetime2(name: &str) -> _ {
+   |                         ^^^^
+
+error[E0106]: missing lifetime specifier
+  --> tests/fail/auto_type_life_times.rs:12:25
+   |
+12 | fn with_lifetime(name: &'_ str) -> _ {
+   |                         ^^ expected named lifetime parameter
+   |
+help: consider introducing a named lifetime parameter
+   |
+12 | fn with_lifetime<'a>(name: &'a str) -> _ {
+   |                 ++++        ~~
+
+error[E0106]: missing lifetime specifier
+  --> tests/fail/auto_type_life_times.rs:17:25
+   |
+17 | fn with_lifetime2(name: &str) -> _ {
+   |                         ^ expected named lifetime parameter
+   |
+help: consider introducing a named lifetime parameter
+   |
+17 | fn with_lifetime2<'a>(name: &'a str) -> _ {
+   |                  ++++        ++
+
+error: lifetime may not live long enough
+  --> tests/fail/auto_type_life_times.rs:13:5
+   |
+12 | fn with_lifetime(name: &'_ str) -> _ {
+   |                        - let's call the lifetime of this reference `'1`
+13 |     users::table.filter(users::name.eq(name))
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ returning this value requires that `'1` must outlive `'static`
+
+error: lifetime may not live long enough
+  --> tests/fail/auto_type_life_times.rs:18:5
+   |
+17 | fn with_lifetime2(name: &str) -> _ {
+   |                         - let's call the lifetime of this reference `'1`
+18 |     users::table.filter(users::name.eq(name))
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ returning this value requires that `'1` must outlive `'static`

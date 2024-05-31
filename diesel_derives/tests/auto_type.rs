@@ -355,6 +355,11 @@ fn test_normal_functions() -> _ {
     ))
 }
 
+#[auto_type]
+fn with_lifetime<'a>(name: &'a str) -> _ {
+    users::table.filter(users::name.eq(name))
+}
+
 // #[auto_type]
 // fn test_sql_fragment() -> _ {
 //     sql("foo")
