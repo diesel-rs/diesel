@@ -156,11 +156,11 @@ macro_rules! tuple_impls {
             }
 
             #[allow(unused_assignments)]
-            impl<$($T,)+ Tab, __DB> InsertValues<Tab, __DB> for ($($T,)+)
+            impl<$($T,)+ Tab, __DB> InsertValues<__DB, Tab> for ($($T,)+)
             where
                 Tab: Table,
                 __DB: Backend,
-                $($T: InsertValues<Tab, __DB>,)+
+                $($T: InsertValues<__DB, Tab>,)+
             {
                 fn column_names(&self, mut out: AstPass<'_, '_, __DB>) -> QueryResult<()> {
                     let mut needs_comma = false;

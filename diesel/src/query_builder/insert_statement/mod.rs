@@ -455,7 +455,7 @@ impl<T, Tab, DB> QueryFragment<DB> for ValuesClause<T, Tab>
 where
     DB: Backend,
     Tab: Table,
-    T: InsertValues<Tab, DB>,
+    T: InsertValues<DB, Tab>,
     DefaultValues: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
