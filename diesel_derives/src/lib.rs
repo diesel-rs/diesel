@@ -1786,7 +1786,7 @@ pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
 /// * Query constructed by `diesel::sql_query`
 /// * Expressions using `diesel::dsl::sql`
 ///
-/// For this cases a manual type annotation is required. See the "Annotating Types" section below
+/// For these cases a manual type annotation is required. See the "Annotating Types" section below
 /// for details.
 ///
 ///

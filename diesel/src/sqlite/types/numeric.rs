@@ -1,4 +1,4 @@
-#![cfg(feature = "bigdecimal")]
+#![cfg(feature = "numeric")]
 
 use bigdecimal::{BigDecimal, FromPrimitive};
 
@@ -7,7 +7,7 @@ use crate::sql_types::{Double, Numeric};
 use crate::sqlite::connection::SqliteValue;
 use crate::sqlite::Sqlite;
 
-#[cfg(all(feature = "sqlite", feature = "bigdecimal"))]
+#[cfg(all(feature = "sqlite", feature = "numeric"))]
 impl FromSql<Numeric, Sqlite> for BigDecimal {
     fn from_sql(bytes: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         let x = <f64 as FromSql<Double, Sqlite>>::from_sql(bytes)?;

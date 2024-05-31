@@ -30,7 +30,7 @@ define_sql_function! {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// # use diesel::dsl::*;
-    /// # #[cfg(feature = "bigdecimal")]
+    /// # #[cfg(feature = "numeric")]
     /// # extern crate bigdecimal;
     /// #
     /// # fn main() {

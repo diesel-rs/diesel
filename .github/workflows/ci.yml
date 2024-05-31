@@ -21,7 +21,7 @@ concurrency:
 jobs:
   check_and_test:
     name: Check
-    needs: [sqlite_bundled, rustfmt_and_clippy, postgres_bundled]
+    needs: [sqlite_bundled, rustfmt_and_clippy, postgres_bundled, mysql_bundled, typos]
     strategy:
       fail-fast: false
       matrix:
@@ -449,7 +449,7 @@ jobs:
           RUSTDOCFLAGS: -Zsanitizer=address
           RUSTFLAGS: -Zsanitizer=address
           ASAN_OPTIONS: detect_stack_use_after_return=1
-        run: cargo +stable -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "sqlite extras libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
+        run: cargo +stable -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "sqlite extras __with_asan_tests" --target x86_64-unknown-linux-gnu
 
   postgres_bundled:
     name: Check postgres bundled + Postgres with asan
@@ -491,7 +491,7 @@ jobs:
           RUSTDOCFLAGS: -Zsanitizer=address
           RUSTFLAGS: -Zsanitizer=address
           ASAN_OPTIONS: detect_stack_use_after_return=1
-        run: cargo +stable -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "postgres pq-sys pq-sys/bundled pq-src/with-asan" --target x86_64-unknown-linux-gnu
+        run: cargo +stable -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "postgres extras __with_asan_tests" --target x86_64-unknown-linux-gnu
 
   mysql_bundled:
     name: Check mysql bundled + Mysql with asan
@@ -543,7 +543,7 @@ jobs:
           LSAN_OPTIONS: suppressions=/tmp/suppr.txt
         run: |
           echo "leak:mysql_server_init" > /tmp/suppr.txt
-          cargo +stable -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "mysql mysqlclient-sys mysqlclient-sys/bundled mysqlclient-src/with-asan" --target x86_64-unknown-linux-gnu
+          cargo +stable -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "mysql extras __with_asan_tests" --target x86_64-unknown-linux-gnu
 
   minimal_rust_version:
     name: Check Minimal supported rust version (1.78.0)
@@ -576,8 +576,6 @@ jobs:
   typos:
     name: Spell Check with Typos
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || !github.event.pull_request.draft
-
     steps:
       - name: Checkout Actions Repository
         uses: actions/checkout@v4
