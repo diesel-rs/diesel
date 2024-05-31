@@ -6,7 +6,7 @@ description = "Internal implementation of diesels migration mechanism"
 homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
 rust-version.workspace = true
-include = ["src/**.rs", "tests/**.rs", "LICENSE-*"]
+include.workspace = true
 edition = "2021"
 keywords = ["diesel", "internal"]
 

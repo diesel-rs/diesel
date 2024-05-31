@@ -6,7 +6,7 @@ description = "Codegeneration macros for diesels embedded migrations"
 homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
 edition = "2021"
-include = ["src/**.rs", "tests/**.rs", "LICENSE-*"]
+include.workspace = true
 rust-version.workspace = true
 
 [dependencies]

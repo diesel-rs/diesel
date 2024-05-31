@@ -32,6 +32,7 @@ members = [
 
 [workspace.package]
 rust-version = "1.78.0"
+include = ["src/**/*.rs", "tests/**/*.rs", "LICENSE-*", "README.md"]
 
 # Config for 'cargo dist'
 [workspace.metadata.dist]

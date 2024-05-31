@@ -7,7 +7,7 @@ documentation = "https://diesel.rs/guides/"
 homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel/"
 autotests = false
-include = ["src/**.rs", "tests/**.rs", "LICENSE-*"]
+include.workspace = true
 rust-version.workspace = true
 edition = "2021"
 

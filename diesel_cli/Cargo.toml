@@ -10,8 +10,18 @@ repository = "https://github.com/diesel-rs/diesel"
 keywords = ["diesel", "migrations", "cli"]
 autotests = false
 edition = "2021"
-include = ["src/**.rs", "tests/**.rs", "LICENSE-*", "README.md"]
 rust-version.workspace = true
+
+include = [
+    "src/**/*.rs",
+    "tests/**/*.rs",
+    "LICENSE-*",
+    "README.md",
+    "src/default_files/diesel.toml",
+    "src/infer_schema_internals/load_foreign_keys.sql",
+    "src/setup_sql/postgres/initial_setup/down.sql",
+    "src/setup_sql/postgres/initial_setup/up.sql",
+]
 
 [package.metadata.wix]
 upgrade-guid = "AC330981-F4F8-4D8A-AD78-F8B7ECC32DF3"

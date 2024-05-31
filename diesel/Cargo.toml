@@ -11,7 +11,14 @@ keywords = ["orm", "database", "sql"]
 categories = ["database"]
 edition = "2021"
 rust-version.workspace = true
-include = ["src/**.rs", "tests/**.rs", "LICENSE-*", "README.md"]
+include = [
+    "src/**/*.rs",
+    "tests/**/*.rs",
+    "LICENSE-*",
+    "README.md",
+    "src/sqlite/connection/diesel_manage_updated_at.sql",
+    "src/migration/setup_migration_table.sql",
+]
 
 [dependencies]
 byteorder = { version = "1.0", optional = true }

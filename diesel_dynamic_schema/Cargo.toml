@@ -10,7 +10,7 @@ homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
 keywords = ["orm", "database", "sql"]
 categories = ["database"]
-include = ["src/**.rs", "tests/**.rs", "LICENSE-*", "README.md"]
+include.workspace = true
 rust-version.workspace = true
 
 [dependencies.diesel]
