@@ -1,7 +1,7 @@
 mod case;
 pub mod expression_type_inference;
 mod local_variables_map;
-mod required_lifetimes;
+mod referenced_generics;
 mod settings_builder;
 
 use {
@@ -166,33 +166,19 @@ pub(crate) fn auto_type_impl(
 
     let type_alias = match type_alias {
         Some(type_alias) => {
-            let mut referenced_lifetimes =
-                required_lifetimes::extract_referenced_lifetimes(&return_type, &mut errors);
-            referenced_lifetimes.sort_unstable();
-            referenced_lifetimes.dedup();
-            let lifetimes: Vec<&syn::Lifetime> = input_function
-                .sig
-                .generics
-                .lifetimes()
-                .map(|input_lifetime| &input_lifetime.lifetime)
-                .filter(|lifetime| referenced_lifetimes.binary_search(&lifetime).is_ok())
-                .collect();
-            let lifetimes = lifetimes.as_slice();
+            // We're generating a type alias so we need to extract the necessary lifetimes and
+            // generic type parameters for that type alias
+            let type_alias_generics = referenced_generics::extract_referenced_generics(
+                &return_type,
+                &input_function.sig.generics,
+                &mut errors,
+            );
 
             let vis = &input_function.vis;
-            input_function.sig.output = parse_quote!(-> #type_alias<#(#lifetimes,)*>);
-            // we need this branch here to get
-            // a reasonable error message
-            // for the case that there is no lifetime specifierer
-            // but we need one
-            let lifetimes = if lifetimes.is_empty() {
-                None
-            } else {
-                Some(quote! {<#(#lifetimes,)*>})
-            };
+            input_function.sig.output = parse_quote!(-> #type_alias #type_alias_generics);
             quote! {
                 #[allow(non_camel_case_types)]
-                #vis type #type_alias #lifetimes = #return_type;
+                #vis type #type_alias #type_alias_generics = #return_type;
             }
         }
         None => {
@@ -209,7 +195,7 @@ pub(crate) fn auto_type_impl(
 
     for error in errors {
         // Extracting from the `Rc` only if it's the last reference is an elegant way to
-        // deduplicate errors For this to work it is necessary that the rest of
+        // deduplicate errors. For this to work it is necessary that the rest of
         // the errors (those from the local variables map that weren't used) are
         // dropped before, which is the case here, and that we are iterating on the
         // errors in an owned manner.

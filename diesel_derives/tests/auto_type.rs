@@ -360,6 +360,14 @@ fn with_lifetime<'a>(name: &'a str) -> _ {
     users::table.filter(users::name.eq(name))
 }
 
+#[auto_type]
+fn with_type_generics<'a, T>(name: &'a T) -> _
+where
+    &'a T: diesel::expression::AsExpression<diesel::sql_types::Text>,
+{
+    users::name.eq(name)
+}
+
 // #[auto_type]
 // fn test_sql_fragment() -> _ {
 //     sql("foo")
