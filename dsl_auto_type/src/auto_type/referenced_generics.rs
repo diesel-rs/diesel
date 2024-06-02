@@ -7,9 +7,9 @@ use {
     },
 };
 
-pub(crate) fn extract_referenced_generics<'g>(
+pub(crate) fn extract_referenced_generics(
     ty: &syn::Type,
-    generics: &'g syn::Generics,
+    generics: &syn::Generics,
     errors: &mut Vec<Rc<syn::Error>>,
 ) -> syn::Generics {
     struct Visitor<'g, 'errs> {

@@ -116,6 +116,16 @@ impl<'a, 'p> LocalVariablesMap<'a, 'p> {
         Ok(())
     }
 
+    pub(crate) fn process_const_generic(&mut self, const_generic: &'a syn::ConstParam) {
+        self.inner.map.insert(
+            &const_generic.ident,
+            LetStatementInferredType {
+                type_: const_generic.ty.clone(),
+                errors: Vec::new(),
+            },
+        );
+    }
+
     /// Finishes a block inference for this map.
     /// It may be initialized with `pat`s before (such as function parameters),
     /// then this function is used to infer the type of the last expression in the block.

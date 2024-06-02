@@ -135,6 +135,9 @@ pub(crate) fn auto_type_impl(
                     parent: None,
                 },
             };
+            for const_generic in input_function.sig.generics.const_params() {
+                local_variables_map.process_const_generic(const_generic);
+            }
             for function_param in &input_function.sig.inputs {
                 if let syn::FnArg::Typed(syn::PatType { pat, ty, .. }) = function_param {
                     match local_variables_map.process_pat(pat, Some(ty), None) {

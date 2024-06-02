@@ -368,6 +368,11 @@ where
     users::name.eq(name)
 }
 
+#[auto_type]
+fn with_const_generics<const N: i32>() -> _ {
+    users::id.eq(N)
+}
+
 // #[auto_type]
 // fn test_sql_fragment() -> _ {
 //     sql("foo")
