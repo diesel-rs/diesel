@@ -1,6 +1,7 @@
 mod case;
 pub mod expression_type_inference;
 mod local_variables_map;
+mod required_lifetimes;
 mod settings_builder;
 
 use {
@@ -162,20 +163,22 @@ pub(crate) fn auto_type_impl(
             .into());
         }
     };
-    let mut lifetimes =
-        match crate::auto_type::expression_type_inference::infer_lifetimes(&return_type) {
-            Ok(l) => l,
-            Err(e) => {
-                errors.push(Rc::new(e));
-                Vec::new()
-            }
-        };
-    lifetimes.sort();
-    lifetimes.dedup();
-    let lifetimes = &lifetimes;
 
     let type_alias = match type_alias {
         Some(type_alias) => {
+            let mut referenced_lifetimes =
+                required_lifetimes::extract_referenced_lifetimes(&return_type, &mut errors);
+            referenced_lifetimes.sort_unstable();
+            referenced_lifetimes.dedup();
+            let lifetimes: Vec<&syn::Lifetime> = input_function
+                .sig
+                .generics
+                .lifetimes()
+                .map(|input_lifetime| &input_lifetime.lifetime)
+                .filter(|lifetime| referenced_lifetimes.binary_search(&lifetime).is_ok())
+                .collect();
+            let lifetimes = lifetimes.as_slice();
+
             let vis = &input_function.vis;
             input_function.sig.output = parse_quote!(-> #type_alias<#(#lifetimes,)*>);
             // we need this branch here to get

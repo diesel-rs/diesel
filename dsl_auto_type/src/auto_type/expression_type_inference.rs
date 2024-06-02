@@ -1,6 +1,3 @@
-use syn::GenericArgument;
-use syn::Lifetime;
-
 use super::*;
 
 pub use super::settings_builder::InferrerSettingsBuilder;
@@ -388,69 +385,4 @@ fn literal_type(t: &proc_macro2::Literal) -> Result<syn::Type, syn::Error> {
         })?..];
     syn::parse_str(type_suffix)
         .map_err(|_| syn::Error::new_spanned(t, "Invalid type suffix for literal"))
-}
-
-pub(super) fn infer_lifetimes(return_type: &syn::Type) -> Result<Vec<&Lifetime>, syn::Error> {
-    match return_type {
-        Type::Path(p) => {
-            let mut out = Vec::new();
-            for s in &p.path.segments {
-                match &s.arguments {
-                    syn::PathArguments::None => {}
-                    syn::PathArguments::AngleBracketed(b) => {
-                        for arg in &b.args {
-                            if let GenericArgument::Type(t) = arg {
-                                out.extend(infer_lifetimes(t)?);
-                            } else {
-                                return Err(syn::Error::new_spanned(
-                                    arg,
-                                    "expected a type argument in this position",
-                                ));
-                            }
-                        }
-                    }
-                    syn::PathArguments::Parenthesized(a) => {
-                        return Err(syn::Error::new_spanned(a, "expected no type arguments or a generic type argument in this position "));
-                    }
-                }
-            }
-            Ok(out)
-        }
-        Type::Reference(r) => {
-            let mut out = Vec::new();
-            if let Some(ref lifetime) = r.lifetime {
-                if lifetime.ident == "_" {
-                    return Err(syn::Error::new_spanned(
-                        lifetime,
-                        "`#[auto_type]` requires named lifetimes",
-                    ));
-                }
-                if lifetime.ident != "static" {
-                    out.push(lifetime);
-                }
-            } else {
-                return Err(syn::Error::new_spanned(
-                    r,
-                    "`#[auto_type]` requires named lifetimes",
-                ));
-            }
-            out.extend(infer_lifetimes(&r.elem)?);
-            Ok(out)
-        }
-        Type::Tuple(t) => {
-            let mut out = Vec::new();
-            for t in &t.elems {
-                out.extend(infer_lifetimes(t)?);
-            }
-            Ok(out)
-        }
-        Type::Slice(s) => infer_lifetimes(&s.elem),
-        Type::Infer(_) => Ok(Vec::new()),
-        t => Err(syn::Error::new_spanned(
-            t,
-            "this type is currently unsupported by `#[auto_type]`.\n\
-                 Please open an issue with an reproducing example to \
-                 add support for it in the future",
-        )),
-    }
 }
