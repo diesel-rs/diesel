@@ -73,10 +73,12 @@ impl TypeInferrer<'_> {
             Err(e) => self.register_error(e, expr.span()),
         }
     }
+
     fn register_error(&self, error: syn::Error, infer_type_span: Span) -> syn::Type {
         self.errors.borrow_mut().push(Rc::new(error));
         parse_quote_spanned!(infer_type_span=> _)
     }
+
     fn try_infer_expression_type(
         &self,
         expr: &syn::Expr,
