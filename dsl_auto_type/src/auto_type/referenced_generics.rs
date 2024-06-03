@@ -1,11 +1,7 @@
-use {
-    std::rc::Rc,
-    syn::{
-        parse_quote,
-        visit::{self, Visit},
-        Ident, Lifetime,
-    },
-};
+use std::rc::Rc;
+use syn::parse_quote;
+use syn::visit::{self, Visit};
+use syn::{Ident, Lifetime};
 
 pub(crate) fn extract_referenced_generics(
     ty: &syn::Type,
