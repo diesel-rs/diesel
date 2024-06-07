@@ -11,6 +11,19 @@ use crate::result::{ConnectionError, ConnectionResult, QueryResult};
 
 pub(super) struct RawConnection(NonNull<ffi::MYSQL>);
 
+// old versions of mysqlclient do not expose
+// ffi::FALSE, so we need to have our own compatibility
+// wrapper here
+//
+// Depending on the bindings version ffi::my_bool
+// might be an actual bool or a i8. For the former
+// case `default()` corresponds to `false` for the later
+// to `0` which is both interpreted as false
+#[inline(always)]
+pub(super) fn ffi_false() -> ffi::my_bool {
+    Default::default()
+}
+
 impl RawConnection {
     pub(super) fn new() -> Self {
         perform_thread_unsafe_library_initialization();
@@ -175,7 +188,7 @@ impl RawConnection {
     }
 
     fn more_results(&self) -> bool {
-        unsafe { ffi::mysql_more_results(self.0.as_ptr()) != ffi::FALSE }
+        unsafe { ffi::mysql_more_results(self.0.as_ptr()) != ffi_false() }
     }
 
     fn next_result(&self) -> QueryResult<()> {
