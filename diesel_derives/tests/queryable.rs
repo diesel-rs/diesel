@@ -87,3 +87,16 @@ fn multiple_tables() {
         data
     );
 }
+
+#[test]
+fn name_conflict() {
+    type Field = i32;
+    type Record = i32;
+
+    #[derive(Debug, Clone, PartialEq, Eq, Queryable)]
+    struct MyStruct(Field, Record);
+
+    let conn = &mut connection();
+    let data = select(sql::<(Integer, Integer)>("1, 2")).get_result(conn);
+    assert_eq!(Ok(MyStruct(1, 2)), data);
+}
