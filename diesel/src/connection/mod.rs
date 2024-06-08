@@ -367,7 +367,7 @@ where
     {
         let mut user_result = None;
         let _ = self.transaction::<(), _, _>(|conn| {
-            user_result = f(conn).ok();
+            user_result = f(conn).map_err(|e| dbg!(e)).ok();
             Err(Error::RollbackTransaction)
         });
         user_result.expect("Transaction did not succeed")

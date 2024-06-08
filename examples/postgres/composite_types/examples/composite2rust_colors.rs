@@ -1,10 +1,8 @@
 // Function to connect to database.
-use diesel_postgres_composite_type::establish_connection;
+use composite_types::establish_connection;
 
 // Bring column names of the table into scope
-use diesel_postgres_composite_type::schema::colors::{
-    blue, color_id, color_name, dsl::colors, green, red,
-};
+use composite_types::schema::colors::{blue, color_id, color_name, dsl::colors, green, red};
 
 // Define the signature of the SQL function we want to call:
 use diesel::define_sql_function;

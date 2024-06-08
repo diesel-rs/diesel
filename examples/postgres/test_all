@@ -18,10 +18,9 @@ if [ -z "${BACKEND##*postgres*}" ]; then
         cd "$dir"
 
         if [ -d "migrations" ]; then
-            ../../../bin/diesel database reset
+            ../../../bin/diesel database reset --locked-schema
         fi
 
-        cargo test
         cd ..
     done
 fi

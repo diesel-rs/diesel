@@ -65,16 +65,14 @@ cfg_if! {
                 .or_else(|_| dotenvy::var("DATABASE_URL"))
                 .expect("DATABASE_URL must be set in order to run tests");
             let mut conn = MysqlConnection::establish(&database_url).unwrap();
-            sql_query("DROP TABLE IF EXISTS users CASCADE").execute(&mut conn).unwrap();
-            sql_query("DROP TABLE IF EXISTS users_ CASCADE").execute(&mut conn).unwrap();
-            sql_query("CREATE TABLE users (\
+            sql_query("CREATE TEMPORARY TABLE users (\
                 id INTEGER PRIMARY KEY AUTO_INCREMENT, \
                 name TEXT NOT NULL, \
                 hair_color VARCHAR(255) DEFAULT 'Green',
                 type VARCHAR(255) DEFAULT 'regular')")
                 .execute(&mut conn)
                 .unwrap();
-            sql_query("CREATE TABLE users_ (\
+            sql_query("CREATE TEMPORARY TABLE users_ (\
                 id INTEGER PRIMARY KEY AUTO_INCREMENT, \
                 name TEXT NOT NULL, \
                 hair_color VARCHAR(255) DEFAULT 'Green',

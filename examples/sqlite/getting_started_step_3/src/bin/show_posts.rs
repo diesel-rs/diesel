@@ -1,9 +1,9 @@
 use diesel::prelude::*;
-use diesel_demo_step_3_sqlite::models::*;
-use diesel_demo_step_3_sqlite::*;
+use getting_started_step_3_sqlite::models::*;
+use getting_started_step_3_sqlite::*;
 
 fn main() {
-    use diesel_demo_step_3_sqlite::schema::posts::dsl::*;
+    use getting_started_step_3_sqlite::schema::posts::dsl::*;
 
     let connection = &mut establish_connection();
     let results = posts

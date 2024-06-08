@@ -4,6 +4,7 @@ mod comment;
 mod editor;
 mod pagination;
 mod post;
+#[rustfmt::skip]
 mod schema;
 
 #[cfg(test)]

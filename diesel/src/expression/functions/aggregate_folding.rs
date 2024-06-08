@@ -48,8 +48,7 @@ define_sql_function! {
     /// #     use bigdecimal::BigDecimal;
     /// #     use self::numbers::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS numbers").execute(conn)?;
-    /// #     diesel::sql_query("CREATE TABLE numbers (number INTEGER)").execute(conn)?;
+    /// #     diesel::sql_query("CREATE TEMPORARY TABLE numbers (number INTEGER)").execute(conn)?;
     /// diesel::insert_into(numbers)
     ///     .values(&vec![number.eq(1), number.eq(2)])
     ///     .execute(conn)?;

@@ -1,52 +1,122 @@
 #!/usr/bin/env bash
 set -ex
 
-if [ "$1" = "integration" ]; then
-    if [ "$2" ]; then
-        BACKEND="$2"
-        shift 2
-    else
-        BACKEND=postgres
-        shift
-    fi
-    if [ "$BACKEND" = "mysql" ]; then
-        export RUST_TEST_THREADS=1
-    fi
-    (cd diesel_tests && cargo test --features "$BACKEND" --no-default-features "$*")
-elif [ "$1" = "compile" ]; then
-    shift
-    (cd diesel_compile_tests && cargo test "$*")
+if ! command -v cargo-nextest &> /dev/null
+then
+    echo "cargo nextest not found"
+    echo ""
+    echo "Install cargo-nextest to run the test"
+    echo "https://nexte.st/"
+    echo ""
+    echo "Run 'cargo install cargo-nextest' to install cargo nextest"
+fi
+
+BACKEND="$1"
+ADDITIONAL_FLAGS="${@:2}"
+
+case $BACKEND in
+    "all")
+        echo "Run tests for all backends"
+        /usr/bin/env bash $0 sqlite $ADDITIONAL_FLAGS
+        /usr/bin/env bash $0 postgres $ADDITIONAL_FLAGS
+        /usr/bin/env bash $0 mysql $ADDITIONAL_FLAGS
+        exit 0
+        ;;
+    "postgres")
+        echo "Build and run postgres tests"
+        echo "Remember to set 'PG_DATABASE_URL' for this";
+        EXCLUDE="\
+            --exclude all_about_inserts_mysql \
+            --exclude getting_started_step_1_mysql \
+            --exclude getting_started_step_2_mysql \
+            --exclude getting_started_step_3_mysql \
+            --exclude all_about_inserts_sqlite \
+            --exclude getting_started_step_1_sqlite \
+            --exclude getting_started_step_2_sqlite \
+            --exclude getting_started_step_3_sqlite
+            "
+        ;;
+    "mysql")
+        echo "Build and run mysql tests"
+        echo "Remember to set 'MYSQL_DATABASE_URL' and 'MYSQL_UNIT_TEST_DATABASE_URL' for this"
+        RUST_TEST_THREADS="-- --test-threads=1"
+        NEXTEST_TEST_THREADS="-j 1"
+        EXCLUDE="\
+            --exclude all_about_inserts_sqlite \
+            --exclude getting_started_step_1_sqlite \
+            --exclude getting_started_step_2_sqlite \
+            --exclude getting_started_step_3_sqlite \
+            --exclude all_about_inserts \
+            --exclude all_about_updates \
+            --exclude getting_started_step_1_pg \
+            --exclude getting_started_step_2_pg \
+            --exclude getting_started_step_3_pg \
+            --exclude composite_types \
+            --exclude custom_types \
+            --exclude relations \
+            --exclude advanced-blog-cli \
+            "
+        ;;
+    "sqlite")
+        echo "Build and run sqlite tests"
+        echo "Remember to set 'SQLITE_DATABASE_URL' for this"
+        EXCLUDE="\
+            --exclude all_about_inserts_mysql \
+            --exclude getting_started_step_1_mysql \
+            --exclude getting_started_step_2_mysql \
+            --exclude getting_started_step_3_mysql \
+            --exclude all_about_inserts \
+            --exclude all_about_updates \
+            --exclude getting_started_step_1_pg \
+            --exclude getting_started_step_2_pg \
+            --exclude getting_started_step_3_pg \
+            --exclude composite_types \
+            --exclude custom_types \
+            --exclude relations \
+            --exclude advanced-blog-cli \
+            "
+        ;;
+    "")
+        echo "Need to specify the backend ('postgres'/'sqlite'/'mysql'/'all') as first argument"
+        exit 1
+        ;;
+    *)
+        echo "Unsupported backend"
+        exit 1
+        ;;
+esac
+
+cargo nextest run --workspace --no-default-features $EXCLUDE \
+    -F "diesel/$BACKEND" -F "diesel/extras" \
+    -F "diesel_derives/$BACKEND" \
+    -F "diesel_cli/$BACKEND" \
+    -F "migrations_macros/$BACKEND" \
+    -F "diesel_migrations/$BACKEND" \
+    -F "diesel_tests/$BACKEND" \
+    -F "diesel-dynamic-schema/$BACKEND" \
+    $ADDITIONAL_FLAGS $NEXTEST_TEST_THREADS
+
+
+if [ -z $NO_DOC_TESTS ];
+then
+
+cargo test --doc --no-default-features \
+    -p diesel -F "diesel/$BACKEND" -F "diesel/extras" \
+    -p diesel_derives -F "diesel/$BACKEND" -F "diesel_derives/$BACKEND" \
+    -p diesel_migrations \
+    -p diesel-dynamic-schema -F "diesel/$BACKEND" -F "$BACKEND" \
+    -p migrations_macros \
+    -p dsl_auto_type \
+    -p diesel_table_macro_syntax \
+    $RUST_TEST_THREADS
 else
-    (cd diesel && cargo test --no-default-features --features "extras sqlite" "$*")
-    (cd diesel && cargo test --no-default-features --features "extras postgres" "$*")
-    (cd diesel && cargo test --no-default-features --features "mysql" "$*" -- --test-threads 1)
+    echo "Doc tests skipped, unset NO_DOC_TESTS to run doc tests"
+fi
 
-    (cd diesel_cli && cargo test --features "sqlite" --no-default-features "$*")
-    (cd diesel_migrations && cargo test --features "sqlite diesel/sqlite" "$*")
-    (cd diesel_migrations && cargo test --features "sqlite diesel/sqlite" "$*")
-    (cd diesel_derives && cargo test --features "diesel/sqlite sqlite" "$*")
-    (cd diesel_tests && cargo test --features "sqlite" --no-default-features "$*")
-    (cd diesel_dynamic_schema && cargo test --features "sqlite diesel/sqlite" "$*")
-    (cd diesel_bench && cargo test --features "sqlite" --benches "$*")
-
-    (cd diesel_migrations && cargo test --features "postgres diesel/postgres" "$*")
-    (cd diesel_migrations/migrations_macros && cargo test --features "diesel/postgres postgres" "$*")
-    (cd diesel_derives && cargo test --features "diesel/postgres postgres" "$*")
-    (cd diesel_cli && cargo test --features "postgres" --no-default-features "$*")
-    (cd diesel_tests && cargo test --features "postgres" --no-default-features "$*")
-    (cd diesel_dynamic_schema && cargo test --features "postgres diesel/postgres" "$*")
-    (cd diesel_bench && cargo test --features "postgres" --benches "$*")
-
-    (cd diesel_migrations && cargo test --features "mysql diesel/mysql" "$*" -- --test-threads 1)
-    (cd diesel_migrations/migrations_macros && cargo test --features "diesel/mysql mysql" "$*" -- --test-threads 1)
-    (cd diesel_derives && cargo test --features "diesel/mysql mysql" "$*" -- --test-threads 1)
-    (cd diesel_cli && cargo test --features "mysql" --no-default-features "$*" -- --test-threads 1)
-    (cd diesel_tests && cargo test --features "mysql" --no-default-features "$*" -- --test-threads 1)
-    (cd diesel_dynamic_schema && cargo test --features "mysql diesel/mysql" "$*" -- --test-threads 1)
-    (cd diesel_bench && cargo test --features "mysql" --benches "$*")
-
-    (cd diesel_compile_tests && cargo test "$*")
-    (cd diesel_migrations/migrations_internals && cargo test "$*")
-    export BACKEND="mysql sqlite postgres"
-    (cd examples && ./test_all "$*")
+if [ -z $EXAMPLE_SCHEMA_CHECKS ];
+then
+    echo "Skip example schema checks."
+    echo "Set EXAMPLE_SCHEMA_CHECKS=1 and {PG/MYSQL/SQLITE}_EXAMPLE_DATABASE_URL to perform these steps"
+else
+    /usr/bin/env bash examples/$BACKEND/test_all
 fi

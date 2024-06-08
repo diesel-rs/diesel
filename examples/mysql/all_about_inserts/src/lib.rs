@@ -405,6 +405,22 @@ fn examine_sql_from_explicit_returning() {
 
 #[cfg(test)]
 fn establish_connection() -> MysqlConnection {
-    let url = ::std::env::var("DATABASE_URL").unwrap();
-    MysqlConnection::establish(&url).unwrap()
+    let url = std::env::var("MYSQL_DATABASE_URL")
+        .or_else(|_| std::env::var("DATABASE_URL"))
+        .unwrap();
+    let mut conn = MysqlConnection::establish(&url).unwrap();
+    diesel::sql_query(
+        "CREATE TEMPORARY TABLE users ( \
+            id INTEGER PRIMARY KEY AUTO_INCREMENT, \
+            name TEXT NOT NULL, \
+            hair_color TEXT, \
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP \
+        );\
+    ",
+    )
+    .execute(&mut conn)
+    .unwrap();
+    conn.begin_test_transaction().unwrap();
+    conn
 }

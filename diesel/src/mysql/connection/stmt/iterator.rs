@@ -229,7 +229,6 @@ impl<'a> Field<'a, Mysql> for MysqlField<'a> {
 #[allow(clippy::drop_non_drop)] // we want to explicitly extend lifetimes here
 fn fun_with_row_iters() {
     crate::table! {
-        #[allow(unused_parens)]
         users(id) {
             id -> Integer,
             name -> Text,
@@ -245,13 +244,10 @@ fn fun_with_row_iters() {
     let conn = &mut crate::test_helpers::connection();
 
     crate::sql_query(
-        "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+        "CREATE TEMPORARY TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
     )
     .execute(conn)
     .unwrap();
-    crate::sql_query("DELETE FROM users;")
-        .execute(conn)
-        .unwrap();
 
     crate::insert_into(users::table)
         .values(vec![
