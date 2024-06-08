@@ -1,5 +1,7 @@
 use crate::schema::*;
 use diesel::backend::Backend;
+use diesel::deserialize::FromSqlRow;
+use diesel::expression::AsExpression;
 use diesel::serialize::{Output, ToSql};
 use diesel::*;
 

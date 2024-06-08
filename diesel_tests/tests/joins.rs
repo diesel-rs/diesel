@@ -350,6 +350,7 @@ fn select_then_join() {
     let expected_data = vec![1, 2];
     let data: Vec<i32> = users
         .select(id)
+        .order(id)
         .left_outer_join(posts::table)
         .load(connection)
         .unwrap();

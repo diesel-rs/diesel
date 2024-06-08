@@ -258,6 +258,7 @@ where
     /// use diesel::upsert::*;
     ///
     /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE users").execute(conn).unwrap();
     /// #     diesel::sql_query("CREATE TEMPORARY TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255), hair_color VARCHAR(255))").execute(conn).unwrap();
     /// diesel::sql_query("CREATE UNIQUE INDEX users_name ON users (name)").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Sean" };

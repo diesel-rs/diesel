@@ -1,4 +1,4 @@
-use diesel_demo_step_2_sqlite::*;
+use getting_started_step_2_sqlite::*;
 use std::io::{stdin, Read};
 
 fn main() {

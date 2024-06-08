@@ -386,7 +386,7 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut connection_no_data();
-/// #     diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL)")
+/// #     diesel::sql_query("CREATE TEMPORARY TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL)")
 /// #         .execute(connection)
 /// #         .unwrap();
 /// let user = InsertableUser {

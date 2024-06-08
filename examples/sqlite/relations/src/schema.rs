@@ -34,4 +34,9 @@ diesel::joinable!(books_authors -> authors (author_id));
 diesel::joinable!(books_authors -> books (book_id));
 diesel::joinable!(pages -> books (book_id));
 
-diesel::allow_tables_to_appear_in_same_query!(authors, books, books_authors, pages,);
+diesel::allow_tables_to_appear_in_same_query!(
+    authors,
+    books,
+    books_authors,
+    pages,
+);

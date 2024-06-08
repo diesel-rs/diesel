@@ -28,12 +28,13 @@ members = [
     "examples/sqlite/getting_started_step_1",
     "examples/sqlite/getting_started_step_2",
     "examples/sqlite/getting_started_step_3",
-    "examples/sqlite/relations",
+    "examples/sqlite/relations", "xtask",
 ]
 
 [workspace.package]
 rust-version = "1.78.0"
 include = ["src/**/*.rs", "tests/**/*.rs", "LICENSE-*", "README.md"]
+edition = "2021"
 
 [workspace.dependencies]
 libsqlite3-sys = "0.29"

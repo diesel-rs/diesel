@@ -71,7 +71,7 @@ use proc_macro::TokenStream;
 /// #
 /// #
 /// # #[cfg(feature = "postgres")]
-/// pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../../migrations/postgresql");
+/// pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../../migrations/postgres");
 /// # #[cfg(all(feature = "mysql", not(feature = "postgres")))]
 /// # pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../../migrations/mysql");
 /// # #[cfg(all(feature = "sqlite", not(any(feature = "postgres", feature = "mysql"))))]
@@ -83,8 +83,7 @@ use proc_macro::TokenStream;
 /// # }
 ///
 /// fn run_migrations(connection: &mut impl MigrationHarness<DB>) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-/// #   #[cfg(feature = "mysql")]
-/// #   connection.revert_all_migrations(MIGRATIONS)?;
+/// #   let _ = connection.revert_all_migrations(MIGRATIONS);
 ///
 ///     // This will run the necessary migrations.
 ///     //

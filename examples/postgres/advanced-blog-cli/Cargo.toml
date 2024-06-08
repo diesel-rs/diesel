@@ -1,13 +1,13 @@
 [package]
 name = "advanced-blog-cli"
 version = "0.1.0"
-edition = "2018"
+edition.workspace = true
 publish = false
 
 [dependencies]
 argon2 = "0.5.0"
 chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }
-diesel = { version = "2.1.0", path = "../../../diesel", features = ["postgres", "chrono"] }
+diesel = { version = "2.2.0", path = "../../../diesel", features = ["postgres", "chrono"] }
 dotenvy = "0.15"
 clap = { version = "4.2.7", features = ["derive"] }
 tempfile = "3.1.0"

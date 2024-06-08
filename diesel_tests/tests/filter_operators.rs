@@ -206,11 +206,9 @@ fn filter_by_ilike() {
 }
 
 #[test]
-#[allow(deprecated)]
 #[cfg(feature = "postgres")]
 fn filter_by_any() {
     use crate::schema::users::dsl::*;
-    use diesel::dsl::any;
 
     let connection = &mut connection_with_3_users();
     let sean = User::new(1, "Sean");
@@ -222,7 +220,7 @@ fn filter_by_any() {
     assert_eq!(
         vec![sean.clone(), tess],
         users
-            .filter(name.eq(any(owned_names)))
+            .filter(name.eq_any(owned_names))
             .order(id.asc())
             .load(connection)
             .unwrap()
@@ -230,7 +228,7 @@ fn filter_by_any() {
     assert_eq!(
         vec![sean, jim],
         users
-            .filter(name.eq(any(borrowed_names)))
+            .filter(name.eq_any(borrowed_names))
             .order(id.asc())
             .load(connection)
             .unwrap()
