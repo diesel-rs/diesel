@@ -48,7 +48,9 @@ pub fn run_print_schema<W: IoWrite>(
 ) -> Result<(), crate::errors::Error> {
     let schema = output_schema(connection, config)?;
 
-    output.write_all(schema.as_bytes())?;
+    output
+        .write_all(schema.as_bytes())
+        .map_err(|e| crate::errors::Error::IoError(e, None))?;
     Ok(())
 }
 
@@ -272,7 +274,7 @@ pub fn output_schema(
                     patch_file.display(),
                     e
                 );
-                return Err(e.into());
+                return Err(crate::errors::Error::IoError(e, Some(patch_file.clone())));
             }
         };
         let patch = diffy::Patch::from_str(&patch)?;

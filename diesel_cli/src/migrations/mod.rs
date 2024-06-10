@@ -130,7 +130,8 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
             let version = migration_version(args);
             let versioned_name = format!("{version}_{migration_name}");
             let migration_dir = migrations_dir(matches)?.join(versioned_name);
-            fs::create_dir(&migration_dir)?;
+            fs::create_dir(&migration_dir)
+                .map_err(|e| crate::errors::Error::IoError(e, Some(migration_dir.clone())))?;
 
             match args
                 .get_one::<String>("MIGRATION_FORMAT")
@@ -164,17 +165,22 @@ fn generate_sql_migration(
 ) -> Result<(), crate::errors::Error> {
     use std::io::Write;
 
-    let migration_dir_relative =
-        crate::convert_absolute_path_to_relative(path, &env::current_dir()?);
+    let migration_dir_relative = crate::convert_absolute_path_to_relative(
+        path,
+        &env::current_dir().map_err(|e| crate::errors::Error::IoError(e, None))?,
+    );
 
     let up_path = path.join("up.sql");
     println!(
         "Creating {}",
         migration_dir_relative.join("up.sql").display()
     );
-    let mut up = fs::File::create(up_path)?;
-    up.write_all(b"-- Your SQL goes here\n")?;
-    up.write_all(up_sql.as_bytes())?;
+    let mut up = fs::File::create(&up_path)
+        .map_err(|e| crate::errors::Error::IoError(e, Some(up_path.clone())))?;
+    up.write_all(b"-- Your SQL goes here\n")
+        .map_err(|e| crate::errors::Error::IoError(e, Some(up_path.clone())))?;
+    up.write_all(up_sql.as_bytes())
+        .map_err(|e| crate::errors::Error::IoError(e, Some(up_path.clone())))?;
 
     if with_down {
         let down_path = path.join("down.sql");
@@ -182,9 +188,12 @@ fn generate_sql_migration(
             "Creating {}",
             migration_dir_relative.join("down.sql").display()
         );
-        let mut down = fs::File::create(down_path)?;
-        down.write_all(b"-- This file should undo anything in `up.sql`\n")?;
-        down.write_all(down_sql.as_bytes())?;
+        let mut down = fs::File::create(&down_path)
+            .map_err(|e| crate::errors::Error::IoError(e, Some(down_path.clone())))?;
+        down.write_all(b"-- This file should undo anything in `up.sql`\n")
+            .map_err(|e| crate::errors::Error::IoError(e, Some(up_path.clone())))?;
+        down.write_all(down_sql.as_bytes())
+            .map_err(|e| crate::errors::Error::IoError(e, Some(up_path.clone())))?;
     }
     Ok(())
 }
