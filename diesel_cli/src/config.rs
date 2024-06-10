@@ -56,7 +56,8 @@ impl Config {
         let path = Self::file_path(matches);
 
         if path.exists() {
-            let content = fs::read_to_string(&path)?;
+            let content = fs::read_to_string(&path)
+                .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_owned())))?;
             let mut result = toml::from_str::<Self>(&content)?;
             result.set_relative_path_base(
                 path.parent()
