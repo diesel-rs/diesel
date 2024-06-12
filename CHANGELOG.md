@@ -10,6 +10,17 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.2.1] 2024-06-12
+
+## Fixed
+
+* Fixed using `#[dsl::auto_type]` with functions that accept reference arguments
+* Fixed using `#[derive(Queryable)]` with structs that use a type named `Row` as field type
+* Fixed a regression that prevented using `mysqlclient-sys` 0.2.x with diesel 2.2
+* Fixed connecting to postgres database using the scram-sha-256 authentication method on windows while using the bundled postgres builds
+* Improved the error messages in diesel-cli for cases where a file/folder was not found
+* Fixed several version detection bugs in mysqlclient-sys to use pre-generated bindings in more situations
+
 ## [2.2.0] 2024-05-31
 
 ### Added
