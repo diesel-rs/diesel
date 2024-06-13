@@ -389,13 +389,13 @@ impl BindData {
             length,
             capacity,
             flags,
-            is_null: ffi::FALSE,
-            is_truncated: Some(ffi::FALSE),
+            is_null: super::raw::ffi_false(),
+            is_truncated: Some(super::raw::ffi_false()),
         }
     }
 
     fn is_truncated(&self) -> bool {
-        self.is_truncated.unwrap_or(ffi::FALSE) != ffi::FALSE
+        self.is_truncated.unwrap_or(super::raw::ffi_false()) != super::raw::ffi_false()
     }
 
     fn is_fixed_size_buffer(&self) -> bool {
@@ -711,7 +711,9 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
                  something has gone wrong. Please open an issue at \
                  the diesel github repo."
             ),
-
+            // depending on the bindings version
+            // there might be no unlisted field type
+            #[allow(unreachable_patterns)]
             t => unreachable!(
                 "Unsupported type encountered: {t:?}. \
                  If you ever see this error, something has gone wrong. \

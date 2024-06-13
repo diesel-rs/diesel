@@ -18,8 +18,8 @@ pub enum Error {
     ProjectRootNotFound(PathBuf),
     #[error("The --database-url argument must be passed, or the DATABASE_URL environment variable must be set.")]
     DatabaseUrlMissing,
-    #[error("Encountered an IO error: {0}")]
-    IoError(#[from] std::io::Error),
+    #[error("Encountered an IO error: {0} {}", print_optional_path(.1))]
+    IoError(#[source] std::io::Error, Option<PathBuf>),
     #[error("Failed to execute a database query: {0}")]
     QueryError(#[from] diesel::result::Error),
     #[error("Failed to run migrations: {0}")]
@@ -62,4 +62,10 @@ pub enum Error {
     ClapMatchesError(#[from] clap::parser::MatchesError),
     #[error("No `[print_schema.{0}]` entries in your diesel.toml")]
     NoSchemaKeyFound(String),
+}
+
+fn print_optional_path(path: &Option<PathBuf>) -> String {
+    path.as_ref()
+        .map(|p| format!(" for `{}`", p.display()))
+        .unwrap_or_default()
 }

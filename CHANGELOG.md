@@ -10,11 +10,22 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.2.1] 2024-06-12
+
+## Fixed
+
+* Fixed using `#[dsl::auto_type]` with functions that accept reference arguments
+* Fixed using `#[derive(Queryable)]` with structs that use a type named `Row` as field type
+* Fixed a regression that prevented using `mysqlclient-sys` 0.2.x with diesel 2.2
+* Fixed connecting to postgres database using the scram-sha-256 authentication method on windows while using the bundled postgres builds
+* Improved the error messages in diesel-cli for cases where a file/folder was not found
+* Fixed several version detection bugs in mysqlclient-sys to use pre-generated bindings in more situations
+
 ## [2.2.0] 2024-05-31
 
 ### Added
 
-* Support `[print_schema] exclude_custom_type_definitions = ["Vector"]`. If a `custom type` matches one element on the list it's skipped.
+* Support `[print_schema] except_custom_type_definitions = ["Vector"]`. If a `custom type` matches one element on the list it's skipped.
 * Added automatic usage of all sqlite `rowid` aliases when no explicit primary key is defined for `print-schema`
 * Added a `#[dsl::auto_type]` attribute macro, allowing to infer type of query fragment functions
 * Added the same type inference on `Selectable` derives, which allows skipping specifying `select_expression_type` most of the time, in turn enabling most queries to be written using just a `Selectable` derive.

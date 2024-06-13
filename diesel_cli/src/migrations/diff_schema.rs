@@ -4,8 +4,6 @@ use diesel::query_builder::QueryBuilder;
 use diesel::QueryResult;
 use diesel_table_macro_syntax::{ColumnDef, TableDecl};
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::Read;
 use std::path::Path;
 use syn::visit::Visit;
 
@@ -37,9 +35,9 @@ pub fn generate_sql_based_on_diff_schema(
     let project_root = crate::find_project_root()?;
 
     let schema_path = project_root.join(schema_file_path);
-    let mut schema_file = File::open(schema_path)?;
-    let mut content = String::new();
-    schema_file.read_to_string(&mut content)?;
+    let content = std::fs::read_to_string(&schema_path)
+        .map_err(|e| crate::errors::Error::IoError(e, Some(schema_path.clone())))?;
+
     let syn_file = syn::parse_file(&content)?;
 
     let mut tables_from_schema = SchemaCollector::default();

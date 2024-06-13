@@ -46,7 +46,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
     Ok(wrap_in_dummy_mod(quote! {
         use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
-        use diesel::row::{Row, Field};
+        use diesel::row::{Row as _, Field as _};
         use std::convert::TryInto;
 
         impl #impl_generics Queryable<(#(#sql_type,)*), __DB> for #struct_name #ty_generics
