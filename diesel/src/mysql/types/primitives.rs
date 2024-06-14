@@ -23,8 +23,6 @@ where
 }
 
 fn f32_to_i64(f: f32) -> deserialize::Result<i64> {
-    use std::i64;
-
     if f <= i64::MAX as f32 && f >= i64::MIN as f32 {
         Ok(f.trunc() as i64)
     } else {
@@ -35,8 +33,6 @@ fn f32_to_i64(f: f32) -> deserialize::Result<i64> {
 }
 
 fn f64_to_i64(f: f64) -> deserialize::Result<i64> {
-    use std::i64;
-
     if f <= i64::MAX as f64 && f >= i64::MIN as f64 {
         Ok(f.trunc() as i64)
     } else {

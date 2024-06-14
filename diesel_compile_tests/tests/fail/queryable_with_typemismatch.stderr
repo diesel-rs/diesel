@@ -11,7 +11,6 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
    = note: consider using `#[derive(Selectable)]` or #[derive(QueryableByName)] + `#[diesel(check_for_backend(_))]`
            on your struct `User` and in your query `.select(User::as_select())` to get a better error message
    = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
-             (ST0,)
              (ST0, ST1)
              (ST0, ST1, ST2)
              (ST0, ST1, ST2, ST3)
@@ -19,6 +18,7 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
              (ST0, ST1, ST2, ST3, ST4, ST5)
              (ST0, ST1, ST2, ST3, ST4, ST5, ST6)
              (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)
+             (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)
            and $N others
    = note: required for `users::table` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`

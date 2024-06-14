@@ -67,8 +67,8 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
     |          ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
     |
     = help: the following other types implement trait `MixedAggregates<Other>`:
-              <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Yes>>
               <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Never>>
+              <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Yes>>
     = note: required for `(Box<dyn BoxableExpression<table, Pg, (), Yes, SqlType = Nullable<Integer>>>, Box<...>)` to implement `ValidGrouping<()>`
     = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(Box<dyn diesel::BoxableExpression<users::table, Pg, (), diesel::expression::is_aggregate::Yes, SqlType = Nullable<diesel::sql_types::Integer>>>, Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>)>`
     = note: consider using `--verbose` to print the full type name to the console
@@ -82,8 +82,8 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
     |          required by a bound introduced by this call
     |
     = help: the following other types implement trait `MixedAggregates<Other>`:
-              <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Yes>>
               <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Never>>
+              <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Yes>>
     = note: required for `(Box<dyn BoxableExpression<table, Pg, (), Yes, SqlType = Nullable<Integer>>>, Box<...>)` to implement `ValidGrouping<()>`
     = note: required for `SelectStatement<FromClause<table>, SelectClause<(Box<...>, ...)>>` to implement `Query`
     = note: required for `SelectStatement<FromClause<table>, SelectClause<(Box<...>, ...)>>` to implement `LoadQuery<'_, _, (Option<i32>, i32)>`
