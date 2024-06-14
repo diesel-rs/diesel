@@ -6,13 +6,13 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
+             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
+             <posts::columns::id as SelectableExpression<Only<posts::table>>>
+             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
+             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
              <posts::columns::id as SelectableExpression<posts::table>>
              <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
              <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
 
@@ -24,13 +24,13 @@ error[E0277]: Cannot select `posts::columns::user_id` from `users::table`
    |
    = note: `posts::columns::user_id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
+             <posts::columns::user_id as SelectableExpression<JoinOn<Join, On>>>
+             <posts::columns::user_id as SelectableExpression<Only<posts::table>>>
+             <posts::columns::user_id as SelectableExpression<SelectStatement<FromClause<From>>>>
+             <posts::columns::user_id as SelectableExpression<Tablesample<posts::table, TSM>>>
              <posts::columns::user_id as SelectableExpression<posts::table>>
              <posts::columns::user_id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
              <posts::columns::user_id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::user_id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::user_id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::user_id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::user_id as SelectableExpression<Tablesample<posts::table, TSM>>>
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
 
@@ -59,13 +59,13 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
+             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
+             <posts::columns::id as SelectableExpression<Only<posts::table>>>
+             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
+             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
              <posts::columns::id as SelectableExpression<posts::table>>
              <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
              <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
    = note: required for `(posts::columns::id, users::columns::name)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, users::columns::name)>`
 

@@ -117,7 +117,7 @@ fn add_assign_money() {
 #[test]
 #[should_panic(expected = "overflow adding money amounts")]
 fn add_money_overflow() {
-    let c1 = PgMoney(::std::i64::MAX);
+    let c1 = PgMoney(i64::MAX);
     let c2 = PgMoney(1);
     let _overflow = c1 + c2;
 }
@@ -125,7 +125,7 @@ fn add_money_overflow() {
 #[test]
 #[should_panic(expected = "overflow adding money amounts")]
 fn add_assign_money_overflow() {
-    let mut c1 = PgMoney(::std::i64::MAX);
+    let mut c1 = PgMoney(i64::MAX);
     c1 += PgMoney(1);
 }
 
@@ -146,7 +146,7 @@ fn sub_assign_money() {
 #[test]
 #[should_panic(expected = "underflow subtracting money amounts")]
 fn sub_money_underflow() {
-    let c1 = PgMoney(::std::i64::MIN);
+    let c1 = PgMoney(i64::MIN);
     let c2 = PgMoney(1);
     let _underflow = c1 - c2;
 }
@@ -154,6 +154,6 @@ fn sub_money_underflow() {
 #[test]
 #[should_panic(expected = "underflow subtracting money amounts")]
 fn sub_assign_money_underflow() {
-    let mut c1 = PgMoney(::std::i64::MIN);
+    let mut c1 = PgMoney(i64::MIN);
     c1 -= PgMoney(1);
 }

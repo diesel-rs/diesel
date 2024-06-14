@@ -8,13 +8,13 @@ error[E0277]: Cannot select `bad::columns::age` from `users::table`
    |
    = note: `bad::columns::age` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
+             <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
+             <bad::columns::age as SelectableExpression<Only<bad::table>>>
+             <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
+             <bad::columns::age as SelectableExpression<Tablesample<bad::table, TSM>>>
              <bad::columns::age as SelectableExpression<bad::table>>
              <bad::columns::age as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
              <bad::columns::age as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
-             <bad::columns::age as SelectableExpression<Only<bad::table>>>
-             <bad::columns::age as SelectableExpression<Tablesample<bad::table, TSM>>>
    = note: required for `UpdateStatement<table, WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>, Assign<..., ...>, ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
   --> $DIESEL/src/query_builder/update_statement/mod.rs
@@ -36,13 +36,13 @@ error[E0277]: Cannot select `bad::columns::age` from `users::table`
    |
    = note: `bad::columns::age` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
+             <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
+             <bad::columns::age as SelectableExpression<Only<bad::table>>>
+             <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
+             <bad::columns::age as SelectableExpression<Tablesample<bad::table, TSM>>>
              <bad::columns::age as SelectableExpression<bad::table>>
              <bad::columns::age as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
              <bad::columns::age as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
-             <bad::columns::age as SelectableExpression<Only<bad::table>>>
-             <bad::columns::age as SelectableExpression<Tablesample<bad::table, TSM>>>
    = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<users::table>`
    = note: required for `InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<...>,), ...>, ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
