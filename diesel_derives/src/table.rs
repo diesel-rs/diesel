@@ -253,9 +253,11 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
             /// Helper type for representing a boxed query from this table
             pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<'a, ST, diesel::internal::table_macro::FromClause<table>, DB>;
 
+            use diesel::query_source::View;
+
             impl diesel::QuerySource for table {
                 type FromClause = diesel::internal::table_macro::StaticQueryFragmentInstance<table>;
-                type DefaultSelection = <Self as diesel::Table>::AllColumns;
+                type DefaultSelection = <Self as diesel::query_source::View>::AllColumns;
 
                 fn from_clause(&self) -> Self::FromClause {
                     diesel::internal::table_macro::StaticQueryFragmentInstance::new()
@@ -287,16 +289,19 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
                 }
             }
 
+            impl diesel::query_source::View for table {
+                type AllColumns = (#(#column_names,)*);
+                
+                fn all_columns() -> Self::AllColumns {
+                    (#(#column_names,)*)
+                }
+            }
+
             impl diesel::Table for table {
                 type PrimaryKey = #primary_key;
-                type AllColumns = (#(#column_names,)*);
 
                 fn primary_key(&self) -> Self::PrimaryKey {
                     #primary_key
-                }
-
-                fn all_columns() -> Self::AllColumns {
-                    (#(#column_names,)*)
                 }
             }
 
@@ -349,7 +354,7 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
             impl<S, C> diesel::internal::table_macro::FieldAliasMapperAssociatedTypesDisjointnessTrick<table, S, C> for table
             where
                 S: diesel::query_source::AliasSource<Target = table> + ::std::clone::Clone,
-                C: diesel::query_source::Column<Table = table>,
+                C: diesel::query_source::Column<Source = table>,
             {
                 type Out = diesel::query_source::AliasedField<S, C>;
 
@@ -830,7 +835,7 @@ fn expand_column_def(column_def: &ColumnDef) -> TokenStream {
         }
 
         impl diesel::query_source::Column for #column_name {
-            type Table = super::table;
+            type Source = super::table;
 
             const NAME: &'static str = #sql_name;
         }

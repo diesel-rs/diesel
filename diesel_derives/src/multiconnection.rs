@@ -1195,7 +1195,7 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
         let ty = c.ty;
         quote::quote! {
             super::backend::MultiBackend::#ident(_) => {
-                <Self as diesel::insertable::InsertValues<<#ty as diesel::connection::Connection>::Backend, Col::Table>>::column_names(
+                <Self as diesel::insertable::InsertValues<<#ty as diesel::connection::Connection>::Backend, Col::Source>>::column_names(
                     &self,
                     out.cast_database(
                         super::bind_collector::MultiBindCollector::#lower_ident,
@@ -1214,7 +1214,7 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
     let insert_values_backend_bounds = connection_types.iter().map(|c| {
         let ty = c.ty;
         quote::quote! {
-            diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<Col, Expr>>: diesel::insertable::InsertValues<<#ty as diesel::connection::Connection>::Backend, Col::Table>
+            diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<Col, Expr>>: diesel::insertable::InsertValues<<#ty as diesel::connection::Connection>::Backend, Col::Source>
         }
     });
 
@@ -1405,10 +1405,11 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
             }
         }
 
-        impl<Col, Expr> diesel::insertable::InsertValues<super::multi_connection_impl::backend::MultiBackend, Col::Table>
+        impl<Col, Expr> diesel::insertable::InsertValues<super::multi_connection_impl::backend::MultiBackend, Col::Source>
             for diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<Col, Expr>>
         where
             Col: diesel::prelude::Column,
+            Col::Source: diesel::Table,
             Expr: diesel::prelude::Expression<SqlType = Col::SqlType>,
             Expr: diesel::prelude::AppearsOnTable<diesel::internal::derives::multiconnection::NoFromClause>,
             Self: diesel::query_builder::QueryFragment<super::multi_connection_impl::backend::MultiBackend>,

@@ -15,7 +15,7 @@ use crate::query_dsl::methods::{ExecuteDsl, FindDsl};
 use crate::query_dsl::{LoadQuery, RunQueryDsl};
 use crate::result::QueryResult;
 #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
-use crate::Table;
+use crate::query_source::View;
 
 /// A trait defining how to update a record and fetch the updated entry
 /// on a certain backend.
@@ -40,8 +40,8 @@ impl<'b, Changes, Output> UpdateAndFetchResults<Changes, Output> for PgConnectio
 where
     Changes: Copy + AsChangeset<Target = <Changes as HasTable>::Table> + IntoUpdateTarget,
     Update<Changes, Changes>: LoadQuery<'b, PgConnection, Output>,
-    <Changes::Table as Table>::AllColumns: ValidGrouping<()>,
-    <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
+    <Changes::Table as View>::AllColumns: ValidGrouping<()>,
+    <<Changes::Table as View>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
     fn update_and_fetch(&mut self, changeset: Changes) -> QueryResult<Output> {
@@ -60,8 +60,8 @@ where
     Changes::Table: FindDsl<Changes::Id>,
     Update<Changes, Changes>: ExecuteDsl<SqliteConnection>,
     Find<Changes::Table, Changes::Id>: LoadQuery<'b, SqliteConnection, Output>,
-    <Changes::Table as Table>::AllColumns: ValidGrouping<()>,
-    <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
+    <Changes::Table as View>::AllColumns: ValidGrouping<()>,
+    <<Changes::Table as View>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
     fn update_and_fetch(&mut self, changeset: Changes) -> QueryResult<Output> {
@@ -81,8 +81,8 @@ where
     Changes::Table: FindDsl<Changes::Id>,
     Update<Changes, Changes>: ExecuteDsl<MysqlConnection>,
     Find<Changes::Table, Changes::Id>: LoadQuery<'b, MysqlConnection, Output>,
-    <Changes::Table as Table>::AllColumns: ValidGrouping<()>,
-    <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
+    <Changes::Table as View>::AllColumns: ValidGrouping<()>,
+    <<Changes::Table as View>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
     fn update_and_fetch(&mut self, changeset: Changes) -> QueryResult<Output> {
