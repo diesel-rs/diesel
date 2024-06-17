@@ -1,17 +1,41 @@
+use syn::parse_quote;
 use syn::spanned::Spanned;
 use syn::Ident;
+use syn::ItemUse;
 use syn::MetaNameValue;
 
-pub struct TableDecl {
+pub struct ViewDecl {
     pub use_statements: Vec<syn::ItemUse>,
     pub meta: Vec<syn::Attribute>,
     pub schema: Option<Ident>,
     _punct: Option<syn::Token![.]>,
     pub sql_name: String,
     pub table_name: Ident,
-    pub primary_keys: Option<PrimaryKey>,
     _brace_token: syn::token::Brace,
     pub column_defs: syn::punctuated::Punctuated<ColumnDef, syn::Token![,]>,
+}
+
+impl ViewDecl {
+    pub fn column_names(&self) -> Vec<&syn::Ident> {
+        self.column_defs
+            .iter()
+            .map(|c| &c.column_name)
+            .collect::<Vec<_>>()
+    }
+    pub fn imports(&self) -> Vec<ItemUse> {
+        if self.use_statements.is_empty() {
+            vec![parse_quote!(
+                use diesel::sql_types::*;
+            )]
+        } else {
+            self.use_statements.clone()
+        }
+    }
+}
+
+pub struct TableDecl {
+    pub view: ViewDecl,
+    pub primary_keys: Option<PrimaryKey>,
 }
 
 #[allow(dead_code)] // paren_token is currently unused
@@ -27,6 +51,43 @@ pub struct ColumnDef {
     _arrow: syn::Token![->],
     pub tpe: syn::TypePath,
     pub max_length: Option<syn::LitInt>,
+}
+
+impl syn::parse::Parse for ViewDecl {
+    fn parse(buf: &syn::parse::ParseBuffer<'_>) -> Result<Self, syn::Error> {
+        let mut use_statements = Vec::new();
+        loop {
+            let fork = buf.fork();
+            if fork.parse::<syn::ItemUse>().is_ok() {
+                use_statements.push(buf.parse()?);
+            } else {
+                break;
+            };
+        }
+        let mut meta = syn::Attribute::parse_outer(buf)?;
+        let fork = buf.fork();
+        let (schema, punct, table_name) = if parse_table_with_schema(&fork).is_ok() {
+            let (schema, punct, table_name) = parse_table_with_schema(buf)?;
+            (Some(schema), Some(punct), table_name)
+        } else {
+            let table_name = buf.parse()?;
+            (None, None, table_name)
+        };
+        let content;
+        let brace_token = syn::braced!(content in buf);
+        let column_defs = syn::punctuated::Punctuated::parse_terminated(&content)?;
+        let sql_name = get_sql_name(&mut meta, &table_name)?;
+        Ok(Self {
+            use_statements,
+            meta,
+            schema,
+            _punct: punct,
+            sql_name,
+            table_name,
+            _brace_token: brace_token,
+            column_defs,
+        })
+    }
 }
 
 impl syn::parse::Parse for TableDecl {
@@ -60,15 +121,17 @@ impl syn::parse::Parse for TableDecl {
         let column_defs = syn::punctuated::Punctuated::parse_terminated(&content)?;
         let sql_name = get_sql_name(&mut meta, &table_name)?;
         Ok(Self {
-            use_statements,
-            meta,
-            table_name,
+            view: ViewDecl {
+                use_statements,
+                meta,
+                schema,
+                _punct: punct,
+                sql_name,
+                table_name,
+                _brace_token: brace_token,
+                column_defs,
+            },
             primary_keys,
-            _brace_token: brace_token,
-            column_defs,
-            sql_name,
-            _punct: punct,
-            schema,
         })
     }
 }
