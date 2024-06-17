@@ -5,7 +5,7 @@ use crate::backend::{sql_dialect, Backend};
 use crate::expression::{Expression, SelectableExpression, ValidGrouping};
 use crate::helper_types::AliasedFields;
 use crate::query_builder::{AsQuery, AstPass, FromClause, QueryFragment, QueryId, SelectStatement};
-use crate::query_source::{AppearsInFromClause, Column, Never, QuerySource, Table, TableNotEqual};
+use crate::query_source::{AppearsInFromClause, Column, Never, QuerySource, Table, ViewNotEqual};
 use crate::result::QueryResult;
 
 use std::marker::PhantomData;
@@ -27,7 +27,7 @@ impl<S: AliasSource> Alias<S> {
     /// Maps a single field of the source table in this alias
     pub fn field<F>(&self, field: F) -> AliasedField<S, F>
     where
-        F: Column<Table = S::Target>,
+        F: Column<Source = S::Target>,
     {
         AliasedField {
             _alias_source: PhantomData,
@@ -185,7 +185,7 @@ pub trait AliasAliasAppearsInFromClauseSameTable<S2, T> {
 // where T1 != T2
 impl<T1, T2, S> AliasAppearsInFromClause<S, T2> for T1
 where
-    T1: TableNotEqual<T2> + Table,
+    T1: ViewNotEqual<T2> + Table,
     T2: Table,
     S: AliasSource<Target = T1>,
 {
@@ -196,7 +196,7 @@ where
 // where S1: AliasSource, S2: AliasSource, S1::Table != S2::Table
 impl<T1, T2, S1, S2> AliasAliasAppearsInFromClause<T1, S2, S1> for T2
 where
-    T1: TableNotEqual<T2> + Table,
+    T1: ViewNotEqual<T2> + Table,
     T2: Table,
     S1: AliasSource<Target = T1>,
     S2: AliasSource<Target = T2>,

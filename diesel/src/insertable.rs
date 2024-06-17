@@ -154,11 +154,12 @@ impl<T> Default for DefaultableColumnInsertValue<T> {
     }
 }
 
-impl<Col, Expr, DB> InsertValues<DB, Col::Table>
+impl<Col, Expr, DB> InsertValues<DB, Col::Source>
     for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
     DB: Backend + SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>,
     Col: Column,
+    Col::Source: Table,
     Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<NoFromClause>,
     Self: QueryFragment<DB>,
 {
@@ -168,10 +169,11 @@ where
     }
 }
 
-impl<Col, Expr, DB> InsertValues<DB, Col::Table> for ColumnInsertValue<Col, Expr>
+impl<Col, Expr, DB> InsertValues<DB, Col::Source> for ColumnInsertValue<Col, Expr>
 where
     DB: Backend,
     Col: Column,
+    Col::Source: Table,
     Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<NoFromClause>,
     Self: QueryFragment<DB>,
 {
@@ -218,10 +220,11 @@ where
 }
 
 #[cfg(feature = "sqlite")]
-impl<Col, Expr> InsertValues<crate::sqlite::Sqlite, Col::Table>
+impl<Col, Expr> InsertValues<crate::sqlite::Sqlite, Col::Source>
     for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
     Col: Column,
+    Col::Source: Table,
     Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<NoFromClause>,
     Self: QueryFragment<crate::sqlite::Sqlite>,
 {
