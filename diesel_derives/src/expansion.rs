@@ -1,62 +1,134 @@
 use diesel_table_macro_syntax::{ColumnDef, TableDecl, ViewDecl};
 use proc_macro2::TokenStream;
 use syn::parse_quote;
-use syn::punctuated::Punctuated;
-use syn::token::Comma;
 use syn::Ident;
 
 const DEFAULT_PRIMARY_KEY_NAME: &str = "id";
 
-fn check_too_many_columns(ViewDecl { column_defs, .. }: &ViewDecl) -> Result<(), TokenStream> {
-    if column_defs.len() > super::diesel_for_each_tuple::MAX_TUPLE_SIZE as usize {
-        let txt = if column_defs.len() > 128 {
-            "You reached the end. Diesel does not support tables with \
-             more than 128 columns. Consider using less columns."
-        } else if column_defs.len() > 64 {
-            "Table contains more than 64 columns. Consider enabling the \
-             `128-column-tables` feature to enable diesels support for \
-             tables with more than 64 columns."
-        } else if column_defs.len() > 32 {
-            "Table contains more than 32 columns. Consider enabling the \
-             `64-column-tables` feature to enable diesels support for \
-             tables with more than 32 columns."
-        } else {
-            "Table contains more than 16 columns. Consider enabling the \
-             `32-column-tables` feature to enable diesels support for \
-             tables with more than 16 columns."
-        };
-        return Err(quote::quote! {
-            compile_error!(#txt);
-        });
+pub(crate) fn expand_view(input: ViewDecl) -> TokenStream {
+    if let Err(err) = check_too_many_columns(&input) {
+        return err;
     }
-    Ok(())
-}
 
-fn static_query_fragment_impl(_struct: &str, input: &ViewDecl) -> TokenStream {
-    let sql_name = &input.sql_name;
-    if let Some(schema_name) = input.schema.as_ref().map(|i| i.to_string()) {
-        return quote::quote! {
-            impl diesel::internal::table_macro::StaticQueryFragment for table {
-                type Component = diesel::internal::table_macro::InfixNode<
-                        diesel::internal::table_macro::Identifier<'static>,
-                    diesel::internal::table_macro::Identifier<'static>,
-                    &'static str
-                        >;
-                const STATIC_COMPONENT: &'static Self::Component = &diesel::internal::table_macro::InfixNode::new(
-                    diesel::internal::table_macro::Identifier(#schema_name),
-                    diesel::internal::table_macro::Identifier(#sql_name),
-                    "."
-                );
+    let meta = &input.meta;
+    let table_name = &input.table_name;
+    let imports = input.imports();
+
+    let static_query_fragment_impl_for_table = static_query_fragment_impl(&input);
+
+    let backend_specific_table_impls = if cfg!(feature = "postgres") {
+        Some(quote::quote! {
+            impl<S> diesel::JoinTo<diesel::query_builder::Only<S>> for table
+            where
+                diesel::query_builder::Only<S>: diesel::JoinTo<table>,
+            {
+                type FromClause = diesel::query_builder::Only<S>;
+                type OnClause = <diesel::query_builder::Only<S> as diesel::JoinTo<table>>::OnClause;
+
+                fn join_target(__diesel_internal_rhs: diesel::query_builder::Only<S>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, __diesel_internal_on_clause) = diesel::query_builder::Only::<S>::join_target(table);
+                    (__diesel_internal_rhs, __diesel_internal_on_clause)
+                }
             }
-        }
+
+            impl diesel::query_source::AppearsInFromClause<diesel::query_builder::Only<table>>
+                for table
+            {
+                type Count = diesel::query_source::Once;
+            }
+
+            impl diesel::query_source::AppearsInFromClause<table>
+                for diesel::query_builder::Only<table>
+            {
+                type Count = diesel::query_source::Once;
+            }
+
+            impl<S, TSM> diesel::JoinTo<diesel::query_builder::Tablesample<S, TSM>> for table
+            where
+                diesel::query_builder::Tablesample<S, TSM>: diesel::JoinTo<table>,
+                TSM: diesel::internal::table_macro::TablesampleMethod
+            {
+                type FromClause = diesel::query_builder::Tablesample<S, TSM>;
+                type OnClause = <diesel::query_builder::Tablesample<S, TSM> as diesel::JoinTo<table>>::OnClause;
+
+                fn join_target(__diesel_internal_rhs: diesel::query_builder::Tablesample<S, TSM>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, __diesel_internal_on_clause) = diesel::query_builder::Tablesample::<S, TSM>::join_target(table);
+                    (__diesel_internal_rhs, __diesel_internal_on_clause)
+                }
+            }
+
+            impl<TSM> diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<table, TSM>>
+                for table
+                    where
+                TSM: diesel::internal::table_macro::TablesampleMethod
+            {
+                type Count = diesel::query_source::Once;
+            }
+
+            impl<TSM> diesel::query_source::AppearsInFromClause<table>
+                for diesel::query_builder::Tablesample<table, TSM>
+                    where
+                TSM: diesel::internal::table_macro::TablesampleMethod
+            {
+                type Count = diesel::query_source::Once;
+            }
+        })
     } else {
-        return quote::quote! {
-            impl diesel::internal::table_macro::StaticQueryFragment for table {
-                type Component = diesel::internal::table_macro::Identifier<'static>;
-                const STATIC_COMPONENT: &'static Self::Component = &diesel::internal::table_macro::Identifier(#sql_name);
+        None
+    };
+
+    // let valid_grouping_for_table_columns = generate_valid_grouping_for_table_columns(&input);
+    let base_view_impl = base_struct_impl(
+        &input,
+        quote::quote! {
+            // #(#valid_grouping_for_table_columns)*
+        },
+    );
+    let reexport_column_from_dsl = input.column_defs.iter().map(|c| {
+        let column_name = &c.column_name;
+        if c.column_name == *table_name {
+            let span = c.column_name.span();
+            let message = format!(
+                "Column `{column_name}` cannot be named the same as it's table.\n\
+                 You may use `#[sql_name = \"{column_name}\"]` to reference the table's \
+                 `{column_name}` column \n\
+                 Docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`\n"
+            );
+            quote::quote_spanned! { span =>
+                compile_error!(#message);
+            }
+        } else {
+            quote::quote! {
+                pub use super::columns::#column_name;
             }
         }
-    };
+    });
+
+    quote::quote! {
+        #(#meta)*
+        #[allow(unused_imports, dead_code, unreachable_pub)]
+        pub mod #table_name {
+            use ::diesel;
+            pub use self::columns::*;
+            use diesel::query_source::View;
+
+            #(#imports)*
+
+            /// Re-exports all of the columns of this table, as well as the
+            /// table struct renamed to the module name. This is meant to be
+            /// glob imported for functions which only deal with one table.
+            pub mod dsl {
+                #(#reexport_column_from_dsl)*
+                pub use super::table as #table_name;
+            }
+
+            #base_view_impl
+
+            #static_query_fragment_impl_for_table
+
+            #backend_specific_table_impls
+        }
+    }
 }
 
 pub(crate) fn expand_table(input: TableDecl) -> TokenStream {
@@ -122,31 +194,7 @@ pub(crate) fn expand_table(input: TableDecl) -> TokenStream {
         }
     };
 
-    let column_defs = input.view.column_defs.iter().map(expand_column_def);
-    let column_ty = input.view.column_defs.iter().map(|c| &c.tpe);
-
-    let sql_name = &input.view.sql_name;
-    let static_query_fragment_impl_for_table = static_query_fragment_impl("table", &input.view);
-
-    let reexport_column_from_dsl = input.view.column_defs.iter().map(|c| {
-        let column_name = &c.column_name;
-        if c.column_name == *table_name {
-            let span = c.column_name.span();
-            let message = format!(
-                "Column `{column_name}` cannot be named the same as it's table.\n\
-                 You may use `#[sql_name = \"{column_name}\"]` to reference the table's \
-                 `{column_name}` column \n\
-                 Docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`\n"
-            );
-            quote::quote_spanned! { span =>
-                compile_error!(#message);
-            }
-        } else {
-            quote::quote! {
-                pub use super::columns::#column_name;
-            }
-        }
-    });
+    let static_query_fragment_impl_for_table = static_query_fragment_impl(&input.view);
 
     let backend_specific_table_impls = if cfg!(feature = "postgres") {
         Some(quote::quote! {
@@ -210,9 +258,12 @@ pub(crate) fn expand_table(input: TableDecl) -> TokenStream {
     };
 
     let valid_grouping_for_table_columns = generate_valid_grouping_for_table_columns(&input);
-    let base_view_impl = base_struct_impl(&input.view, quote::quote! {
-        #(#valid_grouping_for_table_columns)*
-    });
+    let base_view_impl = base_struct_impl(
+        &input.view,
+        quote::quote! {
+            #(#valid_grouping_for_table_columns)*
+        },
+    );
     let reexport_column_from_dsl = input.view.column_defs.iter().map(|c| {
         let column_name = &c.column_name;
         if c.column_name == *table_name {
@@ -311,6 +362,58 @@ pub(crate) fn expand_table(input: TableDecl) -> TokenStream {
     }
 }
 
+fn check_too_many_columns(ViewDecl { column_defs, .. }: &ViewDecl) -> Result<(), TokenStream> {
+    if column_defs.len() > super::diesel_for_each_tuple::MAX_TUPLE_SIZE as usize {
+        let txt = if column_defs.len() > 128 {
+            "You reached the end. Diesel does not support tables with \
+             more than 128 columns. Consider using less columns."
+        } else if column_defs.len() > 64 {
+            "Table contains more than 64 columns. Consider enabling the \
+             `128-column-tables` feature to enable diesels support for \
+             tables with more than 64 columns."
+        } else if column_defs.len() > 32 {
+            "Table contains more than 32 columns. Consider enabling the \
+             `64-column-tables` feature to enable diesels support for \
+             tables with more than 32 columns."
+        } else {
+            "Table contains more than 16 columns. Consider enabling the \
+             `32-column-tables` feature to enable diesels support for \
+             tables with more than 16 columns."
+        };
+        return Err(quote::quote! {
+            compile_error!(#txt);
+        });
+    }
+    Ok(())
+}
+
+fn static_query_fragment_impl(input: &ViewDecl) -> TokenStream {
+    let sql_name = &input.sql_name;
+    if let Some(schema_name) = input.schema.as_ref().map(|i| i.to_string()) {
+        quote::quote! {
+            impl diesel::internal::table_macro::StaticQueryFragment for table {
+                type Component = diesel::internal::table_macro::InfixNode<
+                        diesel::internal::table_macro::Identifier<'static>,
+                    diesel::internal::table_macro::Identifier<'static>,
+                    &'static str
+                        >;
+                const STATIC_COMPONENT: &'static Self::Component = &diesel::internal::table_macro::InfixNode::new(
+                    diesel::internal::table_macro::Identifier(#schema_name),
+                    diesel::internal::table_macro::Identifier(#sql_name),
+                    "."
+                );
+            }
+        }
+    } else {
+        quote::quote! {
+            impl diesel::internal::table_macro::StaticQueryFragment for table {
+                type Component = diesel::internal::table_macro::Identifier<'static>;
+                const STATIC_COMPONENT: &'static Self::Component = &diesel::internal::table_macro::Identifier(#sql_name);
+            }
+        }
+    }
+}
+
 fn generate_valid_grouping_for_table_columns(table: &TableDecl) -> Vec<TokenStream> {
     let mut ret = Vec::with_capacity(table.view.column_defs.len() * table.view.column_defs.len());
 
@@ -362,11 +465,10 @@ fn base_struct_impl(input: &ViewDecl, column_impl: TokenStream) -> TokenStream {
     let column_defs = input.column_defs.iter().map(expand_column_def);
     let column_ty = input.column_defs.iter().map(|c| &c.tpe);
 
-    let table_name = input.table_name.to_string();
     let import = input.imports();
     let imports_for_column_module = import.iter().map(fix_import_for_submodule);
 
-    return quote::quote! {
+    quote::quote! {
 
         #[allow(non_upper_case_globals, dead_code)]
         /// A tuple of all of the columns on this table
@@ -430,7 +532,7 @@ fn base_struct_impl(input: &ViewDecl, column_impl: TokenStream) -> TokenStream {
 
         impl diesel::query_source::View for table {
             type AllColumns = (#(#column_names,)*);
-            
+
             fn all_columns() -> Self::AllColumns {
                 (#(#column_names,)*)
             }

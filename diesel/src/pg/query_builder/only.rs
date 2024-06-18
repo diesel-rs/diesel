@@ -76,12 +76,12 @@ where
 }
 
 impl<S> View for Only<S>
-where 
-S: Table + Clone + AsQuery,
+where
+    S: Table + Clone + AsQuery,
 
-<S as Table>::PrimaryKey: SelectableExpression<Only<S>>,
-<S as View>::AllColumns: SelectableExpression<Only<S>>,
-<S as QuerySource>::DefaultSelection: ValidGrouping<()> + SelectableExpression<Only<S>>,
+    <S as Table>::PrimaryKey: SelectableExpression<Only<S>>,
+    <S as View>::AllColumns: SelectableExpression<Only<S>>,
+    <S as QuerySource>::DefaultSelection: ValidGrouping<()> + SelectableExpression<Only<S>>,
 {
     type AllColumns = <S as View>::AllColumns;
     fn all_columns() -> Self::AllColumns {

@@ -1,5 +1,5 @@
-use crate::{query_builder::*, Table};
 use crate::query_source::Column;
+use crate::{query_builder::*, Table};
 
 /// Represents the column list for use in an insert statement.
 ///
@@ -17,7 +17,7 @@ pub trait ColumnList {
 impl<C> ColumnList for C
 where
     C: Column,
-    C::Source: Table
+    C::Source: Table,
 {
     type Table = <C as Column>::Source;
 

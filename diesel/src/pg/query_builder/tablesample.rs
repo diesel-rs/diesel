@@ -179,7 +179,6 @@ where
     fn primary_key(&self) -> Self::PrimaryKey {
         self.source.primary_key()
     }
-
 }
 
 #[cfg(test)]

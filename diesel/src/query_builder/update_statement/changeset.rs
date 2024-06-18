@@ -120,7 +120,7 @@ where
 impl<C> AssignmentTarget for C
 where
     C: Column,
-    C::Source: Table
+    C::Source: Table,
 {
     type Table = C::Source;
     type QueryAstNode = ColumnWrapperForUpdate<C>;

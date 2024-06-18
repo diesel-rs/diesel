@@ -94,7 +94,7 @@ where
 impl<L, R> AssignmentTarget for ArrayIndex<L, R>
 where
     L: Column,
-    L::Source: Table
+    L::Source: Table,
 {
     type Table = <L as Column>::Source;
     type QueryAstNode = ArrayIndex<UncorrelatedColumn<L>, R>;

@@ -14,6 +14,8 @@ pub(crate) mod prelude {
 
 #[doc(inline)]
 pub use diesel_derives::table_proc as table;
+#[doc(inline)]
+pub use diesel_derives::view_proc as view;
 
 /// Allow two tables to be referenced in a join query without providing an
 /// explicit `ON` clause.

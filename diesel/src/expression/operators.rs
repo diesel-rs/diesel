@@ -562,7 +562,7 @@ use crate::Table;
 impl<T, U> Insertable<T::Source> for Eq<T, U>
 where
     T: Column,
-    T::Source: Table
+    T::Source: Table,
 {
     type Values = ValuesClause<ColumnInsertValue<T, U>, T::Source>;
 

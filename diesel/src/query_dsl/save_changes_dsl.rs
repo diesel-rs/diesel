@@ -13,9 +13,9 @@ use crate::query_builder::{AsChangeset, IntoUpdateTarget};
 use crate::query_dsl::methods::{ExecuteDsl, FindDsl};
 #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
 use crate::query_dsl::{LoadQuery, RunQueryDsl};
-use crate::result::QueryResult;
 #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
 use crate::query_source::View;
+use crate::result::QueryResult;
 
 /// A trait defining how to update a record and fetch the updated entry
 /// on a certain backend.

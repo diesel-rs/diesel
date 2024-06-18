@@ -1,5 +1,5 @@
 use crate::expression::Expression;
-use crate::query_source::Table;
+use crate::query_source::View;
 
 /// The `select` method
 ///
@@ -22,7 +22,7 @@ pub trait SelectDsl<Selection: Expression> {
 impl<T, Selection> SelectDsl<Selection> for T
 where
     Selection: Expression,
-    T: Table,
+    T: View,
     T::Query: SelectDsl<Selection>,
 {
     type Output = <T::Query as SelectDsl<Selection>>::Output;

@@ -1,7 +1,7 @@
 use crate::backend::sql_dialect;
 use crate::expression::SqlLiteral;
-use crate::{query_builder::*, Table};
 use crate::query_source::Column;
+use crate::{query_builder::*, Table};
 
 #[doc(hidden)]
 pub trait OnConflictTarget<Table> {}
@@ -50,7 +50,12 @@ where
     }
 }
 
-impl<T> OnConflictTarget<T::Source> for ConflictTarget<T> where T: Column, T::Source: Table {}
+impl<T> OnConflictTarget<T::Source> for ConflictTarget<T>
+where
+    T: Column,
+    T::Source: Table,
+{
+}
 
 impl<DB, ST, SP> QueryFragment<DB, SP> for ConflictTarget<SqlLiteral<ST>>
 where
@@ -81,7 +86,12 @@ where
     }
 }
 
-impl<T> OnConflictTarget<T::Source> for ConflictTarget<(T,)> where T: Column, T::Source: Table {}
+impl<T> OnConflictTarget<T::Source> for ConflictTarget<(T,)>
+where
+    T: Column,
+    T::Source: Table,
+{
+}
 
 macro_rules! on_conflict_tuples {
     ($(

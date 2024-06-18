@@ -17,11 +17,10 @@ pub struct ViewDecl {
 
 impl ViewDecl {
     pub fn column_names(&self) -> Vec<&syn::Ident> {
-        self
-        .column_defs
-        .iter()
-        .map(|c| &c.column_name)
-        .collect::<Vec<_>>()
+        self.column_defs
+            .iter()
+            .map(|c| &c.column_name)
+            .collect::<Vec<_>>()
     }
     pub fn imports(&self) -> Vec<ItemUse> {
         if self.use_statements.is_empty() {
@@ -79,14 +78,14 @@ impl syn::parse::Parse for ViewDecl {
         let column_defs = syn::punctuated::Punctuated::parse_terminated(&content)?;
         let sql_name = get_sql_name(&mut meta, &table_name)?;
         Ok(Self {
-            use_statements, 
-            meta, 
-            schema, 
-            _punct: punct, 
-            sql_name, 
-            table_name, 
-            _brace_token: brace_token, 
-            column_defs
+            use_statements,
+            meta,
+            schema,
+            _punct: punct,
+            sql_name,
+            table_name,
+            _brace_token: brace_token,
+            column_defs,
         })
     }
 }
@@ -122,7 +121,16 @@ impl syn::parse::Parse for TableDecl {
         let column_defs = syn::punctuated::Punctuated::parse_terminated(&content)?;
         let sql_name = get_sql_name(&mut meta, &table_name)?;
         Ok(Self {
-            view: ViewDecl { use_statements, meta, schema, _punct: punct, sql_name, table_name, _brace_token: brace_token, column_defs },
+            view: ViewDecl {
+                use_statements,
+                meta,
+                schema,
+                _punct: punct,
+                sql_name,
+                table_name,
+                _brace_token: brace_token,
+                column_defs,
+            },
             primary_keys,
         })
     }
