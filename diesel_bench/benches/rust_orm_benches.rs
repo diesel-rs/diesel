@@ -28,7 +28,7 @@ mod for_insert {
 
 mod for_load {
     use super::*;
-    use rustorm::dao::FromDao;
+    use rustorm::table::FromDao;
     use rustorm::Dao;
 
     #[derive(Debug, FromDao, ToColumnNames, ToTableName)]
@@ -56,18 +56,18 @@ mod for_load {
     pub struct UserWithPost(Users, Option<Posts>);
 
     impl FromDao for UserWithPost {
-        fn from_dao(dao: &Dao) -> Self {
+        fn from_dao(table: &Dao) -> Self {
             let user = Users {
-                id: dao.get("myuser_id").unwrap(),
-                name: dao.get("name").unwrap(),
-                hair_color: dao.get("hair_color").unwrap(),
+                id: table.get("myuser_id").unwrap(),
+                name: table.get("name").unwrap(),
+                hair_color: table.get("hair_color").unwrap(),
             };
-            let post = if let Some(id) = dao.get("post_id").unwrap() {
+            let post = if let Some(id) = table.get("post_id").unwrap() {
                 Some(Posts {
                     id,
-                    user_id: dao.get("user_id").unwrap(),
-                    title: dao.get("title").unwrap(),
-                    body: dao.get("body").unwrap(),
+                    user_id: table.get("user_id").unwrap(),
+                    title: table.get("title").unwrap(),
+                    body: table.get("body").unwrap(),
                 })
             } else {
                 None

@@ -78,8 +78,8 @@ pub fn generate_sql_based_on_diff_schema(
                 .map(ToString::to_string)
                 .collect::<Vec<_>>()
         });
-        table_pk_key_list.insert(t.table_name.to_string(), keys);
-        expected_schema_map.insert(t.table_name.to_string(), t);
+        table_pk_key_list.insert(t.view.table_name.to_string(), keys);
+        expected_schema_map.insert(t.view.table_name.to_string(), t);
     }
     config.with_docs = DocConfig::NoDocComments;
     config.column_sorting = ColumnSorting::OrdinalPosition;
@@ -104,7 +104,7 @@ pub fn generate_sql_based_on_diff_schema(
         let columns =
             crate::infer_schema_internals::load_table_data(&mut conn, table.clone(), &config)?;
         if let Some(t) = expected_schema_map.remove(&table.sql_name.to_lowercase()) {
-            tracing::info!(table = ?t.sql_name, "Table exists in schema.rs");
+            tracing::info!(table = ?t.view.sql_name, "Table exists in schema.rs");
             let mut primary_keys_in_db =
                 crate::infer_schema_internals::get_primary_keys(&mut conn, &table)?;
             primary_keys_in_db.sort();
@@ -125,6 +125,7 @@ pub fn generate_sql_based_on_diff_schema(
             }
 
             let mut expected_column_map = t
+                .view
                 .column_defs
                 .into_iter()
                 .map(|c| (c.sql_name.to_lowercase(), c))
@@ -157,7 +158,7 @@ pub fn generate_sql_based_on_diff_schema(
             added_columns.extend(expected_column_map.into_values());
 
             schema_diff.push(SchemaDiff::ChangeTable {
-                table: t.sql_name,
+                table: t.view.sql_name,
                 added_columns,
                 removed_columns,
                 changed_columns,
@@ -185,13 +186,13 @@ pub fn generate_sql_based_on_diff_schema(
     }
 
     schema_diff.extend(expected_schema_map.into_values().map(|t| {
-        tracing::info!(table = ?t.sql_name, "Tables does not exist in database");
+        tracing::info!(table = ?t.view.sql_name, "Tables does not exist in database");
         let foreign_keys = expected_fk_map
-            .remove(&t.table_name.to_string())
+            .remove(&t.view.table_name.to_string())
             .unwrap_or_default()
             .into_iter()
             .filter_map(|j| {
-                let referenced_table = table_pk_key_list.get(&t.table_name.to_string())?;
+                let referenced_table = table_pk_key_list.get(&t.view.table_name.to_string())?;
                 match referenced_table {
                     None => Some((j, "id".into())),
                     Some(pks) if pks.len() == 1 => Some((j, pks.first()?.to_string())),
@@ -329,13 +330,14 @@ impl SchemaDiff {
                 to_create,
                 foreign_keys,
             } => {
-                let table = &to_create.sql_name.to_lowercase();
+                let table = &to_create.view.sql_name.to_lowercase();
                 let primary_keys = to_create
                     .primary_keys
                     .as_ref()
                     .map(|keys| keys.keys.iter().map(|k| k.to_string()).collect())
                     .unwrap_or_else(|| vec![String::from("id")]);
                 let column_data = to_create
+                    .view
                     .column_defs
                     .iter()
                     .map(|c| {
@@ -441,7 +443,7 @@ impl SchemaDiff {
                 )?;
             }
             SchemaDiff::CreateTable { to_create, .. } => {
-                generate_drop_table(query_builder, &to_create.sql_name.to_lowercase())?;
+                generate_drop_table(query_builder, &to_create.view.sql_name.to_lowercase())?;
             }
             SchemaDiff::ChangeTable {
                 table,
