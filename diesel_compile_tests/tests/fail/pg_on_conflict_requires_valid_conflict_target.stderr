@@ -1,8 +1,8 @@
-error[E0271]: type mismatch resolving `<id as Column>::Table == table`
+error[E0271]: type mismatch resolving `<id as Column>::Source == table`
   --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:38:22
    |
 38 |         .on_conflict(posts::id);
-   |          ----------- ^^^^^^^^^ type mismatch resolving `<id as Column>::Table == table`
+   |          ----------- ^^^^^^^^^ type mismatch resolving `<id as Column>::Source == table`
    |          |
    |          required by a bound introduced by this call
    |
