@@ -162,8 +162,8 @@ impl ForeignKeyConstraint {
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum SupportedColumnStructures {
-    VIEW,
-    TABLE,
+    View,
+    Table,
 }
 
 #[derive(Debug)]
@@ -198,8 +198,8 @@ impl ColumnData {
 impl Display for SupportedColumnStructures {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let format = match self {
-            Self::TABLE => "BASE TABLE",
-            Self::VIEW => "VIEW",
+            Self::Table => "BASE TABLE",
+            Self::View => "VIEW",
         };
         write!(f, "{format}")
     }
@@ -209,8 +209,8 @@ impl FromStr for SupportedColumnStructures {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "BASE TABLE" => Ok(Self::TABLE),
-            "VIEW" => Ok(Self::VIEW),
+            "BASE TABLE" => Ok(Self::Table),
+            "VIEW" => Ok(Self::View),
             _ => unreachable!("This should never happen. Read {s}"),
         }
     }
@@ -224,6 +224,6 @@ impl SupportedColumnStructures {
             .collect()
     }
     pub fn all() -> Vec<SupportedColumnStructures> {
-        vec![Self::VIEW, Self::TABLE]
+        vec![Self::View, Self::Table]
     }
 }

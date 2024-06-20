@@ -50,7 +50,7 @@ pub fn load_table_names(
         .into_iter()
         .map(|table| {
             (
-                SupportedColumnStructures::TABLE,
+                SupportedColumnStructures::Table,
                 TableName::from_name(table),
             )
         });
@@ -62,7 +62,7 @@ pub fn load_table_names(
         .order(name)
         .load::<String>(connection)?
         .into_iter()
-        .map(|table| (SupportedColumnStructures::VIEW, TableName::from_name(table)));
+        .map(|table| (SupportedColumnStructures::View, TableName::from_name(table)));
 
     Ok(tables.chain(view).collect())
 }

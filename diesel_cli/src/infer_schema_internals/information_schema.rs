@@ -177,7 +177,7 @@ where
     Ok(table_names
         .into_iter()
         .map(|(name, tpy)| {
-            let tpy = SupportedColumnStructures::from_str(&tpy).unwrap();
+            let tpy = SupportedColumnStructures::from_str(&tpy).expect("This should never happen.");
             let data = TableName {
                 rust_name: inference::rust_name_for_sql_name(&name),
                 sql_name: name,

@@ -102,7 +102,7 @@ pub fn generate_sql_based_on_diff_schema(
     for (structure, table) in tables_from_database {
         tracing::info!(?table, "Diff for existing table");
         match structure {
-            SupportedColumnStructures::TABLE => {
+            SupportedColumnStructures::Table => {
                 let columns = crate::infer_schema_internals::load_table_data(
                     &mut conn,
                     table.clone(),
@@ -151,7 +151,7 @@ pub fn generate_sql_based_on_diff_schema(
                     });
                 }
             }
-            SupportedColumnStructures::VIEW => {
+            SupportedColumnStructures::View => {
                 return Err(crate::errors::Error::UnsupportedFeature(
                     "Views are not supported by --diff-schema yet".into(),
                 ));

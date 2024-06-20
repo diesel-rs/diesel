@@ -159,7 +159,7 @@ pub fn output_schema(
     let foreign_keys = remove_unsafe_foreign_keys_for_codegen(
         connection,
         &foreign_keys,
-        &filter_column_structure(&table_names, SupportedColumnStructures::TABLE),
+        &filter_column_structure(&table_names, SupportedColumnStructures::Table),
     );
 
     let mut out = String::new();
@@ -169,10 +169,10 @@ pub fn output_schema(
     let data = table_names
         .into_iter()
         .map(|(kind, t)| match kind {
-            SupportedColumnStructures::TABLE => {
+            SupportedColumnStructures::Table => {
                 Ok(ColumnData::Table(load_table_data(connection, t, config)?))
             }
-            SupportedColumnStructures::VIEW => {
+            SupportedColumnStructures::View => {
                 Ok(ColumnData::View(load_view_data(connection, t, config)?))
             }
         })
@@ -660,7 +660,7 @@ impl<'a> Display for ColumnStructureDefinition<'a> {
                 out,
                 "{}",
                 ColumnDefinitions {
-                    columns: &self.table.columns(),
+                    columns: self.table.columns(),
                     with_docs: self.with_docs,
                     table_full_sql_name: &full_sql_name,
                     custom_type_overrides: self.custom_type_overrides
