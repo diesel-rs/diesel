@@ -2,7 +2,7 @@ use clap::ArgMatches;
 use diesel::backend::Backend;
 use diesel::query_builder::QueryBuilder;
 use diesel::QueryResult;
-use diesel_table_macro_syntax::{ColumnDef, TableDecl};
+use diesel_table_macro_syntax::{ColumnDef, TableDecl, ViewDecl};
 use std::collections::HashMap;
 use std::path::Path;
 use syn::visit::Visit;
@@ -11,7 +11,7 @@ use crate::config::PrintSchema;
 use crate::database::InferConnection;
 use crate::infer_schema_internals::{
     filter_table_names, load_table_names, ColumnDefinition, ColumnType, ForeignKeyConstraint,
-    TableData, TableName,
+    SupportedColumnStructures, TableData, TableName,
 };
 use crate::print_schema::{ColumnSorting, DocConfig};
 
@@ -99,89 +99,63 @@ pub fn generate_sql_based_on_diff_schema(
     let mut schema_diff = Vec::new();
     let table_names = load_table_names(&mut conn, None)?;
     let tables_from_database = filter_table_names(table_names.clone(), &config.filter);
-    for table in tables_from_database {
+    for (structure, table) in tables_from_database {
         tracing::info!(?table, "Diff for existing table");
-        let columns =
-            crate::infer_schema_internals::load_table_data(&mut conn, table.clone(), &config)?;
-        if let Some(t) = expected_schema_map.remove(&table.sql_name.to_lowercase()) {
-            tracing::info!(table = ?t.view.sql_name, "Table exists in schema.rs");
-            let mut primary_keys_in_db =
-                crate::infer_schema_internals::get_primary_keys(&mut conn, &table)?;
-            primary_keys_in_db.sort();
-            let mut primary_keys_in_schema = t
-                .primary_keys
-                .map(|pk| pk.keys.iter().map(|k| k.to_string()).collect::<Vec<_>>())
-                .unwrap_or_else(|| vec!["id".into()]);
-            primary_keys_in_schema.sort();
-            if primary_keys_in_db != primary_keys_in_schema {
-                tracing::debug!(
-                    ?primary_keys_in_schema,
-                    ?primary_keys_in_db,
-                    "Primary keys changed"
-                );
-                return Err(crate::errors::Error::UnsupportedFeature(
-                    "Cannot change primary keys with --diff-schema yet".into(),
-                ));
-            }
-
-            let mut expected_column_map = t
-                .view
-                .column_defs
-                .into_iter()
-                .map(|c| (c.sql_name.to_lowercase(), c))
-                .collect::<HashMap<_, _>>();
-
-            let mut added_columns = Vec::new();
-            let mut removed_columns = Vec::new();
-            let mut changed_columns = Vec::new();
-
-            for c in columns.column_data {
-                if let Some(def) = expected_column_map.remove(&c.sql_name.to_lowercase()) {
-                    let tpe = ColumnType::for_column_def(&def)?;
-                    if !is_same_type(&c.ty, tpe) {
-                        tracing::info!(old = ?c, new = ?def.sql_name, "Column changed type");
-                        changed_columns.push((c, def));
+        match structure {
+            SupportedColumnStructures::TABLE => {
+                let columns = crate::infer_schema_internals::load_table_data(
+                    &mut conn,
+                    table.clone(),
+                    &config,
+                )?;
+                if let Some(TableDecl { primary_keys, view }) =
+                    expected_schema_map.remove(&table.sql_name.to_lowercase())
+                {
+                    tracing::info!(table = ?view.sql_name, "Table exists in schema.rs");
+                    let mut primary_keys_in_db =
+                        crate::infer_schema_internals::get_primary_keys(&mut conn, &table)?;
+                    primary_keys_in_db.sort();
+                    let mut primary_keys_in_schema = primary_keys
+                        .map(|pk| pk.keys.iter().map(|k| k.to_string()).collect::<Vec<_>>())
+                        .unwrap_or_else(|| vec!["id".into()]);
+                    primary_keys_in_schema.sort();
+                    if primary_keys_in_db != primary_keys_in_schema {
+                        tracing::debug!(
+                            ?primary_keys_in_schema,
+                            ?primary_keys_in_db,
+                            "Primary keys changed"
+                        );
+                        return Err(crate::errors::Error::UnsupportedFeature(
+                            "Cannot change primary keys with --diff-schema yet".into(),
+                        ));
                     }
+                    schema_diff.push(update_columns(view, columns.column_data)?);
                 } else {
-                    tracing::info!(column = ?c, "Column was removed");
-                    removed_columns.push(c);
+                    tracing::info!("Table does not exist yet");
+                    let foreign_keys = foreign_key_map
+                        .get(&table.rust_name)
+                        .cloned()
+                        .unwrap_or_default();
+                    if foreign_keys.iter().any(|fk| {
+                        fk.foreign_key_columns.len() != 1 || fk.primary_key_columns.len() != 1
+                    }) {
+                        return Err(crate::errors::Error::UnsupportedFeature(
+                            "Tables with composite foreign keys are not supported by --diff-schema"
+                                .into(),
+                        ));
+                    }
+                    schema_diff.push(SchemaDiff::DropTable {
+                        table,
+                        columns,
+                        foreign_keys,
+                    });
                 }
             }
-
-            if !expected_column_map.is_empty() {
-                let columns = expected_column_map
-                    .values()
-                    .map(|v| v.column_name.to_string())
-                    .collect::<Vec<_>>();
-                tracing::info!(added = ?columns, "Added columns");
-            }
-            added_columns.extend(expected_column_map.into_values());
-
-            schema_diff.push(SchemaDiff::ChangeTable {
-                table: t.view.sql_name,
-                added_columns,
-                removed_columns,
-                changed_columns,
-            });
-        } else {
-            tracing::info!("Table does not exist yet");
-            let foreign_keys = foreign_key_map
-                .get(&table.rust_name)
-                .cloned()
-                .unwrap_or_default();
-            if foreign_keys
-                .iter()
-                .any(|fk| fk.foreign_key_columns.len() != 1 || fk.primary_key_columns.len() != 1)
-            {
+            SupportedColumnStructures::VIEW => {
                 return Err(crate::errors::Error::UnsupportedFeature(
-                    "Tables with composite foreign keys are not supported by --diff-schema".into(),
+                    "Views are not supported by --diff-schema yet".into(),
                 ));
             }
-            schema_diff.push(SchemaDiff::DropTable {
-                table,
-                columns,
-                foreign_keys,
-            });
         }
     }
 
@@ -258,6 +232,50 @@ pub fn generate_sql_based_on_diff_schema(
     }
 
     Ok((up_sql, down_sql))
+}
+
+fn update_columns(
+    view: ViewDecl,
+    columns: Vec<ColumnDefinition>,
+) -> Result<SchemaDiff, crate::errors::Error> {
+    let mut expected_column_map = view
+        .column_defs
+        .into_iter()
+        .map(|c| (c.sql_name.to_lowercase(), c))
+        .collect::<HashMap<_, _>>();
+
+    let mut added_columns = Vec::new();
+    let mut removed_columns = Vec::new();
+    let mut changed_columns = Vec::new();
+
+    for c in columns {
+        if let Some(def) = expected_column_map.remove(&c.sql_name.to_lowercase()) {
+            let tpe = ColumnType::for_column_def(&def)?;
+            if !is_same_type(&c.ty, tpe) {
+                tracing::info!(old = ?c, new = ?def.sql_name, "Column changed type");
+                changed_columns.push((c, def));
+            }
+        } else {
+            tracing::info!(column = ?c, "Column was removed");
+            removed_columns.push(c);
+        }
+    }
+
+    if !expected_column_map.is_empty() {
+        let columns = expected_column_map
+            .values()
+            .map(|v| v.column_name.to_string())
+            .collect::<Vec<_>>();
+        tracing::info!(added = ?columns, "Added columns");
+    }
+    added_columns.extend(expected_column_map.into_values());
+
+    Ok(SchemaDiff::ChangeTable {
+        table: view.sql_name,
+        added_columns,
+        removed_columns,
+        changed_columns,
+    })
 }
 
 fn is_same_type(ty: &ColumnType, tpe: ColumnType) -> bool {
