@@ -653,7 +653,7 @@ impl<'a> Display for ColumnStructureDefinition<'a> {
                     }
                     write!(out, "{pk}")?;
                 }
-                write!(out, ")")?;
+                write!(out, ") ")?;
             }
 
             write!(

@@ -58,7 +58,7 @@ pub fn load_table_names(
         .select(name)
         .filter(name.not_like("\\_\\_%").escape('\\'))
         .filter(name.not_like("sqlite%"))
-        .filter(sql::<sql_types::Bool>("type='table'").or(sql::<sql_types::Bool>("type='view'")))
+        .filter(sql::<sql_types::Bool>("type='view'"))
         .order(name)
         .load::<String>(connection)?
         .into_iter()
@@ -481,7 +481,7 @@ fn load_table_names_excludes_sqlite_metadata_tables() {
 }
 
 #[test]
-fn load_table_names_excludes_views() {
+fn load_table_names_includes_views() {
     let mut conn = SqliteConnection::establish(":memory:").unwrap();
     diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .execute(&mut conn)
@@ -494,7 +494,7 @@ fn load_table_names_excludes_views() {
         .into_iter()
         .map(|(_, table)| table)
         .collect::<Vec<_>>();
-    assert_eq!(vec![TableName::from_name("users")], table_names);
+    assert_eq!(vec![TableName::from_name("users"), TableName::from_name("answer")], table_names);
 }
 
 #[test]
