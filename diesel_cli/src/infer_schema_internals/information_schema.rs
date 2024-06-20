@@ -210,7 +210,7 @@ mod tests {
     }
 
     #[test]
-    fn skip_views() {
+    fn include_views() {
         let mut connection = connection();
 
         diesel::sql_query("CREATE TABLE a_regular_table (id SERIAL PRIMARY KEY)")
@@ -227,7 +227,7 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert!(table_names.contains(&TableName::from_name("a_regular_table")));
-        assert!(!table_names.contains(&TableName::from_name("a_view")));
+        assert!(table_names.contains(&TableName::from_name("a_view")));
     }
 
     #[test]
