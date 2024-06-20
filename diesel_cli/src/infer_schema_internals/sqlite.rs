@@ -494,7 +494,13 @@ fn load_table_names_includes_views() {
         .into_iter()
         .map(|(_, table)| table)
         .collect::<Vec<_>>();
-    assert_eq!(vec![TableName::from_name("users"), TableName::from_name("answer")], table_names);
+    assert_eq!(
+        vec![
+            TableName::from_name("users"),
+            TableName::from_name("answer")
+        ],
+        table_names
+    );
 }
 
 #[test]
