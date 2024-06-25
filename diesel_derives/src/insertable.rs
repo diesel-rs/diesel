@@ -71,14 +71,18 @@ fn derive_into_single_table(
             None => treat_none_as_default_value,
         };
 
-        match (field.serialize_as.as_ref(), field.embed()) {
-            (None, true) => {
+        match (
+            field.serialize_as.as_ref(),
+            field.serialize_fn.as_ref(),
+            field.embed(),
+        ) {
+            (None, None, true) => {
                 direct_field_ty.push(field_ty_embed(field, None));
                 direct_field_assign.push(field_expr_embed(field, None));
                 ref_field_ty.push(field_ty_embed(field, Some(quote!(&'insert))));
                 ref_field_assign.push(field_expr_embed(field, Some(quote!(&))));
             }
-            (None, false) => {
+            (None, None, false) => {
                 direct_field_ty.push(field_ty(
                     field,
                     table_name,
@@ -104,26 +108,48 @@ fn derive_into_single_table(
                     treat_none_as_default_value,
                 )?);
             }
-            (Some(AttributeSpanWrapper { item: ty, .. }), false) => {
+            (Some(AttributeSpanWrapper { item: ty, .. }), serialize_fn, false) => {
                 direct_field_ty.push(field_ty_serialize_as(
                     field,
                     table_name,
                     ty,
                     treat_none_as_default_value,
                 )?);
-                direct_field_assign.push(field_expr_serialize_as(
-                    field,
-                    table_name,
-                    ty,
-                    treat_none_as_default_value,
-                )?);
+                if let Some(AttributeSpanWrapper { item: function, .. }) = serialize_fn {
+                    direct_field_assign.push(field_expr_serialize_fn(
+                        field,
+                        table_name,
+                        ty,
+                        function,
+                        treat_none_as_default_value,
+                    )?);
+                } else {
+                    direct_field_assign.push(field_expr_serialize_as(
+                        field,
+                        table_name,
+                        ty,
+                        treat_none_as_default_value,
+                    )?);
+                }
 
                 generate_borrowed_insert = false; // as soon as we hit one field with #[diesel(serialize_as)] there is no point in generating the impl of Insertable for borrowed structs
             }
-            (Some(AttributeSpanWrapper { attribute_span, .. }), true) => {
+            (Some(AttributeSpanWrapper { attribute_span, .. }), _, true) => {
                 return Err(syn::Error::new(
                     *attribute_span,
                     "`#[diesel(embed)]` cannot be combined with `#[diesel(serialize_as)]`",
+                ));
+            }
+            (None, Some(AttributeSpanWrapper { attribute_span, .. }), true) => {
+                return Err(syn::Error::new(
+                    *attribute_span,
+                    "`#[diesel(embed)]` cannot be combined with `#[diesel(serialize_fn)]`",
+                ));
+            }
+            (None, Some(AttributeSpanWrapper { attribute_span, .. }), false) => {
+                return Err(syn::Error::new(
+                    *attribute_span,
+                    "`#[diesel(serialize_fn)]` requires `#[diesel(serialize_as)]` to be declared as well",
                 ));
             }
         }
@@ -229,11 +255,34 @@ fn field_expr_serialize_as(
             Ok(quote!(::std::convert::Into::<#ty>::into(self.#field_name).map(|v| #column.eq(v))))
         } else {
             Ok(
-                quote!(std::option::Option::Some(#column.eq(::std::convert::Into::<#ty>::into(self.#field_name)))),
+                quote!(::std::option::Option::Some(#column.eq(::std::convert::Into::<#ty>::into(self.#field_name)))),
             )
         }
     } else {
         Ok(quote!(#column.eq(::std::convert::Into::<#ty>::into(self.#field_name))))
+    }
+}
+
+fn field_expr_serialize_fn(
+    field: &Field,
+    table_name: &Path,
+    ty: &Type,
+    function: &Expr,
+    treat_none_as_default_value: bool,
+) -> Result<TokenStream> {
+    let field_name = &field.name;
+    let column_name = field.column_name()?;
+    column_name.valid_ident()?;
+    let column = quote!(#table_name::#column_name);
+
+    if treat_none_as_default_value {
+        if is_option_ty(ty) {
+            Ok(quote!(self.#field_name.map(|x| #column.eq((#function)(x)))))
+        } else {
+            Ok(quote!(::std::option::Option::Some(#column.eq((#function)(self.#field_name)))))
+        }
+    } else {
+        Ok(quote!(#column.eq((#function)(self.#field_name))))
     }
 }
 
