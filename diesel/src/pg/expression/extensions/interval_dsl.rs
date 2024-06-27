@@ -124,7 +124,7 @@ pub trait IntervalDsl: Sized + From<i32> + Mul<Self, Output = Self> {
     ///
     /// ```rust
     /// # use diesel::dsl::*;
-    /// assert_eq!(1.08.years(), 1.year());
+    /// assert_eq!(1.04.years(), 1.year());
     /// assert_eq!(1.09.years(), 1.year() + 1.month());
     /// ```
     fn years(self) -> PgInterval {
@@ -237,7 +237,7 @@ impl IntervalDsl for f64 {
     }
 
     fn years(self) -> PgInterval {
-        ((self * 12.0).trunc() as i32).months()
+        ((self * 12.0).round() as i32).months()
     }
 }
 

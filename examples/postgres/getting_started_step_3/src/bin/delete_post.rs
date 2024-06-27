@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use diesel_demo_step_3_pg::*;
+use getting_started_step_3_pg::*;
 use std::env::args;
 
 fn main() {

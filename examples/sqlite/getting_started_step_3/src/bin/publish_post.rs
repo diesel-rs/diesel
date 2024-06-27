@@ -1,10 +1,10 @@
 use diesel::prelude::*;
-use diesel_demo_step_3_sqlite::models::Post;
-use diesel_demo_step_3_sqlite::*;
+use getting_started_step_3_sqlite::models::Post;
+use getting_started_step_3_sqlite::*;
 use std::env::args;
 
 fn main() {
-    use diesel_demo_step_3_sqlite::schema::posts::dsl::{posts, published};
+    use getting_started_step_3_sqlite::schema::posts::dsl::{posts, published};
 
     let id = args()
         .nth(1)

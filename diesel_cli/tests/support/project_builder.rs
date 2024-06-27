@@ -115,15 +115,7 @@ impl Project {
 
     #[cfg(feature = "mysql")]
     pub fn database_url(&self) -> String {
-        use std::env;
-
-        let mut db_url = self.database_url_from_env("MYSQL_DATABASE_URL");
-        if env::var_os("APPVEYOR").is_some() {
-            db_url
-                .set_password(Some(&env::var("MYSQL_PWD").unwrap()))
-                .unwrap();
-        }
-        db_url.to_string()
+        self.database_url_from_env("MYSQL_DATABASE_URL").to_string()
     }
 
     #[cfg(feature = "sqlite")]

@@ -81,8 +81,6 @@
 //! #
 //! # // Create some example data by using typical SQL statements.
 //! # connection_setup::create_user_table(conn);
-//! # // Create some example data by using typical SQL statements.
-//! # connection_setup::create_user_table(conn);
 //! # sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')").execute(conn)?;
 //!
 //!     let users = diesel_dynamic_schema::table("users");

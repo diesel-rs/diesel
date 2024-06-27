@@ -4,6 +4,7 @@ use std::env;
 use std::error::Error;
 
 pub mod model;
+#[rustfmt::skip]
 pub mod schema;
 
 use crate::model::*;

@@ -1,9 +1,6 @@
 use crate::schema::*;
 use diesel::*;
 
-#[cfg(feature = "postgres")]
-static USER_INDEX_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-
 #[test]
 fn test_updating_single_column() {
     use crate::schema::users::dsl::*;
@@ -313,10 +310,7 @@ fn upsert_with_no_changes_executes_do_nothing_owned() {
         .set(&Changes { hair_color: None })
         .execute(connection);
 
-    #[cfg(not(feature = "mysql"))]
     assert_eq!(Ok(0), result);
-    #[cfg(feature = "mysql")]
-    assert_eq!(Ok(1), result);
 }
 
 #[test]
@@ -336,9 +330,6 @@ fn upsert_with_no_changes_executes_do_nothing_owned() {
         .set(&Changes { hair_color: None })
         .execute(connection);
 
-    #[cfg(not(feature = "mysql"))]
-    assert_eq!(Ok(0), result);
-    #[cfg(feature = "mysql")]
     assert_eq!(Ok(1), result);
 }
 
@@ -350,10 +341,15 @@ fn upsert_with_sql_literal_for_target() {
     use diesel::sql_types::Text;
     use diesel::upsert::*;
 
-    // cannot run these tests in parallel due to index creation
-    let _guard = USER_INDEX_LOCK.lock();
-
     let connection = &mut connection();
+    diesel::sql_query(
+        "CREATE TEMPORARY TABLE users(\
+             id SERIAL PRIMARY KEY, \
+             name TEXT NOT NULL, \
+             hair_color TEXT)",
+    )
+    .execute(connection)
+    .unwrap();
     // This index needs to happen before the insert or we'll get a deadlock
     // with any transactions that are trying to get the row lock from insert
     diesel::sql_query("CREATE UNIQUE INDEX ON users (name) WHERE name != 'Tess'")
@@ -392,9 +388,16 @@ fn upsert_with_sql_literal_for_target_with_condition() {
     use diesel::upsert::*;
 
     // cannot run these tests in parallel due to index creation
-    let _guard = USER_INDEX_LOCK.lock();
 
     let connection = &mut connection();
+    diesel::sql_query(
+        "CREATE TEMPORARY TABLE users(\
+             id SERIAL PRIMARY KEY, \
+             name TEXT NOT NULL, \
+             hair_color TEXT)",
+    )
+    .execute(connection)
+    .unwrap();
     // This index needs to happen before the insert or we'll get a deadlock
     // with any transactions that are trying to get the row lock from insert
     diesel::sql_query("CREATE UNIQUE INDEX ON users (name) WHERE name != 'Tess'")

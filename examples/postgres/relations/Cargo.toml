@@ -1,13 +1,13 @@
 [package]
 name = "relations"
 version = "0.1.0"
-edition = "2021"
+edition.workspace = true
 publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-diesel = { version = "2.1.0", features = ["postgres"], path = "../../../diesel" }
+diesel = { version = "2.2.0", features = ["postgres"], path = "../../../diesel" }
 dotenvy = "0.15.6"
 
 [[bin]]

@@ -20,10 +20,7 @@ pub fn create_user_table(conn: &mut diesel::SqliteConnection) {
 pub fn create_user_table(conn: &mut diesel::MysqlConnection) {
     use diesel::*;
 
-    diesel::sql_query("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTO_INCREMENT, name TEXT NOT NULL, hair_color TEXT)")
-        .execute(conn)
-        .unwrap();
-    diesel::sql_query("DELETE FROM users")
+    diesel::sql_query("CREATE TEMPORARY TABLE users (id INTEGER PRIMARY KEY AUTO_INCREMENT, name TEXT NOT NULL, hair_color TEXT)")
         .execute(conn)
         .unwrap();
 }
