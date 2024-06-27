@@ -8,4 +8,3 @@ fn write_post() {
         .append_context("show_posts", "")
         .stdout("Displaying 0 posts\n");
 }
-
