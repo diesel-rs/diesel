@@ -13,7 +13,12 @@ fn write_post() {
         .write_stdin("Test Title\ntest text\n1 2 3")
         .assert()
         .append_context("write_post", "")
-        .stdout("What would you like your title to be?\n\nOk! Let's write Test Title (Press ".to_owned() + EOF + " when finished)\n\n\nSaved draft Test Title with id 1\n");
+        .stdout(
+            "What would you like your title to be?\n\nOk! Let's write Test Title (Press "
+                .to_owned()
+                + EOF
+                + " when finished)\n\n\nSaved draft Test Title with id 1\n",
+        );
 
     let _ = Command::cargo_bin("publish_post")
         .unwrap()
