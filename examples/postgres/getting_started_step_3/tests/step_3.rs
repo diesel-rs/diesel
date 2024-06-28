@@ -1,7 +1,7 @@
 use assert_cmd::Command;
 
 #[test]
-fn write_post() {
+fn publish_post() {
     let _ = Command::cargo_bin("show_posts")
         .unwrap()
         .assert()

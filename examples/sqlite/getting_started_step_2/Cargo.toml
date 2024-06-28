@@ -9,6 +9,7 @@ publish = false
 diesel = { version = "2.1.0", path = "../../../diesel", features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
 dotenvy = "0.15"
 libsqlite3-sys = { version = "0.28.0", features = ["bundled"] }
+assert_cmd = "2.0.14"
 
 [[bin]]
 name = "show_posts"
