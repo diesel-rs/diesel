@@ -25,4 +25,3 @@ const EOF: &str = "CTRL+D";
 
 #[cfg(windows)]
 const EOF: &str = "CTRL+Z";
-
