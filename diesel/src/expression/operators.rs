@@ -557,12 +557,14 @@ use crate::insertable::{ColumnInsertValue, Insertable};
 use crate::query_builder::{QueryFragment, QueryId, ValuesClause};
 use crate::query_source::Column;
 use crate::sql_types::{DieselNumericOps, SqlType};
+use crate::Table;
 
-impl<T, U> Insertable<T::Table> for Eq<T, U>
+impl<T, U> Insertable<T::Source> for Eq<T, U>
 where
     T: Column,
+    T::Source: Table,
 {
-    type Values = ValuesClause<ColumnInsertValue<T, U>, T::Table>;
+    type Values = ValuesClause<ColumnInsertValue<T, U>, T::Source>;
 
     fn values(self) -> Self::Values {
         ValuesClause::new(ColumnInsertValue::new(self.right))

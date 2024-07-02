@@ -120,8 +120,9 @@ where
 impl<C> AssignmentTarget for C
 where
     C: Column,
+    C::Source: Table,
 {
-    type Table = C::Table;
+    type Table = C::Source;
     type QueryAstNode = ColumnWrapperForUpdate<C>;
 
     fn into_target(self) -> Self::QueryAstNode {

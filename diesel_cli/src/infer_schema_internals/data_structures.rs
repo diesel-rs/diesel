@@ -1,6 +1,6 @@
 use diesel_table_macro_syntax::ColumnDef;
 
-use super::table_data::TableName;
+use super::{table_data::TableName, TableData, ViewData};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ColumnInformation {
@@ -79,7 +79,10 @@ impl ColumnType {
     }
 }
 
-use std::fmt;
+use std::{
+    fmt::{self, Display},
+    str::FromStr,
+};
 
 impl fmt::Display for ColumnType {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
@@ -154,5 +157,73 @@ impl ForeignKeyConstraint {
             min(&self.parent_table, &self.child_table),
             max(&self.parent_table, &self.child_table),
         )
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub enum SupportedColumnStructures {
+    View,
+    Table,
+}
+
+#[derive(Debug)]
+pub enum ColumnData {
+    View(ViewData),
+    Table(TableData),
+}
+
+impl ColumnData {
+    pub fn table_name(&self) -> &TableName {
+        match &self {
+            Self::Table(table) => &table.name,
+            Self::View(view) => &view.name,
+        }
+    }
+
+    pub fn columns(&self) -> &Vec<ColumnDefinition> {
+        match self {
+            Self::Table(table) => &table.column_data,
+            Self::View(view) => &view.column_data,
+        }
+    }
+
+    pub fn comment(&self) -> &Option<String> {
+        match self {
+            Self::Table(table) => &table.comment,
+            Self::View(view) => &view.comment,
+        }
+    }
+}
+
+impl Display for SupportedColumnStructures {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let format = match self {
+            Self::Table => "BASE TABLE",
+            Self::View => "VIEW",
+        };
+        write!(f, "{format}")
+    }
+}
+
+impl FromStr for SupportedColumnStructures {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "BASE TABLE" => Ok(Self::Table),
+            "VIEW" => Ok(Self::View),
+            _ => unreachable!("This should never happen. Read {s}"),
+        }
+    }
+}
+
+impl SupportedColumnStructures {
+    pub fn display_all() -> Vec<String> {
+        SupportedColumnStructures::all()
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect()
+    }
+    pub fn all() -> Vec<SupportedColumnStructures> {
+        vec![Self::View, Self::Table]
     }
 }

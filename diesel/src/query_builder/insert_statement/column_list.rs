@@ -1,5 +1,5 @@
-use crate::query_builder::*;
 use crate::query_source::Column;
+use crate::{query_builder::*, Table};
 
 /// Represents the column list for use in an insert statement.
 ///
@@ -17,8 +17,9 @@ pub trait ColumnList {
 impl<C> ColumnList for C
 where
     C: Column,
+    C::Source: Table,
 {
-    type Table = <C as Column>::Table;
+    type Table = <C as Column>::Source;
 
     fn walk_ast<DB: Backend>(&self, mut out: AstPass<'_, '_, DB>) -> QueryResult<()> {
         out.push_identifier(C::NAME)?;

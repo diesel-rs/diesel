@@ -198,7 +198,7 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
             T>
                 where
                 T: Table,
-                $($ST: Column<Table = T>,)*
+                $($ST: Column<Source = T>,)*
                 ($($ST,)*): CopyTarget,
                 $($TT: ToSql<$T, Pg>,)*
             {
@@ -229,7 +229,7 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
             T>
                 where
                 T: Table,
-                $($ST: Column<Table = T>,)*
+                $($ST: Column<Source = T>,)*
                 ($($ST,)*): CopyTarget,
                 $($TT: ToSql<$T, Pg>,)*
             {

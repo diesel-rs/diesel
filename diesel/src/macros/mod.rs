@@ -14,6 +14,8 @@ pub(crate) mod prelude {
 
 #[doc(inline)]
 pub use diesel_derives::table_proc as table;
+#[doc(inline)]
+pub use diesel_derives::view_proc as view;
 
 /// Allow two tables to be referenced in a join query without providing an
 /// explicit `ON` clause.
@@ -211,8 +213,8 @@ macro_rules! joinable_inner {
 macro_rules! allow_tables_to_appear_in_same_query {
     ($left_mod:ident, $($right_mod:ident),+ $(,)*) => {
         $(
-            impl $crate::query_source::TableNotEqual<$left_mod::table> for $right_mod::table {}
-            impl $crate::query_source::TableNotEqual<$right_mod::table> for $left_mod::table {}
+            impl $crate::query_source::ViewNotEqual<$left_mod::table> for $right_mod::table {}
+            impl $crate::query_source::ViewNotEqual<$right_mod::table> for $left_mod::table {}
             $crate::__diesel_internal_backend_specific_allow_tables_to_appear_in_same_query!($left_mod, $right_mod);
         )+
         $crate::allow_tables_to_appear_in_same_query!($($right_mod,)+);
@@ -227,36 +229,36 @@ macro_rules! allow_tables_to_appear_in_same_query {
 #[cfg(feature = "postgres_backend")]
 macro_rules! __diesel_internal_backend_specific_allow_tables_to_appear_in_same_query {
     ($left:ident, $right:ident) => {
-        impl $crate::query_source::TableNotEqual<$left::table>
+        impl $crate::query_source::ViewNotEqual<$left::table>
             for $crate::query_builder::Only<$right::table>
         {
         }
-        impl $crate::query_source::TableNotEqual<$right::table>
+        impl $crate::query_source::ViewNotEqual<$right::table>
             for $crate::query_builder::Only<$left::table>
         {
         }
-        impl $crate::query_source::TableNotEqual<$crate::query_builder::Only<$left::table>>
+        impl $crate::query_source::ViewNotEqual<$crate::query_builder::Only<$left::table>>
             for $right::table
         {
         }
-        impl $crate::query_source::TableNotEqual<$crate::query_builder::Only<$right::table>>
+        impl $crate::query_source::ViewNotEqual<$crate::query_builder::Only<$right::table>>
             for $left::table
         {
         }
-        impl<TSM> $crate::query_source::TableNotEqual<$left::table>
+        impl<TSM> $crate::query_source::ViewNotEqual<$left::table>
             for $crate::query_builder::Tablesample<$right::table, TSM>
         where
             TSM: $crate::internal::table_macro::TablesampleMethod,
         {
         }
-        impl<TSM> $crate::query_source::TableNotEqual<$right::table>
+        impl<TSM> $crate::query_source::ViewNotEqual<$right::table>
             for $crate::query_builder::Tablesample<$left::table, TSM>
         where
             TSM: $crate::internal::table_macro::TablesampleMethod,
         {
         }
         impl<TSM>
-            $crate::query_source::TableNotEqual<
+            $crate::query_source::ViewNotEqual<
                 $crate::query_builder::Tablesample<$left::table, TSM>,
             > for $right::table
         where
@@ -264,7 +266,7 @@ macro_rules! __diesel_internal_backend_specific_allow_tables_to_appear_in_same_q
         {
         }
         impl<TSM>
-            $crate::query_source::TableNotEqual<
+            $crate::query_source::ViewNotEqual<
                 $crate::query_builder::Tablesample<$right::table, TSM>,
             > for $left::table
         where

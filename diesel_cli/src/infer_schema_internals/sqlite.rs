@@ -34,14 +34,13 @@ table! {
 pub fn load_table_names(
     connection: &mut SqliteConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<TableName>, crate::errors::Error> {
+) -> Result<Vec<(SupportedColumnStructures, TableName)>, crate::errors::Error> {
     use self::sqlite_master::dsl::*;
 
     if schema_name.is_some() {
         return Err(crate::errors::Error::InvalidSqliteSchema);
     }
-
-    Ok(sqlite_master
+    let tables = sqlite_master
         .select(name)
         .filter(name.not_like("\\_\\_%").escape('\\'))
         .filter(name.not_like("sqlite%"))
@@ -49,8 +48,23 @@ pub fn load_table_names(
         .order(name)
         .load::<String>(connection)?
         .into_iter()
-        .map(TableName::from_name)
-        .collect())
+        .map(|table| {
+            (
+                SupportedColumnStructures::Table,
+                TableName::from_name(table),
+            )
+        });
+    let view = sqlite_master
+        .select(name)
+        .filter(name.not_like("\\_\\_%").escape('\\'))
+        .filter(name.not_like("sqlite%"))
+        .filter(sql::<sql_types::Bool>("type='view'"))
+        .order(name)
+        .load::<String>(connection)?
+        .into_iter()
+        .map(|table| (SupportedColumnStructures::View, TableName::from_name(table)));
+
+    Ok(tables.chain(view).collect())
 }
 
 pub fn load_foreign_key_constraints(
@@ -60,7 +74,7 @@ pub fn load_foreign_key_constraints(
     let tables = load_table_names(connection, schema_name)?;
     let rows = tables
         .into_iter()
-        .map(|child_table| {
+        .map(|(_, child_table)| {
             let query = format!("PRAGMA FOREIGN_KEY_LIST('{}')", child_table.sql_name);
             sql::<pragma_foreign_key_list::SqlType>(&query)
                 .load::<ForeignKeyListRow>(connection)?
@@ -413,7 +427,11 @@ fn load_table_names_returns_nothing_when_no_tables_exist() {
     let mut conn = SqliteConnection::establish(":memory:").unwrap();
     assert_eq!(
         Vec::<TableName>::new(),
-        load_table_names(&mut conn, None).unwrap()
+        load_table_names(&mut conn, None)
+            .unwrap()
+            .into_iter()
+            .map(|(_, table)| table)
+            .collect::<Vec<_>>()
     );
 }
 
@@ -423,7 +441,11 @@ fn load_table_names_includes_tables_that_exist() {
     diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .execute(&mut conn)
         .unwrap();
-    let table_names = load_table_names(&mut conn, None).unwrap();
+    let table_names = load_table_names(&mut conn, None)
+        .unwrap()
+        .into_iter()
+        .map(|(_, table)| table)
+        .collect::<Vec<_>>();
     assert!(table_names.contains(&TableName::from_name("users")));
 }
 
@@ -433,7 +455,11 @@ fn load_table_names_excludes_diesel_metadata_tables() {
     diesel::sql_query("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .execute(&mut conn)
         .unwrap();
-    let table_names = load_table_names(&mut conn, None).unwrap();
+    let table_names = load_table_names(&mut conn, None)
+        .unwrap()
+        .into_iter()
+        .map(|(_, table)| table)
+        .collect::<Vec<_>>();
     assert!(!table_names.contains(&TableName::from_name("__diesel_metadata")));
 }
 
@@ -446,12 +472,16 @@ fn load_table_names_excludes_sqlite_metadata_tables() {
     diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .execute(&mut conn)
         .unwrap();
-    let table_names = load_table_names(&mut conn, None);
-    assert_eq!(vec![TableName::from_name("users")], table_names.unwrap());
+    let table_names = load_table_names(&mut conn, None)
+        .unwrap()
+        .into_iter()
+        .map(|(_, table)| table)
+        .collect::<Vec<_>>();
+    assert_eq!(vec![TableName::from_name("users")], table_names);
 }
 
 #[test]
-fn load_table_names_excludes_views() {
+fn load_table_names_includes_views() {
     let mut conn = SqliteConnection::establish(":memory:").unwrap();
     diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .execute(&mut conn)
@@ -459,8 +489,18 @@ fn load_table_names_excludes_views() {
     diesel::sql_query("CREATE VIEW answer AS SELECT 42")
         .execute(&mut conn)
         .unwrap();
-    let table_names = load_table_names(&mut conn, None);
-    assert_eq!(vec![TableName::from_name("users")], table_names.unwrap());
+    let table_names = load_table_names(&mut conn, None)
+        .unwrap()
+        .into_iter()
+        .map(|(_, table)| table)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        vec![
+            TableName::from_name("users"),
+            TableName::from_name("answer")
+        ],
+        table_names
+    );
 }
 
 #[test]
@@ -494,7 +534,7 @@ fn load_table_names_output_is_ordered() {
     let table_names = load_table_names(&mut conn, None)
         .unwrap()
         .iter()
-        .map(|table| table.to_string())
+        .map(|(_, table)| table.to_string())
         .collect::<Vec<_>>();
     assert_eq!(vec!["aaa", "bbb", "ccc"], table_names);
 }

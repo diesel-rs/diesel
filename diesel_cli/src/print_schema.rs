@@ -156,17 +156,27 @@ pub fn output_schema(
     );
 
     let foreign_keys = load_foreign_key_constraints(connection, config.schema_name())?;
-    let foreign_keys =
-        remove_unsafe_foreign_keys_for_codegen(connection, &foreign_keys, &table_names);
-    let table_data = table_names
-        .into_iter()
-        .map(|t| load_table_data(connection, t, config))
-        .collect::<Result<Vec<_>, crate::errors::Error>>()?;
+    let foreign_keys = remove_unsafe_foreign_keys_for_codegen(
+        connection,
+        &foreign_keys,
+        &filter_column_structure(&table_names, SupportedColumnStructures::Table),
+    );
 
     let mut out = String::new();
     writeln!(out, "{SCHEMA_HEADER}")?;
-
     let backend = Backend::for_connection(connection);
+
+    let data = table_names
+        .into_iter()
+        .map(|(kind, t)| match kind {
+            SupportedColumnStructures::Table => {
+                Ok(ColumnData::Table(load_table_data(connection, t, config)?))
+            }
+            SupportedColumnStructures::View => {
+                Ok(ColumnData::View(load_view_data(connection, t, config)?))
+            }
+        })
+        .collect::<Result<Vec<_>, crate::errors::Error>>()?;
 
     let columns_custom_types = if config.generate_missing_sql_type_definitions() {
         let diesel_provided_types = match backend {
@@ -179,10 +189,9 @@ pub fn output_schema(
         };
 
         Some(
-            table_data
-                .iter()
-                .map(|t| {
-                    t.column_data
+            data.iter()
+                .map(|cd| {
+                    cd.columns()
                         .iter()
                         .map(|c| {
                             Some(&c.ty)
@@ -208,7 +217,9 @@ pub fn output_schema(
                                         ColumnType {
                                             rust_name: format!(
                                                 "{} {} {}",
-                                                &t.name.rust_name, &c.rust_name, &ty.rust_name
+                                                &cd.table_name().rust_name,
+                                                &c.rust_name,
+                                                &ty.rust_name
                                             )
                                             .to_upper_camel_case(),
                                             ..ty.clone()
@@ -224,8 +235,8 @@ pub fn output_schema(
         None
     };
 
-    let definitions = TableDefinitions {
-        tables: table_data,
+    let definitions = ColumnStructureDefinitions {
+        data,
         fk_constraints: foreign_keys,
         with_docs: config.with_docs,
         custom_types_for_tables: columns_custom_types.map(|custom_types_sorted| {
@@ -252,7 +263,7 @@ pub fn output_schema(
                 "{}",
                 CustomTypesForTablesForDisplay {
                     custom_types: custom_types_for_tables,
-                    tables: &definitions.tables
+                    tables: &definitions.data
                 }
             )?;
         }
@@ -296,7 +307,7 @@ struct CustomTypesForTables {
 
 pub struct CustomTypesForTablesForDisplay<'a> {
     custom_types: &'a CustomTypesForTables,
-    tables: &'a [TableData],
+    tables: &'a [ColumnData],
 }
 
 #[allow(clippy::print_in_format_impl)]
@@ -388,24 +399,28 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
             }
             #[cfg(feature = "mysql")]
             Backend::Mysql => {
-                let mut types_to_generate: Vec<(&ColumnType, &TableName, &ColumnDefinition)> = self
-                    .custom_types
-                    .types_overrides_sorted
-                    .iter()
-                    .zip(self.tables)
-                    .flat_map(|(ct, t)| {
-                        ct.iter()
-                            .zip(&t.column_data)
-                            .map(move |(ct, c)| (ct, c, &t.name))
-                    })
-                    .filter_map(|(ct, c, t)| ct.as_ref().map(|ct| (ct, t, c)))
-                    .collect();
+                let CustomTypesForTables {
+                    types_overrides_sorted,
+                    with_docs,
+                    derives,
+                    ..
+                } = self.custom_types;
+                let mut types_to_generate: Vec<(&ColumnType, &TableName, &ColumnDefinition)> =
+                    types_overrides_sorted
+                        .iter()
+                        .zip(self.tables)
+                        .flat_map(|(ct, t)| {
+                            ct.iter().zip(t.columns()).filter_map(move |(ct, c)| {
+                                ct.as_ref().map(|ct| (ct, t.table_name(), c))
+                            })
+                        })
+                        .collect();
                 if types_to_generate.is_empty() {
                     return Ok(());
                 }
                 types_to_generate.sort_by_key(|(column_type, _, _)| column_type.rust_name.as_str());
 
-                if self.custom_types.with_docs {
+                if *with_docs {
                     writeln!(f, "/// A module containing custom SQL type definitions")?;
                     writeln!(f, "///")?;
                     writeln!(f, "/// (Automatically generated by Diesel.)")?;
@@ -432,7 +447,7 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
                         writeln!(out, "/// (Automatically generated by Diesel.)")?;
                     }
 
-                    writeln!(out, "#[derive({})]", self.custom_types.derives.join(", "))?;
+                    writeln!(out, "#[derive({})]", derives.join(", "))?;
 
                     let mysql_name = {
                         let mut c = custom_type.sql_name.chars();
@@ -454,7 +469,7 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
     }
 }
 
-struct ModuleDefinition<'a>(&'a str, TableDefinitions<'a>);
+struct ModuleDefinition<'a>(&'a str, ColumnStructureDefinitions<'a>);
 
 impl<'a> Display for ModuleDefinition<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -467,7 +482,7 @@ impl<'a> Display for ModuleDefinition<'a> {
                     "{}",
                     CustomTypesForTablesForDisplay {
                         custom_types: custom_types_for_tables,
-                        tables: &self.1.tables
+                        tables: &self.1.data
                     }
                 )?;
             }
@@ -478,18 +493,18 @@ impl<'a> Display for ModuleDefinition<'a> {
     }
 }
 
-struct TableDefinitions<'a> {
-    tables: Vec<TableData>,
+struct ColumnStructureDefinitions<'a> {
+    data: Vec<ColumnData>,
     fk_constraints: Vec<ForeignKeyConstraint>,
     with_docs: DocConfig,
     import_types: Option<&'a [String]>,
     custom_types_for_tables: Option<CustomTypesForTables>,
 }
 
-impl<'a> Display for TableDefinitions<'a> {
+impl<'a> Display for ColumnStructureDefinitions<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let mut is_first = true;
-        for (table_idx, table) in self.tables.iter().enumerate() {
+        for (table_idx, table) in self.data.iter().enumerate() {
             if is_first {
                 is_first = false;
             } else {
@@ -498,7 +513,7 @@ impl<'a> Display for TableDefinitions<'a> {
             writeln!(
                 f,
                 "{}",
-                TableDefinition {
+                ColumnStructureDefinition {
                     table,
                     with_docs: self.with_docs,
                     import_types: self.import_types,
@@ -518,16 +533,16 @@ impl<'a> Display for TableDefinitions<'a> {
             writeln!(f, "{}", Joinable(foreign_key))?;
         }
 
-        if self.tables.len() > 1 {
+        if self.data.len() > 1 {
             write!(f, "\ndiesel::allow_tables_to_appear_in_same_query!(")?;
             {
                 let mut out = PadAdapter::new(f);
                 writeln!(out)?;
-                for table in &self.tables {
-                    if table.name.rust_name == table.name.sql_name {
-                        writeln!(out, "{},", table.name.sql_name)?;
+                for table in &self.data {
+                    if table.table_name().rust_name == table.table_name().sql_name {
+                        writeln!(out, "{},", table.table_name().sql_name)?;
                     } else {
-                        writeln!(out, "{},", table.name.rust_name)?;
+                        writeln!(out, "{},", table.table_name().rust_name)?;
                     }
                 }
             }
@@ -538,8 +553,8 @@ impl<'a> Display for TableDefinitions<'a> {
     }
 }
 
-struct TableDefinition<'a> {
-    table: &'a TableData,
+struct ColumnStructureDefinition<'a> {
+    table: &'a ColumnData,
     with_docs: DocConfig,
     import_types: Option<&'a [String]>,
     custom_type_overrides: Option<&'a [Option<ColumnType>]>,
@@ -553,9 +568,13 @@ fn write_doc_comments(out: &mut impl fmt::Write, doc: &str) -> fmt::Result {
     Ok(())
 }
 
-impl<'a> Display for TableDefinition<'a> {
+impl<'a> Display for ColumnStructureDefinition<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "diesel::table! {{")?;
+        match &self.table {
+            ColumnData::Table(_) => write!(f, "diesel::table! {{")?,
+            ColumnData::View(_) => write!(f, "diesel::view! {{")?,
+        }
+
         {
             let mut out = PadAdapter::new(f);
             writeln!(out)?;
@@ -595,17 +614,17 @@ impl<'a> Display for TableDefinition<'a> {
                 writeln!(out)?;
             }
 
-            let full_sql_name = self.table.name.full_sql_name();
+            let full_sql_name = self.table.table_name().full_sql_name();
 
             match self.with_docs {
                 DocConfig::NoDocComments => {}
                 DocConfig::OnlyDatabaseComments => {
-                    if let Some(comment) = self.table.comment.as_deref() {
+                    if let Some(comment) = self.table.comment().as_deref() {
                         write_doc_comments(&mut out, comment)?;
                     }
                 }
                 DocConfig::DatabaseCommentsFallbackToAutoGeneratedDocComment => {
-                    if let Some(comment) = self.table.comment.as_deref() {
+                    if let Some(comment) = self.table.comment().as_deref() {
                         write_doc_comments(&mut out, comment)?;
                     } else {
                         write_doc_comments(
@@ -620,24 +639,28 @@ impl<'a> Display for TableDefinition<'a> {
                 }
             }
 
-            if self.table.name.rust_name != self.table.name.sql_name {
+            if self.table.table_name().rust_name != self.table.table_name().sql_name {
                 writeln!(out, r#"#[sql_name = "{full_sql_name}"]"#,)?;
             }
 
-            write!(out, "{} (", self.table.name)?;
+            write!(out, "{}", self.table.table_name())?;
 
-            for (i, pk) in self.table.primary_key.iter().enumerate() {
-                if i != 0 {
-                    write!(out, ", ")?;
+            if let ColumnData::Table(t) = self.table {
+                write!(out, " (")?;
+                for (i, pk) in t.primary_key.iter().enumerate() {
+                    if i != 0 {
+                        write!(out, ", ")?;
+                    }
+                    write!(out, "{pk}")?;
                 }
-                write!(out, "{pk}")?;
+                write!(out, ") ")?;
             }
 
             write!(
                 out,
-                ") {}",
+                "{}",
                 ColumnDefinitions {
-                    columns: &self.table.column_data,
+                    columns: self.table.columns(),
                     with_docs: self.with_docs,
                     table_full_sql_name: &full_sql_name,
                     custom_type_overrides: self.custom_type_overrides

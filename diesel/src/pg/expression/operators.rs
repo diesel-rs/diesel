@@ -7,7 +7,7 @@ use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::sql_types::{
     Array, Bigint, Bool, DieselNumericOps, Inet, Integer, Jsonb, SqlType, Text,
 };
-use crate::{Column, QueryResult};
+use crate::{Column, QueryResult, Table};
 
 __diesel_infix_operator!(IsDistinctFrom, " IS DISTINCT FROM ", ConstantNullability Bool, backend: Pg);
 __diesel_infix_operator!(IsNotDistinctFrom, " IS NOT DISTINCT FROM ", ConstantNullability Bool, backend: Pg);
@@ -94,8 +94,9 @@ where
 impl<L, R> AssignmentTarget for ArrayIndex<L, R>
 where
     L: Column,
+    L::Source: Table,
 {
-    type Table = <L as Column>::Table;
+    type Table = <L as Column>::Source;
     type QueryAstNode = ArrayIndex<UncorrelatedColumn<L>, R>;
 
     fn into_target(self) -> Self::QueryAstNode {

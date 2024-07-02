@@ -120,9 +120,10 @@ where
     type SqlType = T::SqlType;
 }
 
-impl<T> AppearsOnTable<T::Table> for Excluded<T>
+impl<T> AppearsOnTable<T::Source> for Excluded<T>
 where
     T: Column,
+    T::Source: Table,
     Excluded<T>: Expression,
 {
 }

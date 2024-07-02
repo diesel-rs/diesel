@@ -72,18 +72,23 @@ where
     }
 }
 
+impl<T, U> diesel::query_source::View for Table<T, U>
+where
+    Self: QuerySource + AsQuery,
+{
+    type AllColumns = DummyExpression;
+    fn all_columns() -> Self::AllColumns {
+        DummyExpression::new()
+    }
+}
+
 impl<T, U> diesel::Table for Table<T, U>
 where
     Self: QuerySource + AsQuery,
 {
     type PrimaryKey = DummyExpression;
-    type AllColumns = DummyExpression;
 
     fn primary_key(&self) -> Self::PrimaryKey {
-        DummyExpression::new()
-    }
-
-    fn all_columns() -> Self::AllColumns {
         DummyExpression::new()
     }
 }

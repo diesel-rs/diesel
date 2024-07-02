@@ -1,8 +1,8 @@
-error[E0271]: type mismatch resolving `<id as Column>::Table == table`
+error[E0271]: type mismatch resolving `<id as Column>::Source == table`
   --> tests/fail/derive/aliases.rs:36:22
    |
 36 |     user_alias.field(posts::id);
-   |                ----- ^^^^^^^^^ type mismatch resolving `<id as Column>::Table == table`
+   |                ----- ^^^^^^^^^ type mismatch resolving `<id as Column>::Source == table`
    |                |
    |                required by a bound introduced by this call
    |
@@ -39,8 +39,8 @@ note: required by a bound in `Alias::<S>::field`
    |     pub fn field<F>(&self, field: F) -> AliasedField<S, F>
    |            ----- required by a bound in this associated function
    |     where
-   |         F: Column<Table = S::Target>,
-   |                   ^^^^^^^^^^^^^^^^^ required by this bound in `Alias::<S>::field`
+   |         F: Column<Source = S::Target>,
+   |                   ^^^^^^^^^^^^^^^^^^ required by this bound in `Alias::<S>::field`
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
@@ -102,9 +102,9 @@ error[E0599]: the method `select` exists for struct `SelectStatement<FromClause<
    |
    = note: consider using `--verbose` to print the full type name to the console
    = note: the following trait bounds were not satisfied:
-           `&SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>>>: Table`
+           `&SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>>>: View`
            which is required by `&SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>>>: diesel::QueryDsl`
-           `&mut SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>>>: Table`
+           `&mut SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>>>: View`
            which is required by `&mut SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>>>: diesel::QueryDsl`
 
 error[E0277]: Cannot select `users::columns::id` from `Alias<users2>`
@@ -274,7 +274,7 @@ error[E0599]: the method `select` exists for struct `SelectStatement<FromClause<
    |
    = note: consider using `--verbose` to print the full type name to the console
    = note: the following trait bounds were not satisfied:
-           `&SelectStatement<FromClause<JoinOn<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>>>: Table`
+           `&SelectStatement<FromClause<JoinOn<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>>>: View`
            which is required by `&SelectStatement<FromClause<JoinOn<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>>>: diesel::QueryDsl`
-           `&mut SelectStatement<FromClause<JoinOn<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>>>: Table`
+           `&mut SelectStatement<FromClause<JoinOn<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>>>: View`
            which is required by `&mut SelectStatement<FromClause<JoinOn<query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<AliasedField<posts2, posts::columns::author>, AliasedField<posts3, posts::columns::author>>>>>>: diesel::QueryDsl`

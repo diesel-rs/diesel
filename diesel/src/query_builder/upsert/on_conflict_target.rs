@@ -1,7 +1,7 @@
 use crate::backend::sql_dialect;
 use crate::expression::SqlLiteral;
-use crate::query_builder::*;
 use crate::query_source::Column;
+use crate::{query_builder::*, Table};
 
 #[doc(hidden)]
 pub trait OnConflictTarget<Table> {}
@@ -50,7 +50,12 @@ where
     }
 }
 
-impl<T> OnConflictTarget<T::Table> for ConflictTarget<T> where T: Column {}
+impl<T> OnConflictTarget<T::Source> for ConflictTarget<T>
+where
+    T: Column,
+    T::Source: Table,
+{
+}
 
 impl<DB, ST, SP> QueryFragment<DB, SP> for ConflictTarget<SqlLiteral<ST>>
 where
@@ -81,7 +86,12 @@ where
     }
 }
 
-impl<T> OnConflictTarget<T::Table> for ConflictTarget<(T,)> where T: Column {}
+impl<T> OnConflictTarget<T::Source> for ConflictTarget<(T,)>
+where
+    T: Column,
+    T::Source: Table,
+{
+}
 
 macro_rules! on_conflict_tuples {
     ($(
@@ -94,7 +104,7 @@ macro_rules! on_conflict_tuples {
                 _DB: Backend<OnConflictClause = _SP>,
                 _SP: sql_dialect::on_conflict_clause::PgLikeOnConflictClause,
                 _T: Column,
-                $($T: Column<Table=_T::Table>,)*
+                $($T: Column<Source=_T::Source>,)*
             {
                 fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, _DB>) -> QueryResult<()>
                 {
@@ -109,9 +119,9 @@ macro_rules! on_conflict_tuples {
                 }
             }
 
-            impl<_T, $($T),*> OnConflictTarget<_T::Table> for ConflictTarget<(_T, $($T),*)> where
+            impl<_T, $($T),*> OnConflictTarget<_T::Source> for ConflictTarget<(_T, $($T),*)> where
                 _T: Column,
-                $($T: Column<Table=_T::Table>,)*
+                $($T: Column<Source=_T::Source>,)*
             {
             }
         )*

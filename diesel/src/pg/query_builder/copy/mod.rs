@@ -148,7 +148,7 @@ macro_rules! copy_target_for_columns {
         $(
             impl<T, $($ST,)*> CopyTarget for ($($ST,)*)
             where
-                $($ST: Column<Table = T>,)*
+                $($ST: Column<Source = T>,)*
                 ($(<$ST as Expression>::SqlType,)*): SqlType,
                 T: Table + StaticQueryFragment,
                 T::Component: QueryFragment<Pg>,

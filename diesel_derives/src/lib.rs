@@ -38,6 +38,7 @@ mod associations;
 mod diesel_for_each_tuple;
 mod diesel_numeric_ops;
 mod diesel_public_if;
+mod expansion;
 mod from_sql_row;
 mod identifiable;
 mod insertable;
@@ -48,7 +49,6 @@ mod queryable_by_name;
 mod selectable;
 mod sql_function;
 mod sql_type;
-mod table;
 mod valid_grouping;
 
 /// Implements `AsChangeset`
@@ -1540,11 +1540,25 @@ pub fn __diesel_public_if(attrs: TokenStream, input: TokenStream) -> TokenStream
 #[proc_macro]
 pub fn table_proc(input: TokenStream) -> TokenStream {
     match syn::parse(input) {
-        Ok(input) => table::expand(input).into(),
+        Ok(input) => expansion::expand_table(input).into(),
         Err(_) => quote::quote! {
             compile_error!(
                 "Invalid `table!` syntax. Please see the `table!` macro docs for more info.\n\
                  Docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`\n"
+            );
+        }
+        .into(),
+    }
+}
+
+#[proc_macro]
+pub fn view_proc(input: TokenStream) -> TokenStream {
+    match syn::parse(input) {
+        Ok(input) => expansion::expand_view(input).into(),
+        Err(_) => quote::quote! {
+            compile_error!(
+                "Invalid `view!` syntax. Please see the `view!` macro docs for more info.\n\
+                 Docs available at: `https://docs.diesel.rs/master/diesel/macro.view.html`\n"
             );
         }
         .into(),

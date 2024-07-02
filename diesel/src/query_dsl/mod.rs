@@ -17,7 +17,7 @@ use crate::expression::count::CountStar;
 use crate::expression::Expression;
 use crate::helper_types::*;
 use crate::query_builder::locking_clause as lock;
-use crate::query_source::{joins, Table};
+use crate::query_source::{joins, View};
 use crate::result::QueryResult;
 
 mod belonging_to_dsl;
@@ -1387,7 +1387,7 @@ pub trait QueryDsl: Sized {
     }
 }
 
-impl<T: Table> QueryDsl for T {}
+impl<T: View> QueryDsl for T {}
 
 /// Methods used to execute queries.
 pub trait RunQueryDsl<Conn>: Sized {
@@ -1788,4 +1788,4 @@ pub trait RunQueryDsl<Conn>: Sized {
 // resolution. Otherwise our users will get an error saying `<3 page long type>:
 // ExecuteDsl is not satisfied` instead of a specific error telling them what
 // part of their query is wrong.
-impl<T, Conn> RunQueryDsl<Conn> for T where T: Table {}
+impl<T, Conn> RunQueryDsl<Conn> for T where T: View {}

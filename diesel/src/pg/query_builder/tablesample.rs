@@ -1,7 +1,7 @@
 use crate::expression::{Expression, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::{AsQuery, AstPass, FromClause, QueryFragment, QueryId, SelectStatement};
-use crate::query_source::QuerySource;
+use crate::query_source::{QuerySource, View};
 use crate::result::QueryResult;
 use crate::sql_types::{Double, SmallInt};
 use crate::{JoinTo, SelectableExpression, Table};
@@ -147,25 +147,37 @@ where
     }
 }
 
+impl<S, TSM> View for Tablesample<S, TSM>
+where
+    S: Table + Clone + AsQuery,
+    TSM: TablesampleMethod,
+
+    <S as Table>::PrimaryKey: SelectableExpression<Tablesample<S, TSM>>,
+    <S as View>::AllColumns: SelectableExpression<Tablesample<S, TSM>>,
+    <S as QuerySource>::DefaultSelection:
+        ValidGrouping<()> + SelectableExpression<Tablesample<S, TSM>>,
+{
+    type AllColumns = <S as View>::AllColumns;
+
+    fn all_columns() -> Self::AllColumns {
+        S::all_columns()
+    }
+}
+
 impl<S, TSM> Table for Tablesample<S, TSM>
 where
     S: Table + Clone + AsQuery,
     TSM: TablesampleMethod,
 
     <S as Table>::PrimaryKey: SelectableExpression<Tablesample<S, TSM>>,
-    <S as Table>::AllColumns: SelectableExpression<Tablesample<S, TSM>>,
+    <S as View>::AllColumns: SelectableExpression<Tablesample<S, TSM>>,
     <S as QuerySource>::DefaultSelection:
         ValidGrouping<()> + SelectableExpression<Tablesample<S, TSM>>,
 {
     type PrimaryKey = <S as Table>::PrimaryKey;
-    type AllColumns = <S as Table>::AllColumns;
 
     fn primary_key(&self) -> Self::PrimaryKey {
         self.source.primary_key()
-    }
-
-    fn all_columns() -> Self::AllColumns {
-        S::all_columns()
     }
 }
 

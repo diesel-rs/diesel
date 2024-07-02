@@ -322,12 +322,18 @@ impl<'a, T, Tab> UndecoratedInsertRecord<Tab> for &'a T where
 {
 }
 
-impl<T, U> UndecoratedInsertRecord<T::Table> for ColumnInsertValue<T, U> where T: Column {}
+impl<T, U> UndecoratedInsertRecord<T::Source> for ColumnInsertValue<T, U>
+where
+    T: Column,
+    T::Source: Table,
+{
+}
 
-impl<T, U> UndecoratedInsertRecord<T::Table>
+impl<T, U> UndecoratedInsertRecord<T::Source>
     for DefaultableColumnInsertValue<ColumnInsertValue<T, U>>
 where
     T: Column,
+    T::Source: Table,
 {
 }
 
@@ -342,14 +348,24 @@ where
 
 impl<T, Table> UndecoratedInsertRecord<Table> for Vec<T> where [T]: UndecoratedInsertRecord<Table> {}
 
-impl<Lhs, Rhs> UndecoratedInsertRecord<Lhs::Table> for Eq<Lhs, Rhs> where Lhs: Column {}
+impl<Lhs, Rhs> UndecoratedInsertRecord<Lhs::Source> for Eq<Lhs, Rhs>
+where
+    Lhs: Column,
+    Lhs::Source: Table,
+{
+}
 
 impl<Lhs, Rhs, Tab> UndecoratedInsertRecord<Tab> for Option<Eq<Lhs, Rhs>> where
     Eq<Lhs, Rhs>: UndecoratedInsertRecord<Tab>
 {
 }
 
-impl<Lhs, Rhs> UndecoratedInsertRecord<Lhs::Table> for Grouped<Eq<Lhs, Rhs>> where Lhs: Column {}
+impl<Lhs, Rhs> UndecoratedInsertRecord<Lhs::Source> for Grouped<Eq<Lhs, Rhs>>
+where
+    Lhs: Column,
+    Lhs::Source: Table,
+{
+}
 
 impl<Lhs, Rhs, Tab> UndecoratedInsertRecord<Tab> for Option<Grouped<Eq<Lhs, Rhs>>> where
     Eq<Lhs, Rhs>: UndecoratedInsertRecord<Tab>

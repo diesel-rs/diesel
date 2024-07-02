@@ -28,7 +28,7 @@ impl<S, C> QueryId for AliasedField<S, C>
 where
     S: AliasSource + 'static,
     S::Target: 'static,
-    C: Column<Table = S::Target> + 'static + QueryId,
+    C: Column<Source = S::Target> + 'static + QueryId,
 {
     type QueryId = Self;
     const HAS_STATIC_QUERY_ID: bool = <C as QueryId>::HAS_STATIC_QUERY_ID;
@@ -38,7 +38,7 @@ impl<QS, S, C> AppearsOnTable<QS> for AliasedField<S, C>
 where
     S: AliasSource,
     QS: AppearsInFromClause<Alias<S>, Count = Once>,
-    C: Column<Table = S::Target>,
+    C: Column<Source = S::Target>,
 {
 }
 
@@ -46,7 +46,7 @@ impl<S, C, DB> QueryFragment<DB> for AliasedField<S, C>
 where
     S: AliasSource,
     DB: Backend,
-    C: Column<Table = S::Target>,
+    C: Column<Source = S::Target>,
 {
     fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         pass.push_identifier(S::NAME)?;
@@ -59,7 +59,7 @@ where
 impl<S, C> Expression for AliasedField<S, C>
 where
     S: AliasSource,
-    C: Column<Table = S::Target> + Expression,
+    C: Column<Source = S::Target> + Expression,
 {
     type SqlType = C::SqlType;
 }
@@ -67,7 +67,7 @@ where
 impl<S, C> SelectableExpression<Alias<S>> for AliasedField<S, C>
 where
     S: AliasSource,
-    C: Column<Table = S::Target>,
+    C: Column<Source = S::Target>,
     Self: AppearsOnTable<Alias<S>>,
 {
 }
@@ -75,7 +75,7 @@ where
 impl<S, C> ValidGrouping<()> for AliasedField<S, C>
 where
     S: AliasSource,
-    C: Column<Table = S::Target>,
+    C: Column<Source = S::Target>,
 {
     type IsAggregate = is_aggregate::No;
 }
@@ -83,8 +83,8 @@ where
 impl<S, C1, C2> ValidGrouping<AliasedField<S, C1>> for AliasedField<S, C2>
 where
     S: AliasSource,
-    C1: Column<Table = S::Target>,
-    C2: Column<Table = S::Target>,
+    C1: Column<Source = S::Target>,
+    C2: Column<Source = S::Target>,
     C2: ValidGrouping<C1, IsAggregate = is_aggregate::Yes>,
 {
     type IsAggregate = is_aggregate::Yes;
@@ -101,7 +101,7 @@ where
 impl<S, C, T> EqAll<T> for AliasedField<S, C>
 where
     S: AliasSource,
-    C: Column<Table = S::Target>,
+    C: Column<Source = S::Target>,
     Self: ExpressionMethods,
     <Self as Expression>::SqlType: sql_types::SqlType,
     T: AsExpression<<Self as Expression>::SqlType>,
