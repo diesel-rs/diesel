@@ -289,6 +289,7 @@ fn test_pg_range_expression_methods() -> _ {
 #[cfg(feature = "postgres")]
 #[auto_type]
 fn test_pg_range_expression_methods() -> _ {
+    use std::ops::Bound;
     pg_extras::range.contains_range((Bound::Included(2i32), Bound::Included(7i32)))
 }
 
