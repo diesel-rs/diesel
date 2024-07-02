@@ -155,7 +155,7 @@
 //! with the `bundled` feature as a dependency to your crate so SQLite will be bundled:
 //! ```toml
 //! [dependencies]
-//! libsqlite3-sys = { version = "0.25.2", features = ["bundled"] }
+//! libsqlite3-sys = { version = "0.29", features = ["bundled"] }
 //! ```
 //! - `postgres`: This feature enables the diesel postgres backend. Enabling this feature requires a compatible
 //! copy of `libpq` for your target architecture. This features implies `postgres_backend`
