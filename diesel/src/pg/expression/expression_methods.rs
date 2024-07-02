@@ -744,7 +744,6 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     ///     .filter(versions.contains(1))
     ///     .load::<i32>(conn)?;
     /// assert!(amazing_posts.is_empty());
-    ///
     /// #     Ok(())
     /// # }
     /// ```
@@ -797,7 +796,6 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     ///     .filter(versions.contains_range((Bound::Included(2), Bound::Included(7))))
     ///     .load::<i32>(conn)?;
     /// assert!(amazing_posts.is_empty());
-    ///
     /// #     Ok(())
     /// # }
     /// ```
