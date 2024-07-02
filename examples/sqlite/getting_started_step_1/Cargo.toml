@@ -11,7 +11,7 @@ diesel = { version = "2.1.0", path = "../../../diesel", features = ["sqlite"] }
 dotenvy = "0.15"
 libsqlite3-sys = { version = "0.28.0", features = ["bundled"] }
 
-[dev_dependencies]
+[dev-dependencies]
 assert_cmd = "2.0.14"
 
 [[bin]]

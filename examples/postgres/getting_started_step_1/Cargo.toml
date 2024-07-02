@@ -8,7 +8,7 @@ publish = false
 diesel = { version = "2.1.0", path = "../../../diesel", features = ["postgres"] }
 dotenvy = "0.15"
 
-[dev_dependencies]
+[dev-dependencies]
 assert_cmd = "2.0.14"
 
 [[bin]]
