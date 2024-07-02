@@ -8,6 +8,9 @@ publish = false
 diesel = { version = "2.1.0", path = "../../../diesel", features = ["mysql"] }
 dotenvy = "0.15"
 
+[dev_dependencies]
+assert_cmd = "2.0.14"
+
 [[bin]]
 name = "show_posts"
 doc = false
