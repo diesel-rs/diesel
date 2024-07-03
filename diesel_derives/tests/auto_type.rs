@@ -281,14 +281,15 @@ fn test_pg_jsonb_expression_methods() -> _ {
 fn test_pg_range_expression_methods() -> _ {
     let my_range: (Bound<i32>, Bound<i32>) = (Bound::Included(2), Bound::Included(7));
 
-    pg_extras::range.contains_range(my_range)
-
-    // `.contains()` cannot be supported here as
-    // the type level constraints are slightly different
-    // for `Range<>` than for the other types that provide a `contains()`
-    // function. We could likely support it by
-    // renaming the function to `.range_contains()` (or something similar)
-    // .contains(42_i32)
+    pg_extras::range
+        .contains_range(my_range)
+        // `.contains()` cannot be supported here as
+        // the type level constraints are slightly different
+        // for `Range<>` than for the other types that provide a `contains()`
+        // function. We could likely support it by
+        // renaming the function to `.range_contains()` (or something similar)
+        // .contains(42_i32)
+        .select(lower(pg_extras::range))
 }
 
 #[cfg(feature = "postgres")]
