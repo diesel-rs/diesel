@@ -799,7 +799,7 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn contains_range<T>(self, other: T) -> dsl::RangeContainsRange<Self, T>
+    fn contains_range<T>(self, other: T) -> dsl::ContainsRange<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
