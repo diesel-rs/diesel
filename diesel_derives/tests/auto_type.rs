@@ -281,7 +281,9 @@ fn test_pg_jsonb_expression_methods() -> _ {
 fn test_pg_range_expression_methods() -> _ {
     let my_range: (Bound<i32>, Bound<i32>) = (Bound::Included(2), Bound::Included(7));
 
-    pg_extras::range.contains_range(my_range)
+    pg_extras::range
+        .contains_range(my_range)
+        .and(pg_extras::range.is_contained_by(my_range))
 
     // `.contains()` cannot be supported here as
     // the type level constraints are slightly different

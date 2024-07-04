@@ -806,6 +806,57 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     {
         Grouped(Contains::new(self, other.as_expression()))
     }
+
+    /// Creates a PostgreSQL `<@` expression.
+    ///
+    /// This operator returns whether a range is contained by a specific element
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         versions -> Range<Integer>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     use std::collections::Bound;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
+    /// #
+    /// diesel::insert_into(posts)
+    ///     .values(versions.eq((Bound::Included(5), Bound::Unbounded)))
+    ///     .execute(conn)?;
+    ///
+    /// let cool_posts = posts.select(id)
+    ///     .filter(versions.is_contained_by((Bound::Included(1), Bound::Unbounded)))
+    ///     .load::<i32>(conn)?;
+    /// assert_eq!(vec![1], cool_posts);
+    ///
+    /// let amazing_posts = posts.select(id)
+    ///     .filter(versions.is_contained_by((Bound::Included(1), Bound::Included(2))))
+    ///     .load::<i32>(conn)?;
+    /// assert!(amazing_posts.is_empty());
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn is_contained_by<T>(self, other: T) -> dsl::IsContainedByRange<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
+        Grouped(IsContainedBy::new(self, other.as_expression()))
+    }
 }
 
 impl<T> PgRangeExpressionMethods for T

@@ -64,6 +64,11 @@ pub type RangeContains<Lhs, Rhs> = Grouped<
 #[cfg(feature = "postgres_backend")]
 pub type ContainsRange<Lhs, Rhs> = Contains<Lhs, Rhs>;
 
+/// The return type of [`lhs.is_contained_by(rhs)`](super::expression_methods::PgRangeExpressionMethods::is_contained_by)
+#[cfg(feature = "postgres_backend")]
+pub type IsContainedByRange<Lhs, Rhs> =
+    Grouped<super::operators::IsContainedBy<Lhs, AsExpr<Rhs, Lhs>>>;
+
 /// The return type of [`lhs.is_contained_by(rhs)`](super::expression_methods::PgArrayExpressionMethods::is_contained_by)
 #[cfg(feature = "postgres_backend")]
 pub type IsContainedBy<Lhs, Rhs> = Grouped<super::operators::IsContainedBy<Lhs, AsExpr<Rhs, Lhs>>>;
