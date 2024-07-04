@@ -980,8 +980,8 @@ error[E0277]: the trait bound `(diesel::expression::select_by::SelectBy<Post, _>
     |
     = note: this is a mismatch between what your query returns and what your type expects the query to return
     = note: the fields in your struct need to match the fields returned by your query in count, order and type
-    = note: consider using `#[derive(Selectable)]` + `#[diesel(check_for_backend(_))]` on your struct `((i32, std::string::String), std::string::String)` and
-            in your query `.select(((i32, std::string::String), std::string::String)::as_select())` to get a better error message
+    = note: consider using `#[derive(Selectable)]` or #[derive(QueryableByName)] + `#[diesel(check_for_backend(_))]`
+            on your struct `((i32, std::string::String), std::string::String)` and in your query `.select(((i32, std::string::String), std::string::String)::as_select())` to get a better error message
     = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
               (ST0,)
               (ST0, ST1)
