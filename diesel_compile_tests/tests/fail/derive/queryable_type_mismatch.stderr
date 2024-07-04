@@ -8,8 +8,8 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
    |
    = note: this is a mismatch between what your query returns and what your type expects the query to return
    = note: the fields in your struct need to match the fields returned by your query in count, order and type
-   = note: consider using `#[derive(Selectable)]` + `#[diesel(check_for_backend(_))]` on your struct `UserWithToFewFields` and
-           in your query `.select(UserWithToFewFields::as_select())` to get a better error message
+   = note: consider using `#[derive(Selectable)]` or #[derive(QueryableByName)] + `#[diesel(check_for_backend(_))]`
+           on your struct `UserWithToFewFields` and in your query `.select(UserWithToFewFields::as_select())` to get a better error message
    = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
              (ST0, ST1)
              (ST0, ST1, ST2)
@@ -40,8 +40,8 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
    |
    = note: this is a mismatch between what your query returns and what your type expects the query to return
    = note: the fields in your struct need to match the fields returned by your query in count, order and type
-   = note: consider using `#[derive(Selectable)]` + `#[diesel(check_for_backend(_))]` on your struct `UserWithToManyFields` and
-           in your query `.select(UserWithToManyFields::as_select())` to get a better error message
+   = note: consider using `#[derive(Selectable)]` or #[derive(QueryableByName)] + `#[diesel(check_for_backend(_))]`
+           on your struct `UserWithToManyFields` and in your query `.select(UserWithToManyFields::as_select())` to get a better error message
    = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
              (ST0, ST1)
              (ST0, ST1, ST2)
@@ -72,8 +72,8 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
    |
    = note: this is a mismatch between what your query returns and what your type expects the query to return
    = note: the fields in your struct need to match the fields returned by your query in count, order and type
-   = note: consider using `#[derive(Selectable)]` + `#[diesel(check_for_backend(_))]` on your struct `UserWrongOrder` and
-           in your query `.select(UserWrongOrder::as_select())` to get a better error message
+   = note: consider using `#[derive(Selectable)]` or #[derive(QueryableByName)] + `#[diesel(check_for_backend(_))]`
+           on your struct `UserWrongOrder` and in your query `.select(UserWrongOrder::as_select())` to get a better error message
    = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
              (ST0, ST1)
              (ST0, ST1, ST2)
@@ -104,8 +104,8 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
    |
    = note: this is a mismatch between what your query returns and what your type expects the query to return
    = note: the fields in your struct need to match the fields returned by your query in count, order and type
-   = note: consider using `#[derive(Selectable)]` + `#[diesel(check_for_backend(_))]` on your struct `UserTypeMismatch` and
-           in your query `.select(UserTypeMismatch::as_select())` to get a better error message
+   = note: consider using `#[derive(Selectable)]` or #[derive(QueryableByName)] + `#[diesel(check_for_backend(_))]`
+           on your struct `UserTypeMismatch` and in your query `.select(UserTypeMismatch::as_select())` to get a better error message
    = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
              (ST0, ST1)
              (ST0, ST1, ST2)
