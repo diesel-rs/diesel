@@ -59,7 +59,7 @@ pub type RangeContains<Lhs, Rhs> = Grouped<
     >,
 >;
 
-/// The return type of [`lhs.contains(rhs)`](super::expression_methods::PgRangeExpressionMethods::contains_range)
+/// The return type of [`lhs.contains_range(rhs)`](super::expression_methods::PgRangeExpressionMethods::contains_range)
 /// for range expressions
 #[cfg(feature = "postgres_backend")]
 pub type ContainsRange<Lhs, Rhs> = Contains<Lhs, Rhs>;
