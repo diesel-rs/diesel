@@ -3,6 +3,8 @@ use diesel::dsl::*;
 use diesel::helper_types::*;
 use diesel::prelude::*;
 use diesel::sql_types;
+#[cfg(feature = "postgres")]
+use std::ops::Bound;
 
 table! {
     users {
@@ -274,17 +276,20 @@ fn test_pg_jsonb_expression_methods() -> _ {
         .and(pg_extras::jsonb.is_contained_by(pg_extras::jsonb))
 }
 
-// `.contains()` cannot be supported here as
-// the type level constraints are slightly different
-// for `Range<>` than for the other types that provide a `contains()`
-// function. We could likely support it by
-// renaming the function to `.range_contains()` (or something similar)
-/*
 #[cfg(feature = "postgres")]
 #[auto_type]
 fn test_pg_range_expression_methods() -> _ {
-    pg_extras::range.contains(42_i32)
-}*/
+    let my_range: (Bound<i32>, Bound<i32>) = (Bound::Included(2), Bound::Included(7));
+
+    pg_extras::range.contains_range(my_range)
+
+    // `.contains()` cannot be supported here as
+    // the type level constraints are slightly different
+    // for `Range<>` than for the other types that provide a `contains()`
+    // function. We could likely support it by
+    // renaming the function to `.range_contains()` (or something similar)
+    // .contains(42_i32)
+}
 
 #[cfg(feature = "postgres")]
 #[auto_type]
