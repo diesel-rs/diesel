@@ -850,6 +850,7 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
     fn is_contained_by<T>(self, other: T) -> dsl::IsContainedByRange<Self, T>
     where
         Self::SqlType: SqlType,
