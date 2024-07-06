@@ -1,9 +1,8 @@
 use std::str::FromStr;
 
-use crate::diesel::connection::SimpleConnection;
 use crate::schema::*;
 use bigdecimal::BigDecimal;
-use diesel::{prelude::*, update};
+use diesel::{insert_into, prelude::*, update};
 
 diesel::table! {
     bigdecimal_table (id) {
@@ -21,6 +20,8 @@ struct CustomBigDecimal {
 
 #[test]
 fn big_decimal_add() {
+    let connection = &mut connection();
+
     let data = vec![
         CustomBigDecimal {
             id: 1,
@@ -32,19 +33,18 @@ fn big_decimal_add() {
         },
     ];
 
-    let connection = &mut connection();
-    connection
-        .batch_execute(
-            r#"
-        CREATE TEMPORARY TABLE bigdecimal_table (
+    diesel::sql_query(
+        "
+        CREATE TABLE bigdecimal_table (
             id SERIAL PRIMARY KEY,
             big_decimal DECIMAL NOT NULL
             );
-        "#,
-        )
-        .unwrap();
+        ",
+    )
+    .execute(connection)
+    .unwrap();
 
-    diesel::insert_into(bigdecimal_table::table)
+    insert_into(bigdecimal_table::table)
         .values(&data)
         .execute(connection)
         .unwrap();
@@ -52,4 +52,5 @@ fn big_decimal_add() {
     let val = BigDecimal::from_str("0.1").unwrap();
     let updated = update(bigdecimal_table::table)
         .set(bigdecimal_table::big_decimal.eq(bigdecimal_table::big_decimal + val));
+    println!("{:?}", updated);
 }
