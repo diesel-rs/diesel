@@ -1,7 +1,11 @@
+use super::DeleteStatement;
+use super::InsertStatement;
+use super::UpdateStatement;
 use super::{AstPass, QueryFragment};
 use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::query_builder::QueryId;
 use crate::result::QueryResult;
+use crate::QuerySource;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct NoReturningClause;
@@ -51,4 +55,29 @@ where
         self.0.walk_ast(out.reborrow())?;
         Ok(())
     }
+}
+
+pub trait ReturningClauseHelper<S> {
+    type WithReturning;
+}
+
+impl<S, T, U, Op> ReturningClauseHelper<S> for InsertStatement<T, U, Op>
+where
+    T: QuerySource,
+{
+    type WithReturning = InsertStatement<T, U, Op, ReturningClause<S>>;
+}
+
+impl<S, T, U, V> ReturningClauseHelper<S> for UpdateStatement<T, U, V>
+where
+    T: QuerySource,
+{
+    type WithReturning = UpdateStatement<T, U, V, ReturningClause<S>>;
+}
+
+impl<S, T, U> ReturningClauseHelper<S> for DeleteStatement<T, U>
+where
+    T: QuerySource,
+{
+    type WithReturning = DeleteStatement<T, U, ReturningClause<S>>;
 }

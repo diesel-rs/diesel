@@ -675,6 +675,13 @@ pub mod helper_types {
         <U as crate::query_builder::update_statement::UpdateAutoTypeHelper>::Where,
         <V as crate::AsChangeset>::Changeset,
     >;
+
+    /// Represents the return type of
+    /// [`InsertStatement::returning`](crate::query_builder::InsertStatement::returning),
+    /// [`UpdateStatement::returning`] and
+    /// [`DeleteStatement::returning`](crate::query_builder::DeleteStatement::returning)
+    pub type Returning<Q, S> =
+        <Q as crate::query_builder::returning_clause::ReturningClauseHelper<S>>::WithReturning;
 }
 
 pub mod prelude {
