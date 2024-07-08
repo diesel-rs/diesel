@@ -104,5 +104,5 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn lower<T: RangeHelper<Inner: SingleValue> + SingleValue>(range: T) -> Nullable<<T as RangeHelper>::Inner>;
+    fn lower<T: RangeHelper>(range: T) -> Nullable<<T as RangeHelper>::Inner>;
 }

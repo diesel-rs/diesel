@@ -2450,7 +2450,8 @@ where
 
 pub(in crate::pg) mod private {
     use crate::sql_types::{
-        Array, Binary, Cidr, Inet, Integer, Json, Jsonb, Nullable, Range, SqlType, Text,
+        Array, Binary, Cidr, Inet, Integer, Json, Jsonb, Nullable, Range, SingleValue, SqlType,
+        Text,
     };
     use crate::{Expression, IntoSql};
 
@@ -2492,13 +2493,14 @@ pub(in crate::pg) mod private {
 
     /// Marker trait used to extract the inner type
     /// of our `Range<T>` sql type, used to implement `PgRangeExpressionMethods`
-    pub trait RangeHelper: SqlType {
-        type Inner;
+    pub trait RangeHelper: SqlType + SingleValue {
+        type Inner: SingleValue;
     }
 
     impl<ST> RangeHelper for Range<ST>
     where
         Self: 'static,
+        ST: SingleValue,
     {
         type Inner = ST;
     }
