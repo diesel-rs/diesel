@@ -11,7 +11,7 @@ diesel::table! {
     }
 }
 
-#[derive(Insertable, Queryable, Selectable)]
+#[derive(Debug, Insertable, Queryable, Selectable)]
 #[diesel(table_name = bigdecimal_table)]
 struct CustomBigDecimal {
     pub id: i32,
@@ -22,22 +22,16 @@ struct CustomBigDecimal {
 fn big_decimal_add() {
     let connection = &mut connection();
 
-    let data = vec![
-        CustomBigDecimal {
-            id: 1,
-            big_decimal: BigDecimal::from_str("0.8").unwrap(),
-        },
-        CustomBigDecimal {
-            id: 2,
-            big_decimal: BigDecimal::from_str("0.9").unwrap(),
-        },
-    ];
+    let custom_value = CustomBigDecimal {
+        id: 1,
+        big_decimal: BigDecimal::from_str(&"0.80").unwrap(),
+    };
 
     diesel::sql_query(
         "
-        CREATE TABLE bigdecimal_table (
+        CREATE TEMPORARY TABLE bigdecimal_table (
             id SERIAL PRIMARY KEY,
-            big_decimal DECIMAL NOT NULL
+            big_decimal DECIMAL(8,2) NOT NULL
             );
         ",
     )
@@ -45,12 +39,18 @@ fn big_decimal_add() {
     .unwrap();
 
     insert_into(bigdecimal_table::table)
-        .values(&data)
+        .values(&custom_value)
         .execute(connection)
         .unwrap();
 
-    let val = BigDecimal::from_str("0.1").unwrap();
-    let updated = update(bigdecimal_table::table)
-        .set(bigdecimal_table::big_decimal.eq(bigdecimal_table::big_decimal + val));
-    println!("{:?}", updated);
+    let val = BigDecimal::from_str(&"0.1").unwrap();
+
+    update(bigdecimal_table::table)
+        .set(bigdecimal_table::big_decimal.eq(bigdecimal_table::big_decimal + val))
+        .execute(connection)
+        .unwrap();
+
+    let updated: CustomBigDecimal = bigdecimal_table::table.first(connection).unwrap();
+
+    assert_eq!(BigDecimal::from_str(&"0.90").unwrap(), updated.big_decimal);
 }
