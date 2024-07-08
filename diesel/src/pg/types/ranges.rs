@@ -1,5 +1,6 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::Bound;
+use std::error::Error;
 use std::io::Write;
 
 use crate::deserialize::{self, FromSql, Queryable};
@@ -213,5 +214,20 @@ impl HasSqlType<Daterange> for Pg {
 impl HasSqlType<Int8range> for Pg {
     fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3926, 3927)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl ToSql<RangeBoundEnum, Pg> for RangeBound {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        let literal = match self {
+            Self::LowerBoundInclusiveUpperBoundInclusive => "[]",
+            Self::LowerBoundInclusiveUpperBoundExclusive => "[)",
+            Self::LowerBoundExclusiveUpperBoundInclusive => "(]",
+            Self::LowerBoundExclusiveUpperBoundExclusive => "[]",
+        };
+        out.write_all(literal.as_bytes())
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 }
