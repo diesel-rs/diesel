@@ -24,7 +24,7 @@ fn big_decimal_add() {
 
     let custom_value = CustomBigDecimal {
         id: 1,
-        big_decimal: BigDecimal::from_str(&"0.80").unwrap(),
+        big_decimal: BigDecimal::from_str("0.80").unwrap(),
     };
 
     diesel::sql_query(
@@ -43,7 +43,7 @@ fn big_decimal_add() {
         .execute(connection)
         .unwrap();
 
-    let val = BigDecimal::from_str(&"0.1").unwrap();
+    let val = BigDecimal::from_str("0.1").unwrap();
 
     update(bigdecimal_table::table)
         .set(bigdecimal_table::big_decimal.eq(bigdecimal_table::big_decimal + val))
@@ -52,5 +52,5 @@ fn big_decimal_add() {
 
     let updated: CustomBigDecimal = bigdecimal_table::table.first(connection).unwrap();
 
-    assert_eq!(BigDecimal::from_str(&"0.90").unwrap(), updated.big_decimal);
+    assert_eq!(BigDecimal::from_str("0.90").unwrap(), updated.big_decimal);
 }
