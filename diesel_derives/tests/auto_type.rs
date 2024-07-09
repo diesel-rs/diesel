@@ -279,19 +279,28 @@ fn test_pg_jsonb_expression_methods() -> _ {
 #[cfg(feature = "postgres")]
 #[auto_type]
 fn test_pg_range_expression_methods() -> _ {
+    use diesel::sql_types::RangeBound;
+
     let my_range: (Bound<i32>, Bound<i32>) = (Bound::Included(2), Bound::Included(7));
 
     pg_extras::range
         .contains_range(my_range)
         .and(pg_extras::range.is_contained_by(my_range))
-    // `.contains()` cannot be supported here as
-    // the type level constraints are slightly different
-    // for `Range<>` than for the other types that provide a `contains()`
-    // function. We could likely support it by
-    // renaming the function to `.range_contains()` (or something similar)
-    // .contains(42_i32)
-    // this kind of free standing functions is not supported by auto_type yet
-    //.select(lower(pg_extras::range))
+        // `.contains()` cannot be supported here as
+        // the type level constraints are slightly different
+        // for `Range<>` than for the other types that provide a `contains()`
+        // function. We could likely support it by
+        // renaming the function to `.range_contains()` (or something similar)
+        // .contains(42_i32)
+        .select(
+            // this kind of free standing functions is not supported by auto_type yet
+            //lower(pg_extras::range),
+            int4range(
+                None,
+                Some(5i32),
+                RangeBound::LowerBoundInclusiveUpperBoundInclusive,
+            ),
+        )
 }
 
 #[cfg(feature = "postgres")]
