@@ -172,6 +172,7 @@ pub mod sql_types {
     /// used in functions int4range, int8range, numrange, tsrange, tstzrange, daterange.
     #[derive(Debug, Clone, Copy, diesel_derives::AsExpression)]
     #[diesel(sql_type = RangeBoundEnum)]
+    #[allow(clippy::enum_variant_names)]
     pub enum RangeBound {
         /// postgres '[]'
         LowerBoundInclusiveUpperBoundInclusive,
