@@ -284,13 +284,14 @@ fn test_pg_range_expression_methods() -> _ {
     pg_extras::range
         .contains_range(my_range)
         .and(pg_extras::range.is_contained_by(my_range))
-
     // `.contains()` cannot be supported here as
     // the type level constraints are slightly different
     // for `Range<>` than for the other types that provide a `contains()`
     // function. We could likely support it by
     // renaming the function to `.range_contains()` (or something similar)
     // .contains(42_i32)
+    // this kind of free standing functions is not supported by auto_type yet
+    //.select(lower(pg_extras::range))
 }
 
 #[cfg(feature = "postgres")]
@@ -378,6 +379,18 @@ where
 #[auto_type]
 fn with_const_generics<const N: i32>() -> _ {
     users::id.eq(N)
+}
+
+#[auto_type]
+fn insert_returning() -> _ {
+    insert_into(users::table)
+        .values(users::id.eq(42_i32))
+        .returning(users::id)
+}
+
+#[auto_type]
+fn delete_returning() -> _ {
+    delete(users::table).returning(users::id)
 }
 
 // #[auto_type]
