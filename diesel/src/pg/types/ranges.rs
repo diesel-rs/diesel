@@ -224,7 +224,7 @@ impl ToSql<RangeBoundEnum, Pg> for RangeBound {
             Self::LowerBoundInclusiveUpperBoundInclusive => "[]",
             Self::LowerBoundInclusiveUpperBoundExclusive => "[)",
             Self::LowerBoundExclusiveUpperBoundInclusive => "(]",
-            Self::LowerBoundExclusiveUpperBoundExclusive => "[]",
+            Self::LowerBoundExclusiveUpperBoundExclusive => "()",
         };
         out.write_all(literal.as_bytes())
             .map(|_| IsNull::No)
