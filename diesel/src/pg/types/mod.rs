@@ -135,6 +135,11 @@ pub mod sql_types {
     /// ### [`ToSql`] impls
     ///
     /// - [`(Bound<T>, Bound<T>)`][bound] for any `T` which implements `ToSql<ST>`.
+    /// - [`Range<T>`][std::range] for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeInclusive<T>`] for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeFrom<T>`] for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeTo<T>`] for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeToInclusive<T>`] for any `T` which implements `ToSql<ST>`.
     ///
     /// ### [`FromSql`] impls
     ///
@@ -143,6 +148,11 @@ pub mod sql_types {
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
     /// [bound]: std::collections::Bound
+    /// [std::range]: std::ops::Range
+    /// [`RangeInclusive<T>`]: std::ops::RangeInclusive
+    /// [`RangeFrom<T>`]: std::ops::RangeFrom
+    /// [`RangeTo<T>`]: std::ops::RangeTo
+    /// [`RangeToInclusive<T>`]: std::ops::RangeToInclusive
     /// [`Range`]: https://www.postgresql.org/docs/current/rangetypes.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[cfg(feature = "postgres_backend")]
