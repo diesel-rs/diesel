@@ -10,6 +10,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+### Added
+
+* Support for libsqlite3-sys 0.29.0
+
 ## [2.2.0] 2024-05-31
 
 ### Added
