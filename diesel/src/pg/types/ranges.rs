@@ -24,41 +24,26 @@ bitflags::bitflags! {
     }
 }
 
-#[cfg(feature = "postgres_backend")]
-impl<ST: 'static, T> AsExpression<Range<ST>> for (Bound<T>, Bound<T>) {
-    type Expression = SqlBound<Range<ST>, Self>;
+macro_rules! range_as_expression {
+    ($ty:ty; $sql_type:ty) => {
+        #[cfg(feature = "postgres_backend")]
+        // this simplifies the macro implementation
+        // as some macro calls use this lifetime
+        #[allow(clippy::extra_unused_lifetimes)]
+        impl<'a, 'b, ST: 'static, T> AsExpression<$sql_type> for $ty {
+            type Expression = SqlBound<$sql_type, Self>;
 
-    fn as_expression(self) -> Self::Expression {
-        SqlBound::new(self)
-    }
+            fn as_expression(self) -> Self::Expression {
+                SqlBound::new(self)
+            }
+        }
+    };
 }
 
-#[cfg(feature = "postgres_backend")]
-impl<'a, ST: 'static, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>) {
-    type Expression = SqlBound<Range<ST>, Self>;
-
-    fn as_expression(self) -> Self::Expression {
-        SqlBound::new(self)
-    }
-}
-
-#[cfg(feature = "postgres_backend")]
-impl<ST: 'static, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>) {
-    type Expression = SqlBound<Nullable<Range<ST>>, Self>;
-
-    fn as_expression(self) -> Self::Expression {
-        SqlBound::new(self)
-    }
-}
-
-#[cfg(feature = "postgres_backend")]
-impl<'a, ST: 'static, T> AsExpression<Nullable<Range<ST>>> for &'a (Bound<T>, Bound<T>) {
-    type Expression = SqlBound<Nullable<Range<ST>>, Self>;
-
-    fn as_expression(self) -> Self::Expression {
-        SqlBound::new(self)
-    }
-}
+range_as_expression!((Bound<T>, Bound<T>); Range<ST>);
+range_as_expression!(&'a (Bound<T>, Bound<T>); Range<ST>);
+range_as_expression!((Bound<T>, Bound<T>); Nullable<Range<ST>>);
+range_as_expression!(&'a (Bound<T>, Bound<T>); Nullable<Range<ST>>);
 
 #[cfg(feature = "postgres_backend")]
 impl<T, ST> FromSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
