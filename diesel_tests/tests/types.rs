@@ -1434,12 +1434,47 @@ fn test_range_to_sql() {
     use std::collections::Bound;
 
     let expected_value = "'[1,2]'::int4range";
-    let value = (Bound::Included(1), Bound::Excluded(3));
+    let value = (Bound::Included(1), Bound::Included(2));
     assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
+    let value = 1..=2;
+    assert!(query_to_sql_equality::<
+        Range<Int4>,
+        std::ops::RangeInclusive<i32>,
+    >(expected_value, value));
 
     let expected_value = "'(1,2]'::int4range";
-    let value = (Bound::Included(2), Bound::Excluded(3));
+    let value = (Bound::Excluded(1), Bound::Included(2));
     assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
+
+    let expected_value = "'[1,2)'::int4range";
+    let value = (Bound::Included(1), Bound::Excluded(2));
+    assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
+    let value = 1..2;
+    assert!(query_to_sql_equality::<Range<Int4>, std::ops::Range<i32>>(
+        expected_value,
+        value
+    ));
+
+    let expected_value = "'(,2)'::int4range";
+    let value = (Bound::Unbounded, Bound::Excluded(2));
+    assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
+    let value = ..2;
+    assert!(query_to_sql_equality::<Range<Int4>, std::ops::RangeTo<i32>>(expected_value, value));
+
+    let expected_value = "'(,2]'::int4range";
+    let value = (Bound::Unbounded, Bound::Included(2));
+    assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
+    let value = ..=2;
+    assert!(query_to_sql_equality::<
+        Range<Int4>,
+        std::ops::RangeToInclusive<i32>,
+    >(expected_value, value));
+
+    let expected_value = "'[1,)'::int4range";
+    let value = (Bound::Included(1), Bound::Unbounded);
+    assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
+    let value = 1..;
+    assert!(query_to_sql_equality::<Range<Int4>, std::ops::RangeFrom<i32>>(expected_value, value));
 }
 
 #[cfg(feature = "postgres")]
