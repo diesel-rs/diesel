@@ -135,11 +135,11 @@ pub mod sql_types {
     /// ### [`ToSql`] impls
     ///
     /// - [`(Bound<T>, Bound<T>)`][bound] for any `T` which implements `ToSql<ST>`.
-    /// - [`Range<T>`][std::range] for any `T` which implements `ToSql<ST>`.
-    /// - [`RangeInclusive<T>`] for any `T` which implements `ToSql<ST>`.
-    /// - [`RangeFrom<T>`] for any `T` which implements `ToSql<ST>`.
-    /// - [`RangeTo<T>`] for any `T` which implements `ToSql<ST>`.
-    /// - [`RangeToInclusive<T>`] for any `T` which implements `ToSql<ST>`.
+    /// - [`Range<T>`][std::range] (aka `start..end`) for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeInclusive<T>`] (aka `start..=end`) for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeFrom<T>`] (aka `start..`) for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeTo<T>`] (aka `..end`) for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeToInclusive<T>`] (aka `..=end`) for any `T` which implements `ToSql<ST>`.
     ///
     /// ### [`FromSql`] impls
     ///
