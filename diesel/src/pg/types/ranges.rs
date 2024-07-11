@@ -30,7 +30,7 @@ macro_rules! range_as_expression {
         // this simplifies the macro implementation
         // as some macro calls use this lifetime
         #[allow(clippy::extra_unused_lifetimes)]
-        impl<'a, 'b, ST: 'static, T> AsExpression<$sql_type> for $ty {
+        impl<'a, ST: 'static, T> AsExpression<$sql_type> for $ty {
             type Expression = SqlBound<$sql_type, Self>;
 
             fn as_expression(self) -> Self::Expression {
