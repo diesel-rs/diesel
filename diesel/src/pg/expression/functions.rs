@@ -109,7 +109,6 @@ define_sql_function! {
 
 define_sql_function! {
     /// Returns range of integer.
-    /// if the range is empty or has no lower bound, it returns NULL.
     /// # Example
     ///
     /// ```rust
