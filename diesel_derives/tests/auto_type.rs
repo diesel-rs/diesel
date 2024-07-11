@@ -293,7 +293,7 @@ fn test_pg_range_expression_methods() -> _ {
     //.select(
     // this kind of free standing functions is not supported by auto_type yet
     //lower(pg_extras::range),
-    // The auto_trait also dind't like this one
+    // The auto_trait also didn't like this one
     //int4range(None, Some(5i32), RangeBound::LowerBoundInclusiveUpperBoundInclusive),
     //)
 }
