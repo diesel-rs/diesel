@@ -344,3 +344,51 @@ define_sql_function! {
     #[cfg(feature = "postgres_backend")]
     fn tstzrange(lower: Nullable<Timestamptz>, upper: Nullable<Timestamptz>, bound: RangeBoundEnum) -> Tstzrange;
 }
+
+define_sql_function! {
+    /// Returns range of date.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         versions -> Daterange,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     use std::collections::Bound;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions DATERANGE NOT NULL)").execute(conn).unwrap();
+    /// #
+    /// use diesel::dsl::daterange;
+    /// use diesel::pg::sql_types::RangeBound;
+    /// use time::{Date, macros::date};
+    ///
+    /// diesel::insert_into(posts)
+    ///     .values(&[
+    ///        versions.eq(daterange(Some(date!(2020-01-01)), Some(date!(2021-01-01)), RangeBound::LowerBoundInclusiveUpperBoundInclusive)),
+    ///        versions.eq(daterange(None, Some(date!(2020-01-01)), RangeBound::LowerBoundInclusiveUpperBoundExclusive)),
+    ///     ]).execute(conn)?;
+    ///
+    /// let cool_posts = posts.select(versions)
+    ///     .load::<(Bound<Date>, Bound<Date>)>(conn)?;
+    /// assert_eq!(vec![
+    ///          (Bound::Included(date!(2020-01-01)), Bound::Excluded(date!(2021-01-02))),
+    ///          (Bound::Unbounded, Bound::Excluded(date!(2020-01-01))),
+    ///      ], cool_posts);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn daterange(lower: Nullable<Date>, upper: Nullable<Date>, bound: RangeBoundEnum) -> Daterange;
+}
