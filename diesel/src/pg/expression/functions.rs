@@ -117,7 +117,7 @@ define_sql_function! {
     /// # table! {
     /// #     posts {
     /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
+    /// #         versions -> Int4range,
     /// #     }
     /// # }
     /// #
@@ -152,4 +152,51 @@ define_sql_function! {
     /// ```
     #[cfg(feature = "postgres_backend")]
     fn int4range(lower: Nullable<Integer>, upper: Nullable<Integer>, bound: RangeBoundEnum) -> Int4range;
+}
+
+define_sql_function! {
+    /// Returns range of integer.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         versions -> Int8range,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     use std::collections::Bound;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT8RANGE NOT NULL)").execute(conn).unwrap();
+    /// #
+    /// use diesel::dsl::int8range;
+    /// use diesel::pg::sql_types::RangeBound;
+    ///
+    /// diesel::insert_into(posts)
+    ///     .values(&[
+    ///        versions.eq(int8range(Some(3), Some(5), RangeBound::LowerBoundInclusiveUpperBoundInclusive)),
+    ///        versions.eq(int8range(None, Some(2), RangeBound::LowerBoundInclusiveUpperBoundExclusive)),
+    ///     ]).execute(conn)?;
+    ///
+    /// let cool_posts = posts.select(versions)
+    ///     .load::<(Bound<i64>, Bound<i64>)>(conn)?;
+    /// assert_eq!(vec![
+    ///          (Bound::Included(3), Bound::Excluded(6)), // Postgres cast this internally
+    ///          (Bound::Unbounded, Bound::Excluded(2)),
+    ///      ], cool_posts);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn int8range(lower: Nullable<BigInt>, upper: Nullable<BigInt>, bound: RangeBoundEnum) -> Int8range;
 }
