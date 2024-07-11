@@ -296,3 +296,51 @@ define_sql_function! {
     #[cfg(feature = "postgres_backend")]
     fn tsrange(lower: Nullable<Timestamp>, upper: Nullable<Timestamp>, bound: RangeBoundEnum) -> Tsrange;
 }
+
+define_sql_function! {
+    /// Returns range of timestamp with timezone.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         versions -> Tstzrange,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     use std::collections::Bound;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions TSTZRANGE NOT NULL)").execute(conn).unwrap();
+    /// #
+    /// use diesel::dsl::tstzrange;
+    /// use diesel::pg::sql_types::RangeBound;
+    /// use time::{OffsetDateTime, macros::datetime};
+    ///
+    /// diesel::insert_into(posts)
+    ///     .values(&[
+    ///        versions.eq(tstzrange(Some(datetime!(2020-01-01 0:00 UTC)), Some(datetime!(2021-01-01 0:00 -3)), RangeBound::LowerBoundInclusiveUpperBoundInclusive)),
+    ///        versions.eq(tstzrange(None, Some(datetime!(2020-01-01 0:00 +2)), RangeBound::LowerBoundInclusiveUpperBoundExclusive)),
+    ///     ]).execute(conn)?;
+    ///
+    /// let cool_posts = posts.select(versions)
+    ///     .load::<(Bound<OffsetDateTime>, Bound<OffsetDateTime>)>(conn)?;
+    /// assert_eq!(vec![
+    ///          (Bound::Included(datetime!(2020-01-01 0:00 UTC)), Bound::Included(datetime!(2021-01-01 0:00 -3))),
+    ///          (Bound::Unbounded, Bound::Excluded(datetime!(2020-01-01 0:00 +2))),
+    ///      ], cool_posts);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn tstzrange(lower: Nullable<Timestamptz>, upper: Nullable<Timestamptz>, bound: RangeBoundEnum) -> Tstzrange;
+}
