@@ -200,3 +200,51 @@ define_sql_function! {
     #[cfg(feature = "postgres_backend")]
     fn int8range(lower: Nullable<BigInt>, upper: Nullable<BigInt>, bound: RangeBoundEnum) -> Int8range;
 }
+
+define_sql_function! {
+    /// Returns range of number.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         versions -> Numrange,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     use std::collections::Bound;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions NUMRANGE NOT NULL)").execute(conn).unwrap();
+    /// #
+    /// # use bigdecimal::BigDecimal;
+    /// use diesel::dsl::numrange;
+    /// use diesel::pg::sql_types::RangeBound;
+    ///
+    /// diesel::insert_into(posts)
+    ///     .values(&[
+    ///        versions.eq(numrange(Some(BigDecimal::from(3)), Some(BigDecimal::from(5)), RangeBound::LowerBoundInclusiveUpperBoundInclusive)),
+    ///        versions.eq(numrange(None, Some(BigDecimal::from(2)), RangeBound::LowerBoundInclusiveUpperBoundExclusive)),
+    ///     ]).execute(conn)?;
+    ///
+    /// let cool_posts = posts.select(versions)
+    ///     .load::<(Bound<BigDecimal>, Bound<BigDecimal>)>(conn)?;
+    /// assert_eq!(vec![
+    ///          (Bound::Included(BigDecimal::from(3)), Bound::Included(BigDecimal::from(5))),
+    ///          (Bound::Unbounded, Bound::Excluded(BigDecimal::from(2))),
+    ///      ], cool_posts);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn numrange(lower: Nullable<Numeric>, upper: Nullable<Numeric>, bound: RangeBoundEnum) -> Numrange;
+}
