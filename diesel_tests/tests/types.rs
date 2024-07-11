@@ -1479,6 +1479,27 @@ fn test_range_to_sql() {
 
 #[cfg(feature = "postgres")]
 #[test]
+fn test_range_bound_enum_to_sql() {
+    assert!(query_to_sql_equality::<RangeBoundEnum, RangeBound>(
+        "'[]'",
+        RangeBound::LowerBoundInclusiveUpperBoundInclusive
+    ));
+    assert!(query_to_sql_equality::<RangeBoundEnum, RangeBound>(
+        "'[)'",
+        RangeBound::LowerBoundInclusiveUpperBoundExclusive
+    ));
+    assert!(query_to_sql_equality::<RangeBoundEnum, RangeBound>(
+        "'(]'",
+        RangeBound::LowerBoundExclusiveUpperBoundInclusive
+    ));
+    assert!(query_to_sql_equality::<RangeBoundEnum, RangeBound>(
+        "'()'",
+        RangeBound::LowerBoundExclusiveUpperBoundExclusive
+    ));
+}
+
+#[cfg(feature = "postgres")]
+#[test]
 fn test_inserting_ranges() {
     use std::collections::Bound;
 

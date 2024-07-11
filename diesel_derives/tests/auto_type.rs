@@ -290,8 +290,12 @@ fn test_pg_range_expression_methods() -> _ {
     // function. We could likely support it by
     // renaming the function to `.range_contains()` (or something similar)
     // .contains(42_i32)
+    //.select(
     // this kind of free standing functions is not supported by auto_type yet
-    //.select(lower(pg_extras::range))
+    //lower(pg_extras::range),
+    // The auto_trait also didn't like this one
+    //int4range(None, Some(5i32), RangeBound::LowerBoundInclusiveUpperBoundInclusive),
+    //)
 }
 
 #[cfg(feature = "postgres")]

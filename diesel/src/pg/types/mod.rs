@@ -171,6 +171,29 @@ pub mod sql_types {
     #[doc(hidden)]
     pub type Tstzrange = Range<crate::sql_types::Timestamptz>;
 
+    /// This is a wrapper for [`RangeBound`] to represent range bounds: '[]', '(]', '[)', '()',
+    /// used in functions int4range, int8range, numrange, tsrange, tstzrange, daterange.
+    #[derive(Debug, Clone, Copy, QueryId, SqlType)]
+    #[cfg(feature = "postgres_backend")]
+    #[diesel(postgres_type(name = "text"))]
+    pub struct RangeBoundEnum;
+
+    /// Represent postgres range bounds: '[]', '(]', '[)', '()',
+    /// used in functions int4range, int8range, numrange, tsrange, tstzrange, daterange.
+    #[derive(Debug, Clone, Copy, diesel_derives::AsExpression)]
+    #[diesel(sql_type = RangeBoundEnum)]
+    #[allow(clippy::enum_variant_names)]
+    pub enum RangeBound {
+        /// postgres '[]'
+        LowerBoundInclusiveUpperBoundInclusive,
+        /// postgres '[)'
+        LowerBoundInclusiveUpperBoundExclusive,
+        /// postgres '(]'
+        LowerBoundExclusiveUpperBoundInclusive,
+        /// postgres '()'
+        LowerBoundExclusiveUpperBoundExclusive,
+    }
+
     /// The [`Record`] (a.k.a. tuple) SQL type.
     ///
     /// ### [`ToSql`] impls
