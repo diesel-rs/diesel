@@ -54,6 +54,7 @@ cfg-if = "1"
 dotenvy = "0.15"
 ipnetwork = ">=0.12.2, <0.21.0"
 quickcheck = "1.0.3"
+tempfile = "3.10.1"
 
 [features]
 default = ["with-deprecated", "32-column-tables"]
