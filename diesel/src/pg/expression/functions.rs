@@ -360,6 +360,49 @@ define_sql_function! {
 }
 
 define_sql_function! {
+    /// Returns the smallest range which includes both of the given ranges.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         first_versions -> Range<Integer>,
+    /// #         second_versions -> Range<Integer>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     use std::collections::Bound;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, first_versions INT4RANGE NOT NULL, second_versions INT4RANGE NOT NULL)").execute(conn).unwrap();
+    /// #
+    /// use diesel::dsl::range_merge;
+    /// diesel::insert_into(posts)
+    ///     .values((
+    ///        first_versions.eq((Bound::Included(5), Bound::Excluded(7))),
+    ///        second_versions.eq((Bound::Included(6),Bound::Unbounded)),
+    ///     )).execute(conn)?;
+    ///
+    /// let cool_posts = posts.select(range_merge(first_versions, second_versions))
+    ///     .load::<(Bound<i32>, Bound<i32>)>(conn)?;
+    /// assert_eq!(vec![(Bound::Included(5), Bound::Unbounded)], cool_posts);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn range_merge<T: RangeHelper>(lhs: T, rhs: T) -> Range<<T as RangeHelper>::Inner>;
+}
+
+define_sql_function! {
     /// Returns range of integer.
     /// # Example
     ///
