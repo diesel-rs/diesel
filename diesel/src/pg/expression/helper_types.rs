@@ -37,6 +37,7 @@ pub type IsDistinctFrom<Lhs, Rhs> =
     Grouped<super::operators::IsDistinctFrom<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of [`lhs.overlaps_with(rhs)`](super::expression_methods::PgArrayExpressionMethods::overlaps_with)
+/// and [`lhs.overlaps_with(rhs)`](super::expression_methods::PgRangeExpressionMethods::overlaps_with)
 #[cfg(feature = "postgres_backend")]
 pub type OverlapsWith<Lhs, Rhs> = Grouped<super::operators::OverlapsWith<Lhs, AsExpr<Rhs, Lhs>>>;
 
