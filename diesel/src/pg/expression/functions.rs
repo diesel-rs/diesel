@@ -108,6 +108,49 @@ define_sql_function! {
 }
 
 define_sql_function! {
+    /// Returns the upper bound of the range.
+    /// if the range is empty or has no upper bound, it returns NULL.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         versions -> Range<Integer>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     use std::collections::Bound;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
+    /// #
+    /// use diesel::dsl::upper;
+    /// diesel::insert_into(posts)
+    ///     .values(&[
+    ///        versions.eq((Bound::Included(5), Bound::Excluded(7))),
+    ///        versions.eq((Bound::Included(5), Bound::Unbounded))
+    ///     ]).execute(conn)?;
+    ///
+    /// let cool_posts = posts.select(upper(versions))
+    ///     .load::<Option<i32>>(conn)?;
+    /// assert_eq!(vec![Some(7), None], cool_posts);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn upper<T: RangeHelper>(range: T) -> Nullable<<T as RangeHelper>::Inner>;
+}
+
+define_sql_function! {
     /// Returns range of integer.
     /// # Example
     ///
