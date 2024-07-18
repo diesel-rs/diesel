@@ -78,7 +78,7 @@ jobs:
 
       - name: Run Benchmarks (Sqlite)
         if: matrix.backend == 'sqlite'
-        run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "sqlite sqlx-bench sqlx/sqlite tokio rusqlite futures sea-orm sea-orm/sqlx-sqlite criterion/async_tokio"
+        run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "sqlite sqlx-bench sqlx/sqlite tokio rusqlite futures sea-orm sea-orm/sqlx-sqlite criterion/async_tokio diesel-async diesel-async/sqlite"
 
       - name: Run Benchmarks (Mysql)
         if: matrix.backend == 'mysql'
