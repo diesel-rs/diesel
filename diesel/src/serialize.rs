@@ -228,11 +228,9 @@ where
 ///    SecondValue,
 /// }
 ///
-/// impl<DB> ToSql<Integer, DB> for Post
-/// where
-///     DB: Backend,
-/// {
-///    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+/// # #[cfg(feature = "mysql")]
+/// impl<DB> ToSql<Integer, diesel::mysql::Mysql> for Post {
+///    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, diesel::mysql::Mysql>) -> serialize::Result {
 ///        match *self {
 ///            Post::FirstValue => out.write_all(b"one")?,
 ///            Post::SecondValue => out.write_all(b"two")?,
