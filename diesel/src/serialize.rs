@@ -229,7 +229,7 @@ where
 /// }
 ///
 /// # #[cfg(feature = "mysql")]
-/// impl<DB> ToSql<sql_types::PostEnum, diesel::mysql::Mysql> for Post {
+/// impl ToSql<sql_types::PostEnum, diesel::mysql::Mysql> for Post {
 ///    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, diesel::mysql::Mysql>) -> serialize::Result {
 ///        match *self {
 ///            Post::FirstValue => out.write_all(b"one")?,
