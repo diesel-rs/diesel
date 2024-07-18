@@ -210,6 +210,12 @@ where
 /// Example with String and custom type created by diesel cli
 ///
 /// ```rust
+/// # use diesel::backend::Backend;
+/// # use diesel::expression::AsExpression;
+/// # use diesel::sql_types::*;
+/// # use diesel::serialize::{self, ToSql, Output};
+/// # use std::io::Write;
+/// #
 /// pub mod sql_types {
 ///    #[derive(diesel::sql_types::SqlType)]
 ///    #[diesel(mysql_type(name = "Enum"))]
