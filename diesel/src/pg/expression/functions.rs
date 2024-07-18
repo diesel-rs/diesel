@@ -151,7 +151,7 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns if the range is empty.
+    /// Returns true if the range is empty.
     /// # Example
     ///
     /// ```rust
@@ -193,7 +193,7 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns if the range's lower bound inclusive.
+    /// Returns true if the range's lower bound is inclusive.
     /// # Example
     ///
     /// ```rust
@@ -235,7 +235,7 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns if the range's upper bound inclusive.
+    /// Returns true if the range's upper bound is inclusive.
     /// # Example
     ///
     /// ```rust
@@ -276,7 +276,7 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns if the range's lower bound inclusive.
+    /// Returns true if the range's lower bound is unbounded.
     /// # Example
     ///
     /// ```rust
@@ -318,7 +318,7 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns if the range's upper bound inclusive.
+    /// Returns true if the range's upper bound is unbounded.
     /// # Example
     ///
     /// ```rust
