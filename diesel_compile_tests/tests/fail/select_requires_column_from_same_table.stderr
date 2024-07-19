@@ -8,13 +8,13 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
+             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
+             <posts::columns::id as SelectableExpression<Only<posts::table>>>
+             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
+             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
              <posts::columns::id as SelectableExpression<posts::table>>
              <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
              <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<posts::columns::id>`
    = note: 1 redundant requirement hidden
    = note: required for `users::table` to implement `SelectDsl<posts::columns::id>`

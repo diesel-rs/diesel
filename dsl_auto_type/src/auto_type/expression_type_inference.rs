@@ -91,6 +91,9 @@ impl TypeInferrer<'_> {
             (syn::Expr::Group(syn::ExprGroup { expr, .. }), type_hint) => {
                 return self.try_infer_expression_type(expr, type_hint)
             }
+            (syn::Expr::Paren(syn::ExprParen { expr, .. }), type_hint) => {
+                return self.try_infer_expression_type(expr, type_hint)
+            }
             (
                 syn::Expr::Tuple(syn::ExprTuple {
                     elems: expr_elems, ..

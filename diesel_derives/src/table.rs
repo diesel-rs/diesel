@@ -586,6 +586,7 @@ fn is_numeric(ty: &syn::TypePath) -> bool {
         "Int8",
         "Bigint",
         "BigSerial",
+        "Decimal",
         "Float",
         "Float4",
         "Float8",

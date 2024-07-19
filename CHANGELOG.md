@@ -10,6 +10,15 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.2.2] 2024-07-19
+
+### Fixed
+
+* Support for libsqlite3-sys 0.29.0
+* Fixed a potential panic in the sqlite cursor implementation
+* Fixed support for rust numeric operators with columns of the type `Numeric`
+* Removed the `SerializedDatabase::new` function due to unsoundness
+
 ## [2.2.1] 2024-06-12
 
 ## Fixed
@@ -2116,3 +2125,5 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.1.5]: https://github.com/diesel-rs/diesel/compare/v.2.1.4...v2.1.5
 [2.1.6]: https://github.com/diesel-rs/diesel/compare/v.2.1.5...v2.1.6
 [2.2.0]: https://github.com/diesel-rs/diesel/compare/v.2.1.0...v2.2.0
+[2.2.1]: https://github.com/diesel-rs/diesel/compare/v.2.2.0...v2.2.1
+[2.2.2]: https://github.com/diesel-rs/diesel/compare/v.2.2.1...v2.2.2

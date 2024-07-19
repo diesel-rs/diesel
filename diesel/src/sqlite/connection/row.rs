@@ -200,126 +200,209 @@ impl<'stmt, 'query> Field<'stmt, Sqlite> for SqliteField<'stmt, 'query> {
     }
 }
 
-#[test]
-fn fun_with_row_iters() {
-    crate::table! {
-        #[allow(unused_parens)]
-        users(id) {
-            id -> Integer,
-            name -> Text,
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fun_with_row_iters() {
+        crate::table! {
+            #[allow(unused_parens)]
+            users(id) {
+                id -> Integer,
+                name -> Text,
+            }
         }
-    }
 
-    use crate::connection::LoadConnection;
-    use crate::deserialize::{FromSql, FromSqlRow};
-    use crate::prelude::*;
-    use crate::row::{Field, Row};
-    use crate::sql_types;
+        use crate::connection::LoadConnection;
+        use crate::deserialize::{FromSql, FromSqlRow};
+        use crate::prelude::*;
+        use crate::row::{Field, Row};
+        use crate::sql_types;
 
-    let conn = &mut crate::test_helpers::connection();
+        let conn = &mut crate::test_helpers::connection();
 
-    crate::sql_query("CREATE TABLE users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);")
-        .execute(conn)
-        .unwrap();
+        crate::sql_query("CREATE TABLE users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);")
+            .execute(conn)
+            .unwrap();
 
-    crate::insert_into(users::table)
-        .values(vec![
-            (users::id.eq(1), users::name.eq("Sean")),
-            (users::id.eq(2), users::name.eq("Tess")),
-        ])
-        .execute(conn)
-        .unwrap();
+        crate::insert_into(users::table)
+            .values(vec![
+                (users::id.eq(1), users::name.eq("Sean")),
+                (users::id.eq(2), users::name.eq("Tess")),
+            ])
+            .execute(conn)
+            .unwrap();
 
-    let query = users::table.select((users::id, users::name));
+        let query = users::table.select((users::id, users::name));
 
-    let expected = vec![(1, String::from("Sean")), (2, String::from("Tess"))];
+        let expected = vec![(1, String::from("Sean")), (2, String::from("Tess"))];
 
-    let row_iter = conn.load(query).unwrap();
-    for (row, expected) in row_iter.zip(&expected) {
-        let row = row.unwrap();
+        let row_iter = conn.load(query).unwrap();
+        for (row, expected) in row_iter.zip(&expected) {
+            let row = row.unwrap();
 
-        let deserialized = <(i32, String) as FromSqlRow<
-            (sql_types::Integer, sql_types::Text),
-            _,
-        >>::build_from_row(&row)
-        .unwrap();
-
-        assert_eq!(&deserialized, expected);
-    }
-
-    {
-        let collected_rows = conn.load(query).unwrap().collect::<Vec<_>>();
-
-        for (row, expected) in collected_rows.iter().zip(&expected) {
-            let deserialized = row
-                .as_ref()
-                .map(|row| {
-                    <(i32, String) as FromSqlRow<
-                            (sql_types::Integer, sql_types::Text),
-                        _,
-                        >>::build_from_row(row).unwrap()
-                })
-                .unwrap();
+            let deserialized = <(i32, String) as FromSqlRow<
+                (sql_types::Integer, sql_types::Text),
+                _,
+            >>::build_from_row(&row)
+            .unwrap();
 
             assert_eq!(&deserialized, expected);
         }
+
+        {
+            let collected_rows = conn.load(query).unwrap().collect::<Vec<_>>();
+
+            for (row, expected) in collected_rows.iter().zip(&expected) {
+                let deserialized = row
+                    .as_ref()
+                    .map(|row| {
+                        <(i32, String) as FromSqlRow<
+                            (sql_types::Integer, sql_types::Text),
+                        _,
+                        >>::build_from_row(row).unwrap()
+                    })
+                    .unwrap();
+
+                assert_eq!(&deserialized, expected);
+            }
+        }
+
+        let mut row_iter = conn.load(query).unwrap();
+
+        let first_row = row_iter.next().unwrap().unwrap();
+        let first_fields = (first_row.get(0).unwrap(), first_row.get(1).unwrap());
+        let first_values = (first_fields.0.value(), first_fields.1.value());
+
+        assert!(row_iter.next().unwrap().is_err());
+        std::mem::drop(first_values);
+        assert!(row_iter.next().unwrap().is_err());
+        std::mem::drop(first_fields);
+
+        let second_row = row_iter.next().unwrap().unwrap();
+        let second_fields = (second_row.get(0).unwrap(), second_row.get(1).unwrap());
+        let second_values = (second_fields.0.value(), second_fields.1.value());
+
+        assert!(row_iter.next().unwrap().is_err());
+        std::mem::drop(second_values);
+        assert!(row_iter.next().unwrap().is_err());
+        std::mem::drop(second_fields);
+
+        assert!(row_iter.next().is_none());
+
+        let first_fields = (first_row.get(0).unwrap(), first_row.get(1).unwrap());
+        let second_fields = (second_row.get(0).unwrap(), second_row.get(1).unwrap());
+
+        let first_values = (first_fields.0.value(), first_fields.1.value());
+        let second_values = (second_fields.0.value(), second_fields.1.value());
+
+        assert_eq!(
+            <i32 as FromSql<sql_types::Integer, Sqlite>>::from_nullable_sql(first_values.0)
+                .unwrap(),
+            expected[0].0
+        );
+        assert_eq!(
+            <String as FromSql<sql_types::Text, Sqlite>>::from_nullable_sql(first_values.1)
+                .unwrap(),
+            expected[0].1
+        );
+
+        assert_eq!(
+            <i32 as FromSql<sql_types::Integer, Sqlite>>::from_nullable_sql(second_values.0)
+                .unwrap(),
+            expected[1].0
+        );
+        assert_eq!(
+            <String as FromSql<sql_types::Text, Sqlite>>::from_nullable_sql(second_values.1)
+                .unwrap(),
+            expected[1].1
+        );
+
+        let first_fields = (first_row.get(0).unwrap(), first_row.get(1).unwrap());
+        let first_values = (first_fields.0.value(), first_fields.1.value());
+
+        assert_eq!(
+            <i32 as FromSql<sql_types::Integer, Sqlite>>::from_nullable_sql(first_values.0)
+                .unwrap(),
+            expected[0].0
+        );
+        assert_eq!(
+            <String as FromSql<sql_types::Text, Sqlite>>::from_nullable_sql(first_values.1)
+                .unwrap(),
+            expected[0].1
+        );
     }
 
-    let mut row_iter = conn.load(query).unwrap();
+    #[cfg(feature = "returning_clauses_for_sqlite_3_35")]
+    crate::define_sql_function! {fn sleep(a: diesel::sql_types::Integer) -> diesel::sql_types::Integer}
 
-    let first_row = row_iter.next().unwrap().unwrap();
-    let first_fields = (first_row.get(0).unwrap(), first_row.get(1).unwrap());
-    let first_values = (first_fields.0.value(), first_fields.1.value());
+    #[test]
+    #[cfg(feature = "returning_clauses_for_sqlite_3_35")]
+    fn parallel_iter_with_error() {
+        use crate::connection::Connection;
+        use crate::connection::LoadConnection;
+        use crate::connection::SimpleConnection;
+        use crate::expression_methods::ExpressionMethods;
+        use crate::SqliteConnection;
+        use std::sync::{Arc, Barrier};
+        use std::time::Duration;
 
-    assert!(row_iter.next().unwrap().is_err());
-    std::mem::drop(first_values);
-    assert!(row_iter.next().unwrap().is_err());
-    std::mem::drop(first_fields);
+        let temp_dir = tempfile::tempdir().unwrap();
+        let db_path = format!("{}/test.db", temp_dir.path().display());
+        let mut conn1 = SqliteConnection::establish(&db_path).unwrap();
+        let mut conn2 = SqliteConnection::establish(&db_path).unwrap();
 
-    let second_row = row_iter.next().unwrap().unwrap();
-    let second_fields = (second_row.get(0).unwrap(), second_row.get(1).unwrap());
-    let second_values = (second_fields.0.value(), second_fields.1.value());
+        crate::table! {
+            users {
+                id -> Integer,
+                name -> Text,
+            }
+        }
 
-    assert!(row_iter.next().unwrap().is_err());
-    std::mem::drop(second_values);
-    assert!(row_iter.next().unwrap().is_err());
-    std::mem::drop(second_fields);
+        conn1
+            .batch_execute("CREATE TABLE users(id INTEGER NOT NULL PRIMARY KEY, name TEXT)")
+            .unwrap();
 
-    assert!(row_iter.next().is_none());
+        let barrier = Arc::new(Barrier::new(2));
+        let barrier2 = barrier.clone();
 
-    let first_fields = (first_row.get(0).unwrap(), first_row.get(1).unwrap());
-    let second_fields = (second_row.get(0).unwrap(), second_row.get(1).unwrap());
+        // we unblock the main thread from the sleep function
+        sleep_utils::register_impl(&mut conn2, move |a: i32| {
+            barrier.wait();
+            std::thread::sleep(Duration::from_secs(a as u64));
+            a
+        })
+        .unwrap();
 
-    let first_values = (first_fields.0.value(), first_fields.1.value());
-    let second_values = (second_fields.0.value(), second_fields.1.value());
+        // spawn a background thread that locks the database file
+        let handle = std::thread::spawn(move || {
+            use crate::query_dsl::RunQueryDsl;
 
-    assert_eq!(
-        <i32 as FromSql<sql_types::Integer, Sqlite>>::from_nullable_sql(first_values.0).unwrap(),
-        expected[0].0
-    );
-    assert_eq!(
-        <String as FromSql<sql_types::Text, Sqlite>>::from_nullable_sql(first_values.1).unwrap(),
-        expected[0].1
-    );
+            conn2
+                .immediate_transaction(|conn| diesel::select(sleep(1)).execute(conn))
+                .unwrap();
+        });
+        barrier2.wait();
 
-    assert_eq!(
-        <i32 as FromSql<sql_types::Integer, Sqlite>>::from_nullable_sql(second_values.0).unwrap(),
-        expected[1].0
-    );
-    assert_eq!(
-        <String as FromSql<sql_types::Text, Sqlite>>::from_nullable_sql(second_values.1).unwrap(),
-        expected[1].1
-    );
+        // execute some action that also requires a lock
+        let mut iter = conn1
+            .load(
+                diesel::insert_into(users::table)
+                    .values((users::id.eq(1), users::name.eq("John")))
+                    .returning(users::id),
+            )
+            .unwrap();
 
-    let first_fields = (first_row.get(0).unwrap(), first_row.get(1).unwrap());
-    let first_values = (first_fields.0.value(), first_fields.1.value());
+        // get the first iterator result, that should return the lock error
+        let n = iter.next().unwrap();
+        assert!(n.is_err());
 
-    assert_eq!(
-        <i32 as FromSql<sql_types::Integer, Sqlite>>::from_nullable_sql(first_values.0).unwrap(),
-        expected[0].0
-    );
-    assert_eq!(
-        <String as FromSql<sql_types::Text, Sqlite>>::from_nullable_sql(first_values.1).unwrap(),
-        expected[0].1
-    );
+        // check that the iterator is now empty
+        let n = iter.next();
+        assert!(n.is_none());
+
+        // join the background thread
+        handle.join().unwrap();
+    }
 }

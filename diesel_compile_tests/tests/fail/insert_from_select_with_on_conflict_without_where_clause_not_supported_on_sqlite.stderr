@@ -11,9 +11,9 @@ error[E0277]: `OnConflictSelectWrapper<SelectStatement<FromClause<table>, Select
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<BoxedSelectStatement<'a, ST, QS, Sqlite, GB>> as QueryFragment<Sqlite>>
-             <diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<SelectStatement<F, S, D, diesel::query_builder::where_clause::WhereClause<W>, O, LOf, G, H, LC>> as QueryFragment<Sqlite>>
              <diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S> as QueryFragment<Mysql>>
              <diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S> as QueryFragment<Pg>>
+             <diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<SelectStatement<F, S, D, diesel::query_builder::where_clause::WhereClause<W>, O, LOf, G, H, LC>> as QueryFragment<Sqlite>>
    = note: required for `InsertFromSelect<OnConflictSelectWrapper<SelectStatement<FromClause<table>, SelectClause<id>>>, id>` to implement `QueryFragment<Sqlite>`
    = note: 3 redundant requirements hidden
    = note: required for `InsertStatement<table, OnConflictValues<InsertFromSelect<OnConflictSelectWrapper<...>, ...>, ..., ...>>` to implement `QueryFragment<Sqlite>`

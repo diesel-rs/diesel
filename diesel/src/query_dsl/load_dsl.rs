@@ -182,8 +182,8 @@ mod private {
     #[diagnostic::on_unimplemented(
         note = "this is a mismatch between what your query returns and what your type expects the query to return",
         note = "the fields in your struct need to match the fields returned by your query in count, order and type",
-        note = "consider using `#[derive(Selectable)]` + `#[diesel(check_for_backend({DB}))]` on your struct `{U}` and \n\
-                in your query `.select({U}::as_select())` to get a better error message"
+        note = "consider using `#[derive(Selectable)]` or #[derive(QueryableByName)] + `#[diesel(check_for_backend({DB}))]` \n\
+                on your struct `{U}` and in your query `.select({U}::as_select())` to get a better error message"
     )]
     pub trait CompatibleType<U, DB> {
         type SqlType;

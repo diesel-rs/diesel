@@ -64,12 +64,12 @@ error[E0277]: the trait bound `BoxedSelectStatement<'_, diesel::sql_types::Text,
    |          ^^^^^^^^^^ the trait `Table` is not implemented for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>`, which is required by `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>: JoinWithImplicitOnClause<_, Inner>`
    |
    = help: the following other types implement trait `Table`:
-             posts::table
-             users::table
              Only<S>
              Tablesample<S, TSM>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
+             posts::table
+             users::table
    = note: required for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>` to implement `JoinTo<query_source::joins::OnClauseWrapper<_, _>>`
    = note: required for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>` to implement `JoinWithImplicitOnClause<query_source::joins::OnClauseWrapper<_, _>, Inner>`
 
@@ -129,12 +129,12 @@ error[E0277]: the trait bound `BoxedSelectStatement<'_, (diesel::sql_types::Inte
    |          ^^^^^^^^ the trait `Table` is not implemented for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>`, which is required by `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>: GroupByDsl<_>`
    |
    = help: the following other types implement trait `Table`:
-             posts::table
-             users::table
              Only<S>
              Tablesample<S, TSM>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
+             posts::table
+             users::table
    = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>` to implement `GroupByDsl<_>`
 
 error[E0277]: the trait bound `SelectStatement<FromClause<BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>>>: GroupByDsl<_>` is not satisfied

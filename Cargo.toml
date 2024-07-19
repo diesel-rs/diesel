@@ -34,6 +34,9 @@ members = [
 rust-version = "1.78.0"
 include = ["src/**/*.rs", "tests/**/*.rs", "LICENSE-*", "README.md"]
 
+[workspace.dependencies]
+libsqlite3-sys = "0.29"
+
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)

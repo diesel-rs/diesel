@@ -10,10 +10,10 @@ error[E0277]: `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Intege
    = note: this usually means that the `Mysql` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB, SD>>
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action, diesel::query_builder::where_clause::WhereClause<Expr>> as QueryFragment<DB>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB, SD>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
    = note: required for `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` to implement `QueryFragment<Mysql>`
    = note: 1 redundant requirement hidden
    = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<(ColumnInsertValue<id, ...>, ...), ...>, ..., ...>>` to implement `QueryFragment<Mysql>`
@@ -41,10 +41,10 @@ error[E0277]: `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Intege
    = note: this usually means that the `Mysql` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB, SD>>
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action, diesel::query_builder::where_clause::WhereClause<Expr>> as QueryFragment<DB>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB, SD>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
    = note: required for `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` to implement `QueryFragment<Mysql>`
    = note: 1 redundant requirement hidden
    = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<(ColumnInsertValue<id, ...>, ...), ...>, ..., ...>>` to implement `QueryFragment<Mysql>`
@@ -69,14 +69,14 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target
    |          required by a bound introduced by this call
    |
    = help: the following other types implement trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Table>`:
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<SqlLiteral<ST>> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Tab>>
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Tab>>
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'a>> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(T,)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<T as Column>::Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5, T6)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
            and $N others
 note: required by a bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
   --> $DIESEL/src/upsert/on_conflict_extension.rs
@@ -99,10 +99,10 @@ error[E0277]: `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Intege
    = note: this usually means that the `Mysql` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB, SD>>
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action, diesel::query_builder::where_clause::WhereClause<Expr>> as QueryFragment<DB>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB, SD>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
    = note: required for `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` to implement `QueryFragment<Mysql>`
    = note: 1 redundant requirement hidden
    = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<(ColumnInsertValue<id, ...>, ...), ...>, ..., ...>>` to implement `QueryFragment<Mysql>`
@@ -130,10 +130,10 @@ error[E0277]: `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Intege
    = note: this usually means that the `Mysql` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB, SD>>
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action, diesel::query_builder::where_clause::WhereClause<Expr>> as QueryFragment<DB>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB, SD>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
    = note: required for `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` to implement `QueryFragment<Mysql>`
    = note: 1 redundant requirement hidden
    = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<(ColumnInsertValue<id, ...>, ...), ...>, ..., ...>>` to implement `QueryFragment<Mysql>`
@@ -161,10 +161,10 @@ error[E0277]: `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Intege
    = note: this usually means that the `Mysql` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
-             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB, SD>>
              <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action, diesel::query_builder::where_clause::WhereClause<Expr>> as QueryFragment<DB>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB, SD>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<DB>>
+             <diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<Values, Target, Action> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
    = note: required for `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` to implement `QueryFragment<Mysql>`
    = note: 1 redundant requirement hidden
    = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<(ColumnInsertValue<id, ...>, ...), ...>, ..., ...>>` to implement `QueryFragment<Mysql>`
@@ -215,14 +215,14 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target
    |          required by a bound introduced by this call
    |
    = help: the following other types implement trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Table>`:
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<SqlLiteral<ST>> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Tab>>
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Tab>>
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'a>> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(T,)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<T as Column>::Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5, T6)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
            and $N others
 note: required by a bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
   --> $DIESEL/src/upsert/on_conflict_extension.rs
@@ -244,14 +244,14 @@ error[E0277]: `diesel::query_builder::upsert::on_conflict_target::ConflictTarget
    = note: this usually means that the `Pg` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<SqlLiteral<ST>> as QueryFragment<DB, SP>>
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'a>> as QueryFragment<Pg, pg::backend::PgOnConflictClause>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(T,)> as QueryFragment<DB, SP>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0)> as QueryFragment<_DB, _SP>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1)> as QueryFragment<_DB, _SP>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2)> as QueryFragment<_DB, _SP>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3)> as QueryFragment<_DB, _SP>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4)> as QueryFragment<_DB, _SP>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5)> as QueryFragment<_DB, _SP>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5, T6)> as QueryFragment<_DB, _SP>>
            and $N others
    = note: required for `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` to implement `QueryFragment<Pg, pg::backend::PgOnConflictClause>`
    = note: 2 redundant requirements hidden
@@ -277,14 +277,14 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target
    |          required by a bound introduced by this call
    |
    = help: the following other types implement trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Table>`:
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<SqlLiteral<ST>> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Tab>>
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Tab>>
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'a>> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(T,)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<T as Column>::Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5, T6)> as diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>>
            and $N others
 note: required by a bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
   --> $DIESEL/src/upsert/on_conflict_extension.rs
@@ -306,14 +306,14 @@ error[E0277]: `diesel::query_builder::upsert::on_conflict_target::ConflictTarget
    = note: this usually means that the `Pg` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<SqlLiteral<ST>> as QueryFragment<DB, SP>>
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys> as QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>>
-             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'a>> as QueryFragment<Pg, pg::backend::PgOnConflictClause>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(T,)> as QueryFragment<DB, SP>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0)> as QueryFragment<_DB, _SP>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1)> as QueryFragment<_DB, _SP>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2)> as QueryFragment<_DB, _SP>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3)> as QueryFragment<_DB, _SP>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4)> as QueryFragment<_DB, _SP>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5)> as QueryFragment<_DB, _SP>>
+             <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5, T6)> as QueryFragment<_DB, _SP>>
            and $N others
    = note: required for `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` to implement `QueryFragment<Pg, pg::backend::PgOnConflictClause>`
    = note: 2 redundant requirements hidden
