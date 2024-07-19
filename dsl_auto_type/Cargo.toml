@@ -1,6 +1,6 @@
 [package]
 name = "dsl_auto_type"
-version = "0.1.1"
+version = "0.1.2"
 license = "MIT OR Apache-2.0"
 description = "Automatically expand query fragment types for factoring as functions"
 documentation = "https://docs.rs/crate/diesel_migrations"
