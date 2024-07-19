@@ -70,6 +70,14 @@ pub type ContainsRange<Lhs, Rhs> = Contains<Lhs, Rhs>;
 #[cfg(feature = "postgres_backend")]
 pub type IsContainedBy<Lhs, Rhs> = Grouped<super::operators::IsContainedBy<Lhs, AsExpr<Rhs, Lhs>>>;
 
+/// The return type of [`lhs.range_is_contained_by(rhs)`](super::expression_methods::PgRangeExpressionMethods::lesser_than)
+#[cfg(feature = "postgres_backend")]
+pub type LesserThanRange<Lhs, Rhs> =
+    Grouped<super::operators::IsContainedByNet<Lhs, AsExpr<Rhs, Lhs>>>;
+
+#[doc(hidden)] // used by `#[auto_type]`
+pub type LesserThan<Lhs, Rhs> = LesserThanRange<Lhs, Rhs>;
+
 /// The return type of [`expr.nulls_first()`](super::expression_methods::PgSortExpressionMethods::nulls_first)
 #[cfg(feature = "postgres_backend")]
 pub type NullsFirst<T> = super::operators::NullsFirst<T>;
