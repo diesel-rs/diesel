@@ -78,6 +78,13 @@ pub type LesserThanRange<Lhs, Rhs> =
 #[doc(hidden)] // used by `#[auto_type]`
 pub type LesserThan<Lhs, Rhs> = LesserThanRange<Lhs, Rhs>;
 
+/// The return type of [`lhs.range_is_contained_by(rhs)`](super::expression_methods::PgRangeExpressionMethods::greater_than)
+#[cfg(feature = "postgres_backend")]
+pub type GreaterThanRange<Lhs, Rhs> = Grouped<super::operators::ContainsNet<Lhs, AsExpr<Rhs, Lhs>>>;
+
+#[doc(hidden)] // used by `#[auto_type]`
+pub type GreaterThan<Lhs, Rhs> = GreaterThanRange<Lhs, Rhs>;
+
 /// The return type of [`expr.nulls_first()`](super::expression_methods::PgSortExpressionMethods::nulls_first)
 #[cfg(feature = "postgres_backend")]
 pub type NullsFirst<T> = super::operators::NullsFirst<T>;
