@@ -285,6 +285,8 @@ fn test_pg_range_expression_methods() -> _ {
         .contains_range(my_range)
         .and(pg_extras::range.is_contained_by(my_range))
         .and(pg_extras::range.overlaps_with(my_range))
+        .and(pg_extras::range.lesser_than(my_range))
+        .and(pg_extras::range.greater_than(my_range))
     // `.contains()` cannot be supported here as
     // the type level constraints are slightly different
     // for `Range<>` than for the other types that provide a `contains()`
