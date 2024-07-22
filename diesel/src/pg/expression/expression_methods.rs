@@ -916,7 +916,7 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
 
     /// Creates a PostgreSQL `<<` expression.
     ///
-    /// This operator returns whether two ranges overlap.
+    /// Is the first range strictly left of the second?
     ///
     /// # Example
     ///
@@ -971,7 +971,7 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
 
     /// Creates a PostgreSQL `>>` expression.
     ///
-    /// This operator returns whether two ranges overlap.
+    /// Is the first range strictly right of the second?
     ///
     /// # Example
     ///
