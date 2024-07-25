@@ -1,5 +1,5 @@
-use std::fmt::Debug;
-use std::fmt::Display;
+use downcast_rs::Downcast;
+use std::fmt::{Debug, Display};
 use std::num::NonZeroU32;
 use std::ops::DerefMut;
 
@@ -242,10 +242,11 @@ impl<'a> InstrumentationEvent<'a> {
 /// More complex usages and integrations with frameworks like
 /// `tracing` and `log` are supposed to be part of their own
 /// crates.
-pub trait Instrumentation: Send + 'static {
+pub trait Instrumentation: Downcast + Send + 'static {
     /// The function that is invoced for each event
     fn on_connection_event(&mut self, event: InstrumentationEvent<'_>);
 }
+downcast_rs::impl_downcast!(Instrumentation);
 
 /// Get an instance of the default [`Instrumentation`]
 ///
@@ -266,9 +267,11 @@ pub fn get_default_instrumentation() -> Option<Box<dyn Instrumentation>> {
 ///
 /// // a simple logger that prints all events to stdout
 /// fn simple_logger() -> Option<Box<dyn Instrumentation>> {
-///    // we need the explicit argument type there due
-///    // to bugs in rustc
-///    Some(Box::new(|event: InstrumentationEvent<'_>| println!("{event:?}")))
+///     // we need the explicit argument type there due
+///     // to bugs in rustc
+///     Some(Box::new(|event: InstrumentationEvent<'_>| {
+///         println!("{event:?}")
+///     }))
 /// }
 ///
 /// set_default_instrumentation(simple_logger);
