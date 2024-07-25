@@ -328,6 +328,7 @@ pub(crate) struct DynInstrumentation {
     no_instrumentation: NoInstrumentation,
     inner: Option<Box<dyn Instrumentation>>,
 }
+
 impl Deref for DynInstrumentation {
     type Target = dyn Instrumentation;
 
@@ -335,6 +336,7 @@ impl Deref for DynInstrumentation {
         self.inner.as_deref().unwrap_or(&self.no_instrumentation)
     }
 }
+
 impl DerefMut for DynInstrumentation {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.inner
@@ -342,6 +344,7 @@ impl DerefMut for DynInstrumentation {
             .unwrap_or(&mut self.no_instrumentation)
     }
 }
+
 impl DynInstrumentation {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
@@ -372,6 +375,7 @@ impl DynInstrumentation {
         }
     }
 }
+
 impl<I: Instrumentation> From<I> for DynInstrumentation {
     fn from(instrumentation: I) -> Self {
         Self {
@@ -382,6 +386,7 @@ impl<I: Instrumentation> From<I> for DynInstrumentation {
 }
 
 struct NoInstrumentation;
+
 impl Instrumentation for NoInstrumentation {
     fn on_connection_event(&mut self, _: InstrumentationEvent<'_>) {}
 }
