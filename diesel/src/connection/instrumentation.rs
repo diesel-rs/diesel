@@ -1,7 +1,7 @@
 use downcast_rs::Downcast;
 use std::fmt::{Debug, Display};
 use std::num::NonZeroU32;
-use std::ops::DerefMut;
+use std::ops::{Deref, DerefMut};
 
 static GLOBAL_INSTRUMENTATION: std::sync::RwLock<fn() -> Option<Box<dyn Instrumentation>>> =
     std::sync::RwLock::new(|| None);
@@ -313,6 +313,89 @@ where
     fn on_connection_event(&mut self, event: InstrumentationEvent<'_>) {
         if let Some(i) = self {
             i.on_connection_event(event)
+        }
+    }
+}
+
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+/// An optional dyn instrumentation.
+/// For ease of use, this type implements [`Deref`] and [`DerefMut`] to `&dyn Instrumentation`,
+/// falling back to a no-op implementation if no instrumentation is set.
+pub(crate) struct DynInstrumentation {
+    /// zst
+    no_instrumentation: NoInstrumentation,
+    inner: Option<Box<dyn Instrumentation>>,
+}
+impl Deref for DynInstrumentation {
+    type Target = dyn Instrumentation;
+
+    fn deref(&self) -> &Self::Target {
+        self.inner.as_deref().unwrap_or(&self.no_instrumentation)
+    }
+}
+impl DerefMut for DynInstrumentation {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.inner
+            .as_deref_mut()
+            .unwrap_or(&mut self.no_instrumentation)
+    }
+}
+impl DynInstrumentation {
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub(crate) fn default_instrumentation() -> Self {
+        Self {
+            inner: get_default_instrumentation(),
+            no_instrumentation: NoInstrumentation,
+        }
+    }
+
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub(crate) fn none() -> Self {
+        Self {
+            inner: None,
+            no_instrumentation: NoInstrumentation,
+        }
+    }
+
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub(crate) fn on_connection_event(&mut self, event: InstrumentationEvent<'_>) {
+        if let Some(inner) = self.inner.as_deref_mut() {
+            inner.on_connection_event(event)
+        }
+    }
+}
+impl<I: Instrumentation> From<I> for DynInstrumentation {
+    fn from(instrumentation: I) -> Self {
+        Self {
+            inner: Some(unpack_instrumentation(Box::new(instrumentation))),
+            no_instrumentation: NoInstrumentation,
+        }
+    }
+}
+
+struct NoInstrumentation;
+impl Instrumentation for NoInstrumentation {
+    fn on_connection_event(&mut self, _: InstrumentationEvent<'_>) {}
+}
+
+/// Unwrap unnecessary boxing levels
+fn unpack_instrumentation(
+    mut instrumentation: Box<dyn Instrumentation>,
+) -> Box<dyn Instrumentation> {
+    loop {
+        match instrumentation.downcast::<Box<dyn Instrumentation>>() {
+            Ok(extra_boxed_instrumentation) => instrumentation = *extra_boxed_instrumentation,
+            Err(not_extra_boxed_instrumentation) => {
+                break not_extra_boxed_instrumentation;
+            }
         }
     }
 }

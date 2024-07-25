@@ -21,7 +21,7 @@ use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use super::SqliteAggregateFunction;
-use crate::connection::instrumentation::StrQueryHelper;
+use crate::connection::instrumentation::{DynInstrumentation, StrQueryHelper};
 use crate::connection::statement_cache::StatementCache;
 use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
@@ -127,7 +127,7 @@ pub struct SqliteConnection {
     // this exists for the sole purpose of implementing `WithMetadataLookup` trait
     // and avoiding static mut which will be deprecated in 2024 edition
     metadata_lookup: (),
-    instrumentation: Option<Box<dyn Instrumentation>>,
+    instrumentation: DynInstrumentation,
 }
 
 // This relies on the invariant that RawConnection or Statement are never
@@ -165,7 +165,7 @@ impl Connection for SqliteConnection {
     /// If the database does not exist, this method will try to
     /// create a new database and then establish a connection to it.
     fn establish(database_url: &str) -> ConnectionResult<Self> {
-        let mut instrumentation = crate::connection::instrumentation::get_default_instrumentation();
+        let mut instrumentation = DynInstrumentation::default_instrumentation();
         instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
             url: database_url,
         });
@@ -198,11 +198,11 @@ impl Connection for SqliteConnection {
     }
 
     fn instrumentation(&mut self) -> &mut dyn Instrumentation {
-        &mut self.instrumentation
+        &mut *self.instrumentation
     }
 
     fn set_instrumentation(&mut self, instrumentation: impl Instrumentation) {
-        self.instrumentation = Some(Box::new(instrumentation));
+        self.instrumentation = instrumentation.into();
     }
 }
 
@@ -352,7 +352,7 @@ impl SqliteConnection {
             &Sqlite,
             &[],
             |sql, is_cached| Statement::prepare(raw_connection, sql, is_cached),
-            &mut self.instrumentation,
+            &mut *self.instrumentation,
         ) {
             Ok(statement) => statement,
             Err(e) => {
@@ -366,7 +366,7 @@ impl SqliteConnection {
             }
         };
 
-        StatementUse::bind(statement, source, &mut self.instrumentation)
+        StatementUse::bind(statement, source, &mut *self.instrumentation)
     }
 
     #[doc(hidden)]
@@ -540,7 +540,7 @@ impl SqliteConnection {
             raw_connection,
             transaction_state: AnsiTransactionManager::default(),
             metadata_lookup: (),
-            instrumentation: None,
+            instrumentation: DynInstrumentation::none(),
         };
         conn.register_diesel_sql_functions()
             .map_err(CouldntSetupConfiguration)?;
