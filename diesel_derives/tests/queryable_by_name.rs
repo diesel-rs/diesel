@@ -12,6 +12,15 @@ table! {
     }
 }
 
+#[cfg(feature = "postgres")]
+table! {
+    multiple_sql_types_for_text {
+        id -> Integer,
+        name -> Text,
+        email -> Citext
+    }
+}
+
 #[test]
 fn named_struct_definition() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
@@ -81,6 +90,55 @@ fn struct_with_path_in_name() {
             foo: 1,
             bar: 2,
             r#type: 3
+        }),
+        data
+    );
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn struct_with_multiple_sql_types_for_text() {
+    #[derive(Debug, PartialEq, QueryableByName)]
+    struct MultipleSqlTypesForText {
+        #[diesel(sql_type = diesel::sql_types::Text)]
+        name: String,
+        #[diesel(sql_type = diesel::sql_types::Citext)]
+        email: String,
+    }
+
+    let conn = &mut connection();
+    sql_query("CREATE EXTENSION IF NOT EXISTS citext")
+        .execute(conn)
+        .unwrap();
+    let data = sql_query("SELECT 'name'::text AS name, 'email'::citext AS email").get_result(conn);
+    assert_eq!(
+        Ok(MultipleSqlTypesForText {
+            name: "name".into(),
+            email: "email".into()
+        }),
+        data
+    );
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn struct_with_multiple_sql_types_for_text_from_table() {
+    #[derive(Debug, PartialEq, QueryableByName)]
+    #[diesel(table_name = multiple_sql_types_for_text)]
+    struct MultipleSqlTypesForText {
+        name: String,
+        email: String,
+    }
+
+    let conn = &mut connection();
+    sql_query("CREATE EXTENSION IF NOT EXISTS citext")
+        .execute(conn)
+        .unwrap();
+    let data = sql_query("SELECT 'name'::text AS name, 'email'::citext AS email").get_result(conn);
+    assert_eq!(
+        Ok(MultipleSqlTypesForText {
+            name: "name".into(),
+            email: "email".into()
         }),
         data
     );
