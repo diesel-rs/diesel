@@ -326,8 +326,8 @@ where
 /// falling back to a no-op implementation if no instrumentation is set.
 ///
 /// The DynInstrumentation type is useful because without it we actually did tend to return
-/// &mut Option<Box> as &mut dyn Instrumentation from connection.instrumentation(), so
-/// downcasting would have to be done in these two steps by the user, which is counter-intuitive.
+/// (accidentally) &mut Option<Box> as &mut dyn Instrumentation from connection.instrumentation(),
+/// so downcasting would have to be done in these two steps by the user, which is counter-intuitive.
 pub(crate) struct DynInstrumentation {
     /// zst
     no_instrumentation: NoInstrumentation,
@@ -375,6 +375,9 @@ impl DynInstrumentation {
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
     pub(crate) fn on_connection_event(&mut self, event: InstrumentationEvent<'_>) {
+        // This implementation is not necessary to be able to call this method on this object
+        // because of the already existing Deref impl.
+        // However it allows avoiding the dynamic dispatch to the stub value
         if let Some(inner) = self.inner.as_deref_mut() {
             inner.on_connection_event(event)
         }
