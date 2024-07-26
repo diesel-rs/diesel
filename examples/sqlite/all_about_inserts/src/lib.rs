@@ -30,7 +30,7 @@ pub struct UserForm<'a> {
 }
 
 #[derive(Queryable, PartialEq, Debug)]
-struct User {
+pub struct User {
     id: i32,
     name: String,
     hair_color: Option<String>,
