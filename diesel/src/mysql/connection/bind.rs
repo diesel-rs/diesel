@@ -6,8 +6,7 @@ use std::ops::Index;
 use std::os::raw as libc;
 use std::ptr::NonNull;
 
-use super::stmt::MysqlFieldMetadata;
-use super::stmt::StatementUse;
+use super::stmt::{MysqlFieldMetadata, StatementUse};
 use crate::mysql::connection::stmt::StatementMetadata;
 use crate::mysql::types::date_and_time::MysqlTime;
 use crate::mysql::{MysqlType, MysqlValue};
@@ -870,7 +869,7 @@ mod tests {
             ),
             &mut conn.statement_cache,
             &mut conn.raw_connection,
-            &mut conn.instrumentation,
+            &mut *conn.instrumentation,
         ).unwrap();
 
         let metadata = stmt.metadata().unwrap();

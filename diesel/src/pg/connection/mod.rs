@@ -5,15 +5,14 @@ mod result;
 mod row;
 mod stmt;
 
-use self::copy::CopyFromSink;
-use self::copy::CopyToBuffer;
+use self::copy::{CopyFromSink, CopyToBuffer};
 use self::cursor::*;
 use self::private::ConnectionAndTransactionManager;
 use self::raw::{PgTransactionStatus, RawConnection};
 use self::stmt::Statement;
-use crate::connection::instrumentation::DebugQuery;
-use crate::connection::instrumentation::Instrumentation;
-use crate::connection::instrumentation::StrQueryHelper;
+use crate::connection::instrumentation::{
+    DebugQuery, DynInstrumentation, Instrumentation, StrQueryHelper,
+};
 use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
@@ -29,9 +28,7 @@ use std::ffi::CString;
 use std::fmt::Debug;
 use std::os::raw as libc;
 
-use super::query_builder::copy::CopyFromExpression;
-use super::query_builder::copy::CopyTarget;
-use super::query_builder::copy::CopyToCommand;
+use super::query_builder::copy::{CopyFromExpression, CopyTarget, CopyToCommand};
 
 pub(super) use self::result::PgResult;
 
@@ -178,7 +175,7 @@ impl Connection for PgConnection {
     type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
-        let mut instrumentation = crate::connection::instrumentation::get_default_instrumentation();
+        let mut instrumentation = DynInstrumentation::default_instrumentation();
         instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
             url: database_url,
         });
@@ -187,7 +184,7 @@ impl Connection for PgConnection {
                 connection_and_transaction_manager: ConnectionAndTransactionManager {
                     raw_connection: raw_conn,
                     transaction_state: AnsiTransactionManager::default(),
-                    instrumentation: None,
+                    instrumentation: DynInstrumentation::none(),
                 },
                 statement_cache: StatementCache::new(),
                 metadata_cache: PgMetadataCache::new(),
@@ -233,11 +230,11 @@ impl Connection for PgConnection {
     }
 
     fn instrumentation(&mut self) -> &mut dyn Instrumentation {
-        &mut self.connection_and_transaction_manager.instrumentation
+        &mut *self.connection_and_transaction_manager.instrumentation
     }
 
     fn set_instrumentation(&mut self, instrumentation: impl Instrumentation) {
-        self.connection_and_transaction_manager.instrumentation = Some(Box::new(instrumentation));
+        self.connection_and_transaction_manager.instrumentation = instrumentation.into();
     }
 }
 
@@ -517,7 +514,7 @@ impl PgConnection {
                 };
                 Statement::prepare(conn, sql, query_name.as_deref(), &metadata)
             },
-            &mut self.connection_and_transaction_manager.instrumentation,
+            &mut *self.connection_and_transaction_manager.instrumentation,
         );
         if !execute_returning_count {
             if let Err(ref e) = query {
@@ -557,7 +554,7 @@ mod private {
     pub struct ConnectionAndTransactionManager {
         pub(super) raw_connection: RawConnection,
         pub(super) transaction_state: AnsiTransactionManager,
-        pub(super) instrumentation: Option<Box<dyn Instrumentation>>,
+        pub(super) instrumentation: DynInstrumentation,
     }
 
     pub trait PgLoadingMode<B> {
@@ -800,8 +797,7 @@ mod tests {
 
     #[test]
     fn transaction_manager_returns_an_error_when_attempting_to_commit_outside_of_a_transaction() {
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::result::Error;
         use crate::PgConnection;
 
@@ -818,8 +814,7 @@ mod tests {
 
     #[test]
     fn transaction_manager_returns_an_error_when_attempting_to_rollback_outside_of_a_transaction() {
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::result::Error;
         use crate::PgConnection;
 
@@ -838,8 +833,7 @@ mod tests {
     fn postgres_transaction_is_rolled_back_upon_syntax_error() {
         use std::num::NonZeroU32;
 
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::*;
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
@@ -883,8 +877,7 @@ mod tests {
     fn nested_postgres_transaction_is_rolled_back_upon_syntax_error() {
         use std::num::NonZeroU32;
 
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::*;
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
@@ -1165,8 +1158,7 @@ mod tests {
 
     #[test]
     fn postgres_transaction_is_rolled_back_upon_deferred_constraint_failure() {
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::Error;
         use crate::*;
@@ -1215,8 +1207,7 @@ mod tests {
 
     #[test]
     fn postgres_transaction_is_rolled_back_upon_deferred_trigger_failure() {
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::Error;
         use crate::*;
@@ -1291,8 +1282,7 @@ mod tests {
 
     #[test]
     fn nested_postgres_transaction_is_rolled_back_upon_deferred_trigger_failure() {
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::Error;
         use crate::*;
@@ -1374,8 +1364,7 @@ mod tests {
 
     #[test]
     fn nested_postgres_transaction_is_rolled_back_upon_deferred_constraint_failure() {
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::Error;
         use crate::*;
