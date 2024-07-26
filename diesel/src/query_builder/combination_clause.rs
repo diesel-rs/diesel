@@ -8,18 +8,6 @@ use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::{AsQuery, AstPass, Query, QueryFragment, QueryId, SelectQuery};
 use crate::{CombineDsl, Insertable, QueryResult, RunQueryDsl, Table};
 
-#[derive(Debug, Clone, Copy, QueryId)]
-pub(crate) struct NoCombinationClause;
-
-impl<DB> QueryFragment<DB> for NoCombinationClause
-where
-    DB: Backend + DieselReserveSpecialization,
-{
-    fn walk_ast<'b>(&'b self, _: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        Ok(())
-    }
-}
-
 #[derive(Debug, Copy, Clone, QueryId)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Combine queries using a combinator like `UNION`, `INTERSECT` or `EXPECT`

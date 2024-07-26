@@ -1,11 +1,7 @@
 error[E0599]: no method named `with_format` found for struct `CopyFromQuery<users::table, pg::query_builder::copy::copy_from::InsertableWrapper<Vec<NewUser>>>` in the current scope
   --> tests/fail/copy_can_only_use_options_with_raw_variant.rs:49:10
    |
-47 |       diesel::copy_from(users::table)
-   |       -------------------------------
-   |       |
-   |  _____method `with_format` is available on `CopyFromQuery<users::table, pg::query_builder::copy::copy_from::NotSet>`
-   | |
+47 | /     diesel::copy_from(users::table)
 48 | |         .from_insertable(vec![NewUser { name: "John" }])
 49 | |         .with_format(CopyFormat::Csv)
    | |         -^^^^^^^^^^^ method not found in `CopyFromQuery<table, InsertableWrapper<Vec<NewUser>>>`
