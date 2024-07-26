@@ -157,12 +157,12 @@ impl_selectable_expression!(NotIn<T, U>);
 /// Diesel provided several implementations here:
 ///
 ///  - An implementation for any [`Iterator`] over values
-///  that implement [`AsExpression<ST>`] for the corresponding
-///  sql type ST. The corresponding values clause will contain
-///  bind statements for each individual value.
+///    that implement [`AsExpression<ST>`] for the corresponding
+///    sql type ST. The corresponding values clause will contain
+///    bind statements for each individual value.
 ///  - An implementation for select statements, that returns
-///  a single field. The corresponding values clause will contain
-///  the sub query.
+///    a single field. The corresponding values clause will contain
+///    the sub query.
 ///
 ///  This trait is exposed for custom third party backends so
 ///  that they can restrict the [`QueryFragment`] implementations

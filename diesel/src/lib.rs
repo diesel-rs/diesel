@@ -151,64 +151,64 @@
 
 //!
 //! - `sqlite`: This feature enables the diesel sqlite backend. Enabling this feature requires per default
-//! a compatible copy of `libsqlite3` for your target architecture. Alternatively, you can add `libsqlite3-sys`
-//! with the `bundled` feature as a dependency to your crate so SQLite will be bundled:
-//! ```toml
-//! [dependencies]
-//! libsqlite3-sys = { version = "0.29", features = ["bundled"] }
-//! ```
+//!   a compatible copy of `libsqlite3` for your target architecture. Alternatively, you can add `libsqlite3-sys`
+//!   with the `bundled` feature as a dependency to your crate so SQLite will be bundled:
+//!   ```toml
+//!   [dependencies]
+//!   libsqlite3-sys = { version = "0.29", features = ["bundled"] }
+//!   ```
 //! - `postgres`: This feature enables the diesel postgres backend. Enabling this feature requires a compatible
-//! copy of `libpq` for your target architecture. This features implies `postgres_backend`
+//!   copy of `libpq` for your target architecture. This features implies `postgres_backend`
 //! - `mysql`: This feature enables the idesel mysql backend. Enabling this feature requires a compatible copy
-//! of `libmysqlclient` for your target architecture. This feature implies `mysql_backend`
+//!   of `libmysqlclient` for your target architecture. This feature implies `mysql_backend`
 //! - `postgres_backend`: This feature enables those parts of diesels postgres backend, that are not dependent
-//! on `libpq`. Diesel does not provide any connection implementation with only this feature enabled.
-//! This feature can be used to implement a custom implementation of diesels `Connection` trait for the
-//! postgres backend outside of diesel itself, while reusing the existing query dsl extensions for the
-//! postgres backend
+//!   on `libpq`. Diesel does not provide any connection implementation with only this feature enabled.
+//!   This feature can be used to implement a custom implementation of diesels `Connection` trait for the
+//!   postgres backend outside of diesel itself, while reusing the existing query dsl extensions for the
+//!   postgres backend
 //! - `mysql_backend`: This feature enables those parts of diesels mysql backend, that are not dependent
-//! on `libmysqlclient`. Diesel does not provide any connection implementation with only this feature enabled.
-//! This feature can be used to implement a custom implementation of diesels `Connection` trait for the
-//! mysql backend outside of diesel itself, while reusing the existing query dsl extensions for the
-//! mysql backend
+//!   on `libmysqlclient`. Diesel does not provide any connection implementation with only this feature enabled.
+//!   This feature can be used to implement a custom implementation of diesels `Connection` trait for the
+//!   mysql backend outside of diesel itself, while reusing the existing query dsl extensions for the
+//!   mysql backend
 //! - `returning_clauses_for_sqlite_3_35`: This feature enables support for `RETURNING` clauses in the sqlite backend.
-//! Enabling this feature requires sqlite 3.35.0 or newer.
+//!   Enabling this feature requires sqlite 3.35.0 or newer.
 //! - `32-column-tables`: This feature enables support for tables with up to 32 columns.
-//! This feature is enabled by default. Consider disabling this feature if you write a library crate
-//! providing general extensions for diesel or if you do not need to support tables with more than 16 columns
-//! and you want to minimize your compile times.
+//!   This feature is enabled by default. Consider disabling this feature if you write a library crate
+//!   providing general extensions for diesel or if you do not need to support tables with more than 16 columns
+//!   and you want to minimize your compile times.
 //! - `64-column-tables`: This feature enables support for tables with up to 64 columns. It implies the
-//! `32-column-tables` feature. Enabling this feature will increase your compile times.
+//!   `32-column-tables` feature. Enabling this feature will increase your compile times.
 //! - `128-column-tables`: This feature enables support for tables with up to 128 columns. It implies the
-//! `64-column-tables` feature. Enabling this feature will increase your compile times significantly.
+//!   `64-column-tables` feature. Enabling this feature will increase your compile times significantly.
 //! - `i-implement-a-third-party-backend-and-opt-into-breaking-changes`: This feature opens up some otherwise
-//! private API, that can be useful to implement a third party [`Backend`](crate::backend::Backend)
-//! or write a custom [`Connection`] implementation. **Do not use this feature for
-//! any other usecase**. By enabling this feature you explicitly opt out diesel stability guarantees. We explicitly
-//! reserve us the right to break API's exported under this feature flag in any upcoming minor version release.
-//! If you publish a crate depending on this feature flag consider to restrict the supported diesel version to the
-//! currently released minor version.
+//!   private API, that can be useful to implement a third party [`Backend`](crate::backend::Backend)
+//!   or write a custom [`Connection`] implementation. **Do not use this feature for
+//!   any other usecase**. By enabling this feature you explicitly opt out diesel stability guarantees. We explicitly
+//!   reserve us the right to break API's exported under this feature flag in any upcoming minor version release.
+//!   If you publish a crate depending on this feature flag consider to restrict the supported diesel version to the
+//!   currently released minor version.
 //! - `serde_json`: This feature flag enables support for (de)serializing json values from the database using
-//! types provided by `serde_json`.
+//!   types provided by `serde_json`.
 //! - `chrono`: This feature flags enables support for (de)serializing date/time values from the database using
-//! types provided by `chrono`
+//!   types provided by `chrono`
 //! - `uuid`: This feature flag enables support for (de)serializing uuid values from the database using types
-//! provided by `uuid`
+//!   provided by `uuid`
 //! - `network-address`: This feature flag enables support for (de)serializing
-//! IP values from the database using types provided by `ipnetwork`.
+//!   IP values from the database using types provided by `ipnetwork`.
 //! - `ipnet-address`: This feature flag enables support for (de)serializing IP
-//! values from the database using types provided by `ipnet`.
+//!   values from the database using types provided by `ipnet`.
 //! - `numeric`: This feature flag enables support for (de)serializing numeric values from the database using types
-//! provided by `bigdecimal`
+//!   provided by `bigdecimal`
 //! - `r2d2`: This feature flag enables support for the `r2d2` connection pool implementation.
 //! - `extras`: This feature enables the feature flagged support for any third party crate. This implies the
-//! following feature flags: `serde_json`, `chrono`, `uuid`, `network-address`, `numeric`, `r2d2`
+//!   following feature flags: `serde_json`, `chrono`, `uuid`, `network-address`, `numeric`, `r2d2`
 //! - `with-deprecated`: This feature enables items marked as `#[deprecated]`. It is enabled by default.
-//! disabling this feature explicitly opts out diesels stability guarantee.
+//!   disabling this feature explicitly opts out diesels stability guarantee.
 //! - `without-deprecated`: This feature disables any item marked as `#[deprecated]`. Enabling this feature
-//! explicitly opts out the stability guarantee given by diesel. This feature overrides the `with-deprecated`.
-//! Note that this may also remove items that are not shown as `#[deprecated]` in our documentation, due to
-//! various bugs in rustdoc. It can be used to check if you depend on any such hidden `#[deprecated]` item.
+//!   explicitly opts out the stability guarantee given by diesel. This feature overrides the `with-deprecated`.
+//!   Note that this may also remove items that are not shown as `#[deprecated]` in our documentation, due to
+//!   various bugs in rustdoc. It can be used to check if you depend on any such hidden `#[deprecated]` item.
 //!
 //! By default the following features are enabled:
 //!
