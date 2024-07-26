@@ -36,6 +36,21 @@ impl ToSql<MacAddr, Pg> for [u8; 6] {
     }
 }
 
+#[cfg(all(feature = "macaddr", feature = "postgres_backend"))]
+impl FromSql<MacAddr, Pg> for macaddr::MacAddr6 {
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+        <[u8; 6] as FromSql<MacAddr, Pg>>::from_sql(value).map(Into::into)
+    }
+}
+
+#[cfg(all(feature = "macaddr", feature = "postgres_backend"))]
+impl ToSql<MacAddr, Pg> for macaddr::MacAddr6 {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        let array_value = self.into_array();
+        <[u8; 6] as ToSql<MacAddr, Pg>>::to_sql(&array_value, &mut out.reborrow())
+    }
+}
+
 #[test]
 fn macaddr_roundtrip() {
     use crate::query_builder::bind_collector::ByteWrapper;
@@ -44,6 +59,16 @@ fn macaddr_roundtrip() {
     let mut bytes = Output::test(ByteWrapper(&mut buffer));
     let input_address = [0x52, 0x54, 0x00, 0xfb, 0xc6, 0x16];
     ToSql::<MacAddr, Pg>::to_sql(&input_address, &mut bytes).unwrap();
+
     let output_address: [u8; 6] = FromSql::from_sql(PgValue::for_test(&buffer)).unwrap();
     assert_eq!(input_address, output_address);
+
+    #[cfg(feature = "macaddr")]
+    {
+        use macaddr::MacAddr6;
+
+        let input_address: MacAddr6 = input_address.into();
+        let output_address: MacAddr6 = FromSql::from_sql(PgValue::for_test(&buffer)).unwrap();
+        assert_eq!(input_address, output_address);
+    }
 }

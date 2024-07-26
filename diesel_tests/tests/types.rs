@@ -1057,6 +1057,12 @@ fn pg_macaddress_from_sql() {
         expected_value,
         query_single_value::<MacAddr, [u8; 6]>(query)
     );
+
+    #[cfg(feature = "macaddr")]
+    assert_eq!(
+        expected_value,
+        query_single_value::<MacAddr, macaddr::MacAddr6>(query)
+    );
 }
 
 #[test]
@@ -1068,6 +1074,14 @@ fn pg_macaddress_to_sql_macaddress() {
         expected_value,
         value
     ));
+
+    #[cfg(feature = "macaddr")]
+    {
+        assert!(query_to_sql_equality::<MacAddr, macaddr::MacAddr6>(
+            expected_value,
+            macaddr::MacAddr6::new(0x08, 0x00, 0x2b, 0x01, 0x02, 0x03)
+        ));
+    }
 }
 
 #[test]
