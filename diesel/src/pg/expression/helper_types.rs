@@ -60,6 +60,12 @@ pub type RangeContains<Lhs, Rhs> = Grouped<
     >,
 >;
 
+/// The return type of [`lhs.range_not_extends_right_to(rhs)`](super::expression_methods::PgRangeExpressionMethods::range_not_extends_right_to)
+/// for range expressions
+#[cfg(feature = "postgres_backend")]
+pub type RangeNotExtendsRightTo<Lhs, Rhs> =
+    Grouped<super::operators::NotExtendsRightTo<Lhs, AsExpr<Rhs, Lhs>>>;
+
 /// The return type of [`lhs.contains_range(rhs)`](super::expression_methods::PgRangeExpressionMethods::contains_range)
 /// for range expressions
 #[cfg(feature = "postgres_backend")]

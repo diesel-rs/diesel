@@ -15,6 +15,7 @@ infix_operator!(OverlapsWith, " && ", backend: Pg);
 infix_operator!(Contains, " @> ", backend: Pg);
 infix_operator!(IsContainedBy, " <@ ", backend: Pg);
 infix_operator!(ILike, " ILIKE ", backend: Pg);
+infix_operator!(NotExtendsRightTo, " &< ", backend: Pg);
 infix_operator!(NotILike, " NOT ILIKE ", backend: Pg);
 infix_operator!(SimilarTo, " SIMILAR TO ", backend: Pg);
 infix_operator!(NotSimilarTo, " NOT SIMILAR TO ", backend: Pg);
