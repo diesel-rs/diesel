@@ -48,6 +48,27 @@ __diesel_infix_operator!(
 infix_operator!(RetrieveByPathAsTextJson, " #>> ", Text, backend: Pg);
 infix_operator!(RemoveByPathFromJsonb, " #-", Jsonb, backend: Pg);
 
+__diesel_infix_operator!(
+    UnionsRange,
+    " + ",
+    __diesel_internal_SameResultAsInput,
+    backend: Pg
+);
+
+__diesel_infix_operator!(
+    DifferenceRange,
+    " - ",
+    __diesel_internal_SameResultAsInput,
+    backend: Pg
+);
+
+__diesel_infix_operator!(
+    IntersectionRange,
+    " * ",
+    __diesel_internal_SameResultAsInput,
+    backend: Pg
+);
+
 #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
 #[doc(hidden)]
 pub struct ArrayIndex<L, R> {
