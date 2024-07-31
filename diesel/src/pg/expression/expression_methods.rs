@@ -2730,10 +2730,16 @@ pub(in crate::pg) mod private {
         message = "`{Self}` is neither `diesel::sql_types::Array<_>` nor `diesel::sql_types::Nullable<Array<_>>`",
         note = "try to provide an expression that produces one of the expected sql types"
     )]
-    pub trait ArrayOrNullableArray {}
+    pub trait ArrayOrNullableArray {
+        type Inner;
+    }
 
-    impl<T> ArrayOrNullableArray for Array<T> {}
-    impl<T> ArrayOrNullableArray for Nullable<Array<T>> {}
+    impl<T> ArrayOrNullableArray for Array<T> {
+        type Inner = T;
+    }
+    impl<T> ArrayOrNullableArray for Nullable<Array<T>> {
+        type Inner = T;
+    }
 
     /// Marker trait used to implement `PgNetExpressionMethods` on the appropriate types.
     #[diagnostic::on_unimplemented(

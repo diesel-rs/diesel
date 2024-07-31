@@ -3,6 +3,7 @@
 use super::expression_methods::InetOrCidr;
 use super::expression_methods::RangeHelper;
 use crate::expression::functions::define_sql_function;
+use crate::pg::expression::expression_methods::ArrayOrNullableArray;
 use crate::sql_types::*;
 
 define_sql_function! {
@@ -700,15 +701,15 @@ define_sql_function! {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use diesel::dsl::{array, array_append};
-    /// #     use diesel::sql_types::{Integer, Nullable};
+    /// #     use diesel::dsl::array_append;
+    /// #     use diesel::sql_types::{Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let ints = diesel::select(array_append::<Integer, _, _>(Some(vec![Some(1), Some(2)]), Some(3)))
+    /// let ints = diesel::select(array_append::<Integer, Array<_>, _, _>(vec![Some(1), Some(2)], Some(3)))
     ///     .get_result::<Vec<Option<i32>>>(connection)?;
     /// assert_eq!(vec![Some(1), Some(2), Some(3)], ints);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn array_append<T: SingleValue>(ts: Nullable<Array<Nullable<T>>>, t: Nullable<T>) -> Array<Nullable<T>>;
+    fn array_append<T: SingleValue, Arr: ArrayOrNullableArray<Inner=Nullable<T>> + SingleValue>(a: Arr, e: Nullable<T>) -> Array<Nullable<T>>;
 }
