@@ -687,3 +687,28 @@ define_sql_function! {
     #[cfg(feature = "postgres_backend")]
     fn daterange(lower: Nullable<Date>, upper: Nullable<Date>, bound: RangeBoundEnum) -> Daterange;
 }
+
+define_sql_function! {
+    /// Append an element to the end of an array.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{array, array_append};
+    /// #     use diesel::sql_types::{Integer, Nullable};
+    /// #     let connection = &mut establish_connection();
+    /// let ints = diesel::select(array_append::<Integer, _, _>(Some(vec![Some(1), Some(2)]), Some(3)))
+    ///     .get_result::<Vec<Option<i32>>>(connection)?;
+    /// assert_eq!(vec![Some(1), Some(2), Some(3)], ints);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn array_append<T: SingleValue>(ts: Nullable<Array<Nullable<T>>>, t: Nullable<T>) -> Array<Nullable<T>>;
+}
