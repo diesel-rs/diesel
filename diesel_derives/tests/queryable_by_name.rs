@@ -12,12 +12,12 @@ table! {
     }
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "sqlite")]
 table! {
     multiple_sql_types_for_text {
         id -> Integer,
-        name -> Text,
-        email -> Citext
+        string -> Text,
+        time -> Timestamp,
     }
 }
 
@@ -95,57 +95,50 @@ fn struct_with_path_in_name() {
     );
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "sqlite")]
 #[test]
 fn struct_with_multiple_sql_types_for_text() {
     #[derive(Debug, PartialEq, QueryableByName)]
     struct MultipleSqlTypesForText {
         #[diesel(sql_type = diesel::sql_types::Text)]
-        name: String,
-        #[diesel(sql_type = diesel::sql_types::Citext)]
-        email: String,
+        string: String,
+        #[diesel(sql_type = diesel::sql_types::Timestamp)]
+        time: String,
     }
 
     let conn = &mut connection();
-    sql_query("CREATE EXTENSION IF NOT EXISTS citext")
-        .execute(conn)
-        .unwrap();
-    let data = sql_query("SELECT 'name'::text AS name, 'email'::citext AS email").get_result(conn);
+    let data = sql_query("SELECT 'name' AS string, '2024-07-31T21:09:00' AS time").get_result(conn);
     assert_eq!(
         Ok(MultipleSqlTypesForText {
-            name: "name".into(),
-            email: "email".into()
+            string: "name".into(),
+            time: "2024-07-31T21:09:00".into()
         }),
         data
     );
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "sqlite")]
 #[test]
 fn struct_with_multiple_sql_types_for_text_from_table() {
     #[derive(Debug, PartialEq, QueryableByName)]
     #[diesel(table_name = multiple_sql_types_for_text)]
     struct MultipleSqlTypesForText {
-        name: String,
-        email: String,
+        string: String,
+        time: String,
     }
 
     let conn = &mut connection();
-    sql_query("CREATE EXTENSION IF NOT EXISTS citext")
-        .execute(conn)
-        .unwrap();
-    let data = sql_query("SELECT 'name'::text AS name, 'email'::citext AS email").get_result(conn);
+    let data = sql_query("SELECT 'name' AS string, '2024-07-31T21:09:00' AS time").get_result(conn);
     assert_eq!(
         Ok(MultipleSqlTypesForText {
-            name: "name".into(),
-            email: "email".into()
+            string: "name".into(),
+            time: "2024-07-31T21:09:00".into()
         }),
         data
     );
 }
 
 // FIXME: Test usage with renamed columns
-
 #[test]
 fn struct_with_no_table() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
