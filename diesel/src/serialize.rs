@@ -237,7 +237,7 @@ where
 ///        match *self {
 ///            // these string values need to match the labels used in your
 ///            // enum definition in SQL. So this expects that you defined the
-///            /// relevat enum type as`ENUM('one', 'two')` in your `CREATE TABLE` statement
+///            /// relevant enum type as`ENUM('one', 'two')` in your `CREATE TABLE` statement
 ///            Post::FirstValue => out.write_all(b"one")?,
 ///            Post::SecondValue => out.write_all(b"two")?,
 ///        }
