@@ -91,6 +91,25 @@ pub type GreaterThanRange<Lhs, Rhs> = Grouped<super::operators::ContainsNet<Lhs,
 #[doc(hidden)] // used by `#[auto_type]`
 pub type GreaterThan<Lhs, Rhs> = GreaterThanRange<Lhs, Rhs>;
 
+/// The return type of [`lhs.union_range(rhs)`](super::expression_methods::PgRangeExpressionMethods::union_range)
+#[cfg(feature = "postgres_backend")]
+pub type UnionRange<Lhs, Rhs> = Grouped<super::operators::UnionsRange<Lhs, AsExpr<Rhs, Lhs>>>;
+
+/// The return type of [`lhs.difference_range(rhs)`](super::expression_methods::PgRangeExpressionMethods::difference_range)
+#[cfg(feature = "postgres_backend")]
+pub type Difference<Lhs, Rhs> = Grouped<super::operators::DifferenceRange<Lhs, AsExpr<Rhs, Lhs>>>;
+
+#[doc(hidden)] // used by `#[auto_type]`
+pub type DifferenceRange<Lhs, Rhs> = Difference<Lhs, Rhs>;
+
+/// The return type of [`lhs.intersection_range(rhs)`](super::expression_methods::PgRangeExpressionMethods::intersection_range)
+#[cfg(feature = "postgres_backend")]
+pub type Intersection<Lhs, Rhs> =
+    Grouped<super::operators::IntersectionRange<Lhs, AsExpr<Rhs, Lhs>>>;
+
+#[doc(hidden)] // used by `#[auto_type]`
+pub type IntersectionRange<Lhs, Rhs> = Intersection<Lhs, Rhs>;
+
 /// The return type of [`expr.nulls_first()`](super::expression_methods::PgSortExpressionMethods::nulls_first)
 #[cfg(feature = "postgres_backend")]
 pub type NullsFirst<T> = super::operators::NullsFirst<T>;
