@@ -689,6 +689,7 @@ define_sql_function! {
     fn daterange(lower: Nullable<Date>, upper: Nullable<Date>, bound: RangeBoundEnum) -> Daterange;
 }
 
+#[cfg(feature = "postgres_backend")]
 define_sql_function! {
     /// Append an element to the end of an array.
     /// # Example
@@ -710,6 +711,5 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "postgres_backend")]
     fn array_append<T: SingleValue, Arr: ArrayOrNullableArray<Inner=Nullable<T>> + SingleValue>(a: Arr, e: Nullable<T>) -> Array<Nullable<T>>;
 }
