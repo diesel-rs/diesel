@@ -1127,6 +1127,9 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     ///
     /// This operator takes two ranges and returns the difference.
     ///
+    /// The second range must not be contained in the first in such a way that the
+    /// difference would not be a single range.
+    ///
     /// # Example
     ///
     /// ```rust
@@ -1173,7 +1176,7 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
 
     /// Creates a PostgreSQL ` * ` expression.
     ///
-    /// This operator takes two ranges and returns the difference.
+    /// This operator takes two ranges and returns the intersection.
     ///
     /// # Example
     ///
