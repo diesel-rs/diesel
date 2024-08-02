@@ -142,29 +142,33 @@ pub fn bench_medium_complex_query_by_name(b: &mut Bencher, size: usize) {
     let query = conn
         .prep(
             "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, p.user_id, p.title, p.body \
-             FROM users as u LEFT JOIN posts as p on u.id = p.user_id",
+             FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = ?",
         )
         .unwrap();
 
     b.iter(|| {
-        conn.exec_map(&query, Params::Empty, |mut row: Row| {
-            let user = User {
-                id: row.take("myuser_id").unwrap(),
-                name: row.take("name").unwrap(),
-                hair_color: row.take("hair_color").unwrap(),
-            };
-            let post = if let Some(id) = row.take("post_id").unwrap() {
-                Some(Post {
-                    id,
-                    user_id: row.take("user_id").unwrap(),
-                    title: row.take("title").unwrap(),
-                    body: row.take("body").unwrap(),
-                })
-            } else {
-                None
-            };
-            (user, post)
-        })
+        conn.exec_map(
+            &query,
+            Params::Positional(vec!["black".into()]),
+            |mut row: Row| {
+                let user = User {
+                    id: row.take("myuser_id").unwrap(),
+                    name: row.take("name").unwrap(),
+                    hair_color: row.take("hair_color").unwrap(),
+                };
+                let post = if let Some(id) = row.take("post_id").unwrap() {
+                    Some(Post {
+                        id,
+                        user_id: row.take("user_id").unwrap(),
+                        title: row.take("title").unwrap(),
+                        body: row.take("body").unwrap(),
+                    })
+                } else {
+                    None
+                };
+                (user, post)
+            },
+        )
         .unwrap()
     })
 }
