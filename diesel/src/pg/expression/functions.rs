@@ -703,11 +703,23 @@ define_sql_function! {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::array_append;
-    /// #     use diesel::sql_types::{Integer, Array};
+    /// #     use diesel::sql_types::{Nullable, Integer, Array};
     /// #     let connection = &mut establish_connection();
     /// let ints = diesel::select(array_append::<Integer, Array<_>, _, _>(vec![1, 2], 3))
     ///     .get_result::<Vec<i32>>(connection)?;
     /// assert_eq!(vec![1, 2, 3], ints);
+    ///
+    /// let ints = diesel::select(array_append::<Nullable<Integer>, Array<_>, _, _>(vec![Some(1), Some(2)], None::<i32>))
+    ///     .get_result::<Vec<Option<i32>>>(connection)?;
+    /// assert_eq!(vec![Some(1), Some(2), None], ints);
+    ///
+    /// let ints = diesel::select(array_append::<Integer, Nullable<Array<_>>, _, _>(None::<Vec<i32>>, 3))
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(vec![3], ints);
+    ///
+    /// let ints = diesel::select(array_append::<Nullable<Integer>, Nullable<Array<_>>, _, _>(None::<Vec<i32>>, None::<i32>))
+    ///     .get_result::<Vec<Option<i32>>>(connection)?;
+    /// assert_eq!(vec![None], ints);
     /// #     Ok(())
     /// # }
     /// ```
