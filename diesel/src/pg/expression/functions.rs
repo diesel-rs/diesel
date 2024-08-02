@@ -512,9 +512,11 @@ define_sql_function! {
     /// # }
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "numeric")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "numeric")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
     /// #     use std::collections::Bound;
@@ -560,9 +562,11 @@ define_sql_function! {
     /// # }
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "time")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "time")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
     /// #     use std::collections::Bound;
@@ -656,9 +660,11 @@ define_sql_function! {
     /// # }
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "time")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "time")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
     /// #     use std::collections::Bound;
