@@ -209,7 +209,7 @@ pub fn bench_medium_complex_query_by_name(b: &mut Bencher, size: usize) {
         let query = client
             .prepare(
                 "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, p.user_id, p.title, p.body \
-                 FROM users as u LEFT JOIN posts as p on u.id = p.user_id",
+                 FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = $1",
             )
             .await
             .unwrap();
@@ -219,7 +219,7 @@ pub fn bench_medium_complex_query_by_name(b: &mut Bencher, size: usize) {
     b.iter(|| {
         runtime.block_on(async {
             client
-                .query_raw(&query, NO_PARAMS)
+                .query_raw(&query, &[&"black"])
                 .await
                 .unwrap()
                 .map(|row| {
