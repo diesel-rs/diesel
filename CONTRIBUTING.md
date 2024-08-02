@@ -110,9 +110,10 @@ Thank you! We'll try to respond as quickly as possible.
     ```
 
 5. Now, try running the test suite to confirm everything works for you locally
-   by executing `bin/test`. (Initially, this will take a while to compile
+   by executing `cargo xtask run-tests`. (Initially, this will take a while to compile
    everything.) In addition, if you want to compile and test a crate separately, 
-   you can refer to the commands in `bin/test`.
+   you can refer to the commands printed and executed by `cargo xtask run-tests`. Additionally you 
+   can check `cargo xtask run-tests --help` on how to further configure which tests are executed.
 
 [rustup]: https://rustup.rs/
 
@@ -126,17 +127,19 @@ To run rustfmt tests locally:
 
 2. Install the rustfmt and clippy by running
    ```
-   rustup component add rustfmt-preview
-   rustup component add clippy-preview
+   rustup component add rustfmt
+   rustup component add clippy
    ```
+   
+3. Install [cargo-nextest](https://nexte.st/) via `cargo install cargo-nextest`
 
-3. Run clippy using cargo from the root of your diesel repo.
+4. Run clippy using cargo from the root of your diesel repo.
    ```
    cargo clippy --all
    ```
    Each PR needs to compile without warning.
 
-4. Run rustfmt using cargo from the root of your diesel repo.
+5. Run rustfmt using cargo from the root of your diesel repo.
 
    To see changes that need to be made, run
 

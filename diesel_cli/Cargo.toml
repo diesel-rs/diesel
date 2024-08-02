@@ -43,7 +43,7 @@ dotenvy = "0.15"
 heck = "0.5.0"
 serde = { version = "1.0.193", features = ["derive", "std"] }
 toml = "0.8"
-url = { version = "2.2.2" }
+url = "2.2.2"
 libsqlite3-sys = { workspace = true, optional = true }
 pq-sys = { version = ">=0.4, <0.7.0", optional = true }
 openssl-sys = { version = "0.9.93", features = ["vendored"], optional = true }

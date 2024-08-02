@@ -1,15 +1,17 @@
 [package]
-name = "diesel_demo_step_3_mysql"
+name = "getting_started_step_3_mysql"
 version = "0.1.0"
-edition = "2018"
+edition.workspace = true
 publish = false
 
 [dependencies]
-diesel = { version = "2.1.0", path = "../../../diesel", features = ["mysql"] }
+diesel = { version = "2.2.0", path = "../../../diesel", features = ["mysql"] }
 dotenvy = "0.15"
 
 [dev-dependencies]
 assert_cmd = "2.0.14"
+url = "2.2.2"
+diesel_migrations = { version = "2.2.0", path = "../../../diesel_migrations" }
 
 [[bin]]
 name = "show_posts"

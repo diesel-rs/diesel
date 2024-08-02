@@ -607,10 +607,7 @@ fn filter_subselect_with_nullable_column() {
 
 #[test]
 #[cfg(feature = "postgres")]
-#[allow(deprecated)]
 fn filter_subselect_with_pg_any() {
-    use diesel::dsl::any;
-
     let conn = &mut connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", conn);
 
@@ -624,9 +621,11 @@ fn filter_subselect_with_pg_any() {
 
     let users_with_published_posts = users::table
         .filter(
-            users::id.eq(any(posts::table
-                .select(posts::user_id)
-                .filter(posts::user_id.eq(users::id)))),
+            users::id.eq_any(
+                posts::table
+                    .select(posts::user_id)
+                    .filter(posts::user_id.eq(users::id)),
+            ),
         )
         .load(conn);
     assert_eq!(Ok(vec![sean]), users_with_published_posts);

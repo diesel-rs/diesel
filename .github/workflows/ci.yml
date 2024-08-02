@@ -21,7 +21,14 @@ concurrency:
 jobs:
   check_and_test:
     name: Check
-    needs: [sqlite_bundled, rustfmt_and_clippy, postgres_bundled, mysql_bundled, typos]
+    needs:
+      [
+        sqlite_bundled,
+        rustfmt_and_clippy,
+        postgres_bundled,
+        mysql_bundled,
+        typos,
+      ]
     strategy:
       fail-fast: false
       matrix:
@@ -37,12 +44,6 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: ${{ runner.os }}-${{ matrix.backend }}-cargo-${{ hashFiles('**/Cargo.toml') }}
-
-      - name: Set environment variables
-        shell: bash
-        if: matrix.backend == 'mysql'
-        run: |
-          echo "RUST_TEST_THREADS=1" >> $GITHUB_ENV
 
       - name: Set environment variables
         shell: bash
@@ -63,7 +64,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libpq-dev postgresql
-          echo "host    all             all             127.0.0.1/32            md5" > sudo tee -a /etc/postgresql/10/main/pg_hba.conf
           sudo service postgresql restart && sleep 3
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
           sudo service postgresql restart && sleep 3
@@ -73,45 +73,12 @@ jobs:
       - name: Install sqlite (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'sqlite'
         run: |
-          curl -fsS --retry 3 -o sqlite-autoconf-3400100.tar.gz https://www.sqlite.org/2022/sqlite-autoconf-3400100.tar.gz
-          tar zxf sqlite-autoconf-3400100.tar.gz
-          cd sqlite-autoconf-3400100
-          CFLAGS="$CFLAGS -O2 -fno-strict-aliasing \
-              -DSQLITE_DEFAULT_FOREIGN_KEYS=1 \
-              -DSQLITE_SECURE_DELETE \
-              -DSQLITE_ENABLE_COLUMN_METADATA \
-              -DSQLITE_ENABLE_FTS3_PARENTHESIS \
-              -DSQLITE_ENABLE_RTREE=1 \
-              -DSQLITE_SOUNDEX=1 \
-              -DSQLITE_ENABLE_UNLOCK_NOTIFY \
-              -DSQLITE_OMIT_LOOKASIDE=1 \
-              -DSQLITE_ENABLE_DBSTAT_VTAB \
-              -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1 \
-              -DSQLITE_ENABLE_LOAD_EXTENSION \
-              -DSQLITE_ENABLE_JSON1 \
-              -DSQLITE_LIKE_DOESNT_MATCH_BLOBS \
-              -DSQLITE_THREADSAFE=1 \
-              -DSQLITE_ENABLE_FTS3_TOKENIZER=1 \
-              -DSQLITE_MAX_SCHEMA_RETRY=25 \
-              -DSQLITE_ENABLE_PREUPDATE_HOOK \
-              -DSQLITE_ENABLE_SESSION \
-              -DSQLITE_ENABLE_STMTVTAB \
-              -DSQLITE_MAX_VARIABLE_NUMBER=250000" \
-          ./configure --prefix=/usr \
-              --enable-threadsafe \
-              --enable-dynamic-extensions \
-              --libdir=/usr/lib/x86_64-linux-gnu \
-              --libexecdir=/usr/lib/x86_64-linux-gnu/sqlite3
-          sudo make
-          sudo make install
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Install mysql (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'mysql'
         run: |
           sudo systemctl start mysql.service
-          sudo apt-get update
-          sudo apt-get -y install libmysqlclient-dev
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
           echo "MYSQL_DATABASE_URL=mysql://root:root@localhost/diesel_test" >> $GITHUB_ENV
           echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root:root@localhost/diesel_example" >> $GITHUB_ENV
@@ -156,7 +123,6 @@ jobs:
           echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@localhost/diesel_unit_test" >> $GITHUB_ENV
           echo "MYSQLCLIENT_LIB_DIR=/usr/local/opt/mariadb@10.5/lib" >> $GITHUB_ENV
           echo "MYSQLCLIENT_VERSION=10.5" >> $GITHUB_ENV
-
 
       - name: Install mysql (MacOS M1)
         if: matrix.os == 'macos-14' && matrix.backend == 'mysql'
@@ -229,97 +195,50 @@ jobs:
       - name: Rust version check
         shell: bash
         run: |
-          cargo +${{ matrix.rust }} --version
-          rustc +${{ matrix.rust }} --version
+          rustup override set ${{ matrix.rust }}
+          cargo --version
+          rustc --version
 
-      - name: Test diesel (nightly)
+      - uses: taiki-e/install-action@nextest
+
+      - name: Add Flags (nightly)
         if: matrix.rust == 'nightly'
         shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable extras i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-
-      - name: Test diesel
-        if: matrix.rust == 'stable'
-        shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras r2d2"
-
-      - name: Test diesel (with-deprecated)
-        if: matrix.rust == 'beta'
-        shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras with-deprecated"
-
-      - name: Test diesel-derives (nightly)
-        if: matrix.rust == 'nightly'
-        shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_derives/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }} diesel/unstable diesel/time time diesel/chrono chrono ${{ matrix.backend }}"
-
-      - name: Test diesel-derives
-        shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_derives/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }} ${{ matrix.backend }}"
-
-      - name: Test diesel-cli
-        shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_cli/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
-
-      - name: Test diesel examples
-        shell: bash
-        env:
-          BACKEND: ${{ matrix.backend }}
         run: |
-          (cd examples/${{ matrix.backend }} && rustup run ${{ matrix.rust }} bash test_all)
+          echo FLAGS="-F diesel/i-implement-a-third-party-backend-and-opt-into-breaking-changes -F diesel/unstable -F diesel/without-deprecated" >> $GITHUB_ENV
 
-      - name: Test migrations-internals
+      - name: Add Flags (beta)
+        if: matrix.rust == 'beta' && matrix.backend == 'sqlite'
         shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_migrations/migrations_internals/Cargo.toml
+        run: |
+          echo FLAGS="-F diesel/returning_clauses_for_sqlite_3_35 -F libsqlite3-sys/bundled" >> $GITHUB_ENV
 
-      - name: Test migrations-macros
-        shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "diesel/${{ matrix.backend }} ${{ matrix.backend }}"
-
-      - name: Test table-macro-syntax
-        shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_table_macro_syntax/Cargo.toml
-
-      - name: Test diesel_migrations
-        shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_migrations/Cargo.toml --features "${{ matrix.backend }} diesel/${{ matrix.backend }}"
-
-      - name: Run diesel_tests (nightly)
-        if: matrix.rust == 'nightly'
-        shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable"
-
-      - name: Run diesel_tests (beta)
-        if: matrix.rust == 'beta'
-        shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }} returning_clauses_for_sqlite_3_35 libsqlite3-sys/bundled"
-
-      - name: Run diesel_tests
+      - name: Add Flags (stable)
         if: matrix.rust == 'stable'
         shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
+        run: |
+          echo FLAGS="-F diesel/with-deprecated" >> $GITHUB_ENV
 
-      - name: Run diesel_dynamic_schema tests
+      - name: Skip Doc tests for windows/macos
+        if: runner.os != 'Linux'
         shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_dynamic_schema/Cargo.toml --no-default-features --features "${{ matrix.backend }} diesel/${{ matrix.backend }}"
+        run: |
+          echo NO_DOC_TESTS="--no-doc-tests" >> $GITHUB_ENV
+
+      - name: Enable example schema checks on linux
+        if: runner.os != 'Linux'
+        shell: bash
+        run: |
+          echo EXAMPLE_SCHEMA_CHECKS="--no-example-schema-check" >> $GITHUB_ENV
+
+      - name: Run tests
+        shell: bash
+        run: cargo xtask run-tests ${{ matrix.backend }} $NO_DOC_TESTS $EXAMPLE_SCHEMA_CHECKS -- --no-fail-fast $FLAGS
 
       - name: Run diesel_benches
+        if: runner.os == 'Linux'
         shell: bash
         run: cargo +${{ matrix.rust }} test --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" --bench benchmarks
-
-      - name: Run rustdoc (nightly)
-        if: matrix.rust == 'nightly'
-        shell: bash
-        run: cargo +${{ matrix.rust }} doc --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }} unstable i-implement-a-third-party-backend-and-opt-into-breaking-changes extras"
-
-      - name: Run rustdoc
-        if: matrix.rust == 'stable'
-        shell: bash
-        run: cargo +${{ matrix.rust }} doc --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }}"
-
-      - name: Run rustdoc (with-deprecated)
-        if: matrix.rust == 'beta'
-        shell: bash
-        run: cargo +${{ matrix.rust }} doc --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }} with-deprecated"
 
   compile_tests:
     name: Compiletests

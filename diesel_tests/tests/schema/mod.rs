@@ -220,7 +220,7 @@ const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
 
 #[cfg(feature = "postgres")]
 const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
-    diesel_migrations::embed_migrations!("../migrations/postgresql");
+    diesel_migrations::embed_migrations!("../migrations/postgres");
 
 #[cfg(feature = "mysql")]
 const MIGRATIONS: diesel_migrations::EmbeddedMigrations =

@@ -1,8 +1,10 @@
 use crate::schema::*;
 use diesel::connection::SimpleConnection;
-use diesel::deserialize::FromSql;
+use diesel::deserialize::{FromSql, FromSqlRow};
+use diesel::expression::AsExpression;
 use diesel::pg::{Pg, PgValue};
 use diesel::serialize::{IsNull, Output, ToSql};
+use diesel::sql_types::SqlType;
 use diesel::*;
 use std::io::Write;
 

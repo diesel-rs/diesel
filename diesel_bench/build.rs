@@ -32,7 +32,7 @@ fn connection() -> MysqlConnection {
 }
 
 #[cfg(feature = "postgres")]
-const MIGRATION_SUBDIR: &str = "postgresql";
+const MIGRATION_SUBDIR: &str = "postgres";
 
 #[cfg(feature = "sqlite")]
 const MIGRATION_SUBDIR: &str = "sqlite";

@@ -1,5 +1,6 @@
 use crate::helpers::*;
 use crate::schema::*;
+use diesel::expression::AsExpression;
 use diesel::serialize::Output;
 use diesel::*;
 

@@ -1,6 +1,6 @@
 use self::models::Post;
 use diesel::prelude::*;
-use diesel_demo_step_3_sqlite::*;
+use getting_started_step_3_sqlite::*;
 use std::env::args;
 
 fn main() {

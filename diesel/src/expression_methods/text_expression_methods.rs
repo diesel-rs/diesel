@@ -27,7 +27,7 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #     use diesel::insert_into;
     /// #
     /// #     let connection = &mut connection_no_data();
-    /// #     diesel::sql_query("CREATE TABLE users (
+    /// #     diesel::sql_query("CREATE TEMPORARY TABLE users (
     /// #         id INTEGER PRIMARY KEY,
     /// #         name VARCHAR(255) NOT NULL,
     /// #         hair_color VARCHAR(255)

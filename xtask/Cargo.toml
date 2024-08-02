@@ -1,0 +1,13 @@
+[package]
+name = "xtask"
+version = "0.1.0"
+publish = false
+rust-version.workspace = true
+include.workspace = true
+edition.workspace = true
+
+[dependencies]
+clap = { version = "4.0", default-features = false, features = ["std", "help", "usage", "error-context", "suggestions", "derive"] }
+cargo_metadata = "0.18"
+dotenvy = "0.15"
+tempfile = "3"
