@@ -23,12 +23,13 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             if f.embed() {
                 Ok(quote!(<#field_ty as QueryableByName<__DB>>::build(row)?))
             } else {
+                let st = sql_type(f, &model)?;
                 let deserialize_ty = f.ty_for_deserialize();
                 let name = f.column_name()?;
                 let name = LitStr::new(&name.to_string(), name.span());
                 Ok(quote!(
                    {
-                       let field = diesel::row::NamedRow::get(row, #name)?;
+                       let field = diesel::row::NamedRow::get::<#st, #deserialize_ty>(row, #name)?;
                        <#deserialize_ty as Into<#field_ty>>::into(field)
                    }
                 ))
