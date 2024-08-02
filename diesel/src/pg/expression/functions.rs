@@ -3,6 +3,7 @@
 use super::expression_methods::InetOrCidr;
 use super::expression_methods::RangeHelper;
 use crate::expression::functions::define_sql_function;
+use crate::pg::expression::expression_methods::ArrayOrNullableArray;
 use crate::sql_types::*;
 
 define_sql_function! {
@@ -511,9 +512,11 @@ define_sql_function! {
     /// # }
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "numeric")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "numeric")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
     /// #     use std::collections::Bound;
@@ -559,9 +562,11 @@ define_sql_function! {
     /// # }
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "time")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "time")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
     /// #     use std::collections::Bound;
@@ -655,9 +660,11 @@ define_sql_function! {
     /// # }
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "time")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "time")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
     /// #     use std::collections::Bound;
@@ -686,4 +693,41 @@ define_sql_function! {
     /// ```
     #[cfg(feature = "postgres_backend")]
     fn daterange(lower: Nullable<Date>, upper: Nullable<Date>, bound: RangeBoundEnum) -> Daterange;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Append an element to the end of an array.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_append;
+    /// #     use diesel::sql_types::{Nullable, Integer, Array};
+    /// #     let connection = &mut establish_connection();
+    /// let ints = diesel::select(array_append::<Array<_>, Integer, _, _>(vec![1, 2], 3))
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(vec![1, 2, 3], ints);
+    ///
+    /// let ints = diesel::select(array_append::<Array<_>, Nullable<Integer>, _, _>(vec![Some(1), Some(2)], None::<i32>))
+    ///     .get_result::<Vec<Option<i32>>>(connection)?;
+    /// assert_eq!(vec![Some(1), Some(2), None], ints);
+    ///
+    /// let ints = diesel::select(array_append::<Nullable<Array<_>>, Integer, _, _>(None::<Vec<i32>>, 3))
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(vec![3], ints);
+    ///
+    /// let ints = diesel::select(array_append::<Nullable<Array<_>>, Nullable<Integer>, _, _>(None::<Vec<i32>>, None::<i32>))
+    ///     .get_result::<Vec<Option<i32>>>(connection)?;
+    /// assert_eq!(vec![None], ints);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_append<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue>(a: Arr, e: T) -> Array<T>;
 }
