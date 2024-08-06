@@ -61,24 +61,33 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             None => treat_none_as_null,
         };
 
-        match field.serialize_as.as_ref() {
-            Some(AttributeSpanWrapper { item: ty, .. }) => {
+        match (field.serialize_as.as_ref(), field.serialize_fn.as_ref()) {
+            (Some(AttributeSpanWrapper { item: ty, .. }), serialize_fn) => {
                 direct_field_ty.push(field_changeset_ty_serialize_as(
                     field,
                     table_name,
                     ty,
                     treat_none_as_null,
                 )?);
-                direct_field_assign.push(field_changeset_expr_serialize_as(
-                    field,
-                    table_name,
-                    ty,
-                    treat_none_as_null,
-                )?);
+                if let Some(AttributeSpanWrapper { item: function, .. }) = serialize_fn {
+                    direct_field_ty.push(field_changeset_expr_serialize_fn(
+                        field,
+                        table_name,
+                        function,
+                        treat_none_as_null,
+                    )?);
+                } else {
+                    direct_field_assign.push(field_changeset_expr_serialize_as(
+                        field,
+                        table_name,
+                        ty,
+                        treat_none_as_null,
+                    )?);
+                }
 
                 generate_borrowed_changeset = false; // as soon as we hit one field with #[diesel(serialize_as)] there is no point in generating the impl of AsChangeset for borrowed structs
             }
-            None => {
+            (None, None) => {
                 direct_field_ty.push(field_changeset_ty(
                     field,
                     table_name,
@@ -103,6 +112,12 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                     Some(quote!(&)),
                     treat_none_as_null,
                 )?);
+            }
+            (None, Some(AttributeSpanWrapper { attribute_span, .. })) => {
+                return Err(syn::Error::new(
+                    *attribute_span,
+                    "`#[diesel(serialize_fn)]` requires `#[diesel(serialize_as)]` to be declared as well",
+                ));
             }
         }
     }
@@ -216,5 +231,22 @@ fn field_changeset_expr_serialize_as(
         Ok(quote!(self.#field_name.map(|x| #column.eq(::std::convert::Into::<#ty>::into(x)))))
     } else {
         Ok(quote!(#column.eq(::std::convert::Into::<#ty>::into(self.#field_name))))
+    }
+}
+
+fn field_changeset_expr_serialize_fn(
+    field: &Field,
+    table_name: &Path,
+    function: &Expr,
+    treat_none_as_null: bool,
+) -> Result<TokenStream> {
+    let field_name = &field.name;
+    let column_name = field.column_name()?;
+    column_name.valid_ident()?;
+    let column: Expr = parse_quote!(#table_name::#column_name);
+    if !treat_none_as_null && is_option_ty(&field.ty) {
+        Ok(quote!(self.#field_name.map(|x| #column.eq((#function)(x)))))
+    } else {
+        Ok(quote!(#column.eq((#function)(self.#field_name))))
     }
 }
