@@ -11,6 +11,9 @@ table! {
         id -> Integer,
         name -> Text,
         time -> Timestamp,
+        bigint -> BigInt,
+        numeric -> Numeric,
+        date -> Date,
     }
 }
 
@@ -46,6 +49,7 @@ table! {
         blob -> Binary,
         timestamp -> Timestamp,
         range -> Range<Integer>,
+        timestamptz -> Timestamptz,
     }
 }
 
@@ -287,7 +291,9 @@ fn test_pg_range_expression_methods() -> _ {
         .and(pg_extras::range.overlaps_with(my_range))
         .and(pg_extras::range.lesser_than(my_range))
         .and(pg_extras::range.greater_than(my_range))
-        .and(pg_extras::range.range_not_extends_right_to(my_range))
+        .and(pg_extras::range.range_extends_right_to(my_range))
+        .and(pg_extras::range.range_extends_left_to(my_range))
+        .and(pg_extras::id.is_contained_by_range(my_range))
         .and(
             pg_extras::range
                 .union_range(pg_extras::range)
@@ -309,12 +315,6 @@ fn test_pg_range_expression_methods() -> _ {
     // function. We could likely support it by
     // renaming the function to `.range_contains()` (or something similar)
     // .contains(42_i32)
-    //.select(
-    // this kind of free standing functions is not supported by auto_type yet
-    //lower(pg_extras::range),
-    // The auto_trait also didn't like this one
-    //int4range(None, Some(5i32), RangeBound::LowerBoundInclusiveUpperBoundInclusive),
-    //)
 }
 
 #[cfg(feature = "postgres")]
@@ -384,6 +384,34 @@ fn test_normal_functions() -> _ {
             .otherwise(users::id),
         case_when(users::id.eq(1_i32), users::id).otherwise(users::id),
     ))
+}
+
+#[cfg(feature = "postgres")]
+#[auto_type]
+fn postgres_functions() -> _ {
+    let bound: sql_types::RangeBound =
+        sql_types::RangeBound::LowerBoundExclusiveUpperBoundExclusive;
+    (
+        lower(pg_extras::range),
+        upper(pg_extras::range),
+        isempty(pg_extras::range),
+        lower_inc(pg_extras::range),
+        upper_inc(pg_extras::range),
+        lower_inf(pg_extras::range),
+        upper_inf(pg_extras::range),
+        range_merge(pg_extras::range, pg_extras::range),
+        int4range(users::id.nullable(), users::id.nullable(), bound),
+        int8range(users::bigint.nullable(), users::bigint.nullable(), bound),
+        numrange(users::numeric.nullable(), users::numeric.nullable(), bound),
+        daterange(users::date.nullable(), users::date.nullable(), bound),
+        tsrange(users::time.nullable(), users::time.nullable(), bound),
+        tstzrange(
+            pg_extras::timestamptz.nullable(),
+            pg_extras::timestamptz.nullable(),
+            bound,
+        ),
+        array_append(pg_extras::array, pg_extras::id),
+    )
 }
 
 #[auto_type]
