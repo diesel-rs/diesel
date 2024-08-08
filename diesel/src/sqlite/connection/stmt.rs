@@ -15,7 +15,7 @@ use std::io::{stderr, Write};
 use std::os::raw as libc;
 use std::ptr::{self, NonNull};
 
-pub(super) struct Statement {
+pub(crate) struct Statement {
     inner_statement: NonNull<ffi::sqlite3_stmt>,
 }
 
@@ -38,7 +38,7 @@ impl Statement {
                 raw_connection.internal_connection.as_ptr(),
                 CString::new(sql)?.as_ptr(),
                 n_byte,
-                if matches!(is_cached, PrepareForCache::Yes) {
+                if matches!(is_cached, PrepareForCache::Yes { counter: _ }) {
                     ffi::SQLITE_PREPARE_PERSISTENT as u32
                 } else {
                     0

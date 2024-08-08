@@ -205,6 +205,10 @@ impl Connection for MysqlConnection {
     fn set_instrumentation(&mut self, instrumentation: impl Instrumentation) {
         self.instrumentation = instrumentation.into();
     }
+
+    fn set_prepared_statement_cache_size(&mut self, size: CacheSize) {
+        self.statement_cache.set_cache_size(size);
+    }
 }
 
 #[inline(always)]

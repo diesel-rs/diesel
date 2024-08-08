@@ -133,7 +133,7 @@ To run rustfmt tests locally:
    rustup component add clippy
    ```
 
-3. Install [typos](https://github.com/crate-ci/typos) via `cargo install typos`
+3. Install [typos](https://github.com/crate-ci/typos) via `cargo install typos-cli`
 
 4. Use `cargo xtask tidy` to check if your changes follow the expected code style.
    This will run `cargo fmt --check`, `typos` and `cargo clippy` internally. See `cargo xtask tidy --help`

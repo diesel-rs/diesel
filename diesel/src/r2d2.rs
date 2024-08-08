@@ -341,6 +341,10 @@ where
     fn set_instrumentation(&mut self, instrumentation: impl crate::connection::Instrumentation) {
         (**self).set_instrumentation(instrumentation)
     }
+
+    fn set_prepared_statement_cache_size(&mut self, size: crate::connection::CacheSize) {
+        (**self).set_prepared_statement_cache_size(size)
+    }
 }
 
 impl<B, M> LoadConnection<B> for PooledConnection<M>
