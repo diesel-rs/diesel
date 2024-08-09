@@ -1,0 +1,136 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="This derives implements `diesel::Connection` and related traits for an enum of connections to different databases."><title>MultiConnection in diesel_derives - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel_derives" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc derive"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel_derives/index.html">diesel_derives</a><span class="version">2.2.2</span></h2></div><div class="sidebar-elems"></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Derive Macro <a href="index.html">diesel_derives</a>::<wbr><a class="derive" href="#">MultiConnection</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/diesel_derives/lib.rs.html#1733-1735">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>#[derive(MultiConnection)]</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>This derives implements <code>diesel::Connection</code> and related traits for an enum of
+connections to different databases.</p>
+<p>By applying this derive to such an enum, you can use the enum as a connection type in
+any location all the inner connections are valid. This derive supports enum
+variants containing a single tuple field. Each tuple field type must implement
+<code>diesel::Connection</code> and a number of related traits. Connection types form Diesel itself
+as well as third party connection types are supported by this derive.</p>
+<p>The implementation of <code>diesel::Connection::establish</code> tries to establish
+a new connection with the given connection string in the order the connections
+are specified in the enum. If one connection fails, it tries the next one and so on.
+That means that as soon as more than one connection type accepts a certain connection
+string the first matching type in your enum will always establish the connection. This
+is especially important if one of the connection types is <code>diesel::SqliteConnection</code>
+as this connection type accepts arbitrary paths. It should normally place as last entry
+in your enum. If you want control of which connection type is created, just construct the
+corresponding enum manually by first establishing the connection via the inner type and then
+wrap the result into the enum.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::prelude::<span class="kw-2">*</span>;
+
+<span class="attr">#[derive(diesel::MultiConnection)]
+</span><span class="kw">pub enum </span>AnyConnection {
+    Postgresql(diesel::PgConnection),
+    Mysql(diesel::MysqlConnection),
+    Sqlite(diesel::SqliteConnection),
+}
+
+<span class="macro">diesel::table!</span> {
+    users {
+        id -&gt; Integer,
+        name -&gt; Text,
+    }
+}
+
+<span class="kw">fn </span>use_multi(conn: <span class="kw-2">&amp;mut </span>AnyConnection) -&gt; QueryResult&lt;()&gt; {
+   <span class="comment">// Use the connection enum as any other connection type
+   // for inserting/updating/loading/…
+   </span>diesel::insert_into(users::table)
+       .values(users::name.eq(<span class="string">"Sean"</span>))
+       .execute(conn)<span class="question-mark">?</span>;
+
+   <span class="kw">let </span>users = users::table.load::&lt;(i32, String)&gt;(conn)<span class="question-mark">?</span>;
+
+   <span class="comment">// Match on the connection type to access
+   // the inner connection. This allows us then to use
+   // backend specific methods.
+   </span><span class="kw">if let </span>AnyConnection::Postgresql(<span class="kw-2">ref mut </span>conn) = conn {
+       <span class="comment">// perform a postgresql specific query here
+       </span><span class="kw">let </span>users = users::table.load::&lt;(i32, String)&gt;(conn)<span class="question-mark">?</span>;
+   }
+
+   <span class="prelude-val">Ok</span>(())
+}
+</code></pre></div>
+<h2 id="limitations"><a class="doc-anchor" href="#limitations">§</a>Limitations</h2>
+<p>The derived connection implementation can only cover the common subset of
+all inner connection types. So, if one backend doesn’t support certain SQL features,
+like for example, returning clauses, the whole connection implementation doesn’t
+support this feature. In addition, only a limited set of SQL types is supported:</p>
+<ul>
+<li><code>diesel::sql_types::SmallInt</code></li>
+<li><code>diesel::sql_types::Integer</code></li>
+<li><code>diesel::sql_types::BigInt</code></li>
+<li><code>diesel::sql_types::Double</code></li>
+<li><code>diesel::sql_types::Float</code></li>
+<li><code>diesel::sql_types::Text</code></li>
+<li><code>diesel::sql_types::Date</code></li>
+<li><code>diesel::sql_types::Time</code></li>
+<li><code>diesel::sql_types::Timestamp</code></li>
+</ul>
+<p>Support for additional types can be added by providing manual implementations of
+<code>HasSqlType</code>, <code>FromSql</code> and <code>ToSql</code> for the corresponding type, all databases included
+in your enum, and the backend generated by this derive called <code>MultiBackend</code>.
+For example to support a custom enum <code>MyEnum</code> with the custom SQL type <code>MyInteger</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">extern crate </span>diesel;
+<span class="kw">use </span>diesel::backend::Backend;
+<span class="kw">use </span>diesel::deserialize::{<span class="self">self</span>, FromSql, FromSqlRow};
+<span class="kw">use </span>diesel::serialize::{<span class="self">self</span>, IsNull, ToSql};
+<span class="kw">use </span>diesel::AsExpression;
+<span class="kw">use </span>diesel::sql_types::{HasSqlType, SqlType};
+<span class="kw">use </span>diesel::prelude::<span class="kw-2">*</span>;
+
+<span class="attr">#[derive(diesel::MultiConnection)]
+</span><span class="kw">pub enum </span>AnyConnection {
+    Postgresql(diesel::PgConnection),
+    Mysql(diesel::MysqlConnection),
+    Sqlite(diesel::SqliteConnection),
+}
+
+<span class="comment">// defining an custom SQL type is optional
+// you can also use types from `diesel::sql_types`
+</span><span class="attr">#[derive(Copy, Clone, Debug, SqlType)]
+#[diesel(postgres_type(name = <span class="string">"Int4"</span>))]
+#[diesel(mysql_type(name = <span class="string">"Long"</span>))]
+#[diesel(sqlite_type(name = <span class="string">"Integer"</span>))]
+</span><span class="kw">struct </span>MyInteger;
+
+
+<span class="comment">// our custom enum
+</span><span class="attr">#[repr(i32)]
+#[derive(Debug, Clone, Copy, AsExpression, FromSqlRow)]
+#[diesel(sql_type = MyInteger)]
+</span><span class="kw">pub enum </span>MyEnum {
+    A = <span class="number">1</span>,
+    B = <span class="number">2</span>,
+}
+
+<span class="comment">// The `MultiBackend` type is generated by `#[derive(diesel::MultiConnection)]`
+// This part is only required if you define a custom sql type
+</span><span class="kw">impl </span>HasSqlType&lt;MyInteger&gt; <span class="kw">for </span>MultiBackend {
+   <span class="kw">fn </span>metadata(lookup: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; <span class="self">Self</span>::TypeMetadata {
+       <span class="comment">// The `lookup_sql_type` function is exposed by the `MultiBackend` type
+       </span>MultiBackend::lookup_sql_type::&lt;MyInteger&gt;(lookup)
+   }
+}
+
+<span class="kw">impl </span>FromSql&lt;MyInteger, MultiBackend&gt; <span class="kw">for </span>MyEnum {
+   <span class="kw">fn </span>from_sql(bytes: &lt;MultiBackend <span class="kw">as </span>Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;) -&gt; deserialize::Result&lt;<span class="self">Self</span>&gt; {
+       <span class="comment">// The `from_sql` function is exposed by the `RawValue` type of the
+       // `MultiBackend` type
+       // This requires a `FromSql` impl for each backend
+       </span>bytes.from_sql::&lt;MyEnum, MyInteger&gt;()
+   }
+}
+
+<span class="kw">impl </span>ToSql&lt;MyInteger, MultiBackend&gt; <span class="kw">for </span>MyEnum {
+   <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>, out: <span class="kw-2">&amp;mut </span>serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, MultiBackend&gt;) -&gt; serialize::Result {
+       <span class="doccomment">/// `set_value` expects a tuple consisting of the target SQL type
+       /// and self for `MultiBackend`
+       /// This requires a `ToSql` impl for each backend
+       </span>out.set_value((MyInteger, <span class="self">self</span>));
+       <span class="prelude-val">Ok</span>(IsNull::No)
+   }
+}</code></pre></div>
+</div></details></section></div></main></body></html>

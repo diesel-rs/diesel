@@ -1,0 +1,307 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="PostgreSQL specific methods present on JSONB expressions."><title>PgJsonbExpressionMethods in diesel::prelude - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.2.2</span></h2></div><h2 class="location"><a href="#">PgJsonbExpressionMethods</a></h2><div class="sidebar-elems"><section><h3><a href="#provided-methods">Provided Methods</a></h3><ul class="block"><li><a href="#method.concat">concat</a></li><li><a href="#method.contains">contains</a></li><li><a href="#method.has_all_keys">has_all_keys</a></li><li><a href="#method.has_any_key">has_any_key</a></li><li><a href="#method.has_key">has_key</a></li><li><a href="#method.is_contained_by">is_contained_by</a></li><li><a href="#method.remove">remove</a></li><li><a href="#method.remove_by_path">remove_by_path</a></li></ul><h3><a href="#object-safety">Object Safety</a></h3><h3><a href="#implementors">Implementors</a></h3></section><h2><a href="index.html">In diesel::prelude</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Trait <a href="../index.html">diesel</a>::<wbr><a href="index.html">prelude</a>::<wbr><a class="trait" href="#">PgJsonbExpressionMethods</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel/pg/expression/expression_methods.rs.html#1240-1848">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub trait PgJsonbExpressionMethods: <a class="trait" href="trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> {
+    // Provided methods
+    fn <a href="#method.concat" class="fn">concat</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.Concat.html" title="type diesel::dsl::Concat">Concat</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.has_key" class="fn">has_key</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.HasKeyJsonb.html" title="type diesel::dsl::HasKeyJsonb">HasKeyJsonb</a>&lt;Self, T&gt;
+       <span class="where">where T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="type" href="../sql_types/type.VarChar.html" title="type diesel::sql_types::VarChar">VarChar</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.has_any_key" class="fn">has_any_key</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.HasAnyKeyJsonb.html" title="type diesel::dsl::HasAnyKeyJsonb">HasAnyKeyJsonb</a>&lt;Self, T&gt;
+       <span class="where">where T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Array.html" title="struct diesel::sql_types::Array">Array</a>&lt;<a class="type" href="../sql_types/type.VarChar.html" title="type diesel::sql_types::VarChar">VarChar</a>&gt;&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.has_all_keys" class="fn">has_all_keys</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.HasAllKeysJsonb.html" title="type diesel::dsl::HasAllKeysJsonb">HasAllKeysJsonb</a>&lt;Self, T&gt;
+       <span class="where">where T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Array.html" title="struct diesel::sql_types::Array">Array</a>&lt;<a class="type" href="../sql_types/type.VarChar.html" title="type diesel::sql_types::VarChar">VarChar</a>&gt;&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.contains" class="fn">contains</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.Contains.html" title="type diesel::dsl::Contains">Contains</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.is_contained_by" class="fn">is_contained_by</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.IsContainedBy.html" title="type diesel::dsl::IsContainedBy">IsContainedBy</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.remove" class="fn">remove</a>&lt;T&gt;(
+        self,
+        other: T,
+    ) -&gt; <a class="type" href="../dsl/type.RemoveFromJsonb.html" title="type diesel::dsl::RemoveFromJsonb">RemoveFromJsonb</a>&lt;Self, T::Expression, &lt;T::Expression as <a class="trait" href="trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>&gt;::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;
+       <span class="where">where T: JsonRemoveIndex,
+             &lt;T::Expression as <a class="trait" href="trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>&gt;::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a></span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.remove_by_path" class="fn">remove_by_path</a>&lt;T&gt;(
+        self,
+        other: T,
+    ) -&gt; <a class="type" href="../dsl/type.RemoveByPathFromJsonb.html" title="type diesel::dsl::RemoveByPathFromJsonb">RemoveByPathFromJsonb</a>&lt;Self, T::<a class="associatedtype" href="../expression/trait.AsExpression.html#associatedtype.Expression" title="type diesel::expression::AsExpression::Expression">Expression</a>&gt;
+       <span class="where">where T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Array.html" title="struct diesel::sql_types::Array">Array</a>&lt;<a class="struct" href="../sql_types/struct.Text.html" title="struct diesel::sql_types::Text">Text</a>&gt;&gt;</span> { ... }
+}</code></pre><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>postgres_backend</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>PostgreSQL specific methods present on JSONB expressions.</p>
+</div></details><h2 id="provided-methods" class="section-header">Provided Methods<a href="#provided-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="method.concat" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1306-1312">source</a><h4 class="code-header">fn <a href="#method.concat" class="fn">concat</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.Concat.html" title="type diesel::dsl::Concat">Concat</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>||</code> expression.</p>
+<p>This operator concatenates two JSONB values and returns JSONB value</p>
+<h5 id="example"><a class="doc-anchor" href="#example">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>santas_address: serde_json::Value = <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"Article Circle Expressway 1"</span>,
+    <span class="string">"city"</span>: <span class="string">"North Pole"</span>,
+    <span class="string">"postcode"</span>: <span class="string">"99705"</span>,
+    <span class="string">"state"</span>: <span class="string">"Alaska"
+</span>});
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Claus"</span>), address.eq(<span class="kw-2">&amp;</span>santas_address)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>to_concatenate: serde_json::Value = <span class="macro">serde_json::json!</span>({
+    <span class="string">"continent"</span>: <span class="string">"NA"</span>,
+    <span class="string">"planet"</span>: <span class="string">"Earth"
+</span>});
+
+<span class="kw">let </span>final_address: serde_json::Value = <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"Article Circle Expressway 1"</span>,
+    <span class="string">"city"</span>: <span class="string">"North Pole"</span>,
+    <span class="string">"postcode"</span>: <span class="string">"99705"</span>,
+    <span class="string">"state"</span>: <span class="string">"Alaska"</span>,
+    <span class="string">"continent"</span>: <span class="string">"NA"</span>,
+    <span class="string">"planet"</span>: <span class="string">"Earth"
+</span>});
+
+<span class="kw">let </span>final_address_db = contacts.select(address.concat(<span class="kw-2">&amp;</span>to_concatenate)).get_result::&lt;serde_json::Value&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(final_address, final_address_db);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.has_key" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1368-1373">source</a><h4 class="code-header">fn <a href="#method.has_key" class="fn">has_key</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.HasKeyJsonb.html" title="type diesel::dsl::HasKeyJsonb">HasKeyJsonb</a>&lt;Self, T&gt;<div class="where">where
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="type" href="../sql_types/type.VarChar.html" title="type diesel::sql_types::VarChar">VarChar</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>?</code> expression.</p>
+<p>This operator checks if the right hand side string exists as a top-level key within the JSONB</p>
+<h5 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>santas_address: serde_json::Value = <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"Article Circle Expressway 1"</span>,
+    <span class="string">"city"</span>: <span class="string">"North Pole"</span>,
+    <span class="string">"postcode"</span>: <span class="string">"99705"</span>,
+    <span class="string">"state"</span>: <span class="string">"Alaska"
+</span>});
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Claus"</span>), address.eq(<span class="kw-2">&amp;</span>santas_address)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>key_exists = contacts.select(address.has_key(<span class="string">"street"</span>)).get_result::&lt;bool&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert!</span>(key_exists);
+
+<span class="kw">let </span>santas_with_address_postcode = contacts.select(id).filter(address.has_key(<span class="string">"postcode"</span>)).get_result::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="number">1</span>, santas_with_address_postcode);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.has_any_key" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1429-1434">source</a><h4 class="code-header">fn <a href="#method.has_any_key" class="fn">has_any_key</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.HasAnyKeyJsonb.html" title="type diesel::dsl::HasAnyKeyJsonb">HasAnyKeyJsonb</a>&lt;Self, T&gt;<div class="where">where
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Array.html" title="struct diesel::sql_types::Array">Array</a>&lt;<a class="type" href="../sql_types/type.VarChar.html" title="type diesel::sql_types::VarChar">VarChar</a>&gt;&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>?|</code> expression.</p>
+<p>This operator checks if any of the strings in the right hand side array exists as top level key in the given JSONB</p>
+<h5 id="example-2"><a class="doc-anchor" href="#example-2">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>santas_address: serde_json::Value = <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"Article Circle Expressway 1"</span>,
+    <span class="string">"city"</span>: <span class="string">"North Pole"</span>,
+    <span class="string">"postcode"</span>: <span class="string">"99705"</span>,
+    <span class="string">"state"</span>: <span class="string">"Alaska"
+</span>});
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Claus"</span>), address.eq(<span class="kw-2">&amp;</span>santas_address)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>any_key_exists = contacts.select(address.has_any_key(<span class="macro">vec!</span>[<span class="string">"street"</span>, <span class="string">"city"</span>, <span class="string">"rudolf"</span>])).get_result::&lt;bool&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert!</span>(any_key_exists);
+
+<span class="kw">let </span>santas_with_address_postcode = contacts.select(id).filter(address.has_any_key(<span class="macro">vec!</span>[<span class="string">"street"</span>, <span class="string">"city"</span>, <span class="string">"rudolf"</span>])).get_result::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="number">1</span>, santas_with_address_postcode);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.has_all_keys" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1490-1495">source</a><h4 class="code-header">fn <a href="#method.has_all_keys" class="fn">has_all_keys</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.HasAllKeysJsonb.html" title="type diesel::dsl::HasAllKeysJsonb">HasAllKeysJsonb</a>&lt;Self, T&gt;<div class="where">where
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Array.html" title="struct diesel::sql_types::Array">Array</a>&lt;<a class="type" href="../sql_types/type.VarChar.html" title="type diesel::sql_types::VarChar">VarChar</a>&gt;&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>?&amp;</code> expression.</p>
+<p>This operator checks if all the strings in the right hand side array exist as top level keys in the given JSONB</p>
+<h5 id="example-3"><a class="doc-anchor" href="#example-3">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>santas_address: serde_json::Value = <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"Article Circle Expressway 1"</span>,
+    <span class="string">"city"</span>: <span class="string">"North Pole"</span>,
+    <span class="string">"postcode"</span>: <span class="string">"99705"</span>,
+    <span class="string">"state"</span>: <span class="string">"Alaska"
+</span>});
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Claus"</span>), address.eq(<span class="kw-2">&amp;</span>santas_address)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>all_keys_exist = contacts.select(address.has_all_keys(<span class="macro">vec!</span>[<span class="string">"street"</span>, <span class="string">"city"</span>, <span class="string">"postcode"</span>])).get_result::&lt;bool&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert!</span>(all_keys_exist);
+
+<span class="kw">let </span>santas_with_address_postcode = contacts.select(id).filter(address.has_all_keys(<span class="macro">vec!</span>[<span class="string">"street"</span>, <span class="string">"city"</span>, <span class="string">"postcode"</span>])).get_result::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="number">1</span>, santas_with_address_postcode);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.contains" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1550-1556">source</a><h4 class="code-header">fn <a href="#method.contains" class="fn">contains</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.Contains.html" title="type diesel::dsl::Contains">Contains</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>@&gt;</code> expression.</p>
+<p>This operator checks whether left hand side JSONB value contains right hand side JSONB value</p>
+<h5 id="example-4"><a class="doc-anchor" href="#example-4">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>easter_bunny_address: serde_json::Value = <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"123 Carrot Road"</span>,
+    <span class="string">"province"</span>: <span class="string">"Easter Island"</span>,
+    <span class="string">"region"</span>: <span class="string">"Valparaíso"</span>,
+    <span class="string">"country"</span>: <span class="string">"Chile"</span>,
+    <span class="string">"postcode"</span>: <span class="string">"88888"</span>,
+});
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Bunny"</span>), address.eq(<span class="kw-2">&amp;</span>easter_bunny_address)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>country_chile: serde_json::Value = <span class="macro">serde_json::json!</span>({<span class="string">"country"</span>: <span class="string">"Chile"</span>});
+<span class="kw">let </span>contains_country_chile = contacts.select(address.contains(<span class="kw-2">&amp;</span>country_chile)).get_result::&lt;bool&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert!</span>(contains_country_chile);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.is_contained_by" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1616-1622">source</a><h4 class="code-header">fn <a href="#method.is_contained_by" class="fn">is_contained_by</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.IsContainedBy.html" title="type diesel::dsl::IsContainedBy">IsContainedBy</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>&lt;@</code> expression.</p>
+<p>This operator checks whether left hand side JSONB value is contained by right hand side JSON value.
+<code>foo.contains(bar)</code> is the same as <code>bar.is_contained_by(foo)</code>.</p>
+<h5 id="example-5"><a class="doc-anchor" href="#example-5">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>partial_easter_bunny_address: serde_json::Value = <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"123 Carrot Road"</span>,
+    <span class="string">"country"</span>: <span class="string">"Chile"</span>,
+});
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Bunny"</span>), address.eq(<span class="kw-2">&amp;</span>partial_easter_bunny_address)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>full_easter_bunny_address: serde_json::Value = <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"123 Carrot Road"</span>,
+    <span class="string">"province"</span>: <span class="string">"Easter Island"</span>,
+    <span class="string">"region"</span>: <span class="string">"Valparaíso"</span>,
+    <span class="string">"country"</span>: <span class="string">"Chile"</span>,
+    <span class="string">"postcode"</span>: <span class="string">"88888"</span>,
+});
+<span class="kw">let </span>address_is_contained_by = contacts.select(address.is_contained_by(<span class="kw-2">&amp;</span>full_easter_bunny_address)).get_result::&lt;bool&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert!</span>(address_is_contained_by);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.remove" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1722-1734">source</a><h4 class="code-header">fn <a href="#method.remove" class="fn">remove</a>&lt;T&gt;(
+    self,
+    other: T,
+) -&gt; <a class="type" href="../dsl/type.RemoveFromJsonb.html" title="type diesel::dsl::RemoveFromJsonb">RemoveFromJsonb</a>&lt;Self, T::Expression, &lt;T::Expression as <a class="trait" href="trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>&gt;::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;<div class="where">where
+    T: JsonRemoveIndex,
+    &lt;T::Expression as <a class="trait" href="trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>&gt;::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>-</code> expression.</p>
+<p>This operator removes the value associated with the given key, that is provided on the
+Right Hand Side of the operator.</p>
+<h5 id="example-6"><a class="doc-anchor" href="#example-6">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>santas_address: serde_json::Value = <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"Article Circle Expressway 1"</span>,
+    <span class="string">"city"</span>: <span class="string">"North Pole"</span>,
+    <span class="string">"postcode"</span>: <span class="string">"99705"</span>,
+    <span class="string">"state"</span>: <span class="string">"Alaska"
+</span>});
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Claus"</span>), address.eq(<span class="kw-2">&amp;</span>santas_address)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>santas_modified_address = contacts.select(address.remove(<span class="string">"postcode"</span>)).get_result::&lt;serde_json::Value&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(santas_modified_address, <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"Article Circle Expressway 1"</span>,
+    <span class="string">"city"</span>: <span class="string">"North Pole"</span>,
+    <span class="string">"state"</span>: <span class="string">"Alaska"
+</span>}));
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Claus"</span>), address.eq(<span class="kw-2">&amp;</span>santas_address)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>santas_modified_address = contacts.select(address.remove(<span class="macro">vec!</span>[<span class="string">"postcode"</span>, <span class="string">"state"</span>])).get_result::&lt;serde_json::Value&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(santas_modified_address, <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"Article Circle Expressway 1"</span>,
+    <span class="string">"city"</span>: <span class="string">"North Pole"</span>,
+}));
+
+<span class="kw">let </span>robert_downey_jr_addresses: serde_json::Value = <span class="macro">serde_json::json!</span>([
+    {
+        <span class="string">"street"</span>: <span class="string">"Somewhere In La 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"Los Angeles"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"12231223"</span>,
+        <span class="string">"state"</span>: <span class="string">"California"
+    </span>},
+    {
+        <span class="string">"street"</span>: <span class="string">"Somewhere In Ny 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"New York"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"3213212"</span>,
+        <span class="string">"state"</span>: <span class="string">"New York"
+    </span>}
+]);
+
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Robert Downey Jr."</span>), address.eq(<span class="kw-2">&amp;</span>robert_downey_jr_addresses)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>roberts_address_in_db = contacts
+                            .filter(name.eq(<span class="string">"Robert Downey Jr."</span>))
+                            .select(address.remove(<span class="number">1</span>))
+                            .get_result::&lt;serde_json::Value&gt;(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>roberts_first_address = <span class="macro">serde_json::json!</span>([{
+        <span class="string">"street"</span>: <span class="string">"Somewhere In La 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"Los Angeles"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"12231223"</span>,
+        <span class="string">"state"</span>: <span class="string">"California"
+</span>}]);
+<span class="macro">assert_eq!</span>(roberts_first_address, roberts_address_in_db);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.remove_by_path" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1842-1847">source</a><h4 class="code-header">fn <a href="#method.remove_by_path" class="fn">remove_by_path</a>&lt;T&gt;(
+    self,
+    other: T,
+) -&gt; <a class="type" href="../dsl/type.RemoveByPathFromJsonb.html" title="type diesel::dsl::RemoveByPathFromJsonb">RemoveByPathFromJsonb</a>&lt;Self, T::<a class="associatedtype" href="../expression/trait.AsExpression.html#associatedtype.Expression" title="type diesel::expression::AsExpression::Expression">Expression</a>&gt;<div class="where">where
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Array.html" title="struct diesel::sql_types::Array">Array</a>&lt;<a class="struct" href="../sql_types/struct.Text.html" title="struct diesel::sql_types::Text">Text</a>&gt;&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>#-</code> expression.</p>
+<p>This operator removes the value associated with the given json path, that is provided on the
+Right Hand Side of the operator.</p>
+<h5 id="example-7"><a class="doc-anchor" href="#example-7">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>santas_address: serde_json::Value = <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"Article Circle Expressway 1"</span>,
+    <span class="string">"city"</span>: <span class="string">"North Pole"</span>,
+    <span class="string">"postcode"</span>: <span class="string">"99705"</span>,
+    <span class="string">"state"</span>: <span class="string">"Alaska"
+</span>});
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Claus"</span>), address.eq(<span class="kw-2">&amp;</span>santas_address)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>santas_modified_address = contacts.select(address.remove(<span class="string">"postcode"</span>)).get_result::&lt;serde_json::Value&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(santas_modified_address, <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"Article Circle Expressway 1"</span>,
+    <span class="string">"city"</span>: <span class="string">"North Pole"</span>,
+    <span class="string">"state"</span>: <span class="string">"Alaska"
+</span>}));
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Claus"</span>), address.eq(<span class="kw-2">&amp;</span>santas_address)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>santas_modified_address = contacts.select(address.remove_by_path(<span class="macro">vec!</span>[<span class="string">"postcode"</span>])).get_result::&lt;serde_json::Value&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(santas_modified_address, <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"Article Circle Expressway 1"</span>,
+    <span class="string">"city"</span>: <span class="string">"North Pole"</span>,
+    <span class="string">"state"</span>: <span class="string">"Alaska"
+</span>}));
+
+<span class="kw">let </span>robert_downey_jr_addresses: serde_json::Value = <span class="macro">serde_json::json!</span>([
+    {
+        <span class="string">"street"</span>: <span class="string">"Somewhere In La 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"Los Angeles"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"12231223"</span>,
+        <span class="string">"state"</span>: <span class="string">"California"
+    </span>},
+    {
+        <span class="string">"street"</span>: <span class="string">"Somewhere In Ny 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"New York"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"3213212"</span>,
+        <span class="string">"state"</span>: <span class="string">"New York"
+    </span>}
+]);
+
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Robert Downey Jr."</span>), address.eq(<span class="kw-2">&amp;</span>robert_downey_jr_addresses)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>roberts_address_in_db = contacts
+                            .filter(name.eq(<span class="string">"Robert Downey Jr."</span>))
+                            .select(address.remove_by_path(<span class="macro">vec!</span>[<span class="string">"1"</span>, <span class="string">"postcode"</span>]))
+                            .get_result::&lt;serde_json::Value&gt;(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>roberts_address = <span class="macro">serde_json::json!</span>([
+    {
+        <span class="string">"street"</span>: <span class="string">"Somewhere In La 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"Los Angeles"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"12231223"</span>,
+        <span class="string">"state"</span>: <span class="string">"California"
+    </span>},
+    {
+        <span class="string">"street"</span>: <span class="string">"Somewhere In Ny 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"New York"</span>,
+        <span class="string">"state"</span>: <span class="string">"New York"
+    </span>}
+]);
+<span class="macro">assert_eq!</span>(roberts_address, roberts_address_in_db);</code></pre></div>
+</div></details></div><h2 id="object-safety" class="section-header">Object Safety<a href="#object-safety" class="anchor">§</a></h2><div class="object-safety-info">This trait is <b>not</b> <a href="https://doc.rust-lang.org/nightly/reference/items/traits.html#object-safety">object safe</a>.</div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"><section id="impl-PgJsonbExpressionMethods-for-T" class="impl"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1850-1855">source</a><a href="#impl-PgJsonbExpressionMethods-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="../expression_methods/trait.PgJsonbExpressionMethods.html" title="trait diesel::expression_methods::PgJsonbExpressionMethods">PgJsonbExpressionMethods</a> for T<div class="where">where
+    T: <a class="trait" href="trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>,
+    T::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: JsonbOrNullableJsonb,</div></h3></section></div><script src="../../trait.impl/diesel/pg/expression/expression_methods/trait.PgJsonbExpressionMethods.js" async></script></section></div></main></body></html>

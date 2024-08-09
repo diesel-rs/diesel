@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Creates a `COPY FROM` statement"><title>copy_from in diesel - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel/index.html">diesel</a><span class="version">2.2.2</span></h2></div><div class="sidebar-elems"></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Function <a href="index.html">diesel</a>::<wbr><a class="fn" href="#">copy_from</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/diesel/pg/query_builder/copy/copy_from.rs.html#638-646">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub fn copy_from&lt;T&gt;(table: T) -&gt; <a class="struct" href="pg/struct.CopyFromQuery.html" title="struct diesel::pg::CopyFromQuery">CopyFromQuery</a>&lt;T, NotSet&gt;<div class="where">where
+    T: <a class="trait" href="prelude/trait.Table.html" title="trait diesel::prelude::Table">Table</a>,</div></code></pre><span class="item-info"><div class="stab portability">Available on <strong>crate features <code>postgres_backend</code> and <code>postgres</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Creates a <code>COPY FROM</code> statement</p>
+<p>This function constructs <code>COPY FROM</code> statement which copies data
+<em>from</em> a source into the database. It’s designed to move larger
+amounts of data into the database.</p>
+<p>This function accepts a target table as argument.</p>
+<p>There are two ways to construct a <code>COPY FROM</code> statement with
+diesel:</p>
+<ul>
+<li>By providing a <code>Vec&lt;I&gt;</code> where <code>I</code> implements <code>Insertable</code> for the
+given table</li>
+<li>By providing a target selection (column list or table name)
+and a callback that provides the data</li>
+</ul>
+<p>The first variant uses the <code>BINARY</code> format internally to send
+the provided data efficiently to the database. It automatically
+sets the right options and does not allow changing them.
+Use <a href="pg/struct.CopyFromQuery.html#method.from_insertable" title="method diesel::pg::CopyFromQuery::from_insertable"><code>CopyFromQuery::from_insertable</code></a> for this.</p>
+<p>The second variant allows you to control the behaviour
+of the generated <code>COPY FROM</code> statement in detail. It can
+be setup via the <a href="pg/struct.CopyFromQuery.html#method.from_raw_data" title="method diesel::pg::CopyFromQuery::from_raw_data"><code>CopyFromQuery::from_raw_data</code></a> function.
+The callback accepts an opaque object as argument that allows
+to write the corresponding data to the database. The exact
+format depends on the settings chosen by the various
+<code>CopyFromQuery::with_*</code> methods. See
+<a href="https://www.postgresql.org/docs/current/sql-copy.html">the postgresql documentation</a>
+for more details about the expected formats.</p>
+<p>If you don’t have any specific needs you should prefer
+using the more convenient first variant.</p>
+<p>This functionality is postgresql specific.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2><h3 id="via-copyfromqueryfrom_insertable"><a class="doc-anchor" href="#via-copyfromqueryfrom_insertable">§</a>Via <a href="pg/struct.CopyFromQuery.html#method.from_insertable" title="method diesel::pg::CopyFromQuery::from_insertable"><code>CopyFromQuery::from_insertable</code></a></h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="attr">#[derive(Insertable)]
+#[diesel(table_name = users)]
+#[diesel(treat_none_as_default_value = <span class="bool-val">false</span>)]
+</span><span class="kw">struct </span>NewUser {
+    name: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str,
+}
+
+
+<span class="kw">let </span>data = <span class="macro">vec!</span>[
+    NewUser { name: <span class="string">"Diva Plavalaguna" </span>},
+    NewUser { name: <span class="string">"Father Vito Cornelius" </span>},
+];
+
+<span class="kw">let </span>count = diesel::copy_from(users::table)
+    .from_insertable(<span class="kw-2">&amp;</span>data)
+    .execute(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(count, <span class="number">2</span>);</code></pre></div>
+<h3 id="via-copyfromqueryfrom_raw_data"><a class="doc-anchor" href="#via-copyfromqueryfrom_raw_data">§</a>Via <a href="pg/struct.CopyFromQuery.html#method.from_raw_data" title="method diesel::pg::CopyFromQuery::from_raw_data"><code>CopyFromQuery::from_raw_data</code></a></h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::pg::CopyFormat;
+<span class="kw">let </span>count = diesel::copy_from(users::table)
+    .from_raw_data(users::table, |copy| {
+        <span class="macro">writeln!</span>(copy, <span class="string">"3,Diva Plavalaguna"</span>).unwrap();
+        <span class="macro">writeln!</span>(copy, <span class="string">"4,Father Vito Cornelius"</span>).unwrap();
+        diesel::QueryResult::Ok(())
+    })
+    .with_format(CopyFormat::Csv)
+    .execute(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(count, <span class="number">2</span>);</code></pre></div>
+</div></details></section></div></main></body></html>

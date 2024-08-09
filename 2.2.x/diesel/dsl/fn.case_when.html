@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Creates a SQL `CASE WHEN ... END` expression"><title>case_when in diesel::dsl - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.2.2</span></h2></div><div class="sidebar-elems"><h2><a href="index.html">In diesel::dsl</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Function <a href="../index.html">diesel</a>::<wbr><a href="index.html">dsl</a>::<wbr><a class="fn" href="#">case_when</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel/expression/case_when.rs.html#70-84">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub fn case_when&lt;C, T, ST&gt;(condition: C, if_true: T) -&gt; <a class="type" href="type.case_when.html" title="type diesel::dsl::case_when">case_when</a>&lt;C, T, ST&gt;<div class="where">where
+    C: <a class="trait" href="../prelude/trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>,
+    &lt;C as <a class="trait" href="../prelude/trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>&gt;::<a class="associatedtype" href="../prelude/trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.BoolOrNullableBool.html" title="trait diesel::sql_types::BoolOrNullableBool">BoolOrNullableBool</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;ST&gt;,
+    ST: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a> + <a class="trait" href="../expression/trait.TypedExpressionType.html" title="trait diesel::expression::TypedExpressionType">TypedExpressionType</a>,</div></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Creates a SQL <code>CASE WHEN ... END</code> expression</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::dsl::case_when;
+
+<span class="kw">let </span>users_with_name: Vec&lt;(i32, <span class="prelude-ty">Option</span>&lt;i32&gt;)&gt; = users
+    .select((id, case_when(name.eq(<span class="string">"Sean"</span>), id)))
+    .load(connection)
+    .unwrap();
+
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>[(<span class="number">1</span>, <span class="prelude-val">Some</span>(<span class="number">1</span>)), (<span class="number">2</span>, <span class="prelude-val">None</span>)], users_with_name.as_slice());</code></pre></div>
+<h2 id="else-clause"><a class="doc-anchor" href="#else-clause">§</a><code>ELSE</code> clause</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::dsl::case_when;
+
+<span class="kw">let </span>users_with_name: Vec&lt;(i32, i32)&gt; = users
+    .select((id, case_when(name.eq(<span class="string">"Sean"</span>), id).otherwise(<span class="number">0</span>)))
+    .load(connection)
+    .unwrap();
+
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>[(<span class="number">1</span>, <span class="number">1</span>), (<span class="number">2</span>, <span class="number">0</span>)], users_with_name.as_slice());</code></pre></div>
+<p>Note that the SQL types of the <code>case_when</code> and <code>else</code> expressions should
+be equal. This includes whether they are wrapped in
+<a href="../sql_types/struct.Nullable.html" title="struct diesel::sql_types::Nullable"><code>Nullable</code></a>, so you may need to call
+<a href="../expression_methods/trait.NullableExpressionMethods.html#method.nullable" title="method diesel::expression_methods::NullableExpressionMethods::nullable"><code>nullable</code></a>
+on one of them.</p>
+<h2 id="more-when-branches"><a class="doc-anchor" href="#more-when-branches">§</a>More <code>WHEN</code> branches</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::dsl::case_when;
+
+<span class="kw">let </span>users_with_name: Vec&lt;(i32, <span class="prelude-ty">Option</span>&lt;i32&gt;)&gt; = users
+    .select((id, case_when(name.eq(<span class="string">"Sean"</span>), id).when(name.eq(<span class="string">"Tess"</span>), <span class="number">2</span>)))
+    .load(connection)
+    .unwrap();
+
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>[(<span class="number">1</span>, <span class="prelude-val">Some</span>(<span class="number">1</span>)), (<span class="number">2</span>, <span class="prelude-val">Some</span>(<span class="number">2</span>))], users_with_name.as_slice());</code></pre></div>
+</div></details></section></div></main></body></html>

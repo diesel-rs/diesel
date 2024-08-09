@@ -1,0 +1,903 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/quickcheck-1.0.3/src/tester.rs`."><title>tester.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="quickcheck" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<a href="#2" id="2">2</a>
+<a href="#3" id="3">3</a>
+<a href="#4" id="4">4</a>
+<a href="#5" id="5">5</a>
+<a href="#6" id="6">6</a>
+<a href="#7" id="7">7</a>
+<a href="#8" id="8">8</a>
+<a href="#9" id="9">9</a>
+<a href="#10" id="10">10</a>
+<a href="#11" id="11">11</a>
+<a href="#12" id="12">12</a>
+<a href="#13" id="13">13</a>
+<a href="#14" id="14">14</a>
+<a href="#15" id="15">15</a>
+<a href="#16" id="16">16</a>
+<a href="#17" id="17">17</a>
+<a href="#18" id="18">18</a>
+<a href="#19" id="19">19</a>
+<a href="#20" id="20">20</a>
+<a href="#21" id="21">21</a>
+<a href="#22" id="22">22</a>
+<a href="#23" id="23">23</a>
+<a href="#24" id="24">24</a>
+<a href="#25" id="25">25</a>
+<a href="#26" id="26">26</a>
+<a href="#27" id="27">27</a>
+<a href="#28" id="28">28</a>
+<a href="#29" id="29">29</a>
+<a href="#30" id="30">30</a>
+<a href="#31" id="31">31</a>
+<a href="#32" id="32">32</a>
+<a href="#33" id="33">33</a>
+<a href="#34" id="34">34</a>
+<a href="#35" id="35">35</a>
+<a href="#36" id="36">36</a>
+<a href="#37" id="37">37</a>
+<a href="#38" id="38">38</a>
+<a href="#39" id="39">39</a>
+<a href="#40" id="40">40</a>
+<a href="#41" id="41">41</a>
+<a href="#42" id="42">42</a>
+<a href="#43" id="43">43</a>
+<a href="#44" id="44">44</a>
+<a href="#45" id="45">45</a>
+<a href="#46" id="46">46</a>
+<a href="#47" id="47">47</a>
+<a href="#48" id="48">48</a>
+<a href="#49" id="49">49</a>
+<a href="#50" id="50">50</a>
+<a href="#51" id="51">51</a>
+<a href="#52" id="52">52</a>
+<a href="#53" id="53">53</a>
+<a href="#54" id="54">54</a>
+<a href="#55" id="55">55</a>
+<a href="#56" id="56">56</a>
+<a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a>
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a>
+<a href="#383" id="383">383</a>
+<a href="#384" id="384">384</a>
+<a href="#385" id="385">385</a>
+<a href="#386" id="386">386</a>
+<a href="#387" id="387">387</a>
+<a href="#388" id="388">388</a>
+<a href="#389" id="389">389</a>
+<a href="#390" id="390">390</a>
+<a href="#391" id="391">391</a>
+<a href="#392" id="392">392</a>
+<a href="#393" id="393">393</a>
+<a href="#394" id="394">394</a>
+<a href="#395" id="395">395</a>
+<a href="#396" id="396">396</a>
+<a href="#397" id="397">397</a>
+<a href="#398" id="398">398</a>
+<a href="#399" id="399">399</a>
+<a href="#400" id="400">400</a>
+<a href="#401" id="401">401</a>
+<a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a>
+<a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
+<a href="#406" id="406">406</a>
+<a href="#407" id="407">407</a>
+<a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a>
+<a href="#410" id="410">410</a>
+<a href="#411" id="411">411</a>
+<a href="#412" id="412">412</a>
+<a href="#413" id="413">413</a>
+<a href="#414" id="414">414</a>
+<a href="#415" id="415">415</a>
+<a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a>
+<a href="#420" id="420">420</a>
+<a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
+<a href="#423" id="423">423</a>
+<a href="#424" id="424">424</a>
+<a href="#425" id="425">425</a>
+<a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
+<a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
+<a href="#430" id="430">430</a>
+<a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
+<a href="#436" id="436">436</a>
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
+<a href="#446" id="446">446</a>
+<a href="#447" id="447">447</a>
+<a href="#448" id="448">448</a>
+<a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>std::cmp;
+<span class="kw">use </span>std::env;
+<span class="kw">use </span>std::fmt::Debug;
+<span class="kw">use </span>std::panic;
+
+<span class="kw">use crate</span>::{
+    tester::Status::{Discard, Fail, Pass},
+    Arbitrary, Gen,
+};
+
+<span class="doccomment">/// The main QuickCheck type for setting configuration and running QuickCheck.
+</span><span class="kw">pub struct </span>QuickCheck {
+    tests: u64,
+    max_tests: u64,
+    min_tests_passed: u64,
+    gen: Gen,
+}
+
+<span class="kw">fn </span>qc_tests() -&gt; u64 {
+    <span class="kw">let </span>default = <span class="number">100</span>;
+    <span class="kw">match </span>env::var(<span class="string">"QUICKCHECK_TESTS"</span>) {
+        <span class="prelude-val">Ok</span>(val) =&gt; val.parse().unwrap_or(default),
+        <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; default,
+    }
+}
+
+<span class="kw">fn </span>qc_max_tests() -&gt; u64 {
+    <span class="kw">let </span>default = <span class="number">10_000</span>;
+    <span class="kw">match </span>env::var(<span class="string">"QUICKCHECK_MAX_TESTS"</span>) {
+        <span class="prelude-val">Ok</span>(val) =&gt; val.parse().unwrap_or(default),
+        <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; default,
+    }
+}
+
+<span class="kw">fn </span>qc_gen_size() -&gt; usize {
+    <span class="kw">let </span>default = <span class="number">100</span>;
+    <span class="kw">match </span>env::var(<span class="string">"QUICKCHECK_GENERATOR_SIZE"</span>) {
+        <span class="prelude-val">Ok</span>(val) =&gt; val.parse().unwrap_or(default),
+        <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; default,
+    }
+}
+
+<span class="kw">fn </span>qc_min_tests_passed() -&gt; u64 {
+    <span class="kw">let </span>default = <span class="number">0</span>;
+    <span class="kw">match </span>env::var(<span class="string">"QUICKCHECK_MIN_TESTS_PASSED"</span>) {
+        <span class="prelude-val">Ok</span>(val) =&gt; val.parse().unwrap_or(default),
+        <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; default,
+    }
+}
+
+<span class="kw">impl </span>QuickCheck {
+    <span class="doccomment">/// Creates a new QuickCheck value.
+    ///
+    /// This can be used to run QuickCheck on things that implement `Testable`.
+    /// You may also adjust the configuration, such as the number of tests to
+    /// run.
+    ///
+    /// By default, the maximum number of passed tests is set to `100`, the max
+    /// number of overall tests is set to `10000` and the generator is created
+    /// with a size of `100`.
+    </span><span class="kw">pub fn </span>new() -&gt; QuickCheck {
+        <span class="kw">let </span>gen = Gen::new(qc_gen_size());
+        <span class="kw">let </span>tests = qc_tests();
+        <span class="kw">let </span>max_tests = cmp::max(tests, qc_max_tests());
+        <span class="kw">let </span>min_tests_passed = qc_min_tests_passed();
+
+        QuickCheck { tests, max_tests, min_tests_passed, gen }
+    }
+
+    <span class="doccomment">/// Set the random number generator to be used by QuickCheck.
+    </span><span class="kw">pub fn </span>gen(<span class="self">self</span>, gen: Gen) -&gt; QuickCheck {
+        QuickCheck { gen, ..<span class="self">self </span>}
+    }
+
+    <span class="doccomment">/// Set the number of tests to run.
+    ///
+    /// This actually refers to the maximum number of *passed* tests that
+    /// can occur. Namely, if a test causes a failure, future testing on that
+    /// property stops. Additionally, if tests are discarded, there may be
+    /// fewer than `tests` passed.
+    </span><span class="kw">pub fn </span>tests(<span class="kw-2">mut </span><span class="self">self</span>, tests: u64) -&gt; QuickCheck {
+        <span class="self">self</span>.tests = tests;
+        <span class="self">self
+    </span>}
+
+    <span class="doccomment">/// Set the maximum number of tests to run.
+    ///
+    /// The number of invocations of a property will never exceed this number.
+    /// This is necessary to cap the number of tests because QuickCheck
+    /// properties can discard tests.
+    </span><span class="kw">pub fn </span>max_tests(<span class="kw-2">mut </span><span class="self">self</span>, max_tests: u64) -&gt; QuickCheck {
+        <span class="self">self</span>.max_tests = max_tests;
+        <span class="self">self
+    </span>}
+
+    <span class="doccomment">/// Set the minimum number of tests that needs to pass.
+    ///
+    /// This actually refers to the minimum number of *valid* *passed* tests
+    /// that needs to pass for the property to be considered successful.
+    </span><span class="kw">pub fn </span>min_tests_passed(<span class="kw-2">mut </span><span class="self">self</span>, min_tests_passed: u64) -&gt; QuickCheck {
+        <span class="self">self</span>.min_tests_passed = min_tests_passed;
+        <span class="self">self
+    </span>}
+
+    <span class="doccomment">/// Tests a property and returns the result.
+    ///
+    /// The result returned is either the number of tests passed or a witness
+    /// of failure.
+    ///
+    /// (If you're using Rust's unit testing infrastructure, then you'll
+    /// want to use the `quickcheck` method, which will `panic!` on failure.)
+    </span><span class="kw">pub fn </span>quicktest&lt;A&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, f: A) -&gt; <span class="prelude-ty">Result</span>&lt;u64, TestResult&gt;
+    <span class="kw">where
+        </span>A: Testable,
+    {
+        <span class="kw">let </span><span class="kw-2">mut </span>n_tests_passed = <span class="number">0</span>;
+        <span class="kw">for _ in </span><span class="number">0</span>..<span class="self">self</span>.max_tests {
+            <span class="kw">if </span>n_tests_passed &gt;= <span class="self">self</span>.tests {
+                <span class="kw">break</span>;
+            }
+            <span class="kw">match </span>f.result(<span class="kw-2">&amp;mut </span><span class="self">self</span>.gen) {
+                TestResult { status: Pass, .. } =&gt; n_tests_passed += <span class="number">1</span>,
+                TestResult { status: Discard, .. } =&gt; <span class="kw">continue</span>,
+                r @ TestResult { status: Fail, .. } =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(r),
+            }
+        }
+        <span class="prelude-val">Ok</span>(n_tests_passed)
+    }
+
+    <span class="doccomment">/// Tests a property and calls `panic!` on failure.
+    ///
+    /// The `panic!` message will include a (hopefully) minimal witness of
+    /// failure.
+    ///
+    /// It is appropriate to use this method with Rust's unit testing
+    /// infrastructure.
+    ///
+    /// Note that if the environment variable `RUST_LOG` is set to enable
+    /// `info` level log messages for the `quickcheck` crate, then this will
+    /// include output on how many QuickCheck tests were passed.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use quickcheck::QuickCheck;
+    ///
+    /// fn prop_reverse_reverse() {
+    ///     fn revrev(xs: Vec&lt;usize&gt;) -&gt; bool {
+    ///         let rev: Vec&lt;_&gt; = xs.clone().into_iter().rev().collect();
+    ///         let revrev: Vec&lt;_&gt; = rev.into_iter().rev().collect();
+    ///         xs == revrev
+    ///     }
+    ///     QuickCheck::new().quickcheck(revrev as fn(Vec&lt;usize&gt;) -&gt; bool);
+    /// }
+    /// ```
+    </span><span class="kw">pub fn </span>quickcheck&lt;A&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, f: A)
+    <span class="kw">where
+        </span>A: Testable,
+    {
+        <span class="comment">// Ignore log init failures, implying it has already been done.
+        </span><span class="kw">let _ </span>= <span class="kw">crate</span>::env_logger_init();
+
+        <span class="kw">let </span>n_tests_passed = <span class="kw">match </span><span class="self">self</span>.quicktest(f) {
+            <span class="prelude-val">Ok</span>(n_tests_passed) =&gt; n_tests_passed,
+            <span class="prelude-val">Err</span>(result) =&gt; <span class="macro">panic!</span>(result.failed_msg()),
+        };
+
+        <span class="kw">if </span>n_tests_passed &gt;= <span class="self">self</span>.min_tests_passed {
+            <span class="macro">info!</span>(<span class="string">"(Passed {} QuickCheck tests.)"</span>, n_tests_passed)
+        } <span class="kw">else </span>{
+            <span class="macro">panic!</span>(
+                <span class="string">"(Unable to generate enough tests, {} not discarded.)"</span>,
+                n_tests_passed
+            )
+        }
+    }
+}
+
+<span class="doccomment">/// Convenience function for running QuickCheck.
+///
+/// This is an alias for `QuickCheck::new().quickcheck(f)`.
+</span><span class="kw">pub fn </span>quickcheck&lt;A: Testable&gt;(f: A) {
+    QuickCheck::new().quickcheck(f)
+}
+
+<span class="doccomment">/// Describes the status of a single instance of a test.
+///
+/// All testable things must be capable of producing a `TestResult`.
+</span><span class="attr">#[derive(Clone, Debug)]
+</span><span class="kw">pub struct </span>TestResult {
+    status: Status,
+    arguments: Vec&lt;String&gt;,
+    err: <span class="prelude-ty">Option</span>&lt;String&gt;,
+}
+
+<span class="doccomment">/// Whether a test has passed, failed or been discarded.
+</span><span class="attr">#[derive(Clone, Debug)]
+</span><span class="kw">enum </span>Status {
+    Pass,
+    Fail,
+    Discard,
+}
+
+<span class="kw">impl </span>TestResult {
+    <span class="doccomment">/// Produces a test result that indicates the current test has passed.
+    </span><span class="kw">pub fn </span>passed() -&gt; TestResult {
+        TestResult::from_bool(<span class="bool-val">true</span>)
+    }
+
+    <span class="doccomment">/// Produces a test result that indicates the current test has failed.
+    </span><span class="kw">pub fn </span>failed() -&gt; TestResult {
+        TestResult::from_bool(<span class="bool-val">false</span>)
+    }
+
+    <span class="doccomment">/// Produces a test result that indicates failure from a runtime error.
+    </span><span class="kw">pub fn </span>error&lt;S: Into&lt;String&gt;&gt;(msg: S) -&gt; TestResult {
+        <span class="kw">let </span><span class="kw-2">mut </span>r = TestResult::from_bool(<span class="bool-val">false</span>);
+        r.err = <span class="prelude-val">Some</span>(msg.into());
+        r
+    }
+
+    <span class="doccomment">/// Produces a test result that instructs `quickcheck` to ignore it.
+    /// This is useful for restricting the domain of your properties.
+    /// When a test is discarded, `quickcheck` will replace it with a
+    /// fresh one (up to a certain limit).
+    </span><span class="kw">pub fn </span>discard() -&gt; TestResult {
+        TestResult { status: Discard, arguments: <span class="macro">vec!</span>[], err: <span class="prelude-val">None </span>}
+    }
+
+    <span class="doccomment">/// Converts a `bool` to a `TestResult`. A `true` value indicates that
+    /// the test has passed and a `false` value indicates that the test
+    /// has failed.
+    </span><span class="kw">pub fn </span>from_bool(b: bool) -&gt; TestResult {
+        TestResult {
+            status: <span class="kw">if </span>b { Pass } <span class="kw">else </span>{ Fail },
+            arguments: <span class="macro">vec!</span>[],
+            err: <span class="prelude-val">None</span>,
+        }
+    }
+
+    <span class="doccomment">/// Tests if a "procedure" fails when executed. The test passes only if
+    /// `f` generates a task failure during its execution.
+    </span><span class="kw">pub fn </span>must_fail&lt;T, F&gt;(f: F) -&gt; TestResult
+    <span class="kw">where
+        </span>F: FnOnce() -&gt; T,
+        F: <span class="lifetime">'static</span>,
+        T: <span class="lifetime">'static</span>,
+    {
+        <span class="kw">let </span>f = panic::AssertUnwindSafe(f);
+        TestResult::from_bool(panic::catch_unwind(f).is_err())
+    }
+
+    <span class="doccomment">/// Returns `true` if and only if this test result describes a failing
+    /// test.
+    </span><span class="kw">pub fn </span>is_failure(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+        <span class="kw">match </span><span class="self">self</span>.status {
+            Fail =&gt; <span class="bool-val">true</span>,
+            Pass | Discard =&gt; <span class="bool-val">false</span>,
+        }
+    }
+
+    <span class="doccomment">/// Returns `true` if and only if this test result describes a failing
+    /// test as a result of a run time error.
+    </span><span class="kw">pub fn </span>is_error(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+        <span class="self">self</span>.is_failure() &amp;&amp; <span class="self">self</span>.err.is_some()
+    }
+
+    <span class="kw">fn </span>failed_msg(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+        <span class="kw">match </span><span class="self">self</span>.err {
+            <span class="prelude-val">None </span>=&gt; <span class="macro">format!</span>(
+                <span class="string">"[quickcheck] TEST FAILED. Arguments: ({})"</span>,
+                <span class="self">self</span>.arguments.join(<span class="string">", "</span>)
+            ),
+            <span class="prelude-val">Some</span>(<span class="kw-2">ref </span>err) =&gt; <span class="macro">format!</span>(
+                <span class="string">"[quickcheck] TEST FAILED (runtime error). \
+                 Arguments: ({})\nError: {}"</span>,
+                <span class="self">self</span>.arguments.join(<span class="string">", "</span>),
+                err
+            ),
+        }
+    }
+}
+
+<span class="doccomment">/// `Testable` describes types (e.g., a function) whose values can be
+/// tested.
+///
+/// Anything that can be tested must be capable of producing a `TestResult`
+/// given a random number generator. This is trivial for types like `bool`,
+/// which are just converted to either a passing or failing test result.
+///
+/// For functions, an implementation must generate random arguments
+/// and potentially shrink those arguments if they produce a failure.
+///
+/// It's unlikely that you'll have to implement this trait yourself.
+</span><span class="kw">pub trait </span>Testable: <span class="lifetime">'static </span>{
+    <span class="kw">fn </span>result(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="kw-2">&amp;mut </span>Gen) -&gt; TestResult;
+}
+
+<span class="kw">impl </span>Testable <span class="kw">for </span>bool {
+    <span class="kw">fn </span>result(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="kw-2">&amp;mut </span>Gen) -&gt; TestResult {
+        TestResult::from_bool(<span class="kw-2">*</span><span class="self">self</span>)
+    }
+}
+
+<span class="kw">impl </span>Testable <span class="kw">for </span>() {
+    <span class="kw">fn </span>result(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="kw-2">&amp;mut </span>Gen) -&gt; TestResult {
+        TestResult::passed()
+    }
+}
+
+<span class="kw">impl </span>Testable <span class="kw">for </span>TestResult {
+    <span class="kw">fn </span>result(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="kw-2">&amp;mut </span>Gen) -&gt; TestResult {
+        <span class="self">self</span>.clone()
+    }
+}
+
+<span class="kw">impl</span>&lt;A, E&gt; Testable <span class="kw">for </span><span class="prelude-ty">Result</span>&lt;A, E&gt;
+<span class="kw">where
+    </span>A: Testable,
+    E: Debug + <span class="lifetime">'static</span>,
+{
+    <span class="kw">fn </span>result(<span class="kw-2">&amp;</span><span class="self">self</span>, g: <span class="kw-2">&amp;mut </span>Gen) -&gt; TestResult {
+        <span class="kw">match </span><span class="kw-2">*</span><span class="self">self </span>{
+            <span class="prelude-val">Ok</span>(<span class="kw-2">ref </span>r) =&gt; r.result(g),
+            <span class="prelude-val">Err</span>(<span class="kw-2">ref </span>err) =&gt; TestResult::error(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, err)),
+        }
+    }
+}
+
+<span class="doccomment">/// Return a vector of the debug formatting of each item in `args`
+</span><span class="kw">fn </span>debug_reprs(args: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="kw">dyn </span>Debug]) -&gt; Vec&lt;String&gt; {
+    args.iter().map(|x| <span class="macro">format!</span>(<span class="string">"{:?}"</span>, x)).collect()
+}
+
+<span class="macro">macro_rules!</span> testable_fn {
+    ($(<span class="macro-nonterminal">$name</span>: ident),<span class="kw-2">*</span>) =&gt; {
+
+<span class="kw">impl</span>&lt;T: Testable,
+     $(<span class="macro-nonterminal">$name</span>: Arbitrary + Debug),<span class="kw-2">*</span>&gt; Testable <span class="kw">for fn</span>($(<span class="macro-nonterminal">$name</span>),<span class="kw-2">*</span>) -&gt; T {
+    <span class="attr">#[allow(non_snake_case)]
+    </span><span class="kw">fn </span>result(<span class="kw-2">&amp;</span><span class="self">self</span>, g: <span class="kw-2">&amp;mut </span>Gen) -&gt; TestResult {
+        <span class="kw">fn </span>shrink_failure&lt;T: Testable, $(<span class="macro-nonterminal">$name</span>: Arbitrary + Debug),<span class="kw-2">*</span>&gt;(
+            g: <span class="kw-2">&amp;mut </span>Gen,
+            self_: <span class="kw">fn</span>($(<span class="macro-nonterminal">$name</span>),<span class="kw-2">*</span>) -&gt; T,
+            a: ($(<span class="macro-nonterminal">$name</span>,)<span class="kw-2">*</span>),
+        ) -&gt; <span class="prelude-ty">Option</span>&lt;TestResult&gt; {
+            <span class="kw">for </span>t <span class="kw">in </span>a.shrink() {
+                <span class="kw">let </span>($(<span class="macro-nonterminal">$name</span>,)<span class="kw-2">*</span>) = t.clone();
+                <span class="kw">let </span><span class="kw-2">mut </span>r_new = safe(<span class="kw">move </span>|| {self_($(<span class="macro-nonterminal">$name</span>),<span class="kw-2">*</span>)}).result(g);
+                <span class="kw">if </span>r_new.is_failure() {
+                    {
+                        <span class="kw">let </span>($(<span class="kw-2">ref </span><span class="macro-nonterminal">$name</span>,)<span class="kw-2">*</span>) : ($(<span class="macro-nonterminal">$name</span>,)<span class="kw-2">*</span>) = t;
+                        r_new.arguments = debug_reprs(<span class="kw-2">&amp;</span>[$(<span class="macro-nonterminal">$name</span>),<span class="kw-2">*</span>]);
+                    }
+
+                    <span class="comment">// The shrunk value *does* witness a failure, so keep
+                    // trying to shrink it.
+                    </span><span class="kw">let </span>shrunk = shrink_failure(g, self_, t);
+
+                    <span class="comment">// If we couldn't witness a failure on any shrunk value,
+                    // then return the failure we already have.
+                    </span><span class="kw">return </span><span class="prelude-val">Some</span>(shrunk.unwrap_or(r_new))
+                }
+            }
+            <span class="prelude-val">None
+        </span>}
+
+        <span class="kw">let </span>self_ = <span class="kw-2">*</span><span class="self">self</span>;
+        <span class="kw">let </span>a: ($(<span class="macro-nonterminal">$name</span>,)<span class="kw-2">*</span>) = Arbitrary::arbitrary(g);
+        <span class="kw">let </span>( $(<span class="macro-nonterminal">$name</span>,)* ) = a.clone();
+        <span class="kw">let </span><span class="kw-2">mut </span>r = safe(<span class="kw">move </span>|| {self_($(<span class="macro-nonterminal">$name</span>),<span class="kw-2">*</span>)}).result(g);
+
+        {
+            <span class="kw">let </span>( $(<span class="kw-2">ref </span><span class="macro-nonterminal">$name</span>,)* ) = a;
+            r.arguments = debug_reprs(<span class="kw-2">&amp;</span>[$(<span class="macro-nonterminal">$name</span>),<span class="kw-2">*</span>]);
+        }
+        <span class="kw">match </span>r.status {
+            Pass|Discard =&gt; r,
+            Fail =&gt; {
+                shrink_failure(g, self_, a).unwrap_or(r)
+            }
+        }
+    }
+}}}
+
+<span class="macro">testable_fn!</span>();
+<span class="macro">testable_fn!</span>(A);
+<span class="macro">testable_fn!</span>(A, B);
+<span class="macro">testable_fn!</span>(A, B, C);
+<span class="macro">testable_fn!</span>(A, B, C, D);
+<span class="macro">testable_fn!</span>(A, B, C, D, E);
+<span class="macro">testable_fn!</span>(A, B, C, D, E, F);
+<span class="macro">testable_fn!</span>(A, B, C, D, E, F, G);
+<span class="macro">testable_fn!</span>(A, B, C, D, E, F, G, H);
+
+<span class="kw">fn </span>safe&lt;T, F&gt;(fun: F) -&gt; <span class="prelude-ty">Result</span>&lt;T, String&gt;
+<span class="kw">where
+    </span>F: FnOnce() -&gt; T,
+    F: <span class="lifetime">'static</span>,
+    T: <span class="lifetime">'static</span>,
+{
+    panic::catch_unwind(panic::AssertUnwindSafe(fun)).map_err(|any_err| {
+        <span class="comment">// Extract common types of panic payload:
+        // panic and assert produce &amp;str or String
+        </span><span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>s) = any_err.downcast_ref::&lt;<span class="kw-2">&amp;</span>str&gt;() {
+            s.to_owned()
+        } <span class="kw">else if let </span><span class="prelude-val">Some</span>(s) = any_err.downcast_ref::&lt;String&gt;() {
+            s.to_owned()
+        } <span class="kw">else </span>{
+            <span class="string">"UNABLE TO SHOW RESULT OF PANIC."</span>.to_owned()
+        }
+    })
+}
+
+<span class="doccomment">/// Convenient aliases.
+</span><span class="kw">trait </span>AShow: Arbitrary + Debug {}
+<span class="kw">impl</span>&lt;A: Arbitrary + Debug&gt; AShow <span class="kw">for </span>A {}
+
+<span class="attr">#[cfg(test)]
+</span><span class="kw">mod </span>test {
+    <span class="kw">use crate</span>::{Gen, QuickCheck};
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>shrinking_regression_issue_126() {
+        <span class="kw">fn </span>thetest(vals: Vec&lt;bool&gt;) -&gt; bool {
+            vals.iter().filter(|<span class="kw-2">&amp;</span>v| <span class="kw-2">*</span>v).count() &lt; <span class="number">2
+        </span>}
+        <span class="kw">let </span>failing_case = QuickCheck::new()
+            .quicktest(thetest <span class="kw">as fn</span>(vals: Vec&lt;bool&gt;) -&gt; bool)
+            .unwrap_err();
+        <span class="kw">let </span>expected_argument = <span class="macro">format!</span>(<span class="string">"{:?}"</span>, [<span class="bool-val">true</span>, <span class="bool-val">true</span>]);
+        <span class="macro">assert_eq!</span>(failing_case.arguments, <span class="macro">vec!</span>[expected_argument]);
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>size_for_small_types_issue_143() {
+        <span class="kw">fn </span>t(<span class="kw">_</span>: i8) -&gt; bool {
+            <span class="bool-val">true
+        </span>}
+        QuickCheck::new().gen(Gen::new(<span class="number">129</span>)).quickcheck(t <span class="kw">as fn</span>(i8) -&gt; bool);
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>regression_signed_shrinker_panic() {
+        <span class="kw">fn </span>foo_can_shrink(v: i8) -&gt; bool {
+            <span class="kw">let _ </span>= <span class="kw">crate</span>::Arbitrary::shrink(<span class="kw-2">&amp;</span>v).take(<span class="number">100</span>).count();
+            <span class="bool-val">true
+        </span>}
+        <span class="kw">crate</span>::quickcheck(foo_can_shrink <span class="kw">as fn</span>(i8) -&gt; bool);
+    }
+}
+</code></pre></div></section></main></body></html>

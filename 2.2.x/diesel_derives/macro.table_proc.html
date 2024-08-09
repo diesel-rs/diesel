@@ -1,0 +1,106 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Specifies that a table exists, and what columns it has. This will create a new public module, with the same name, as the name of the table. In this module, you will find a unit struct named `table`, and a unit struct with the name of each column."><title>table_proc in diesel_derives - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel_derives" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel_derives/index.html">diesel_derives</a><span class="version">2.2.2</span></h2></div><div class="sidebar-elems"></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Macro <a href="index.html">diesel_derives</a>::<wbr><a class="macro" href="#">table_proc</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/diesel_derives/lib.rs.html#1541-1552">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>table_proc!() { <span class="comment">/* proc-macro */</span> }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Specifies that a table exists, and what columns it has. This will create a
+new public module, with the same name, as the name of the table. In this
+module, you will find a unit struct named <code>table</code>, and a unit struct with the
+name of each column.</p>
+<p>By default, this allows a maximum of 32 columns per table.
+You can increase this limit to 64 by enabling the <code>64-column-tables</code> feature.
+You can increase it to 128 by enabling the <code>128-column-tables</code> feature.
+You can decrease it to 16 columns,
+which improves compilation time,
+by disabling the default features of Diesel.
+Note that enabling 64 column tables or larger will substantially increase
+the compile time of Diesel.</p>
+<h3 id="example-usage"><a class="doc-anchor" href="#example-usage">§</a>Example usage</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::table!</span> {
+    users {
+        id -&gt; Integer,
+        name -&gt; VarChar,
+        favorite_color -&gt; Nullable&lt;VarChar&gt;,
+    }
+}</code></pre></div>
+<p>You may also specify a primary key if it is called something other than <code>id</code>.
+Tables with no primary key aren’t supported.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::table!</span> {
+    users (non_standard_primary_key) {
+        non_standard_primary_key -&gt; Integer,
+        name -&gt; VarChar,
+        favorite_color -&gt; Nullable&lt;VarChar&gt;,
+    }
+}</code></pre></div>
+<p>For tables with composite primary keys, list all the columns in the primary key.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::table!</span> {
+    followings (user_id, post_id) {
+        user_id -&gt; Integer,
+        post_id -&gt; Integer,
+        favorited -&gt; Bool,
+    }
+}</code></pre></div>
+<p>If you are using types that aren’t from Diesel’s core types, you can specify
+which types to import.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::table!</span> {
+    <span class="kw">use </span>diesel::sql_types::<span class="kw-2">*</span>;
+    <span class="kw">use </span>diesel_full_text_search::<span class="kw-2">*</span>;
+
+    posts {
+        id -&gt; Integer,
+        title -&gt; Text,
+        keywords -&gt; TsVector,
+    }
+}</code></pre></div>
+<p>If you want to add documentation to the generated code, you can use the
+following syntax:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::table!</span> {
+    <span class="doccomment">/// The table containing all blog posts
+    </span>posts {
+        <span class="doccomment">/// The post's unique id
+        </span>id -&gt; Integer,
+        <span class="doccomment">/// The post's title
+        </span>title -&gt; Text,
+    }
+}</code></pre></div>
+<p>If you have a column with the same name as a Rust reserved keyword, you can use
+the <code>sql_name</code> attribute like this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::table!</span> {
+    posts {
+        id -&gt; Integer,
+        <span class="doccomment">/// This column is named `mytype` but references the table `type` column.
+        </span><span class="attr">#[sql_name = <span class="string">"type"</span>]
+        </span>mytype -&gt; Text,
+    }
+}</code></pre></div>
+<p>This module will also contain several helper types:</p>
+<h3 id="dsl"><a class="doc-anchor" href="#dsl">§</a>dsl</h3>
+<p>This simply re-exports the table, renamed to the same name as the module,
+and each of the columns. This is useful to glob import when you’re dealing
+primarily with one table, to allow writing <code>users.filter(name.eq("Sean"))</code>
+instead of <code>users::table.filter(users::name.eq("Sean"))</code>.</p>
+<h3 id="all_columns"><a class="doc-anchor" href="#all_columns">§</a><code>all_columns</code></h3>
+<p>A constant will be assigned called <code>all_columns</code>. This is what will be
+selected if you don’t otherwise specify a select clause. It’s type will be
+<code>table::AllColumns</code>. You can also get this value from the
+<code>Table::all_columns</code> function.</p>
+<h3 id="star"><a class="doc-anchor" href="#star">§</a>star</h3>
+<p>This will be the qualified “star” expression for this table (e.g.
+<code>users.*</code>). Internally, we read columns by index, not by name, so this
+column is not safe to read data out of, and it has had its SQL type set to
+<code>()</code> to prevent accidentally using it as such. It is sometimes useful for
+counting statements, however. It can also be accessed through the <code>Table.star()</code>
+method.</p>
+<h3 id="sqltype"><a class="doc-anchor" href="#sqltype">§</a><code>SqlType</code></h3>
+<p>A type alias called <code>SqlType</code> will be created. It will be the SQL type of
+<code>all_columns</code>. The SQL type is needed for things like returning boxed
+queries.</p>
+<h3 id="boxedquery"><a class="doc-anchor" href="#boxedquery">§</a><code>BoxedQuery</code></h3>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">pub type </span>BoxedQuery&lt;<span class="lifetime">'a</span>, DB, ST = SqlType&gt; = BoxedSelectStatement&lt;<span class="lifetime">'a</span>, ST, table, DB&gt;;</code></pre></div>
+</div></details></section></div></main></body></html>

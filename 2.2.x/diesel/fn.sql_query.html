@@ -1,0 +1,36 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Construct a full SQL query using raw SQL."><title>sql_query in diesel - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel/index.html">diesel</a><span class="version">2.2.2</span></h2></div><div class="sidebar-elems"></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Function <a href="index.html">diesel</a>::<wbr><a class="fn" href="#">sql_query</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/diesel/query_builder/functions.rs.html#603-605">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub fn sql_query&lt;T: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;<a class="struct" href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html" title="struct alloc::string::String">String</a>&gt;&gt;(query: T) -&gt; <a class="struct" href="query_builder/struct.SqlQuery.html" title="struct diesel::query_builder::SqlQuery">SqlQuery</a></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Construct a full SQL query using raw SQL.</p>
+<p>This function exists for cases where a query needs to be written that is not
+supported by the query builder. Unlike most queries in Diesel, <code>sql_query</code>
+will deserialize its data by name, not by index. That means that you cannot
+deserialize into a tuple, and structs which you deserialize from this
+function will need to have <code>#[derive(QueryableByName)]</code>.</p>
+<p>This function is intended for use when you want to write the entire query
+using raw SQL. If you only need a small bit of raw SQL in your query, use
+<a href="dsl/fn.sql.html" title="fn diesel::dsl::sql"><code>sql</code></a> instead.</p>
+<p>Query parameters can be bound into the raw query using <a href="query_builder/struct.SqlQuery.html#method.bind" title="method diesel::query_builder::SqlQuery::bind"><code>SqlQuery::bind()</code></a>.</p>
+<h2 id="safety"><a class="doc-anchor" href="#safety">§</a>Safety</h2>
+<p>The implementation of <code>QueryableByName</code> will assume that columns with a
+given name will have a certain type. The compiler will be unable to verify
+that the given type is correct. If your query returns a column of an
+unexpected type, the result may have the wrong value, or return an error.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>users = sql_query(<span class="string">"SELECT * FROM users ORDER BY id"</span>)
+    .load(connection);
+<span class="kw">let </span>expected_users = <span class="macro">vec!</span>[
+    User { id: <span class="number">1</span>, name: <span class="string">"Sean"</span>.into() },
+    User { id: <span class="number">2</span>, name: <span class="string">"Tess"</span>.into() },
+];
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(expected_users), users);
+
+<span class="comment">// Checkout the documentation of your database for the correct
+// bind placeholder
+</span><span class="kw">let </span>users = sql_query(<span class="string">"SELECT * FROM users WHERE id &gt; ? AND name &lt;&gt; ?"</span>);
+<span class="kw">let </span>users = users
+    .bind::&lt;Integer, <span class="kw">_</span>&gt;(<span class="number">1</span>)
+    .bind::&lt;Text, <span class="kw">_</span>&gt;(<span class="string">"Tess"</span>)
+    .get_results(connection);
+<span class="kw">let </span>expected_users = <span class="macro">vec!</span>[
+    User { id: <span class="number">3</span>, name: <span class="string">"Jim"</span>.into() },
+];
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(expected_users), users);</code></pre></div>
+</div></details></section></div></main></body></html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Implements `AsChangeset`"><title>AsChangeset in diesel::prelude - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc derive"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.2.2</span></h2></div><div class="sidebar-elems"><h2><a href="index.html">In diesel::prelude</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Derive Macro <a href="../index.html">diesel</a>::<wbr><a href="index.html">prelude</a>::<wbr><a class="derive" href="#">AsChangeset</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel_derives/lib.rs.html#118">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>#[derive(AsChangeset)]
+{
+    <span class="comment">// Attributes available to this derive:</span>
+    #[diesel]
+    #[table_name]
+    #[column_name]
+    #[primary_key]
+    #[changeset_options]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Implements <code>AsChangeset</code></p>
+<p>To implement <code>AsChangeset</code> this derive needs to know the corresponding table
+type. By default, it uses the <code>snake_case</code> type name with an added <code>s</code> from
+the current scope.
+It is possible to change this default by using <code>#[diesel(table_name = something)]</code>.</p>
+<p>If a field name of your struct differs
+from the name of the corresponding column, you can annotate the field with
+<code>#[diesel(column_name = some_column_name)]</code>.</p>
+<p>To provide custom serialization behavior for a field, you can use
+<code>#[diesel(serialize_as = SomeType)]</code>. If this attribute is present, Diesel
+will call <code>.into</code> on the corresponding field and serialize the instance of <code>SomeType</code>,
+rather than the actual field on your struct. This can be used to add custom behavior for a
+single field, or use types that are otherwise unsupported by Diesel.
+Normally, Diesel produces two implementations of the <code>AsChangeset</code> trait for your
+struct using this derive: one for an owned version and one for a borrowed version.
+Using <code>#[diesel(serialize_as)]</code> implies a conversion using <code>.into</code> which consumes the underlying value.
+Hence, once you use <code>#[diesel(serialize_as)]</code>, Diesel can no longer insert borrowed
+versions of your struct.</p>
+<p>By default, any <code>Option</code> fields on the struct are skipped if their value is
+<code>None</code>. If you would like to assign <code>NULL</code> to the field instead, you can
+annotate your struct with <code>#[diesel(treat_none_as_null = true)]</code>.</p>
+<h2 id="attributes"><a class="doc-anchor" href="#attributes">§</a>Attributes</h2><h3 id="optional-container-attributes"><a class="doc-anchor" href="#optional-container-attributes">§</a>Optional container attributes</h3>
+<ul>
+<li><code>#[diesel(treat_none_as_null = true)]</code>, specifies that
+the derive should treat <code>None</code> values as <code>NULL</code>. By default
+<code>Option::&lt;T&gt;::None</code> is just skipped. To insert a <code>NULL</code> using default
+behavior use <code>Option::&lt;Option&lt;T&gt;&gt;::Some(None)</code></li>
+<li><code>#[diesel(table_name = path::to::table)]</code>, specifies a path to the table for which the
+current type is a changeset. The path is relative to the current module.
+If this attribute is not used, the type name converted to
+<code>snake_case</code> with an added <code>s</code> is used as table name.</li>
+<li><code>#[diesel(primary_key(id1, id2))]</code> to specify the struct field that
+that corresponds to the primary key. If not used, <code>id</code> will be
+assumed as primary key field</li>
+</ul>
+<h3 id="optional-field-attributes"><a class="doc-anchor" href="#optional-field-attributes">§</a>Optional field attributes</h3>
+<ul>
+<li><code>#[diesel(column_name = some_column_name)]</code>, overrides the column name
+of the current field to <code>some_column_name</code>. By default, the field
+name is used as column name.</li>
+<li><code>#[diesel(serialize_as = SomeType)]</code>, instead of serializing the actual
+field type, Diesel will convert the field into <code>SomeType</code> using <code>.into</code> and
+serialize that instead. By default, this derive will serialize directly using
+the actual field type.</li>
+<li><code>#[diesel(treat_none_as_null = true/false)]</code>, overrides the container-level
+<code>treat_none_as_null</code> attribute for the current field.</li>
+</ul>
+</div></details></section></div></main></body></html>

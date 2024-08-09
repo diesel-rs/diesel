@@ -1,0 +1,219 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A connection to a database"><title>Connection in diesel::prelude - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.2.2</span></h2></div><h2 class="location"><a href="#">Connection</a></h2><div class="sidebar-elems"><section><h3><a href="#required-associated-types">Required Associated Types</a></h3><ul class="block"><li><a href="#associatedtype.Backend">Backend</a></li><li><a href="#associatedtype.TransactionManager">TransactionManager</a></li></ul><h3><a href="#required-methods">Required Methods</a></h3><ul class="block"><li><a href="#tymethod.establish">establish</a></li><li><a href="#tymethod.execute_returning_count">execute_returning_count</a></li><li><a href="#tymethod.instrumentation">instrumentation</a></li><li><a href="#tymethod.set_instrumentation">set_instrumentation</a></li><li><a href="#tymethod.transaction_state">transaction_state</a></li></ul><h3><a href="#provided-methods">Provided Methods</a></h3><ul class="block"><li><a href="#method.begin_test_transaction">begin_test_transaction</a></li><li><a href="#method.test_transaction">test_transaction</a></li><li><a href="#method.transaction">transaction</a></li></ul><h3><a href="#object-safety">Object Safety</a></h3><h3><a href="#implementors">Implementors</a></h3></section><h2><a href="index.html">In diesel::prelude</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Trait <a href="../index.html">diesel</a>::<wbr><a href="index.html">prelude</a>::<wbr><a class="trait" href="#">Connection</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel/connection/mod.rs.html#212-404">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub trait Connection: <a class="trait" href="../connection/trait.SimpleConnection.html" title="trait diesel::connection::SimpleConnection">SimpleConnection</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a><div class="where">where
+    Self: <a class="trait" href="../connection/trait.ConnectionSealed.html" title="trait diesel::connection::ConnectionSealed">ConnectionSealed</a>,</div>{
+    type <a href="#associatedtype.Backend" class="associatedtype">Backend</a>: <a class="trait" href="../backend/trait.Backend.html" title="trait diesel::backend::Backend">Backend</a>;
+    type <a href="#associatedtype.TransactionManager" class="associatedtype">TransactionManager</a>: <a class="trait" href="../connection/trait.TransactionManager.html" title="trait diesel::connection::TransactionManager">TransactionManager</a>&lt;Self&gt;;
+
+    // Required methods
+    fn <a href="#tymethod.establish" class="fn">establish</a>(database_url: &amp;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) -&gt; <a class="type" href="type.ConnectionResult.html" title="type diesel::prelude::ConnectionResult">ConnectionResult</a>&lt;Self&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.execute_returning_count" class="fn">execute_returning_count</a>&lt;T&gt;(&amp;mut self, source: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;T</a>) -&gt; <a class="type" href="type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt;
+       <span class="where">where T: <a class="trait" href="../query_builder/trait.QueryFragment.html" title="trait diesel::query_builder::QueryFragment">QueryFragment</a>&lt;Self::<a class="associatedtype" href="trait.Connection.html#associatedtype.Backend" title="type diesel::prelude::Connection::Backend">Backend</a>&gt; + <a class="trait" href="../query_builder/trait.QueryId.html" title="trait diesel::query_builder::QueryId">QueryId</a></span>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.transaction_state" class="fn">transaction_state</a>(
+        &amp;mut self,
+    ) -&gt; &amp;mut &lt;Self::<a class="associatedtype" href="trait.Connection.html#associatedtype.TransactionManager" title="type diesel::prelude::Connection::TransactionManager">TransactionManager</a> as <a class="trait" href="../connection/trait.TransactionManager.html" title="trait diesel::connection::TransactionManager">TransactionManager</a>&lt;Self&gt;&gt;::<a class="associatedtype" href="../connection/trait.TransactionManager.html#associatedtype.TransactionStateData" title="type diesel::connection::TransactionManager::TransactionStateData">TransactionStateData</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.instrumentation" class="fn">instrumentation</a>(&amp;mut self) -&gt; &amp;mut dyn <a class="trait" href="../connection/trait.Instrumentation.html" title="trait diesel::connection::Instrumentation">Instrumentation</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_instrumentation" class="fn">set_instrumentation</a>(&amp;mut self, instrumentation: impl <a class="trait" href="../connection/trait.Instrumentation.html" title="trait diesel::connection::Instrumentation">Instrumentation</a>);
+
+    // Provided methods
+    fn <a href="#method.transaction" class="fn">transaction</a>&lt;T, E, F&gt;(&amp;mut self, f: F) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;T, E&gt;
+       <span class="where">where F: <a class="trait" href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnOnce.html" title="trait core::ops::function::FnOnce">FnOnce</a>(<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut Self</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;T, E&gt;,
+             E: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;<a class="enum" href="../result/enum.Error.html" title="enum diesel::result::Error">Error</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.begin_test_transaction" class="fn">begin_test_transaction</a>(&amp;mut self) -&gt; <a class="type" href="type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>&gt; { ... }
+<span class="item-spacer"></span>    fn <a href="#method.test_transaction" class="fn">test_transaction</a>&lt;T, E, F&gt;(&amp;mut self, f: F) -&gt; T
+       <span class="where">where F: <a class="trait" href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnOnce.html" title="trait core::ops::function::FnOnce">FnOnce</a>(<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut Self</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;T, E&gt;,
+             E: <a class="trait" href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html" title="trait core::fmt::Debug">Debug</a></span> { ... }
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A connection to a database</p>
+<p>This trait represents a database connection. It can be used to query the database through
+the query dsl provided by diesel, custom extensions or raw sql queries.</p>
+<h2 id="implementing-a-custom-connection"><a class="doc-anchor" href="#implementing-a-custom-connection">§</a>Implementing a custom connection</h2>
+<p>There are several reasons why you would want to implement a custom connection implementation:</p>
+<ul>
+<li>To wrap an existing connection for instrumentation purposes</li>
+<li>To use a different underlying library to provide a connection implementation
+for already existing backends.</li>
+<li>To add support for an unsupported database system</li>
+</ul>
+<p>Implementing a <code>Connection</code> in a third party crate requires
+enabling the
+<code>i-implement-a-third-party-backend-and-opt-into-breaking-changes</code>
+crate feature which grants access to some of diesel’s implementation details.</p>
+<h3 id="wrapping-an-existing-connection-impl"><a class="doc-anchor" href="#wrapping-an-existing-connection-impl">§</a>Wrapping an existing connection impl</h3>
+<p>Wrapping an existing connection allows you to customize the implementation to
+add additional functionality, like for example instrumentation. For this use case
+you only need to implement <code>Connection</code>, <a href="../connection/trait.LoadConnection.html" title="trait diesel::connection::LoadConnection"><code>LoadConnection</code></a> and all super traits.
+You should forward any method call to the wrapped connection type.
+It is <strong>important</strong> to also forward any method where diesel provides a
+default implementation, as the wrapped connection implementation may
+contain a customized implementation.</p>
+<p>To allow the integration of your new connection type with other diesel features
+it may be useful to also implement <a href="../r2d2/trait.R2D2Connection.html" title="trait diesel::r2d2::R2D2Connection"><code>R2D2Connection</code></a>
+and <a href="../migration/trait.MigrationConnection.html" title="trait diesel::migration::MigrationConnection"><code>MigrationConnection</code></a>.</p>
+<h3 id="provide-a-new-connection-implementation-for-an-existing-backend"><a class="doc-anchor" href="#provide-a-new-connection-implementation-for-an-existing-backend">§</a>Provide a new connection implementation for an existing backend</h3>
+<p>Implementing a new connection based on an existing backend can enable the usage of
+other methods to connect to the database. One example here would be to replace
+the official diesel provided connection implementations with an implementation
+based on a pure rust connection crate.</p>
+<p><strong>It’s important to use prepared statements to implement the following methods:</strong></p>
+<ul>
+<li><a href="../connection/trait.LoadConnection.html#tymethod.load" title="method diesel::connection::LoadConnection::load"><code>LoadConnection::load</code></a></li>
+<li><a href="trait.Connection.html#tymethod.execute_returning_count" title="method diesel::prelude::Connection::execute_returning_count"><code>Connection::execute_returning_count</code></a></li>
+</ul>
+<p>For performance reasons it may also be meaningful to cache already prepared statements.
+See <a href="../connection/statement_cache/struct.StatementCache.html" title="struct diesel::connection::statement_cache::StatementCache"><code>StatementCache</code></a>
+for a helper type to implement prepared statement caching.
+The <a href="../connection/statement_cache/index.html" title="mod diesel::connection::statement_cache">statement_cache</a>
+module documentation contains details about efficient prepared statement caching
+based on diesels query builder.</p>
+<p>It is required to implement at least the following parts:</p>
+<ul>
+<li>A row type that describes how to receive values form a database row.
+This type needs to implement <a href="../row/trait.Row.html" title="trait diesel::row::Row"><code>Row</code></a></li>
+<li>A field type that describes a database field value.
+This type needs to implement <a href="../row/trait.Field.html" title="trait diesel::row::Field"><code>Field</code></a></li>
+<li>A connection type that wraps the connection +
+the necessary state management.</li>
+<li>Maybe a <a href="../connection/trait.TransactionManager.html" title="trait diesel::connection::TransactionManager"><code>TransactionManager</code></a> implementation matching
+the interface provided by the database connection crate.
+Otherwise the implementation used by the corresponding
+<code>Connection</code> in diesel can be reused.</li>
+</ul>
+<p>To allow the integration of your new connection type with other diesel features
+it may be useful to also implement <a href="../r2d2/trait.R2D2Connection.html" title="trait diesel::r2d2::R2D2Connection"><code>R2D2Connection</code></a>
+and <a href="../migration/trait.MigrationConnection.html" title="trait diesel::migration::MigrationConnection"><code>MigrationConnection</code></a>.</p>
+<p>The exact implementation of the <code>Connection</code> trait depends on the interface provided
+by the connection crate/library. A struct implementing <code>Connection</code> should
+likely contain a <a href="../connection/statement_cache/struct.StatementCache.html" title="struct diesel::connection::statement_cache::StatementCache"><code>StatementCache</code></a>
+to cache prepared statements efficiently.</p>
+<p>As implementations differ significantly between the supported backends
+we cannot give a one for all description here. Generally it’s likely a
+good idea to follow the implementation of the corresponding connection
+in diesel at a high level to gain some idea how to implement your
+custom implementation.</p>
+<h3 id="implement-support-for-an-unsupported-database-system"><a class="doc-anchor" href="#implement-support-for-an-unsupported-database-system">§</a>Implement support for an unsupported database system</h3>
+<p>Additionally to anything mentioned in the previous section the following steps are required:</p>
+<ul>
+<li>Implement a custom backend type. See the documentation of <a href="../backend/trait.Backend.html" title="trait diesel::backend::Backend"><code>Backend</code></a> for details</li>
+<li>Implement appropriate <a href="../deserialize/trait.FromSql.html" title="trait diesel::deserialize::FromSql"><code>FromSql</code></a>/
+<a href="../serialize/trait.ToSql.html" title="trait diesel::serialize::ToSql"><code>ToSql</code></a> conversions.
+At least the following impls should be considered:
+<ul>
+<li><code>i16</code>: <code>FromSql&lt;SmallInt, YourBackend&gt;</code></li>
+<li><code>i32</code>: <code>FromSql&lt;Integer, YourBackend&gt;</code></li>
+<li><code>i64</code>: <code>FromSql&lt;BigInt, YourBackend&gt;</code></li>
+<li><code>f32</code>: <code>FromSql&lt;Float, YourBackend&gt;</code></li>
+<li><code>f64</code>: <code>FromSql&lt;Double, YourBackend&gt;</code></li>
+<li><code>bool</code>: <code>FromSql&lt;Bool, YourBackend&gt;</code></li>
+<li><code>String</code>: <code>FromSql&lt;Text, YourBackend&gt;</code></li>
+<li><code>Vec&lt;u8&gt;</code>: <code>FromSql&lt;Binary, YourBackend&gt;</code></li>
+<li><code>i16</code>: <code>ToSql&lt;SmallInt, YourBackend&gt;</code></li>
+<li><code>i32</code>: <code>ToSql&lt;Integer, YourBackend&gt;</code></li>
+<li><code>i64</code>: <code>ToSql&lt;BigInt, YourBackend&gt;</code></li>
+<li><code>f32</code>: <code>ToSql&lt;Float, YourBackend&gt;</code></li>
+<li><code>f64</code>: <code>ToSql&lt;Double, YourBackend&gt;</code></li>
+<li><code>bool</code>: <code>ToSql&lt;Bool, YourBackend&gt;</code></li>
+<li><code>String</code>: <code>ToSql&lt;Text, YourBackend&gt;</code></li>
+<li><code>Vec&lt;u8&gt;</code>: <code>ToSql&lt;Binary, YourBackend&gt;</code></li>
+</ul>
+</li>
+<li>Maybe a <a href="../connection/trait.TransactionManager.html" title="trait diesel::connection::TransactionManager"><code>TransactionManager</code></a> implementation matching
+the interface provided by the database connection crate.
+Otherwise the implementation used by the corresponding
+<code>Connection</code> in diesel can be reused.</li>
+</ul>
+<p>As these implementations will vary depending on the backend being used,
+we cannot give concrete examples here. We recommend looking at our existing
+implementations to see how you can implement your own connection.</p>
+</div></details><h2 id="required-associated-types" class="section-header">Required Associated Types<a href="#required-associated-types" class="anchor">§</a></h2><div class="methods"><details class="toggle" open><summary><section id="associatedtype.Backend" class="method"><a class="src rightside" href="../../src/diesel/connection/mod.rs.html#220">source</a><h4 class="code-header">type <a href="#associatedtype.Backend" class="associatedtype">Backend</a>: <a class="trait" href="../backend/trait.Backend.html" title="trait diesel::backend::Backend">Backend</a></h4></section></summary><div class="docblock"><p>The backend this type connects to</p>
+</div></details><details class="toggle" open><summary><section id="associatedtype.TransactionManager" class="method"><a class="src rightside" href="../../src/diesel/connection/mod.rs.html#226">source</a><h4 class="code-header">type <a href="#associatedtype.TransactionManager" class="associatedtype">TransactionManager</a>: <a class="trait" href="../connection/trait.TransactionManager.html" title="trait diesel::connection::TransactionManager">TransactionManager</a>&lt;Self&gt;</h4></section><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>i-implement-a-third-party-backend-and-opt-into-breaking-changes</code></strong> only.</div></span></summary><div class="docblock"><p>The transaction manager implementation used by this connection</p>
+</div></details></div><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.establish" class="method"><a class="src rightside" href="../../src/diesel/connection/mod.rs.html#233">source</a><h4 class="code-header">fn <a href="#tymethod.establish" class="fn">establish</a>(database_url: &amp;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) -&gt; <a class="type" href="type.ConnectionResult.html" title="type diesel::prelude::ConnectionResult">ConnectionResult</a>&lt;Self&gt;</h4></section></summary><div class="docblock"><p>Establishes a new connection to the database</p>
+<p>The argument to this method and the method’s behavior varies by backend.
+See the documentation for that backend’s connection class
+for details about what it accepts and how it behaves.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.execute_returning_count" class="method"><a class="src rightside" href="../../src/diesel/connection/mod.rs.html#381-383">source</a><h4 class="code-header">fn <a href="#tymethod.execute_returning_count" class="fn">execute_returning_count</a>&lt;T&gt;(&amp;mut self, source: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;T</a>) -&gt; <a class="type" href="type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt;<div class="where">where
+    T: <a class="trait" href="../query_builder/trait.QueryFragment.html" title="trait diesel::query_builder::QueryFragment">QueryFragment</a>&lt;Self::<a class="associatedtype" href="trait.Connection.html#associatedtype.Backend" title="type diesel::prelude::Connection::Backend">Backend</a>&gt; + <a class="trait" href="../query_builder/trait.QueryId.html" title="trait diesel::query_builder::QueryId">QueryId</a>,</div></h4></section><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>i-implement-a-third-party-backend-and-opt-into-breaking-changes</code></strong> only.</div></span></summary><div class="docblock"><p>Execute a single SQL statements given by a query and return
+number of affected rows</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.transaction_state" class="method"><a class="src rightside" href="../../src/diesel/connection/mod.rs.html#392-394">source</a><h4 class="code-header">fn <a href="#tymethod.transaction_state" class="fn">transaction_state</a>(
+    &amp;mut self,
+) -&gt; &amp;mut &lt;Self::<a class="associatedtype" href="trait.Connection.html#associatedtype.TransactionManager" title="type diesel::prelude::Connection::TransactionManager">TransactionManager</a> as <a class="trait" href="../connection/trait.TransactionManager.html" title="trait diesel::connection::TransactionManager">TransactionManager</a>&lt;Self&gt;&gt;::<a class="associatedtype" href="../connection/trait.TransactionManager.html#associatedtype.TransactionStateData" title="type diesel::connection::TransactionManager::TransactionStateData">TransactionStateData</a></h4></section><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>i-implement-a-third-party-backend-and-opt-into-breaking-changes</code></strong> only.</div></span></summary><div class="docblock"><p>Get access to the current transaction state of this connection</p>
+<p>This function should be used from <a href="../connection/trait.TransactionManager.html" title="trait diesel::connection::TransactionManager"><code>TransactionManager</code></a> to access
+internally required state.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.instrumentation" class="method"><a class="src rightside" href="../../src/diesel/connection/mod.rs.html#400">source</a><h4 class="code-header">fn <a href="#tymethod.instrumentation" class="fn">instrumentation</a>(&amp;mut self) -&gt; &amp;mut dyn <a class="trait" href="../connection/trait.Instrumentation.html" title="trait diesel::connection::Instrumentation">Instrumentation</a></h4></section><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>i-implement-a-third-party-backend-and-opt-into-breaking-changes</code></strong> only.</div></span></summary><div class="docblock"><p>Get the instrumentation instance stored in this connection</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_instrumentation" class="method"><a class="src rightside" href="../../src/diesel/connection/mod.rs.html#403">source</a><h4 class="code-header">fn <a href="#tymethod.set_instrumentation" class="fn">set_instrumentation</a>(&amp;mut self, instrumentation: impl <a class="trait" href="../connection/trait.Instrumentation.html" title="trait diesel::connection::Instrumentation">Instrumentation</a>)</h4></section></summary><div class="docblock"><p>Set a specific <a href="../connection/trait.Instrumentation.html" title="trait diesel::connection::Instrumentation"><code>Instrumentation</code></a> implementation for this connection</p>
+</div></details></div><h2 id="provided-methods" class="section-header">Provided Methods<a href="#provided-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="method.transaction" class="method"><a class="src rightside" href="../../src/diesel/connection/mod.rs.html#303-309">source</a><h4 class="code-header">fn <a href="#method.transaction" class="fn">transaction</a>&lt;T, E, F&gt;(&amp;mut self, f: F) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;T, E&gt;<div class="where">where
+    F: <a class="trait" href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnOnce.html" title="trait core::ops::function::FnOnce">FnOnce</a>(<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut Self</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;T, E&gt;,
+    E: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;<a class="enum" href="../result/enum.Error.html" title="enum diesel::result::Error">Error</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Executes the given function inside of a database transaction</p>
+<p>This function executes the provided closure <code>f</code> inside a database
+transaction. If there is already an open transaction for the current
+connection savepoints will be used instead. The connection is committed if
+the closure returns <code>Ok(_)</code>, it will be rolled back if it returns <code>Err(_)</code>.
+For both cases the original result value will be returned from this function.</p>
+<p>If the transaction fails to commit due to a <code>SerializationFailure</code> or a
+<code>ReadOnlyTransaction</code> a rollback will be attempted.
+If the rollback fails, the error will be returned in a
+<a href="../result/enum.Error.html#variant.RollbackErrorOnCommit" title="variant diesel::result::Error::RollbackErrorOnCommit"><code>Error::RollbackErrorOnCommit</code></a>,
+from which you will be able to extract both the original commit error and
+the rollback error.
+In addition, the connection will be considered broken
+as it contains a uncommitted unabortable open transaction. Any further
+interaction with the transaction system will result in an returned error
+in this case.</p>
+<p>If the closure returns an <code>Err(_)</code> and the rollback fails the function
+will return that rollback error directly, and the transaction manager will
+be marked as broken as it contains a uncommitted unabortable open transaction.</p>
+<p>If a nested transaction fails to release the corresponding savepoint
+the error will be returned directly.</p>
+<h5 id="example"><a class="doc-anchor" href="#example">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::result::Error;
+
+conn.transaction::&lt;<span class="kw">_</span>, Error, <span class="kw">_</span>&gt;(|conn| {
+    diesel::insert_into(users)
+        .values(name.eq(<span class="string">"Ruby"</span>))
+        .execute(conn)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>all_names = users.select(name).load::&lt;String&gt;(conn)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">"Sean"</span>, <span class="string">"Tess"</span>, <span class="string">"Ruby"</span>], all_names);
+
+    <span class="prelude-val">Ok</span>(())
+})<span class="question-mark">?</span>;
+
+conn.transaction::&lt;(), <span class="kw">_</span>, <span class="kw">_</span>&gt;(|conn| {
+    diesel::insert_into(users)
+        .values(name.eq(<span class="string">"Pascal"</span>))
+        .execute(conn)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>all_names = users.select(name).load::&lt;String&gt;(conn)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">"Sean"</span>, <span class="string">"Tess"</span>, <span class="string">"Ruby"</span>, <span class="string">"Pascal"</span>], all_names);
+
+    <span class="comment">// If we want to roll back the transaction, but don't have an
+    // actual error to return, we can return `RollbackTransaction`.
+    </span><span class="prelude-val">Err</span>(Error::RollbackTransaction)
+});
+
+<span class="kw">let </span>all_names = users.select(name).load::&lt;String&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">"Sean"</span>, <span class="string">"Tess"</span>, <span class="string">"Ruby"</span>], all_names);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.begin_test_transaction" class="method"><a class="src rightside" href="../../src/diesel/connection/mod.rs.html#314-328">source</a><h4 class="code-header">fn <a href="#method.begin_test_transaction" class="fn">begin_test_transaction</a>(&amp;mut self) -&gt; <a class="type" href="type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>&gt;</h4></section></summary><div class="docblock"><p>Creates a transaction that will never be committed. This is useful for
+tests. Panics if called while inside of a transaction or
+if called with a connection containing a broken transaction</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.test_transaction" class="method"><a class="src rightside" href="../../src/diesel/connection/mod.rs.html#363-374">source</a><h4 class="code-header">fn <a href="#method.test_transaction" class="fn">test_transaction</a>&lt;T, E, F&gt;(&amp;mut self, f: F) -&gt; T<div class="where">where
+    F: <a class="trait" href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnOnce.html" title="trait core::ops::function::FnOnce">FnOnce</a>(<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut Self</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;T, E&gt;,
+    E: <a class="trait" href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html" title="trait core::fmt::Debug">Debug</a>,</div></h4></section></summary><div class="docblock"><p>Executes the given function inside a transaction, but does not commit
+it. Panics if the given function returns an error.</p>
+<h5 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::result::Error;
+
+conn.test_transaction::&lt;<span class="kw">_</span>, Error, <span class="kw">_</span>&gt;(|conn| {
+    diesel::insert_into(users)
+        .values(name.eq(<span class="string">"Ruby"</span>))
+        .execute(conn)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>all_names = users.select(name).load::&lt;String&gt;(conn)<span class="question-mark">?</span>;
+    <span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">"Sean"</span>, <span class="string">"Tess"</span>, <span class="string">"Ruby"</span>], all_names);
+
+    <span class="prelude-val">Ok</span>(())
+});
+
+<span class="comment">// Even though we returned `Ok`, the transaction wasn't committed.
+</span><span class="kw">let </span>all_names = users.select(name).load::&lt;String&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">"Sean"</span>, <span class="string">"Tess"</span>], all_names);</code></pre></div>
+</div></details></div><h2 id="object-safety" class="section-header">Object Safety<a href="#object-safety" class="anchor">§</a></h2><div class="object-safety-info">This trait is <b>not</b> <a href="https://doc.rust-lang.org/nightly/reference/items/traits.html#object-safety">object safe</a>.</div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"><details class="toggle implementors-toggle"><summary><section id="impl-Connection-for-MysqlConnection" class="impl"><a class="src rightside" href="../../src/diesel/mysql/connection/mod.rs.html#141-209">source</a><a href="#impl-Connection-for-MysqlConnection" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="trait.Connection.html" title="trait diesel::prelude::Connection">Connection</a> for <a class="struct" href="../mysql/struct.MysqlConnection.html" title="struct diesel::mysql::MysqlConnection">MysqlConnection</a></h3><span class="item-info"><div class="stab portability">Available on <strong>crate features <code>mysql</code> and <code>mysql_backend</code></strong> only.</div></span></section></summary><div class="impl-items"><section id="associatedtype.Backend-1" class="associatedtype trait-impl"><a href="#associatedtype.Backend-1" class="anchor">§</a><h4 class="code-header">type <a href="#associatedtype.Backend" class="associatedtype">Backend</a> = <a class="struct" href="../mysql/struct.Mysql.html" title="struct diesel::mysql::Mysql">Mysql</a></h4></section><section id="associatedtype.TransactionManager-1" class="associatedtype trait-impl"><a href="#associatedtype.TransactionManager-1" class="anchor">§</a><h4 class="code-header">type <a href="#associatedtype.TransactionManager" class="associatedtype">TransactionManager</a> = <a class="struct" href="../connection/struct.AnsiTransactionManager.html" title="struct diesel::connection::AnsiTransactionManager">AnsiTransactionManager</a></h4></section></div></details><details class="toggle implementors-toggle"><summary><section id="impl-Connection-for-PgConnection" class="impl"><a class="src rightside" href="../../src/diesel/pg/connection/mod.rs.html#176-242">source</a><a href="#impl-Connection-for-PgConnection" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="trait.Connection.html" title="trait diesel::prelude::Connection">Connection</a> for <a class="struct" href="../pg/struct.PgConnection.html" title="struct diesel::pg::PgConnection">PgConnection</a></h3><span class="item-info"><div class="stab portability">Available on <strong>crate features <code>postgres</code> and <code>postgres_backend</code></strong> only.</div></span></section></summary><div class="impl-items"><section id="associatedtype.Backend-2" class="associatedtype trait-impl"><a href="#associatedtype.Backend-2" class="anchor">§</a><h4 class="code-header">type <a href="#associatedtype.Backend" class="associatedtype">Backend</a> = <a class="struct" href="../pg/struct.Pg.html" title="struct diesel::pg::Pg">Pg</a></h4></section><section id="associatedtype.TransactionManager-2" class="associatedtype trait-impl"><a href="#associatedtype.TransactionManager-2" class="anchor">§</a><h4 class="code-header">type <a href="#associatedtype.TransactionManager" class="associatedtype">TransactionManager</a> = <a class="struct" href="../connection/struct.AnsiTransactionManager.html" title="struct diesel::connection::AnsiTransactionManager">AnsiTransactionManager</a></h4></section></div></details><details class="toggle implementors-toggle"><summary><section id="impl-Connection-for-SqliteConnection" class="impl"><a class="src rightside" href="../../src/diesel/sqlite/connection/mod.rs.html#157-207">source</a><a href="#impl-Connection-for-SqliteConnection" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="trait.Connection.html" title="trait diesel::prelude::Connection">Connection</a> for <a class="struct" href="../sqlite/struct.SqliteConnection.html" title="struct diesel::sqlite::SqliteConnection">SqliteConnection</a></h3><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>sqlite</code></strong> only.</div></span></section></summary><div class="impl-items"><section id="associatedtype.Backend-3" class="associatedtype trait-impl"><a href="#associatedtype.Backend-3" class="anchor">§</a><h4 class="code-header">type <a href="#associatedtype.Backend" class="associatedtype">Backend</a> = <a class="struct" href="../sqlite/struct.Sqlite.html" title="struct diesel::sqlite::Sqlite">Sqlite</a></h4></section><section id="associatedtype.TransactionManager-3" class="associatedtype trait-impl"><a href="#associatedtype.TransactionManager-3" class="anchor">§</a><h4 class="code-header">type <a href="#associatedtype.TransactionManager" class="associatedtype">TransactionManager</a> = <a class="struct" href="../connection/struct.AnsiTransactionManager.html" title="struct diesel::connection::AnsiTransactionManager">AnsiTransactionManager</a></h4></section></div></details><details class="toggle implementors-toggle"><summary><section id="impl-Connection-for-PooledConnection%3CM%3E" class="impl"><a class="src rightside" href="../../src/diesel/r2d2.rs.html#227-266">source</a><a href="#impl-Connection-for-PooledConnection%3CM%3E" class="anchor">§</a><h3 class="code-header">impl&lt;M&gt; <a class="trait" href="trait.Connection.html" title="trait diesel::prelude::Connection">Connection</a> for <a class="struct" href="../r2d2/struct.PooledConnection.html" title="struct diesel::r2d2::PooledConnection">PooledConnection</a>&lt;M&gt;<div class="where">where
+    M: <a class="trait" href="../r2d2/trait.ManageConnection.html" title="trait diesel::r2d2::ManageConnection">ManageConnection</a>,
+    M::<a class="associatedtype" href="../r2d2/trait.ManageConnection.html#associatedtype.Connection" title="type diesel::r2d2::ManageConnection::Connection">Connection</a>: <a class="trait" href="trait.Connection.html" title="trait diesel::prelude::Connection">Connection</a> + <a class="trait" href="../r2d2/trait.R2D2Connection.html" title="trait diesel::r2d2::R2D2Connection">R2D2Connection</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'static,</div></h3><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>r2d2</code></strong> only.</div></span></section></summary><div class="impl-items"><section id="associatedtype.Backend-4" class="associatedtype trait-impl"><a href="#associatedtype.Backend-4" class="anchor">§</a><h4 class="code-header">type <a href="#associatedtype.Backend" class="associatedtype">Backend</a> = &lt;&lt;M as <a class="trait" href="../r2d2/trait.ManageConnection.html" title="trait diesel::r2d2::ManageConnection">ManageConnection</a>&gt;::<a class="associatedtype" href="../r2d2/trait.ManageConnection.html#associatedtype.Connection" title="type diesel::r2d2::ManageConnection::Connection">Connection</a> as <a class="trait" href="trait.Connection.html" title="trait diesel::prelude::Connection">Connection</a>&gt;::<a class="associatedtype" href="trait.Connection.html#associatedtype.Backend" title="type diesel::prelude::Connection::Backend">Backend</a></h4></section><section id="associatedtype.TransactionManager-4" class="associatedtype trait-impl"><a href="#associatedtype.TransactionManager-4" class="anchor">§</a><h4 class="code-header">type <a href="#associatedtype.TransactionManager" class="associatedtype">TransactionManager</a> = PoolTransactionManager&lt;&lt;&lt;M as <a class="trait" href="../r2d2/trait.ManageConnection.html" title="trait diesel::r2d2::ManageConnection">ManageConnection</a>&gt;::<a class="associatedtype" href="../r2d2/trait.ManageConnection.html#associatedtype.Connection" title="type diesel::r2d2::ManageConnection::Connection">Connection</a> as <a class="trait" href="trait.Connection.html" title="trait diesel::prelude::Connection">Connection</a>&gt;::<a class="associatedtype" href="trait.Connection.html#associatedtype.TransactionManager" title="type diesel::prelude::Connection::TransactionManager">TransactionManager</a>&gt;</h4></section></div></details></div><script src="../../trait.impl/diesel/connection/trait.Connection.js" data-ignore-extern-crates="r2d2" async></script></section></div></main></body></html>

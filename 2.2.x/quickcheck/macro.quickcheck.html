@@ -1,0 +1,25 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A macro for writing quickcheck tests."><title>quickcheck in quickcheck - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="quickcheck" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../quickcheck/index.html">quickcheck</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Macro <a href="index.html">quickcheck</a>::<wbr><a class="macro" href="#">quickcheck</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/quickcheck/lib.rs.html#43-67">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><span class="macro">macro_rules!</span> quickcheck {
+    (@as_items $(<span class="macro-nonterminal">$i</span>:item)<span class="kw-2">*</span>) =&gt; { ... };
+    {
+        $(
+            $(<span class="attr">#[<span class="macro-nonterminal">$m</span>:meta]</span>)*
+            <span class="kw">fn </span><span class="macro-nonterminal">$fn_name</span>:ident($(<span class="macro-nonterminal">$arg_name</span>:ident : <span class="macro-nonterminal">$arg_ty</span>:ty),<span class="kw-2">*</span>) -&gt; <span class="macro-nonterminal">$ret</span>:ty {
+                $(<span class="macro-nonterminal">$code</span>:tt)*
+            }
+        )*
+    } =&gt; { ... };
+}</pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A macro for writing quickcheck tests.</p>
+<p>This macro takes as input one or more property functions to test, and
+produces a proper <code>#[test]</code> function for each property. If the property
+fails, the behavior is as if <code>quickcheck</code> were called on the property
+(i.e., it panics and fails the test).</p>
+<p>Note that this macro doesn’t support <code>mut</code> or patterns in parameters.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">quickcheck!</span> {
+    <span class="kw">fn </span>prop_reverse_reverse(xs: Vec&lt;usize&gt;) -&gt; bool {
+        <span class="kw">let </span>rev: Vec&lt;<span class="kw">_</span>&gt; = xs.clone().into_iter().rev().collect();
+        <span class="kw">let </span>revrev: Vec&lt;<span class="kw">_</span>&gt; = rev.into_iter().rev().collect();
+        xs == revrev
+    }
+};</code></pre></div>
+</div></details></section></div></main></body></html>

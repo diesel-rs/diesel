@@ -1,0 +1,116 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Automatically annotates return type of a query fragment function"><title>auto_type in diesel_derives - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel_derives" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc attr"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel_derives/index.html">diesel_derives</a><span class="version">2.2.2</span></h2></div><div class="sidebar-elems"></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Attribute Macro <a href="index.html">diesel_derives</a>::<wbr><a class="attr" href="#">auto_type</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/diesel_derives/lib.rs.html#1889-1904">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>#[auto_type]</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Automatically annotates return type of a query fragment function</p>
+<p>This may be useful when factoring out common query fragments into functions.
+If not using this, it would typically involve explicitly writing the full
+type of the query fragment function, which depending on the length of said
+query fragment can be quite difficult (especially to maintain) and verbose.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::dsl;
+
+<span class="attr">#[dsl::auto_type]
+</span><span class="kw">fn </span>user_has_post() -&gt; <span class="kw">_ </span>{
+    dsl::exists(posts::table.filter(posts::user_id.eq(users::id)))
+}
+
+<span class="kw">let </span>users_with_posts: Vec&lt;String&gt; = users::table
+    .filter(user_has_post())
+    .select(users::name)
+    .load(conn)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(
+    <span class="kw-2">&amp;</span>[<span class="string">"Sean"</span>, <span class="string">"Tess"</span>] <span class="kw">as </span><span class="kw-2">&amp;</span>[<span class="kw">_</span>],
+    users_with_posts
+        .iter()
+        .map(|s| s.as_str())
+        .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+);</code></pre></div>
+<h2 id="limitations"><a class="doc-anchor" href="#limitations">§</a>Limitations</h2>
+<p>While this attribute tries to support as much of diesels built-in DSL as possible it’s
+unfortunately not possible to support everything. Notable unsupported types are:</p>
+<ul>
+<li>Update statements</li>
+<li>Insert from select statements</li>
+<li>Query constructed by <code>diesel::sql_query</code></li>
+<li>Expressions using <code>diesel::dsl::sql</code></li>
+</ul>
+<p>For these cases a manual type annotation is required. See the “Annotating Types” section below
+for details.</p>
+<h2 id="advanced-usage"><a class="doc-anchor" href="#advanced-usage">§</a>Advanced usage</h2>
+<p>By default, the macro will:</p>
+<ul>
+<li>Generate a type alias for the return type of the function, named the
+exact same way as the function itself.</li>
+<li>Assume that functions, unless otherwise annotated, have a type alias for
+their return type available at the same path as the function itself
+(including case). (e.g. for the <code>dsl::not(x)</code> call, it expects that there
+is a <code>dsl::not&lt;X&gt;</code> type alias available)</li>
+<li>Assume that methods, unless otherwise annotated, have a type alias
+available as <code>diesel::dsl::PascalCaseOfMethodName</code> (e.g. for the
+<code>x.and(y)</code> call, it expects that there is a <code>diesel::dsl::And&lt;X, Y&gt;</code> type
+alias available)</li>
+</ul>
+<p>The defaults can be changed by passing the following attributes to the
+macro:</p>
+<ul>
+<li><code>#[auto_type(no_type_alias)]</code> to disable the generation of the type alias.</li>
+<li><code>#[auto_type(dsl_path = "path::to::dsl")]</code> to change the path where the
+macro will look for type aliases for methods. This is required if you mix your own
+custom query dsl extensions with diesel types. In that case, you may use this argument to
+reference a module defined like so:
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">mod </span>dsl {
+    <span class="doccomment">/// export all of diesel dsl
+    </span><span class="kw">pub use </span>diesel::dsl::<span class="kw-2">*</span>;
+  
+    <span class="doccomment">/// Export your extension types here
+    </span><span class="kw">pub use </span><span class="kw">crate</span>::your_extension::dsl::YourType;
+ }</code></pre></div>
+</li>
+<li><code>#[auto_type(method_type_case = "snake_case")]</code> to change the case of the
+method type alias.</li>
+<li><code>#[auto_type(function_type_case = "snake_case")]</code> to change the case of
+the function type alias (if you don’t want the exact same path but want to
+change the case of the last element of the path).</li>
+</ul>
+<p>The <code>dsl_path</code> attribute in particular may be used to declare an
+intermediate module where you would define the few additional needed type
+aliases that can’t be inferred automatically.</p>
+<h3 id="annotating-types"><a class="doc-anchor" href="#annotating-types">§</a>Annotating types</h3>
+<p>Sometimes the macro can’t infer the type of a particular sub-expression. In
+that case, you can annotate the type of the sub-expression:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::dsl;
+
+<span class="comment">// This will generate a `user_has_post_with_id_greater_than` type alias
+</span><span class="attr">#[dsl::auto_type]
+</span><span class="kw">fn </span>user_has_post_with_id_greater_than(id_greater_than: i32) -&gt; <span class="kw">_ </span>{
+    dsl::exists(
+        posts::table
+            .filter(posts::user_id.eq(users::id))
+            .filter(posts::id.gt(id_greater_than)),
+    )
+}
+
+<span class="attr">#[dsl::auto_type]
+</span><span class="kw">fn </span>users_with_posts_with_id_greater_than(id_greater_than: i32) -&gt; <span class="kw">_ </span>{
+    <span class="comment">// If we didn't specify the type for this query fragment, the macro would infer it as
+    // `user_has_post_with_id_greater_than&lt;i32&gt;`, which would be incorrect because there is
+    // no generic parameter.
+    </span><span class="kw">let </span>filter: user_has_post_with_id_greater_than =
+        user_has_post_with_id_greater_than(id_greater_than);
+    <span class="comment">// The macro inferring that it has to pass generic parameters is still the convention
+    // because it's the most general case, as well as the common case within Diesel itself,
+    // and because annotating this way is reasonably simple, while the other way around
+    // would be hard.
+
+    </span>users::table.filter(filter).select(users::name)
+}
+
+<span class="kw">let </span>users_with_posts: Vec&lt;String&gt; = users_with_posts_with_id_greater_than(<span class="number">2</span>).load(conn)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(
+    <span class="kw-2">&amp;</span>[<span class="string">"Tess"</span>] <span class="kw">as </span><span class="kw-2">&amp;</span>[<span class="kw">_</span>],
+    users_with_posts
+        .iter()
+        .map(|s| s.as_str())
+        .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+);</code></pre></div>
+</div></details></section></div></main></body></html>

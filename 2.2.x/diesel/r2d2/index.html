@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Connection pooling via r2d2."><title>diesel::r2d2 - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.2.2</span></h2></div><h2 class="location"><a href="#">Module r2d2</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#traits">Traits</a></li><li><a href="#types">Type Aliases</a></li></ul></section><h2><a href="../index.html">In crate diesel</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../index.html">diesel</a>::<wbr><a class="mod" href="#">r2d2</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel/r2d2.rs.html#1-598">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>r2d2</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Connection pooling via r2d2.</p>
+<p>Note: This module requires enabling the <code>r2d2</code> feature</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<p>The below snippet is a contrived example emulating a web application,
+where one would first initialize the pool in the <code>main()</code> function
+(at the start of a long-running process). One would then pass this
+pool struct around as shared state, which, here, we’ve emulated using
+threads instead of routes.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>diesel::r2d2::ConnectionManager;
+<span class="kw">use </span>diesel::r2d2::Pool;
+<span class="kw">use </span>diesel::result::Error;
+<span class="kw">use </span>std::thread;
+
+
+<span class="kw">pub fn </span>get_connection_pool() -&gt; Pool&lt;ConnectionManager&lt;DbConnection&gt;&gt; {
+    <span class="kw">let </span>url = database_url_for_env();
+    <span class="kw">let </span>manager = ConnectionManager::&lt;DbConnection&gt;::new(url);
+    <span class="comment">// Refer to the `r2d2` documentation for more methods to use
+    // when building a connection pool
+    </span>Pool::builder()
+        .test_on_check_out(<span class="bool-val">true</span>)
+        .build(manager)
+        .expect(<span class="string">"Could not build connection pool"</span>)
+}
+
+<span class="kw">pub fn </span>create_user(conn: <span class="kw-2">&amp;mut </span>DbConnection, user_name: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;usize, Error&gt; {
+    <span class="kw">use </span>schema::users::dsl::<span class="kw-2">*</span>;
+
+    diesel::insert_into(users)
+        .values(name.eq(user_name))
+        .execute(conn)
+}
+
+<span class="kw">fn </span>main() {
+    <span class="kw">let </span>pool = get_connection_pool();
+    <span class="kw">let </span><span class="kw-2">mut </span>threads = <span class="macro">vec!</span>[];
+    <span class="kw">let </span>max_users_to_create = <span class="number">1</span>;
+
+    <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..max_users_to_create {
+        <span class="kw">let </span>pool = pool.clone();
+        threads.push(thread::spawn({
+            <span class="kw">move </span>|| {
+                <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>pool.get().unwrap();
+                <span class="kw">let </span>name = <span class="macro">format!</span>(<span class="string">"Person {}"</span>, i);
+                create_user(conn, <span class="kw-2">&amp;</span>name).unwrap();
+            }
+        }))
+    }
+
+    <span class="kw">for </span>handle <span class="kw">in </span>threads {
+        handle.join().unwrap();
+    }
+}</code></pre></div>
+<h2 id="a-note-on-error-handling"><a class="doc-anchor" href="#a-note-on-error-handling">§</a>A note on error handling</h2>
+<p>When used inside a pool, if an individual connection becomes
+broken (as determined by the <a href="trait.R2D2Connection.html#method.is_broken" title="method diesel::r2d2::R2D2Connection::is_broken">R2D2Connection::is_broken</a> method)
+then, when the connection goes out of scope, <code>r2d2</code> will close
+and return the connection to the DB.</p>
+<p><code>diesel</code> determines broken connections by whether or not the current
+thread is panicking or if individual <code>Connection</code> structs are
+broken (determined by the <code>is_broken()</code> method). Generically, these
+are left to individual backends to implement themselves.</p>
+<p>For SQLite, PG, and MySQL backends <code>is_broken()</code> is determined
+by whether or not the <code>TransactionManagerStatus</code> (as a part
+of the <code>AnsiTransactionManager</code> struct) is in an <code>InError</code> state
+or contains an open transaction when the connection goes out of scope.</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="event/index.html" title="mod diesel::r2d2::event">event</a></div><div class="desc docblock-short">Event subscriptions.</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Builder.html" title="struct diesel::r2d2::Builder">Builder</a></div><div class="desc docblock-short">A builder for a connection pool.</div></li><li><div class="item-name"><a class="struct" href="struct.ConnectionManager.html" title="struct diesel::r2d2::ConnectionManager">ConnectionManager</a></div><div class="desc docblock-short">An r2d2 connection manager for use with Diesel.</div></li><li><div class="item-name"><a class="struct" href="struct.Extensions.html" title="struct diesel::r2d2::Extensions">Extensions</a></div><div class="desc docblock-short">A “type map” used to associate data with pooled connections.</div></li><li><div class="item-name"><a class="struct" href="struct.LoggingErrorHandler.html" title="struct diesel::r2d2::LoggingErrorHandler">LoggingErrorHandler</a></div><div class="desc docblock-short">A <code>HandleError</code> implementation which logs at the error level.</div></li><li><div class="item-name"><a class="struct" href="struct.NopConnectionCustomizer.html" title="struct diesel::r2d2::NopConnectionCustomizer">NopConnectionCustomizer</a></div><div class="desc docblock-short">A <code>CustomizeConnection</code> which does nothing.</div></li><li><div class="item-name"><a class="struct" href="struct.NopErrorHandler.html" title="struct diesel::r2d2::NopErrorHandler">NopErrorHandler</a></div><div class="desc docblock-short">A <code>HandleError</code> implementation which does nothing.</div></li><li><div class="item-name"><a class="struct" href="struct.NopEventHandler.html" title="struct diesel::r2d2::NopEventHandler">NopEventHandler</a></div><div class="desc docblock-short">A <code>HandleEvent</code> implementation which does nothing.</div></li><li><div class="item-name"><a class="struct" href="struct.Pool.html" title="struct diesel::r2d2::Pool">Pool</a></div><div class="desc docblock-short">A generic connection pool.</div></li><li><div class="item-name"><a class="struct" href="struct.PooledConnection.html" title="struct diesel::r2d2::PooledConnection">PooledConnection</a></div><div class="desc docblock-short">A smart pointer wrapping a connection.</div></li><li><div class="item-name"><a class="struct" href="struct.State.html" title="struct diesel::r2d2::State">State</a></div><div class="desc docblock-short">Information about the state of a <code>Pool</code>.</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.Error.html" title="enum diesel::r2d2::Error">Error</a></div><div class="desc docblock-short">The error used when managing connections with <code>r2d2</code>.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.CustomizeConnection.html" title="trait diesel::r2d2::CustomizeConnection">CustomizeConnection</a></div><div class="desc docblock-short">A trait which allows for customization of connections.</div></li><li><div class="item-name"><a class="trait" href="trait.HandleError.html" title="trait diesel::r2d2::HandleError">HandleError</a></div><div class="desc docblock-short">A trait which handles errors reported by the <code>ManageConnection</code>.</div></li><li><div class="item-name"><a class="trait" href="trait.HandleEvent.html" title="trait diesel::r2d2::HandleEvent">HandleEvent</a></div><div class="desc docblock-short">A trait which is provided with information about events in a connection pool.</div></li><li><div class="item-name"><a class="trait" href="trait.ManageConnection.html" title="trait diesel::r2d2::ManageConnection">ManageConnection</a></div><div class="desc docblock-short">A trait which provides connection-specific functionality.</div></li><li><div class="item-name"><a class="trait" href="trait.R2D2Connection.html" title="trait diesel::r2d2::R2D2Connection">R2D2Connection</a></div><div class="desc docblock-short">A trait indicating a connection could be used inside a r2d2 pool</div></li></ul><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="type" href="type.PoolError.html" title="type diesel::r2d2::PoolError">PoolError</a></div><div class="desc docblock-short">A re-export of <a href="../../r2d2/struct.Error.html" title="struct r2d2::Error"><code>r2d2::Error</code></a>, which is only used by methods on <a href="struct.Pool.html" title="struct diesel::r2d2::Pool"><code>r2d2::Pool</code></a>.</div></li></ul></section></div></main></body></html>

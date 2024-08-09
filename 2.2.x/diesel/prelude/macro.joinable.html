@@ -1,0 +1,55 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Allow two tables to be referenced in a join query without providing an explicit `ON` clause."><title>joinable in diesel::prelude - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.2.2</span></h2></div><div class="sidebar-elems"><h2><a href="index.html">In diesel::prelude</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Macro <a href="../index.html">diesel</a>::<wbr><a href="index.html">prelude</a>::<wbr><a class="macro" href="#">joinable</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel/macros/mod.rs.html#83-88">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><span class="macro">macro_rules!</span> joinable {
+    ($(<span class="macro-nonterminal">$child</span>:ident)::* -&gt; $(<span class="macro-nonterminal">$parent</span>:ident)::* (<span class="macro-nonterminal">$source</span>:ident)) =&gt; { ... };
+}</pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Allow two tables to be referenced in a join query without providing an
+explicit <code>ON</code> clause.</p>
+<p>The generated <code>ON</code> clause will always join to the primary key of the parent
+table. This macro removes the need to call [<code>.on</code>] explicitly, you will
+still need to invoke
+<a href="macro.allow_tables_to_appear_in_same_query.html" title="macro diesel::prelude::allow_tables_to_appear_in_same_query"><code>allow_tables_to_appear_in_same_query!</code></a>
+for these two tables to be able to use the resulting query, unless you are
+using <code>diesel print-schema</code> which will generate it for you.</p>
+<p>If you are using <code>diesel print-schema</code>, an invocation of this macro
+will be generated for every foreign key in your database unless
+one of the following is true:</p>
+<ul>
+<li>The foreign key references something other than the primary key</li>
+<li>The foreign key is composite</li>
+<li>There is more than one foreign key connecting two tables</li>
+<li>The foreign key is self-referential</li>
+</ul>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>schema::<span class="kw-2">*</span>;
+
+<span class="macro">joinable!</span>(posts -&gt; users (user_id));
+<span class="macro">allow_tables_to_appear_in_same_query!</span>(posts, users);
+
+<span class="kw">let </span>implicit_on_clause = users::table.inner_join(posts::table);
+<span class="kw">let </span>implicit_on_clause_sql = diesel::debug_query::&lt;DB, <span class="kw">_</span>&gt;(<span class="kw-2">&amp;</span>implicit_on_clause).to_string();
+
+<span class="kw">let </span>explicit_on_clause = users::table
+    .inner_join(posts::table.on(posts::user_id.eq(users::id)));
+<span class="kw">let </span>explicit_on_clause_sql = diesel::debug_query::&lt;DB, <span class="kw">_</span>&gt;(<span class="kw-2">&amp;</span>explicit_on_clause).to_string();
+
+<span class="macro">assert_eq!</span>(implicit_on_clause_sql, explicit_on_clause_sql);
+</code></pre></div>
+<p>In the example above, the line <code>joinable!(posts -&gt; users (user_id));</code></p>
+<p>specifies the relation of the tables and the ON clause in the following way:</p>
+<p><code>child_table -&gt; parent_table (foreign_key)</code></p>
+<ul>
+<li>
+<p><code>parent_table</code> is the Table with the Primary key.</p>
+</li>
+<li>
+<p><code>child_table</code> is the Table with the Foreign key.</p>
+</li>
+</ul>
+<p>So given the Table declaration from <a href="../associations/index.html" title="mod diesel::associations">Associations docs</a></p>
+<ul>
+<li>The parent table would be <code>User</code></li>
+<li>The child table would be <code>Post</code></li>
+<li>and the Foreign key would be <code>Post.user_id</code></li>
+</ul>
+<p>For joins that do not explicitly use on clauses via <a href="../query_dsl/trait.JoinOnDsl.html" title="trait diesel::query_dsl::JoinOnDsl"><code>JoinOnDsl</code></a>
+the following on clause is generated implicitly:</p>
+<div class="example-wrap"><pre class="language-sql"><code>post JOIN users ON posts.user_id = users.id
+</code></pre></div></div></details></section></div></main></body></html>

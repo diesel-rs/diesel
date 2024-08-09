@@ -1,0 +1,213 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="PostgreSQL specific methods present on JSON and JSONB expressions."><title>PgAnyJsonExpressionMethods in diesel::expression_methods - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.2.2</span></h2></div><h2 class="location"><a href="#">PgAnyJsonExpressionMethods</a></h2><div class="sidebar-elems"><section><h3><a href="#provided-methods">Provided Methods</a></h3><ul class="block"><li><a href="#method.retrieve_as_object">retrieve_as_object</a></li><li><a href="#method.retrieve_as_text">retrieve_as_text</a></li><li><a href="#method.retrieve_by_path_as_object">retrieve_by_path_as_object</a></li><li><a href="#method.retrieve_by_path_as_text">retrieve_by_path_as_text</a></li></ul><h3><a href="#object-safety">Object Safety</a></h3><h3><a href="#implementors">Implementors</a></h3></section><h2><a href="index.html">In diesel::expression_methods</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Trait <a href="../index.html">diesel</a>::<wbr><a href="index.html">expression_methods</a>::<wbr><a class="trait" href="#">PgAnyJsonExpressionMethods</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel/pg/expression/expression_methods.rs.html#1859-2220">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub trait PgAnyJsonExpressionMethods: <a class="trait" href="../prelude/trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> {
+    // Provided methods
+    fn <a href="#method.retrieve_as_object" class="fn">retrieve_as_object</a>&lt;T&gt;(
+        self,
+        other: T,
+    ) -&gt; <a class="type" href="../dsl/type.RetrieveAsObjectJson.html" title="type diesel::dsl::RetrieveAsObjectJson">RetrieveAsObjectJson</a>&lt;Self, T::Expression, &lt;T::Expression as <a class="trait" href="../prelude/trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>&gt;::<a class="associatedtype" href="../prelude/trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;
+       <span class="where">where T: JsonIndex,
+             &lt;T::Expression as <a class="trait" href="../prelude/trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>&gt;::<a class="associatedtype" href="../prelude/trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a></span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.retrieve_as_text" class="fn">retrieve_as_text</a>&lt;T&gt;(
+        self,
+        other: T,
+    ) -&gt; <a class="type" href="../dsl/type.RetrieveAsTextJson.html" title="type diesel::dsl::RetrieveAsTextJson">RetrieveAsTextJson</a>&lt;Self, T::Expression, &lt;T::Expression as <a class="trait" href="../prelude/trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>&gt;::<a class="associatedtype" href="../prelude/trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;
+       <span class="where">where T: JsonIndex,
+             &lt;T::Expression as <a class="trait" href="../prelude/trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>&gt;::<a class="associatedtype" href="../prelude/trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a></span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.retrieve_by_path_as_object" class="fn">retrieve_by_path_as_object</a>&lt;T&gt;(
+        self,
+        other: T,
+    ) -&gt; <a class="type" href="../dsl/type.RetrieveByPathAsObjectJson.html" title="type diesel::dsl::RetrieveByPathAsObjectJson">RetrieveByPathAsObjectJson</a>&lt;Self, T::<a class="associatedtype" href="../expression/trait.AsExpression.html#associatedtype.Expression" title="type diesel::expression::AsExpression::Expression">Expression</a>&gt;
+       <span class="where">where T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Array.html" title="struct diesel::sql_types::Array">Array</a>&lt;<a class="struct" href="../sql_types/struct.Text.html" title="struct diesel::sql_types::Text">Text</a>&gt;&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.retrieve_by_path_as_text" class="fn">retrieve_by_path_as_text</a>&lt;T&gt;(
+        self,
+        other: T,
+    ) -&gt; <a class="type" href="../dsl/type.RetrieveByPathAsTextJson.html" title="type diesel::dsl::RetrieveByPathAsTextJson">RetrieveByPathAsTextJson</a>&lt;Self, T::<a class="associatedtype" href="../expression/trait.AsExpression.html#associatedtype.Expression" title="type diesel::expression::AsExpression::Expression">Expression</a>&gt;
+       <span class="where">where T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Array.html" title="struct diesel::sql_types::Array">Array</a>&lt;<a class="struct" href="../sql_types/struct.Text.html" title="struct diesel::sql_types::Text">Text</a>&gt;&gt;</span> { ... }
+}</code></pre><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>postgres_backend</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>PostgreSQL specific methods present on JSON and JSONB expressions.</p>
+</div></details><h2 id="provided-methods" class="section-header">Provided Methods<a href="#provided-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="method.retrieve_as_object" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1948-1960">source</a><h4 class="code-header">fn <a href="#method.retrieve_as_object" class="fn">retrieve_as_object</a>&lt;T&gt;(
+    self,
+    other: T,
+) -&gt; <a class="type" href="../dsl/type.RetrieveAsObjectJson.html" title="type diesel::dsl::RetrieveAsObjectJson">RetrieveAsObjectJson</a>&lt;Self, T::Expression, &lt;T::Expression as <a class="trait" href="../prelude/trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>&gt;::<a class="associatedtype" href="../prelude/trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;<div class="where">where
+    T: JsonIndex,
+    &lt;T::Expression as <a class="trait" href="../prelude/trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>&gt;::<a class="associatedtype" href="../prelude/trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>-&gt;</code> expression.</p>
+<p>This operator extracts the value associated with the given key, that is provided on the
+Right Hand Side of the operator.</p>
+<p>Extracts n’th element of JSON array (array elements are indexed from zero, but negative integers count from the end).
+Extracts JSON object field with the given key.</p>
+<h5 id="example"><a class="doc-anchor" href="#example">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>santas_address: serde_json::Value = <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"Article Circle Expressway 1"</span>,
+    <span class="string">"city"</span>: <span class="string">"North Pole"</span>,
+    <span class="string">"postcode"</span>: <span class="string">"99705"</span>,
+    <span class="string">"state"</span>: <span class="string">"Alaska"
+</span>});
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Claus"</span>), address.eq(<span class="kw-2">&amp;</span>santas_address)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>santas_postcode = contacts.select(address.retrieve_as_object(<span class="string">"postcode"</span>)).get_result::&lt;serde_json::Value&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(santas_postcode, <span class="macro">serde_json::json!</span>(<span class="string">"99705"</span>));
+
+
+<span class="kw">let </span>robert_downey_jr_addresses: serde_json::Value = <span class="macro">serde_json::json!</span>([
+    {
+        <span class="string">"street"</span>: <span class="string">"Somewhere In La 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"Los Angeles"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"12231223"</span>,
+        <span class="string">"state"</span>: <span class="string">"California"
+    </span>},
+    {
+        <span class="string">"street"</span>: <span class="string">"Somewhere In Ny 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"New York"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"3213212"</span>,
+        <span class="string">"state"</span>: <span class="string">"New York"
+    </span>}
+]);
+
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Robert Downey Jr."</span>), address.eq(<span class="kw-2">&amp;</span>robert_downey_jr_addresses)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>roberts_second_address_in_db = contacts
+                            .filter(name.eq(<span class="string">"Robert Downey Jr."</span>))
+                            .select(address.retrieve_as_object(<span class="number">1</span>))
+                            .get_result::&lt;serde_json::Value&gt;(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>roberts_second_address = <span class="macro">serde_json::json!</span>({
+        <span class="string">"street"</span>: <span class="string">"Somewhere In Ny 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"New York"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"3213212"</span>,
+        <span class="string">"state"</span>: <span class="string">"New York"
+</span>});
+<span class="macro">assert_eq!</span>(roberts_second_address, roberts_second_address_in_db);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.retrieve_as_text" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#2050-2062">source</a><h4 class="code-header">fn <a href="#method.retrieve_as_text" class="fn">retrieve_as_text</a>&lt;T&gt;(
+    self,
+    other: T,
+) -&gt; <a class="type" href="../dsl/type.RetrieveAsTextJson.html" title="type diesel::dsl::RetrieveAsTextJson">RetrieveAsTextJson</a>&lt;Self, T::Expression, &lt;T::Expression as <a class="trait" href="../prelude/trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>&gt;::<a class="associatedtype" href="../prelude/trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;<div class="where">where
+    T: JsonIndex,
+    &lt;T::Expression as <a class="trait" href="../prelude/trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>&gt;::<a class="associatedtype" href="../prelude/trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>-&gt;&gt;</code> expression.</p>
+<p>This operator extracts the value associated with the given key, that is provided on the
+Right Hand Side of the operator.</p>
+<p>Extracts n’th element of JSON array (array elements are indexed from zero, but negative integers count from the end).
+Extracts JSON object field as Text with the given key.</p>
+<h5 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>santas_address: serde_json::Value = <span class="macro">serde_json::json!</span>({
+    <span class="string">"street"</span>: <span class="string">"Article Circle Expressway 1"</span>,
+    <span class="string">"city"</span>: <span class="string">"North Pole"</span>,
+    <span class="string">"postcode"</span>: <span class="string">"99705"</span>,
+    <span class="string">"state"</span>: <span class="string">"Alaska"
+</span>});
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Claus"</span>), address.eq(<span class="kw-2">&amp;</span>santas_address)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>santas_postcode = contacts.select(address.retrieve_as_text(<span class="string">"postcode"</span>)).get_result::&lt;String&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(santas_postcode, <span class="string">"99705"</span>);
+
+
+<span class="kw">let </span>robert_downey_jr_addresses: serde_json::Value = <span class="macro">serde_json::json!</span>([
+    {
+        <span class="string">"street"</span>: <span class="string">"Somewhere In La 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"Los Angeles"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"12231223"</span>,
+        <span class="string">"state"</span>: <span class="string">"California"
+    </span>},
+    {
+        <span class="string">"street"</span>: <span class="string">"Somewhere In Ny 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"New York"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"3213212"</span>,
+        <span class="string">"state"</span>: <span class="string">"New York"
+    </span>}
+]);
+
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Robert Downey Jr."</span>), address.eq(<span class="kw-2">&amp;</span>robert_downey_jr_addresses)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>roberts_second_address_in_db = contacts
+                            .filter(name.eq(<span class="string">"Robert Downey Jr."</span>))
+                            .select(address.retrieve_as_text(<span class="number">1</span>))
+                            .get_result::&lt;String&gt;(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>roberts_second_address = String::from(
+    <span class="string">"{\"city\": \"New York\", \
+    \"state\": \"New York\", \
+    \"street\": \"Somewhere In Ny 251\", \
+    \"postcode\": \"3213212\"}"
+    </span>);
+<span class="macro">assert_eq!</span>(roberts_second_address, roberts_second_address_in_db);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.retrieve_by_path_as_object" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#2132-2140">source</a><h4 class="code-header">fn <a href="#method.retrieve_by_path_as_object" class="fn">retrieve_by_path_as_object</a>&lt;T&gt;(
+    self,
+    other: T,
+) -&gt; <a class="type" href="../dsl/type.RetrieveByPathAsObjectJson.html" title="type diesel::dsl::RetrieveByPathAsObjectJson">RetrieveByPathAsObjectJson</a>&lt;Self, T::<a class="associatedtype" href="../expression/trait.AsExpression.html#associatedtype.Expression" title="type diesel::expression::AsExpression::Expression">Expression</a>&gt;<div class="where">where
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Array.html" title="struct diesel::sql_types::Array">Array</a>&lt;<a class="struct" href="../sql_types/struct.Text.html" title="struct diesel::sql_types::Text">Text</a>&gt;&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>#&gt;</code> expression.</p>
+<p>This operator extracts the value associated with the given key, that is provided on the
+Right Hand Side of the operator.</p>
+<p>Extracts n’th element of JSON array (array elements are indexed from zero, but negative integers count from the end).
+Extracts JSON object field with the given key.</p>
+<h5 id="example-2"><a class="doc-anchor" href="#example-2">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>robert_downey_jr_addresses: serde_json::Value = <span class="macro">serde_json::json!</span>([
+    {
+        <span class="string">"street"</span>: <span class="string">"Somewhere In La 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"Los Angeles"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"12231223"</span>,
+        <span class="string">"state"</span>: <span class="string">"California"
+    </span>},
+    {
+        <span class="string">"street"</span>: <span class="string">"Somewhere In Ny 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"New York"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"3213212"</span>,
+        <span class="string">"state"</span>: <span class="string">"New York"
+    </span>}
+]);
+
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Robert Downey Jr."</span>), address.eq(<span class="kw-2">&amp;</span>robert_downey_jr_addresses)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>roberts_second_street_in_db = contacts
+                            .filter(name.eq(<span class="string">"Robert Downey Jr."</span>))
+                            .select(address.retrieve_by_path_as_object(<span class="macro">vec!</span>[<span class="string">"1"</span>, <span class="string">"street"</span>]))
+                            .get_result::&lt;serde_json::Value&gt;(conn)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(roberts_second_street_in_db, <span class="macro">serde_json::json!</span>(<span class="string">"Somewhere In Ny 251"</span>));</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.retrieve_by_path_as_text" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#2211-2219">source</a><h4 class="code-header">fn <a href="#method.retrieve_by_path_as_text" class="fn">retrieve_by_path_as_text</a>&lt;T&gt;(
+    self,
+    other: T,
+) -&gt; <a class="type" href="../dsl/type.RetrieveByPathAsTextJson.html" title="type diesel::dsl::RetrieveByPathAsTextJson">RetrieveByPathAsTextJson</a>&lt;Self, T::<a class="associatedtype" href="../expression/trait.AsExpression.html#associatedtype.Expression" title="type diesel::expression::AsExpression::Expression">Expression</a>&gt;<div class="where">where
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Array.html" title="struct diesel::sql_types::Array">Array</a>&lt;<a class="struct" href="../sql_types/struct.Text.html" title="struct diesel::sql_types::Text">Text</a>&gt;&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>#&gt;&gt;</code> expression.</p>
+<p>This operator extracts the value associated with the given key, that is provided on the
+Right Hand Side of the operator.</p>
+<p>Extracts n’th element of JSON array (array elements are indexed from zero, but negative integers count from the end).
+Extracts JSON object field as Text with the given key.</p>
+<h5 id="example-3"><a class="doc-anchor" href="#example-3">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>robert_downey_jr_addresses: serde_json::Value = <span class="macro">serde_json::json!</span>([
+    {
+        <span class="string">"street"</span>: <span class="string">"Somewhere In La 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"Los Angeles"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"12231223"</span>,
+        <span class="string">"state"</span>: <span class="string">"California"
+    </span>},
+    {
+        <span class="string">"street"</span>: <span class="string">"Somewhere In Ny 251"</span>,
+        <span class="string">"city"</span>: <span class="string">"New York"</span>,
+        <span class="string">"postcode"</span>: <span class="string">"3213212"</span>,
+        <span class="string">"state"</span>: <span class="string">"New York"
+    </span>}
+]);
+
+diesel::insert_into(contacts)
+    .values((name.eq(<span class="string">"Robert Downey Jr."</span>), address.eq(<span class="kw-2">&amp;</span>robert_downey_jr_addresses)))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>roberts_second_street_in_db = contacts
+                            .filter(name.eq(<span class="string">"Robert Downey Jr."</span>))
+                            .select(address.retrieve_by_path_as_text(<span class="macro">vec!</span>[<span class="string">"1"</span>, <span class="string">"street"</span>]))
+                            .get_result::&lt;String&gt;(conn)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(roberts_second_street_in_db, <span class="string">"Somewhere In Ny 251"</span>);
+</code></pre></div>
+</div></details></div><h2 id="object-safety" class="section-header">Object Safety<a href="#object-safety" class="anchor">§</a></h2><div class="object-safety-info">This trait is <b>not</b> <a href="https://doc.rust-lang.org/nightly/reference/items/traits.html#object-safety">object safe</a>.</div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"></div><script src="../../trait.impl/diesel/pg/expression/expression_methods/trait.PgAnyJsonExpressionMethods.js" async></script></section></div></main></body></html>

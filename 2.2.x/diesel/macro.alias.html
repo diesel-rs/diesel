@@ -1,0 +1,61 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Declare a new alias for a table"><title>alias in diesel - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel/index.html">diesel</a><span class="version">2.2.2</span></h2></div><div class="sidebar-elems"></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Macro <a href="index.html">diesel</a>::<wbr><a class="macro" href="#">alias</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/diesel/query_source/aliasing/macros.rs.html#76-126">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><span class="macro">macro_rules!</span> alias {
+    ($($(<span class="macro-nonterminal">$table</span>: ident)::+ <span class="kw">as </span><span class="macro-nonterminal">$alias</span>: ident),* $(,)<span class="question-mark">?</span>) =&gt; { ... };
+    ($($(<span class="macro-nonterminal">$table</span>: ident)::+ <span class="kw">as </span><span class="macro-nonterminal">$alias_name</span>: ident: <span class="macro-nonterminal">$alias_ty</span>: ident),* $(,)<span class="question-mark">?</span>) =&gt; { ... };
+    ($(<span class="macro-nonterminal">$vis</span>: vis <span class="kw">const </span><span class="macro-nonterminal">$const_name</span>: ident: Alias&lt;<span class="macro-nonterminal">$alias_ty</span>: ident&gt; = $(<span class="macro-nonterminal">$table</span>: ident)::+ <span class="kw">as </span><span class="macro-nonterminal">$alias_sql_name</span>: ident);* $(;)<span class="question-mark">?</span>) =&gt; { ... };
+    (NoConst $($(<span class="macro-nonterminal">$table</span>: ident)::+ <span class="kw">as </span><span class="macro-nonterminal">$alias_sql_name</span>: ident: <span class="macro-nonterminal">$vis</span>: vis <span class="macro-nonterminal">$alias_ty</span>: ident),* $(,)<span class="question-mark">?</span>) =&gt; { ... };
+}</pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Declare a new alias for a table</p>
+<p>This macro creates a value of the type <a href="query_source/struct.Alias.html" title="struct diesel::query_source::Alias"><code>Alias</code></a></p>
+<h3 id="example-usage"><a class="doc-anchor" href="#example-usage">§</a>Example usage</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">fn </span>main() {
+    <span class="kw">use </span>schema::users;
+    <span class="kw">let </span>connection = <span class="kw-2">&amp;mut </span>establish_connection();
+    <span class="kw">let </span>(users1, users2) = <span class="macro">diesel::alias!</span>(schema::users <span class="kw">as </span>user1, schema::users <span class="kw">as </span>user2);
+    <span class="kw">let </span>res = users1
+        .inner_join(users2.on(users1.field(users::id).eq(users2.field(users::id))))
+        .select((users1.fields((users::id, users::name)), users2.field(users::name)))
+        .order_by(users2.field(users::id))
+        .load::&lt;((i32, String), String)&gt;(connection);
+    <span class="macro">assert_eq!</span>(
+        res,
+        <span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[
+            ((<span class="number">1</span>, <span class="string">"Sean"</span>.to_owned()), <span class="string">"Sean"</span>.to_owned()),
+            ((<span class="number">2</span>, <span class="string">"Tess"</span>.to_owned()), <span class="string">"Tess"</span>.to_owned()),
+        ]),
+    );
+}</code></pre></div>
+<h3 id="make-type-expressible"><a class="doc-anchor" href="#make-type-expressible">§</a>Make type expressible</h3>
+<p>It may sometimes be useful to declare an alias at the module level, in such a way that the type
+of a query using it can be expressed (to not declare it anonymously).</p>
+<p>This can be achieved in the following way</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::{query_source::Alias, dsl};
+
+<span class="macro">diesel::alias!</span>(schema::users <span class="kw">as </span>users_alias: UsersAlias);
+<span class="comment">// or
+</span><span class="macro">diesel::alias!</span>{
+    <span class="kw">pub const </span>USERS_ALIAS_2: Alias&lt;UsersAlias2&gt; = schema::users <span class="kw">as </span>users_alias_2;
+}
+
+<span class="kw">fn </span>some_function_that_returns_a_query_fragment(
+) -&gt; dsl::InnerJoin&lt;schema::posts::table, Alias&lt;UsersAlias&gt;&gt;
+{
+    schema::posts::table.inner_join(users_alias)
+}</code></pre></div>
+<p>Note that you may also use this form within a function, in the following way:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">fn </span>main() {
+    <span class="macro">diesel::alias!</span>(schema::users <span class="kw">as </span>users_alias: UsersAlias);
+    users_alias.inner_join(schema::posts::table);
+}</code></pre></div>
+<h3 id="troubleshooting-and-limitations"><a class="doc-anchor" href="#troubleshooting-and-limitations">§</a>Troubleshooting and limitations</h3>
+<p>If you encounter a <strong>compilation error</strong> where “the trait
+<code>AppearsInFromClause&lt;Alias&lt;your_alias&gt;&gt;</code> is not implemented”, when trying to use two aliases to
+the same table within a single query note the following two limitations:</p>
+<ul>
+<li>You will need to declare these in a single <code>alias!</code> call.</li>
+<li>The path to the table module will have to be expressed in the exact same
+manner. (That is, you can do <code>alias!(schema::users as user1, schema::users as user2)</code>
+or <code>alias!(users as user1, users as user2)</code>, but not
+<code>alias!(schema::users as user1, users as user2)</code>)</li>
+</ul>
+</div></details></section></div></main></body></html>

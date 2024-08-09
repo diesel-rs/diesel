@@ -1,0 +1,54 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Creates a `COPY TO` statement"><title>copy_to in diesel::dsl - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-d7a46bd0e1dce774.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (5affbb171 2024-07-18)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.2.2</span></h2></div><div class="sidebar-elems"><h2><a href="index.html">In diesel::dsl</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Function <a href="../index.html">diesel</a>::<wbr><a href="index.html">dsl</a>::<wbr><a class="fn" href="#">copy_to</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel/pg/query_builder/copy/copy_to.rs.html#563-571">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub fn copy_to&lt;T&gt;(target: T) -&gt; <a class="struct" href="../pg/struct.CopyToQuery.html" title="struct diesel::pg::CopyToQuery">CopyToQuery</a>&lt;T, NotSet&gt;<div class="where">where
+    T: <a class="trait" href="../pg/trait.CopyTarget.html" title="trait diesel::pg::CopyTarget">CopyTarget</a>,</div></code></pre><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>postgres_backend</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Creates a <code>COPY TO</code> statement</p>
+<p>This function constructs a <code>COPY TO</code> statement which copies data
+from the database <strong>to</strong> a client side target. It’s designed to move
+larger amounts of data out of the database.</p>
+<p>This function accepts a target selection (table name or list of columns) as argument.</p>
+<p>There are two ways to use a <code>COPY TO</code> statement with diesel:</p>
+<ul>
+<li>By using <a href="../pg/struct.CopyToQuery.html#method.load" title="method diesel::pg::CopyToQuery::load"><code>CopyToQuery::load</code></a> directly to load the deserialized result
+directly into a specified type</li>
+<li>By using the <code>with_*</code> methods to configure the format sent by the database
+and then by calling <a href="../pg/struct.CopyToQuery.html#method.load_raw" title="method diesel::pg::CopyToQuery::load_raw"><code>CopyToQuery::load_raw</code></a> to receive the raw data
+sent by the database.</li>
+</ul>
+<p>The first variant uses the <code>BINARY</code> format internally to receive
+the selected data efficiently. It automatically sets the right options
+and does not allow to change them via <code>with_*</code> methods.</p>
+<p>The second variant allows you to control the behaviour of the
+generated <code>COPY TO</code> statement in detail. You can use the various
+<code>with_*</code> methods for that before issuing the statement via <a href="../pg/struct.CopyToQuery.html#method.load_raw" title="method diesel::pg::CopyToQuery::load_raw"><code>CopyToQuery::load_raw</code></a>.
+That method will return an type that implements <a href="https://doc.rust-lang.org/nightly/std/io/trait.BufRead.html" title="trait std::io::BufRead"><code>std::io::BufRead</code></a>, which
+allows you to directly read the response from the database in the configured
+format.
+See <a href="https://www.postgresql.org/docs/current/sql-copy.html">the postgresql documentation</a>
+for more details about the supported formats.</p>
+<p>If you don’t have any specific needs you should prefer using the more
+convenient first variant.</p>
+<p>This functionality is postgresql specific.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2><h3 id="via-copytoqueryload"><a class="doc-anchor" href="#via-copytoqueryload">§</a>Via <a href="../pg/struct.CopyToQuery.html#method.load" title="method diesel::pg::CopyToQuery::load"><code>CopyToQuery::load()</code></a></h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="attr">#[derive(Queryable, Selectable, PartialEq, Debug)]
+#[diesel(table_name = users)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+</span><span class="kw">struct </span>User {
+    name: String,
+}
+
+<span class="kw">let </span>out = diesel::copy_to(users::table)
+    .load::&lt;User, <span class="kw">_</span>&gt;(connection)<span class="question-mark">?
+    </span>.collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(out, <span class="macro">vec!</span>[User{ name: <span class="string">"Sean"</span>.into() }, User{ name: <span class="string">"Tess"</span>.into() }]);</code></pre></div>
+<h3 id="via-copytoqueryload_raw"><a class="doc-anchor" href="#via-copytoqueryload_raw">§</a>Via <a href="../pg/struct.CopyToQuery.html#method.load_raw" title="method diesel::pg::CopyToQuery::load_raw"><code>CopyToQuery::load_raw()</code></a></h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::pg::CopyFormat;
+<span class="kw">use </span>std::io::Read;
+
+<span class="kw">let </span><span class="kw-2">mut </span>copy = diesel::copy_to(users::table)
+    .with_format(CopyFormat::Csv)
+    .load_raw(connection)<span class="question-mark">?</span>;
+
+<span class="kw">let </span><span class="kw-2">mut </span>out = String::new();
+copy.read_to_string(<span class="kw-2">&amp;mut </span>out).unwrap();
+<span class="macro">assert_eq!</span>(out, <span class="string">"1,Sean\n2,Tess\n"</span>);</code></pre></div>
+</div></details></section></div></main></body></html>
