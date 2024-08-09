@@ -52,7 +52,7 @@ pub enum Error {
     FmtError(#[from] std::fmt::Error),
     #[error("Failed to parse patch file: {0}")]
     DiffyParseError(#[from] diffy::ParsePatchError),
-    #[error("Failed to apply path: {0}")]
+    #[error("Failed to apply patch: {0}")]
     DiffyApplyError(#[from] diffy::ApplyError),
     #[error("Column length literal can't be parsed as u64: {0}")]
     ColumnLiteralParseError(syn::Error),
