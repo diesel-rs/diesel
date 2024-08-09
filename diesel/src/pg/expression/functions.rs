@@ -66,8 +66,10 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns the lower bound of the range.
-    /// if the range is empty or has no lower bound, it returns NULL.
+    /// Returns the lower bound of the range
+    ///
+    /// If the range is empty or has no lower bound, it returns NULL.
+    ///
     /// # Example
     ///
     /// ```rust
@@ -109,8 +111,10 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns the upper bound of the range.
-    /// if the range is empty or has no upper bound, it returns NULL.
+    /// Returns the upper bound of the range
+    ///
+    /// If the range is empty or has no upper bound, it returns NULL.
+    ///
     /// # Example
     ///
     /// ```rust
@@ -152,7 +156,8 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns true if the range is empty.
+    /// Returns true if the range is empty
+    ///
     /// # Example
     ///
     /// ```rust
@@ -194,7 +199,8 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns true if the range's lower bound is inclusive.
+    /// Returns true if the range's lower bound is inclusive
+    ///
     /// # Example
     ///
     /// ```rust
@@ -236,7 +242,8 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns true if the range's upper bound is inclusive.
+    /// Returns true if the range's upper bound is inclusive
+    ///
     /// # Example
     ///
     /// ```rust
@@ -277,7 +284,8 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns true if the range's lower bound is unbounded.
+    /// Returns true if the range's lower bound is unbounded
+    ///
     /// # Example
     ///
     /// ```rust
@@ -319,7 +327,8 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns true if the range's upper bound is unbounded.
+    /// Returns true if the range's upper bound is unbounded
+    ///
     /// # Example
     ///
     /// ```rust
@@ -361,7 +370,8 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns the smallest range which includes both of the given ranges.
+    /// Returns the smallest range which includes both of the given ranges
+    ///
     /// # Example
     ///
     /// ```rust
@@ -400,11 +410,12 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn range_merge<T: RangeHelper>(lhs: T, rhs: T) -> Range<<T as RangeHelper>::Inner>;
+    fn range_merge<T1: RangeHelper, T2: RangeHelper<Inner = T1::Inner>>(lhs: T1, rhs: T2) -> Range<T1::Inner>;
 }
 
 define_sql_function! {
-    /// Returns range of integer.
+    /// Returns range of integer
+    ///
     /// # Example
     ///
     /// ```rust
@@ -451,7 +462,8 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns range of integer.
+    /// Returns range of big ints
+    ///
     /// # Example
     ///
     /// ```rust
@@ -498,7 +510,8 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns range of number.
+    /// Returns range of numeric values
+    ///
     /// # Example
     ///
     /// ```rust
@@ -548,7 +561,8 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns range of timestamp without timezone.
+    /// Returns range of timestamps without timezone
+    ///
     /// # Example
     ///
     /// ```rust
@@ -598,7 +612,8 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns range of timestamp with timezone.
+    /// Returns range of timestamps with timezone
+    ///
     /// # Example
     ///
     /// ```rust
@@ -646,7 +661,8 @@ define_sql_function! {
 }
 
 define_sql_function! {
-    /// Returns range of date.
+    /// Returns range of dates
+    ///
     /// # Example
     ///
     /// ```rust
@@ -697,7 +713,8 @@ define_sql_function! {
 
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
-    /// Append an element to the end of an array.
+    /// Append an element to the end of an array
+    ///
     /// # Example
     ///
     /// ```rust
