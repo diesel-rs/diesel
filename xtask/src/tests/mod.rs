@@ -30,32 +30,13 @@ pub(crate) struct TestArgs {
     flags: Vec<String>,
 }
 
-fn get_exclude_for_backend<'a>(backend: &str, metadata: &'a Metadata) -> Vec<&'a str> {
-    let examples = metadata.workspace_root.join("examples");
-    let backend_examples = examples.join(backend);
-    metadata
-        .workspace_packages()
-        .into_iter()
-        .filter_map(move |p| {
-            if p.manifest_path.starts_with(&examples)
-                && !p.manifest_path.starts_with(&backend_examples)
-            {
-                Some(["--exclude", &p.name])
-            } else {
-                None
-            }
-        })
-        .flatten()
-        .collect()
-}
-
 impl TestArgs {
     pub(crate) fn run(mut self) {
         let metadata = MetadataCommand::default().exec().unwrap();
         let success = if matches!(self.backend, Backend::All) {
             let mut success = true;
-            for backend in [Backend::Postgres, Backend::Sqlite, Backend::Mysql] {
-                self.backend = backend;
+            for backend in Backend::ALL {
+                self.backend = *backend;
                 let result = self.run_tests(&metadata);
                 success = success && result;
                 if !result && !self.keep_going {
@@ -74,7 +55,7 @@ impl TestArgs {
     fn run_tests(&self, metadata: &Metadata) -> bool {
         let backend_name = self.backend.to_string();
         println!("Running tests for {backend_name}");
-        let exclude = get_exclude_for_backend(&backend_name, metadata);
+        let exclude = crate::utils::get_exclude_for_backend(&backend_name, metadata);
         if std::env::var("DATABASE_URL").is_err() {
             match self.backend {
                 Backend::Postgres => {

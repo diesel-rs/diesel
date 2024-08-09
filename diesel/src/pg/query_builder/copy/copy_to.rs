@@ -273,10 +273,7 @@ where
         C::get_buffer(out)
     }
 
-    fn execute<'conn, T>(
-        &'conn mut self,
-        command: CopyToCommand<T>,
-    ) -> QueryResult<Self::CopyToBuffer<'conn>>
+    fn execute<T>(&mut self, command: CopyToCommand<T>) -> QueryResult<Self::CopyToBuffer<'_>>
     where
         T: CopyTarget,
     {

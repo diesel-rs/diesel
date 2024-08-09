@@ -108,8 +108,10 @@ Thank you! We'll try to respond as quickly as possible.
     ```bash
     $ docker-compose up
     ```
+    
+5. Install [cargo-nextest](https://nexte.st/) via `cargo install cargo-nextest`
 
-5. Now, try running the test suite to confirm everything works for you locally
+6. Now, try running the test suite to confirm everything works for you locally
    by executing `cargo xtask run-tests`. (Initially, this will take a while to compile
    everything.) In addition, if you want to compile and test a crate separately, 
    you can refer to the commands printed and executed by `cargo xtask run-tests`. Additionally you 
@@ -130,40 +132,15 @@ To run rustfmt tests locally:
    rustup component add rustfmt
    rustup component add clippy
    ```
-   
-3. Install [cargo-nextest](https://nexte.st/) via `cargo install cargo-nextest`
 
-4. Run clippy using cargo from the root of your diesel repo.
-   ```
-   cargo clippy --all
-   ```
-   Each PR needs to compile without warning.
+3. Install [typos](https://github.com/crate-ci/typos) via `cargo install typos`
 
-5. Run rustfmt using cargo from the root of your diesel repo.
-
-   To see changes that need to be made, run
-
-   ```
-   cargo fmt --all -- --check
-   ```
-
-   If all code is properly formatted (e.g. if you have not made any changes),
-   this should run without error or output.
-   If your code needs to be reformatted,
-   you will see a diff between your code and properly formatted code.
-   If you see code here that you didn't make any changes to
-   then you are probably running the wrong version of rustfmt.
-   Once you are ready to apply the formatting changes, run
-
-   ```
-   cargo fmt --all
-   ```
-
-   You won't see any output, but all your files will be corrected.
+4. Use `cargo xtask tidy` to check if your changes follow the expected code style.
+   This will run `cargo fmt --check`, `typos` and `cargo clippy` internally. See `cargo xtask tidy --help`
+   for additional options.
 
 You can also use rustfmt to make corrections or highlight issues in your editor.
 Check out [their README](https://github.com/rust-lang/rustfmt) for details.
-
 
 ### Common Abbreviations
 
