@@ -1500,6 +1500,44 @@ fn test_range_bound_enum_to_sql() {
 
 #[cfg(feature = "postgres")]
 #[test]
+fn test_multirange_from_sql() {
+    use diesel::dsl::sql;
+    use std::collections::Bound;
+
+    let connection = &mut connection();
+
+    let query = "'{(,1), [5,8), [10,)}'::int4multirange";
+    let expected_value = vec![
+        (Bound::Unbounded, Bound::Excluded(1)),
+        (Bound::Included(5), Bound::Excluded(8)),
+        (Bound::Included(10), Bound::Unbounded),
+    ];
+    assert_eq!(
+        expected_value,
+        query_single_value::<Multirange<Int4>, Vec<(Bound<i32>, Bound<i32>)>>(query)
+    );
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn test_multirange_to_sql() {
+    use diesel::dsl::sql;
+    use std::collections::Bound;
+
+    let expected_value = "'{(,1), [5,8), [10,)}'::int4multirange";
+    let value = vec![
+        (Bound::Unbounded, Bound::Excluded(1)),
+        (Bound::Included(5), Bound::Excluded(8)),
+        (Bound::Included(10), Bound::Unbounded),
+    ];
+    assert!(query_to_sql_equality::<
+        Multirange<Int4>,
+        Vec<(Bound<i32>, Bound<i32>)>,
+    >(expected_value, value));
+}
+
+#[cfg(feature = "postgres")]
+#[test]
 fn test_inserting_ranges() {
     use std::collections::Bound;
 
