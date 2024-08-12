@@ -278,7 +278,7 @@ mod pg_types {
     test_round_trip!(
         tsrange_multirangetrips,
         Multirange<Timestamp>,
-        Vec<(i64, u32, i64, u32)>,
+        (i64, u32, i64, u32), // if we use Vec here we receive a weird values which postgres don't accept
         mk_ts_bound_lists
     );
     test_round_trip!(
@@ -412,16 +412,9 @@ mod pg_types {
     }
 
     fn mk_ts_bound_lists(
-        data: Vec<(i64, u32, i64, u32)>,
+        data: (i64, u32, i64, u32),
     ) -> Vec<(Bound<NaiveDateTime>, Bound<NaiveDateTime>)> {
-        let data: Vec<_> = data.into_iter().filter(|d| d.0 < d.2).collect();
-
-        if !is_sorted4(&data) {
-            // This is invalid but we don't have a way to say that to quickcheck
-            return vec![];
-        }
-
-        data.into_iter().map(mk_ts_bounds).collect()
+        vec![mk_ts_bounds(data)]
     }
 
     #[allow(clippy::type_complexity)]
