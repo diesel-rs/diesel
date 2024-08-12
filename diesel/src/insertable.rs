@@ -291,14 +291,8 @@ where
 {
     type Values = BatchInsert<Vec<T::Values>, Tab, [T::Values; N], true>;
 
-    // We must use the deprecated `IntoIter` function
-    // here as 1.51 (MSRV) does not support the new not
-    // deprecated variant
-    #[allow(deprecated)]
     fn values(self) -> Self::Values {
-        let values = std::array::IntoIter::new(self)
-            .map(Insertable::values)
-            .collect::<Vec<_>>();
+        let values = self.into_iter().map(Insertable::values).collect::<Vec<_>>();
         BatchInsert::new(values)
     }
 }
