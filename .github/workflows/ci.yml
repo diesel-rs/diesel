@@ -160,10 +160,10 @@ jobs:
         if: runner.os == 'Windows' && matrix.backend == 'postgres'
         shell: bash
         run: |
-          choco install postgresql12 --force --params '/Password:root'
-          echo "C:\Program Files\PostgreSQL\12\bin" >> $GITHUB_PATH
-          echo "C:\Program Files\PostgreSQL\12\lib" >> $GITHUB_PATH
-          echo "PQ_LIB_DIR=C:\Program Files\PostgreSQL\12\lib" >> $GITHUB_ENV
+          choco install postgresql14 --force --params '/Password:root'
+          echo "C:\Program Files\PostgreSQL\14\bin" >> $GITHUB_PATH
+          echo "C:\Program Files\PostgreSQL\14\lib" >> $GITHUB_PATH
+          echo "PQ_LIB_DIR=C:\Program Files\PostgreSQL\14\lib" >> $GITHUB_ENV
           echo "PG_DATABASE_URL=postgres://postgres:root@localhost/" >> $GITHUB_ENV
           echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres:root@localhost/diesel_example" >> $GITHUB_ENV
 
