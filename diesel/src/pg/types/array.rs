@@ -101,7 +101,7 @@ where
         out.write_i32::<NetworkEndian>(flags)?;
         let element_oid = Pg::metadata(out.metadata_lookup()).oid()?;
         out.write_u32::<NetworkEndian>(element_oid)?;
-        out.write_i32::<NetworkEndian>(self.len() as i32)?;
+        out.write_i32::<NetworkEndian>(self.len().try_into()?)?;
         let lower_bound = 1;
         out.write_i32::<NetworkEndian>(lower_bound)?;
 
