@@ -108,4 +108,24 @@ where
     }
 }
 
-// TODO: nullable impl
+impl<T, ST> ToSql<Nullable<Multirange<ST>>, Pg> for [(Bound<T>, Bound<T>)]
+where
+    ST: 'static,
+    [(Bound<T>, Bound<T>)]: ToSql<ST, Pg>,
+    T: ToSql<ST, Pg>,
+{
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        ToSql::<Multirange<ST>, Pg>::to_sql(self, out)
+    }
+}
+
+impl<T, ST> ToSql<Nullable<Multirange<ST>>, Pg> for Vec<(Bound<T>, Bound<T>)>
+where
+    ST: 'static,
+    Vec<(Bound<T>, Bound<T>)>: ToSql<ST, Pg>,
+    T: ToSql<ST, Pg>,
+{
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        ToSql::<Multirange<ST>, Pg>::to_sql(self, out)
+    }
+}
