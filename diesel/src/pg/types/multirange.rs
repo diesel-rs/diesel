@@ -61,12 +61,12 @@ where
 {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
-        let len = bytes.read_i32::<NetworkEndian>()?;
+        let len = bytes.read_u32::<NetworkEndian>()?;
 
         (0..len)
             .map(|_| {
-                let range_size = bytes.read_i32::<NetworkEndian>()?;
-                let (range_bytes, new_bytes) = bytes.split_at(range_size as usize);
+                let range_size: usize = bytes.read_i32::<NetworkEndian>()?.try_into()?;
+                let (range_bytes, new_bytes) = bytes.split_at(range_size);
                 bytes = new_bytes;
                 FromSql::from_sql(PgValue::new_internal(range_bytes, &value))
             })
@@ -80,7 +80,7 @@ where
     T: ToSql<ST, Pg>,
 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
-        out.write_u32::<NetworkEndian>(self.len() as u32)?;
+        out.write_u32::<NetworkEndian>(self.len().try_into()?)?;
 
         let mut buffer = Vec::new();
         for value in self {
@@ -88,7 +88,8 @@ where
                 let mut inner_buffer = Output::new(ByteWrapper(&mut buffer), out.metadata_lookup());
                 ToSql::<Range<ST>, Pg>::to_sql(&value, &mut inner_buffer)?;
             }
-            out.write_u32::<NetworkEndian>(buffer.len() as u32)?;
+            let buffer_len: i32 = buffer.len().try_into()?;
+            out.write_i32::<NetworkEndian>(buffer_len)?;
             out.write_all(&buffer)?;
             buffer.clear();
         }
