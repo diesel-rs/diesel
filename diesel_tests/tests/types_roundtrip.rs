@@ -251,6 +251,42 @@ mod pg_types {
         (i64, u32, i64, u32),
         mk_tstz_bounds
     );
+    test_round_trip!(
+        int4multirange_roundtrips,
+        Multirange<Int4>,
+        Vec<(i32, i32)>,
+        mk_bound_list
+    );
+    test_round_trip!(
+        int8multirange_roundtrips,
+        Multirange<Int8>,
+        Vec<(i64, i64)>,
+        mk_bound_list
+    );
+    test_round_trip!(
+        datemultirange_roundtrips,
+        Multirange<Date>,
+        (u32, u32), // if we use Vec here we receive a weird values which postgres don't accept
+        mk_date_bound_lists
+    );
+    test_round_trip!(
+        numrange_multirangetrips,
+        Multirange<Numeric>,
+        Vec<(i64, u64, i64, u64)>,
+        mk_num_bound_lists
+    );
+    test_round_trip!(
+        tsrange_multirangetrips,
+        Multirange<Timestamp>,
+        (i64, u32, i64, u32), // if we use Vec here we receive a weird values which postgres don't accept
+        mk_ts_bound_lists
+    );
+    test_round_trip!(
+        tstzrange_multirangetrips,
+        Multirange<Timestamptz>,
+        (i64, u32, i64, u32), // if we use Vec here we receive a weird values which postgres don't accept
+        mk_tstz_bound_lists
+    );
 
     test_round_trip!(json_roundtrips, Json, SerdeWrapper, mk_serde_json);
     test_round_trip!(jsonb_roundtrips, Jsonb, SerdeWrapper, mk_serde_json);
@@ -331,6 +367,61 @@ mod pg_types {
         let tstz1 = mk_datetime((data.0, data.1));
         let tstz2 = mk_datetime((data.2, data.3));
         mk_bounds((tstz1, tstz2))
+    }
+
+    fn is_sorted2<T>(data: &[(T, T)]) -> bool
+    where
+        T: Ord,
+    {
+        data.windows(2).all(|w| w[0].1 < w[1].0)
+    }
+
+    fn is_sorted4<T, U>(data: &[(T, U, T, U)]) -> bool
+    where
+        T: Ord,
+    {
+        data.windows(2).all(|w| w[0].2 < w[1].0)
+    }
+
+    fn mk_bound_list<T: Ord + PartialEq>(data: Vec<(T, T)>) -> Vec<(Bound<T>, Bound<T>)> {
+        let data: Vec<_> = data.into_iter().filter(|d| d.0 < d.1).collect();
+
+        if !is_sorted2(&data) {
+            // This is invalid but we don't have a way to say that to quickcheck
+            return vec![];
+        }
+
+        data.into_iter().map(mk_bounds).collect()
+    }
+
+    fn mk_date_bound_lists(data: (u32, u32)) -> Vec<(Bound<NaiveDate>, Bound<NaiveDate>)> {
+        vec![mk_date_bounds(data)]
+    }
+
+    fn mk_num_bound_lists(
+        data: Vec<(i64, u64, i64, u64)>,
+    ) -> Vec<(Bound<BigDecimal>, Bound<BigDecimal>)> {
+        let data: Vec<_> = data.into_iter().filter(|d| d.0 < d.2).collect();
+
+        if !is_sorted4(&data) {
+            // This is invalid but we don't have a way to say that to quickcheck
+            return vec![];
+        }
+
+        data.into_iter().map(mk_num_bounds).collect()
+    }
+
+    fn mk_ts_bound_lists(
+        data: (i64, u32, i64, u32),
+    ) -> Vec<(Bound<NaiveDateTime>, Bound<NaiveDateTime>)> {
+        vec![mk_ts_bounds(data)]
+    }
+
+    #[allow(clippy::type_complexity)]
+    fn mk_tstz_bound_lists(
+        data: (i64, u32, i64, u32),
+    ) -> Vec<(Bound<DateTime<Utc>>, Bound<DateTime<Utc>>)> {
+        vec![mk_tstz_bounds(data)]
     }
 
     pub fn mk_pg_naive_datetime(data: (i64, u32)) -> NaiveDateTime {

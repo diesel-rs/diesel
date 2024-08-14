@@ -13,6 +13,7 @@ mod json;
 mod mac_addr;
 #[doc(hidden)]
 pub(in crate::pg) mod money;
+mod multirange;
 #[cfg(feature = "network-address")]
 mod network_address;
 mod numeric;
@@ -170,6 +171,41 @@ pub mod sql_types {
     pub type Tsrange = Range<crate::sql_types::Timestamp>;
     #[doc(hidden)]
     pub type Tstzrange = Range<crate::sql_types::Timestamptz>;
+
+    /// The [`Multirange`] SQL type.
+    ///
+    /// This wraps another type to represent a SQL range of that type.
+    ///
+    /// ### [`ToSql`] impls
+    ///
+    /// - [`Vec<(Bound<T>, Bound<T>)>`][Vec] for any `T` which implements `ToSql<ST>`
+    /// - [`&[T]`][slice] for any `T` which implements `ToSql<ST>`
+    ///
+    /// ### [`FromSql`] impls
+    ///
+    /// - [`Vec<T>`][Vec] for any `T` which implements `ToSql<Range<ST>>`
+    ///
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [Vec]: std::vec::Vec
+    /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
+    /// [`Multirange`]: https://www.postgresql.org/docs/current/rangetypes.html
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[cfg(feature = "postgres_backend")]
+    pub struct Multirange<ST: 'static>(ST);
+
+    #[doc(hidden)]
+    pub type Int4multirange = Multirange<crate::sql_types::Int4>;
+    #[doc(hidden)]
+    pub type Int8multirange = Multirange<crate::sql_types::Int8>;
+    #[doc(hidden)]
+    pub type Datemultirange = Multirange<crate::sql_types::Date>;
+    #[doc(hidden)]
+    pub type Nummultirange = Multirange<crate::sql_types::Numeric>;
+    #[doc(hidden)]
+    pub type Tsmultirange = Multirange<crate::sql_types::Timestamp>;
+    #[doc(hidden)]
+    pub type Tstzmultirange = Multirange<crate::sql_types::Timestamptz>;
 
     /// This is a wrapper for [`RangeBound`] to represent range bounds: '[]', '(]', '[)', '()',
     /// used in functions int4range, int8range, numrange, tsrange, tstzrange, daterange.

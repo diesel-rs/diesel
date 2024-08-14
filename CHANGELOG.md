@@ -13,6 +13,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ### Added
 
 * Support for libsqlite3-sys 0.29.0
+* Support for postgres multirange type
 
 ## [2.2.0] 2024-05-31
 

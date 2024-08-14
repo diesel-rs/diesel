@@ -84,7 +84,7 @@ where
 
         if !flags.contains(RangeFlags::LB_INF) {
             let elem_size = bytes.read_i32::<NetworkEndian>()?;
-            let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
+            let (elem_bytes, new_bytes) = bytes.split_at(elem_size.try_into()?);
             bytes = new_bytes;
             let value = T::from_sql(PgValue::new_internal(elem_bytes, &value))?;
 
