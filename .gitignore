@@ -3,3 +3,9 @@ Cargo.lock
 !diesel_cli/Cargo.lock
 .env
 *.snap.new
+
+./.idea/*
+/.idea/.gitignore
+/.idea/diesel.iml
+/.idea/modules.xml
+/.idea/vcs.xml
