@@ -21,6 +21,7 @@ members = [
     "examples/postgres/getting_started_step_1",
     "examples/postgres/getting_started_step_2",
     "examples/postgres/getting_started_step_3",
+    "examples/postgres/custom_arrays",
     "examples/postgres/custom_types",
     "examples/postgres/composite_types",
     "examples/postgres/relations",
