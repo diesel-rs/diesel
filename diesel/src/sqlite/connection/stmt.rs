@@ -27,13 +27,17 @@ impl Statement {
     ) -> QueryResult<Self> {
         let mut stmt = ptr::null_mut();
         let mut unused_portion = ptr::null();
+        let n_byte = sql
+            .len()
+            .try_into()
+            .map_err(|e| Error::SerializationError(Box::new(e)))?;
         // the cast for `ffi::SQLITE_PREPARE_PERSISTENT` is required for old libsqlite3-sys versions
         #[allow(clippy::unnecessary_cast)]
         let prepare_result = unsafe {
             ffi::sqlite3_prepare_v3(
                 raw_connection.internal_connection.as_ptr(),
                 CString::new(sql)?.as_ptr(),
-                sql.len() as libc::c_int,
+                n_byte,
                 if matches!(is_cached, PrepareForCache::Yes) {
                     ffi::SQLITE_PREPARE_PERSISTENT as u32
                 } else {
@@ -68,16 +72,23 @@ impl Statement {
                 ffi::sqlite3_bind_null(self.inner_statement.as_ptr(), bind_index)
             }
             (SqliteType::Binary, InternalSqliteBindValue::BorrowedBinary(bytes)) => {
+                let n = bytes
+                    .len()
+                    .try_into()
+                    .map_err(|e| Error::SerializationError(Box::new(e)))?;
                 ffi::sqlite3_bind_blob(
                     self.inner_statement.as_ptr(),
                     bind_index,
                     bytes.as_ptr() as *const libc::c_void,
-                    bytes.len() as libc::c_int,
+                    n,
                     ffi::SQLITE_STATIC(),
                 )
             }
             (SqliteType::Binary, InternalSqliteBindValue::Binary(mut bytes)) => {
-                let len = bytes.len();
+                let len = bytes
+                    .len()
+                    .try_into()
+                    .map_err(|e| Error::SerializationError(Box::new(e)))?;
                 // We need a separate pointer here to pass it to sqlite
                 // as the returned pointer is a pointer to a dyn sized **slice**
                 // and not the pointer to the first element of the slice
@@ -87,22 +98,29 @@ impl Statement {
                     self.inner_statement.as_ptr(),
                     bind_index,
                     ptr as *const libc::c_void,
-                    len as libc::c_int,
+                    len,
                     ffi::SQLITE_STATIC(),
                 )
             }
             (SqliteType::Text, InternalSqliteBindValue::BorrowedString(bytes)) => {
+                let len = bytes
+                    .len()
+                    .try_into()
+                    .map_err(|e| Error::SerializationError(Box::new(e)))?;
                 ffi::sqlite3_bind_text(
                     self.inner_statement.as_ptr(),
                     bind_index,
                     bytes.as_ptr() as *const libc::c_char,
-                    bytes.len() as libc::c_int,
+                    len,
                     ffi::SQLITE_STATIC(),
                 )
             }
             (SqliteType::Text, InternalSqliteBindValue::String(bytes)) => {
                 let mut bytes = Box::<[u8]>::from(bytes);
-                let len = bytes.len();
+                let len = bytes
+                    .len()
+                    .try_into()
+                    .map_err(|e| Error::SerializationError(Box::new(e)))?;
                 // We need a separate pointer here to pass it to sqlite
                 // as the returned pointer is a pointer to a dyn sized **slice**
                 // and not the pointer to the first element of the slice
@@ -112,7 +130,7 @@ impl Statement {
                     self.inner_statement.as_ptr(),
                     bind_index,
                     ptr as *const libc::c_char,
-                    len as libc::c_int,
+                    len,
                     ffi::SQLITE_STATIC(),
                 )
             }
@@ -481,7 +499,10 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
     pub(super) fn index_for_column_name(&mut self, field_name: &str) -> Option<usize> {
         (0..self.column_count())
             .find(|idx| self.field_name(*idx) == Some(field_name))
-            .map(|v| v as usize)
+            .map(|v| {
+                v.try_into()
+                    .expect("Diesel expects to run at least on a 32 bit platform")
+            })
     }
 
     pub(super) fn field_name(&self, idx: i32) -> Option<&str> {
@@ -497,7 +518,7 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
         });
 
         column_names
-            .get(idx as usize)
+            .get(usize::try_from(idx).expect("Diesel expects to run at least on a 32 bit platform"))
             .and_then(|c| unsafe { c.as_ref() })
     }
 

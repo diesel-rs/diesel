@@ -15,7 +15,7 @@ fn to_time(dt: MysqlTime) -> Result<NaiveTime, Box<dyn std::error::Error>> {
         ("year", dt.year),
         ("month", dt.month),
         ("day", dt.day),
-        ("offset", dt.time_zone_displacement as u32),
+        ("offset", dt.time_zone_displacement.try_into()?),
     ] {
         if field != 0 {
             return Err(format!("Unable to convert {dt:?} to time: {name} must be 0").into());
@@ -63,7 +63,7 @@ fn to_primitive_datetime(dt: OffsetDateTime) -> PrimitiveDateTime {
 impl ToSql<Datetime, Mysql> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         let mysql_time = MysqlTime {
-            year: self.year() as libc::c_uint,
+            year: self.year().try_into()?,
             month: self.month() as libc::c_uint,
             day: self.day() as libc::c_uint,
             hour: self.hour() as libc::c_uint,
@@ -171,7 +171,7 @@ impl FromSql<Time, Mysql> for NaiveTime {
 impl ToSql<Date, Mysql> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         let mysql_time = MysqlTime {
-            year: self.year() as libc::c_uint,
+            year: self.year().try_into()?,
             month: self.month() as libc::c_uint,
             day: self.day() as libc::c_uint,
             hour: 0,

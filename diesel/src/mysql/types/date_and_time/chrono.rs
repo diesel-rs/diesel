@@ -26,7 +26,7 @@ impl FromSql<Datetime, Mysql> for NaiveDateTime {
 impl ToSql<Timestamp, Mysql> for NaiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         let mysql_time = MysqlTime {
-            year: self.year() as libc::c_uint,
+            year: self.year().try_into()?,
             month: self.month() as libc::c_uint,
             day: self.day() as libc::c_uint,
             hour: self.hour() as libc::c_uint,
@@ -48,16 +48,16 @@ impl FromSql<Timestamp, Mysql> for NaiveDateTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MysqlTime as FromSql<Timestamp, Mysql>>::from_sql(bytes)?;
 
-        NaiveDate::from_ymd_opt(mysql_time.year as i32, mysql_time.month, mysql_time.day)
-            .and_then(|v| {
-                v.and_hms_micro_opt(
-                    mysql_time.hour,
-                    mysql_time.minute,
-                    mysql_time.second,
-                    mysql_time.second_part as u32,
-                )
-            })
-            .ok_or_else(|| format!("Cannot parse this date: {mysql_time:?}").into())
+        let micro = mysql_time.second_part.try_into()?;
+        NaiveDate::from_ymd_opt(
+            mysql_time.year.try_into()?,
+            mysql_time.month,
+            mysql_time.day,
+        )
+        .and_then(|v| {
+            v.and_hms_micro_opt(mysql_time.hour, mysql_time.minute, mysql_time.second, micro)
+        })
+        .ok_or_else(|| format!("Cannot parse this date: {mysql_time:?}").into())
     }
 }
 
@@ -94,7 +94,7 @@ impl FromSql<Time, Mysql> for NaiveTime {
 impl ToSql<Date, Mysql> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         let mysql_time = MysqlTime {
-            year: self.year() as libc::c_uint,
+            year: self.year().try_into()?,
             month: self.month() as libc::c_uint,
             day: self.day() as libc::c_uint,
             hour: 0,
@@ -114,8 +114,12 @@ impl ToSql<Date, Mysql> for NaiveDate {
 impl FromSql<Date, Mysql> for NaiveDate {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MysqlTime as FromSql<Date, Mysql>>::from_sql(bytes)?;
-        NaiveDate::from_ymd_opt(mysql_time.year as i32, mysql_time.month, mysql_time.day)
-            .ok_or_else(|| format!("Unable to convert {mysql_time:?} to chrono").into())
+        NaiveDate::from_ymd_opt(
+            mysql_time.year.try_into()?,
+            mysql_time.month,
+            mysql_time.day,
+        )
+        .ok_or_else(|| format!("Unable to convert {mysql_time:?} to chrono").into())
     }
 }
 

@@ -145,7 +145,7 @@ impl<'stmt, 'query> Row<'stmt, Sqlite> for SqliteRow<'stmt, 'query> {
         let idx = self.idx(idx)?;
         Some(SqliteField {
             row: self.inner.borrow(),
-            col_idx: i32::try_from(idx).ok()?,
+            col_idx: idx,
         })
     }
 
@@ -178,15 +178,19 @@ impl<'stmt, 'idx, 'query> RowIndex<&'idx str> for SqliteRow<'stmt, 'query> {
 #[allow(missing_debug_implementations)]
 pub struct SqliteField<'stmt, 'query> {
     pub(super) row: Ref<'stmt, PrivateSqliteRow<'stmt, 'query>>,
-    pub(super) col_idx: i32,
+    pub(super) col_idx: usize,
 }
 
 impl<'stmt, 'query> Field<'stmt, Sqlite> for SqliteField<'stmt, 'query> {
     fn field_name(&self) -> Option<&str> {
         match &*self.row {
-            PrivateSqliteRow::Direct(stmt) => stmt.field_name(self.col_idx),
+            PrivateSqliteRow::Direct(stmt) => stmt.field_name(
+                self.col_idx
+                    .try_into()
+                    .expect("Diesel expects to run at least on a 32 bit platform"),
+            ),
             PrivateSqliteRow::Duplicated { column_names, .. } => column_names
-                .get(self.col_idx as usize)
+                .get(self.col_idx)
                 .and_then(|t| t.as_ref().map(|n| n as &str)),
         }
     }
