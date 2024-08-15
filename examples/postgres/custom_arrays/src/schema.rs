@@ -3,7 +3,7 @@
 pub mod smdb {
     pub mod sql_types {
         #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
-        #[diesel(postgres_type(name = "service_endpoint", schema = "smdb"))]
+        #[diesel(postgres_type(name = "service_endpoint"))]
         pub struct ServiceEndpoint;
     }
 
