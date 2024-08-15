@@ -273,6 +273,9 @@ where
         C::get_buffer(out)
     }
 
+    // Suppresses a false positive. See the lint docs:
+    // https://rust-lang.github.io/rust-clippy/master/index.html#/needless_lifetimes
+    #[allow(clippy::needless_lifetimes)]
     fn execute<'conn, T>(
         &'conn mut self,
         command: CopyToCommand<T>,
