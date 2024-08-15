@@ -74,10 +74,12 @@ a good security practice. To create a new schema with Diesel, you follow three s
 2) Declare the schema in the migration up/down.sql files
 3) Prefix all table names in the migration up/down.sql files with the schema
 
-Postgres uses internally a schema as something like a search path for a table and, by default, searches in the public
-schema for a table. If that fails, Postgres returns an error that the table does not exists (in the default schema).
-Because of the search path mechanism, you only have to declare the schema name and consistently prefix the tables in the
-schema with the schema name and that’s it.
+Postgres uses internally a schema as something like a search path for a table and, by default, 
+searches in the public schema for a table. If that fails, Postgres returns an error that the table does not exists (in the default schema).
+Because of the search path mechanism, you only have to declare the schema name and consistently prefix thetables in the schema with the schema name and that’s it.
+
+It is important to know that a custom schema only applies to tables. Custom types and enum still
+reside in the default public schema. 
 
 In your diesel.toml file, add the following entry:
 
@@ -114,7 +116,7 @@ Postgres ENUM in your up.sql looks like this:
 -- Your SQL goes here
 CREATE SCHEMA IF NOT EXISTS smdb;
 
-CREATE TYPE smdb.protocol_type AS ENUM (
+CREATE TYPE protocol_type AS ENUM (
     'UnknownProtocol',
     'GRPC',
     'HTTP',
@@ -122,11 +124,10 @@ CREATE TYPE smdb.protocol_type AS ENUM (
 );
 ```
 
-Notice, the table name is prefixed by the DB schema to ensure Postgres find it. Also, you add the corresponding drop
-type operation to your down.sql file:
+Add the corresponding drop type operation to your down.sql file:
 
 ```sql
-DROP TYPE IF EXISTS smdb.protocol_type CASCADE;
+DROP TYPE IF EXISTS protocol_type CASCADE;
 DROP schema IF EXISTS smdb;
 ```
 
@@ -147,20 +148,20 @@ your endpoint type looks like this in your up.sql:
 ```sql
 -- Your SQL goes here
 
-CREATE TYPE smdb.service_endpoint AS (
+CREATE TYPE service_endpoint AS (
 	"name" Text,
 	"version" INTEGER,
 	"base_uri" Text,
 	"port" INTEGER,
-	"protocol" smdb.protocol_type
+	"protocol" protocol_type
 );
 ```
 
 And the matching drop operation in the down.sql file:
 
 ```sql
-DROP TYPE IF EXISTS smdb.service_endpoint CASCADE;
-DROP TYPE IF EXISTS smdb.protocol_type CASCADE;
+DROP TYPE IF EXISTS service_endpoint CASCADE;
+DROP TYPE IF EXISTS protocol_type CASCADE;
 DROP schema IF EXISTS smdb;
 ```
 
@@ -203,24 +204,28 @@ CREATE TABLE  smdb.service(
 	"health_check_uri" Text NOT NULL,
 	"base_uri" Text NOT NULL,
 	"dependencies" INTEGER[] NOT NULL,
-	"endpoints" smdb.service_endpoint[] NOT NULL
+	"endpoints" service_endpoint[] NOT NULL
 );
 ```
 
-And add the matching drop statement to your down.sql file:
+As mentioned earlier, the custom schema applies to tables therefore the service table is
+prefixed with the schema name whereas the endpoint type is not as it resides in the public schema. 
+
+Add the matching drop statement to your down.sql file:
 
 ```sql
 -- This file should undo anything in `up.sql`
 DROP TABLE IF EXISTS smdb.service;
-DROP TYPE IF EXISTS smdb.service_endpoint CASCADE;
-DROP TYPE IF EXISTS smdb.protocol_type CASCADE;
+DROP TYPE IF EXISTS service_endpoint CASCADE;
+DROP TYPE IF EXISTS protocol_type CASCADE;
 DROP schema IF EXISTS smdb;
 ```
 
 A few notes on the service table:
 
-* Notice the schema prefix appears in both, the table name and in referenced types
-* The array type follows the usual convention type[]
+* Notice the schema prefix appears only in the table name.
+* The custom type and custom Enum do not have any prefix because they are in the default schema.
+* The array type follows the usual convention type[].
 * The NOT NULL attribute means that the array itself must be set; Values inside the array still might be null.
 
 The Diesel team decided that array values are nullable by default because there so many things that may go wrong when
@@ -233,19 +238,19 @@ In total, the up.sql looks as below:
 -- Your SQL goes here
 CREATE SCHEMA IF NOT EXISTS smdb;
 
-CREATE TYPE smdb.protocol_type AS ENUM (
+CREATE TYPE protocol_type AS ENUM (
     'UnknownProtocol',
     'GRPC',
     'HTTP',
     'UDP'
 );
 
-CREATE TYPE smdb.service_endpoint AS (
+CREATE TYPE service_endpoint AS (
 	"name" Text,
 	"version" INTEGER,
 	"base_uri" Text,
 	"port" INTEGER,
-	"protocol" smdb.protocol_type
+	"protocol" protocol_type
 );
 
 CREATE TABLE  smdb.service(
@@ -257,7 +262,7 @@ CREATE TABLE  smdb.service(
 	"health_check_uri" Text NOT NULL,
 	"base_uri" Text NOT NULL,
 	"dependencies" INTEGER[] NOT NULL,
-	"endpoints" smdb.service_endpoint[] NOT NULL
+	"endpoints" service_endpoint[] NOT NULL
 );
 ```
 
