@@ -114,7 +114,7 @@ fn test_create_service(conn: &mut Connection) {
     assert_eq!(service.service_id, 1);
     assert_eq!(service.name, "test");
     assert_eq!(service.version, 1);
-    assert_eq!(service.online, true);
+    assert!(service.online);
     assert_eq!(service.description, "test");
     assert_eq!(service.health_check_uri, "http://example.com");
     assert_eq!(service.base_uri, "http://example.com");
@@ -146,7 +146,7 @@ fn test_check_if_service_id_online(conn: &mut Connection) {
 fn test_get_all_online_services(conn: &mut Connection) {
     let result = service::Service::get_all_online_services(conn);
     assert!(result.is_ok());
-    assert!(result.unwrap().len() > 0);
+    assert!(!result.unwrap().is_empty());
 }
 
 fn test_get_all_offline_services(conn: &mut Connection) {
@@ -182,7 +182,7 @@ fn test_service_read(conn: &mut Connection) {
     assert_eq!(service.service_id, 1);
     assert_eq!(service.name, "test");
     assert_eq!(service.version, 1);
-    assert_eq!(service.online, true);
+    assert!(service.online);
     assert_eq!(service.description, "test");
     assert_eq!(service.health_check_uri, "http://example.com");
     assert_eq!(service.base_uri, "http://example.com");
@@ -194,7 +194,7 @@ fn test_service_read_all(conn: &mut Connection) {
     assert!(result.is_ok());
 
     let services = result.unwrap();
-    assert!(services.len() > 0);
+    assert!(!services.is_empty());
 }
 
 fn test_set_service_online(conn: &mut Connection) {
@@ -244,7 +244,7 @@ fn test_service_update(conn: &mut Connection) {
     assert_eq!(service.service_id, 1);
     assert_eq!(service.name, "new_test");
     assert_eq!(service.version, 2);
-    assert_eq!(service.online, true);
+    assert!(service.online);
     assert_eq!(service.description, "test");
     assert_eq!(service.health_check_uri, "http://example.com");
     assert_eq!(service.base_uri, "http://example.com");
