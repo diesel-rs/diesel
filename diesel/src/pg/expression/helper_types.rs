@@ -60,11 +60,17 @@ pub type RangeContains<Lhs, Rhs> = Grouped<
     >,
 >;
 
-/// The return type of [`lhs.range_not_extends_right_to(rhs)`](super::expression_methods::PgRangeExpressionMethods::range_not_extends_right_to)
+/// The return type of [`lhs.range_extends_right_to(rhs)`](super::expression_methods::PgRangeExpressionMethods::range_extends_right_to)
 /// for range expressions
 #[cfg(feature = "postgres_backend")]
-pub type RangeNotExtendsRightTo<Lhs, Rhs> =
-    Grouped<super::operators::NotExtendsRightTo<Lhs, AsExpr<Rhs, Lhs>>>;
+pub type RangeExtendsRightTo<Lhs, Rhs> =
+    Grouped<super::operators::ExtendsRightTo<Lhs, AsExpr<Rhs, Lhs>>>;
+
+/// The return type of [`lhs.range_extends_left_to(rhs)`](super::expression_methods::PgRangeExpressionMethods::range_extends_left_to)
+/// for range expressions
+#[cfg(feature = "postgres_backend")]
+pub type RangeExtendsLeftTo<Lhs, Rhs> =
+    Grouped<super::operators::ExtendsLeftTo<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of [`lhs.contains_range(rhs)`](super::expression_methods::PgRangeExpressionMethods::contains_range)
 /// for range expressions
@@ -75,6 +81,12 @@ pub type ContainsRange<Lhs, Rhs> = Contains<Lhs, Rhs>;
 /// and [`lhs.is_contained_by(rhs)`](super::expression_methods::PgArrayExpressionMethods::is_contained_by)
 #[cfg(feature = "postgres_backend")]
 pub type IsContainedBy<Lhs, Rhs> = Grouped<super::operators::IsContainedBy<Lhs, AsExpr<Rhs, Lhs>>>;
+
+/// The return type of [`lhs.is_contained_by_range(rhs)`](super::expression_methods::PgExpressionMethods::is_contained_by_range)
+#[cfg(feature = "postgres_backend")]
+pub type IsContainedByRange<Lhs, Rhs> = Grouped<
+    super::operators::IsContainedBy<Lhs, AsExprOf<Rhs, diesel::sql_types::Range<SqlTypeOf<Lhs>>>>,
+>;
 
 /// The return type of [`lhs.range_is_contained_by(rhs)`](super::expression_methods::PgRangeExpressionMethods::lesser_than)
 #[cfg(feature = "postgres_backend")]
@@ -101,6 +113,10 @@ pub type Difference<Lhs, Rhs> = Grouped<super::operators::DifferenceRange<Lhs, A
 
 #[doc(hidden)] // used by `#[auto_type]`
 pub type DifferenceRange<Lhs, Rhs> = Difference<Lhs, Rhs>;
+
+/// The return type of [`lhs.range_adjacent(rhs)`](super::expression_methods::PgRangeExpressionMethods::range_adjacent)
+#[cfg(feature = "postgres_backend")]
+pub type RangeAdjacent<Lhs, Rhs> = Grouped<super::operators::RangeAdjacent<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of [`lhs.intersection_range(rhs)`](super::expression_methods::PgRangeExpressionMethods::intersection_range)
 #[cfg(feature = "postgres_backend")]
@@ -308,3 +324,48 @@ pub type array_to_string_null<Arr, Elem> = super::functions::array_to_string_nul
 #[cfg(feature = "postgres_backend")]
 pub type array_to_string<Arr, Elem> =
     super::functions::array_to_string<SqlTypeOf<Arr>, SqlTypeOf<Elem>, Arr, Elem>;
+
+/// Return type of [`lower(range)`](super::functions::lower())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type lower<R> = super::functions::lower<SqlTypeOf<R>, R>;
+
+/// Return type of [`upper(range)`](super::functions::upper())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type upper<R> = super::functions::upper<SqlTypeOf<R>, R>;
+
+/// Return type of [`isempty(range)`](super::functions::isempty())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type isempty<R> = super::functions::isempty<SqlTypeOf<R>, R>;
+
+/// Return type of [`lower_inc(range)`](super::functions::lower_inc())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type lower_inc<R> = super::functions::lower_inc<SqlTypeOf<R>, R>;
+
+/// Return type of [`upper_inc(range)`](super::functions::upper_inc())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type upper_inc<R> = super::functions::upper_inc<SqlTypeOf<R>, R>;
+
+/// Return type of [`lower_inf(range)`](super::functions::lower_inf())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type lower_inf<R> = super::functions::lower_inf<SqlTypeOf<R>, R>;
+
+/// Return type of [`upper_inf(range)`](super::functions::upper_inf())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type upper_inf<R> = super::functions::upper_inf<SqlTypeOf<R>, R>;
+
+/// Return type of [`range_merge(range_a, range_b)`](super::functions::range_merge())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type range_merge<R1, R2> = super::functions::range_merge<SqlTypeOf<R1>, SqlTypeOf<R2>, R1, R2>;
+
+/// Return type of [`array_append(array, element)`](super::functions::array_append())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_append<A, E> = super::functions::array_append<SqlTypeOf<A>, SqlTypeOf<E>, A, E>;
