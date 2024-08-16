@@ -100,7 +100,8 @@ jobs:
       - name: Install sqlite (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'sqlite'
         run: |
-          brew install sqlite
+          # otherwise brew install fails
+          HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 brew install sqlite
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS)
