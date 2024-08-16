@@ -423,7 +423,7 @@ impl FromSql<PgProtocolType, Pg> for ProtocolType {
 }
 ```
 
-In toSql, it is important to end the implementation with Ok(IsNull::No). In the from_sql, it is important to add a catch
+In ToSql, it is important to end the implementation with Ok(IsNull::No). In the from_sql, it is important to add a catch
 all case that returns an UnknownProtocol instance. In practice, the catch all rarely ever gets triggered, but in those
 few corner cases when it does, it keeps the application running.
 
