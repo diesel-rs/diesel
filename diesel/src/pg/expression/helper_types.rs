@@ -3,7 +3,7 @@ use crate::expression::grouped::Grouped;
 use crate::expression::Expression;
 use crate::pg::expression::expression_methods::private::{JsonIndex, JsonRemoveIndex};
 use crate::pg::types::sql_types::Array;
-use crate::sql_types::{Inet, Integer, VarChar};
+use crate::sql_types::{Inet, Integer, Nullable, Text, VarChar};
 
 /// The return type of [`lhs.ilike(rhs)`](super::expression_methods::PgTextExpressionMethods::ilike)
 #[cfg(feature = "postgres_backend")]
@@ -291,3 +291,20 @@ pub type NotLikeBinary<Lhs, Rhs> = crate::dsl::NotLike<Lhs, Rhs>;
 #[doc(hidden)]
 #[deprecated(note = "Use `dsl::Concat` instead")]
 pub type ConcatArray<Lhs, Rhs> = crate::dsl::Concat<Lhs, Rhs>;
+
+/// Return type of [`array_to_string_null(arr, delim, null_str)`](super::functions::array_to_string_null())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_to_string_null<Arr, Elem> = super::functions::array_to_string_null<
+    SqlTypeOf<Arr>,
+    SqlTypeOf<Elem>,
+    Arr,
+    Elem,
+    Nullable<Text>,
+>;
+
+/// Return type of [`array_to_string(arr, delim)`](super::functions::array_to_string())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_to_string<Arr, Elem> =
+    super::functions::array_to_string<SqlTypeOf<Arr>, SqlTypeOf<Elem>, Arr, Elem>;

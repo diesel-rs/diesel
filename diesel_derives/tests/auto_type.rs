@@ -385,7 +385,35 @@ fn test_normal_functions() -> _ {
         case_when(users::id.eq(1_i32), users::id).otherwise(users::id),
     ))
 }
-
+#[cfg(feature = "postgres")]
+#[auto_type]
+fn postgres_functions() -> _ {
+    let bound: sql_types::RangeBound =
+        sql_types::RangeBound::LowerBoundExclusiveUpperBoundExclusive;
+    (
+        lower(pg_extras::range),
+        upper(pg_extras::range),
+        isempty(pg_extras::range),
+        lower_inc(pg_extras::range),
+        upper_inc(pg_extras::range),
+        lower_inf(pg_extras::range),
+        upper_inf(pg_extras::range),
+        range_merge(pg_extras::range, pg_extras::range),
+        int4range(users::id.nullable(), users::id.nullable(), bound),
+        int8range(users::bigint.nullable(), users::bigint.nullable(), bound),
+        numrange(users::numeric.nullable(), users::numeric.nullable(), bound),
+        daterange(users::date.nullable(), users::date.nullable(), bound),
+        tsrange(users::time.nullable(), users::time.nullable(), bound),
+        tstzrange(
+            pg_extras::timestamptz.nullable(),
+            pg_extras::timestamptz.nullable(),
+            bound,
+        ),
+        array_append(pg_extras::array, pg_extras::id),
+        array_to_string_null(pg_extras::array, ", ".into(), Some("NULL".into())),
+        array_to_string(pg_extras::array, ", ".to_string()),
+    )
+}
 #[auto_type]
 fn with_lifetime<'a>(name: &'a str) -> _ {
     users::table.filter(users::name.eq(name))

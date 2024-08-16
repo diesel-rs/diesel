@@ -731,3 +731,78 @@ define_sql_function! {
     /// ```
     fn array_append<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue>(a: Arr, e: T) -> Array<T>;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Converts each array element to its text representation, and concatenates those separated by the delimiter string.
+    /// If `null_str` is given and is not `NULL`, then `NULL` array entries are represented by that string;
+    /// otherwise, they are omitted.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_to_string_null;
+    /// #     let conn = &mut establish_connection();
+    ///
+    /// let result_with_null_str = diesel::select(array_to_string_null::<Array<Text>, Text>(
+    ///     vec!["a".to_string(), "b".to_string(), "c".to_string()],
+    ///     ", ".to_string(),
+    ///     Some("NULL".to_string())
+    /// )).get_result::<String>(conn)?;
+    /// assert_eq!("a, b, c".to_string(), result_with_null_str);
+    ///
+    /// let result_without_null_str = diesel::select(array_to_string_null::<Array<Text>, Text>(
+    ///     vec!["a".to_string(), "b".to_string(), None],
+    ///     ", ".to_string(),
+    ///     None
+    /// )).get_result::<String>(conn)?;
+    /// assert_eq!("a, b".to_string(), result_without_null_str);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_to_string_null<Arr: ArrayOrNullableArray<Inner=Elem> + SingleValue, Elem: SingleValue>(
+        arr: Arr,
+        delim: Text,
+        null_str: Nullable<Text>
+    ) -> Text;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    #[sql_name = "array_to_string"]
+    /// Converts each array element to its text representation, and concatenates those separated by the delimiter string.
+    /// This variant omits the `null_str` argument.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_to_string;
+    /// #     let conn = &mut establish_connection();
+    ///
+    /// let result = diesel::select(array_to_string::<Array<Text>, Text>(
+    ///     vec!["a".to_string(), "b".to_string(), "c".to_string()],
+    ///     ", ".to_string()
+    /// )).get_result::<String>(conn)?;
+    /// assert_eq!("a, b, c".to_string(), result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_to_string<Arr: ArrayOrNullableArray<Inner=Elem> + SingleValue, Elem: SingleValue>(
+        arr: Arr,
+        delim: Text
+    ) -> Text;
+}
