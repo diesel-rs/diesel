@@ -11,7 +11,7 @@ use crate::expression::grouped::Grouped;
 use crate::expression::operators::{Asc, Concat, Desc, Like, NotLike};
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
 use crate::pg::expression::expression_methods::private::BinaryOrNullableBinary;
-use crate::sql_types::{Array, Inet, Integer, SqlType, Text, VarChar};
+use crate::sql_types::{Array, Inet, Integer, Range, SqlType, Text, VarChar};
 use crate::EscapeExpressionMethods;
 
 /// PostgreSQL specific methods which are present on all expressions.
@@ -71,6 +71,89 @@ pub trait PgExpressionMethods: Expression + Sized {
         T: AsExpression<Self::SqlType>,
     {
         Grouped(IsDistinctFrom::new(self, other.as_expression()))
+    }
+
+    /// Creates a PostgreSQL `<@` expression.
+    ///
+    /// This operator returns true whether a element is contained by a range
+    ///
+    /// This operator evaluates to true for the following cases:
+    ///
+    /// ```text
+    /// self:     |
+    /// other:  [-----]
+    /// ```
+    ///
+    /// ```text
+    /// self:  |
+    /// other: [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:       |
+    /// other:  [----]
+    /// ```
+    ///
+    /// This operator evaluates to false for the following cases:
+    ///
+    /// ```text
+    /// self:           |
+    /// other:  [-----]
+    /// ```
+    ///
+    /// ```text
+    /// self:  |
+    /// other:   [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:       |
+    /// other: [----)
+    /// ```
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         versions -> Range<Integer>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::Bound;
+    /// #     use diesel::dsl::int4range;
+    /// #     use diesel::sql_types::Integer;
+    /// #
+    /// #     let conn = &mut establish_connection();
+    /// #
+    ///       let my_range = int4range(1, 5, diesel::sql_types::RangeBound::LowerBoundInclusiveUpperBoundExclusive);
+    ///
+    ///       let (first, second) = diesel::select((
+    ///           4.into_sql::<Integer>().is_contained_by_range(my_range),
+    ///           10.into_sql::<Integer>().is_contained_by_range(my_range)
+    ///       )).get_result::<(bool, bool)>(conn)?;
+    ///
+    ///       assert_eq!(first, true);
+    ///       assert_eq!(second, false);
+    /// #
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
+    fn is_contained_by_range<T>(self, other: T) -> dsl::IsContainedByRange<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Range<Self::SqlType>>,
+    {
+        Grouped(IsContainedBy::new(self, other.as_expression()))
     }
 }
 
@@ -706,7 +789,41 @@ impl<T, U> EscapeExpressionMethods for Grouped<NotSimilarTo<T, U>> {
 pub trait PgRangeExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `@>` expression.
     ///
-    /// This operator returns whether a range contains an specific element
+    /// This operator returns true whether a range contains an specific element
+    ///
+    /// This operator evaluates to true for the following cases:
+    ///
+    /// ```text
+    /// self:   [-----]
+    /// other:    |
+    /// ```
+    ///
+    /// ```text
+    /// self:  [----]
+    /// other: |
+    /// ```
+    ///
+    /// ```text
+    /// self:  [----]
+    /// other:      |
+    /// ```
+    ///
+    /// This operator evaluates to false for the following cases:
+    ///
+    /// ```text
+    /// self:   [-----]
+    /// other:          |
+    /// ```
+    ///
+    /// ```text
+    /// self:    [----]
+    /// other: |
+    /// ```
+    ///
+    /// ```text
+    /// self:  [----)
+    /// other:      |
+    /// ```
     ///
     /// # Example
     ///
@@ -758,7 +875,36 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
 
     /// Creates a PostgreSQL `@>` expression.
     ///
-    /// This operator returns whether a range contains an specific element
+    /// This operator returns true whether a range contains another range
+    ///
+    /// This operator evaluates to true for the following cases:
+    ///
+    /// ```text
+    /// self:   [-------]
+    /// other:     [--]
+    /// ```
+    ///
+    /// ```text
+    /// self:  [------]
+    /// other: [------]
+    /// ```
+    ///
+    /// This operator evaluates to false for the following cases:
+    ///
+    /// ```text
+    /// self:   [-----]
+    /// other:     [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:    [----]
+    /// other: [--------]
+    /// ```
+    ///
+    /// ```text
+    /// self:  [----)
+    /// other: [----]
+    /// ```
     ///
     /// # Example
     ///
@@ -809,7 +955,36 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
 
     /// Creates a PostgreSQL `<@` expression.
     ///
-    /// This operator returns whether a range is contained by a specific element
+    /// This operator returns true whether a range is contained by another range
+    ///
+    /// This operator evaluates to true for the following cases:
+    ///
+    /// ```text
+    /// self:   [-----]
+    /// other: [-------]
+    /// ```
+    ///
+    /// ```text
+    /// self:  [----]
+    /// other: [----]
+    /// ```
+    ///
+    /// This operator evaluates to false for the following cases:
+    ///
+    /// ```text
+    /// self:   [------]
+    /// other:   [---]
+    /// ```
+    ///
+    /// ```text
+    /// self:   [----]
+    /// other: [-----)
+    /// ```
+    ///
+    /// ```text
+    /// self:  [----]
+    /// other:   [----]
+    /// ```
     ///
     /// # Example
     ///
@@ -861,7 +1036,46 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
 
     /// Creates a PostgreSQL `&&` expression.
     ///
-    /// This operator returns whether two ranges overlap.
+    /// This operator returns true whether two ranges overlap.
+    ///
+    /// This operator evaluates to true for the following cases:
+    ///
+    /// ```text
+    /// self:   [-----]
+    /// other:    [-----]
+    /// ```
+    ///
+    /// ```text
+    /// self:     [----]
+    /// other: [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:     [----]
+    /// other:  [-------]
+    /// ```
+    ///
+    /// ```text
+    /// self:   [----]
+    /// other:  [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:   [----]
+    /// other:  [----)
+    /// ```
+    ///
+    /// This operator evaluates to false for the following cases:
+    ///
+    /// ```text
+    /// self:   [-----]
+    /// other:          [-----]
+    /// ```
+    ///
+    /// ```text
+    /// self:       [----]
+    /// other: [--]
+    /// ```
     ///
     /// # Example
     ///
@@ -916,7 +1130,44 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
 
     /// Creates a PostgreSQL `&<` expression.
     ///
-    /// This operator returns whether a range doesn't extend to the right of another
+    /// This operator returns true whether the argument range extend to the right of the current range
+    ///
+    /// Postgresql defines "extends" as does not have a lower bound smaller than the lower bound of the
+    /// self range. That means the right hand side range can overlap parts of the left hand side
+    /// range or be on the right side of the left hand side range
+    ///
+    /// The following constelations evaluate to true:
+    /// ```text
+    /// self:   [------)
+    /// other:    [----)
+    /// ```
+    ///
+    /// ```text
+    /// self:  [----)
+    /// other:         [----)
+    /// ```
+    ///
+    /// ```text
+    /// self:  [------)
+    /// other:    [------)
+    /// ```
+    ///
+    /// The following constelations evaluate to false:
+    ///
+    /// ```text
+    /// self:             [------]
+    /// other:    [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:            [------]
+    /// other:         [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:  [------]
+    /// other: [------)
+    /// ```
     ///
     /// # Example
     ///
@@ -945,29 +1196,149 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     ///     .values(versions.eq((Bound::Included(1), Bound::Excluded(20))))
     ///     .execute(conn)?;
     ///
-    /// let cool_posts = posts.select(id)
-    ///     .filter(versions.range_not_extends_right_to((Bound::Included(18), Bound::Excluded(20))))
-    ///     .load::<i32>(conn)?;
-    /// assert_eq!(vec![1], cool_posts);
+    /// let cool_posts = posts.select(versions.range_extends_right_to((Bound::Included(18), Bound::Excluded(20))))
+    ///     .get_result::<bool>(conn)?;
+    /// assert_eq!(true, cool_posts);
     ///
-    /// let amazing_posts = posts.select(id)
-    ///     .filter(versions.contains_range((Bound::Included(20), Bound::Excluded(25))))
-    ///     .load::<i32>(conn)?;
-    /// assert!(amazing_posts.is_empty());
+    /// let cool_posts = posts.select(versions.range_extends_right_to((Bound::Included(25), Bound::Excluded(30))))
+    ///     .get_result::<bool>(conn)?;
+    /// assert_eq!(true, cool_posts);
+    ///
+    /// let amazing_posts = posts.select(versions.range_extends_right_to((Bound::Included(-10), Bound::Excluded(0))))
+    ///     .get_result::<bool>(conn)?;
+    /// assert_eq!(false, amazing_posts);
     /// #     Ok(())
     /// # }
     /// ```
-    fn range_not_extends_right_to<T>(self, other: T) -> dsl::RangeNotExtendsRightTo<Self, T>
+    fn range_extends_right_to<T>(self, other: T) -> dsl::RangeExtendsRightTo<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
-        Grouped(NotExtendsRightTo::new(self, other.as_expression()))
+        Grouped(ExtendsRightTo::new(self, other.as_expression()))
+    }
+
+    /// Creates a PostgreSQL `&>` expression.
+    ///
+    /// This operator returns true whether a range does extend to the left of another
+    ///
+    /// Postgresql defines "extends" as does not have a upper bound greater than the upper bound of the
+    /// self range. That means the right hand side range can overlap parts of the left hand side
+    /// range or be on the left side of the left hand side range
+    ///
+    /// The following constelations evaluate to true:
+    /// ```text
+    /// self:        [------)
+    /// other:    [----)
+    /// ```
+    ///
+    /// ```text
+    /// self:          [----)
+    /// other: [----)
+    /// ```
+    ///
+    /// ```text
+    /// self:  [------)
+    /// other:        [------)
+    /// ```
+    ///
+    /// The following constelations evaluate to false:
+    ///
+    /// ```text
+    /// self:   [--------]
+    /// other:    [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:  [------]
+    /// other:          [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:  [------]
+    /// other: (------]
+    /// ```
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         versions -> Range<Integer>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     use std::collections::Bound;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
+    /// #
+    /// diesel::insert_into(posts)
+    ///     .values(versions.eq((Bound::Included(1), Bound::Excluded(20))))
+    ///     .execute(conn)?;
+    ///
+    /// let cool_posts = posts.select(versions.range_extends_left_to((Bound::Included(-10), Bound::Excluded(5))))
+    ///     .get_result::<bool>(conn)?;
+    /// assert_eq!(true, cool_posts);
+    ///
+    /// let cool_posts = posts.select(versions.range_extends_left_to((Bound::Included(-10), Bound::Excluded(-5))))
+    ///     .get_result::<bool>(conn)?;
+    /// assert_eq!(true, cool_posts);
+    ///
+    /// let amazing_posts = posts.select(versions.range_extends_left_to((Bound::Included(25), Bound::Excluded(30))))
+    ///     .get_result::<bool>(conn)?;
+    /// assert_eq!(false, amazing_posts);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn range_extends_left_to<T>(self, other: T) -> dsl::RangeExtendsLeftTo<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
+        Grouped(ExtendsLeftTo::new(self, other.as_expression()))
     }
 
     /// Creates a PostgreSQL `<<` expression.
     ///
     /// Is the first range strictly left of the second?
+    ///
+    /// The following constelations evaluate to true:
+    /// ```text
+    /// self:   [------)
+    /// other:            [----)
+    /// ```
+    ///
+    /// ```text
+    /// self:  [----)
+    /// other:      [----)
+    /// ```
+    ///
+    /// The following constelations evaluate to false:
+    ///
+    /// ```text
+    /// self:             [------]
+    /// other:    [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:     [------]
+    /// other:         [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:  [------]
+    /// other:        [------)
+    /// ```
     ///
     /// # Example
     ///
@@ -1024,6 +1395,34 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     ///
     /// Is the first range strictly right of the second?
     ///
+    /// The following constelations evaluate to true:
+    /// ```text
+    /// self:          [------)
+    /// other: [----)
+    /// ```
+    ///
+    /// ```text
+    /// self:        [----)
+    /// other:  [----)
+    /// ```
+    ///
+    /// The following constelations evaluate to false:
+    ///
+    /// ```text
+    /// self:  [------]
+    /// other:          [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:     [------]
+    /// other:         [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:         [------]
+    /// other: [------]
+    /// ```
+    ///
     /// # Example
     ///
     /// ```rust
@@ -1075,9 +1474,119 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
         Grouped(ContainsNet::new(self, other.as_expression()))
     }
 
+    /// Creates a PostgreSQL ` -|- ` expression.
+    ///
+    /// This operator evaluates to true if the two ranges are adjacent
+    ///
+    /// The following constelations evaluate to true:
+    /// ```text
+    /// self:   [------)
+    /// other:         [----)
+    /// ```
+    ///
+    /// ```text
+    /// self:       [----)
+    /// other: [----)
+    /// ```
+    ///
+    /// ```text
+    /// self:        [----)
+    /// other: [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:  [----]
+    /// other:       [----]
+    /// ```
+    ///
+    /// The following constelations evaluate to false:
+    ///
+    /// ```text
+    /// self:        [------]
+    /// other:    [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:     [------]
+    /// other:         [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:  [------]
+    /// other:        [------]
+    /// ```
+    ///
+    /// ```text
+    /// self:  [------]
+    /// other:           [------]
+    /// ```
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         versions -> Range<Integer>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     use std::collections::Bound;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
+    /// #
+    /// diesel::insert_into(posts)
+    ///     .values(&vec![
+    ///         (versions.eq((Bound::Included(1), Bound::Excluded(2)))),
+    ///         (versions.eq((Bound::Included(4), Bound::Excluded(7))))
+    ///     ])
+    ///     .execute(conn)?;
+    ///
+    /// let data = posts.select(versions.range_adjacent((Bound::Included(2),Bound::Included(6))))
+    ///     .load::<bool>(conn)?;
+    /// let expected = vec![true, false];
+    /// assert_eq!(expected, data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn range_adjacent<T>(self, other: T) -> dsl::RangeAdjacent<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
+        Grouped(RangeAdjacent::new(self, other.as_expression()))
+    }
+
     /// Creates a PostgreSQL ` + ` expression.
     ///
     /// This operator unions two ranges and returns the union.
+    ///
+    /// ```text
+    /// self:   [------)
+    /// other:      [----)
+    /// result: [--------)
+    /// ```
+    ///
+    /// ```text
+    /// self:          [----)
+    /// other: [----)
+    /// result: error
+    /// ```
+    ///
+    /// ```text
+    /// self:      [----)
+    /// other: [----]
+    /// result [--------)
+    /// ```
     ///
     /// # Example
     ///
@@ -1130,6 +1639,24 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// The second range must not be contained in the first in such a way that the
     /// difference would not be a single range.
     ///
+    /// ```text
+    /// self:   [------)
+    /// other:      [----)
+    /// result: [---)
+    /// ```
+    ///
+    /// ```text
+    /// self:      [----)
+    /// other:  [----)
+    /// result:      [--)
+    /// ```
+    ///
+    /// ```text
+    /// self:      [--------)
+    /// other:       [----]
+    /// result: error
+    /// ```
+    ///
     /// # Example
     ///
     /// ```rust
@@ -1177,6 +1704,30 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL ` * ` expression.
     ///
     /// This operator takes two ranges and returns the intersection.
+    ///
+    /// ```text
+    /// self:   [------)
+    /// other:      [----)
+    /// result:     [--)
+    /// ```
+    ///
+    /// ```text
+    /// self:      [----)
+    /// other:  [----)
+    /// result:    [-)
+    /// ```
+    ///
+    /// ```text
+    /// self:    [--------)
+    /// other:     [----]
+    /// result:    [----]
+    /// ```
+    ///
+    /// ```text
+    /// self:    [--------)
+    /// other:               [----]
+    /// result: empty range
+    /// ```
     ///
     /// # Example
     ///
