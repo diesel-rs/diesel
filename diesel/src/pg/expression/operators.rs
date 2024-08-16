@@ -15,7 +15,8 @@ infix_operator!(OverlapsWith, " && ", backend: Pg);
 infix_operator!(Contains, " @> ", backend: Pg);
 infix_operator!(IsContainedBy, " <@ ", backend: Pg);
 infix_operator!(ILike, " ILIKE ", backend: Pg);
-infix_operator!(NotExtendsRightTo, " &< ", backend: Pg);
+infix_operator!(ExtendsRightTo, " &< ", backend: Pg);
+infix_operator!(ExtendsLeftTo, " &> ", backend: Pg);
 infix_operator!(NotILike, " NOT ILIKE ", backend: Pg);
 infix_operator!(SimilarTo, " SIMILAR TO ", backend: Pg);
 infix_operator!(NotSimilarTo, " NOT SIMILAR TO ", backend: Pg);
@@ -31,6 +32,7 @@ infix_operator!(DifferenceNet, " - ", Bigint, backend: Pg);
 infix_operator!(HasKeyJsonb, " ? ", backend: Pg);
 infix_operator!(HasAnyKeyJsonb, " ?| ", backend: Pg);
 infix_operator!(HasAllKeysJsonb, " ?& ", backend: Pg);
+infix_operator!(RangeAdjacent, " -|- ", backend: Pg);
 infix_operator!(RemoveFromJsonb, " - ", Jsonb, backend: Pg);
 __diesel_infix_operator!(
     RetrieveAsObjectJson,
