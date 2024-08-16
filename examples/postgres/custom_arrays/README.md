@@ -1,9 +1,23 @@
-# Custom array and custom data in Postgres
+# Custom Array and Data Types in Postgres
+
+Table of Content:
+1. [Concepts](#concepts)
+2. [The project](#the-project)
+3. [Getting started](#getting-started)
+4. [Postgres schema](#postgres-schema)
+5. [Postgres Enum](#postgres-enum)
+6. [Postgres custom type](#postgres-custom-type)
+7. [Postgres SERIAL vs INTEGER primary key](#postgres-serial-vs-integer-primary-key)
+8. [Postgres array with custom type](#postgres-array-with-custom-type)
+9. [Rust Types](#rust-types)
+10. [Additional methods](#additional-methods)
+11. [Applied Best Practices](#applied-best-practices)
+12. [Testing](#testing) 
 
 In this guide, you learn more about the concepts listed below and illustrate the actual usage in Diesel with a sample
 project.
 
-**Concepts**:
+## Concepts:
 
 * Custom Enum
 * Custom type that uses a custom Enum
@@ -190,7 +204,7 @@ depends on other services. In order to insert a service that depends on any othe
 already been inserted or not, you have to know the service ID upfront. With that out of the way, let’s define the
 service table.
 
-## Postgres array with a custom type
+## Postgres array with custom type
 
 To define the service table, the add the following to your up.sql file
 
@@ -826,9 +840,7 @@ doesn’t count as a database error whereas if the query would fail, that would 
 decision depends largely on the design requirements and if you already have custom errors defined, then adding a
 ServiceDependencyOfflineError variant should be straight forward.
 
-At this point, the Service type implementation is complete. I have skipped the testing procedure, but in a nutshell, you
-just create a util that connects to a running Postgres server and then returns a connection to run all tests. You find
-all tests in the test folder.
+At this point, the Service type implementation is complete.
 
 ## Applied Best Practices
 
@@ -889,4 +901,199 @@ compile error saying that trait FromSql is not implemented.
 
 If you write a database layer for an existing system, this technique comes in handy as you can seamlessly convert
 between Diesel DB types and your target types while leaving your target types as it. And because you never know when you have to do this, it’s generally recommended to add type annotations to DB return types. 
+
+## Testing
+
+Diesel enables you to test your database schema and migration early on in the development process. 
+To do so, you need only meed:
+
+* A util that creates a DB connection
+* A util that runs the DB migration 
+* And your DB integration tests
+
+### DB Connection Types 
+
+Broadly speaking, there are two ways to handle database connection. One way is to create one connection per application 
+and use it until the application shuts down. Another way is to create a pool of connection and, 
+whenever a database connection is needed for an DB operation, a connection is taken from the pool 
+and after the DB operation has been completed, the connection is returned to the pool. 
+The first approach is quite common in small application whereas the second one is commonly used in server application 
+that expected consistent database usage. 
+
+**Important** 
+
+Using database connection pool in Diesel requires you to enable the `r2d2` feature in your cargo.toml file. 
+
+In Diesel, you can handle connections either way, but the only noticeable difference is the actual connection type 
+used as type parameter. For that reason, a type alias for the DB connection was declared early on because 
+that would allow you to switch between a single connection and a pooled connection without refactoring. 
+However, because connection pooling in Diesel is so well supported, I suggest to use it by default.
+
+### DB Connection Test Util 
+
+Let's start with a small util that returns a DB connection. First you need to get a database URI from somewhere, 
+then construct a connection pool, and lastly return the connection pool. 
+Remember, this is just a test util so there is no need to add anything more than necessary.
+
+```rust
+fn postgres_connection_pool() -> Pool<ConnectionManager<PgConnection>> {
+    dotenv().ok();
+
+    let database_url = env::var("DATABASE_URL")
+        .or_else(|_| env::var("POSTGRES_DATABASE_URL"))
+        .expect("DATABASE_URL must be set");
+
+    let manager = ConnectionManager::<PgConnection>::new(database_url);
+    Pool::builder()
+        .test_on_check_out(true)
+        .build(manager)
+        .expect("Could not build connection pool")
+}
+```
+
+Here we use the dotenv crate to test if there is an environment variable of either DATABASE_URL or POSTGRES_DATABASE_URL 
+and if so, parse the string and use it to build a connection pool. Therefore, make sure you have one of 
+those variables set in your environment. Notice, the test_on_check_out flag is set to true, 
+which means the database will be pinged to check if the database is actually reachable and the connection is working correctly. 
+
+###  DB Migration Util 
+
+Diesel can run a database migration in one of two ways. First, you can use the Diesel CLI in your terminal 
+to generate, run, or revert migrations manually. This is ideal for development when you frequently 
+change the database schema. The second way is programmatically via the embedded migration macro, 
+which is ideal to build a single binary with all migrations compiled into it so that 
+you don't have to install and run the Diesel CLI on the target machine. 
+This simplifies deployment of your application and streamlines continuous integration testing. 
+
+**Important**
+
+You must add the crate `diesel_migrations` to your cargo.toml and set the target database as feature flag 
+to enable the embedded migration macro.
+
+To serve both purposes, deployment and CI testing, let's add a new function `run_db_migration` to the lib.rs file
+of the crate that takes a connection as parameter, checks if the DB connection is valid, 
+checks if there are any pending migrations, and if so, runs all pending migrations. 
+The implementation is straight forward, as you can see below:
+
+```rust 
+pub fn run_db_migration(
+    conn: &mut Connection,
+) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    // Check DB connection!
+    match conn.ping() {
+        Ok(_) => {}
+        Err(e) => {
+            eprint!("[run_db_migration]: Error connecting to database: {}", e);
+            return Err(Box::new(e));
+        }
+    }
+
+    // Check if DB has pending migrations
+    let has_pending = match conn.has_pending_migration(MIGRATIONS) {
+        Ok(has_pending) => has_pending,
+        Err(e) => {
+            eprint!(
+                "[run_db_migration]: Error checking for pending database migrations: {}",
+                e
+            );
+            return Err(e);
+        }
+    };
+
+    // If so, run all pending migrations.
+    if has_pending {
+        match conn.run_pending_migrations(MIGRATIONS) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                eprint!("[run_db_migration]: Error migrating database: {}", e);
+                Err(e)
+            }
+        }
+    } else {
+        // Nothing pending, just return
+        Ok(())
+    }
+}
+```
+
+The rational to check for all potential errors is twofold. For once, because the database connection is given as a parameter,
+you just don't know if the creating pool has checked the connection, therefore you better check it to catch a dead connection before using it. 
+Second, even if you have a correct database connection, this does not guarantee that the migration will succeed. 
+There might be some types left from a previously aborted drop operations or 
+a random error might happened at any stage of the migration, therefore you have to handle the error where it occurs. 
+Also, because you run the db migration during application startup or before testing, 
+ensure you have clear error messages to speed up diagnostic and debugging. 
+
+
+### DB Integration Tests
+
+Database integration tests become flaky when executed in parallel usually because of conflicting read / write operations. 
+While modern database systems can handle concurrent data access, test tools with assertions not so much. 
+That means, test assertions start to fail seemingly randomly when executed concurrently. 
+There are only very few viable options to deal with this reality:
+
+* Don't use parallel test execution
+* Only parallelize test per isolated access
+* Do synchronization and test the actual database state before each test and run tests as atomic transactions 
+
+Out of the three options, the last one will almost certainly win you an over-engineering award in the unlikely case 
+your colleagues appreciate the resulting test complexity. If not, good luck. 
+In practice, not using parallel test execution is often not possible either because of the larger number 
+of integration tests that run on a CI server. To be clear, strictly sequential tests is a great option 
+for small projects with low complexity, it just doesn't scale as the project grows in size and complexity. 
+
+And that leaves us only with the middle-ground of grouping tables into isolated access. 
+Suppose your database has 25 tables you are tasked to test. 
+Some of them are clearly unrelated, others only require read access to some tables, 
+and then you have those where you have to test for multi-table inserts and updates.
+
+Say, you can form 7 groups of tables that are clearly independent of each other, 
+then you can run those 7 test groups in parallel, but for all practical purpose within each group, 
+all tests are run in sequence unless you are testing specifically for concurrent read write access. 
+You want to put those test into a dedicated test group anyways as they capture errors that are more complex 
+than errors from your basic integration tests. 
+And it makes sense to stage integration tests into simple functional tests, complex workflow tests, 
+and chaos tests that triggers read / write conflicts randomly to test for blind spots. 
+
+In any case, the test suite for the service example follow the sequential execution pattern so that they can be
+executed in parallel along other test groups without causing randomly failing tests. Specifically, 
+the test structure looks as shown below. However, the full test suite is in the test folder.
+
+```rust 
+#[test]
+fn test_service() {
+    let pool = postgres_connection_pool();
+    let conn = &mut pool.get().unwrap();
+
+    println!("Test DB migration");
+    test_db_migration(conn);
+
+    println!("Test create!");
+    test_create_service(conn);
+
+    println!("Test count!");
+    test_count_service(conn);
+    
+    //...
+}    
+
+fn test_db_migration(conn: &mut Connection) {
+    let res = custom_arrays::run_db_migration(conn);
+    //dbg!(&result);
+    assert!(res.is_ok());
+}
+```
+
+The idea here is simple yet powerful: There is just one Rust test so regardless of whether you test with Cargo, 
+Nextest or any other test util, this test will run everything within it in sequence. 
+The print statements are usually only shown if a test fails. However, there is one important details worth mentioning, 
+the assert macro often obfuscates the error message and if you have ever seen a complex stack trace 
+full of fnOnce invocations, you know that already. To get a more meaningful error message, just uncomment the dbg! 
+statement that unwraps the result before the assertion and you will see a helpful error message in most cases.
+
+You may have noticed that the DB migration util checks if there are pending migrations and if there is nothing, 
+it does nothing and just returns. The wisdom behind this decision is that, there are certain corner cases 
+that only occur when you run a database tet multiple times and you really want to run the DB migration 
+just once to simulate that scenario as realistic as possible. When you test locally, the same logic applies
+and you really only want to run a database migration when the schema has changed. 
 
