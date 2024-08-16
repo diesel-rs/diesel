@@ -211,6 +211,34 @@ impl Connection for MysqlConnection {
     }
 }
 
+impl ConnectionWithReturningId for MysqlConnection {
+    type ReturnedId = u64;
+
+    fn execute_returning_id<T>(&mut self, source: &T) -> QueryResult<Self::ReturnedId>
+    where
+        T: QueryFragment<Self::Backend> + QueryId,
+    {
+        #[allow(unsafe_code)] // call to unsafe function
+        update_transaction_manager_status(
+            prepared_query(
+                &source,
+                &mut self.statement_cache,
+                &mut self.raw_connection,
+                &mut *self.instrumentation,
+            )
+            .and_then(|stmt| {
+                // we have not called result yet, so calling `execute` is
+                // fine
+                let stmt_use = unsafe { stmt.execute() }?;
+                Ok(unsafe { stmt_use.insert_id() })
+            }),
+            &mut self.transaction_state,
+            &mut self.instrumentation,
+            &crate::debug_query(source),
+        )
+    }
+}
+
 #[inline(always)]
 fn update_transaction_manager_status<T>(
     query_result: QueryResult<T>,
