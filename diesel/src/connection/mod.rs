@@ -486,6 +486,19 @@ pub trait BoxableConnection<DB: Backend>: SimpleConnection + std::any::Any {
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
 }
 
+/// An extension of the [`Connection`](trait.Connection.html) trait that provides the value
+/// assigned to an inserted row with an auto-incremented ID column
+pub trait ConnectionWithReturningId: Connection {
+    /// The type that the connection implementation returns for IDs
+    type ReturnedId;
+
+    /// Execute a single INSERT statement given by a query and return the ID that the database
+    /// assigns
+    fn execute_returning_id<T>(&mut self, source: &T) -> QueryResult<Self::ReturnedId>
+    where
+        T: QueryFragment<Self::Backend> + QueryId;
+}
+
 impl<C> BoxableConnection<C::Backend> for C
 where
     C: Connection + std::any::Any,
