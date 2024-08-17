@@ -155,4 +155,9 @@ mod private {
 
     impl TextOrNullableText for Text {}
     impl TextOrNullableText for Nullable<Text> {}
+
+    #[cfg(feature = "postgres_backend")]
+    impl TextOrNullableText for crate::pg::sql_types::Citext {}
+    #[cfg(feature = "postgres_backend")]
+    impl TextOrNullableText for Nullable<crate::pg::sql_types::Citext> {}
 }
