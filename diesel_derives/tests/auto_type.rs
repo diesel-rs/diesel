@@ -411,7 +411,7 @@ fn postgres_functions() -> _ {
             bound,
         ),
         array_append(pg_extras::array, pg_extras::id),
-        array_to_string_null(pg_extras::array, ", ".into(), Some("NULL".into())),
+        array_to_string_with_null_string(pg_extras::array, ", ".into(), Some("NULL".into())),
         array_to_string(pg_extras::array, ", ".to_string()),
     )
 }
