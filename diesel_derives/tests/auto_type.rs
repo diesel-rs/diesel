@@ -430,6 +430,7 @@ fn postgres_functions() -> _ {
         array_position(pg_extras::array, pg_extras::id),
         array_position_with_subscript(pg_extras::array, pg_extras::id, pg_extras::id),
         array_positions(pg_extras::array, pg_extras::id),
+        array_ndims(pg_extras::array),
     )
 }
 
