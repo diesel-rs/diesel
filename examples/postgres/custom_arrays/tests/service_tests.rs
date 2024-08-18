@@ -3,23 +3,16 @@ use custom_arrays::model::protocol_type::ProtocolType;
 use custom_arrays::model::service;
 use custom_arrays::model::service::{CreateService, UpdateService};
 use custom_arrays::Connection;
-use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::PgConnection;
+use diesel::{Connection as DieselConnection, PgConnection};
 use dotenvy::dotenv;
 use std::env;
 
-fn postgres_connection_pool() -> Pool<ConnectionManager<PgConnection>> {
+fn postgres_connection() -> PgConnection {
     dotenv().ok();
 
-    let database_url = env::var("DATABASE_URL")
-        .or_else(|_| env::var("POSTGRES_DATABASE_URL"))
-        .expect("DATABASE_URL must be set");
-
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
-    Pool::builder()
-        .test_on_check_out(true)
-        .build(manager)
-        .expect("Could not build connection pool")
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    PgConnection::establish(&database_url)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
 fn test_db_migration(conn: &mut Connection) {
@@ -30,8 +23,8 @@ fn test_db_migration(conn: &mut Connection) {
 
 #[test]
 fn test_service() {
-    let pool = postgres_connection_pool();
-    let conn = &mut pool.get().unwrap();
+    let mut connection = postgres_connection();
+    let conn = &mut connection;
 
     println!("Test DB migration");
     test_db_migration(conn);

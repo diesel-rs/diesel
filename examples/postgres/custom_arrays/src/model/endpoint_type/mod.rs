@@ -2,10 +2,9 @@ use crate::model::protocol_type::{PgProtocolType, ProtocolType};
 use diesel::deserialize::{FromSql, FromSqlRow};
 use diesel::expression::AsExpression;
 use diesel::pg::{Pg, PgValue};
-use diesel::{deserialize, serialize};
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::{Integer, Record, Text};
-
+use diesel::{deserialize, serialize};
 
 #[derive(Debug, Clone, FromSqlRow, AsExpression, PartialEq, Eq)]
 #[diesel(sql_type=crate::schema::smdb::sql_types::ServiceEndpoint)]
@@ -34,7 +33,6 @@ impl Endpoint {
         }
     }
 }
-
 
 impl ToSql<crate::schema::smdb::sql_types::ServiceEndpoint, Pg> for Endpoint {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
