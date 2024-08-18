@@ -59,7 +59,7 @@ impl CreateService {
 }
 
 #[derive(Debug, Clone, Queryable, Insertable, AsChangeset)]
-#[diesel(table_name= crate::schema::smdb::service)]
+#[diesel(table_name=crate::schema::smdb::service)]
 pub struct UpdateService {
     pub name: Option<String>,
     pub version: Option<i32>,
