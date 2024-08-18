@@ -108,14 +108,10 @@ impl Service {
         param_service_id: i32,
         param_online: bool,
     ) -> QueryResult<()> {
-        match diesel::update(service.filter(service_id.eq(param_service_id)))
+        diesel::update(service.filter(service_id.eq(param_service_id)))
             .set(online.eq(param_online))
-            .returning(Service::as_returning())
-            .get_result(db)
-        {
-            Ok(_) => Ok(()),
-            Err(e) => Err(e),
-        }
+            .execute(db)?;
+        Ok(())
     }
 
     pub fn update(
