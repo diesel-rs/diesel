@@ -122,7 +122,7 @@ DROP schema IF EXISTS smdb;
 
 The company only uses three types of API endpoints, gRPC, http, or UDP. However, because data entry or transmission
 errors happen, an UnknownProtocol has been added to catch everything else that may go wrong to ensure no serialization /
-deserialization bugs crash the system. Instead, every once a while a Chron job runs over the database and searches for
+deserialization bugs crash the system. Instead, every once a while a Cron job runs over the database and searches for
 those UnknownProtocol entries, reports it to the admin who may fixes the incorrect entries one day. Therefore the
 Postgres ENUM in your up.sql looks like this:
 
@@ -393,7 +393,7 @@ message, make sure to check:
 
 If all those checks pass and you still see errors, it’s most likely a serialization error.
 
-To serialize and deserialize a custom Enum, you write a custom toSql and fromSql implementation. Luckily, this is
+To serialize and deserialize a custom Enum, you write a custom ToSql and FromSql implementation. Luckily, this is
 straightforward.
 
 ```rust
@@ -468,7 +468,7 @@ impl ToSql<crate::schema::smdb::sql_types::ServiceEndpoint, Pg> for Endpoint {
 ```
 
 I cannot stress enough that it is paramount that the tuple type signature must match exactly the Postgres type signature defined in your up.sql. Ideally, you want to use the split view function in your IDE to have the up.sql 
-in one pane and the the toSql implementation in another pane, both side by side, to double check 
+in one pane and the the ToSql implementation in another pane, both side by side, to double check 
 that the number and types match. 
 If the type or number of types mismatch, you will get a compiler error telling you that somehow either 
 the number of fields don’t match or that the type of the fields don’t match. 
