@@ -53,14 +53,10 @@ impl Service {
         db: &mut Connection,
         param_service_id: i32,
     ) -> QueryResult<bool> {
-        match service
+        service
             .filter(service_id.eq(param_service_id))
             .select(online)
             .first::<bool>(db)
-        {
-            Ok(res) => Ok(res),
-            Err(e) => Err(e),
-        }
     }
 
     pub fn get_all_online_services(db: &mut Connection) -> QueryResult<Vec<Self>> {
