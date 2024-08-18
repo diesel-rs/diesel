@@ -5,7 +5,7 @@ use custom_arrays::model::service::{CreateService, UpdateService};
 use custom_arrays::Connection;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use std::env;
 
 fn postgres_connection_pool() -> Pool<ConnectionManager<PgConnection>> {
