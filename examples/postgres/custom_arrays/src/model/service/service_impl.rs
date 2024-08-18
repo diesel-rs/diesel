@@ -25,10 +25,7 @@ impl Service {
         db: &mut Connection,
         param_service_id: i32,
     ) -> QueryResult<bool> {
-        match service.find(param_service_id).first::<Service>(db) {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
-        }
+        service.find(param_service_id).first::<Service>(db).optional().map(Option::is_some)
     }
 
     pub fn check_all_services_online(
