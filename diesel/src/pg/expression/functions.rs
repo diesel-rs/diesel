@@ -710,7 +710,7 @@ define_sql_function! {
     #[cfg(feature = "postgres_backend")]
     fn daterange(lower: Nullable<Date>, upper: Nullable<Date>, bound: RangeBoundEnum) -> Daterange;
 }
-
+#[cfg(feature = "postgres_backend")]
 define_sql_function! {
     /// Append an element to the end of an array
     ///
@@ -745,10 +745,9 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "postgres_backend")]
     fn array_append<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue>(a: Arr, e: T) -> Array<T>;
 }
-
+#[cfg(feature = "postgres_backend")]
 define_sql_function! {
     /// Converts each array element to its text representation, and concatenates those elements
     /// separated by the delimiter string. If `null_string` is given and is not `NULL`, then `NULL`
@@ -762,13 +761,26 @@ define_sql_function! {
     ///
     /// # Example
     ///
-    /// ```
-    /// use diesel::dsl::array_to_string_with_null_string;
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_to_string_with_null_string;
+    /// #     use diesel::sql_types::{Nullable, Text, Array};
+    /// #     let connection = &mut establish_connection();
     ///
-    /// let query = your_table
-    ///     .select(array_to_string_with_null_string(your_array_column, ",", "NULL"));
+    /// let arr = vec![Some("first"), None, Some("third")];
+    /// let result = diesel::select(array_to_string_with_null_string::<Array<_>, Text, _>(arr, ",", "NULL"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(result, "first,NULL,third");
+    /// #     Ok(())
+    /// # }
     /// ```
-    #[cfg(feature = "postgres_backend")]
     #[sql_name = "array_to_string"]
     fn array_to_string_with_null_string<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue, N: SingleValue>(
         a: Arr,
@@ -777,10 +789,12 @@ define_sql_function! {
     ) -> Text;
 }
 
+#[cfg(feature = "postgres_backend")]
 define_sql_function! {
     /// Converts each array element to its text representation, and concatenates those elements
     /// separated by the delimiter string. This variant omits the `null_str` argument. See [`array_to_string_with_null_string`]
-    /// for a variant with that argument
+    /// for a variant with that argument.
+    ///
     /// # Arguments
     ///
     /// * `a` - The array to be converted to a string.
@@ -788,13 +802,26 @@ define_sql_function! {
     ///
     /// # Example
     ///
-    /// ```
-    /// use diesel::dsl::array_to_string;
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_to_string;
+    /// #     use diesel::sql_types::{Nullable, Text, Array};
+    /// #     let connection = &mut establish_connection();
     ///
-    /// let query = your_table
-    ///     .select(array_to_string(your_array_column, ","));
+    /// let arr = vec![Some("first"), None, Some("third")];
+    /// let result = diesel::select(array_to_string::<Array<_>, Text>(arr, ","))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(result, "first,third");
+    /// #     Ok(())
+    /// # }
     /// ```
-    #[cfg(feature = "postgres_backend")]
     fn array_to_string<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue>(
         a: Arr,
         e: T
