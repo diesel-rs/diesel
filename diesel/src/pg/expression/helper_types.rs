@@ -3,7 +3,7 @@ use crate::expression::grouped::Grouped;
 use crate::expression::Expression;
 use crate::pg::expression::expression_methods::private::{JsonIndex, JsonRemoveIndex};
 use crate::pg::types::sql_types::Array;
-use crate::sql_types::{Inet, Integer, Text, VarChar};
+use crate::sql_types::{Inet, Integer, VarChar};
 
 /// The return type of [`lhs.ilike(rhs)`](super::expression_methods::PgTextExpressionMethods::ilike)
 #[cfg(feature = "postgres_backend")]
@@ -311,13 +311,25 @@ pub type ConcatArray<Lhs, Rhs> = crate::dsl::Concat<Lhs, Rhs>;
 /// Return type of [`array_to_string_with_null_string(arr, delim, null_str)`](super::functions::array_to_string_with_null_string())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
-pub type array_to_string_with_null_string<Arr, Elem> =
-    super::functions::array_to_string_with_null_string<SqlTypeOf<Arr>, SqlTypeOf<Elem>, Arr, Text>;
+pub type array_to_string_with_null_string<A, E, N> =
+    super::functions::array_to_string_with_null_string<
+        SqlTypeOf<A>, // The SQL type of the array
+        SqlTypeOf<E>, // The SQL type of the delimiter
+        SqlTypeOf<N>, // The SQL type of the null_string
+        A,
+        E,
+        N,
+    >;
 
 /// Return type of [`array_to_string(arr, delim)`](super::functions::array_to_string())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
-pub type array_to_string<Arr> = super::functions::array_to_string<SqlTypeOf<Arr>, Arr, Text>;
+pub type array_to_string<A, E> = super::functions::array_to_string<
+    SqlTypeOf<A>, // The SQL type of the array
+    SqlTypeOf<E>, // The SQL type of the elements within the array
+    A,
+    E,
+>;
 
 /// Return type of [`lower(range)`](super::functions::lower())
 #[allow(non_camel_case_types)]
