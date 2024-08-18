@@ -1,6 +1,8 @@
 use diesel::deserialize::{FromSql, FromSqlRow};
 use diesel::expression::AsExpression;
 use diesel::pg::{Pg, PgValue};
+use diesel::result::DatabaseErrorKind;
+use diesel::result::Error::DatabaseError;
 use diesel::serialize::{IsNull, Output, ToSql};
 use diesel::sql_types::SqlType;
 use diesel::{deserialize, serialize};
@@ -9,7 +11,7 @@ use std::io::Write;
 //  Diesel type mapping requires a struct to derive a SqlType for custom ToSql and FromSql implementations
 #[derive(SqlType)]
 #[diesel(sql_type = protocol_type)]
-#[diesel(postgres_type(name = "protocol_type"))]
+#[diesel(postgres_type(name = "protocol_type", schema = "smdb"))]
 pub struct PgProtocolType;
 
 #[derive(Debug, Clone, FromSqlRow, AsExpression, PartialEq, Eq)]
@@ -41,7 +43,14 @@ impl FromSql<PgProtocolType, Pg> for ProtocolType {
             b"GRPC" => Ok(ProtocolType::GRPC),
             b"HTTP" => Ok(ProtocolType::HTTP),
             b"UDP" => Ok(ProtocolType::UDP),
-            _ => Ok(ProtocolType::UnknownProtocol),
+            _ => Err(DatabaseError(
+                DatabaseErrorKind::SerializationFailure,
+                Box::new(format!(
+                    "Unrecognized enum variant: {:?}",
+                    String::from_utf8_lossy(bytes.as_bytes())
+                )),
+            )
+            .into()),
         }
     }
 }
