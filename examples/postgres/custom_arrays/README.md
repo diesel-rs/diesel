@@ -1,6 +1,7 @@
 # Custom Array and Data Types in Postgres
 
 Table of Content:
+
 1. [Concepts](#concepts)
 2. [The project](#the-project)
 3. [Getting started](#getting-started)
@@ -12,7 +13,7 @@ Table of Content:
 9. [Rust Types](#rust-types)
 10. [Additional methods](#additional-methods)
 11. [Applied Best Practices](#applied-best-practices)
-12. [Testing](#testing) 
+12. [Testing](#testing)
 
 In this guide, you learn more about the concepts listed below and illustrate the actual usage in Diesel with a sample
 project.
@@ -86,14 +87,12 @@ a good security practice. To create a new schema with Diesel, you follow three s
 
 1) Declare the schema name in the diesel.toml file
 2) Declare the schema in the migration up/down.sql files
-3) Prefix all table names in the migration up/down.sql files with the schema
+3) Add the schema to the SQL type as annotations
 
-Postgres uses internally a schema as something like a search path for a table and, by default, 
-searches in the public schema for a table. If that fails, Postgres returns an error that the table does not exists (in the default schema).
-Because of the search path mechanism, you only have to declare the schema name and consistently prefix thetables in the schema with the schema name and that’s it.
-
-It is important to know that a custom schema only applies to tables. Custom types and enum still
-reside in the default public schema. 
+Postgres uses internally a schema as something like a search path for a table and, by default, searches in the public
+schema for a table. If that fails, Postgres returns an error that the table does not exists (in the default schema).
+Because of the search path mechanism, you only have to declare the schema name and consistently prefix the tables in the
+schema with the schema name and that’s it.
 
 In your diesel.toml file, add the following entry:
 
@@ -115,22 +114,23 @@ CREATE SCHEMA IF NOT EXISTS smdb;
 Also, add the corresponding drop operation in the down.sql file.
 
 ```sql
-DROP schema IF EXISTS smdb;
+DROP SCHEMA IF EXISTS smdb;
 ```
 
 ## Postgres Enum
 
 The company only uses three types of API endpoints, gRPC, http, or UDP. However, because data entry or transmission
-errors happen, an UnknownProtocol has been added to catch everything else that may go wrong to ensure no serialization /
-deserialization bugs crash the system. Instead, every once a while a Cron job runs over the database and searches for
-those UnknownProtocol entries, reports it to the admin who may fixes the incorrect entries one day. Therefore the
+errors happen, an UnknownProtocol has been added to catch everything else that may go wrong to ensure that a potential
+serialization or deserialization bug does not crash the system.
+Instead, every once a while a Cron job runs over the database and searches for
+those UnknownProtocol entries, reports it to the admin who may fixes the incorrect entries. Therefore the
 Postgres ENUM in your up.sql looks like this:
 
 ```sql
 -- Your SQL goes here
 CREATE SCHEMA IF NOT EXISTS smdb;
 
-CREATE TYPE protocol_type AS ENUM (
+CREATE TYPE smdb.protocol_type AS ENUM (
     'UnknownProtocol',
     'GRPC',
     'HTTP',
@@ -138,44 +138,51 @@ CREATE TYPE protocol_type AS ENUM (
 );
 ```
 
+Notice the schema prefix before the Enum name.
 Add the corresponding drop type operation to your down.sql file:
 
 ```sql
-DROP TYPE IF EXISTS protocol_type CASCADE;
+DROP TYPE IF EXISTS smdb.protocol_type CASCADE;
 DROP schema IF EXISTS smdb;
 ```
 
 ## Postgres custom type
 
 The service endpoint in this case is modelled as a custom type.
-There are few cases when you want to choose a custom type over a table.
+There are few cases when you want to choose a custom type over a table:
 
-1) The data have no relation to data in other tables
-2) You want to group a bunch of fields i.e. to store a configuration file with nested fields
-3) You specifically don’t want to model relations
+1) The data have no relation to data in other tables.
+2) You want to group a set of fields i.e. to store a complex configuration file with nested fields.
+3) You specifically don’t relations because of specific requirements.
 
-In the case of a service endpoint, it really is as simple as every service has one or more endpoints, but these are
-certainly not worth storing in a separate table since then you would have to deal with resolving relations during query
-time. Rather, when using the custom type, you just access a field that is basically a tuple. With that out of the way,
+The service endpoint is an example of the first two cases.
+For once, the endpoints have no relation to any other data therefore a separate table makes little sense. Secondly, the
+entire service metadata database really is more of a configuration store and, in a way, the service table really is just
+one complex configuration with nested fields.
+Also, worth mentioning, if you were to store endpoints in a separate table, then you would have to deal with resolving
+relations during query time and that is probably a bit too much for just loading a configuration.
+Rather, when using the custom type, you just access a field that is basically a tuple.
+With that out of the way,
 your endpoint type looks like this in your up.sql:
 
 ```sql
 -- Your SQL goes here
 
-CREATE TYPE service_endpoint AS (
+CREATE TYPE smdb.service_endpoint AS (
 	"name" Text,
 	"version" INTEGER,
 	"base_uri" Text,
 	"port" INTEGER,
-	"protocol" protocol_type
+	"protocol" smdb.protocol_type
 );
 ```
 
+Again, all custom types are prefixed with the custom schema.
 And the matching drop operation in the down.sql file:
 
 ```sql
-DROP TYPE IF EXISTS service_endpoint CASCADE;
-DROP TYPE IF EXISTS protocol_type CASCADE;
+DROP TYPE IF EXISTS smdb.service_endpoint CASCADE;
+DROP TYPE IF EXISTS smdb.protocol_type CASCADE;
 DROP schema IF EXISTS smdb;
 ```
 
@@ -189,8 +196,8 @@ Let’s think this through:
 ### Internal primary key: SERIAL type
 
 When you only need a primary key as an index, you just use the SERIAL and Postgres gives your data an automatically
-incrementing integer primary key. You usually can return the primary key value after inserting so if you need to know
-the key, you do get it after insert.
+incrementing integer primary key.
+You usually can return the primary key value after inserting so if you need to know the key, you do get it after insert.
 
 ### External primary key: INTEGER type
 
@@ -218,28 +225,25 @@ CREATE TABLE  smdb.service(
 	"health_check_uri" Text NOT NULL,
 	"base_uri" Text NOT NULL,
 	"dependencies" INTEGER[] NOT NULL,
-	"endpoints" service_endpoint[] NOT NULL
+	"endpoints" smdb.service_endpoint[] NOT NULL
 );
 ```
-
-As mentioned earlier, the custom schema applies to tables therefore the service table is
-prefixed with the schema name whereas the endpoint type is not as it resides in the public schema. 
 
 Add the matching drop statement to your down.sql file:
 
 ```sql
 -- This file should undo anything in `up.sql`
 DROP TABLE IF EXISTS smdb.service;
-DROP TYPE IF EXISTS service_endpoint CASCADE;
-DROP TYPE IF EXISTS protocol_type CASCADE;
-DROP schema IF EXISTS smdb;
+DROP TYPE IF EXISTS smdb.service_endpoint CASCADE;
+DROP TYPE IF EXISTS smdb.protocol_type CASCADE;
+DROP SCHEMA IF EXISTS smdb;
 ```
 
 A few notes on the service table:
 
-* Notice the schema prefix appears only in the table name.
-* The custom type and custom Enum do not have any prefix because they are in the default schema.
-* The array type follows the usual convention type[].
+* All types and tables are prefixed with the custom schema to give Postgres a
+  hint where to find these types and tables.
+* The array type follows the usual convention schema.type[].
 * The NOT NULL attribute means that the array itself must be set; Values inside the array still might be null.
 
 The Diesel team decided that array values are nullable by default because there so many things that may go wrong when
@@ -252,19 +256,19 @@ In total, the up.sql looks as below:
 -- Your SQL goes here
 CREATE SCHEMA IF NOT EXISTS smdb;
 
-CREATE TYPE protocol_type AS ENUM (
+CREATE TYPE smdb.protocol_type AS ENUM (
     'UnknownProtocol',
     'GRPC',
     'HTTP',
     'UDP'
 );
 
-CREATE TYPE service_endpoint AS (
+CREATE TYPE smdb.service_endpoint AS (
 	"name" Text,
 	"version" INTEGER,
 	"base_uri" Text,
 	"port" INTEGER,
-	"protocol" protocol_type
+	"protocol" smdb.protocol_type
 );
 
 CREATE TABLE  smdb.service(
@@ -276,7 +280,7 @@ CREATE TABLE  smdb.service(
 	"health_check_uri" Text NOT NULL,
 	"base_uri" Text NOT NULL,
 	"dependencies" INTEGER[] NOT NULL,
-	"endpoints" service_endpoint[] NOT NULL
+	"endpoints" smdb.service_endpoint[] NOT NULL
 );
 ```
 
@@ -286,7 +290,11 @@ Now, it’s time to run the Diesel migration:
 diesel migration run
 ```
 
-This generates a schema.rs file in the src root:
+You may use a database console to double check if all types and tables have been created inside the custom schema. If a
+type somehow appears in the public default schema, double check if the type definition in up.sql has been prefixed with
+the schema name.
+
+The Diesel migration generates the following schema.rs file in the src root:
 
 ```rust
 // @generated automatically by Diesel CLI.
@@ -329,8 +337,11 @@ showing related warnings
 Next, you want to create a folder model with a mod file in it attached to your lib file. This is your place to store all
 Rust type implementations matching all the generated Postgres types and tables.
 
-Lastly, you also want to add a type alias for a pooled connection in the lib file because that connection definition is
-a long and convoluted type in need of a shorthand.
+Lastly, you also want to add a type alias for a postgres database connection in the lib file because that gives you the
+freedom to swap between a normal single connection or a connection pool without updating your type implementation or
+tests.
+The connection pool type alias has ben uncommented, but the type signature of the pooled connection makes it obvious why
+a type alias is a good idea.
 
 At this point, your lib file looks as shown below:
 
@@ -338,7 +349,12 @@ At this point, your lib file looks as shown below:
 mod schema;
 pub mod model;
 
-pub type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::pg::PgConnection>>;
+// Alias for a pooled connection.
+// pub type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::pg::PgConnection>>;
+
+// Alias for a normal, single, connection.
+pub type Connection = PgConnection;
+
 ```
 
 ## Rust Types
@@ -356,11 +372,13 @@ Diesel needs a wrapper struct to store a custom Enum in Postgres, so let’s add
 ```rust
 #[derive(SqlType)]
 #[diesel(sql_type = protocol_type)]
-#[diesel(postgres_type(name = "protocol_type"))]
+#[diesel(postgres_type(name = "protocol_type", schema = "smdb"))]
 pub struct PgProtocolType;
 ```
 
 It is important that you add both, sql_type and postgres_type, otherwise insert will fail.
+Furthermore, it is important to add the database schema ("smdb") otherwise Postgres fails to find the type and aborts an
+operation on that type.
 
 Next, let’s define the actual Enum. Bear in mind to use the wrapper struct as sql_type on the Enum:
 
@@ -392,12 +410,16 @@ message, make sure to check:
 5) Does my Rust type refers to the wrapper struct type?
 
 If all those checks pass and you still see errors, it’s most likely a serialization error.
+To serialize and deserialize a custom Enum, you write a custom ToSql and FromSql implementation.
 
-To serialize and deserialize a custom Enum, you write a custom ToSql and FromSql implementation. Luckily, this is
-straightforward.
+`ToSql` describes how to serialize a given rust type (Self) as sql side type (first generic argument) for a specific
+database backend (second generic argument).
+It needs to translate the type into the relevant wire protocol in that case.
+For postgres/mysql enums that's just the enum value as ascii string,
+but in general it's depended on the database + type. Also, it is important
+to end the implementation with Ok(IsNull::No).
 
 ```rust
-
 impl ToSql<PgProtocolType, Pg> for ProtocolType {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         match *self {
@@ -409,7 +431,15 @@ impl ToSql<PgProtocolType, Pg> for ProtocolType {
         Ok(IsNull::No)
     }
 }
+```
 
+`FromSql` describes how to deserialize a given rust type (Self) as sql side type (first generic argument) for a specific
+database backend (second generic argument).
+It need to translate from the relevant wire protocol to the rust type.
+For postgres/mysql enums that just means matching on the as ascii string,
+but in general it's depended on the database + type.
+
+```rust
 impl FromSql<PgProtocolType, Pg> for ProtocolType {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         match bytes.as_bytes() {
@@ -417,15 +447,21 @@ impl FromSql<PgProtocolType, Pg> for ProtocolType {
             b"GRPC" => Ok(ProtocolType::GRPC),
             b"HTTP" => Ok(ProtocolType::HTTP),
             b"UDP" => Ok(ProtocolType::UDP),
-            _ => Ok(ProtocolType::UnknownProtocol),
+            _ => Err(DatabaseError(
+                DatabaseErrorKind::SerializationFailure,
+                Box::new(format!(
+                    "Unrecognized enum variant: {:?}",
+                    String::from_utf8_lossy(bytes.as_bytes())
+                )),
+            )
+            .into()),
         }
     }
 }
 ```
 
-In ToSql, it is important to end the implementation with Ok(IsNull::No). In the from_sql, it is important to add a catch
-all case that returns an UnknownProtocol instance. In practice, the catch all rarely ever gets triggered, but in those
-few corner cases when it does, it keeps the application running.
+In the from_sql, it is important to add error handling for unknown Enum variants
+to catch errors that may result from incorrect database updates.
 
 ### Rust Struct Endpoint
 
@@ -441,14 +477,16 @@ pub struct Endpoint {
 }
 ```
 
-It is worth mentioning is that the sql_type refers to the wrapper struct generated by Diesel and stored in the schema.rs
-file. Keep this in mind if you ever refactor the schema.rs file into a different folder because the macro annotation
-checks the path during compilation and throws an error if it cannot find the type in the provided path. The serialize
-and deserialize implementation of a custom type is not as obvious as the Enum because, internally, Postgres represent a
-custom type as an anonymous typed tuple. Therefore, you have to map a struct to a typed tuple and back.
+It is worth mentioning is that the sql_type refers to the sql side type generated by Diesel and stored in the schema.rs
+file.
+Keep this in mind if you ever refactor the schema.rs file into a different folder because the macro annotation checks
+the path during compilation and throws an error if it cannot find the type in the provided path.
+The serialize and deserialize implementation of a custom type is not as obvious as the Enum because, internally,
+Postgres represent a custom type as an anonymous typed tuple. Therefore, you have to map a struct to a typed tuple and
+back.
 
-Let’s start with the toSql implementation to store the Rust Endpoint struct as typed tuple. Luckily, Diesel provides a
-helper util to do just that.
+Let’s start with the toSql implementation to store the Rust Endpoint struct as typed tuple.
+Luckily, Diesel provides a helper util to do just that.
 
 ```rust 
 impl ToSql<crate::schema::smdb::sql_types::ServiceEndpoint, Pg> for Endpoint {
@@ -467,14 +505,16 @@ impl ToSql<crate::schema::smdb::sql_types::ServiceEndpoint, Pg> for Endpoint {
 }
 ```
 
-I cannot stress enough that it is paramount that the tuple type signature must match exactly the Postgres type signature defined in your up.sql. Ideally, you want to use the split view function in your IDE to have the up.sql 
-in one pane and the the ToSql implementation in another pane, both side by side, to double check 
-that the number and types match. 
-If the type or number of types mismatch, you will get a compiler error telling you that somehow either 
-the number of fields don’t match or that the type of the fields don’t match. 
+I cannot stress enough that it is paramount that the tuple type signature must match exactly the Postgres type signature
+defined in your up.sql.
+Ideally, you want to use the split view function in your IDE to have the up.sql in one pane and the the ToSql
+implementation in another pane, both side by side, to double check
+that the number and types match.
+If the type or number of types mismatch, you will get a compiler error telling you that somehow either
+the number of fields don’t match or that the type of the fields don’t match.
 Also, because the write_tuple expects values, you have to call either to_owned() or clone() on any referenced data.
 
-The from_sql reverses the process by converting a Postgres typed tuple back into a Rust struct. 
+The from_sql reverses the process by converting a Postgres typed tuple back into a Rust struct.
 Again, Diesel provides a convenient helper to do so:
 
 ```rust 
@@ -494,11 +534,12 @@ impl FromSql<crate::schema::smdb::sql_types::ServiceEndpoint, Pg> for Endpoint {
 }
 ```
 
-Similar to the serialization process, it is paramount that the type annotation match exactly the one used in toSql and
-the type definition in up.sql.
+Similar to the serialization process, it is paramount that the type annotation
+match exactly the one used in toSql and the type definition in up.sql.
 
-Debugging serialization issues in Diesel is relatively straight forward since the compiler usually points out the
-location of the issue and, often, the issue is a type mismatch that is relatively easy to fix.
+Debugging serialization issues in Diesel is relatively straight forward
+since the compiler usually points out the location of the issue and, often, the issue is a type mismatch that is
+relatively easy to fix.
 
 It’s worth repeating that you are dealing with three types in total:
 
@@ -514,7 +555,7 @@ Make sure all of those types match correctly.
 The service struct gets its serialization and deserialization implementation generated by Diesel so that saves some
 typing. On the other hand, it is a good practice to implement database operations on the actual type itself.
 The wisdom here is twofold. For once, you cannot separate the database operation from the type,
-therefore it makes sense to implement the operations on the type itself. 
+therefore it makes sense to implement the operations on the type itself.
 This also hides implementation details in encapsulation,
 as [discussed in the book](https://doc.rust-lang.org/book/ch17-01-what-is-oo.html#encapsulation-that-hides-implementation-details).
 
@@ -530,9 +571,17 @@ in total, we crate 3 service types:
 2) CreateService: For create operations
 3) UpdateService: For update operations
 
-The Service and CreateService have identical fields. Also, both types require a primary key annotation in addition to
-the table name. The UpdateService, however, has each field wrapped into an option type. When the option type is Some,
-Diesel knows that this field needs updating. If the field is set to None, Diesel ignores it.
+The Service and CreateService have identical fields.
+Also, both types require a primary key annotation in addition to
+the table name. For more details about inserts, refer to the
+official [all about inserts guide](https://diesel.rs/guides/all-about-inserts.html).
+
+The UpdateService, however, has each field wrapped into an option type. When the option type is Some, Diesel knows that
+this field needs updating. If the field is set to None, Diesel ignores it.
+For more details about updates, refer to the
+official [all about updates guide](https://diesel.rs/guides/all-about-updates.html)
+
+The relevant type declarations are:
 
 ```rust
 #[derive(Debug, Clone, Queryable, Selectable)]
@@ -572,7 +621,7 @@ pub struct UpdateService {
 ```
 
 Next, let’s implement the CRUD operations on the service type.
-Remember the handy connection type alias defined earlier? 
+Remember the handy connection type alias defined earlier?
 This service implementation is the place to use it.
 
 ### **Create**
@@ -591,7 +640,7 @@ impl Service {
 The insert into function needs the table as target and the value to insert. It is a common convention to return the
 inserted value so that the callsite can verify that the insert completed correctly.
 
-###  **Read**
+### **Read**
 
 ```rust
     pub fn read(db: &mut Connection, param_service_id: i32) -> QueryResult<Self> {
@@ -653,12 +702,13 @@ With the CRUD methods implemented, it’s time to look at the more interesting p
 
 ## Additional methods
 
-In the requirement, it was stated that: 
+In the requirement, it was stated that:
 
 “... a service depends on other services, and it would be great to test before deploying a
 new service, if all of its dependencies are online.”
 
-To do so we have to implement a method that sets a service online and another one to set it offline. By experience, a few
+To do so we have to implement a method that sets a service online and another one to set it offline. By experience, a
+few
 non-trivial errors are caused by incorrectly set Boolean flags and whenever you can, hide Boolean flags in your public
 API and use a dedicated method instead to the set them.
 
@@ -853,10 +903,10 @@ and follows three best practices:
 
 ### Database connection as a parameter
 
-The first one refers to the idea that no type should hold application state, and a database connection definitely counts as application state. Instead, you would write a database connection manager 
-that manages a Postgres connection pool, and then calls into the database methods implemented 
-in the service type giving it a pooled connection as parameter. 
-
+The first one refers to the idea that no type should hold application state, and a database connection definitely counts
+as application state. Instead, you would write a database connection manager
+that manages a Postgres connection pool, and then calls into the database methods implemented
+in the service type giving it a pooled connection as parameter.
 
 ### Prefer the generated DSL over custom queries
 
@@ -896,86 +946,92 @@ we have to update the return type of the method as well.
     }
 ```
 
-Run the compile and see that it works. Now, if you were to remove the type annotation <i64> from get_result, you get a
-compile error saying that trait FromSql is not implemented.
+Run the compile and see that it works. Now, if you were to remove the type annotation <i64> from get_result,
+you get a compile error saying that trait FromSql is not implemented.
+The type annotation is required because there can be more than one FromSql impl for the same rust type and there can be
+more than one FromSql type for the same sql type. That gives a lot flexibility how you actually map data between your
+database and your rust code, but it requires explicit type annotation.
 
 If you write a database layer for an existing system, this technique comes in handy as you can seamlessly convert
-between Diesel DB types and your target types while leaving your target types as it. And because you never know when you have to do this, it’s generally recommended to add type annotations to DB return types. 
+between Diesel DB types and your target types while leaving your target types as it. And because you never know when you
+have to do this, it’s generally recommended to add type annotations to DB return types.
 
 ## Testing
 
-Diesel enables you to test your database schema and migration early on in the development process. 
+Diesel enables you to test your database schema and migration early on in the development process.
 To do so, you need only meed:
 
 * A util that creates a DB connection
-* A util that runs the DB migration 
+* A util that runs the DB migration
 * And your DB integration tests
 
-### DB Connection Types 
+### DB Connection Types
 
-Broadly speaking, there are two ways to handle database connection. One way is to create one connection per application 
-and use it until the application shuts down. Another way is to create a pool of connection and, 
-whenever a database connection is needed for an DB operation, a connection is taken from the pool 
-and after the DB operation has been completed, the connection is returned to the pool. 
-The first approach is quite common in small application whereas the second one is commonly used in server application 
-that expected consistent database usage. 
-
-**Important** 
-
-Using database connection pool in Diesel requires you to enable the `r2d2` feature in your cargo.toml file. 
-
-In Diesel, you can handle connections either way, but the only noticeable difference is the actual connection type 
-used as type parameter. For that reason, a type alias for the DB connection was declared early on because 
-that would allow you to switch between a single connection and a pooled connection without refactoring. 
-However, because connection pooling in Diesel is so well supported, I suggest to use it by default.
-
-### DB Connection Test Util 
-
-Let's start with a small util that returns a DB connection. First you need to get a database URI from somewhere, 
-then construct a connection pool, and lastly return the connection pool. 
-Remember, this is just a test util so there is no need to add anything more than necessary.
-
-```rust
-fn postgres_connection_pool() -> Pool<ConnectionManager<PgConnection>> {
-    dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL")
-        .or_else(|_| env::var("POSTGRES_DATABASE_URL"))
-        .expect("DATABASE_URL must be set");
-
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
-    Pool::builder()
-        .test_on_check_out(true)
-        .build(manager)
-        .expect("Could not build connection pool")
-}
-```
-
-Here we use the dotenv crate to test if there is an environment variable of either DATABASE_URL or POSTGRES_DATABASE_URL 
-and if so, parse the string and use it to build a connection pool. Therefore, make sure you have one of 
-those variables set in your environment. Notice, the test_on_check_out flag is set to true, 
-which means the database will be pinged to check if the database is actually reachable and the connection is working correctly. 
-
-###  DB Migration Util 
-
-Diesel can run a database migration in one of two ways. First, you can use the Diesel CLI in your terminal 
-to generate, run, or revert migrations manually. This is ideal for development when you frequently 
-change the database schema. The second way is programmatically via the embedded migration macro, 
-which is ideal to build a single binary with all migrations compiled into it so that 
-you don't have to install and run the Diesel CLI on the target machine. 
-This simplifies deployment of your application and streamlines continuous integration testing. 
+Broadly speaking, there are two ways to handle database connection. One way is to create one connection per application
+and use it until the application shuts down. Another way is to create a pool of connection and,
+whenever a database connection is needed for an DB operation, a connection is taken from the pool
+and after the DB operation has been completed, the connection is returned to the pool.
+The first approach is quite common in small application whereas the second one is commonly used in server application
+that expected consistent database usage.
 
 **Important**
 
-You must add the crate `diesel_migrations` to your cargo.toml and set the target database as feature flag 
-to enable the embedded migration macro.
+Using database connection pool in Diesel requires you to enable the `r2d2` feature in your cargo.toml file.
 
-To serve both purposes, deployment and CI testing, let's add a new function `run_db_migration` to the lib.rs file
-of the crate that takes a connection as parameter, checks if the DB connection is valid, 
-checks if there are any pending migrations, and if so, runs all pending migrations. 
-The implementation is straight forward, as you can see below:
+In Diesel, you can handle connections either way, but the only noticeable difference is the actual connection type used
+as type parameter. For that reason, a type alias for the DB connection was declared in the lib.rs file because
+that would allow you to switch between a single connection and a pooled connection without refactoring.
+
+### DB Connection Test Util
+
+Let's start with a small util that returns a simple DB connection. First you need to get a database URI from somewhere,
+then construct a connection, and lastly return the connection.
+Remember, this is just a test util so there is no need to add anything more than necessary.
+
+```rust
+use dotenvy::dotenv;
+
+fn postgres_connection() -> PgConnection {
+    dotenv().ok();
+
+    let database_url = env::var("POSTGRES_DATABASE_URL")
+    .expect("POSTGRES_DATABASE_URL must be set");
+    
+    PgConnection::establish(&database_url)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+}
+```
+
+Here we use the dotenv crate to test if there is an environment variable of either DATABASE_URL or POSTGRES_DATABASE_URL
+and if so, parse the string and use it to establish a connection. Therefore, make sure the POSTGRES_DATABASE_URL is set
+correctly.
+
+### DB Migration Util
+
+Diesel can run a database migration in one of two ways.
+First, you can use the Diesel CLI in your terminal
+to generate, run, or revert migrations manually. This is ideal for development when you frequently change the database
+schema.
+
+The second way is programmatically via the embedded migration macro,
+which is ideal to build a single binary with all migrations compiled into it so that
+you don't have to install and run the Diesel CLI on the target machine.
+This simplifies deployment of your application and streamlines continuous integration testing.
+
+**Important**
+
+You must add the crate `diesel_migrations` to your cargo.toml and set the target database as feature flag to enable the
+embedded migration macro.
+
+To serve both purposes, deployment and CI testing, let's add a new function `run_db_migration` to the lib.rs file of the
+crate that takes a connection as parameter, checks if the DB connection is valid, checks if there are any pending
+migrations, and if so, runs all pending migrations. The implementation is straight forward, as you can see below:
 
 ```rust 
+pub type Connection = PgConnection;
+
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
+
 pub fn run_db_migration(
     conn: &mut Connection,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
@@ -1016,54 +1072,56 @@ pub fn run_db_migration(
 }
 ```
 
-The rational to check for all potential errors is twofold. For once, because the database connection is given as a parameter,
-you just don't know if the creating pool has checked the connection, therefore you better check it to catch a dead connection before using it. 
-Second, even if you have a correct database connection, this does not guarantee that the migration will succeed. 
-There might be some types left from a previously aborted drop operations or 
-a random error might happened at any stage of the migration, therefore you have to handle the error where it occurs. 
-Also, because you run the db migration during application startup or before testing, 
-ensure you have clear error messages to speed up diagnostic and debugging. 
-
+The rational to check for all potential errors is twofold. For once, because the database connection is given as a
+parameter,
+you just don't know if the component that created the connection has checked the connection, therefore you better check
+it to catch a dead connection.
+Second, even if you have a correct database connection, this does not guarantee that the migration will succeed.
+There might be some types left from a previously aborted drop operations or
+a random error might happened at any stage of the migration, therefore you have to handle the error where it occurs.
+Also, because you run the db migration during application startup or before testing,
+ensure you have clear error messages to speed up diagnostic and debugging.
 
 ### DB Integration Tests
 
-Database integration tests become flaky when executed in parallel usually because of conflicting read / write operations. 
-While modern database systems can handle concurrent data access, test tools with assertions not so much. 
-That means, test assertions start to fail seemingly randomly when executed concurrently. 
+Database integration tests become flaky when executed in parallel usually because of conflicting read / write
+operations.
+While modern database systems can handle concurrent data access, test tools with assertions not so much.
+That means, test assertions start to fail seemingly randomly when executed concurrently.
 There are only very few viable options to deal with this reality:
 
 * Don't use parallel test execution
 * Only parallelize test per isolated access
-* Do synchronization and test the actual database state before each test and run tests as atomic transactions 
+* Do synchronization and test the actual database state before each test and run tests as atomic transactions
 
-Out of the three options, the last one will almost certainly win you an over-engineering award in the unlikely case 
-your colleagues appreciate the resulting test complexity. If not, good luck. 
-In practice, not using parallel test execution is often not possible either because of the larger number 
-of integration tests that run on a CI server. To be clear, strictly sequential tests is a great option 
-for small projects with low complexity, it just doesn't scale as the project grows in size and complexity. 
+Out of the three options, the last one will almost certainly win you an over-engineering award in the unlikely case
+your colleagues appreciate the resulting test complexity. If not, good luck.
+In practice, not using parallel test execution is often not possible either because of the larger number
+of integration tests that run on a CI server. To be clear, strictly sequential tests is a great option
+for small projects with low complexity, it just doesn't scale as the project grows in size and complexity.
 
-And that leaves us only with the middle-ground of grouping tables into isolated access. 
-Suppose your database has 25 tables you are tasked to test. 
-Some of them are clearly unrelated, others only require read access to some tables, 
+And that leaves us only with the middle-ground of grouping tables into isolated access.
+Suppose your database has 25 tables you are tasked to test.
+Some of them are clearly unrelated, others only require read access to some tables,
 and then you have those where you have to test for multi-table inserts and updates.
 
-Say, you can form 7 groups of tables that are clearly independent of each other, 
-then you can run those 7 test groups in parallel, but for all practical purpose within each group, 
-all tests are run in sequence unless you are testing specifically for concurrent read write access. 
-You want to put those test into a dedicated test group anyways as they capture errors that are more complex 
-than errors from your basic integration tests. 
-And it makes sense to stage integration tests into simple functional tests, complex workflow tests, 
-and chaos tests that triggers read / write conflicts randomly to test for blind spots. 
+Say, you can form 7 groups of tables that are clearly independent of each other,
+then you can run those 7 test groups in parallel, but for all practical purpose within each group,
+all tests are run in sequence unless you are testing specifically for concurrent read write access.
+You want to put those test into a dedicated test group anyways as they capture errors that are more complex
+than errors from your basic integration tests.
+And it makes sense to stage integration tests into simple functional tests, complex workflow tests,
+and chaos tests that triggers read / write conflicts randomly to test for blind spots.
 
 In any case, the test suite for the service example follow the sequential execution pattern so that they can be
-executed in parallel along other test groups without causing randomly failing tests. Specifically, 
+executed in parallel along other test groups without causing randomly failing tests. Specifically,
 the test structure looks as shown below. However, the full test suite is in the test folder.
 
 ```rust 
 #[test]
 fn test_service() {
-    let pool = postgres_connection_pool();
-    let conn = &mut pool.get().unwrap();
+    let mut connection = postgres_connection();
+    let conn = &mut connection;
 
     println!("Test DB migration");
     test_db_migration(conn);
@@ -1084,16 +1142,21 @@ fn test_db_migration(conn: &mut Connection) {
 }
 ```
 
-The idea here is simple yet powerful: There is just one Rust test so regardless of whether you test with Cargo, 
-Nextest or any other test util, this test will run everything within it in sequence. 
-The print statements are usually only shown if a test fails. However, there is one important details worth mentioning, 
-the assert macro often obfuscates the error message and if you have ever seen a complex stack trace 
-full of fnOnce invocations, you know that already. To get a more meaningful error message, just uncomment the dbg! 
+The idea here is simple yet powerful:
+There is just one Rust test so regardless of whether you test with Cargo,
+Nextest or any other test util, this test will run everything within it in sequence.
+The print statements are usually only shown if a test fails.
+However, there is one important details worth mentioning,
+the assert macro often obfuscates the error message and if you have ever seen a complex stack trace full of fnOnce
+invocations, you know that already.
+To get a more meaningful error message, just uncomment the dbg!
 statement that unwraps the result before the assertion and you will see a helpful error message in most cases.
 
-You may have noticed that the DB migration util checks if there are pending migrations and if there is nothing, 
-it does nothing and just returns. The wisdom behind this decision is that, there are certain corner cases 
-that only occur when you run a database tet multiple times and you really want to run the DB migration 
-just once to simulate that scenario as realistic as possible. When you test locally, the same logic applies
-and you really only want to run a database migration when the schema has changed. 
+You may have noticed that the DB migration util checks if there are pending migrations and if there is nothing, it does
+nothing and just returns.
+The wisdom behind this decision is that, there are certain corner cases
+that only occur when you run a database tet multiple times and you really want to run the DB migration just once to
+simulate that scenario as realistic as possible.
+When you test locally, the same logic applies and you really only want to run a database migration when the schema has
+changed. 
 

@@ -6,7 +6,10 @@ use std::error::Error;
 pub mod model;
 mod schema;
 
+// Alias for a pooled connection.
 // pub type Connection = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<diesel::pg::PgConnection>>;
+
+// Alias for a normal, single, connection.
 pub type Connection = PgConnection;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
