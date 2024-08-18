@@ -3,7 +3,7 @@ use crate::model::service::{CreateService, Service, UpdateService};
 use crate::model::Connection;
 use crate::schema::smdb::service::dsl::*;
 use diesel::{
-    insert_into, ExpressionMethods, QueryDsl, QueryResult, RunQueryDsl, SelectableHelper,
+    insert_into, ExpressionMethods, OptionalExtension, QueryDsl, QueryResult, RunQueryDsl, SelectableHelper,
 };
 
 impl Service {
@@ -25,7 +25,7 @@ impl Service {
         db: &mut Connection,
         param_service_id: i32,
     ) -> QueryResult<bool> {
-        service.find(param_service_id).first::<Service>(db).optional().map(Option::is_some)
+        service.find(param_service_id).first::<Service>(db).optional().map(|arg0: Option<Service>| Option::is_some(&arg0))
     }
 
     pub fn check_all_services_online(
