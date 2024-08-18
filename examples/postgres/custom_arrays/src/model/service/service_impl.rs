@@ -33,14 +33,9 @@ impl Service {
         services: &[i32],
     ) -> QueryResult<(bool, Option<String>)> {
         for id in services {
-            match Service::check_if_service_id_online(db, *id) {
-                Ok(res) => {
-                    if !res {
-                        return Ok((false, Some(format!("Service {} is offline", id))));
-                    }
-                }
-                Err(e) => return Err(e),
-            };
+            if !Service::check_if_service_id_online(db, *id)? {
+               return Ok((false, Some(format!("Service {} is offline", id))));
+            }
         }
 
         Ok((true, None))
