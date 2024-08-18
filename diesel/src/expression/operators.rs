@@ -760,6 +760,9 @@ pub trait LikeIsAllowedForType<ST>: Backend {}
 
 impl<DB> LikeIsAllowedForType<crate::sql_types::Text> for DB where DB: Backend {}
 
+#[cfg(feature = "postgres_backend")]
+impl LikeIsAllowedForType<crate::pg::sql_types::Citext> for crate::pg::Pg {}
+
 impl<T, DB> LikeIsAllowedForType<crate::sql_types::Nullable<T>> for DB where
     DB: Backend + LikeIsAllowedForType<T>
 {
