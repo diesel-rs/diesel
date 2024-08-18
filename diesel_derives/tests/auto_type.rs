@@ -1,12 +1,11 @@
 #![allow(dead_code)] // this is a compile pass test
-
 use diesel::dsl::*;
 use diesel::helper_types::*;
-
 use diesel::prelude::*;
 use diesel::sql_types;
 #[cfg(feature = "postgres")]
 use std::ops::Bound;
+
 table! {
     users {
         id -> Integer,
