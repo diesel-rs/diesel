@@ -115,6 +115,12 @@ fn pg_diesel_types() -> HashSet<&'static str> {
     types.insert("Numrange");
     types.insert("Tsrange");
     types.insert("Tstzrange");
+    types.insert("Int4multirange");
+    types.insert("Int8multirange");
+    types.insert("Datemultirange");
+    types.insert("Nummultirange");
+    types.insert("Tsmultirange");
+    types.insert("Tstzmultirange");
     types.insert("SmallSerial");
     types.insert("BigSerial");
     types.insert("Serial");
