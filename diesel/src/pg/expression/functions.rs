@@ -747,7 +747,6 @@ define_sql_function! {
     /// ```
     fn array_append<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue>(a: Arr, e: T) -> Array<T>;
 }
-#[cfg(feature = "postgres_backend")]
 define_sql_function! {
     /// Converts each array element to its text representation, and concatenates those elements
     /// separated by the delimiter string. If `null_string` is given and is not `NULL`, then `NULL`
@@ -767,7 +766,7 @@ define_sql_function! {
     /// #     use diesel::sql_types::{Nullable, Text, Array};
     /// #     let connection = &mut establish_connection();
     ///
-    /// let arr = diesel::select(array_to_string_with_null_string::<Array<_>, Text, _, _, _, _>(
+    /// let result = diesel::select(array_to_string_with_null_string::<Array<_>, Nullable<Text>, _, _, _, _>(
     ///     vec![Some("first"), None, Some("third")], ",", "NULL"))
     ///     .get_result::<String>(connection)?;
     ///
@@ -775,7 +774,7 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_to_string_with_null_string<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue, N: SingleValue>(
+    fn array_to_string_with_null_string<Arr: ArrayOrNullableArray<Inner=Nullable<Text>> + SingleValue, T: SingleValue, N: SingleValue>(
         a: Arr,
         e: T,
         n: N
@@ -802,7 +801,7 @@ define_sql_function! {
     /// #     use diesel::sql_types::{Text, Array};
     /// #     let connection = &mut establish_connection();
     ///
-    /// let result = diesel::select(array_to_string::<Array<_>, Text, _, _>(
+    /// let result = diesel::select(array_to_string::<Array<_>, Nullable<Text>, _, _>(
     ///     vec![Some("first"), Some("second")], ","))
     ///     .get_result::<String>(connection)?;
     ///
@@ -810,7 +809,7 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_to_string<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue>(
+    fn array_to_string<Arr: ArrayOrNullableArray<Inner=Nullable<Text>> + SingleValue, T: SingleValue>(
         a: Arr,
         e: T
     ) -> Text;
