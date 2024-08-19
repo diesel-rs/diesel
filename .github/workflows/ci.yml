@@ -107,31 +107,31 @@ jobs:
       - name: Install mysql (MacOS)
         if: matrix.os == 'macos-13' && matrix.backend == 'mysql'
         run: |
-          brew install mariadb@10.5
-          /usr/local/opt/mariadb@10.5/bin/mysql_install_db
-          /usr/local/opt/mariadb@10.5/bin/mysql.server start
+          brew install mariadb@10.11
+          /usr/local/opt/mariadb@10.11/bin/mysql_install_db
+          /usr/local/opt/mariadb@10.11/bin/mysql.server start
           sleep 3
-          /usr/local/opt/mariadb@10.5/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'runner'@'localhost';" -urunner
+          /usr/local/opt/mariadb@10.11/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'runner'@'localhost';" -urunner
           echo "MYSQL_DATABASE_URL=mysql://runner@localhost/diesel_test" >> $GITHUB_ENV
           echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://runner@localhost/diesel_example" >> $GITHUB_ENV
           echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@localhost/diesel_unit_test" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_LIB_DIR=/usr/local/opt/mariadb@10.5/lib" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_VERSION=10.5" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=/usr/local/opt/mariadb@10.11/lib" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=10.11" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS M1)
         if: matrix.os == 'macos-14' && matrix.backend == 'mysql'
         run: |
-          brew install mariadb@10.5
-          ls /opt/homebrew/opt/mariadb@10.5
-          /opt/homebrew/opt/mariadb@10.5/bin/mysql_install_db
-          /opt/homebrew/opt/mariadb@10.5/bin/mysql.server start
+          brew install mariadb@10.11
+          ls /opt/homebrew/opt/mariadb@10.11
+          /opt/homebrew/opt/mariadb@10.11/bin/mysql_install_db
+          /opt/homebrew/opt/mariadb@10.11/bin/mysql.server start
           sleep 3
-          /opt/homebrew/opt/mariadb@10.5/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'runner'@'localhost';" -urunner
+          /opt/homebrew/opt/mariadb@10.11/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'runner'@'localhost';" -urunner
           echo "MYSQL_DATABASE_URL=mysql://runner@localhost/diesel_test" >> $GITHUB_ENV
           echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://runner@localhost/diesel_example" >> $GITHUB_ENV
           echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@localhost/diesel_unit_test" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_LIB_DIR=/opt/homebrew/opt/mariadb@10.5/lib" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_VERSION=10.5" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=/opt/homebrew/opt/mariadb@10.11/lib" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=10.11" >> $GITHUB_ENV
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'
