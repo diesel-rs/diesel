@@ -154,6 +154,32 @@ fn reset_works_with_migration_dir_by_env() {
 }
 
 #[test]
+fn reset_works_with_no_default_migrations_arg() {
+    let p = project("reset_works_with_no_default_migrations_arg")
+        .folder("custom_migrations")
+        .file(
+            "diesel.toml",
+            r#"
+            [migrations_directory]
+            dir = "custom_migrations"
+            "#,
+        )
+        .build();
+    database(&p.database_url()).create();
+
+    let result = p
+        .command("database")
+        .arg("reset")
+        .arg("--no-default-migration")
+        .run();
+
+    use std::path::Path;
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file(Path::new("custom_migrations").join("00000000000000_diesel_initial_setup")));
+}
+
+#[test]
 fn reset_sanitize_database_name() {
     let p = project("name-with-dashes").folder("migrations").build();
     let _db = database(&p.database_url()).create();
