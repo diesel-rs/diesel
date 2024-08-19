@@ -753,12 +753,6 @@ define_sql_function! {
     /// separated by the delimiter string. If `null_string` is given and is not `NULL`, then `NULL`
     /// array entries are represented by that string; otherwise, they are omitted.
     ///
-    /// # Arguments
-    ///
-    /// * `a` - The array to be converted to a string.
-    /// * `e` - The delimiter to be used between array elements.
-    /// * `n` - The string to represent `NULL` values in the array.
-    ///
     /// # Example
     ///
     /// ```rust
@@ -773,15 +767,14 @@ define_sql_function! {
     /// #     use diesel::sql_types::{Nullable, Text, Array};
     /// #     let connection = &mut establish_connection();
     ///
-    /// let arr = vec![Some("first"), None, Some("third")];
-    /// let result = diesel::select(array_to_string_with_null_string::<Array<_>, Text, _>(arr, ",", "NULL"))
+    /// let arr = diesel::select(array_to_string_with_null_string::<Array<_>, Text, _, _, _, _>(
+    ///     vec![Some("first"), None, Some("third")], ",", "NULL"))
     ///     .get_result::<String>(connection)?;
     ///
     /// assert_eq!(result, "first,NULL,third");
     /// #     Ok(())
     /// # }
     /// ```
-    #[sql_name = "array_to_string"]
     fn array_to_string_with_null_string<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue, N: SingleValue>(
         a: Arr,
         e: T,
@@ -792,13 +785,8 @@ define_sql_function! {
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
     /// Converts each array element to its text representation, and concatenates those elements
-    /// separated by the delimiter string. This variant omits the `null_str` argument. See [`array_to_string_with_null_string`]
-    /// for a variant with that argument.
-    ///
-    /// # Arguments
-    ///
-    /// * `a` - The array to be converted to a string.
-    /// * `e` - The delimiter to be used between array elements.
+    /// separated by the delimiter string. This variant omits the `null_string` argument. See [`array_to_string_with_null_string`]
+    /// for a variant with that argument
     ///
     /// # Example
     ///
@@ -811,14 +799,14 @@ define_sql_function! {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::array_to_string;
-    /// #     use diesel::sql_types::{Nullable, Text, Array};
+    /// #     use diesel::sql_types::{Text, Array};
     /// #     let connection = &mut establish_connection();
     ///
-    /// let arr = vec![Some("first"), None, Some("third")];
-    /// let result = diesel::select(array_to_string::<Array<_>, Text>(arr, ","))
+    /// let result = diesel::select(array_to_string::<Array<_>, Text, _, _>(
+    ///     vec![Some("first"), Some("second")], ","))
     ///     .get_result::<String>(connection)?;
     ///
-    /// assert_eq!(result, "first,third");
+    /// assert_eq!(result, "first,second");
     /// #     Ok(())
     /// # }
     /// ```
