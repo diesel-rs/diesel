@@ -831,3 +831,37 @@ define_sql_function! {
     /// ```
     fn array_prepend<T: SingleValue, Arr: ArrayOrNullableArray<Inner=T> + SingleValue>(e: T, a: Arr) -> Array<T>;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Removes all elements equal to the given value from the array
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_remove;
+    /// #     use diesel::sql_types::{Nullable, Integer, Array};
+    /// #     let connection = &mut establish_connection();
+    /// let ints = diesel::select(array_remove::<Array<_>, Integer, _, _>(vec![1, 2, 3, 2], 2))
+    ///     .get_result::<Option<Vec<i32>>>(connection)?;
+    /// assert_eq!(Some(vec![1, 3]), ints);
+
+    /// let ints = diesel::select(array_remove::<Array<_>, Nullable<Integer>, _, _>(vec![None, Some(1), Some(2), None, Some(4)], None::<i32>))
+    ///     .get_result::<Option<Vec<Option<i32>>>>(connection)?;
+    /// assert_eq!(Some(vec![Some(1), Some(2), Some(4)]), ints);
+
+    /// let ints = diesel::select(array_remove::<Nullable<Array<_>>, Nullable<Integer>, _, _>(None::<Vec<i32>>, None::<i32>))
+    ///     .get_result::<Option<Vec<Option<i32>>>>(connection)?;
+    /// assert_eq!(None, ints);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_remove<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue>(a: Arr, e: T) -> Nullable<Array<T>>;
+}
