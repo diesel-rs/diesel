@@ -793,3 +793,41 @@ define_sql_function! {
     ///
     fn array_dims<Arr:ArrayOrNullableArray<> + SingleValue>(arr:Arr) -> Text;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Prepends an element to the beginning of an array
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_prepend;
+    /// #     use diesel::sql_types::{Nullable, Integer, Array};
+    /// #     let connection = &mut establish_connection();
+    /// let ints = diesel::select(array_prepend::<Integer, Array<_>, _, _>(3, vec![1, 2]))
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(vec![3, 1, 2], ints);
+    ///
+    /// let ints = diesel::select(array_prepend::<Nullable<Integer>, Array<_>, _, _>(None::<i32>, vec![Some(1), Some(2)]))
+    ///     .get_result::<Vec<Option<i32>>>(connection)?;
+    /// assert_eq!(vec![None, Some(1), Some(2)], ints);
+    ///
+    /// let ints = diesel::select(array_prepend::<Integer, Nullable<Array<_>>, _, _>(3, None::<Vec<i32>>))
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(vec![3], ints);
+    ///
+    /// let ints = diesel::select(array_prepend::<Nullable<Integer>, Nullable<Array<_>>, _, _>(None::<i32>, None::<Vec<i32>>))
+    ///     .get_result::<Vec<Option<i32>>>(connection)?;
+    /// assert_eq!(vec![None], ints);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_prepend<T: SingleValue, Arr: ArrayOrNullableArray<Inner=T> + SingleValue>(e: T, a: Arr) -> Array<T>;
+}
