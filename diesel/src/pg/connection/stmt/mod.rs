@@ -36,7 +36,7 @@ impl Statement {
             .map(|data| data.as_ref().map(|d| d.len().try_into()).unwrap_or(Ok(0)))
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
-        let param_count = params_pointer
+        let param_count: libc::c_int = params_pointer
             .len()
             .try_into()
             .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
@@ -71,7 +71,7 @@ impl Statement {
             .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
 
         let internal_result = unsafe {
-            let param_count = param_types
+            let param_count: libc::c_int = param_types
                 .len()
                 .try_into()
                 .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;

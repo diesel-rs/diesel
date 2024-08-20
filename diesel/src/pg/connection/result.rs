@@ -108,9 +108,10 @@ impl PgResult {
     }
 
     pub(super) fn num_rows(&self) -> usize {
-        self.row_count
-            .try_into()
-            .expect("Diesel expects to run on at a least 32 bit OS")
+        self.row_count.try_into().expect(
+            "Diesel expects to run on a >= 32 bit OS \
+                (or libpq is giving out negative row count)",
+        )
     }
 
     pub(super) fn get_row(self: Rc<Self>, idx: usize) -> PgRow {
@@ -149,7 +150,7 @@ impl PgResult {
     }
 
     pub(in crate::pg) fn column_type(&self, col_idx: usize) -> NonZeroU32 {
-        let col_idx = col_idx
+        let col_idx: i32 = col_idx
             .try_into()
             .expect("Column indices are expected to fit into 32 bit");
         let type_oid = unsafe { PQftype(self.internal_result.as_ptr(), col_idx) };
@@ -191,9 +192,10 @@ impl PgResult {
     }
 
     pub(super) fn column_count(&self) -> usize {
-        self.column_count
-            .try_into()
-            .expect("Diesel expects to run on a at least 32 bit OS")
+        self.column_count.try_into().expect(
+            "Diesel expects to run on a >= 32 bit OS \
+                (or libpq is giving out negative column count)",
+        )
     }
 }
 

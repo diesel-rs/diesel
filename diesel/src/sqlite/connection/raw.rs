@@ -420,7 +420,7 @@ where
     static NULL_CTX_ERR: &str =
         "We've written the aggregator to the aggregate context, but it could not be retrieved.";
 
-    let n_bytes = std::mem::size_of::<OptionalAggregator<A>>()
+    let n_bytes: i32 = std::mem::size_of::<OptionalAggregator<A>>()
         .try_into()
         .expect("Aggregate context should be larger than 2^32");
     let aggregate_context = unsafe {
@@ -525,7 +525,7 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
 }
 
 unsafe fn context_error_str(ctx: *mut ffi::sqlite3_context, error: &str) {
-    let len = error
+    let len: i32 = error
         .len()
         .try_into()
         .expect("Trying to set a error message with more than 2^32 byte is not supported");
