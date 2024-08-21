@@ -311,7 +311,7 @@ pub type ConcatArray<Lhs, Rhs> = crate::dsl::Concat<Lhs, Rhs>;
 /// Return type of [`lower(range)`](super::functions::lower())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
-pub type lower<R, T> = super::functions::lower<SqlTypeOf<R>, SqlTypeOf<T>, R>;
+pub type lower<R> = super::functions::lower<SqlTypeOf<R>, R>;
 
 /// Return type of [`upper(range)`](super::functions::upper())
 #[allow(non_camel_case_types)]
