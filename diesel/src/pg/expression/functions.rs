@@ -1,10 +1,11 @@
 //! PostgreSQL specific functions
 
 use super::expression_methods::InetOrCidr;
-use super::expression_methods::RangeOrNullableRange;
 use crate::expression::functions::define_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
+use crate::pg::expression::expression_methods::MultirangeOrNullableMultirange;
 use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
+use crate::pg::expression::expression_methods::RangeOrNullableRange;
 use crate::sql_types::*;
 
 define_sql_function! {
@@ -353,6 +354,37 @@ define_sql_function! {
     /// ```
     #[cfg(feature = "postgres_backend")]
     fn range_merge<R1: RangeOrNullableRange + SingleValue, R2: RangeOrNullableRange<Inner=R1::Inner> + SingleValue>(lhs: R1, rhs: R2) -> Nullable<Range<R1::Inner>>;
+}
+
+define_sql_function! {
+    /// Returns the smallest range which includes all ranges in the multirange
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// # use diesel::pg::sql_types::{Range, Multirange};
+    /// # use diesel::dsl::multirange_merge;
+    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::{Nullable, Integer, Array};
+    /// #     let connection = &mut establish_connection();
+    /// let int = diesel::select(multirange_merge::<Multirange<Integer>, _>(vec![1..3, 7..10])).get_result::<(Bound<i32>, Bound<i32>)>(connection)?;
+    /// assert_eq!((Bound::Included(1), Bound::Excluded(10)), int);
+    ///
+    /// let int = diesel::select(multirange_merge::<Nullable<Multirange<Integer>>, _>(None::<Vec<std::ops::Range<i32>>>)).get_result::<Option<(Bound<i32>, Bound<i32>)>>(connection)?;
+    /// assert_eq!(None, int);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "range_merge"]
+    fn multirange_merge<R: MultirangeOrNullableMultirange + SingleValue>(multirange: R) -> R::Range;
 }
 
 define_sql_function! {
