@@ -810,6 +810,13 @@ define_sql_function! {
     /// let dims = diesel::select(array_dims::<Array<Nullable<Integer>>,_>(vec![None::<i32>,Some(2)]))
     ///     .get_result::<String>(connection)?;
     /// assert!(String::from("[1:2]").eq(&dims));
+    /// let dims = diesel::select(array_dims::<Array<_>,_>(vec![1,2]))
+    ///     .get_result::<String>(connection).unwrap();
+    /// assert!(String::from("[1:2]").eq(&dims));
+    ///
+    /// let dims = diesel::select(array_dims::<Array<_>,_>(vec![vec![1,2,3],vec![4,5,6]]))
+    /// .get_result::<String>(connection).unwrap();
+    /// assert!(String::from("[1:2][1:3]").eq(&dims));
     ///
     /// let dims = diesel::select(array_dims::<Array<Nullable<Integer>>,_>(vec![None::<i32>]))
     ///     .get_result::<String>(connection)?;
