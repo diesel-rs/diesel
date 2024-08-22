@@ -186,39 +186,32 @@ define_sql_function! {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
+    /// # use diesel::pg::sql_types::{Range, Multirange};
+    /// # use diesel::dsl::lower_inc;
     /// #     use std::collections::Bound;
-    /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
-    /// #
-    /// use diesel::dsl::lower_inc;
-    /// diesel::insert_into(posts)
-    ///     .values(&[
-    ///        versions.eq((Bound::Included(5), Bound::Excluded(7))),
-    ///        versions.eq((Bound::Excluded(7), Bound::Excluded(7))),
-    ///     ]).execute(conn)?;
+    /// #     use diesel::sql_types::{Nullable, Integer, Array};
+    /// #     let connection = &mut establish_connection();
+    /// let int = diesel::select(lower_inc::<Range<Integer>,  _>(1..5)).get_result::<Option<bool>>(connection)?;
+    /// assert_eq!(Some(true), int);
     ///
-    /// let cool_posts = posts.select(lower_inc(versions))
-    ///     .load::<bool>(conn)?;
-    /// assert_eq!(vec![true, false], cool_posts);
+    /// let int = diesel::select(lower_inc::<Range<Integer>, _>(..5)).get_result::<Option<bool>>(connection)?;
+    /// assert_eq!(Some(false), int);
+    ///
+    /// let int = diesel::select(lower_inc::<Nullable<Range<Integer>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<bool>>(connection)?;
+    /// assert_eq!(None, int);
+    ///
+    /// let int = diesel::select(lower_inc::<Multirange<Integer>, _>(vec![5..7])).get_result::<Option<bool>>(connection)?;
+    /// assert_eq!(Some(true), int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn lower_inc<T: RangeHelper>(range: T) -> Bool;
+    fn lower_inc<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<Bool>;
 }
 
 define_sql_function! {
