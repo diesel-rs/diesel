@@ -748,3 +748,34 @@ define_sql_function! {
     /// ```
     fn array_append<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue>(a: Arr, e: T) -> Array<T>;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns a text representation of the array's dimensions
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main(){
+    /// #    run_test().unwrap();
+    /// # }
+    /// # fn run_test()->QueryResult<()>{
+    /// #   use diesel::dsl::array_dims;
+    /// #   use diesel::sql_types::{Nullable,Array,Integer};
+    /// #   let connection = &mut establish_connection();
+    ///
+    /// let dims = diesel::select(array_dims::<Array<_>,_>(vec![1,2]))
+    ///     .get_result::<String>(connection);
+    /// assert!(String::from("[1:2]").eq(&dims));
+    ///
+    /// let dims = diesel::select(array_dims::<Array<_>,_>(vec![vec![1,2,3],vec![4,5,6]]))
+    /// .get_result::<String>(connection);
+    /// assert!(String::from("[1:2][1:3]").eq(&dims));
+    ///
+    /// # Ok(())
+    /// # }
+    ///
+    fn array_dims<Arr:ArrayOrNullableArray + SingleValue>(arr:Arr) -> Text;
+}

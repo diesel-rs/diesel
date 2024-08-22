@@ -352,3 +352,8 @@ pub type range_merge<R1, R2> = super::functions::range_merge<SqlTypeOf<R1>, SqlT
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type array_append<A, E> = super::functions::array_append<SqlTypeOf<A>, SqlTypeOf<E>, A, E>;
+
+/// Return type of [`array_dims(array)`](super::functions::array_append())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_dims<A> = super::functions::array_dims<SqlTypeOf<A>, A>;
