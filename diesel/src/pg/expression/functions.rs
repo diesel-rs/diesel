@@ -1,7 +1,7 @@
 //! PostgreSQL specific functions
 
 use super::expression_methods::InetOrCidr;
-use super::expression_methods::RangeHelper;
+use super::expression_methods::RangeOrNullableRange;
 use crate::expression::functions::define_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
 use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
@@ -327,40 +327,32 @@ define_sql_function! {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         first_versions -> Range<Integer>,
-    /// #         second_versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
+    /// # use diesel::pg::sql_types::{Range, Multirange};
+    /// # use diesel::dsl::range_merge;
     /// #     use std::collections::Bound;
-    /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, first_versions INT4RANGE NOT NULL, second_versions INT4RANGE NOT NULL)").execute(conn).unwrap();
-    /// #
-    /// use diesel::dsl::range_merge;
-    /// diesel::insert_into(posts)
-    ///     .values((
-    ///        first_versions.eq((Bound::Included(5), Bound::Excluded(7))),
-    ///        second_versions.eq((Bound::Included(6),Bound::Unbounded)),
-    ///     )).execute(conn)?;
+    /// #     use diesel::sql_types::{Nullable, Integer, Array};
+    /// #     let connection = &mut establish_connection();
+    /// let int = diesel::select(range_merge::<Range<Integer>, Range<_>,  _, _>(5..11, 10..)).get_result::<Option<(Bound<i32>, Bound<i32>)>>(connection)?;
+    /// assert_eq!(Some((Bound::Included(5), Bound::Unbounded)), int);
     ///
-    /// let cool_posts = posts.select(range_merge(first_versions, second_versions))
-    ///     .load::<(Bound<i32>, Bound<i32>)>(conn)?;
-    /// assert_eq!(vec![(Bound::Included(5), Bound::Unbounded)], cool_posts);
+    /// let int = diesel::select(range_merge::<Range<Integer>, Range<_>,  _, _>(1..3, 7..10)).get_result::<Option<(Bound<i32>, Bound<i32>)>>(connection)?;
+    /// assert_eq!(Some((Bound::Included(1), Bound::Excluded(10))), int);
+    ///
+    /// let int = diesel::select(range_merge::<Nullable<Range<Integer>>, Nullable<Range<_>>,  _, _>(None::<std::ops::Range<i32>>, 7..10)).get_result::<Option<(Bound<i32>, Bound<i32>)>>(connection)?;
+    /// assert_eq!(None, int);
+    ///
+    /// let int = diesel::select(range_merge::<Nullable<Range<Integer>>, Nullable<Range<_>>,  _, _>(1..3, None::<std::ops::Range<i32>>)).get_result::<Option<(Bound<i32>, Bound<i32>)>>(connection)?;
+    /// assert_eq!(None, int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn range_merge<T1: RangeHelper, T2: RangeHelper<Inner = T1::Inner>>(lhs: T1, rhs: T2) -> Range<T1::Inner>;
+    fn range_merge<R1: RangeOrNullableRange + SingleValue, R2: RangeOrNullableRange<Inner=R1::Inner> + SingleValue>(lhs: R1, rhs: R2) -> Nullable<Range<R1::Inner>>;
 }
 
 define_sql_function! {

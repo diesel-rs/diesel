@@ -3485,10 +3485,16 @@ pub(in crate::pg) mod private {
         message = "`{Self}` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Nullable<Range<_>>`",
         note = "try to provide an expression that produces one of the expected sql types"
     )]
-    pub trait RangeOrNullableRange {}
+    pub trait RangeOrNullableRange {
+        type Inner: SingleValue;
+    }
 
-    impl<ST> RangeOrNullableRange for Range<ST> {}
-    impl<ST> RangeOrNullableRange for Nullable<Range<ST>> {}
+    impl<ST: SingleValue> RangeOrNullableRange for Range<ST> {
+        type Inner = ST;
+    }
+    impl<ST: SingleValue> RangeOrNullableRange for Nullable<Range<ST>> {
+        type Inner = ST;
+    }
 
     /// Marker trait used to implement `PgRangeExpressionMethods` on the appropriate
     /// types. Once coherence takes associated types into account, we can remove
