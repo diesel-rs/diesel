@@ -95,7 +95,7 @@ define_sql_function! {
     /// let int = diesel::select(lower::<Nullable<Range<_>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<i32>>(connection)?;
     /// assert_eq!(None, int);
     ///
-    /// let int = diesel::select(lower::<Multirange<_>, _>(vec![(Bound::Included(5), Bound::Included(7))])).get_result::<Option<i32>>(connection)?;
+    /// let int = diesel::select(lower::<Multirange<_>, _>(vec![5..7])).get_result::<Option<i32>>(connection)?;
     /// assert_eq!(Some(5), int);
     /// #     Ok(())
     /// # }
