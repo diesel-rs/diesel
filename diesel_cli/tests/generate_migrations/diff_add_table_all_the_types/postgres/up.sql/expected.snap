@@ -1,6 +1,5 @@
 ---
 source: diesel_cli/tests/migration_generate.rs
-assertion_line: 333
 description: "Test: diff_add_table_all_the_types"
 ---
 -- Your SQL goes here
@@ -42,11 +41,14 @@ CREATE TABLE "all_the_types"(
 	"daterange_col" DATERANGE NOT NULL,
 	"tsrange_col" TSRANGE NOT NULL,
 	"tstzrange_col" TSTZRANGE NOT NULL,
+	"int4multirange_col" INT4MULTIRANGE NOT NULL,
+	"int8multirange_col" INT8MULTIRANGE NOT NULL,
+	"datemultirange_col" DATEMULTIRANGE NOT NULL,
+	"tsmultirange_col" TSMULTIRANGE NOT NULL,
+	"tstzmultirange_col" TSTZMULTIRANGE NOT NULL,
 	"small_serial_col" SMALLSERIAL NOT NULL,
 	"big_serial_col" BIGSERIAL NOT NULL,
 	"serial_col" SERIAL NOT NULL,
 	"bytea_col" BYTEA NOT NULL,
 	"macaddr2_col" MACADDR NOT NULL
 );
-
-
