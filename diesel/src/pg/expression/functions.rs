@@ -803,18 +803,11 @@ define_sql_function! {
     /// #   use diesel::sql_types::{Nullable,Array,Integer};
     /// #   let connection = &mut establish_connection();
     ///
-    /// let dims = diesel::select(array_dims::<Array<Integer>,_>(vec![1,2]))
-    ///     .get_result::<String>(connection)?;
-    /// assert!(String::from("[1:2]").eq(&dims));
-    ///
-    /// let dims = diesel::select(array_dims::<Array<Nullable<Integer>>,_>(vec![None::<i32>,Some(2)]))
-    ///     .get_result::<String>(connection)?;
-    /// assert!(String::from("[1:2]").eq(&dims));
-    /// let dims = diesel::select(array_dims::<Array<_>,_>(vec![1,2]))
+    /// let dims = diesel::select(array_dims::<Array<_>,_,_>(vec![1,2]))
     ///     .get_result::<String>(connection).unwrap();
     /// assert!(String::from("[1:2]").eq(&dims));
     ///
-    /// let dims = diesel::select(array_dims::<Array<_>,_>(vec![vec![1,2,3],vec![4,5,6]]))
+    /// let dims = diesel::select(array_dims::<Array<_>,_,_>(vec![vec![1,2,3],vec![4,5,6]]))
     /// .get_result::<String>(connection).unwrap();
     /// assert!(String::from("[1:2][1:3]").eq(&dims));
     ///
@@ -824,5 +817,5 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
-    fn array_dims<Arr:ArrayOrNullableArray<> + SingleValue>(arr:Arr) -> Text;
+    fn array_dims<Arr:ArrayOrNullableArray<Inner=T> + SingleValue,T:SingleValue>(arr:Arr) -> Text;
 }
