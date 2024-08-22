@@ -114,39 +114,32 @@ define_sql_function! {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
+    /// # use diesel::pg::sql_types::{Range, Multirange};
+    /// # use diesel::dsl::upper;
     /// #     use std::collections::Bound;
-    /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
-    /// #
-    /// use diesel::dsl::upper;
-    /// diesel::insert_into(posts)
-    ///     .values(&[
-    ///        versions.eq((Bound::Included(5), Bound::Excluded(7))),
-    ///        versions.eq((Bound::Included(5), Bound::Unbounded))
-    ///     ]).execute(conn)?;
+    /// #     use diesel::sql_types::{Nullable, Integer, Array};
+    /// #     let connection = &mut establish_connection();
+    /// let int = diesel::select(upper::<Range<_>,  _>(1..2)).get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(2), int);
     ///
-    /// let cool_posts = posts.select(upper(versions))
-    ///     .load::<Option<i32>>(conn)?;
-    /// assert_eq!(vec![Some(7), None], cool_posts);
+    /// let int = diesel::select(upper::<Range<_>, _>(1..)).get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, int);
+    ///
+    /// let int = diesel::select(upper::<Nullable<Range<_>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, int);
+    ///
+    /// let int = diesel::select(upper::<Multirange<_>, _>(vec![5..7])).get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(7), int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn upper<T: RangeHelper>(range: T) -> Nullable<<T as RangeHelper>::Inner>;
+    fn upper<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inner>;
 }
 
 define_sql_function! {
