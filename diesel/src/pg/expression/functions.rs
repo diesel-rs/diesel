@@ -222,38 +222,29 @@ define_sql_function! {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
+    /// # use diesel::pg::sql_types::{Range, Multirange};
+    /// # use diesel::dsl::upper_inc;
     /// #     use std::collections::Bound;
-    /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
-    /// #
-    /// use diesel::dsl::upper_inc;
-    /// diesel::insert_into(posts)
-    ///     .values(&[
-    ///        versions.eq((Bound::Included(5), Bound::Excluded(7))),
-    ///     ]).execute(conn)?;
+    /// #     use diesel::sql_types::{Nullable, Integer, Array};
+    /// #     let connection = &mut establish_connection();
+    /// let int = diesel::select(upper_inc::<Range<Integer>,  _>(1..5)).get_result::<Option<bool>>(connection)?;
+    /// assert_eq!(Some(false), int);
     ///
-    /// let cool_posts = posts.select(upper_inc(versions))
-    ///     .load::<bool>(conn)?;
-    /// assert_eq!(vec![false], cool_posts);
+    /// let int = diesel::select(upper_inc::<Nullable<Range<Integer>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<bool>>(connection)?;
+    /// assert_eq!(None, int);
+    ///
+    /// let int = diesel::select(upper_inc::<Multirange<Integer>, _>(vec![5..7])).get_result::<Option<bool>>(connection)?;
+    /// assert_eq!(Some(false), int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn upper_inc<T: RangeHelper>(range: T) -> Bool;
+    fn upper_inc<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<Bool>;
 }
 
 define_sql_function! {
