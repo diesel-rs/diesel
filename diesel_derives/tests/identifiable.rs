@@ -166,12 +166,10 @@ fn derive_identifiable_with_pk_serialize_as() {
     struct Foo {
         #[diesel(serialize_as = MyI32)]
         id: i32,
-        #[allow(dead_code)]
-        foo: i32,
     }
 
-    let foo1 = Foo { id: 1, foo: 2 };
-    let foo2 = Foo { id: 2, foo: 3 };
+    let foo1 = Foo { id: 1 };
+    let foo2 = Foo { id: 2 };
     assert_eq!(MyI32(1), foo1.id());
     assert_eq!(MyI32(2), foo2.id());
 }
