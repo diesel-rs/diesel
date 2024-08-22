@@ -137,7 +137,6 @@ dependencies = [
  "byteorder",
  "chrono",
  "diesel_derives",
- "downcast-rs",
  "ipnetwork",
  "itoa",
  "libc",
@@ -180,12 +179,6 @@ version = "0.2.0"
 dependencies = [
  "syn",
 ]
-
-[[package]]
-name = "downcast-rs"
-version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
 
 [[package]]
 name = "dsl_auto_type"
@@ -363,9 +356,9 @@ checksum = "6c8640c5d730cb13ebd907d8d04b52f55ac9a2eec55b440c8892f40d56c76c1d"
 
 [[package]]
 name = "mysqlclient-sys"
-version = "0.4.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2aa3a303b6e9878b34811838301b00a56878693c47f9ac0ba397f91adc7bf12"
+checksum = "bd59c034806974df483883503e8a019b1a0137b0e60dd64811537ab56312ad2d"
 dependencies = [
  "pkg-config",
  "vcpkg",
