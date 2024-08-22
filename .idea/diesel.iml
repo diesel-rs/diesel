@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="EMPTY_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/diesel/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/diesel_cli/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/diesel_cli/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/diesel_derives/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/diesel_derives/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/diesel_dynamic_schema/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/diesel_dynamic_schema/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/diesel_dynamic_schema/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/diesel_migrations/migrations_internals/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/diesel_migrations/migrations_macros/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/diesel_migrations/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/diesel_table_macro_syntax/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/diesel_table_macro_syntax/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/diesel_tests/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/dsl_auto_type/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/mysql/all_about_inserts/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/mysql/getting_started_step_1/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/mysql/getting_started_step_1/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/mysql/getting_started_step_2/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/mysql/getting_started_step_2/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/mysql/getting_started_step_3/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/mysql/getting_started_step_3/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/postgres/advanced-blog-cli/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/postgres/all_about_inserts/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/postgres/all_about_updates/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/postgres/composite_types/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/postgres/composite_types/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/postgres/custom_types/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/postgres/getting_started_step_1/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/postgres/getting_started_step_1/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/postgres/getting_started_step_2/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/postgres/getting_started_step_2/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/postgres/getting_started_step_3/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/postgres/getting_started_step_3/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/postgres/relations/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/sqlite/all_about_inserts/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/sqlite/getting_started_step_1/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/sqlite/getting_started_step_1/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/sqlite/getting_started_step_2/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/sqlite/getting_started_step_2/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/sqlite/getting_started_step_3/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/sqlite/getting_started_step_3/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/sqlite/relations/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/xtask/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
