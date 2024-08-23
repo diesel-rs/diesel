@@ -49,6 +49,7 @@ table! {
         blob -> Binary,
         timestamp -> Timestamp,
         range -> Range<Integer>,
+        multirange -> Multirange<Integer>,
         timestamptz -> Timestamptz,
     }
 }
@@ -400,6 +401,7 @@ fn postgres_functions() -> _ {
         lower_inf(pg_extras::range),
         upper_inf(pg_extras::range),
         range_merge(pg_extras::range, pg_extras::range),
+        multirange_merge(pg_extras::multirange),
         int4range(users::id.nullable(), users::id.nullable(), bound),
         int8range(users::bigint.nullable(), users::bigint.nullable(), bound),
         numrange(users::numeric.nullable(), users::numeric.nullable(), bound),
