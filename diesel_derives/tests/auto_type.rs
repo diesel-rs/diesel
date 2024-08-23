@@ -5,7 +5,6 @@ use diesel::prelude::*;
 use diesel::sql_types;
 #[cfg(feature = "postgres")]
 use std::ops::Bound;
-
 table! {
     users {
         id -> Integer,
@@ -50,8 +49,7 @@ table! {
         timestamp -> Timestamp,
         range -> Range<Integer>,
         timestamptz -> Timestamptz,
-        name -> Text,
-        array_string -> Array<Text>
+        name -> Text
     }
 }
 
@@ -413,12 +411,8 @@ fn postgres_functions() -> _ {
             bound,
         ),
         array_append(pg_extras::array, pg_extras::id),
-        array_to_string(pg_extras::array_string, pg_extras::name),
-        array_to_string_with_null_string(
-            pg_extras::array_string,
-            pg_extras::name,
-            pg_extras::name.is_null(),
-        ),
+        array_to_string(pg_extras::array, pg_extras::name),
+        array_to_string_with_null_string(pg_extras::array, pg_extras::name, pg_extras::name),
     )
 }
 
