@@ -4,6 +4,7 @@ use super::expression_methods::InetOrCidr;
 use super::expression_methods::RangeHelper;
 use crate::expression::functions::define_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
+use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
 use crate::sql_types::*;
 
 define_sql_function! {
@@ -75,39 +76,32 @@ define_sql_function! {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
+    /// # use diesel::pg::sql_types::{Range, Multirange};
+    /// # use diesel::dsl::lower;
     /// #     use std::collections::Bound;
-    /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
-    /// #
-    /// use diesel::dsl::lower;
-    /// diesel::insert_into(posts)
-    ///     .values(&[
-    ///        versions.eq((Bound::Included(5), Bound::Included(7))),
-    ///        versions.eq((Bound::Unbounded, Bound::Included(7)))
-    ///     ]).execute(conn)?;
+    /// #     use diesel::sql_types::{Nullable, Integer, Array};
+    /// #     let connection = &mut establish_connection();
+    /// let int = diesel::select(lower::<Range<_>,  _>(1..2)).get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(1), int);
     ///
-    /// let cool_posts = posts.select(lower(versions))
-    ///     .load::<Option<i32>>(conn)?;
-    /// assert_eq!(vec![Some(5), None], cool_posts);
+    /// let int = diesel::select(lower::<Range<_>, _>(..2)).get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, int);
+    ///
+    /// let int = diesel::select(lower::<Nullable<Range<_>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, int);
+    ///
+    /// let int = diesel::select(lower::<Multirange<_>, _>(vec![(Bound::Included(5), Bound::Included(7))])).get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(5), int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn lower<T: RangeHelper>(range: T) -> Nullable<<T as RangeHelper>::Inner>;
+    fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inner>;
 }
 
 define_sql_function! {
