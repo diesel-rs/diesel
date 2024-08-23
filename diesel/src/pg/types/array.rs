@@ -49,7 +49,7 @@ where
                 if has_null && elem_size == -1 {
                     T::from_nullable_sql(None)
                 } else {
-                    let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
+                    let (elem_bytes, new_bytes) = bytes.split_at(elem_size.try_into()?);
                     bytes = new_bytes;
                     T::from_sql(PgValue::new_internal(elem_bytes, &value))
                 }
@@ -116,7 +116,7 @@ where
             };
 
             if let IsNull::No = is_null {
-                out.write_i32::<NetworkEndian>(buffer.len() as i32)?;
+                out.write_i32::<NetworkEndian>(buffer.len().try_into()?)?;
                 out.write_all(&buffer)?;
                 buffer.clear();
             } else {

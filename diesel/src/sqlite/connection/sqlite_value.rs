@@ -49,12 +49,16 @@ unsafe impl Send for OwnedSqliteValue {}
 impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
     pub(super) fn new(
         row: Ref<'row, PrivateSqliteRow<'stmt, 'query>>,
-        col_idx: i32,
+        col_idx: usize,
     ) -> Option<SqliteValue<'row, 'stmt, 'query>> {
         let value = match &*row {
-            PrivateSqliteRow::Direct(stmt) => stmt.column_value(col_idx)?,
+            PrivateSqliteRow::Direct(stmt) => stmt.column_value(
+                col_idx
+                    .try_into()
+                    .expect("Diesel expects to run at least on a 32 bit platform"),
+            )?,
             PrivateSqliteRow::Duplicated { values, .. } => {
-                values.get(col_idx as usize).and_then(|v| v.as_ref())?.value
+                values.get(col_idx).and_then(|v| v.as_ref())?.value
             }
         };
 
@@ -71,13 +75,9 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
 
     pub(super) fn from_owned_row(
         row: &'row OwnedSqliteRow,
-        col_idx: i32,
+        col_idx: usize,
     ) -> Option<SqliteValue<'row, 'stmt, 'query>> {
-        let value = row
-            .values
-            .get(col_idx as usize)
-            .and_then(|v| v.as_ref())?
-            .value;
+        let value = row.values.get(col_idx).and_then(|v| v.as_ref())?.value;
         let ret = Self { _row: None, value };
         if ret.value_type().is_none() {
             None
@@ -90,7 +90,11 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
         let s = unsafe {
             let ptr = ffi::sqlite3_value_text(self.value.as_ptr());
             let len = ffi::sqlite3_value_bytes(self.value.as_ptr());
-            let bytes = slice::from_raw_parts(ptr, len as usize);
+            let bytes = slice::from_raw_parts(
+                ptr,
+                len.try_into()
+                    .expect("Diesel expects to run at least on a 32 bit platform"),
+            );
             // The string is guaranteed to be utf8 according to
             // https://www.sqlite.org/c3ref/value_blob.html
             str::from_utf8_unchecked(bytes)
@@ -111,7 +115,11 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
                 // slices without elements from a pointer
                 &[]
             } else {
-                slice::from_raw_parts(ptr as *const u8, len as usize)
+                slice::from_raw_parts(
+                    ptr as *const u8,
+                    len.try_into()
+                        .expect("Diesel expects to run at least on a 32 bit platform"),
+                )
             }
         }
     }

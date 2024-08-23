@@ -52,7 +52,7 @@ macro_rules! tuple_impls {
                     if num_bytes == -1 {
                         $T::from_nullable_sql(None)?
                     } else {
-                        let (elem_bytes, new_bytes) = bytes.split_at(num_bytes as usize);
+                        let (elem_bytes, new_bytes) = bytes.split_at(num_bytes.try_into()?);
                         bytes = new_bytes;
                         $T::from_sql(PgValue::new_internal(
                             elem_bytes,
@@ -117,7 +117,7 @@ macro_rules! tuple_impls {
                     };
 
                     if let IsNull::No = is_null {
-                        out.write_i32::<NetworkEndian>(buffer.len() as i32)?;
+                        out.write_i32::<NetworkEndian>(buffer.len().try_into()?)?;
                         out.write_all(&buffer)?;
                         buffer.clear();
                     } else {

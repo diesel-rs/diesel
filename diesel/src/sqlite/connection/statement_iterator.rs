@@ -104,7 +104,10 @@ impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
                     Err(e) => Some(Err(e)),
                     Ok(false) => None,
                     Ok(true) => {
-                        let field_count = stmt.column_count() as usize;
+                        let field_count = stmt
+                            .column_count()
+                            .try_into()
+                            .expect("Diesel expects to run at least on a 32 bit platform");
                         self.field_count = field_count;
                         let inner = Rc::new(RefCell::new(PrivateSqliteRow::Direct(stmt)));
                         self.inner = Started(inner.clone());
