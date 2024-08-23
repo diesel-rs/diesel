@@ -10,7 +10,8 @@ use std::env;
 fn postgres_connection() -> PgConnection {
     dotenv().ok();
 
-    let database_url = env::var("POSTGRES_DATABASE_URL").expect("POSTGRES_DATABASE_URL must be set");
+    let database_url =
+        env::var("POSTGRES_DATABASE_URL").expect("POSTGRES_DATABASE_URL must be set");
     PgConnection::establish(&database_url)
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
