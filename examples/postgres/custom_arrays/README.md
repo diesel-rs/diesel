@@ -583,7 +583,7 @@ The relevant type declarations are:
 
 ```rust
 #[derive(Debug, Clone, Queryable, Selectable)]
-#[diesel(table_name= crate::schema::smdb::service,  primary_key(service_id))]
+#[diesel(table_name = crate::schema::smdb::service, primary_key(service_id))]
 pub struct Service {
     pub service_id: i32,
     pub name: String,
