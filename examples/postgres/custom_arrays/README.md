@@ -533,7 +533,7 @@ impl FromSql<crate::schema::smdb::sql_types::ServiceEndpoint, Pg> for Endpoint {
 ```
 
 Similar to the serialization process, it is paramount that the type annotation
-match exactly the one used in toSql and the type definition in up.sql.
+match exactly the one used in ToSql and the type definition in up.sql.
 
 Debugging serialization issues in Diesel is relatively straight forward
 since the compiler usually points out the location of the issue and, often, the issue is a type mismatch that is
