@@ -43,16 +43,27 @@ macro_rules! multirange_as_expression {
     };
 }
 
-multirange_as_expression!(&'a [(Bound<T>, Bound<T>)], Multirange<ST>);
-multirange_as_expression!(&'a [(Bound<T>, Bound<T>)], Nullable<Multirange<ST>>);
-multirange_as_expression!(&'a &'b [(Bound<T>, Bound<T>)], Multirange<ST>);
-multirange_as_expression!(&'a &'b [(Bound<T>, Bound<T>)], Nullable<Multirange<ST>>);
-multirange_as_expression!(Vec<(Bound<T>, Bound<T>)>, Multirange<ST>);
-multirange_as_expression!(Vec<(Bound<T>, Bound<T>)>, Nullable<Multirange<ST>>);
-multirange_as_expression!(&'a Vec<(Bound<T>, Bound<T>)>, Multirange<ST>);
-multirange_as_expression!(&'a Vec<(Bound<T>, Bound<T>)>, Nullable<Multirange<ST>>);
-multirange_as_expression!(&'a &'b Vec<(Bound<T>, Bound<T>)>, Multirange<ST>);
-multirange_as_expression!(&'a &'b Vec<(Bound<T>, Bound<T>)>, Nullable<Multirange<ST>>);
+macro_rules! multirange_as_expressions {
+    ($ty:ty) => {
+        multirange_as_expression!(&'a [$ty], Multirange<ST>);
+        multirange_as_expression!(&'a [$ty], Nullable<Multirange<ST>>);
+        multirange_as_expression!(&'a &'b [$ty], Multirange<ST>);
+        multirange_as_expression!(&'a &'b [$ty], Nullable<Multirange<ST>>);
+        multirange_as_expression!(Vec<$ty>, Multirange<ST>);
+        multirange_as_expression!(Vec<$ty>, Nullable<Multirange<ST>>);
+        multirange_as_expression!(&'a Vec<$ty>, Multirange<ST>);
+        multirange_as_expression!(&'a Vec<$ty>, Nullable<Multirange<ST>>);
+        multirange_as_expression!(&'a &'b Vec<$ty>, Multirange<ST>);
+        multirange_as_expression!(&'a &'b Vec<$ty>, Nullable<Multirange<ST>>);
+    };
+}
+
+multirange_as_expressions!((Bound<T>, Bound<T>));
+multirange_as_expressions!(std::ops::Range<T>);
+multirange_as_expressions!(std::ops::RangeInclusive<T>);
+multirange_as_expressions!(std::ops::RangeToInclusive<T>);
+multirange_as_expressions!(std::ops::RangeFrom<T>);
+multirange_as_expressions!(std::ops::RangeTo<T>);
 
 #[cfg(feature = "postgres_backend")]
 impl<T, ST> FromSql<Multirange<ST>, Pg> for Vec<(Bound<T>, Bound<T>)>
@@ -74,27 +85,36 @@ where
     }
 }
 
+fn to_sql<'c, ST, T, I>(iter: I, out: &mut Output<'_, '_, Pg>) -> serialize::Result
+where
+    ST: 'static,
+    T: ToSql<ST, Pg> + 'c,
+    I: Iterator<Item = (Bound<&'c T>, Bound<&'c T>)> + ExactSizeIterator,
+{
+    out.write_u32::<NetworkEndian>(iter.len().try_into()?)?;
+
+    let mut buffer = Vec::new();
+    for value in iter {
+        {
+            let mut inner_buffer = Output::new(ByteWrapper(&mut buffer), out.metadata_lookup());
+            ToSql::<Range<ST>, Pg>::to_sql(&value, &mut inner_buffer)?;
+        }
+        let buffer_len: i32 = buffer.len().try_into()?;
+        out.write_i32::<NetworkEndian>(buffer_len)?;
+        out.write_all(&buffer)?;
+        buffer.clear();
+    }
+
+    Ok(IsNull::No)
+}
+
 #[cfg(feature = "postgres_backend")]
 impl<T, ST> ToSql<Multirange<ST>, Pg> for [(Bound<T>, Bound<T>)]
 where
     T: ToSql<ST, Pg>,
 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
-        out.write_u32::<NetworkEndian>(self.len().try_into()?)?;
-
-        let mut buffer = Vec::new();
-        for value in self {
-            {
-                let mut inner_buffer = Output::new(ByteWrapper(&mut buffer), out.metadata_lookup());
-                ToSql::<Range<ST>, Pg>::to_sql(&value, &mut inner_buffer)?;
-            }
-            let buffer_len: i32 = buffer.len().try_into()?;
-            out.write_i32::<NetworkEndian>(buffer_len)?;
-            out.write_all(&buffer)?;
-            buffer.clear();
-        }
-
-        Ok(IsNull::No)
+        to_sql(self.iter().map(|r| (r.0.as_ref(), r.1.as_ref())), out)
     }
 }
 
@@ -109,24 +129,71 @@ where
     }
 }
 
-impl<T, ST> ToSql<Nullable<Multirange<ST>>, Pg> for [(Bound<T>, Bound<T>)]
-where
-    ST: 'static,
-    [(Bound<T>, Bound<T>)]: ToSql<ST, Pg>,
-    T: ToSql<ST, Pg>,
-{
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
-        ToSql::<Multirange<ST>, Pg>::to_sql(self, out)
-    }
+use std::ops::RangeBounds;
+macro_rules! multirange_std_to_sql {
+    ($ty:ty) => {
+        #[cfg(feature = "postgres_backend")]
+        impl<ST, T> ToSql<Multirange<ST>, Pg> for [$ty]
+        where
+            ST: 'static,
+            T: ToSql<ST, Pg>,
+        {
+            fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+                to_sql(
+                    self.into_iter().map(|r| (r.start_bound(), r.end_bound())),
+                    out,
+                )
+            }
+        }
+
+        #[cfg(feature = "postgres_backend")]
+        impl<T, ST> ToSql<Multirange<ST>, Pg> for Vec<$ty>
+        where
+            T: ToSql<ST, Pg>,
+            [$ty]: ToSql<Multirange<ST>, Pg>,
+        {
+            fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+                ToSql::<Multirange<ST>, Pg>::to_sql(self.as_slice(), out)
+            }
+        }
+    };
 }
 
-impl<T, ST> ToSql<Nullable<Multirange<ST>>, Pg> for Vec<(Bound<T>, Bound<T>)>
-where
-    ST: 'static,
-    Vec<(Bound<T>, Bound<T>)>: ToSql<ST, Pg>,
-    T: ToSql<ST, Pg>,
-{
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
-        ToSql::<Multirange<ST>, Pg>::to_sql(self, out)
-    }
+multirange_std_to_sql!(std::ops::Range<T>);
+multirange_std_to_sql!(std::ops::RangeInclusive<T>);
+multirange_std_to_sql!(std::ops::RangeFrom<T>);
+multirange_std_to_sql!(std::ops::RangeTo<T>);
+multirange_std_to_sql!(std::ops::RangeToInclusive<T>);
+
+macro_rules! multirange_to_sql_nullable {
+    ($ty:ty) => {
+        impl<T, ST> ToSql<Nullable<Multirange<ST>>, Pg> for [$ty]
+        where
+            ST: 'static,
+            [$ty]: ToSql<ST, Pg>,
+            T: ToSql<ST, Pg>,
+        {
+            fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+                ToSql::<Multirange<ST>, Pg>::to_sql(self, out)
+            }
+        }
+
+        impl<T, ST> ToSql<Nullable<Multirange<ST>>, Pg> for Vec<$ty>
+        where
+            ST: 'static,
+            Vec<$ty>: ToSql<ST, Pg>,
+            T: ToSql<ST, Pg>,
+        {
+            fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+                ToSql::<Multirange<ST>, Pg>::to_sql(self, out)
+            }
+        }
+    };
 }
+
+multirange_to_sql_nullable!((Bound<T>, Bound<T>));
+multirange_to_sql_nullable!(std::ops::Range<T>);
+multirange_to_sql_nullable!(std::ops::RangeInclusive<T>);
+multirange_to_sql_nullable!(std::ops::RangeFrom<T>);
+multirange_to_sql_nullable!(std::ops::RangeTo<T>);
+multirange_to_sql_nullable!(std::ops::RangeToInclusive<T>);
