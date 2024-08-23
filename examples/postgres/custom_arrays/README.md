@@ -597,7 +597,7 @@ pub struct Service {
 }
 
 #[derive(Debug, Clone, Queryable, Insertable)]
-#[diesel(table_name= crate::schema::smdb::service,  primary_key(service_id))]
+#[diesel(table_name = crate::schema::smdb::service, primary_key(service_id))]
 pub struct CreateService {
     pub service_id: i32,
     // ... skipped
