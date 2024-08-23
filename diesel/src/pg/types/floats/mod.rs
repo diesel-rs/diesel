@@ -101,7 +101,7 @@ impl ToSql<sql_types::Numeric, Pg> for PgNumeric {
             PgNumeric::Positive { scale, .. } | PgNumeric::Negative { scale, .. } => scale,
             PgNumeric::NaN => 0,
         };
-        out.write_u16::<NetworkEndian>(digits.len() as u16)?;
+        out.write_u16::<NetworkEndian>(digits.len().try_into()?)?;
         out.write_i16::<NetworkEndian>(weight)?;
         out.write_u16::<NetworkEndian>(sign)?;
         out.write_u16::<NetworkEndian>(scale)?;

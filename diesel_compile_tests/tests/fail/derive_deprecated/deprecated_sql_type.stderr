@@ -59,24 +59,3 @@ error[E0412]: cannot find type `foo` in this scope
    |
 27 |     #[sql_type = "foo"]
    |                  ^^^^^ not found in this scope
-
-error[E0277]: cannot deserialize a value of the database type `_` as `i32`
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:25:10
-   |
-25 | #[derive(QueryableByName)]
-   |          ^^^^^^^^^^^^^^^ the trait `FromSql<_, __DB>` is not implemented for `i32`
-   |
-   = note: double check your type mappings via the documentation of `_`
-   = help: the following other types implement trait `FromSql<A, DB>`:
-             <i32 as FromSql<diesel::sql_types::Integer, Mysql>>
-             <i32 as FromSql<diesel::sql_types::Integer, Pg>>
-             <i32 as FromSql<diesel::sql_types::Integer, Sqlite>>
-note: required by a bound in `diesel::row::NamedRow::get`
-  --> $DIESEL/src/row.rs
-   |
-   |     fn get<ST, T>(&self, column_name: &str) -> deserialize::Result<T>
-   |        --- required by a bound in this associated function
-   |     where
-   |         T: FromSql<ST, DB>;
-   |            ^^^^^^^^^^^^^^^ required by this bound in `NamedRow::get`
-   = note: this error originates in the derive macro `QueryableByName` (in Nightly builds, run with -Z macro-backtrace for more info)

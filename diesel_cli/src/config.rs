@@ -458,6 +458,9 @@ impl PrintSchema {
         self.import_types.as_deref()
     }
 
+    // it's a false positive
+    // https://github.com/rust-lang/rust-clippy/issues/12856
+    #[allow(clippy::needless_borrows_for_generic_args)]
     fn set_relative_path_base(&mut self, base: &Path) {
         if let Some(ref mut file) = self.file {
             if file.is_relative() {

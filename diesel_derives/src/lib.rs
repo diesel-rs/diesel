@@ -467,9 +467,9 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// your struct__ matches __all fields in the query__, including the order and
 /// count. This means that field order is significant if you're using
 /// `#[derive(Queryable)]`. __Field name has no effect__. If you see errors while
-/// loading data into a struct that derives `Queryable`: Consider using [`#[derive(Selectable)]`]
-/// + `#[diesel(check_for_backend(YourBackendType))]` to check for mismatching fields at
-/// compile-time.
+/// loading data into a struct that derives `Queryable`: Consider using
+/// [`#[derive(Selectable)]`] + `#[diesel(check_for_backend(YourBackendType))]`
+/// to check for mismatching fields at compile-time.
 ///
 /// To provide custom deserialization behavior for a field, you can use
 /// `#[diesel(deserialize_as = SomeType)]`. If this attribute is present, Diesel

@@ -202,10 +202,10 @@ impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
         'a: 'b,
         Self: crate::row::RowIndex<I>,
     {
-        let idx = self.idx(idx)?;
+        let col_idx = self.idx(idx)?;
         Some(FunctionArgument {
             args: self.args.borrow(),
-            col_idx: idx as i32,
+            col_idx,
         })
     }
 
@@ -232,7 +232,7 @@ impl<'a, 'b> RowIndex<&'a str> for FunctionRow<'b> {
 
 struct FunctionArgument<'a> {
     args: Ref<'a, ManuallyDrop<PrivateSqliteRow<'a, 'static>>>,
-    col_idx: i32,
+    col_idx: usize,
 }
 
 impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {

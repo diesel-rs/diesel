@@ -1,6 +1,10 @@
-extern crate quickcheck;
-
-use self::quickcheck::{Arbitrary, Gen};
+// it's test code
+#![allow(
+    clippy::cast_possible_wrap,
+    clippy::cast_sign_loss,
+    clippy::cast_possible_truncation
+)]
+use quickcheck::{Arbitrary, Gen};
 
 use super::{PgDate, PgInterval, PgTime, PgTimestamp};
 

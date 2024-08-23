@@ -22,6 +22,7 @@ where
     }
 }
 
+#[allow(clippy::cast_possible_truncation)] // that's what we want here
 fn f32_to_i64(f: f32) -> deserialize::Result<i64> {
     if f <= i64::MAX as f32 && f >= i64::MIN as f32 {
         Ok(f.trunc() as i64)
@@ -32,6 +33,7 @@ fn f32_to_i64(f: f32) -> deserialize::Result<i64> {
     }
 }
 
+#[allow(clippy::cast_possible_truncation)] // that's what we want here
 fn f64_to_i64(f: f64) -> deserialize::Result<i64> {
     if f <= i64::MAX as f64 && f >= i64::MIN as f64 {
         Ok(f.trunc() as i64)
@@ -128,6 +130,8 @@ impl FromSql<Float, Mysql> for f32 {
             NumericRepresentation::Medium(x) => Ok(x as Self),
             NumericRepresentation::Big(x) => Ok(x as Self),
             NumericRepresentation::Float(x) => Ok(x),
+            // there is currently no way to do this in a better way
+            #[allow(clippy::cast_possible_truncation)]
             NumericRepresentation::Double(x) => Ok(x as Self),
             NumericRepresentation::Decimal(bytes) => Ok(str::from_utf8(bytes)?.parse()?),
         }

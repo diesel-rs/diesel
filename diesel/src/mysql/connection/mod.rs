@@ -31,7 +31,7 @@ use crate::RunQueryDsl;
 /// * `ssl_cert` accepts a path to the client's certificate file
 /// * `ssl_key` accepts a path to the client's private key file
 /// * `ssl_mode` expects a value defined for MySQL client command option `--ssl-mode`
-/// See <https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode>
+///   See <https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode>
 ///
 /// # Supported loading model implementations
 ///
@@ -154,7 +154,7 @@ impl Connection for MysqlConnection {
     /// * `ssl_cert` accepts a path to the client's certificate file
     /// * `ssl_key` accepts a path to the client's private key file
     /// * `ssl_mode` expects a value defined for MySQL client command option `--ssl-mode`
-    /// See <https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode>
+    ///   See <https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode>
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut instrumentation = crate::connection::instrumentation::get_default_instrumentation();
         instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
@@ -187,7 +187,7 @@ impl Connection for MysqlConnection {
                 // we have not called result yet, so calling `execute` is
                 // fine
                 let stmt_use = unsafe { stmt.execute() }?;
-                Ok(stmt_use.affected_rows())
+                stmt_use.affected_rows()
             }),
             &mut self.transaction_state,
             &mut self.instrumentation,

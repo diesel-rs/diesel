@@ -273,10 +273,7 @@ where
         C::get_buffer(out)
     }
 
-    fn execute<'conn, T>(
-        &'conn mut self,
-        command: CopyToCommand<T>,
-    ) -> QueryResult<Self::CopyToBuffer<'conn>>
+    fn execute<T>(&mut self, command: CopyToCommand<T>) -> QueryResult<Self::CopyToBuffer<'_>>
     where
         T: CopyTarget,
     {
@@ -335,12 +332,13 @@ where
                 format!("Unexpected flag value: {flags_backward_incompatible:x}").into(),
             ));
         }
-        let header_size = i32::from_be_bytes(
+        let header_size = usize::try_from(i32::from_be_bytes(
             (&buffer[super::COPY_MAGIC_HEADER.len() + 4..super::COPY_MAGIC_HEADER.len() + 8])
                 .try_into()
                 .expect("Exactly 4 byte"),
-        );
-        out.consume(super::COPY_MAGIC_HEADER.len() + 8 + header_size as usize);
+        ))
+        .map_err(|e| crate::result::Error::DeserializationError(Box::new(e)))?;
+        out.consume(super::COPY_MAGIC_HEADER.len() + 8 + header_size);
         let mut len = None;
         Ok(std::iter::from_fn(move || {
             if let Some(len) = len {
@@ -354,7 +352,13 @@ where
             let tuple_count =
                 i16::from_be_bytes((&buffer[..2]).try_into().expect("Exactly 2 bytes"));
             if tuple_count > 0 {
-                let mut buffers = Vec::with_capacity(tuple_count as usize);
+                let tuple_count = match usize::try_from(tuple_count) {
+                    Ok(o) => o,
+                    Err(e) => {
+                        return Some(Err(crate::result::Error::DeserializationError(Box::new(e))))
+                    }
+                };
+                let mut buffers = Vec::with_capacity(tuple_count);
                 let mut offset = 2;
                 for _t in 0..tuple_count {
                     let data_size = i32::from_be_bytes(
@@ -362,11 +366,21 @@ where
                             .try_into()
                             .expect("Exactly 4 bytes"),
                     );
+
                     if data_size < 0 {
                         buffers.push(None);
                     } else {
-                        buffers.push(Some(&buffer[offset + 4..offset + 4 + data_size as usize]));
-                        offset = offset + 4 + data_size as usize;
+                        match usize::try_from(data_size) {
+                            Ok(data_size) => {
+                                buffers.push(Some(&buffer[offset + 4..offset + 4 + data_size]));
+                                offset = offset + 4 + data_size;
+                            }
+                            Err(e) => {
+                                return Some(Err(crate::result::Error::DeserializationError(
+                                    Box::new(e),
+                                )));
+                            }
+                        }
                     }
                 }
 

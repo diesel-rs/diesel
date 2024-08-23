@@ -73,7 +73,7 @@ where
 
         if !flags.contains(RangeFlags::LB_INF) {
             let elem_size = bytes.read_i32::<NetworkEndian>()?;
-            let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
+            let (elem_bytes, new_bytes) = bytes.split_at(elem_size.try_into()?);
             bytes = new_bytes;
             let value = T::from_sql(PgValue::new_internal(elem_bytes, &value))?;
 
@@ -140,7 +140,7 @@ where
                         Output::new(ByteWrapper(&mut buffer), out.metadata_lookup());
                     value.to_sql(&mut inner_buffer)?;
                 }
-                out.write_u32::<NetworkEndian>(buffer.len() as u32)?;
+                out.write_u32::<NetworkEndian>(buffer.len().try_into()?)?;
                 out.write_all(&buffer)?;
                 buffer.clear();
             }
@@ -154,7 +154,7 @@ where
                         Output::new(ByteWrapper(&mut buffer), out.metadata_lookup());
                     value.to_sql(&mut inner_buffer)?;
                 }
-                out.write_u32::<NetworkEndian>(buffer.len() as u32)?;
+                out.write_u32::<NetworkEndian>(buffer.len().try_into()?)?;
                 out.write_all(&buffer)?;
             }
             Bound::Unbounded => {}
