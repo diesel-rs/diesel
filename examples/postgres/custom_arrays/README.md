@@ -395,7 +395,7 @@ It’s worth pointing out that you are dealing with three types in total:
 
 1) protocol_type: The Postgres Enum type
 2) PgProtocolType: The SQL type struct that refers to the Postgres Enum type
-3) ProtocolType: The Rust Enum that refers to the wrapper struct PGProtocolType
+3) ProtocolType: The Rust Enum that maps to the SQL type struct PgProtocolType
 
 Mixing any of those three types will result in a complicated Diesel trait error. However, these error messages are just
 a convoluted way to say that the database type mismatches the Rust type. When you encounter a consulted trait error
