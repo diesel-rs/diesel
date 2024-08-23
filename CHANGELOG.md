@@ -15,6 +15,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Support for libsqlite3-sys 0.29.0
 * Add support for built-in PostgreSQL range operators and functions
 * Support for postgres multirange type
+* Added `diesel::r2d2::TestCustomizer`, which allows users to customize their `diesel::r2d2::Pool`s
+in a way that makes the pools suitable for use in parallel tests.
 
 ## [2.2.0] 2024-05-31
 
