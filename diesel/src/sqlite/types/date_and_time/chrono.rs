@@ -73,7 +73,10 @@ fn parse_julian(julian_days: f64) -> Option<NaiveDateTime> {
     const EPOCH_IN_JULIAN_DAYS: f64 = 2_440_587.5;
     const SECONDS_IN_DAY: f64 = 86400.0;
     let timestamp = (julian_days - EPOCH_IN_JULIAN_DAYS) * SECONDS_IN_DAY;
-    let seconds = timestamp as i64;
+    #[allow(clippy::cast_possible_truncation)] // we want to truncate
+    let seconds = timestamp.trunc() as i64;
+    // that's not true, `fract` is always > 0
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     let nanos = (timestamp.fract() * 1E9) as u32;
     #[allow(deprecated)] // otherwise we would need to bump our minimal chrono version
     NaiveDateTime::from_timestamp_opt(seconds, nanos)

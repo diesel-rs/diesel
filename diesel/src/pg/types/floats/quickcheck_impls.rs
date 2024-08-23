@@ -1,6 +1,6 @@
-extern crate quickcheck;
+#![allow(clippy::cast_sign_loss)] // test code
 
-use self::quickcheck::{Arbitrary, Gen};
+use quickcheck::{Arbitrary, Gen};
 
 use super::PgNumeric;
 

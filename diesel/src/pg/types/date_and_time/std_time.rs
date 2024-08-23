@@ -18,9 +18,9 @@ impl ToSql<sql_types::Timestamp, Pg> for SystemTime {
             Err(time_err) => (true, time_err.duration()),
         };
         let time_since_epoch = if before_epoch {
-            -(duration_to_usecs(duration) as i64)
+            -(i64::try_from(duration_to_usecs(duration))?)
         } else {
-            duration_to_usecs(duration) as i64
+            duration_to_usecs(duration).try_into()?
         };
         ToSql::<sql_types::BigInt, Pg>::to_sql(&time_since_epoch, &mut out.reborrow())
     }

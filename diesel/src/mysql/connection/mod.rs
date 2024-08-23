@@ -187,7 +187,7 @@ impl Connection for MysqlConnection {
                 // we have not called result yet, so calling `execute` is
                 // fine
                 let stmt_use = unsafe { stmt.execute() }?;
-                Ok(stmt_use.affected_rows())
+                stmt_use.affected_rows()
             }),
             &mut self.transaction_state,
             &mut self.instrumentation,

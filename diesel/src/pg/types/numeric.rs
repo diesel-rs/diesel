@@ -58,10 +58,10 @@ mod bigdecimal {
             };
 
             let mut result = BigUint::default();
-            let count = digits.len() as i64;
+            let count = i64::try_from(digits.len())?;
             for digit in digits {
                 result *= BigUint::from(10_000u64);
-                result += BigUint::from(*digit as u64);
+                result += BigUint::from(u64::try_from(*digit)?);
             }
             // First digit got factor 10_000^(digits.len() - 1), but should get 10_000^weight
             let correction_exp = 4 * (i64::from(weight) - count + 1);
@@ -80,6 +80,8 @@ mod bigdecimal {
         }
     }
 
+    // that should likely be a `TryFrom` impl
+    // TODO: diesel 3.0
     #[cfg(all(feature = "postgres_backend", feature = "numeric"))]
     impl<'a> From<&'a BigDecimal> for PgNumeric {
         // NOTE(clippy): No `std::ops::MulAssign` impl for `BigInt`
@@ -98,7 +100,9 @@ mod bigdecimal {
                 }
                 0
             } else {
-                scale as u16
+                scale
+                    .try_into()
+                    .expect("Scale is expected to be 16bit large")
             };
 
             integer = integer.abs();
@@ -112,7 +116,11 @@ mod bigdecimal {
             let mut digits = ToBase10000(Some(integer)).collect::<Vec<_>>();
             digits.reverse();
             let digits_after_decimal = scale / 4 + 1;
-            let weight = digits.len() as i16 - digits_after_decimal as i16 - 1;
+            let weight = i16::try_from(digits.len())
+                .expect("Max digit number is expected to fit into 16 bit")
+                - i16::try_from(digits_after_decimal)
+                    .expect("Max digit number is expected to fit into 16 bit")
+                - 1;
 
             let unnecessary_zeroes = digits.iter().rev().take_while(|i| i.is_zero()).count();
 

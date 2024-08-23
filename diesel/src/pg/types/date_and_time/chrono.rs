@@ -116,7 +116,7 @@ fn pg_epoch_date() -> NaiveDate {
 impl ToSql<Date, Pg> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let days_since_epoch = self.signed_duration_since(pg_epoch_date()).num_days();
-        ToSql::<Date, Pg>::to_sql(&PgDate(days_since_epoch as i32), &mut out.reborrow())
+        ToSql::<Date, Pg>::to_sql(&PgDate(days_since_epoch.try_into()?), &mut out.reborrow())
     }
 }
 
