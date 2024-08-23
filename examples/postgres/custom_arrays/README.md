@@ -465,7 +465,7 @@ to catch errors that may result from incorrect database updates.
 
 ```rust 
 #[derive(Debug, Clone, FromSqlRow, AsExpression, PartialEq, Eq)]
-#[diesel(sql_type=crate::schema::smdb::sql_types::ServiceEndpoint)]
+#[diesel(sql_type = crate::schema::smdb::sql_types::ServiceEndpoint)]
 pub struct Endpoint {
     pub name: String,
     pub version: i32,
