@@ -770,11 +770,11 @@ define_sql_function! {
     ///     .get_result::<String>(connection)?;
     /// assert!(String::from("[1:2]").eq(&dims));
     ///
-    /// let dims = diesel::select(array_dims::<Array<Integer>,_>(vec![None::<i32>,Some(2)]))
+    /// let dims = diesel::select(array_dims::<Array<Nullable<Integer>>,_>(vec![None::<i32>,Some(2)]))
     ///     .get_result::<String>(connection)?;
     /// assert!(String::from("[1:2]").eq(&dims));
     ///
-    /// let dims = diesel::select(array_dims::<Array<Integer>,_>(vec![None::<i32>]))
+    /// let dims = diesel::select(array_dims::<Array<Nullable<Integer>>,_>(vec![None::<i32>]))
     ///     .get_result::<String>(connection)?;
     /// assert!(String::from("[1:1]").eq(&dims));
     /// # Ok(())
