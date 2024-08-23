@@ -371,7 +371,6 @@ Diesel needs a zero sized SQL type struct to represent a custom Enum in Postgres
 
 ```rust
 #[derive(SqlType)]
-#[diesel(sql_type = protocol_type)]
 #[diesel(postgres_type(name = "protocol_type", schema = "smdb"))]
 pub struct PgProtocolType;
 ```
