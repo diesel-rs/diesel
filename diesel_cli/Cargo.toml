@@ -1,6 +1,6 @@
 [package]
 name = "diesel_cli"
-version = "2.2.2"
+version = "2.2.3"
 license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
 readme = "README.md"
