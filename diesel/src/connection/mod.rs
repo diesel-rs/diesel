@@ -37,7 +37,7 @@ pub(crate) use self::private::ConnectionSealed;
 pub use self::private::MultiConnectionHelper;
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-pub use self::instrumentation::StrQueryHelper;
+pub use self::instrumentation::{DynInstrumentation, StrQueryHelper};
 
 #[cfg(all(
     not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
