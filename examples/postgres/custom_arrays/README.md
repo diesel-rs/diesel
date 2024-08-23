@@ -401,11 +401,11 @@ Mixing any of those three types will result in a complicated Diesel trait error.
 a convoluted way to say that the database type mismatches the Rust type. When you encounter a consulted trait error
 message, make sure to check:
 
-1) Do I have a wrapper struct?
-2) Does my a wrapper struct derives SqlType?
-3) Does my wrapper type has both, sql_type and postgres_type declared?
-4) Are sql_type and postgres_type both referring to the correct Postgres type?
-5) Does my Rust type refers to the wrapper struct type?
+1) Do I have a SQL type struct?
+2) Does my a SQL type struct derive SqlType?
+3) Does my SQL type has a `#[diesel(postgres_type(_)]` attribute declared?
+4) Is the  `#[diesel(postgres_type(_)]` attribute referring to the correct Postgres type?
+5) Does my Rust type refers to the SQL type struct?
 
 If all those checks pass and you still see errors, it’s most likely a serialization error.
 To serialize and deserialize a custom Enum, you write a custom ToSql and FromSql implementation.
