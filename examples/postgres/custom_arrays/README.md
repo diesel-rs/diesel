@@ -202,7 +202,7 @@ You usually can return the primary key value after inserting so if you need to k
 ### External primary key: INTEGER type
 
 In case you need to know the specific value of the primary key and you need to know it before inserting the data, you
-have to assign unique primary keys before inserting data and you have to use the INTEGE type (or any of the many integer
+have to assign unique primary keys before inserting data and you have to use the INTEGER type (or any of the many integer
 variations) to convey to Postgres that you set the primary key yourself. Notice, you still have to set the NOT NULL and
 PRIMARY KEY attribute to ensure data consistency.
 
