@@ -340,7 +340,7 @@ Rust type implementations matching all the generated Postgres types and tables.
 Lastly, you also want to add a type alias for a postgres database connection in the lib file because that gives you the
 freedom to swap between a normal single connection or a connection pool without updating your type implementation or
 tests.
-The connection pool type alias has ben uncommented, but the type signature of the pooled connection makes it obvious why
+The connection pool type alias has been uncommented, but the type signature of the pooled connection makes it obvious why
 a type alias is a good idea.
 
 At this point, your lib file looks as shown below:
