@@ -483,7 +483,7 @@ The serialize and deserialize implementation of a custom type is not as obvious 
 Postgres represent a custom type as an anonymous typed tuple. Therefore, you have to map a struct to a typed tuple and
 back.
 
-Let’s start with the toSql implementation to store the Rust Endpoint struct as typed tuple.
+Let’s start with the ToSql implementation to store the Rust Endpoint struct as typed tuple.
 Luckily, Diesel provides a helper util to do just that.
 
 ```rust 
