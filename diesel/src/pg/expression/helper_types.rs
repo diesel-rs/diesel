@@ -348,6 +348,11 @@ pub type upper_inf<R> = super::functions::upper_inf<SqlTypeOf<R>, R>;
 #[cfg(feature = "postgres_backend")]
 pub type range_merge<R1, R2> = super::functions::range_merge<SqlTypeOf<R1>, SqlTypeOf<R2>, R1, R2>;
 
+/// Return type of [`multirange_merge(multirange)`](super::functions::multirange_merge())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type multirange_merge<R> = super::functions::multirange_merge<SqlTypeOf<R>, R>;
+
 /// Return type of [`array_append(array, element)`](super::functions::array_append())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
