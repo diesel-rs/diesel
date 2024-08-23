@@ -15,6 +15,7 @@ pub struct TidyArgs {
 
 impl TidyArgs {
     pub(crate) fn run(&self) {
+        let mut success = true;
         let metadata = MetadataCommand::default().exec().unwrap();
         let mut command = Command::new("cargo");
 
@@ -34,6 +35,8 @@ impl TidyArgs {
             println!("\t Run `cargo fmt --all` to format the source code");
             if !self.keep_going {
                 std::process::exit(1);
+            } else {
+                success = false;
             }
         }
 
@@ -53,6 +56,8 @@ impl TidyArgs {
             println!("\t Run `typos -w` to address some of the issues");
             if !self.keep_going {
                 std::process::exit(1);
+            } else {
+                success = false;
             }
         }
 
@@ -65,6 +70,10 @@ impl TidyArgs {
         .run();
 
         println!();
-        println!("All checks were successful. Ready to submit the code!");
+        if success {
+            println!("All checks were successful. Ready to submit the code!");
+        } else {
+            std::process::exit(1);
+        }
     }
 }

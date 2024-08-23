@@ -361,7 +361,8 @@ pub type array_append<A, E> = super::functions::array_append<SqlTypeOf<A>, SqlTy
 /// Return type of [`array_replace(array, element, replace_with)`](super::functions::array_replace())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
-pub type array_replace<A, E, R> = super::functions::array_replace<SqlTypeOf<A>, SqlTypeOf<E>, A, E, R>;
+pub type array_replace<A, E, R> =
+    super::functions::array_replace<SqlTypeOf<A>, SqlTypeOf<E>, A, E, R>;
 
 /// Return type of [`array_dims(array)`](super::functions::array_append())
 #[allow(non_camel_case_types)]
