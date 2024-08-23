@@ -367,7 +367,7 @@ In total, you need implement three Rust types:
 
 ### Rust Enum: ProtocolType
 
-Diesel needs a wrapper struct to store a custom Enum in Postgres, so let’s add one:
+Diesel needs a zero sized SQL type struct to represent a custom Enum in Postgres, so let’s add one:
 
 ```rust
 #[derive(SqlType)]
