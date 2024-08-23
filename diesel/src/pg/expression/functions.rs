@@ -770,7 +770,7 @@ define_sql_function! {
     ///
     /// let ints = diesel::select(array_replace::<Nullable<Array<_>>, Integer, _, _, _>(None::<Vec<i32>>, 1, 2))
     ///     .get_result::<Option<Vec<i32>>>(connection)?;
-    /// 
+    ///
     /// let ints = diesel::select(array_replace::<Nullable<Array<_>>, Nullable<Integer>, _, _, _>(None::<Vec<i32>>, None::<i32>, Some(1)))
     ///     .get_result::<Option<Vec<Option<i32>>>>(connection)?;
     /// assert_eq!(None, ints);
@@ -778,4 +778,38 @@ define_sql_function! {
     /// # }
     /// ```
     fn array_replace<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue>(a: Arr, e: T, r: T) -> Arr;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns a text representation of the array's dimensions
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main(){
+    /// #    run_test().unwrap();
+    /// # }
+    /// # fn run_test()->QueryResult<()>{
+    /// #   use diesel::dsl::array_dims;
+    /// #   use diesel::sql_types::{Nullable,Array,Integer};
+    /// #   let connection = &mut establish_connection();
+    ///
+    /// let dims = diesel::select(array_dims::<Array<Integer>,_>(vec![1,2]))
+    ///     .get_result::<String>(connection)?;
+    /// assert!(String::from("[1:2]").eq(&dims));
+    ///
+    /// let dims = diesel::select(array_dims::<Array<Nullable<Integer>>,_>(vec![None::<i32>,Some(2)]))
+    ///     .get_result::<String>(connection)?;
+    /// assert!(String::from("[1:2]").eq(&dims));
+    ///
+    /// let dims = diesel::select(array_dims::<Array<Nullable<Integer>>,_>(vec![None::<i32>]))
+    ///     .get_result::<String>(connection)?;
+    /// assert!(String::from("[1:1]").eq(&dims));
+    /// # Ok(())
+    /// # }
+    ///
+    fn array_dims<Arr:ArrayOrNullableArray<> + SingleValue>(arr:Arr) -> Text;
 }
