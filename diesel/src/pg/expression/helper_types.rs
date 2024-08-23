@@ -398,3 +398,8 @@ pub type array_prepend<E, A> = super::functions::array_prepend<SqlTypeOf<E>, Sql
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type array_remove<A, E> = super::functions::array_remove<SqlTypeOf<A>, SqlTypeOf<E>, A, E>;
+
+/// Return type of [`cardinality(array)`](super::functions::cardinality())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type cardinality<A> = super::functions::cardinality<SqlTypeOf<A>, A>;

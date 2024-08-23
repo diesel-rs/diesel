@@ -420,6 +420,7 @@ fn postgres_functions() -> _ {
         array_remove(pg_extras::array, pg_extras::id),
         array_to_string(pg_extras::array, pg_extras::name),
         array_to_string_with_null_string(pg_extras::array, pg_extras::name, pg_extras::name),
+        cardinality(pg_extras::array),
     )
 }
 
