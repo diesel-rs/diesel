@@ -153,7 +153,7 @@ There are few cases when you want to choose a custom type over a table:
 
 1) The data have no relation to data in other tables.
 2) You want to group a set of fields i.e. to store a complex configuration file with nested fields.
-3) You specifically don’t relations because of specific requirements.
+3) You specifically don’t want relations because of specific requirements.
 
 The service endpoint is an example of the first two cases.
 For once, the endpoints have no relation to any other data therefore a separate table makes little sense. Secondly, the
