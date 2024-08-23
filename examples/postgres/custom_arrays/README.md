@@ -512,7 +512,7 @@ If the type or number of types mismatch, you will get a compiler error telling y
 the number of fields don’t match or that the type of the fields don’t match.
 Also, because the write_tuple expects values, you have to call either to_owned() or clone() on any referenced data.
 
-The from_sql reverses the process by converting a Postgres typed tuple back into a Rust struct.
+The FromSql reverses the process by converting a Postgres typed tuple back into a Rust struct.
 Again, Diesel provides a convenient helper to do so:
 
 ```rust 
