@@ -1534,6 +1534,13 @@ fn test_multirange_to_sql() {
         Multirange<Int4>,
         Vec<(Bound<i32>, Bound<i32>)>,
     >(expected_value, value));
+
+    let expected_value = "'{[5,8)}'::int4multirange";
+    let value = vec![5..8];
+    assert!(query_to_sql_equality::<
+        Multirange<Int4>,
+        Vec<(std::ops::Range<i32>)>,
+    >(expected_value, value));
 }
 
 #[cfg(feature = "postgres")]

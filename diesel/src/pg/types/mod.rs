@@ -178,8 +178,8 @@ pub mod sql_types {
     ///
     /// ### [`ToSql`] impls
     ///
-    /// - [`Vec<(Bound<T>, Bound<T>)>`][Vec] for any `T` which implements `ToSql<ST>`
-    /// - [`&[T]`][slice] for any `T` which implements `ToSql<ST>`
+    /// - [`Vec<T>`][Vec] for any `T` which `Range<T>` implements `ToSql<ST>`
+    /// - [`&[T]`][slice] for any `T` which `Range<T>` implements `ToSql<ST>`
     ///
     /// ### [`FromSql`] impls
     ///
