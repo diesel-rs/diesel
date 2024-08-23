@@ -356,4 +356,4 @@ pub type array_append<A, E> = super::functions::array_append<SqlTypeOf<A>, SqlTy
 /// Return type of [`array_dims(array)`](super::functions::array_append())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
-pub type array_dims<A,T> = super::functions::array_dims<SqlTypeOf<A>,SqlTypeOf<T>, A>;
+pub type array_dims<A> = super::functions::array_dims<SqlTypeOf<A>, A>;
