@@ -327,8 +327,8 @@ pub mod smdb {
 
 Notice, the Postgres types are stored in Postgres therefore you are not seeing them in the generated schema. Only tables
 will show up in the generates schema. Furthermore, you will need a wrapper struct to map from Rust to the Postgres type.
-For the ServiceEndpoint, Diesel already generated a matching wrapper struct with the correct annotations. The service
-table then uses that wrapper struct “ServiceEndpoint” instead of the native Postgres type to reference the custom type
+For the ServiceEndpoint, Diesel already generated a matching zero sized SQL type struct with the correct annotations. The service
+table then uses that SQL type `ServiceEndpoint` instead of the native Postgres type to reference the custom type
 in the endpoints array.
 
 You want to attach the generated schema.rs to your lib file to access it from within your crate and stop your IDE from
