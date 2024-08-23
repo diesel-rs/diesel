@@ -359,7 +359,7 @@ pub type Connection = PgConnection;
 
 ## Rust Types
 
-In total, you implement three Rust types:
+In total, you need implement three Rust types:
 
 * Enum: ProtocolType
 * Struct: Endpoint
