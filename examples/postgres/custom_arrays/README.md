@@ -376,8 +376,7 @@ Diesel needs a zero sized SQL type struct to represent a custom Enum in Postgres
 pub struct PgProtocolType;
 ```
 
-It is important that you add both, sql_type and postgres_type, otherwise insert will fail.
-Furthermore, it is important to add the database schema ("smdb") otherwise Postgres fails to find the type and aborts an
+It is important to add the database schema ("smdb") and type name ("protocol_type") otherwise Postgres fails to find the type and aborts an
 operation on that type.
 
 Next, let’s define the actual Enum. Bear in mind to use the wrapper struct as sql_type on the Enum:
