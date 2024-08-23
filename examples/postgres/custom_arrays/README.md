@@ -394,7 +394,7 @@ pub enum ProtocolType {
 It’s worth pointing out that you are dealing with three types in total:
 
 1) protocol_type: The Postgres Enum type
-2) PGProtocolType: The Wrapper struct that refers to the Postgres Enum type
+2) PgProtocolType: The SQL type struct that refers to the Postgres Enum type
 3) ProtocolType: The Rust Enum that refers to the wrapper struct PGProtocolType
 
 Mixing any of those three types will result in a complicated Diesel trait error. However, these error messages are just
