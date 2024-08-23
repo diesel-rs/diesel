@@ -378,7 +378,7 @@ pub struct PgProtocolType;
 It is important to add the database schema ("smdb") and type name ("protocol_type") otherwise Postgres fails to find the type and aborts an
 operation on that type.
 
-Next, let’s define the actual Enum. Bear in mind to use the wrapper struct as sql_type on the Enum:
+Next, let’s define the actual Enum. Bear in mind to use the SQL type struct as sql_type on the Enum:
 
 ```rust
 #[derive(Debug, Clone, FromSqlRow, AsExpression, PartialEq, Eq)]
