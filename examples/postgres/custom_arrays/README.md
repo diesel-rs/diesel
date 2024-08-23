@@ -769,10 +769,7 @@ returns a result or error.
         db: &mut Connection,
         param_service_id: i32,
     ) -> QueryResult<bool> {
-        match service.find(param_service_id).first::<Service>(db) {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
-        }
+        Ok(service.find(param_service_id).first::<Service>(db).optional()?.is_some())
     }
 ```
 
