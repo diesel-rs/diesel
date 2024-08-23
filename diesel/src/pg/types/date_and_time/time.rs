@@ -39,8 +39,7 @@ impl ToSql<Timestamp, Pg> for PrimitiveDateTime {
             let error_message = format!("{self:?} as microseconds is too large to fit in an i64");
             return Err(error_message.into());
         }
-        let micros = micros as i64;
-        ToSql::<Timestamp, Pg>::to_sql(&PgTimestamp(micros), &mut out.reborrow())
+        ToSql::<Timestamp, Pg>::to_sql(&PgTimestamp(micros.try_into()?), &mut out.reborrow())
     }
 }
 
@@ -79,9 +78,10 @@ impl ToSql<Timestamptz, Pg> for OffsetDateTime {
 impl ToSql<Time, Pg> for NaiveTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let duration = *self - NaiveTime::MIDNIGHT;
-        // microseconds in a day cannot overflow i64
-        let micros = duration.whole_microseconds() as i64;
-        ToSql::<Time, Pg>::to_sql(&PgTime(micros), &mut out.reborrow())
+        ToSql::<Time, Pg>::to_sql(
+            &PgTime(duration.whole_microseconds().try_into()?),
+            &mut out.reborrow(),
+        )
     }
 }
 
@@ -100,7 +100,7 @@ const PG_EPOCH_DATE: NaiveDate = date!(2000 - 1 - 1);
 impl ToSql<Date, Pg> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let days_since_epoch = (*self - PG_EPOCH_DATE).whole_days();
-        ToSql::<Date, Pg>::to_sql(&PgDate(days_since_epoch as i32), &mut out.reborrow())
+        ToSql::<Date, Pg>::to_sql(&PgDate(days_since_epoch.try_into()?), &mut out.reborrow())
     }
 }
 

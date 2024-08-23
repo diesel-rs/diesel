@@ -203,6 +203,10 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
                 $($TT: ToSql<$T, Pg>,)*
             {
                 type Target = ($($ST,)*);
+
+                // statically known to always fit
+                // as we don't support more than 128 columns
+                #[allow(clippy::cast_possible_truncation)]
                 const COLUMN_COUNT: i16 = $Tuple as i16;
 
                 fn write_to_buffer(&self, idx: i16, out: &mut Vec<u8>) -> QueryResult<IsNull> {
@@ -234,6 +238,10 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
                 $($TT: ToSql<$T, Pg>,)*
             {
                 type Target = ($($ST,)*);
+
+                // statically known to always fit
+                // as we don't support more than 128 columns
+                #[allow(clippy::cast_possible_truncation)]
                 const COLUMN_COUNT: i16 = $Tuple as i16;
 
                 fn write_to_buffer(&self, idx: i16, out: &mut Vec<u8>) -> QueryResult<IsNull> {
@@ -309,7 +317,9 @@ where
                 if is_null == IsNull::No {
                     // fill in the length afterwards
                     let len_after = buffer.len();
-                    let diff = (len_after - len_before) as i32;
+                    let diff = (len_after - len_before)
+                        .try_into()
+                        .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
                     let bytes = i32::to_be_bytes(diff);
                     for (b, t) in bytes.into_iter().zip(&mut buffer[len_before - 4..]) {
                         *t = b;

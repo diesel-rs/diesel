@@ -198,23 +198,35 @@ pub fn build_cli() -> Command {
         .subcommand_required(true)
         .arg_required_else_help(true);
 
-    let setup_subcommand = Command::new("setup").arg(migration_dir_arg()).about(
-        "Creates the migrations directory, creates the database \
+    let setup_subcommand = Command::new("setup")
+        .arg(migration_dir_arg())
+        .arg(no_default_migration_arg())
+        .about(
+            "Creates the migrations directory, creates the database \
              specified in your DATABASE_URL, and runs existing migrations.",
-    );
+        );
 
     let database_subcommand = Command::new("database")
         .alias("db")
         .arg(migration_dir_arg())
         .about("A group of commands for setting up and resetting your database.")
-        .subcommand(Command::new("setup").about(
-            "Creates the database specified in your DATABASE_URL, \
-             and then runs any existing migrations.",
-        ))
-        .subcommand(Command::new("reset").about(
-            "Resets your database by dropping the database specified \
-             in your DATABASE_URL and then running `diesel database setup`.",
-        ))
+        .subcommand(
+            Command::new("setup")
+                .arg(no_default_migration_arg())
+                .about(
+                    "Creates the database specified in your DATABASE_URL, and \
+                     then runs any existing migrations.",
+                )
+        )
+        .subcommand(
+            Command::new("reset")
+                .arg(no_default_migration_arg())
+                .about(
+                    "Resets your database by dropping the database specified \
+                     in your DATABASE_URL and then running `diesel database \
+                     setup`.",
+                )
+        )
         .subcommand(
             Command::new("drop")
                 .about("Drops the database specified in your DATABASE_URL.")
@@ -401,4 +413,11 @@ fn migration_dir_arg() -> Arg {
         .num_args(1)
         .value_parser(clap::value_parser!(std::path::PathBuf))
         .global(true)
+}
+
+fn no_default_migration_arg() -> Arg {
+    Arg::new("NO_DEFAULT_MIGRATION")
+        .long("no-default-migration")
+        .help("Don't generate the default migration.")
+        .action(ArgAction::SetTrue)
 }

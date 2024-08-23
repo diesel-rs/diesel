@@ -147,7 +147,9 @@ impl RawConnection {
                 pq_sys::PQputCopyData(
                     self.internal_connection.as_ptr(),
                     c.as_ptr() as *const libc::c_char,
-                    c.len() as libc::c_int,
+                    c.len()
+                        .try_into()
+                        .map_err(|e| Error::SerializationError(Box::new(e)))?,
                 )
             };
             if res != 1 {

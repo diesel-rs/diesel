@@ -244,7 +244,10 @@
     clippy::enum_glob_use,
     clippy::if_not_else,
     clippy::items_after_statements,
-    clippy::used_underscore_binding
+    clippy::used_underscore_binding,
+    clippy::cast_possible_wrap,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss
 )]
 #![deny(unsafe_code)]
 #![cfg_attr(test, allow(clippy::map_unwrap_or, clippy::unwrap_used))]

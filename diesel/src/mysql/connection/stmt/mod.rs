@@ -153,9 +153,11 @@ pub(super) struct StatementUse<'a> {
 }
 
 impl<'a> StatementUse<'a> {
-    pub(in crate::mysql::connection) fn affected_rows(&self) -> usize {
+    pub(in crate::mysql::connection) fn affected_rows(&self) -> QueryResult<usize> {
         let affected_rows = unsafe { ffi::mysql_stmt_affected_rows(self.inner.stmt.as_ptr()) };
-        affected_rows as usize
+        affected_rows
+            .try_into()
+            .map_err(|e| Error::DeserializationError(Box::new(e)))
     }
 
     /// This function should be called after `execute` only
@@ -167,14 +169,19 @@ impl<'a> StatementUse<'a> {
 
     pub(super) fn populate_row_buffers(&self, binds: &mut OutputBinds) -> QueryResult<Option<()>> {
         let next_row_result = unsafe { ffi::mysql_stmt_fetch(self.inner.stmt.as_ptr()) };
-        match next_row_result as libc::c_uint {
-            ffi::MYSQL_NO_DATA => Ok(None),
-            ffi::MYSQL_DATA_TRUNCATED => binds.populate_dynamic_buffers(self).map(Some),
-            0 => {
-                binds.update_buffer_lengths();
-                Ok(Some(()))
+        if next_row_result < 0 {
+            self.inner.did_an_error_occur().map(Some)
+        } else {
+            #[allow(clippy::cast_sign_loss)] // that's how it's supposed to be based on the API
+            match next_row_result as libc::c_uint {
+                ffi::MYSQL_NO_DATA => Ok(None),
+                ffi::MYSQL_DATA_TRUNCATED => binds.populate_dynamic_buffers(self).map(Some),
+                0 => {
+                    binds.update_buffer_lengths();
+                    Ok(Some(()))
+                }
+                _error => self.inner.did_an_error_occur().map(Some),
             }
-            _error => self.inner.did_an_error_occur().map(Some),
         }
     }
 
@@ -187,7 +194,8 @@ impl<'a> StatementUse<'a> {
         ffi::mysql_stmt_fetch_column(
             self.inner.stmt.as_ptr(),
             bind,
-            idx as libc::c_uint,
+            idx.try_into()
+                .map_err(|e| Error::DeserializationError(Box::new(e)))?,
             offset as libc::c_ulong,
         );
         self.inner.did_an_error_occur()

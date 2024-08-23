@@ -37,7 +37,7 @@ include = ["src/**/*.rs", "tests/**/*.rs", "LICENSE-*", "README.md"]
 edition = "2021"
 
 [workspace.dependencies]
-libsqlite3-sys = "0.29"
+libsqlite3-sys = "0.30.1"
 
 # Config for 'cargo dist'
 [workspace.metadata.dist]

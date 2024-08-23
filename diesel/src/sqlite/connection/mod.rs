@@ -185,9 +185,11 @@ impl Connection for SqliteConnection {
         T: QueryFragment<Self::Backend> + QueryId,
     {
         let statement_use = self.prepared_query(source)?;
-        statement_use
-            .run()
-            .map(|_| self.raw_connection.rows_affected_by_last_query())
+        statement_use.run().and_then(|_| {
+            self.raw_connection
+                .rows_affected_by_last_query()
+                .map_err(Error::DeserializationError)
+        })
     }
 
     fn transaction_state(&mut self) -> &mut AnsiTransactionManager

@@ -792,6 +792,7 @@ define_sql_function! {
     ///
     fn array_dims<Arr:ArrayOrNullableArray<> + SingleValue>(arr:Arr) -> Text;
 }
+
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
     /// Converts each array element to its text representation and concatenates those elements

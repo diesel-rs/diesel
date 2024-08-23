@@ -54,6 +54,7 @@ impl Queryable<sql_types::Binary, Sqlite> for *const [u8] {
 }
 
 #[cfg(feature = "sqlite")]
+#[allow(clippy::cast_possible_truncation)] // we want to truncate here
 impl FromSql<sql_types::SmallInt, Sqlite> for i16 {
     fn from_sql(value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         Ok(value.read_integer() as i16)
@@ -82,6 +83,7 @@ impl FromSql<sql_types::BigInt, Sqlite> for i64 {
 }
 
 #[cfg(feature = "sqlite")]
+#[allow(clippy::cast_possible_truncation)] // we want to truncate here
 impl FromSql<sql_types::Float, Sqlite> for f32 {
     fn from_sql(value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         Ok(value.read_double() as f32)

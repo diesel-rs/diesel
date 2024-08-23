@@ -253,3 +253,31 @@ fn database_setup_respects_migrations_dir_from_diesel_toml() {
     );
     assert!(db.table_exists("users"));
 }
+
+#[test]
+fn database_setup_no_default_migrations() {
+    let p = project("database_setup_no_default_migrations")
+        .folder("custom_migrations")
+        .file(
+            "diesel.toml",
+            r#"
+            [migrations_directory]
+            dir = "custom_migrations"
+            "#,
+        )
+        .build();
+    let db = database(&p.database_url());
+
+    // sanity check
+    assert!(!db.exists());
+
+    let result = p.command("database")
+        .arg("setup")
+        .arg("--no-default-migration")
+        .run();
+
+    use std::path::Path;
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file(Path::new("custom_migrations").join("00000000000000_diesel_initial_setup")));
+}

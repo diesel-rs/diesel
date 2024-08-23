@@ -69,6 +69,17 @@ fn setup_creates_default_migration_file_if_project_is_otherwise_setup() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn setup_no_default_migration() {
+    let p = project("setup_no_default_migration").build();
+
+    let result = p.command("setup").arg("--no-default-migration").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file(Path::new("migrations").join("00000000000000_diesel_initial_setup")));
+}
+
+#[test]
 fn setup_creates_schema_table() {
     let p = project("setup_creates_schema_table").build();
     let db = database(&p.database_url());

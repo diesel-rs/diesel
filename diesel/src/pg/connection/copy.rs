@@ -102,7 +102,10 @@ impl<'conn> BufRead for CopyToBuffer<'conn> {
                 let len =
                     pq_sys::PQgetCopyData(self.conn.internal_connection.as_ptr(), &mut self.ptr, 0);
                 match len {
-                    len if len >= 0 => self.len = len as usize + 1,
+                    len if len >= 0 => {
+                        self.len = 1 + usize::try_from(len)
+                            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
+                    }
                     -1 => self.len = 0,
                     _ => {
                         let error = self.conn.last_error_message();
