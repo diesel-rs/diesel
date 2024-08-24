@@ -356,6 +356,16 @@ pub fn build_cli() -> Command {
         .global(true)
         .num_args(1);
 
+    let test_db_arg = Arg::new("TEST_DB")
+        .long("test-db")
+        .short('t')
+        .help(
+            "Enable using a test db. This switches the database-url fall back to load from the \
+            TEST_DATABASE_URL environment variable before DATABASE_URL.",
+        )
+        .global(true)
+        .action(ArgAction::SetTrue);
+
     let locked_schema_arg = Arg::new("LOCKED_SCHEMA")
         .long("locked-schema")
         .help("Require that the schema file is up to date.")
@@ -384,6 +394,7 @@ pub fn build_cli() -> Command {
         )
         .arg(database_arg)
         .arg(config_arg)
+        .arg(test_db_arg)
         .arg(locked_schema_arg)
         .subcommand(migration_subcommand)
         .subcommand(setup_subcommand)
