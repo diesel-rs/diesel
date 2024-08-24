@@ -271,7 +271,8 @@ fn database_setup_no_default_migrations() {
     // sanity check
     assert!(!db.exists());
 
-    let result = p.command("database")
+    let result = p
+        .command("database")
         .arg("setup")
         .arg("--no-default-migration")
         .run();
