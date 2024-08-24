@@ -958,3 +958,41 @@ define_sql_function! {
         array: Arr, del: Text
     ) -> Text;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the total number of elements in the array, or 0 if the array is empty.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main(){
+    /// #    run_test().unwrap();
+    /// # }
+    /// # fn run_test()->QueryResult<()>{
+    /// #   use diesel::dsl::cardinality;
+    /// #   use diesel::sql_types::{Nullable,Array,Integer};
+    /// #   let connection = &mut establish_connection();
+    ///
+    /// let array_cardinality = diesel::select(cardinality::<Array<Integer>, _>(vec![1, 2, 3, 4]))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(4, array_cardinality.unwrap());
+    ///
+    /// let array_cardinality = diesel::select(cardinality::<Array<Nullable<Integer>>, _>(vec![Some(1), Some(2), Some(3)]))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(3, array_cardinality.unwrap());
+    ///
+    /// let array_cardinality = diesel::select(cardinality::<Array<Integer>, _>(Vec::<i32>::new()))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(0, array_cardinality.unwrap());
+    ///
+    /// let array_cardinality = diesel::select(cardinality::<Nullable<Array<Integer>>, _>(None::<Vec<i32>>))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, array_cardinality);
+    /// # Ok(())
+    /// # }
+    ///
+    fn cardinality<Arr:ArrayOrNullableArray + SingleValue>(a: Arr) -> Nullable<Integer>;
+}
