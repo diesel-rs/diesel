@@ -994,5 +994,5 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
-    fn cardinality<Arr:ArrayOrNullableArray<> + SingleValue>(a: Arr) -> Nullable<Integer>;
+    fn cardinality<Arr:ArrayOrNullableArray + SingleValue>(a: Arr) -> Nullable<Integer>;
 }
