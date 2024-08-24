@@ -210,23 +210,15 @@ pub fn build_cli() -> Command {
         .alias("db")
         .arg(migration_dir_arg())
         .about("A group of commands for setting up and resetting your database.")
-        .subcommand(
-            Command::new("setup")
-                .arg(no_default_migration_arg())
-                .about(
-                    "Creates the database specified in your DATABASE_URL, and \
+        .subcommand(Command::new("setup").arg(no_default_migration_arg()).about(
+            "Creates the database specified in your DATABASE_URL, and \
                      then runs any existing migrations.",
-                )
-        )
-        .subcommand(
-            Command::new("reset")
-                .arg(no_default_migration_arg())
-                .about(
-                    "Resets your database by dropping the database specified \
+        ))
+        .subcommand(Command::new("reset").arg(no_default_migration_arg()).about(
+            "Resets your database by dropping the database specified \
                      in your DATABASE_URL and then running `diesel database \
                      setup`.",
-                )
-        )
+        ))
         .subcommand(
             Command::new("drop")
                 .about("Drops the database specified in your DATABASE_URL.")

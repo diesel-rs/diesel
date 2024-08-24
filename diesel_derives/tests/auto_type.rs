@@ -5,6 +5,7 @@ use diesel::prelude::*;
 use diesel::sql_types;
 #[cfg(feature = "postgres")]
 use std::ops::Bound;
+
 table! {
     users {
         id -> Integer,
@@ -415,6 +416,8 @@ fn postgres_functions() -> _ {
         array_append(pg_extras::array, pg_extras::id),
         array_replace(pg_extras::array, pg_extras::id, pg_extras::id),
         array_dims(pg_extras::array),
+        array_prepend(pg_extras::id, pg_extras::array),
+        array_remove(pg_extras::array, pg_extras::id),
         array_to_string(pg_extras::array, pg_extras::name),
         array_to_string_with_null_string(pg_extras::array, pg_extras::name, pg_extras::name),
     )
