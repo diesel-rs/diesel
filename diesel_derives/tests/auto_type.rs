@@ -415,6 +415,8 @@ fn postgres_functions() -> _ {
         array_append(pg_extras::array, pg_extras::id),
         array_replace(pg_extras::array, pg_extras::id, pg_extras::id),
         array_dims(pg_extras::array),
+        array_prepend(pg_extras::id, pg_extras::array),
+        array_remove(pg_extras::array, pg_extras::id),
     )
 }
 

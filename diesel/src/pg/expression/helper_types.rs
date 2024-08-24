@@ -367,3 +367,13 @@ pub type array_replace<A, E, R> = super::functions::array_replace<SqlTypeOf<A>, 
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type array_dims<A> = super::functions::array_dims<SqlTypeOf<A>, A>;
+
+/// Return type of [`array_prepend(element, array)`](super::functions::array_prepend())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_prepend<E, A> = super::functions::array_prepend<SqlTypeOf<E>, SqlTypeOf<A>, E, A>;
+
+/// Return type of [`array_remove(array, element)`](super::functions::array_remove())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_remove<A, E> = super::functions::array_remove<SqlTypeOf<A>, SqlTypeOf<E>, A, E>;
