@@ -865,3 +865,96 @@ define_sql_function! {
     /// ```
     fn array_remove<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue>(a: Arr, e: T) -> Arr;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Converts each array element to its text representation and concatenates those elements
+    /// separated by the delimiter string. If `null_string` is provided and is not `NULL`, then `NULL`
+    /// array entries are represented by that string; otherwise, they are omitted.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_to_string_with_null_string;
+    /// #     use diesel::sql_types::{Nullable, Text, Array};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// // Example with `NULL` representation as a string
+    /// let result: String = diesel::select(array_to_string_with_null_string::<Array<Nullable<Text>>, _, _, _>(
+    ///     vec![Some("first"), None::<&str>, Some("third")], ",", "NULL"))
+    ///     .get_result(connection)?;
+    /// assert_eq!(result, "first,NULL,third");
+    ///
+    /// // Example without any `NULL` values
+    /// let result: String = diesel::select(array_to_string_with_null_string::<Array<Nullable<Text>>, _, _, _>(
+    ///     vec![Some("first"), Some("second")], ",", "NULL"))
+    ///     .get_result(connection)?;
+    /// assert_eq!(result, "first,second");
+    ///
+    /// // Example with all `NULL` values
+    /// let result: String = diesel::select(array_to_string_with_null_string::<Array<Nullable<Text>>, _, _, _>(
+    ///     vec![None::<&str>, None::<&str>], ",", "NULL"))
+    ///     .get_result(connection)?;
+    /// assert_eq!(result, "NULL,NULL");
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "array_to_string"]
+    fn array_to_string_with_null_string<Arr: ArrayOrNullableArray + SingleValue>(
+        array: Arr, del: Text, null: Text
+    ) -> Text;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Converts each array element to its text representation and concatenates those elements
+    /// separated by the delimiter string. `NULL` entries are omitted in this variant.
+    /// See [array_to_string_with_null_string] for a variant with that argument.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_to_string;
+    /// #     use diesel::sql_types::{Text, Array, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// // Example with non-null values
+    /// let result: String = diesel::select(array_to_string::<Array<Nullable<Text>>, _, _>(
+    ///     vec![Some("first"), Some("second")], ","))
+    ///     .get_result(connection)?;
+    /// assert_eq!(result, "first,second");
+    ///
+    /// // Example with `NULL` values (omitted in the result)
+    /// let result: String = diesel::select(array_to_string::<Array<Nullable<Text>>, _, _>(
+    ///     vec![Some("first"), None::<&str>, Some("third")], ","))
+    ///     .get_result(connection)?;
+    /// assert_eq!(result, "first,third");
+    ///
+    /// // Example with only `NULL` values (empty result)
+    /// let result: String = diesel::select(array_to_string::<Array<Nullable<Text>>, _, _>(
+    ///     vec![None::<&str>, None::<&str>], ","))
+    ///     .get_result(connection)?;
+    /// assert_eq!(result, "");
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_to_string<Arr: ArrayOrNullableArray + SingleValue>(
+        array: Arr, del: Text
+    ) -> Text;
+}

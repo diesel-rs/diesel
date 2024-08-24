@@ -308,6 +308,26 @@ pub type NotLikeBinary<Lhs, Rhs> = crate::dsl::NotLike<Lhs, Rhs>;
 #[deprecated(note = "Use `dsl::Concat` instead")]
 pub type ConcatArray<Lhs, Rhs> = crate::dsl::Concat<Lhs, Rhs>;
 
+/// Return type of [`array_to_string_with_null_string(arr, delim, null_str)`](super::functions::array_to_string_with_null_string)
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_to_string_with_null_string<A, D, N> =
+    super::functions::array_to_string_with_null_string<
+        SqlTypeOf<A>, // The SQL type of the array
+        A,            // The array itself
+        D,            // The delimiter
+        N,            // The null string
+    >;
+
+/// Return type of [`array_to_string(arr, delim)`](super::functions::array_to_string)
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_to_string<A, D> = super::functions::array_to_string<
+    SqlTypeOf<A>, // The SQL type of the array
+    A,            // The array itself
+    D,            // The delimiter
+>;
+
 /// Return type of [`lower(range)`](super::functions::lower())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
