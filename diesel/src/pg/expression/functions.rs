@@ -1014,7 +1014,7 @@ define_sql_function! {
     /// #     use diesel::dsl::array_cat;
     /// #     use diesel::sql_types::{Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let result = diesel::select(array_cat::<Array<Integer>, _, _>(vec![1, 2], vec![3, 4]))
+    /// let result = diesel::select(array_cat::<Array<Integer>, _, _, _>(vec![1, 2], vec![3, 4]))
     ///     .get_result::<Vec<i32>>(connection)?;
     /// assert_eq!(vec![1, 2, 3, 4], result);
     /// #     Ok(())
