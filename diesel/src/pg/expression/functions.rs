@@ -1025,7 +1025,7 @@ define_sql_function! {
 
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
-    /// Returns the length of the requested array dimension
+    /// Returns the length of the requested array
     ///
     /// # Example
     ///
@@ -1040,7 +1040,7 @@ define_sql_function! {
     /// #     use diesel::dsl::array_length;
     /// #     use diesel::sql_types::{Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let result = diesel::select(array_length::<Array<Integer>, _>(vec![1, 2, 3], 1))
+    /// let result = diesel::select(array_length::<Array<Integer>, _, _>(vec![1, 2, 3], 1))
     ///     .get_result::<Option<i32>>(connection)?;
     /// assert_eq!(Some(3), result);
     /// #     Ok(())
