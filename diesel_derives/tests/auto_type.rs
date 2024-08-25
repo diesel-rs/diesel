@@ -421,6 +421,8 @@ fn postgres_functions() -> _ {
         array_to_string(pg_extras::array, pg_extras::name),
         array_to_string_with_null_string(pg_extras::array, pg_extras::name, pg_extras::name),
         cardinality(pg_extras::array),
+        array_cat(pg_extras::array, pg_extras::array),
+        array_length(pg_extras::array, 1_i32),
     )
 }
 

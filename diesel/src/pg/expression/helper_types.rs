@@ -403,3 +403,13 @@ pub type array_remove<A, E> = super::functions::array_remove<SqlTypeOf<A>, SqlTy
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type cardinality<A> = super::functions::cardinality<SqlTypeOf<A>, A>;
+
+/// Return type of [`array_cat(array_a, array_b)`](super::functions::array_cat())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_cat<A, B> = super::functions::array_cat<SqlTypeOf<A>, SqlTypeOf<B>, A, B>;
+
+/// Return type of [`array_length(array, dimension)`](super::functions::array_length())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_length<A, D> = super::functions::array_length<SqlTypeOf<A>, A, D>;
