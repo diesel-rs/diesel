@@ -22,6 +22,12 @@ fn test_db_migration(conn: &mut Connection) {
     assert!(res.is_ok());
 }
 
+fn test_revert_db_migration(conn: &mut Connection) {
+    let res = custom_arrays::revert_db_migration(conn);
+    //dbg!(&result);
+    assert!(res.is_ok());
+}
+
 #[test]
 fn test_service() {
     let mut connection = postgres_connection();
@@ -71,6 +77,9 @@ fn test_service() {
 
     println!("Test delete service!");
     test_service_delete(conn);
+
+    println!("Test revert DB migration");
+    test_revert_db_migration(conn);
 }
 
 fn test_create_service(conn: &mut Connection) {
