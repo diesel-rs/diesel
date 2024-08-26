@@ -1100,7 +1100,8 @@ define_sql_function! {
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
     /// Returns an array initialized with supplied value and dimensions,
-    /// optionally with lower bounds other than 1
+    /// optionally with lower bounds other than 1. This function omits the optional
+    /// lower bound argument. See [array_fill_with_lower_bound] for that.
     ///
     /// # Example
     ///
@@ -1139,7 +1140,7 @@ define_sql_function! {
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
     /// Returns an array initialized with supplied value and dimensions,
-    /// optionally with lower bounds other than 1
+    /// with lower bounds other than 1
     ///
     /// # Example
     ///
