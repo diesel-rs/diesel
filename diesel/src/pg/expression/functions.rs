@@ -1134,7 +1134,7 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
-    fn array_fill<E:SingleValue>(value:E,dim:Array<Integer>) -> Array<E>;
+    fn array_fill<E:SingleValue>(value: E, dim: Array<Integer>) -> Array<E>;
 }
 
 #[cfg(feature = "postgres_backend")]
@@ -1174,5 +1174,5 @@ define_sql_function! {
     /// # }
     ///
     #[sql_name = "array_fill"]
-    fn array_fill_with_lower_bound<E:SingleValue>(value:E,dim:Array<Integer>,lower_bound:Array<Integer>) -> Array<E>;
+    fn array_fill_with_lower_bound<E:SingleValue>(value: E, dim: Array<Integer>, lower_bound: Array<Integer>) -> Array<E>;
 }
