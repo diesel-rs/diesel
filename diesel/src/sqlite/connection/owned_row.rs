@@ -41,7 +41,7 @@ impl<'a> Row<'a, Sqlite> for OwnedSqliteRow {
         let idx = self.idx(idx)?;
         Some(OwnedSqliteField {
             row: self,
-            col_idx: i32::try_from(idx).ok()?,
+            col_idx: idx,
         })
     }
 
@@ -71,14 +71,14 @@ impl<'idx> RowIndex<&'idx str> for OwnedSqliteRow {
 #[allow(missing_debug_implementations)]
 pub struct OwnedSqliteField<'row> {
     pub(super) row: &'row OwnedSqliteRow,
-    pub(super) col_idx: i32,
+    pub(super) col_idx: usize,
 }
 
 impl<'row> Field<'row, Sqlite> for OwnedSqliteField<'row> {
     fn field_name(&self) -> Option<&str> {
         self.row
             .column_names
-            .get(self.col_idx as usize)
+            .get(self.col_idx)
             .and_then(|o| o.as_ref().map(|s| s.as_ref()))
     }
 

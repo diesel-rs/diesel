@@ -153,7 +153,7 @@ There are few cases when you want to choose a custom type over a table:
 
 1) The data have no relation to data in other tables.
 2) You want to group a set of fields i.e. to store a complex configuration file with nested fields.
-3) You specifically don’t relations because of specific requirements.
+3) You specifically don’t want relations because of specific requirements.
 
 The service endpoint is an example of the first two cases.
 For once, the endpoints have no relation to any other data therefore a separate table makes little sense. Secondly, the
@@ -202,7 +202,7 @@ You usually can return the primary key value after inserting so if you need to k
 ### External primary key: INTEGER type
 
 In case you need to know the specific value of the primary key and you need to know it before inserting the data, you
-have to assign unique primary keys before inserting data and you have to use the INTEGE type (or any of the many integer
+have to assign unique primary keys before inserting data and you have to use the INTEGER type (or any of the many integer
 variations) to convey to Postgres that you set the primary key yourself. Notice, you still have to set the NOT NULL and
 PRIMARY KEY attribute to ensure data consistency.
 
@@ -327,8 +327,8 @@ pub mod smdb {
 
 Notice, the Postgres types are stored in Postgres therefore you are not seeing them in the generated schema. Only tables
 will show up in the generates schema. Furthermore, you will need a wrapper struct to map from Rust to the Postgres type.
-For the ServiceEndpoint, Diesel already generated a matching wrapper struct with the correct annotations. The service
-table then uses that wrapper struct “ServiceEndpoint” instead of the native Postgres type to reference the custom type
+For the ServiceEndpoint, Diesel already generated a matching zero sized SQL type struct with the correct annotations. The service
+table then uses that SQL type `ServiceEndpoint` instead of the native Postgres type to reference the custom type
 in the endpoints array.
 
 You want to attach the generated schema.rs to your lib file to access it from within your crate and stop your IDE from
@@ -340,7 +340,7 @@ Rust type implementations matching all the generated Postgres types and tables.
 Lastly, you also want to add a type alias for a postgres database connection in the lib file because that gives you the
 freedom to swap between a normal single connection or a connection pool without updating your type implementation or
 tests.
-The connection pool type alias has ben uncommented, but the type signature of the pooled connection makes it obvious why
+The connection pool type alias has been uncommented, but the type signature of the pooled connection makes it obvious why
 a type alias is a good idea.
 
 At this point, your lib file looks as shown below:
@@ -359,7 +359,7 @@ pub type Connection = PgConnection;
 
 ## Rust Types
 
-In total, you implement three Rust types:
+In total, you need implement three Rust types:
 
 * Enum: ProtocolType
 * Struct: Endpoint
@@ -367,20 +367,18 @@ In total, you implement three Rust types:
 
 ### Rust Enum: ProtocolType
 
-Diesel needs a wrapper struct to store a custom Enum in Postgres, so let’s add one:
+Diesel needs a zero sized SQL type struct to represent a custom Enum in Postgres, so let’s add one:
 
 ```rust
 #[derive(SqlType)]
-#[diesel(sql_type = protocol_type)]
 #[diesel(postgres_type(name = "protocol_type", schema = "smdb"))]
 pub struct PgProtocolType;
 ```
 
-It is important that you add both, sql_type and postgres_type, otherwise insert will fail.
-Furthermore, it is important to add the database schema ("smdb") otherwise Postgres fails to find the type and aborts an
+It is important to add the database schema ("smdb") and type name ("protocol_type") otherwise Postgres fails to find the type and aborts an
 operation on that type.
 
-Next, let’s define the actual Enum. Bear in mind to use the wrapper struct as sql_type on the Enum:
+Next, let’s define the actual Enum. Bear in mind to use the SQL type struct as sql_type on the Enum:
 
 ```rust
 #[derive(Debug, Clone, FromSqlRow, AsExpression, PartialEq, Eq)]
@@ -396,18 +394,18 @@ pub enum ProtocolType {
 It’s worth pointing out that you are dealing with three types in total:
 
 1) protocol_type: The Postgres Enum type
-2) PGProtocolType: The Wrapper struct that refers to the Postgres Enum type
-3) ProtocolType: The Rust Enum that refers to the wrapper struct PGProtocolType
+2) PgProtocolType: The SQL type struct that refers to the Postgres Enum type
+3) ProtocolType: The Rust Enum that maps to the SQL type struct PgProtocolType
 
 Mixing any of those three types will result in a complicated Diesel trait error. However, these error messages are just
 a convoluted way to say that the database type mismatches the Rust type. When you encounter a consulted trait error
 message, make sure to check:
 
-1) Do I have a wrapper struct?
-2) Does my a wrapper struct derives SqlType?
-3) Does my wrapper type has both, sql_type and postgres_type declared?
-4) Are sql_type and postgres_type both referring to the correct Postgres type?
-5) Does my Rust type refers to the wrapper struct type?
+1) Do I have a SQL type struct?
+2) Does my a SQL type struct derive SqlType?
+3) Does my SQL type has a `#[diesel(postgres_type(_)]` attribute declared?
+4) Is the  `#[diesel(postgres_type(_)]` attribute referring to the correct Postgres type?
+5) Does my Rust type refers to the SQL type struct?
 
 If all those checks pass and you still see errors, it’s most likely a serialization error.
 To serialize and deserialize a custom Enum, you write a custom ToSql and FromSql implementation.
@@ -467,7 +465,7 @@ to catch errors that may result from incorrect database updates.
 
 ```rust 
 #[derive(Debug, Clone, FromSqlRow, AsExpression, PartialEq, Eq)]
-#[diesel(sql_type=crate::schema::smdb::sql_types::ServiceEndpoint)]
+#[diesel(sql_type = crate::schema::smdb::sql_types::ServiceEndpoint)]
 pub struct Endpoint {
     pub name: String,
     pub version: i32,
@@ -485,7 +483,7 @@ The serialize and deserialize implementation of a custom type is not as obvious 
 Postgres represent a custom type as an anonymous typed tuple. Therefore, you have to map a struct to a typed tuple and
 back.
 
-Let’s start with the toSql implementation to store the Rust Endpoint struct as typed tuple.
+Let’s start with the ToSql implementation to store the Rust Endpoint struct as typed tuple.
 Luckily, Diesel provides a helper util to do just that.
 
 ```rust 
@@ -514,7 +512,7 @@ If the type or number of types mismatch, you will get a compiler error telling y
 the number of fields don’t match or that the type of the fields don’t match.
 Also, because the write_tuple expects values, you have to call either to_owned() or clone() on any referenced data.
 
-The from_sql reverses the process by converting a Postgres typed tuple back into a Rust struct.
+The FromSql reverses the process by converting a Postgres typed tuple back into a Rust struct.
 Again, Diesel provides a convenient helper to do so:
 
 ```rust 
@@ -535,7 +533,7 @@ impl FromSql<crate::schema::smdb::sql_types::ServiceEndpoint, Pg> for Endpoint {
 ```
 
 Similar to the serialization process, it is paramount that the type annotation
-match exactly the one used in toSql and the type definition in up.sql.
+match exactly the one used in ToSql and the type definition in up.sql.
 
 Debugging serialization issues in Diesel is relatively straight forward
 since the compiler usually points out the location of the issue and, often, the issue is a type mismatch that is
@@ -544,9 +542,9 @@ relatively easy to fix.
 It’s worth repeating that you are dealing with three types in total:
 
 1) service_endpoint: The Postgres custom type
-2) ServiceEndpoint: The wrapper struct generated by Diesel that refers to the Postgres type service_endpoint. Also, only
-   the wrapper struct carries the postgres_type annotation in addition to the an sql_type annotation.
-3) Endpoint: The Rust struct with an sql_type annotation referring to the wrapper struct ServiceEndpoint
+2) ServiceEndpoint: The SQL type struct generated by Diesel that refers to the Postgres type service_endpoint. Also, only
+   the SQL type struct carries the postgres_type annotation.
+3) Endpoint: The Rust struct with an sql_type annotation referring to the SQL type struct ServiceEndpoint
 
 Make sure all of those types match correctly.
 
@@ -585,7 +583,7 @@ The relevant type declarations are:
 
 ```rust
 #[derive(Debug, Clone, Queryable, Selectable)]
-#[diesel(table_name= crate::schema::smdb::service,  primary_key(service_id))]
+#[diesel(table_name = crate::schema::smdb::service, primary_key(service_id))]
 pub struct Service {
     pub service_id: i32,
     pub name: String,
@@ -599,7 +597,7 @@ pub struct Service {
 }
 
 #[derive(Debug, Clone, Queryable, Insertable)]
-#[diesel(table_name= crate::schema::smdb::service,  primary_key(service_id))]
+#[diesel(table_name = crate::schema::smdb::service, primary_key(service_id))]
 pub struct CreateService {
     pub service_id: i32,
     // ... skipped
@@ -607,7 +605,7 @@ pub struct CreateService {
 }
 
 #[derive(Debug, Clone, Queryable, Insertable, AsChangeset)]
-#[diesel(table_name= crate::schema::smdb::service)]
+#[diesel(table_name = crate::schema::smdb::service)]
 pub struct UpdateService {
     pub name: Option<String>,
     pub version: Option<i32>,
@@ -734,14 +732,10 @@ Let’s start with a private helper method that sets the Boolean online flag on 
         param_service_id: i32,
         param_online: bool,
     ) -> QueryResult<()> {
-        match diesel::update(service.filter(service_id.eq(param_service_id)))
+        diesel::update(service.filter(service_id.eq(param_service_id)))
             .set(online.eq(param_online))
-            .returning(Service::as_returning())
-            .get_result(db)
-        {
-            Ok(_) => Ok(()),
-            Err(e) => Err(e),
-        }
+            .execute(db)?;
+        Ok(())
     }
 ```
 
@@ -775,10 +769,7 @@ returns a result or error.
         db: &mut Connection,
         param_service_id: i32,
     ) -> QueryResult<bool> {
-        match service.find(param_service_id).first::<Service>(db) {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
-        }
+        Ok(service.find(param_service_id).first::<Service>(db).optional()?.is_some())
     }
 ```
 

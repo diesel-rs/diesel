@@ -12,9 +12,31 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
-* Support for libsqlite3-sys 0.29.0
+* Support for libsqlite3-sys 0.30.0
 * Add support for built-in PostgreSQL range operators and functions
 * Support for postgres multirange type
+* Added `diesel::r2d2::TestCustomizer`, which allows users to customize their `diesel::r2d2::Pool`s
+in a way that makes the pools suitable for use in parallel tests.
+
+## [2.2.2] 2024-07-19
+
+### Fixed
+
+* Support for libsqlite3-sys 0.29.0
+* Fixed a potential panic in the sqlite cursor implementation
+* Fixed support for rust numeric operators with columns of the type `Numeric`
+* Removed the `SerializedDatabase::new` function due to unsoundness
+
+## [2.2.1] 2024-06-12
+
+## Fixed
+
+* Fixed using `#[dsl::auto_type]` with functions that accept reference arguments
+* Fixed using `#[derive(Queryable)]` with structs that use a type named `Row` as field type
+* Fixed a regression that prevented using `mysqlclient-sys` 0.2.x with diesel 2.2
+* Fixed connecting to postgres database using the scram-sha-256 authentication method on windows while using the bundled postgres builds
+* Improved the error messages in diesel-cli for cases where a file/folder was not found
+* Fixed several version detection bugs in mysqlclient-sys to use pre-generated bindings in more situations
 
 ## [2.2.0] 2024-05-31
 
@@ -2111,3 +2133,5 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.1.5]: https://github.com/diesel-rs/diesel/compare/v.2.1.4...v2.1.5
 [2.1.6]: https://github.com/diesel-rs/diesel/compare/v.2.1.5...v2.1.6
 [2.2.0]: https://github.com/diesel-rs/diesel/compare/v.2.1.0...v2.2.0
+[2.2.1]: https://github.com/diesel-rs/diesel/compare/v.2.2.0...v2.2.1
+[2.2.2]: https://github.com/diesel-rs/diesel/compare/v.2.2.1...v2.2.2

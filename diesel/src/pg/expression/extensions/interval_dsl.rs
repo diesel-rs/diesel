@@ -213,14 +213,19 @@ impl IntervalDsl for i64 {
     }
 
     fn days(self) -> PgInterval {
-        (self as i32).days()
+        i32::try_from(self)
+            .expect("Maximal supported day interval size is 32 bit")
+            .days()
     }
 
     fn months(self) -> PgInterval {
-        (self as i32).months()
+        i32::try_from(self)
+            .expect("Maximal supported month interval size is 32 bit")
+            .months()
     }
 }
 
+#[allow(clippy::cast_possible_truncation)] // we want to truncate
 impl IntervalDsl for f64 {
     fn microseconds(self) -> PgInterval {
         (self.round() as i64).microseconds()

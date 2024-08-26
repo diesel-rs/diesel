@@ -276,13 +276,12 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), crate
             }
 
             if matches.get_flag("LOCKED_SCHEMA") {
-                let mut buf = Vec::new();
-                print_schema::run_print_schema(&mut connection, config, &mut buf)?;
+                let schema = print_schema::output_schema(&mut connection, config)?;
 
-                let old_buf = std::fs::read(path)
+                let old_buf = std::fs::read_to_string(path)
                     .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_owned())))?;
 
-                if buf != old_buf {
+                if schema.lines().ne(old_buf.lines()) {
                     return Err(crate::errors::Error::SchemaWouldChange(
                         path.display().to_string(),
                     ));

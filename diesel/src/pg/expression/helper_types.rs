@@ -308,6 +308,26 @@ pub type NotLikeBinary<Lhs, Rhs> = crate::dsl::NotLike<Lhs, Rhs>;
 #[deprecated(note = "Use `dsl::Concat` instead")]
 pub type ConcatArray<Lhs, Rhs> = crate::dsl::Concat<Lhs, Rhs>;
 
+/// Return type of [`array_to_string_with_null_string(arr, delim, null_str)`](super::functions::array_to_string_with_null_string)
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_to_string_with_null_string<A, D, N> =
+    super::functions::array_to_string_with_null_string<
+        SqlTypeOf<A>, // The SQL type of the array
+        A,            // The array itself
+        D,            // The delimiter
+        N,            // The null string
+    >;
+
+/// Return type of [`array_to_string(arr, delim)`](super::functions::array_to_string)
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_to_string<A, D> = super::functions::array_to_string<
+    SqlTypeOf<A>, // The SQL type of the array
+    A,            // The array itself
+    D,            // The delimiter
+>;
+
 /// Return type of [`lower(range)`](super::functions::lower())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
@@ -348,7 +368,38 @@ pub type upper_inf<R> = super::functions::upper_inf<SqlTypeOf<R>, R>;
 #[cfg(feature = "postgres_backend")]
 pub type range_merge<R1, R2> = super::functions::range_merge<SqlTypeOf<R1>, SqlTypeOf<R2>, R1, R2>;
 
+/// Return type of [`multirange_merge(multirange)`](super::functions::multirange_merge())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type multirange_merge<R> = super::functions::multirange_merge<SqlTypeOf<R>, R>;
+
 /// Return type of [`array_append(array, element)`](super::functions::array_append())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type array_append<A, E> = super::functions::array_append<SqlTypeOf<A>, SqlTypeOf<E>, A, E>;
+
+/// Return type of [`array_replace(array, element, replace_with)`](super::functions::array_replace())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_replace<A, E, R> =
+    super::functions::array_replace<SqlTypeOf<A>, SqlTypeOf<E>, A, E, R>;
+
+/// Return type of [`array_dims(array)`](super::functions::array_append())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_dims<A> = super::functions::array_dims<SqlTypeOf<A>, A>;
+
+/// Return type of [`array_prepend(element, array)`](super::functions::array_prepend())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_prepend<E, A> = super::functions::array_prepend<SqlTypeOf<E>, SqlTypeOf<A>, E, A>;
+
+/// Return type of [`array_remove(array, element)`](super::functions::array_remove())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_remove<A, E> = super::functions::array_remove<SqlTypeOf<A>, SqlTypeOf<E>, A, E>;
+
+/// Return type of [`cardinality(array)`](super::functions::cardinality())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type cardinality<A> = super::functions::cardinality<SqlTypeOf<A>, A>;

@@ -10,7 +10,9 @@ error[E0277]: Cannot use the `LIKE` operator with expressions of the type `diese
            allowed for all backends
    = note: Expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are
            allowed for the PostgreSQL backend
-   = help: the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is implemented for `Pg`
+   = help: the following other types implement trait `diesel::expression::operators::LikeIsAllowedForType<ST>`:
+             <Pg as diesel::expression::operators::LikeIsAllowedForType<Citext>>
+             <Pg as diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>>
    = note: required for `diesel::expression::operators::Like<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>` to implement `QueryFragment<Sqlite>`
    = note: 6 redundant requirements hidden
    = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<Concat<name, Bound<Binary, Vec<u8>>>>>, ..., ...>` to implement `QueryFragment<Sqlite>`
@@ -38,7 +40,9 @@ error[E0277]: Cannot use the `LIKE` operator with expressions of the type `diese
            allowed for all backends
    = note: Expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are
            allowed for the PostgreSQL backend
-   = help: the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is implemented for `Pg`
+   = help: the following other types implement trait `diesel::expression::operators::LikeIsAllowedForType<ST>`:
+             <Pg as diesel::expression::operators::LikeIsAllowedForType<Citext>>
+             <Pg as diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>>
    = note: required for `diesel::expression::operators::Like<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>` to implement `QueryFragment<Mysql>`
    = note: 6 redundant requirements hidden
    = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<Concat<name, Bound<Binary, Vec<u8>>>>>, ..., ...>` to implement `QueryFragment<Mysql>`
