@@ -16,25 +16,28 @@ fn postgres_connection() -> PgConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-fn test_db_migration(conn: &mut Connection) {
+fn run_db_migration(conn: &mut Connection) {
+    println!("run_db_migration");
     let res = custom_arrays::run_db_migration(conn);
     //dbg!(&result);
     assert!(res.is_ok());
 }
 
-fn test_revert_db_migration(conn: &mut Connection) {
+fn revert_db_migration(conn: &mut Connection) {
+    println!("revert_db_migration");
     let res = custom_arrays::revert_db_migration(conn);
     //dbg!(&result);
     assert!(res.is_ok());
 }
 
-#[test]
+// #[test] // Uncomment to run. Make sure to comment out the other tests first.
+#[allow(dead_code)]
 fn test_service() {
     let mut connection = postgres_connection();
     let conn = &mut connection;
 
-    println!("Test DB migration");
-    test_db_migration(conn);
+    println!("Run DB migration");
+    run_db_migration(conn);
 
     println!("Test create!");
     test_create_service(conn);
@@ -78,10 +81,11 @@ fn test_service() {
     println!("Test delete service!");
     test_service_delete(conn);
 
-    println!("Test revert DB migration");
-    test_revert_db_migration(conn);
+    println!("Revert DB migration");
+    revert_db_migration(conn);
 }
 
+#[allow(dead_code)]
 fn test_create_service(conn: &mut Connection) {
     let grpc_endpoint = Endpoint::new(
         "test_grpc_endpoint".to_string(),
@@ -136,6 +140,7 @@ fn test_create_service(conn: &mut Connection) {
     );
 }
 
+#[allow(dead_code)]
 fn test_count_service(conn: &mut Connection) {
     let result = service::Service::count(conn);
     //dbg!(&result);
@@ -143,6 +148,7 @@ fn test_count_service(conn: &mut Connection) {
     assert_eq!(result.unwrap(), 1);
 }
 
+#[allow(dead_code)]
 fn test_check_if_service_id_exists(conn: &mut Connection) {
     let result = service::Service::check_if_service_id_exists(conn, 1);
     //dbg!(&result);
@@ -150,6 +156,7 @@ fn test_check_if_service_id_exists(conn: &mut Connection) {
     assert!(result.unwrap());
 }
 
+#[allow(dead_code)]
 fn test_check_if_service_id_online(conn: &mut Connection) {
     let result = service::Service::check_if_service_id_online(conn, 1);
     //dbg!(&result);
@@ -157,6 +164,7 @@ fn test_check_if_service_id_online(conn: &mut Connection) {
     assert!(result.unwrap());
 }
 
+#[allow(dead_code)]
 fn test_get_all_online_services(conn: &mut Connection) {
     let result = service::Service::get_all_online_services(conn);
     //dbg!(&result);
@@ -164,6 +172,7 @@ fn test_get_all_online_services(conn: &mut Connection) {
     assert!(!result.unwrap().is_empty());
 }
 
+#[allow(dead_code)]
 fn test_get_all_offline_services(conn: &mut Connection) {
     let result = service::Service::get_all_offline_services(conn);
     //dbg!(&result);
@@ -171,6 +180,7 @@ fn test_get_all_offline_services(conn: &mut Connection) {
     assert_eq!(result.unwrap().len(), 0);
 }
 
+#[allow(dead_code)]
 fn test_get_all_service_dependencies(conn: &mut Connection) {
     let service_id = 1;
 
@@ -180,6 +190,7 @@ fn test_get_all_service_dependencies(conn: &mut Connection) {
     assert_eq!(result.unwrap().len(), 1);
 }
 
+#[allow(dead_code)]
 fn test_get_all_service_endpoints(conn: &mut Connection) {
     let service_id = 1;
 
@@ -189,6 +200,7 @@ fn test_get_all_service_endpoints(conn: &mut Connection) {
     assert_eq!(result.unwrap().len(), 2);
 }
 
+#[allow(dead_code)]
 fn test_service_read(conn: &mut Connection) {
     let service_id = 1;
 
@@ -208,6 +220,7 @@ fn test_service_read(conn: &mut Connection) {
     assert_eq!(service.dependencies, vec![Some(42)]);
 }
 
+#[allow(dead_code)]
 fn test_service_read_all(conn: &mut Connection) {
     let result = service::Service::read_all(conn);
     //dbg!(&result);
@@ -217,6 +230,7 @@ fn test_service_read_all(conn: &mut Connection) {
     assert!(!services.is_empty());
 }
 
+#[allow(dead_code)]
 fn test_set_service_online(conn: &mut Connection) {
     let service_id = 1;
 
@@ -230,6 +244,7 @@ fn test_set_service_online(conn: &mut Connection) {
     assert!(result.unwrap());
 }
 
+#[allow(dead_code)]
 fn test_set_service_offline(conn: &mut Connection) {
     let service_id = 1;
 
@@ -243,6 +258,7 @@ fn test_set_service_offline(conn: &mut Connection) {
     assert!(!result.unwrap());
 }
 
+#[allow(dead_code)]
 fn test_service_update(conn: &mut Connection) {
     // check if service_id exists so we can update the service
     let result = service::Service::check_if_service_id_exists(conn, 1);
@@ -278,6 +294,7 @@ fn test_service_update(conn: &mut Connection) {
     assert_eq!(service.dependencies, vec![Some(42)]);
 }
 
+#[allow(dead_code)]
 fn test_service_delete(conn: &mut Connection) {
     let result = service::Service::read(conn, 1);
     //dbg!(&result);

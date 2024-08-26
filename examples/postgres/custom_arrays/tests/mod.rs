@@ -1,2 +1,5 @@
 #[cfg(test)]
-mod service_tests;
+mod parallel_service_tests;
+
+#[cfg(test)]
+mod single_service_test_run;
