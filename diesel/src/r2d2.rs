@@ -91,7 +91,85 @@
 //! of the `AnsiTransactionManager` struct) is in an `InError` state
 //! or contains an open transaction when the connection goes out of scope.
 //!
-
+//!
+//! # Testing with connections pools
+//!
+//! When testing with connection pools, it is recommended to set the pool size to 1,
+//! and use a customizer to ensure that the transactions are never committed.
+//! The tests using a pool prepared this way can be run in parallel, because
+//! the changes are never committed to the database and are local to each test.
+//!
+//! # Example
+//!
+//! ```rust
+//! # include!("doctest_setup.rs");
+//! use diesel::prelude::*;
+//! use diesel::r2d2::ConnectionManager;
+//! use diesel::r2d2::CustomizeConnection;
+//! use diesel::r2d2::TestCustomizer;
+//! # use diesel::r2d2::Error as R2D2Error;
+//! use diesel::r2d2::Pool;
+//! use diesel::result::Error;
+//! use std::thread;
+//!
+//! # fn main() {}
+//!
+//! pub fn get_testing_pool() -> Pool<ConnectionManager<DbConnection>> {
+//!     let url = database_url_for_env();
+//!     let manager = ConnectionManager::<DbConnection>::new(url);
+//!
+//!     Pool::builder()
+//!         .test_on_check_out(true)
+//!         .max_size(1) // Max pool size set to 1
+//!         .connection_customizer(Box::new(TestCustomizer)) // Test customizer
+//!         .build(manager)
+//!         .expect("Could not build connection pool")
+//! }
+//!
+//! table! {
+//!     users {
+//!         id -> Integer,
+//!         name -> Text,
+//!     }
+//! }
+//!
+//! #[cfg(test)]
+//! mod tests {
+//!     use super::*;
+//!
+//!     #[test]
+//!     fn test_1() {
+//!         let pool = get_testing_pool();
+//!         let mut conn = pool.get().unwrap();
+//!
+//!         crate::sql_query(
+//!             "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL)",
+//!         )
+//!         .execute(&mut conn)
+//!         .unwrap();
+//!
+//!         crate::insert_into(users::table)
+//!             .values(users::name.eq("John"))
+//!             .execute(&mut conn)
+//!             .unwrap();
+//!     }
+//!
+//!     #[test]
+//!     fn test_2() {
+//!         let pool = get_testing_pool();
+//!         let mut conn = pool.get().unwrap();
+//!
+//!         crate::sql_query(
+//!             "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL)",
+//!         )
+//!         .execute(&mut conn)
+//!         .unwrap();
+//!
+//!         let user_count = users::table.count().get_result::<i64>(&mut conn).unwrap();
+//!         assert_eq!(user_count, 0); // Because the transaction from test_1 was never committed
+//!     }
+//! }
+//! ```
 pub use r2d2::*;
 
 /// A re-export of [`r2d2::Error`], which is only used by methods on [`r2d2::Pool`].
@@ -360,6 +438,19 @@ impl Query for CheckConnectionQuery {
 }
 
 impl<C> RunQueryDsl<C> for CheckConnectionQuery {}
+
+/// A connection customizer designed for use in tests. Implements
+/// [CustomizeConnection] in a way that ensures transactions
+/// in a pool customized by it are never committed.
+#[derive(Debug, Clone, Copy)]
+pub struct TestCustomizer;
+
+impl<C: Connection> CustomizeConnection<C, crate::r2d2::Error> for TestCustomizer {
+    fn on_acquire(&self, conn: &mut C) -> Result<(), crate::r2d2::Error> {
+        conn.begin_test_transaction()
+            .map_err(crate::r2d2::Error::QueryError)
+    }
+}
 
 #[cfg(test)]
 mod tests {

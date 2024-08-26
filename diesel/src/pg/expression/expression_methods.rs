@@ -2,7 +2,8 @@
 
 pub(in crate::pg) use self::private::{
     ArrayOrNullableArray, InetOrCidr, JsonIndex, JsonOrNullableJsonOrJsonbOrNullableJsonb,
-    JsonRemoveIndex, JsonbOrNullableJsonb, RangeHelper, RangeOrNullableRange, TextOrNullableText,
+    JsonRemoveIndex, JsonbOrNullableJsonb, MultirangeOrNullableMultirange,
+    MultirangeOrRangeMaybeNullable, RangeHelper, RangeOrNullableRange, TextOrNullableText,
 };
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
@@ -3416,8 +3417,8 @@ where
 
 pub(in crate::pg) mod private {
     use crate::sql_types::{
-        Array, Binary, Cidr, Inet, Integer, Json, Jsonb, Nullable, Range, SingleValue, SqlType,
-        Text,
+        Array, Binary, Cidr, Inet, Integer, Json, Jsonb, Multirange, Nullable, Range, SingleValue,
+        SqlType, Text,
     };
     use crate::{Expression, IntoSql};
 
@@ -3484,10 +3485,61 @@ pub(in crate::pg) mod private {
         message = "`{Self}` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Nullable<Range<_>>`",
         note = "try to provide an expression that produces one of the expected sql types"
     )]
-    pub trait RangeOrNullableRange {}
+    pub trait RangeOrNullableRange {
+        type Inner: SingleValue;
+    }
 
-    impl<ST> RangeOrNullableRange for Range<ST> {}
-    impl<ST> RangeOrNullableRange for Nullable<Range<ST>> {}
+    impl<ST: SingleValue> RangeOrNullableRange for Range<ST> {
+        type Inner = ST;
+    }
+    impl<ST: SingleValue> RangeOrNullableRange for Nullable<Range<ST>> {
+        type Inner = ST;
+    }
+
+    /// Marker trait used to implement `PgRangeExpressionMethods` on the appropriate
+    /// types. Once coherence takes associated types into account, we can remove
+    /// this trait.
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Nullable<Range<_>>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait MultirangeOrNullableMultirange {
+        type Inner: SingleValue;
+        type Range: SingleValue;
+    }
+
+    impl<ST: SingleValue> MultirangeOrNullableMultirange for Multirange<ST> {
+        type Inner = ST;
+        type Range = Range<ST>;
+    }
+    impl<ST: SingleValue> MultirangeOrNullableMultirange for Nullable<Multirange<ST>> {
+        type Inner = ST;
+        type Range = Nullable<Range<ST>>;
+    }
+
+    /// Marker trait used to implement `PgRangeExpressionMethods` on the appropriate
+    /// types. Once coherence takes associated types into account, we can remove
+    /// this trait.
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait MultirangeOrRangeMaybeNullable {
+        type Inner: SingleValue;
+    }
+
+    impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
+        type Inner = ST;
+    }
+    impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Nullable<Range<ST>> {
+        type Inner = ST;
+    }
+    impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Multirange<ST> {
+        type Inner = ST;
+    }
+    impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Nullable<Multirange<ST>> {
+        type Inner = ST;
+    }
 
     /// Marker trait used to implement `PgJsonbExpressionMethods` on the appropriate types.
     #[diagnostic::on_unimplemented(
