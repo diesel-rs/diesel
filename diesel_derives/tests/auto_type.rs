@@ -424,6 +424,8 @@ fn postgres_functions() -> _ {
         trim_array(pg_extras::array, pg_extras::id),
         array_cat(pg_extras::array, pg_extras::array),
         array_length(pg_extras::array, 1_i32),
+        array_fill(pg_extras::id, pg_extras::array),
+        array_fill_with_lower_bound(pg_extras::id, pg_extras::array, pg_extras::array),
     )
 }
 

@@ -418,3 +418,14 @@ pub type array_cat<A, B> = super::functions::array_cat<SqlTypeOf<A>, A, B>;
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type array_length<A, D> = super::functions::array_length<SqlTypeOf<A>, A, D>;
+
+/// Return type of [`array_fill(value,array)`](super::functions::array_fill())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_fill<E> = super::functions::array_fill<SqlTypeOf<E>, E, Array<Integer>>;
+
+/// Return type of [`array_fill_with_lower_bound(value,array,array)`](super::functions::array_fill_with_lower_bound())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_fill_with_lower_bound<E> =
+    super::functions::array_fill_with_lower_bound<SqlTypeOf<E>, E, Array<Integer>, Array<Integer>>;

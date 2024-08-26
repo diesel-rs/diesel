@@ -1096,3 +1096,82 @@ define_sql_function! {
     /// ```
     fn array_length<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, dimension: Integer) -> Nullable<Integer>;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns an array initialized with supplied value and dimensions,
+    /// optionally with lower bounds other than 1
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main(){
+    /// #    run_test().unwrap();
+    /// # }
+    /// # fn run_test()->QueryResult<()>{
+    /// #   use diesel::dsl::array_fill;
+    /// #   use diesel::sql_types::{Nullable,Array,Integer,Text};
+    /// #   let connection = &mut establish_connection();
+    ///
+    /// let array = diesel::select(array_fill::<Integer,_,_>(2,vec![2]))
+    /// .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(vec![2,2],array);
+    ///
+    /// let array = diesel::select(array_fill::<Text,_,_>(String::from("abc"),vec![3]))
+    /// .get_result::<Vec<String>>(connection)?;
+    /// assert_eq!(vec!["abc","abc","abc"],array);
+    ///
+    /// let array = diesel::select(array_fill::<Nullable<Integer>,_,_>(Some(4),vec![3]))
+    /// .get_result::<Vec<Option<i32>>>(connection)?;
+    /// assert_eq!(vec![Some(4),Some(4),Some(4)],array);
+    ///
+    /// let array = diesel::select(array_fill::<Nullable<Integer>,_,_>(None::<i32>,vec![3]))
+    /// .get_result::<Vec<Option<i32>>>(connection)?;
+    /// assert_eq!(vec![None::<i32>,None::<i32>,None::<i32>],array);
+    /// # Ok(())
+    /// # }
+    ///
+    fn array_fill<E:SingleValue>(value:E,dim:Array<Integer>) -> Array<E>;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns an array initialized with supplied value and dimensions,
+    /// optionally with lower bounds other than 1
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main(){
+    /// #    run_test().unwrap();
+    /// # }
+    /// # fn run_test()->QueryResult<()>{
+    /// #   use diesel::dsl::array_fill_with_lower_bound;
+    /// #   use diesel::sql_types::{Nullable,Array,Integer,Text};
+    /// #   let connection = &mut establish_connection();
+    ///
+    /// let array = diesel::select(array_fill_with_lower_bound::<Integer,_,_,_>(2,vec![2],vec![2]))
+    /// .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(vec![2,2],array);
+    ///
+    /// let array = diesel::select(array_fill_with_lower_bound::<Text,_,_,_>(String::from("abc"),vec![3],vec![3]))
+    /// .get_result::<Vec<String>>(connection)?;
+    /// assert_eq!(vec!["abc","abc","abc"],array);
+    ///
+    /// let array = diesel::select(array_fill_with_lower_bound::<Nullable<Integer>,_,_,_>(Some(4),vec![3],vec![3]))
+    /// .get_result::<Vec<Option<i32>>>(connection)?;
+    /// assert_eq!(vec![Some(4),Some(4),Some(4)],array);
+    ///
+    /// let array = diesel::select(array_fill_with_lower_bound::<Nullable<Integer>,_,_,_>(None::<i32>,vec![3],vec![3]))
+    /// .get_result::<Vec<Option<i32>>>(connection)?;
+    /// assert_eq!(vec![None::<i32>,None::<i32>,None::<i32>],array);
+    /// # Ok(())
+    /// # }
+    ///
+    #[sql_name = "array_fill"]
+    fn array_fill_with_lower_bound<E:SingleValue>(value:E,dim:Array<Integer>,lower_bound:Array<Integer>) -> Array<E>;
+}
