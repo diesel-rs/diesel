@@ -1068,23 +1068,16 @@ ensure you have clear error messages to speed up diagnostic and debugging.
 
 ### DB Integration Tests
 
-Database integration tests become flaky when executed in parallel usually because of conflicting read / write
-operations.
+Conventionally, Database integration tests become flaky when executed in parallel usually because of conflicting read / write operations.
 While modern database systems can handle concurrent data access, test tools with assertions not so much.
 That means, test assertions start to fail seemingly randomly when executed concurrently.
 There are only very few viable options to deal with this reality:
 
 * Don't use parallel test execution
-* Only parallelize test per isolated access
-* Do synchronization and test the actual database state before each test and run tests as atomic transactions
+* Form isolated test groups that run in parallel, but tests in each group run sequentially. 
 
-Out of the three options, the last one will almost certainly win you an over-engineering award in the unlikely case
-your colleagues appreciate the resulting test complexity. If not, good luck.
-In practice, not using parallel test execution is often not possible either because of the larger number
-of integration tests that run on a CI server. To be clear, strictly sequential tests is a great option
-for small projects with low complexity, it just doesn't scale as the project grows in size and complexity.
 
-And that leaves us only with the middle-ground of grouping tables into isolated access.
+In practice, the second option is often used by grouping tables into isolated test groups.
 Suppose your database has 25 tables you are tasked to test.
 Some of them are clearly unrelated, others only require read access to some tables,
 and then you have those where you have to test for multi-table inserts and updates.
@@ -1097,9 +1090,7 @@ than errors from your basic integration tests.
 And it makes sense to stage integration tests into simple functional tests, complex workflow tests,
 and chaos tests that triggers read / write conflicts randomly to test for blind spots.
 
-In any case, the test suite for the service example follow the sequential execution pattern so that they can be
-executed in parallel along other test groups without causing randomly failing tests. Specifically,
-the test structure looks as shown below. However, the full test suite is in the test folder.
+In any case, the test folder contains an example of this testing style in the single_service_test file.
 
 ```rust 
 #[test]
@@ -1107,8 +1098,8 @@ fn test_service() {
     let mut connection = postgres_connection();
     let conn = &mut connection;
 
-    println!("Test DB migration");
-    test_db_migration(conn);
+    println!("Run DB migration");
+    run_db_migration(conn);
 
     println!("Test create!");
     test_create_service(conn);
@@ -1117,13 +1108,10 @@ fn test_service() {
     test_count_service(conn);
     
     //...
+    
+    println!("Revert DB migration");
+    revert_db_migration(conn);
 }    
-
-fn test_db_migration(conn: &mut Connection) {
-    let res = custom_arrays::run_db_migration(conn);
-    //dbg!(&result);
-    assert!(res.is_ok());
-}
 ```
 
 The idea here is simple yet powerful:
@@ -1136,11 +1124,44 @@ invocations, you know that already.
 To get a more meaningful error message, just uncomment the dbg!
 statement that unwraps the result before the assertion and you will see a helpful error message in most cases.
 
-You may have noticed that the DB migration util checks if there are pending migrations and if there is nothing, it does
-nothing and just returns.
-The wisdom behind this decision is that, there are certain corner cases
-that only occur when you run a database tet multiple times and you really want to run the DB migration just once to
-simulate that scenario as realistic as possible.
-When you test locally, the same logic applies and you really only want to run a database migration when the schema has
-changed. 
+Diesel, however, offers an easier way to do to parallel integration tests by leaning on a test transaction.
+Conventionally, a transaction follows a the two [phase commit protocol](https://en.wikipedia.org/wiki/Two-phase_commit_protocol). In stage one, a commit request is send to the database to take the necessary steps for either committing or aborting the transaction and test if a commit would succeed. In stage two, the transaction is committed or aborted depending on whether any conflicts were detected in stage one. 
+A test transaction initiates the first stage, prepares everything ready to commit, and then just aborts the transaction at the end of a test. This is as realistic as a real transaction, except nothing is commited to the database and therefore all test transactions can run in parallel.
+
+The test folder contains an example of this testing style in the parallel_service_test file.
+
+
+```rust 
+#[test]
+fn test_create_service() {
+    test_setup();
+
+    let mut connection = postgres_connection();
+    let conn = &mut connection;
+    
+    conn.begin_test_transaction()
+        .expect("Failed to begin test transaction");
+
+    let service = get_crate_service();
+    let endpoints = get_endpoints();
+    let dependencies = get_dependencies();
+
+    let result = service::Service::create(conn, &service);
+
+    // dbg!(&result);
+    assert!(result.is_ok());
+    // ...
+}
+```
+
+Here, the test setup runs first to test if the database connection works and all migrations are in place.
+Also, noticed, each test gets its own database connection. After the connection has been established, 
+the test transaction is started next. From there, the test code is executed. Because each test runs in 
+a separate transaction, you have to apply first principle to each test. For example, if you want to test
+to update a service, you have to insert a service first, then update it, and then 
+test if the update was successful. Because each test transaction aborts after each test, there is no left over
+data to worry about after each test. Furthermore, since PostgreSQL executes transactions in isolation, 
+regardless of whether these are commited or not, no two tests can interfere with each other. 
+Lastly, testing this way is very fast when executed in parallel. 
+
 
