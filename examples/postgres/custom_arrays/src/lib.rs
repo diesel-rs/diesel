@@ -35,6 +35,7 @@ pub fn run_db_migration(
             return Err(Box::new(e));
         }
     }
+
     // Run all pending migrations.
     match conn.run_pending_migrations(MIGRATIONS) {
         Ok(_) => Ok(()),
