@@ -2,7 +2,6 @@ use crate::dsl::{AsExpr, AsExprOf, SqlTypeOf};
 use crate::expression::grouped::Grouped;
 use crate::expression::Expression;
 use crate::pg::expression::expression_methods::private::{JsonIndex, JsonRemoveIndex};
-use crate::pg::expression::expression_methods::ArrayOrNullableArray;
 use crate::pg::types::sql_types::Array;
 use crate::sql_types::{Inet, Integer, VarChar};
 
@@ -413,8 +412,7 @@ pub type trim_array<A, N> = super::functions::trim_array<SqlTypeOf<A>, A, N>;
 /// Return type of [`array_cat(array_a, array_b)`](super::functions::array_cat())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
-pub type array_cat<A, B> =
-    super::functions::array_cat<SqlTypeOf<A>, <SqlTypeOf<A> as ArrayOrNullableArray>::Inner, A, B>;
+pub type array_cat<A, B> = super::functions::array_cat<SqlTypeOf<A>, A, B>;
 
 /// Return type of [`array_length(array, dimension)`](super::functions::array_length())
 #[allow(non_camel_case_types)]

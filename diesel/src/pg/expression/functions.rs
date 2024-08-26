@@ -1056,11 +1056,11 @@ define_sql_function! {
     /// #     use diesel::dsl::array_cat;
     /// #     use diesel::sql_types::{Integer, Array, Nullable};
     /// #     let connection = &mut establish_connection();
-    /// let result = diesel::select(array_cat::<Array<Integer>, _, _, _>(vec![1, 2], vec![3, 4]))
+    /// let result = diesel::select(array_cat::<Array<Integer>, _, _>(vec![1, 2], vec![3, 4]))
     ///     .get_result::<Vec<i32>>(connection)?;
     /// assert_eq!(vec![1, 2, 3, 4], result);
     ///
-    /// let nullable_result = diesel::select(array_cat::<Nullable<Array<Integer>>, _, _, _>(
+    /// let nullable_result = diesel::select(array_cat::<Nullable<Array<Integer>>, _, _>(
     ///     None::<Vec<i32>>,
     ///     None::<Vec<i32>>
     /// )).get_result::<Option<Vec<i32>>>(connection)?;
@@ -1068,7 +1068,7 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_cat<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue>(a: Arr, b: Arr) -> Arr;
+    fn array_cat<Arr: ArrayOrNullableArray + SingleValue>(a: Arr, b: Arr) -> Arr;
 }
 
 #[cfg(feature = "postgres_backend")]
