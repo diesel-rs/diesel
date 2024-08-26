@@ -1060,11 +1060,11 @@ define_sql_function! {
     ///     .get_result::<Vec<i32>>(connection)?;
     /// assert_eq!(vec![1, 2, 3, 4], result);
     ///
-    /// let nullable_result = diesel::select(array_cat::<Nullable<Array<_>>, _, _, _>(
+    /// let nullable_result = diesel::select(array_cat::<Nullable<Array<Integer>>, _, _, _>(
     ///     None::<Vec<i32>>,
     ///     None::<Vec<i32>>
     /// )).get_result::<Option<Vec<i32>>>(connection)?;
-    /// assert_eq!(vec![None], nullable_result);
+    /// assert_eq!(None, nullable_result);
     /// #     Ok(())
     /// # }
     /// ```
