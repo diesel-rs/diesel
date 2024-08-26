@@ -999,6 +999,48 @@ define_sql_function! {
 
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
+    /// Trims an array by removing the last n elements. If the array is multidimensional, only the first dimension is trimmed.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main(){
+    /// #    run_test().unwrap();
+    /// # }
+    /// # fn run_test()->QueryResult<()>{
+    /// #   use diesel::dsl::trim_array;
+    /// #   use diesel::sql_types::{Nullable,Array,Integer};
+    /// #   let connection = &mut establish_connection();
+    ///
+    /// let trimmed_array = diesel::select(trim_array::<Array<Integer>, _, _>(vec![1, 2, 3, 4], 3))
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(vec![1], trimmed_array);
+    ///
+    /// let trimmed_array = diesel::select(trim_array::<Array<Nullable<Integer>>, _, _>(vec![Some(1), Some(2), Some(3)], 1))
+    ///     .get_result::<Vec<Option<i32>>>(connection)?;
+    /// assert_eq!(vec![Some(1), Some(2)], trimmed_array);
+    ///
+    /// let trimmed_array = diesel::select(trim_array::<Array<Integer>, _, _>(Vec::<i32>::new(), 0))
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(Vec::<i32>::new(), trimmed_array);
+    ///
+    /// let trimmed_array = diesel::select(trim_array::<Nullable<Array<Integer>>, _, _>(None::<Vec<i32>>, 0))
+    ///     .get_result::<Option<Vec<i32>>>(connection)?;
+    /// assert_eq!(None, trimmed_array);
+    ///
+    /// let trimmed_array = diesel::select(trim_array::<Nullable<Array<Integer>>, _, _>(None::<Vec<i32>>, 1))
+    ///     .get_result::<Option<Vec<i32>>>(connection)?;
+    /// assert_eq!(None, trimmed_array);
+    /// # Ok(())
+    /// # }
+    ///
+    fn trim_array<Arr:ArrayOrNullableArray + SingleValue>(a: Arr, n: Integer) -> Arr;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
     /// Concatenates two arrays
     ///
     /// # Example
