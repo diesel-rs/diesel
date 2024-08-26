@@ -782,10 +782,11 @@ To check if a service is online, we again lean on the generated DSL:
         db: &mut Connection,
         param_service_id: i32,
     ) -> QueryResult<bool> {
-        match service.find(param_service_id).first::<Service>(db) {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
-        }
+        service
+            .find(param_service_id)
+            .first::<Service>(db)
+            .optional()
+            .map(|arg0: Option<Service>| Option::is_some(&arg0))
     }
 ```
 
@@ -856,19 +857,11 @@ Finally, we can implement the last method that takes a collection of service IDâ
 either true, or the service ID that is offline.
 
 ```rust
-    pub fn check_all_services_online(
-        db: &mut Connection,
-        services: &[i32],
-    ) -> QueryResult<(bool, Option<String>)> {
+    pub fn check_all_services_online(db: &mut Connection, services: &[i32]) -> QueryResult<(bool, Option<String>)> {
         for id in services {
-            match Service::check_if_service_id_online(db, *id) {
-                Ok(res) => {
-                    if !res {
-                        return Ok((false, Some(format!("Service {} is offline", id))));
-                    }
-                }
-                Err(e) => return Err(e),
-            };
+            if !Service::check_if_service_id_online(db, *id)? {
+                return Ok((false, Some(format!("Service {} is offline", id))));
+            }
         }
 
         Ok((true, None))
