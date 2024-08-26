@@ -403,3 +403,8 @@ pub type array_remove<A, E> = super::functions::array_remove<SqlTypeOf<A>, SqlTy
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type cardinality<A> = super::functions::cardinality<SqlTypeOf<A>, A>;
+
+/// Return type of [`trim_array(array)`](super::functions::trim_array())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type trim_array<A, N> = super::functions::trim_array<SqlTypeOf<A>, A, N>;
