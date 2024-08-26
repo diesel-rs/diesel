@@ -1126,10 +1126,17 @@ statement that unwraps the result before the assertion and you will see a helpfu
 
 Diesel, however, offers an easier way to do to parallel integration tests by leaning on a test transaction.
 Conventionally, a transaction follows a the two [phase commit protocol](https://en.wikipedia.org/wiki/Two-phase_commit_protocol). In stage one, a commit request is send to the database to take the necessary steps for either committing or aborting the transaction and test if a commit would succeed. In stage two, the transaction is committed or aborted depending on whether any conflicts were detected in stage one. 
-A test transaction initiates the first stage, prepares everything ready to commit, and then just aborts the transaction at the end of a test. This is as realistic as a real transaction, except nothing is commited to the database and therefore all test transactions can run in parallel.
+A test transaction initiates the first stage, prepares everything ready to commit, and then just aborts the transaction at the end of a test. Specifically, you use a dangling test transaction. Diesel uses that extensively for it's own test-suite. 
+What that means is that you perform the following steps:
 
+* Open a new connection per test
+* Directly start a new transaction (Diesel provides the Connection::begin_test_transaction function for this)
+* Perform any test code (including schema setup for postgres)
+* Rollback the transaction
+
+
+With that you end up with each test does not see the changes from any other tests.
 The test folder contains an example of this testing style in the parallel_service_test file.
-
 
 ```rust 
 #[test]
@@ -1161,7 +1168,7 @@ a separate transaction, you have to apply first principle to each test. For exam
 to update a service, you have to insert a service first, then update it, and then 
 test if the update was successful. Because each test transaction aborts after each test, there is no left over
 data to worry about after each test. Furthermore, since PostgreSQL executes transactions in isolation, 
-regardless of whether these are commited or not, no two tests can interfere with each other. 
+regardless of whether these are committed or not, no two tests can interfere with each other. 
 Lastly, testing this way is very fast when executed in parallel. 
 
 

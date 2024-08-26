@@ -60,7 +60,7 @@ pub fn revert_db_migration(
     conn: &mut Connection,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
     // Check DB connection!
-    if let Ok(_) = conn.ping() {
+    if conn.ping().is_ok() {
     } else if let Err(e) = conn.ping() {
         eprint!("[pg_cmdb]: Error connecting to database: {}", e);
         return Err(Box::new(e));
