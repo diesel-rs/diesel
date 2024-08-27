@@ -30,6 +30,7 @@ use database::InferConnection;
 use diesel::backend::Backend;
 use diesel::Connection;
 use diesel_migrations::{FileBasedMigrations, HarnessWithOutput, MigrationHarness};
+use similar_asserts::SimpleDiff;
 use std::error::Error;
 use std::io::stdout;
 use std::path::{Path, PathBuf};
@@ -282,6 +283,10 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), crate
                     .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_owned())))?;
 
                 if schema.lines().ne(old_buf.lines()) {
+                    println!(
+                        "{}",
+                        SimpleDiff::from_str(&schema, &old_buf, "new schema", "schema in file")
+                    );
                     return Err(crate::errors::Error::SchemaWouldChange(
                         path.display().to_string(),
                     ));
