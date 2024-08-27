@@ -94,7 +94,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             (None, true) => {
                 direct_field_ty.push(field_changeset_ty_embed(field, None));
                 direct_field_assign.push(field_changeset_expr_embed(field, None));
-                ref_field_ty.push(field_changeset_ty_embed(field, Some(quote!(&'insert))));
+                ref_field_ty.push(field_changeset_ty_embed(field, Some(quote!(&'update))));
                 ref_field_assign.push(field_changeset_expr_embed(field, Some(quote!(&))));
             }
             (None, false) => {
