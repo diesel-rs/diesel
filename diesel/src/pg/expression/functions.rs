@@ -1177,7 +1177,7 @@ define_sql_function! {
     fn array_fill_with_lower_bound<E:SingleValue>(value: E, dim: Array<Integer>, lower_bound: Array<Integer>) -> Array<E>;
 }
 
-cfg(feature = "postgres_backend")]
+#[cfg(feature = "postgres_backend")]
  define_sql_function! {
      /// Returns the lower bound of the requested array
      ///
