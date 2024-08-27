@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, quote_spanned};
 use syn::spanned::Spanned as _;
 use syn::{parse_quote, DeriveInput, Expr, Path, Result, Type};
 
@@ -49,6 +49,13 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         // Use field-level attr. with fallback to the struct-level one.
         let treat_none_as_null = match &field.treat_none_as_null {
             Some(attr) => {
+                if let Some(embed) = &field.embed {
+                    return Err(syn::Error::new(
+                        embed.attribute_span,
+                        "`embed` and `treat_none_as_default_value` are mutually exclusive",
+                    ));
+                }
+
                 if !is_option_ty(&field.ty) {
                     return Err(syn::Error::new(
                         field.ty.span(),
@@ -61,8 +68,8 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             None => treat_none_as_null,
         };
 
-        match field.serialize_as.as_ref() {
-            Some(AttributeSpanWrapper { item: ty, .. }) => {
+        match (field.serialize_as.as_ref(), field.embed()) {
+            (Some(AttributeSpanWrapper { item: ty, .. }), false) => {
                 direct_field_ty.push(field_changeset_ty_serialize_as(
                     field,
                     table_name,
@@ -78,7 +85,19 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
                 generate_borrowed_changeset = false; // as soon as we hit one field with #[diesel(serialize_as)] there is no point in generating the impl of AsChangeset for borrowed structs
             }
-            None => {
+            (Some(AttributeSpanWrapper { attribute_span, .. }), true) => {
+                return Err(syn::Error::new(
+                    *attribute_span,
+                    "`#[diesel(embed)]` cannot be combined with `#[diesel(serialize_as)]`",
+                ));
+            }
+            (None, true) => {
+                direct_field_ty.push(field_changeset_ty_embed(field, None));
+                direct_field_assign.push(field_changeset_expr_embed(field, None));
+                ref_field_ty.push(field_changeset_ty_embed(field, Some(quote!(&'insert))));
+                ref_field_assign.push(field_changeset_expr_embed(field, Some(quote!(&))));
+            }
+            (None, false) => {
                 direct_field_ty.push(field_changeset_ty(
                     field,
                     table_name,
@@ -149,6 +168,17 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
         #changeset_borrowed
     )))
+}
+
+fn field_changeset_ty_embed(field: &Field, lifetime: Option<TokenStream>) -> TokenStream {
+    let field_ty = &field.ty;
+    let span = field.span;
+    quote_spanned!(span=> #lifetime #field_ty)
+}
+
+fn field_changeset_expr_embed(field: &Field, lifetime: Option<TokenStream>) -> TokenStream {
+    let field_name = &field.name;
+    quote!(#lifetime self.#field_name)
 }
 
 fn field_changeset_ty(
