@@ -1038,3 +1038,61 @@ define_sql_function! {
     ///
     fn trim_array<Arr:ArrayOrNullableArray + SingleValue>(a: Arr, n: Integer) -> Arr;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Concatenates two arrays
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_cat;
+    /// #     use diesel::sql_types::{Integer, Array, Nullable};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(array_cat::<Array<Integer>, _, _>(vec![1, 2], vec![3, 4]))
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(vec![1, 2, 3, 4], result);
+    ///
+    /// let nullable_result = diesel::select(array_cat::<Nullable<Array<Integer>>, _, _>(
+    ///     None::<Vec<i32>>,
+    ///     None::<Vec<i32>>
+    /// )).get_result::<Option<Vec<i32>>>(connection)?;
+    /// assert_eq!(None, nullable_result);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_cat<Arr: ArrayOrNullableArray + SingleValue>(a: Arr, b: Arr) -> Arr;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the length of the requested array
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_length;
+    /// #     use diesel::sql_types::{Integer, Array};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(array_length::<Array<Integer>, _, _>(vec![1, 2, 3], 1))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(3), result);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_length<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, dimension: Integer) -> Nullable<Integer>;
+}
