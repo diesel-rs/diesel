@@ -1178,27 +1178,27 @@ define_sql_function! {
 }
 
 #[cfg(feature = "postgres_backend")]
- define_sql_function! {
-     /// Returns the lower bound of the requested array
-     ///
-     /// # Example
-     ///
-     /// ```rust
-     /// # include!("../../doctest_setup.rs");
-     /// #
-     /// # fn main() {
-     /// #     run_test().unwrap();
-     /// # }
-     /// #
-     /// # fn run_test() -> QueryResult<()> {
-     /// #     use diesel::dsl::array_lower;
-     /// #     use diesel::sql_types::{Integer, Array};
-     /// #     let connection = &mut establish_connection();
-     /// let result = diesel::select(array_lower::<Array<Integer>, _, _>(vec![1, 2, 3], 1))
-     ///     .get_result::<Option<i32>>(connection)?;
-     /// assert_eq!(Some(1), result);
-     /// #     Ok(())
-     /// # }
-     /// ```
-     fn array_lower<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, dimension: Integer) -> Nullable<Integer>;
- }
+define_sql_function! {
+    /// Returns the lower bound of the requested array
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_lower;
+    /// #     use diesel::sql_types::{Integer, Array};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(array_lower::<Array<Integer>, _, _>(vec![1, 2, 3], 1))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(1), result);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_lower<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, dimension: Integer) -> Nullable<Integer>;
+}
