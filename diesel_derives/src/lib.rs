@@ -62,6 +62,11 @@ mod valid_grouping;
 /// from the name of the corresponding column, you can annotate the field with
 /// `#[diesel(column_name = some_column_name)]`.
 ///
+/// Your struct can also contain fields which implement `AsChangeset`. This is
+/// useful when you want to have one field map to more than one column (for
+/// example, an enum that maps to a label and a value column). Add
+/// `#[diesel(embed)]` to any such fields.
+///
 /// To provide custom serialization behavior for a field, you can use
 /// `#[diesel(serialize_as = SomeType)]`. If this attribute is present, Diesel
 /// will call `.into` on the corresponding field and serialize the instance of `SomeType`,
@@ -98,6 +103,8 @@ mod valid_grouping;
 /// * `#[diesel(column_name = some_column_name)]`, overrides the column name
 ///    of the current field to `some_column_name`. By default, the field
 ///    name is used as column name.
+/// * `#[diesel(embed)]`, specifies that the current field maps not only
+///    to a single database field, but is a struct that implements `AsChangeset`.
 /// * `#[diesel(serialize_as = SomeType)]`, instead of serializing the actual
 ///    field type, Diesel will convert the field into `SomeType` using `.into` and
 ///    serialize that instead. By default, this derive will serialize directly using
