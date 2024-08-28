@@ -434,3 +434,20 @@ pub type array_fill_with_lower_bound<E, A1, A2> =
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type array_lower<A, D> = super::functions::array_lower<SqlTypeOf<A>, A, D>;
+
+/// Return type of [`array_position(array,element)`](super::functions::array_position)
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_position<A, E> = super::functions::array_position<SqlTypeOf<A>, SqlTypeOf<E>, A, E>;
+
+/// Return type of [`array_position_with_subscript(array,element,subscript)`](super::functions::array_position_with_subscript)
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_position_with_subscript<A, E, S> =
+    super::functions::array_position_with_subscript<SqlTypeOf<A>, SqlTypeOf<E>, A, E, S>;
+
+/// Return type of [`array_positions(array,element)`](super::functions::array_positions)
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_positions<A, E> =
+    super::functions::array_positions<SqlTypeOf<A>, SqlTypeOf<E>, A, E>;
