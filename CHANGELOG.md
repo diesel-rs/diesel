@@ -12,6 +12,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
+* Added embedded struct support for `AsChangeset` via `#[diesel(embed)]`
 * Support for libsqlite3-sys 0.30.0
 * Add support for built-in PostgreSQL range operators and functions
 * Support for postgres multirange type
