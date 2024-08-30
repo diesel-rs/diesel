@@ -1,0 +1,12 @@
+[package]
+name = "custom_arrays"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+
+[dependencies]
+diesel = { path = "../../../diesel", version = "2.2.0", default-features = false, features = ["postgres", "r2d2"] }
+diesel_migrations = { path = "../../../diesel_migrations", version = "2.2.0", default-features = false, features = ["postgres"] }
+
+[dev-dependencies]
+dotenvy = "0.15"
