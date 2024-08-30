@@ -38,7 +38,7 @@ impl Statement {
                 raw_connection.internal_connection.as_ptr(),
                 CString::new(sql)?.as_ptr(),
                 n_byte,
-                if matches!(is_cached, PrepareForCache::Yes) {
+                if matches!(is_cached, PrepareForCache::Yes { counter: _ }) {
                     ffi::SQLITE_PREPARE_PERSISTENT as u32
                 } else {
                     0

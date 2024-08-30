@@ -118,6 +118,15 @@ fn generate_connection_impl(
         }
     });
 
+    let set_cache_impl = connection_types.iter().map(|c| {
+        let variant_ident = c.name;
+        quote::quote! {
+            #ident::#variant_ident(conn) => {
+                diesel::connection::Connection::set_prepared_statement_cache_size(conn, size);
+            }
+        }
+    });
+
     let get_instrumentation_impl = connection_types.iter().map(|c| {
         let variant_ident = c.name;
         quote::quote! {
@@ -364,6 +373,12 @@ fn generate_connection_impl(
             fn set_instrumentation(&mut self, instrumentation: impl diesel::connection::Instrumentation) {
                 match self {
                     #(#instrumentation_impl,)*
+                }
+            }
+
+            fn set_prepared_statement_cache_size(&mut self, size: diesel::connection::CacheSize) {
+                match self {
+                    #(#set_cache_impl,)*
                 }
             }
 

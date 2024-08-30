@@ -5,6 +5,8 @@ mod result;
 mod row;
 mod stmt;
 
+use statement_cache::PrepareForCache;
+
 use self::copy::{CopyFromSink, CopyToBuffer};
 use self::cursor::*;
 use self::private::ConnectionAndTransactionManager;
@@ -235,6 +237,10 @@ impl Connection for PgConnection {
 
     fn set_instrumentation(&mut self, instrumentation: impl Instrumentation) {
         self.connection_and_transaction_manager.instrumentation = instrumentation.into();
+    }
+
+    fn set_prepared_statement_cache_size(&mut self, size: CacheSize) {
+        self.statement_cache.set_cache_size(size);
     }
 }
 
@@ -499,18 +505,16 @@ impl PgConnection {
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
 
-        let cache_len = self.statement_cache.len();
         let cache = &mut self.statement_cache;
         let conn = &mut self.connection_and_transaction_manager.raw_connection;
         let query = cache.cached_statement(
             &source,
             &Pg,
             &metadata,
-            |sql, _| {
-                let query_name = if source.is_safe_to_cache_prepared(&Pg)? {
-                    Some(format!("__diesel_stmt_{cache_len}"))
-                } else {
-                    None
+            |sql, is_cached| {
+                let query_name = match is_cached {
+                    PrepareForCache::Yes { counter } => Some(format!("__diesel_stmt_{counter}")),
+                    PrepareForCache::No => None,
                 };
                 Statement::prepare(conn, sql, query_name.as_deref(), &metadata)
             },
@@ -614,11 +618,13 @@ mod tests {
     extern crate dotenvy;
 
     use super::*;
-    use crate::dsl::sql;
     use crate::prelude::*;
     use crate::result::Error::DatabaseError;
-    use crate::sql_types::{Integer, VarChar};
     use std::num::NonZeroU32;
+
+    fn connection() -> PgConnection {
+        crate::test_helpers::pg_connection_no_transaction()
+    }
 
     #[test]
     fn malformed_sql_query() {
@@ -633,166 +639,11 @@ mod tests {
         }
     }
 
-    #[test]
-    fn prepared_statements_are_cached() {
-        let connection = &mut connection();
-
-        let query = crate::select(1.into_sql::<Integer>());
-
-        assert_eq!(Ok(1), query.get_result(connection));
-        assert_eq!(Ok(1), query.get_result(connection));
-        assert_eq!(1, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn queries_with_identical_sql_but_different_types_are_cached_separately() {
-        let connection = &mut connection();
-
-        let query = crate::select(1.into_sql::<Integer>());
-        let query2 = crate::select("hi".into_sql::<VarChar>());
-
-        assert_eq!(Ok(1), query.get_result(connection));
-        assert_eq!(Ok("hi".to_string()), query2.get_result(connection));
-        assert_eq!(2, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn queries_with_identical_types_and_sql_but_different_bind_types_are_cached_separately() {
-        let connection = &mut connection();
-
-        let query = crate::select(1.into_sql::<Integer>()).into_boxed::<Pg>();
-        let query2 = crate::select("hi".into_sql::<VarChar>()).into_boxed::<Pg>();
-
-        assert_eq!(0, connection.statement_cache.len());
-        assert_eq!(Ok(1), query.get_result(connection));
-        assert_eq!(Ok("hi".to_string()), query2.get_result(connection));
-        assert_eq!(2, connection.statement_cache.len());
-    }
-
-    define_sql_function!(fn lower(x: VarChar) -> VarChar);
-
-    #[test]
-    fn queries_with_identical_types_and_binds_but_different_sql_are_cached_separately() {
-        let connection = &mut connection();
-
-        let hi = "HI".into_sql::<VarChar>();
-        let query = crate::select(hi).into_boxed::<Pg>();
-        let query2 = crate::select(lower(hi)).into_boxed::<Pg>();
-
-        assert_eq!(0, connection.statement_cache.len());
-        assert_eq!(Ok("HI".to_string()), query.get_result(connection));
-        assert_eq!(Ok("hi".to_string()), query2.get_result(connection));
-        assert_eq!(2, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn queries_with_sql_literal_nodes_are_not_cached() {
-        let connection = &mut connection();
-        let query = crate::select(sql::<Integer>("1"));
-
-        assert_eq!(Ok(1), query.get_result(connection));
-        assert_eq!(0, connection.statement_cache.len());
-    }
-
     table! {
         users {
             id -> Integer,
             name -> Text,
         }
-    }
-
-    #[test]
-    fn inserts_from_select_are_cached() {
-        let connection = &mut connection();
-        connection.begin_test_transaction().unwrap();
-
-        crate::sql_query(
-            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
-        )
-        .execute(connection)
-        .unwrap();
-
-        let query = users::table.filter(users::id.eq(42));
-        let insert = query
-            .insert_into(users::table)
-            .into_columns((users::id, users::name));
-        assert!(insert.execute(connection).is_ok());
-        assert_eq!(1, connection.statement_cache.len());
-
-        let query = users::table.filter(users::id.eq(42)).into_boxed();
-        let insert = query
-            .insert_into(users::table)
-            .into_columns((users::id, users::name));
-        assert!(insert.execute(connection).is_ok());
-        assert_eq!(2, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn single_inserts_are_cached() {
-        let connection = &mut connection();
-        connection.begin_test_transaction().unwrap();
-
-        crate::sql_query(
-            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
-        )
-        .execute(connection)
-        .unwrap();
-
-        let insert =
-            crate::insert_into(users::table).values((users::id.eq(42), users::name.eq("Foo")));
-
-        assert!(insert.execute(connection).is_ok());
-        assert_eq!(1, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn dynamic_batch_inserts_are_not_cached() {
-        let connection = &mut connection();
-        connection.begin_test_transaction().unwrap();
-
-        crate::sql_query(
-            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
-        )
-        .execute(connection)
-        .unwrap();
-
-        let insert = crate::insert_into(users::table)
-            .values(vec![(users::id.eq(42), users::name.eq("Foo"))]);
-
-        assert!(insert.execute(connection).is_ok());
-        assert_eq!(0, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn static_batch_inserts_are_cached() {
-        let connection = &mut connection();
-        connection.begin_test_transaction().unwrap();
-
-        crate::sql_query(
-            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
-        )
-        .execute(connection)
-        .unwrap();
-
-        let insert =
-            crate::insert_into(users::table).values([(users::id.eq(42), users::name.eq("Foo"))]);
-
-        assert!(insert.execute(connection).is_ok());
-        assert_eq!(1, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn queries_containing_in_with_vec_are_cached() {
-        let connection = &mut connection();
-        let one_as_expr = 1.into_sql::<Integer>();
-        let query = crate::select(one_as_expr.eq_any(vec![1, 2, 3]));
-
-        assert_eq!(Ok(true), query.get_result(connection));
-        assert_eq!(1, connection.statement_cache.len());
-    }
-
-    fn connection() -> PgConnection {
-        crate::test_helpers::pg_connection_no_transaction()
     }
 
     #[test]
