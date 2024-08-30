@@ -427,6 +427,9 @@ fn postgres_functions() -> _ {
         array_fill(pg_extras::id, pg_extras::array),
         array_fill_with_lower_bound(pg_extras::id, pg_extras::array, pg_extras::array),
         array_lower(pg_extras::array, 1_i32),
+        array_position(pg_extras::array, pg_extras::id),
+        array_position_with_subscript(pg_extras::array, pg_extras::id, pg_extras::id),
+        array_positions(pg_extras::array, pg_extras::id),
     )
 }
 

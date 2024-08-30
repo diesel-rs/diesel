@@ -1211,3 +1211,153 @@ define_sql_function! {
     /// ```
     fn array_lower<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, dimension: Integer) -> Nullable<Integer>;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the subscript of the first occurrence of the second argument in the array, or NULL if it's not present.
+    /// If the third argument is given, the search begins at that subscript. This function omits the third argument.
+    /// See [array_position_with_subscript].
+    ///
+    /// The array must be one-dimensional. Comparisons are done using IS NOT DISTINCT FROM semantics,
+    /// so it is possible to search for NULL.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main(){
+    /// #    run_test().unwrap();
+    /// # }
+    /// # fn run_test()->QueryResult<()>{
+    /// #   use diesel::dsl::array_position;
+    /// #   use diesel::sql_types::{Nullable,Array,Integer};
+    /// #   let connection = &mut establish_connection();
+    ///
+    /// let pos = diesel::select(array_position::<Array<_>, Integer, _, _>(vec![1, 2, 3, 4], 3))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(3), pos);
+    ///
+    /// let pos = diesel::select(array_position::<Array<_>, Integer, _, _>(vec![1, 2, 3, 4], 5))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None::<i32>, pos);
+    ///
+    /// let pos = diesel::select(array_position::<Array<_>, Nullable<Integer>, _, _>(
+    ///     vec![1, 2, 3, 4], None::<i32>))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None::<i32>, pos);
+    ///
+    /// let pos = diesel::select(array_position::<Array<_>, Nullable<Integer>, _, _>(
+    ///     vec![None::<i32>, Some(1), Some(2), Some(3)], None::<i32>))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(1), pos);
+    /// # Ok(())
+    /// # }
+    ///
+    fn array_position<Arr: ArrayOrNullableArray<Inner = E> + SingleValue, E: SingleValue>(
+        a: Arr,
+        elem: E,
+    ) -> Nullable<Integer>;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the subscript of the first occurrence of the second argument in the array,
+    /// or NULL if it's not present, beginning at the subscript given as the third argument.
+    ///
+    /// The array must be one-dimensional.
+    /// Comparisons are done using IS NOT DISTINCT FROM semantics,
+    /// so it is possible to search for NULL.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main(){
+    /// #    run_test().unwrap();
+    /// # }
+    /// # fn run_test()->QueryResult<()>{
+    /// #   use diesel::dsl::array_position_with_subscript;
+    /// #   use diesel::sql_types::{Nullable,Array,Integer};
+    /// #   let connection = &mut establish_connection();
+    ///
+    /// let pos = diesel::select(array_position_with_subscript::<Array<_>, Integer, _, _, _>(
+    ///     vec![1, 2, 3, 4], 3, 2))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(3), pos);
+    ///
+    /// let pos = diesel::select(array_position_with_subscript::<Array<_>, Integer, _, _, _>(
+    ///     vec![1, 2, 3, 4], 1, 2))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None::<i32>, pos);
+    ///
+    /// let pos = diesel::select(array_position_with_subscript::<Array<_>, Nullable<Integer>, _, _, _>(
+    ///     vec![None::<i32>, Some(1), Some(2), Some(3)], None::<i32>, 1))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(1), pos);
+    ///
+    /// let pos = diesel::select(array_position_with_subscript::<Array<_>, Nullable<Integer>, _, _, _>(
+    ///     vec![None::<i32>, Some(1), Some(2), Some(3)], None::<i32>, 2))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None::<i32>, pos);
+    /// # Ok(())
+    /// # }
+    ///
+    #[sql_name = "array_position"]
+    fn array_position_with_subscript<
+        Arr: ArrayOrNullableArray<Inner = E> + SingleValue,
+        E: SingleValue,
+    >(
+        a: Arr,
+        elem: E,
+        subscript: Integer,
+    ) -> Nullable<Integer>;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns an array of the subscripts of all occurrences of the second argument in the
+    /// array given as first argument.
+    ///
+    /// The array must be one-dimensional. Comparisons are done using IS NOT DISTINCT FROM semantics,
+    /// so it is possible to search for NULL.
+    /// NULL is returned only if the array is NULL; if the value is not found in the array, an empty array is returned.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main(){
+    /// #    run_test().unwrap();
+    /// # }
+    /// # fn run_test()->QueryResult<()>{
+    /// #   use diesel::dsl::array_positions;
+    /// #   use diesel::sql_types::{Nullable,Array,Integer};
+    /// #   let connection = &mut establish_connection();
+    ///
+    /// let pos = diesel::select(array_positions::<Array<_>, Integer, _, _>(vec![1, 1, 2, 1], 1))
+    ///     .get_result::<Option<Vec<i32>>>(connection)?;
+    /// assert_eq!(Some(vec![1,2,4]), pos);
+    ///
+    /// let pos = diesel::select(array_positions::<Array<_>, Integer, _, _>(vec![1, 2, 3, 4], 5))
+    ///     .get_result::<Option<Vec<i32>>>(connection)?;
+    /// assert_eq!(Some(vec![]), pos);
+    ///
+    /// let pos = diesel::select(array_positions::<Array<_>, Nullable<Integer>, _, _>(
+    ///     vec![None::<i32>, Some(2), Some(3), None::<i32>], None::<i32>))
+    ///     .get_result::<Option<Vec<i32>>>(connection)?;
+    /// assert_eq!(Some(vec![1,4]), pos);
+    ///
+    /// let pos = diesel::select(array_positions::<Nullable<Array<_>>, Integer, _, _>(
+    ///     None::<Vec<i32>>, 1))
+    ///     .get_result::<Option<Vec<i32>>>(connection)?;
+    /// assert_eq!(None::<Vec<i32>>, pos);
+    /// # Ok(())
+    /// # }
+    ///
+    fn array_positions<Arr: ArrayOrNullableArray<Inner = E> + SingleValue, E: SingleValue>(
+        a: Arr,
+        elem: E,
+    ) -> Nullable<Array<Integer>>;
+}
