@@ -438,12 +438,14 @@ fn join_with_explicit_on_clause() {
 
     let data = users::table
         .inner_join(posts::table.on(posts::title.eq("Post One")))
+        .order(users::id)
         .load(connection);
 
     assert_eq!(expected_data, data);
 
     let data = users::table
         .inner_join(posts::table.on(posts::title.eq_any(vec!["Post One"])))
+        .order(users::id)
         .load(connection);
 
     assert_eq!(expected_data, data);
