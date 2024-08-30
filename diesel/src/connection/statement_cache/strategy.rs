@@ -143,16 +143,15 @@ mod testing_utils {
 #[cfg(test)]
 #[cfg(feature = "postgres")]
 mod tests_pg {
-    use crate::{
-        dsl::sql,
-        expression::functions::define_sql_function,
-        insertable::Insertable,
-        macros::table,
-        pg::Pg,
-        sql_types::{Integer, VarChar},
-        test_helpers::pg_database_url,
-        Connection, ExpressionMethods, IntoSql, PgConnection, QueryDsl, RunQueryDsl,
-    };
+    use crate::connection::CacheSize;
+    use crate::dsl::sql;
+    use crate::expression::functions::define_sql_function;
+    use crate::insertable::Insertable;
+    use crate::pg::Pg;
+    use crate::sql_types::{Integer, VarChar};
+    use crate::table;
+    use crate::test_helpers::pg_database_url;
+    use crate::{Connection, ExpressionMethods, IntoSql, PgConnection, QueryDsl, RunQueryDsl};
 
     use super::testing_utils::{count_cache_calls, RecordCacheEvents};
 
@@ -238,7 +237,7 @@ mod tests_pg {
         connection.begin_test_transaction().unwrap();
 
         crate::sql_query(
-            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+            "CREATE TEMPORARY TABLE users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
         )
         .execute(connection)
         .unwrap();
@@ -264,7 +263,7 @@ mod tests_pg {
         connection.begin_test_transaction().unwrap();
 
         crate::sql_query(
-            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+            "CREATE TEMPORARY TABLE users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
         )
         .execute(connection)
         .unwrap();
@@ -282,7 +281,7 @@ mod tests_pg {
         connection.begin_test_transaction().unwrap();
 
         crate::sql_query(
-            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+            "CREATE TEMPORARY TABLE users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
         )
         .execute(connection)
         .unwrap();
@@ -300,7 +299,7 @@ mod tests_pg {
         connection.begin_test_transaction().unwrap();
 
         crate::sql_query(
-            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+            "CREATE TEMPORARY TABLE users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
         )
         .execute(connection)
         .unwrap();
@@ -321,16 +320,30 @@ mod tests_pg {
         assert_eq!(Ok(true), query.get_result(connection));
         assert_eq!(1, count_cache_calls(connection));
     }
+
+    #[test]
+    fn disabling_the_cache_works() {
+        let connection = &mut connection();
+        connection.set_prepared_statement_cache_size(CacheSize::Disabled);
+
+        let query = crate::select(1.into_sql::<Integer>());
+
+        assert_eq!(Ok(1), query.get_result(connection));
+        assert_eq!(0, count_cache_calls(connection));
+        assert_eq!(Ok(1), query.get_result(connection));
+        assert_eq!(0, count_cache_calls(connection));
+    }
 }
 
 #[cfg(test)]
 #[cfg(feature = "sqlite")]
 mod tests_sqlite {
 
-    use crate::{
-        dsl::sql, query_dsl::RunQueryDsl, sql_types::Integer, Connection, ExpressionMethods,
-        IntoSql, SqliteConnection,
-    };
+    use crate::connection::CacheSize;
+    use crate::dsl::sql;
+    use crate::query_dsl::RunQueryDsl;
+    use crate::sql_types::Integer;
+    use crate::{Connection, ExpressionMethods, IntoSql, SqliteConnection};
 
     use super::testing_utils::{count_cache_calls, RecordCacheEvents};
 
@@ -388,5 +401,18 @@ mod tests_sqlite {
 
         assert_eq!(Ok(true), query.get_result(connection));
         assert_eq!(1, count_cache_calls(connection));
+    }
+
+    #[test]
+    fn disabling_the_cache_works() {
+        let connection = &mut connection();
+        connection.set_prepared_statement_cache_size(CacheSize::Disabled);
+
+        let query = crate::select(1.into_sql::<Integer>());
+
+        assert_eq!(Ok(1), query.get_result(connection));
+        assert_eq!(0, count_cache_calls(connection));
+        assert_eq!(Ok(1), query.get_result(connection));
+        assert_eq!(0, count_cache_calls(connection));
     }
 }

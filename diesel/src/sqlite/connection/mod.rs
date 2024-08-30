@@ -121,8 +121,7 @@ pub struct SqliteConnection {
     // statement_cache needs to be before raw_connection
     // otherwise we will get errors about open statements before closing the
     // connection itself
-    // pub(crate) for tests
-    pub(crate) statement_cache: StatementCache<Sqlite, Statement>,
+    statement_cache: StatementCache<Sqlite, Statement>,
     raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
     // this exists for the sole purpose of implementing `WithMetadataLookup` trait

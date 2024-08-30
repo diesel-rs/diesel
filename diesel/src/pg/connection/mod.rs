@@ -126,8 +126,7 @@ pub(super) use self::result::PgResult;
 #[allow(missing_debug_implementations)]
 #[cfg(feature = "postgres")]
 pub struct PgConnection {
-    /// pub(crate) for tests
-    pub(crate) statement_cache: StatementCache<Pg, Statement>,
+    statement_cache: StatementCache<Pg, Statement>,
     metadata_cache: PgMetadataCache,
     connection_and_transaction_manager: ConnectionAndTransactionManager,
 }
