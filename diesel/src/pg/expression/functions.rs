@@ -1390,3 +1390,36 @@ define_sql_function! {
     /// ```
     fn array_ndims<Arr: ArrayOrNullableArray + SingleValue>(arr: Arr) -> Integer;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the upper bound of the requested array
+    ///
+    /// This function returns null for dimensions that do not exist
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_upper;
+    /// #     use diesel::sql_types::{Integer, Array};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(array_upper::<Array<Integer>, _, _>(vec![1, 2, 3], 1))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(3), result);
+    ///
+    /// // the array has only one dimension
+    /// let result = diesel::select(array_upper::<Array<Integer>, _, _>(vec![1, 2, 3], 2))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, result);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_upper<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, dimension: Integer) -> Nullable<Integer>;
+}
