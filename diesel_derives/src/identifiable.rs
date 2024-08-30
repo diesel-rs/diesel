@@ -31,7 +31,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         } = &model.find_column(pk)?;
         if let Some(AttributeSpanWrapper { item: ty, .. }) = serialize_as.as_ref() {
             field_ty.push(quote!(#ty));
-            field_name.push(quote!(::std::convert::Into::<#ty>::into(self.#name)));
+            field_name.push(quote!(::std::convert::Into::<#ty>::into(self.#name.clone())));
         } else {
             field_ty.push(quote!(&'ident #ty));
             field_name.push(quote!(&self.#name));
