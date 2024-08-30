@@ -1181,6 +1181,8 @@ define_sql_function! {
 define_sql_function! {
     /// Returns the lower bound of the requested array
     ///
+    /// This function returns null for dimensions that do not exist
+    ///
     /// # Example
     ///
     /// ```rust
@@ -1197,6 +1199,11 @@ define_sql_function! {
     /// let result = diesel::select(array_lower::<Array<Integer>, _, _>(vec![1, 2, 3], 1))
     ///     .get_result::<Option<i32>>(connection)?;
     /// assert_eq!(Some(1), result);
+    ///
+    /// // the array has only one dimension
+    /// let result = diesel::select(array_lower::<Array<Integer>, _, _>(vec![1, 2, 3], 2))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, result);
     /// #     Ok(())
     /// # }
     /// ```
