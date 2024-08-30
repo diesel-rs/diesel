@@ -6,53 +6,10 @@ use custom_arrays::Connection;
 use diesel::{Connection as DieselConnection, PgConnection};
 use dotenvy::dotenv;
 use std::env;
-use std::process::Command;
-use std::time::Duration;
-
-#[allow(dead_code)]
-fn start_or_reuse_postgres_docker_container() {
-    // check if a container with name postgres-5432 is already running.
-    // If so, re-use that container and just return.
-    let output = Command::new("docker")
-        .arg("ps")
-        .arg(format!("--filter=name={}", "postgres-5432"))
-        .arg("--format={{.Names}}")
-        .output()
-        .expect("failed to check for running postgres container");
-    if !output.stdout.is_empty() {
-        return;
-    }
-
-    // If there is no container running, start one.
-    // Example: docker run --name postgres-5432 -p 5432:5432 -e POSTGRES_PASSWORD=postgres -d postgres:16.3-bookworm
-    println!("start_postgres_docker_container");
-    Command::new("docker")
-        .args([
-            "run",
-            "--name",
-            "postgres-5432",
-            "-p",
-            "5432:5432",
-            "-e",
-            "POSTGRES_PASSWORD=postgres",
-            "-d",
-            "postgres:16.3-bookworm",
-        ])
-        .output()
-        .expect("failed to start postgres container");
-    // Wait for the container to start
-    std::thread::sleep(Duration::from_secs(5));
-}
 
 fn run_db_migration(conn: &mut Connection) {
     println!("run_db_migration");
     let res = custom_arrays::run_db_migration(conn);
-    assert!(res.is_ok(), "{:?}", res.unwrap_err());
-}
-
-fn revert_db_migration(conn: &mut Connection) {
-    println!("revert_db_migration");
-    let res = custom_arrays::revert_db_migration(conn);
     assert!(res.is_ok(), "{:?}", res.unwrap_err());
 }
 
@@ -68,52 +25,19 @@ fn postgres_connection() -> PgConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
     conn.begin_test_transaction()
         .expect("Failed to begin test transaction");
-
+    run_db_migration(&mut conn);
     conn
-}
-
-#[allow(dead_code)]
-fn test_teardown() {
-    println!("test_teardown");
-
-    // Optional. In some environments, you may have to tidy up everything after testing.
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
-
-    println!("Revert pending DB migration");
-    revert_db_migration(conn);
-}
-
-// #[test] // You can test the test setup standalone i.e. for debugging.
-// Run this setup first in every test.
-fn test_setup() {
-    println!("test_setup");
-
-    // Optional: May start a Docker container first if you want fully self contained testing
-    // If there is a container already running, the util will re-use it.
-    // println!("Start or reuse postgres container");
-    // start_or_reuse_postgres_docker_container();
-
-    println!("Connect to database");
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
-
-    println!("Run pending DB migration");
-    run_db_migration(conn);
 }
 
 #[test]
 fn test_create_service() {
-    test_setup();
-
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
+    let connection = &mut postgres_connection();
 
     let service = get_crate_service();
     let endpoints = get_endpoints();
     let dependencies = get_dependencies();
 
-    let result = service::Service::create(conn, &service);
+    let result = service::Service::create(connection, &service);
 
     assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
@@ -132,10 +56,7 @@ fn test_create_service() {
 
 #[test]
 fn test_count_service() {
-    test_setup();
-
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
+    let conn = &mut postgres_connection();
 
     let result = service::Service::count(conn);
     assert!(result.is_ok(), "{:?}", result.unwrap_err());
@@ -152,10 +73,7 @@ fn test_count_service() {
 
 #[test]
 fn test_check_if_service_id_exists() {
-    test_setup();
-
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
+    let conn = &mut postgres_connection();
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
@@ -168,10 +86,7 @@ fn test_check_if_service_id_exists() {
 
 #[test]
 fn test_check_if_service_id_online() {
-    test_setup();
-
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
+    let conn = &mut postgres_connection();
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
@@ -185,10 +100,7 @@ fn test_check_if_service_id_online() {
 
 #[test]
 fn test_get_all_online_services() {
-    test_setup();
-
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
+    let conn = &mut postgres_connection();
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
@@ -201,10 +113,7 @@ fn test_get_all_online_services() {
 
 #[test]
 fn test_get_all_offline_services() {
-    test_setup();
-
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
+    let conn = &mut postgres_connection();
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
@@ -217,10 +126,7 @@ fn test_get_all_offline_services() {
 
 #[test]
 fn test_get_all_service_dependencies() {
-    test_setup();
-
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
+    let conn = &mut postgres_connection();
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
@@ -235,10 +141,7 @@ fn test_get_all_service_dependencies() {
 
 #[test]
 fn test_get_all_service_endpoints() {
-    test_setup();
-
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
+    let conn = &mut postgres_connection();
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
@@ -253,10 +156,7 @@ fn test_get_all_service_endpoints() {
 
 #[test]
 fn test_service_read() {
-    test_setup();
-
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
+    let conn = &mut postgres_connection();
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
@@ -281,8 +181,7 @@ fn test_service_read() {
 
 #[test]
 fn test_service_read_all() {
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
+    let conn = &mut postgres_connection();
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
@@ -297,8 +196,7 @@ fn test_service_read_all() {
 
 #[test]
 fn test_set_service_online() {
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
+    let conn = &mut postgres_connection();
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
@@ -316,8 +214,7 @@ fn test_set_service_online() {
 
 #[test]
 fn test_set_service_offline() {
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
+    let conn = &mut postgres_connection();
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
@@ -335,8 +232,7 @@ fn test_set_service_offline() {
 
 #[test]
 fn test_service_update() {
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
+    let conn = &mut postgres_connection();
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
@@ -376,8 +272,7 @@ fn test_service_update() {
 
 #[test]
 fn test_service_delete() {
-    let mut connection = postgres_connection();
-    let conn = &mut connection;
+    let conn = &mut postgres_connection();
 
     // Insert the service
     let service = get_crate_service();
