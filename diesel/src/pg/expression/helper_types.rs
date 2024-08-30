@@ -429,3 +429,8 @@ pub type array_fill<E, A> = super::functions::array_fill<SqlTypeOf<E>, E, A>;
 #[cfg(feature = "postgres_backend")]
 pub type array_fill_with_lower_bound<E, A1, A2> =
     super::functions::array_fill_with_lower_bound<SqlTypeOf<E>, E, A1, A2>;
+
+/// Return type of [`array_lower(array, bound)`](super::functions::array_lower())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_lower<A, D> = super::functions::array_lower<SqlTypeOf<A>, A, D>;

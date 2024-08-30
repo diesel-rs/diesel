@@ -601,9 +601,11 @@ define_sql_function! {
     /// # }
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "time")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "time")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
     /// #     use std::collections::Bound;
@@ -1175,4 +1177,37 @@ define_sql_function! {
     ///
     #[sql_name = "array_fill"]
     fn array_fill_with_lower_bound<E:SingleValue>(value: E, dim: Array<Integer>, lower_bound: Array<Integer>) -> Array<E>;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the lower bound of the requested array
+    ///
+    /// This function returns null for dimensions that do not exist
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_lower;
+    /// #     use diesel::sql_types::{Integer, Array};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(array_lower::<Array<Integer>, _, _>(vec![1, 2, 3], 1))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(1), result);
+    ///
+    /// // the array has only one dimension
+    /// let result = diesel::select(array_lower::<Array<Integer>, _, _>(vec![1, 2, 3], 2))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, result);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_lower<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, dimension: Integer) -> Nullable<Integer>;
 }
