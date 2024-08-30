@@ -1361,3 +1361,32 @@ define_sql_function! {
         elem: E,
     ) -> Nullable<Array<Integer>>;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the number of dimensions of the array
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_ndims;
+    /// #     use diesel::sql_types::{Nullable, Array, Integer};
+    /// #     let connection = &mut establish_connection();
+    ///
+    ///  // diesel currently only supports 1D arrays
+    /// let dims = diesel::select(array_ndims::<Array<Integer>, _>(vec![1, 2]))
+    ///     .get_result::<i32>(connection)?;
+    /// assert_eq!(1, dims);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_ndims<Arr: ArrayOrNullableArray + SingleValue>(arr: Arr) -> Integer;
+}

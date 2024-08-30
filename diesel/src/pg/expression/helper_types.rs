@@ -451,3 +451,8 @@ pub type array_position_with_subscript<A, E, S> =
 #[cfg(feature = "postgres_backend")]
 pub type array_positions<A, E> =
     super::functions::array_positions<SqlTypeOf<A>, SqlTypeOf<E>, A, E>;
+
+/// Return type of [`array_ndims(array)`](super::functions::array_ndims())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_ndims<A> = super::functions::array_ndims<SqlTypeOf<A>, A>;
