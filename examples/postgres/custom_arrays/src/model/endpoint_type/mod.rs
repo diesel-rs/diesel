@@ -38,11 +38,11 @@ impl ToSql<crate::schema::smdb::sql_types::ServiceEndpoint, Pg> for Endpoint {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         serialize::WriteTuple::<(Text, Integer, Text, Integer, PgProtocolType)>::write_tuple(
             &(
-                self.name.to_owned(),
-                self.version.to_owned(),
-                self.base_uri.to_owned(),
-                self.port.to_owned(),
-                self.protocol.to_owned(),
+                &self.name,
+                &self.version,
+                &self.base_uri,
+                &self.port,
+                &self.protocol,
             ),
             &mut out.reborrow(),
         )

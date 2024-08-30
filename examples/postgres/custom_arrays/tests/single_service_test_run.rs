@@ -10,24 +10,26 @@ use std::env;
 fn postgres_connection() -> PgConnection {
     dotenv().ok();
 
-    let database_url =
-        env::var("POSTGRES_DATABASE_URL").expect("POSTGRES_DATABASE_URL must be set");
-    PgConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+    let database_url = env::var("PG_DATABASE_URL")
+        .or_else(|_| env::var("DATABASE_URL"))
+        .expect("PG_DATABASE_URL must be set");
+    let mut conn = PgConnection::establish(&database_url)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
+    conn.begin_test_transaction()
+        .expect("Failed to begin test transaction");
+    conn
 }
 
 fn run_db_migration(conn: &mut Connection) {
     println!("run_db_migration");
     let res = custom_arrays::run_db_migration(conn);
-    //dbg!(&result);
-    assert!(res.is_ok());
+    assert!(res.is_ok(), "{:?}", res.unwrap_err());
 }
 
 fn revert_db_migration(conn: &mut Connection) {
     println!("revert_db_migration");
     let res = custom_arrays::revert_db_migration(conn);
-    //dbg!(&result);
-    assert!(res.is_ok());
+    assert!(res.is_ok(), "{:?}", res.unwrap_err());
 }
 
 // #[test] // Uncomment to run. Make sure to comment out the other tests first.
@@ -143,40 +145,35 @@ fn test_create_service(conn: &mut Connection) {
 #[allow(dead_code)]
 fn test_count_service(conn: &mut Connection) {
     let result = service::Service::count(conn);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert_eq!(result.unwrap(), 1);
 }
 
 #[allow(dead_code)]
 fn test_check_if_service_id_exists(conn: &mut Connection) {
     let result = service::Service::check_if_service_id_exists(conn, 1);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert!(result.unwrap());
 }
 
 #[allow(dead_code)]
 fn test_check_if_service_id_online(conn: &mut Connection) {
     let result = service::Service::check_if_service_id_online(conn, 1);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert!(result.unwrap());
 }
 
 #[allow(dead_code)]
 fn test_get_all_online_services(conn: &mut Connection) {
     let result = service::Service::get_all_online_services(conn);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert!(!result.unwrap().is_empty());
 }
 
 #[allow(dead_code)]
 fn test_get_all_offline_services(conn: &mut Connection) {
     let result = service::Service::get_all_offline_services(conn);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert_eq!(result.unwrap().len(), 0);
 }
 
@@ -185,8 +182,7 @@ fn test_get_all_service_dependencies(conn: &mut Connection) {
     let service_id = 1;
 
     let result = service::Service::get_all_service_dependencies(conn, service_id);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert_eq!(result.unwrap().len(), 1);
 }
 
@@ -195,8 +191,7 @@ fn test_get_all_service_endpoints(conn: &mut Connection) {
     let service_id = 1;
 
     let result = service::Service::get_all_service_endpoints(conn, service_id);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert_eq!(result.unwrap().len(), 2);
 }
 
@@ -205,8 +200,7 @@ fn test_service_read(conn: &mut Connection) {
     let service_id = 1;
 
     let result = service::Service::read(conn, service_id);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let service = result.unwrap();
 
@@ -223,8 +217,7 @@ fn test_service_read(conn: &mut Connection) {
 #[allow(dead_code)]
 fn test_service_read_all(conn: &mut Connection) {
     let result = service::Service::read_all(conn);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let services = result.unwrap();
     assert!(!services.is_empty());
@@ -235,12 +228,10 @@ fn test_set_service_online(conn: &mut Connection) {
     let service_id = 1;
 
     let result = service::Service::set_service_online(conn, service_id);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let result = service::Service::check_if_service_id_online(conn, service_id);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert!(result.unwrap());
 }
 
@@ -249,12 +240,10 @@ fn test_set_service_offline(conn: &mut Connection) {
     let service_id = 1;
 
     let result = service::Service::set_service_offline(conn, service_id);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let result = service::Service::check_if_service_id_online(conn, service_id);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert!(!result.unwrap());
 }
 
@@ -262,8 +251,7 @@ fn test_set_service_offline(conn: &mut Connection) {
 fn test_service_update(conn: &mut Connection) {
     // check if service_id exists so we can update the service
     let result = service::Service::check_if_service_id_exists(conn, 1);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert!(result.unwrap());
 
     let update = UpdateService::new(
@@ -278,8 +266,7 @@ fn test_service_update(conn: &mut Connection) {
     );
 
     let result = service::Service::update(conn, 1, &update);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let service = result.unwrap();
 
@@ -297,19 +284,15 @@ fn test_service_update(conn: &mut Connection) {
 #[allow(dead_code)]
 fn test_service_delete(conn: &mut Connection) {
     let result = service::Service::read(conn, 1);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let result = service::Service::delete(conn, 1);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let result = service::Service::read(conn, 1);
-    //dbg!(&result);
-    assert!(result.is_err());
+    assert!(result.is_err(), "{:?}", result.unwrap());
 
     let result = service::Service::count(conn);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert_eq!(result.unwrap(), 0);
 }

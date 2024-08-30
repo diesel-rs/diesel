@@ -47,26 +47,29 @@ fn start_or_reuse_postgres_docker_container() {
 fn run_db_migration(conn: &mut Connection) {
     println!("run_db_migration");
     let res = custom_arrays::run_db_migration(conn);
-    //dbg!(&result);
-    assert!(res.is_ok());
+    assert!(res.is_ok(), "{:?}", res.unwrap_err());
 }
 
 fn revert_db_migration(conn: &mut Connection) {
     println!("revert_db_migration");
     let res = custom_arrays::revert_db_migration(conn);
-    //dbg!(&result);
-    assert!(res.is_ok());
+    assert!(res.is_ok(), "{:?}", res.unwrap_err());
 }
 
 fn postgres_connection() -> PgConnection {
     println!("postgres_connection");
     dotenv().ok();
 
-    let database_url =
-        env::var("POSTGRES_DATABASE_URL").expect("POSTGRES_DATABASE_URL must be set");
+    let database_url = env::var("PG_DATABASE_URL")
+        .or_else(|_| env::var("DATABASE_URL"))
+        .expect("PG_DATABASE_URL must be set");
 
-    PgConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+    let mut conn = PgConnection::establish(&database_url)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
+    conn.begin_test_transaction()
+        .expect("Failed to begin test transaction");
+
+    conn
 }
 
 #[allow(dead_code)]
@@ -105,8 +108,6 @@ fn test_create_service() {
 
     let mut connection = postgres_connection();
     let conn = &mut connection;
-    conn.begin_test_transaction()
-        .expect("Failed to begin test transaction");
 
     let service = get_crate_service();
     let endpoints = get_endpoints();
@@ -114,8 +115,7 @@ fn test_create_service() {
 
     let result = service::Service::create(conn, &service);
 
-    // dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let service = result.unwrap();
 
@@ -136,22 +136,17 @@ fn test_count_service() {
 
     let mut connection = postgres_connection();
     let conn = &mut connection;
-    conn.begin_test_transaction()
-        .expect("Failed to begin test transaction");
 
     let result = service::Service::count(conn);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert_eq!(result.unwrap(), 0);
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
-    // dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let result = service::Service::count(conn);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert_eq!(result.unwrap(), 1);
 }
 
@@ -161,17 +156,13 @@ fn test_check_if_service_id_exists() {
 
     let mut connection = postgres_connection();
     let conn = &mut connection;
-    conn.begin_test_transaction()
-        .expect("Failed to begin test transaction");
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
-    // dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let result = service::Service::check_if_service_id_exists(conn, 1);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert!(result.unwrap());
 }
 
@@ -181,18 +172,14 @@ fn test_check_if_service_id_online() {
 
     let mut connection = postgres_connection();
     let conn = &mut connection;
-    conn.begin_test_transaction()
-        .expect("Failed to begin test transaction");
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
-    // dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     // Test if online
     let result = service::Service::check_if_service_id_online(conn, 1);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert!(result.unwrap());
 }
 
@@ -202,17 +189,13 @@ fn test_get_all_online_services() {
 
     let mut connection = postgres_connection();
     let conn = &mut connection;
-    conn.begin_test_transaction()
-        .expect("Failed to begin test transaction");
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
-    // dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let result = service::Service::get_all_online_services(conn);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert!(!result.unwrap().is_empty());
 }
 
@@ -222,17 +205,13 @@ fn test_get_all_offline_services() {
 
     let mut connection = postgres_connection();
     let conn = &mut connection;
-    conn.begin_test_transaction()
-        .expect("Failed to begin test transaction");
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
-    // dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let result = service::Service::get_all_offline_services(conn);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert_eq!(result.unwrap().len(), 0);
 }
 
@@ -242,19 +221,15 @@ fn test_get_all_service_dependencies() {
 
     let mut connection = postgres_connection();
     let conn = &mut connection;
-    conn.begin_test_transaction()
-        .expect("Failed to begin test transaction");
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
-    // dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let service_id = 1;
 
     let result = service::Service::get_all_service_dependencies(conn, service_id);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert_eq!(result.unwrap().len(), 1);
 }
 
@@ -264,19 +239,15 @@ fn test_get_all_service_endpoints() {
 
     let mut connection = postgres_connection();
     let conn = &mut connection;
-    conn.begin_test_transaction()
-        .expect("Failed to begin test transaction");
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
-    // dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let service_id = 1;
 
     let result = service::Service::get_all_service_endpoints(conn, service_id);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert_eq!(result.unwrap().len(), 2);
 }
 
@@ -286,19 +257,15 @@ fn test_service_read() {
 
     let mut connection = postgres_connection();
     let conn = &mut connection;
-    conn.begin_test_transaction()
-        .expect("Failed to begin test transaction");
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
-    // dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let service_id = 1;
 
     let result = service::Service::read(conn, service_id);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let service = result.unwrap();
 
@@ -316,17 +283,13 @@ fn test_service_read() {
 fn test_service_read_all() {
     let mut connection = postgres_connection();
     let conn = &mut connection;
-    conn.begin_test_transaction()
-        .expect("Failed to begin test transaction");
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
-    // dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let result = service::Service::read_all(conn);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let services = result.unwrap();
     assert!(!services.is_empty());
@@ -336,23 +299,18 @@ fn test_service_read_all() {
 fn test_set_service_online() {
     let mut connection = postgres_connection();
     let conn = &mut connection;
-    conn.begin_test_transaction()
-        .expect("Failed to begin test transaction");
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
-    // dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let service_id = 1;
 
     let result = service::Service::set_service_online(conn, service_id);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let result = service::Service::check_if_service_id_online(conn, service_id);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert!(result.unwrap());
 }
 
@@ -360,23 +318,18 @@ fn test_set_service_online() {
 fn test_set_service_offline() {
     let mut connection = postgres_connection();
     let conn = &mut connection;
-    conn.begin_test_transaction()
-        .expect("Failed to begin test transaction");
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
-    // dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let service_id = 1;
 
     let result = service::Service::set_service_offline(conn, service_id);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let result = service::Service::check_if_service_id_online(conn, service_id);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert!(!result.unwrap());
 }
 
@@ -384,18 +337,14 @@ fn test_set_service_offline() {
 fn test_service_update() {
     let mut connection = postgres_connection();
     let conn = &mut connection;
-    conn.begin_test_transaction()
-        .expect("Failed to begin test transaction");
 
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
-    // dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     // check if service_id exists so we can update the service
     let result = service::Service::check_if_service_id_exists(conn, 1);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert!(result.unwrap());
 
     let update = UpdateService::new(
@@ -410,8 +359,7 @@ fn test_service_update() {
     );
 
     let result = service::Service::update(conn, 1, &update);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     let service = result.unwrap();
 
@@ -430,33 +378,27 @@ fn test_service_update() {
 fn test_service_delete() {
     let mut connection = postgres_connection();
     let conn = &mut connection;
-    conn.begin_test_transaction()
-        .expect("Failed to begin test transaction");
 
     // Insert the service
     let service = get_crate_service();
     let result = service::Service::create(conn, &service);
-    // dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     // Check if its there
     let result = service::Service::read(conn, 1);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     // Delete service
     let result = service::Service::delete(conn, 1);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
 
     // Check its gone
     let result = service::Service::read(conn, 1);
     //dbg!(&result);
-    assert!(result.is_err());
+    assert!(result.is_err(), "{:?}", result.unwrap_err());
 
     let result = service::Service::count(conn);
-    //dbg!(&result);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{:?}", result.unwrap_err());
     assert_eq!(result.unwrap(), 0);
 }
 
