@@ -1380,14 +1380,10 @@ define_sql_function! {
     /// #     use diesel::sql_types::{Nullable, Array, Integer};
     /// #     let connection = &mut establish_connection();
     ///
-    /// let dims = diesel::select(array_ndims::<Array<_>, _>(vec![1, 2]))
+    ///  // diesel currently only supports 1D arrays
+    /// let dims = diesel::select(array_ndims::<Array<Integer>, _>(vec![1, 2]))
     ///     .get_result::<i32>(connection)?;
     /// assert_eq!(1, dims);
-    ///
-    /// let dims = diesel::select(array_ndims::<Array<_>, _>(vec![vec![1, 2], vec![3, 4]]))
-    ///     .get_result::<i32>(connection)?;
-    /// assert_eq!(2, dims);
-    ///
     ///
     /// #     Ok(())
     /// # }
