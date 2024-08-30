@@ -1254,8 +1254,9 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
-    fn array_position<Arr:ArrayOrNullableArray<Inner=E> + SingleValue, E:SingleValue>(
-        a: Arr, elem: E
+    fn array_position<Arr: ArrayOrNullableArray<Inner = E> + SingleValue, E: SingleValue>(
+        a: Arr,
+        elem: E,
     ) -> Nullable<Integer>;
 }
 
@@ -1303,8 +1304,13 @@ define_sql_function! {
     /// # }
     ///
     #[sql_name = "array_position"]
-    fn array_position_with_subscript<Arr:ArrayOrNullableArray<Inner=E> + SingleValue, E:SingleValue>(
-        a: Arr, elem: E, subscript:Integer
+    fn array_position_with_subscript<
+        Arr: ArrayOrNullableArray<Inner = E> + SingleValue,
+        E: SingleValue,
+    >(
+        a: Arr,
+        elem: E,
+        subscript: Integer,
     ) -> Nullable<Integer>;
 }
 
@@ -1350,7 +1356,8 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
-    fn array_positions<Arr:ArrayOrNullableArray<Inner=E> + SingleValue, E:SingleValue>(
-        a: Arr, elem: E
+    fn array_positions<Arr: ArrayOrNullableArray<Inner = E> + SingleValue, E: SingleValue>(
+        a: Arr,
+        elem: E,
     ) -> Nullable<Array<Integer>>;
 }
