@@ -206,24 +206,7 @@ pub trait QueryDsl: Sized {
     /// that appear in your query before that function call.
     ///
     /// **Note:** When using `select` with `group_by`, the `group_by` call must appear
-    /// before the `select` call in the query chain. For example:
-    ///
-    /// ```
-    /// # use diesel::prelude::*;
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> Text,
-    /// #     }
-    /// # }
-    /// # fn main() {
-    /// #     let conn = &mut establish_connection();
-    /// users::table
-    ///     .group_by(users::id)
-    ///     .select((users::id, diesel::dsl::count(users::name)))
-    /// #     .load::<(i32, i64)>(conn);
-    /// # }
-    /// ```
+    /// before the `select` call in the query chain.
     ///
     /// [`.inner_join`]: QueryDsl::inner_join()
     /// [`.left_join`]: QueryDsl::left_join()
@@ -975,24 +958,7 @@ pub trait QueryDsl: Sized {
     /// Use [`QueryDsl::select()`] to specify one.
     ///
     /// **Note:** When using `group_by` with `select`, the `group_by` call must appear
-    /// before the `select` call in the query chain. For example:
-    ///
-    /// ```
-    /// # use diesel::prelude::*;
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> Text,
-    /// #     }
-    /// # }
-    /// # fn main() {
-    /// #     let conn = &mut establish_connection();
-    /// users::table
-    ///     .group_by(users::id)
-    ///     .select((users::id, diesel::dsl::count(users::name)))
-    /// #     .load::<(i32, i64)>(conn);
-    /// # }
-    /// ```
+    /// before the `select` call in the query chain.
     ///
     /// If there was already a group by clause, it will be overridden.
     /// Grouping by multiple columns can be achieved by passing a tuple of those
