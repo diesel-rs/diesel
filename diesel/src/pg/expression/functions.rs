@@ -1546,3 +1546,38 @@ define_sql_function! {
     /// ```
     fn to_jsonb<E: MaybeNullableValue<Jsonb>>(e: E) -> E::Out;
 }
+
+define_sql_function! {
+    /// Builds a JSON object out of a text array. The array must have an even number of members,
+    /// in which case they are taken as alternating key/value pairs
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_object;
+    /// #     use diesel::sql_types::{Json};
+    /// #     use serde_json::Value;
+    /// #     let connection = &mut establish_connection();
+    /// let json = diesel::select(json_object(vec!["hello","world"])).get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::from_str(r#"{"hello":"world"}"#).unwrap();
+    /// assert_eq!(expected,json);
+    ///
+    /// let json = diesel::select(json_object(vec!["hello","world","John","Doe"])).get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::from_str(r#"{"hello":"world","John":"Doe"}"#).unwrap();
+    /// assert_eq!(expected,json);
+    ///
+    /// let json = diesel::select(json_object(vec!["hello","world","John"])).get_result::<Value>(connection);
+    /// assert!(json.is_err());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn json_object(text_array:Array<Text>)->Json;
+}
