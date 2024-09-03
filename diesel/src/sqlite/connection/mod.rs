@@ -993,4 +993,21 @@ mod tests {
         .unwrap();
         assert_eq!(res, Some(Vec::new()));
     }
+
+    #[test]
+    fn correctly_handle_empty_query() {
+        let check_empty_query_error = |r: crate::QueryResult<usize>| {
+            assert!(r.is_err());
+            let err = r.unwrap_err();
+            assert!(
+                matches!(err, crate::result::Error::QueryBuilderError(ref b) if b.is::<crate::result::EmptyQuery>()),
+                "Expected a query builder error, but got {err}"
+            );
+        };
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        check_empty_query_error(crate::sql_query("").execute(connection));
+        check_empty_query_error(crate::sql_query("   ").execute(connection));
+        check_empty_query_error(crate::sql_query("\n\t").execute(connection));
+        check_empty_query_error(crate::sql_query("-- SELECT 1;").execute(connection));
+    }
 }

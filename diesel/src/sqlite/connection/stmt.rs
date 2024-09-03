@@ -48,11 +48,14 @@ impl Statement {
             )
         };
 
-        ensure_sqlite_ok(prepare_result, raw_connection.internal_connection.as_ptr()).map(|_| {
-            Statement {
-                inner_statement: unsafe { NonNull::new_unchecked(stmt) },
-            }
-        })
+        ensure_sqlite_ok(prepare_result, raw_connection.internal_connection.as_ptr())?;
+
+        // sqlite3_prepare_v3 returns a null pointer for empty statements. This includes
+        // empty or only whitespace strings or any other non-op query string like a comment
+        let inner_statement = NonNull::new(stmt).ok_or_else(|| {
+            crate::result::Error::QueryBuilderError(Box::new(crate::result::EmptyQuery))
+        })?;
+        Ok(Statement { inner_statement })
     }
 
     // The caller of this function has to ensure that:
