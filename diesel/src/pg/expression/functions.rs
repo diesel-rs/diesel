@@ -1426,9 +1426,7 @@ define_sql_function! {
 
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
-    /// Returns the upper bound of the requested array
-    ///
-    /// This function returns null for dimensions that do not exist
+    /// Converts any SQL value to json
     ///
     /// # Example
     ///
