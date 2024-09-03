@@ -456,6 +456,21 @@ impl fmt::Display for EmptyChangeset {
 
 impl StdError for EmptyChangeset {}
 
+/// Expected when you try to execute an empty query
+#[derive(Debug, Clone, Copy)]
+pub struct EmptyQuery;
+
+impl fmt::Display for EmptyQuery {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Detected an empty query. These are not supported by your database system"
+        )
+    }
+}
+
+impl StdError for EmptyQuery {}
+
 /// An error occurred while deserializing a field
 #[derive(Debug)]
 #[non_exhaustive]
