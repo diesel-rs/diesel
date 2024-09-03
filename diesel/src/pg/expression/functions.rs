@@ -1446,31 +1446,31 @@ define_sql_function! {
     /// #     let connection = &mut establish_connection();
     /// let result = diesel::select(to_json::<Integer, _>(1))
     ///     .get_result::<Value>(connection)?;
-    /// 
+    ///
     /// let expected: Value = serde_json::from_str("1").unwrap();
     /// assert_eq!(expected, result);
-    /// 
+    ///
     /// let result = diesel::select(to_json::<Array<Integer>, _>(vec![1, 2, 3]))
     ///     .get_result::<Value>(connection)?;
-    /// 
+    ///
     /// let expected: Value = serde_json::from_str("[1, 2, 3]").unwrap();
     /// assert_eq!(expected, result);
-    /// 
+    ///
     /// let result = diesel::select(to_json::<Array<Text>, _>(vec!["abcd", "xyz"]))
     ///     .get_result::<Value>(connection)?;
-    /// 
+    ///
     /// let expected: Value = serde_json::from_str(r#"["abcd", "xyz"]"#).unwrap();
     /// assert_eq!(expected, result);
-    /// 
+    ///
     /// let result = diesel::select(to_json::<Array<Nullable<Text>>, _>(Vec::<String>::new()))
     ///     .get_result::<Value>(connection)?;
-    /// 
+    ///
     /// let expected: Value = serde_json::from_str("[]").unwrap();
     /// assert_eq!(expected, result);
-    /// 
+    ///
     /// let result = diesel::select(to_json::<Nullable<Array<Text>>, _>(None::<Vec<String>>))
     ///     .get_result::<Value>(connection);
-    /// 
+    ///
     /// assert!(result.is_err());
     ///
     /// #     Ok(())
