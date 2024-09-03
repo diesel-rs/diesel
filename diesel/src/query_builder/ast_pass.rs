@@ -90,7 +90,13 @@ where
         }
     }
 
-    #[cfg(feature = "sqlite")]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    #[cfg(any(
+        feature = "sqlite",
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    ))]
     pub(crate) fn skip_from(&mut self, value: bool) {
         if let AstPassInternals::ToSql(_, ref mut options) = self.internals {
             options.skip_from = value
