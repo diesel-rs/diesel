@@ -107,7 +107,9 @@ where
         &'b self,
         mut out: crate::query_builder::AstPass<'_, 'b, Pg>,
     ) -> crate::result::QueryResult<()> {
+        out.push_sql("(");
         self.array_expr.walk_ast(out.reborrow())?;
+        out.push_sql(")");
         out.push_sql("[");
         self.index_expr.walk_ast(out.reborrow())?;
         out.push_sql("]");
