@@ -83,7 +83,7 @@ pub(crate) use self::insert_statement::{UndecoratedInsertRecord, ValuesClause};
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
-pub use self::insert_statement::DefaultValues;
+pub use self::insert_statement::{DefaultValues, InsertOrIgnore, Replace};
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
