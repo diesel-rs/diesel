@@ -461,3 +461,8 @@ pub type array_positions<A, E> =
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type array_ndims<A> = super::functions::array_ndims<SqlTypeOf<A>, A>;
+
+/// Return type of [`to_json(element)`](super::functions::to_json())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type to_json<E> = super::functions::to_json<SqlTypeOf<E>, E>;

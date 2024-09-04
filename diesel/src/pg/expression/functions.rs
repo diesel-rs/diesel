@@ -3,6 +3,7 @@
 use super::expression_methods::InetOrCidr;
 use crate::expression::functions::define_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
+use crate::pg::expression::expression_methods::MaybeNullableValue;
 use crate::pg::expression::expression_methods::MultirangeOrNullableMultirange;
 use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
 use crate::pg::expression::expression_methods::RangeOrNullableRange;
@@ -1422,4 +1423,50 @@ define_sql_function! {
     /// # }
     /// ```
     fn array_upper<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, dimension: Integer) -> Nullable<Integer>;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Converts any SQL value to json
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::to_json;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Integer, Array, Json, Text, Nullable};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(to_json::<Integer, _>(1))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(1), result);
+    ///
+    /// let result = diesel::select(to_json::<Array<Text>, _>(vec!["abc", "xyz"]))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(["abc", "xyz"]), result);
+    ///
+    /// let result = diesel::select(to_json::<Array<Nullable<Text>>, _>(Vec::<String>::new()))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!([]), result);
+    ///
+    /// let result = diesel::select(to_json::<Nullable<Text>, _>(None::<String>))
+    ///     .get_result::<Option<Value>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn to_json<E: MaybeNullableValue<Json>>(e: E) -> E::Out;
 }
