@@ -3,6 +3,7 @@
 use super::expression_methods::InetOrCidr;
 use crate::expression::functions::define_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
+use crate::pg::expression::expression_methods::MaybeNullableValue;
 use crate::pg::expression::expression_methods::MultirangeOrNullableMultirange;
 use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
 use crate::pg::expression::expression_methods::RangeOrNullableRange;
@@ -1467,7 +1468,5 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn to_json<E: SingleValue<IsNull: MaybeNullableType<Json>>>(
-        e: E,
-    ) -> <E::IsNull as MaybeNullableType<Json>>::Out;
+    fn to_json<E: MaybeNullableValue<Json>>(e: E) -> E::Out;
 }
