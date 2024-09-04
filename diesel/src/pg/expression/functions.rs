@@ -1439,37 +1439,28 @@ define_sql_function! {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::to_json;
-    /// #     use serde_json::Value;
+    /// #     use serde_json::{json, Value};
     /// #     use diesel::sql_types::{Integer, Array, Json, Text, Nullable};
     /// #     let connection = &mut establish_connection();
     /// let result = diesel::select(to_json::<Integer, _>(1))
     ///     .get_result::<Value>(connection)?;
     ///
-    /// let expected: Value = serde_json::from_str("1").unwrap();
-    /// assert_eq!(expected, result);
+    /// assert_eq!(json!(1), result);
     ///
-    /// let result = diesel::select(to_json::<Array<Integer>, _>(vec![1, 2, 3]))
+    /// let result = diesel::select(to_json::<Array<Text>, _>(vec!["abc", "xyz"]))
     ///     .get_result::<Value>(connection)?;
     ///
-    /// let expected: Value = serde_json::from_str("[1, 2, 3]").unwrap();
-    /// assert_eq!(expected, result);
-    ///
-    /// let result = diesel::select(to_json::<Array<Text>, _>(vec!["abcd", "xyz"]))
-    ///     .get_result::<Value>(connection)?;
-    ///
-    /// let expected: Value = serde_json::from_str(r#"["abcd", "xyz"]"#).unwrap();
-    /// assert_eq!(expected, result);
+    /// assert_eq!(json!(["abc", "xyz"]), result);
     ///
     /// let result = diesel::select(to_json::<Array<Nullable<Text>>, _>(Vec::<String>::new()))
     ///     .get_result::<Value>(connection)?;
     ///
-    /// let expected: Value = serde_json::from_str("[]").unwrap();
-    /// assert_eq!(expected, result);
+    /// assert_eq!(json!([]), result);
     ///
-    /// let result = diesel::select(to_json::<Nullable<Array<Text>>, _>(None::<Vec<String>>))
+    /// let result = diesel::select(to_json::<Nullable<Text>, _>(None::<String>))
     ///     .get_result::<Value>(connection);
     ///
-    /// assert!(result.is_err());
+    /// assert_eq!(result.unwrap_err().to_string(), "Unexpected null for non-null column");
     ///
     /// #     Ok(())
     /// # }
