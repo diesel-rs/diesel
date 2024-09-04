@@ -1434,9 +1434,11 @@ define_sql_function! {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::to_json;
     /// #     use serde_json::{json, Value};
@@ -1458,12 +1460,14 @@ define_sql_function! {
     /// assert_eq!(json!([]), result);
     ///
     /// let result = diesel::select(to_json::<Nullable<Text>, _>(None::<String>))
-    ///     .get_result::<Value>(connection);
+    ///     .get_result::<Option<Value>>(connection)?;
     ///
-    /// assert_eq!(result.unwrap_err().to_string(), "Unexpected null for non-null column");
+    /// assert!(result.is_none());
     ///
     /// #     Ok(())
     /// # }
     /// ```
-    fn to_json<E: SingleValue>(e: E) -> Json;
+    fn to_json<E: SingleValue<IsNull: MaybeNullableType<Json>>>(
+        e: E,
+    ) -> <E::IsNull as MaybeNullableType<Json>>::Out;
 }
