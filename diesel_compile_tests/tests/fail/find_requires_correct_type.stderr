@@ -26,14 +26,14 @@ error[E0277]: the trait bound `str: ValidGrouping<()>` is not satisfied
    |                            ^^^^ the trait `ValidGrouping<()>` is not implemented for `str`, which is required by `SelectStatement<FromClause<int_primary_key::table>>: FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<int_primary_key::columns::id, _>>>`
    |
    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-             <&'a T as ValidGrouping<GB>>
-             <(T0, T1) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5, T6) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5, T6, T7) as ValidGrouping<__GroupByClause>>
+             `&'a T` implements `ValidGrouping<GB>`
+             `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `ValidGrouping<__GroupByClause>`
            and $N others
    = note: required for `&str` to implement `ValidGrouping<()>`
    = note: 1 redundant requirement hidden
@@ -84,14 +84,14 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
    |                               required by a bound introduced by this call
    |
    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-             <&'a T as ValidGrouping<GB>>
-             <(T0, T1) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5, T6) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5, T6, T7) as ValidGrouping<__GroupByClause>>
+             `&'a T` implements `ValidGrouping<GB>`
+             `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `ValidGrouping<__GroupByClause>`
            and $N others
    = note: required for `diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>` to implement `ValidGrouping<()>`
    = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>>` to implement `NonAggregate`

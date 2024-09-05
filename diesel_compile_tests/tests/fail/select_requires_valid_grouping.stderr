@@ -94,12 +94,12 @@ error[E0277]: the trait bound `users::columns::id: IsContainedInGroupBy<comments
     |          ^^^^^^ the trait `IsContainedInGroupBy<comments::columns::id>` is not implemented for `users::columns::id`, which is required by `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<(users::columns::id, posts::columns::id)>>: SelectDsl<_>`
     |
     = help: the following other types implement trait `IsContainedInGroupBy<T>`:
-              <users::columns::id as IsContainedInGroupBy<posts::columns::id>>
-              <users::columns::id as IsContainedInGroupBy<posts::columns::title>>
-              <users::columns::id as IsContainedInGroupBy<posts::columns::user_id>>
-              <users::columns::id as IsContainedInGroupBy<users::columns::hair_color>>
-              <users::columns::id as IsContainedInGroupBy<users::columns::id>>
-              <users::columns::id as IsContainedInGroupBy<users::columns::name>>
+              `users::columns::id` implements `IsContainedInGroupBy<posts::columns::id>`
+              `users::columns::id` implements `IsContainedInGroupBy<posts::columns::title>`
+              `users::columns::id` implements `IsContainedInGroupBy<posts::columns::user_id>`
+              `users::columns::id` implements `IsContainedInGroupBy<users::columns::hair_color>`
+              `users::columns::id` implements `IsContainedInGroupBy<users::columns::id>`
+              `users::columns::id` implements `IsContainedInGroupBy<users::columns::name>`
     = note: required for `(users::columns::id, posts::columns::id)` to implement `IsContainedInGroupBy<comments::columns::id>`
 note: required for `comments::columns::id` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
    --> tests/fail/select_requires_valid_grouping.rs:23:9
@@ -119,12 +119,12 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<comments
     |          ^^^^^^ the trait `IsContainedInGroupBy<comments::columns::id>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<(users::columns::id, posts::columns::id)>>: SelectDsl<_>`
     |
     = help: the following other types implement trait `IsContainedInGroupBy<T>`:
-              <posts::columns::id as IsContainedInGroupBy<posts::columns::id>>
-              <posts::columns::id as IsContainedInGroupBy<posts::columns::title>>
-              <posts::columns::id as IsContainedInGroupBy<posts::columns::user_id>>
-              <posts::columns::id as IsContainedInGroupBy<users::columns::hair_color>>
-              <posts::columns::id as IsContainedInGroupBy<users::columns::id>>
-              <posts::columns::id as IsContainedInGroupBy<users::columns::name>>
+              `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::id>`
+              `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::title>`
+              `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::user_id>`
+              `posts::columns::id` implements `IsContainedInGroupBy<users::columns::hair_color>`
+              `posts::columns::id` implements `IsContainedInGroupBy<users::columns::id>`
+              `posts::columns::id` implements `IsContainedInGroupBy<users::columns::name>`
     = note: required for `(posts::columns::id,)` to implement `IsContainedInGroupBy<comments::columns::id>`
     = note: 1 redundant requirement hidden
     = note: required for `(users::columns::id, posts::columns::id)` to implement `IsContainedInGroupBy<comments::columns::id>`

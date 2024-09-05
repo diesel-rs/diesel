@@ -29,8 +29,8 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
    |                          ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`, which is required by `SelectStatement<FromClause<users::table>>: FilterDsl<_>`
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
-             <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Never>>
-             <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Yes>>
+             `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
+             `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Yes>`
    = note: required for `Grouped<Eq<sum<Integer, id>, Bound<Nullable<BigInt>, i64>>>` to implement `NonAggregate`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<Nullable<BigInt>, i64>>>>`
    = note: consider using `--verbose` to print the full type name to the console

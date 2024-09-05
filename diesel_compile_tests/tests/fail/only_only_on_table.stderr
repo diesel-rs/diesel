@@ -74,4 +74,48 @@ note: the trait `Table` must be implemented
    = note: the following trait defines an item `only`, perhaps you need to implement it:
            candidate #1: `diesel::dsl::OnlyDsl`
 
-error: internal compiler error: compiler/rustc_infer/src/infer/at.rs:364:21: relating different kinds: diesel::pg::Pg '?2
+error[E0277]: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::SqliteConnection, _>` is not satisfied
+  --> tests/fail/only_only_on_table.rs:19:28
+   |
+19 |     foo::table.only().load(&mut conn).unwrap();
+   |                       ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `Only<foo::table>`, which is required by `Only<foo::table>: LoadQuery<'_, _, _>`
+   |                       |
+   |                       required by a bound introduced by this call
+   |
+   = help: the trait `QueryFragment<Pg>` is implemented for `Only<foo::table>`
+   = help: for that trait implementation, expected `Pg`, found `Sqlite`
+   = note: required for `FromClause<Only<foo::table>>` to implement `QueryFragment<Sqlite>`
+   = note: 2 redundant requirements hidden
+   = note: required for `SelectStatement<FromClause<Only<foo::table>>>` to implement `QueryFragment<Sqlite>`
+   = note: required for `Only<foo::table>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+
+error[E0277]: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::MysqlConnection, _>` is not satisfied
+  --> tests/fail/only_only_on_table.rs:23:28
+   |
+23 |     foo::table.only().load(&mut conn).unwrap();
+   |                       ---- ^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `Only<foo::table>`, which is required by `Only<foo::table>: LoadQuery<'_, _, _>`
+   |                       |
+   |                       required by a bound introduced by this call
+   |
+   = help: the trait `QueryFragment<Pg>` is implemented for `Only<foo::table>`
+   = help: for that trait implementation, expected `Pg`, found `Mysql`
+   = note: required for `FromClause<Only<foo::table>>` to implement `QueryFragment<Mysql>`
+   = note: 2 redundant requirements hidden
+   = note: required for `SelectStatement<FromClause<Only<foo::table>>>` to implement `QueryFragment<Mysql>`
+   = note: required for `Only<foo::table>` to implement `LoadQuery<'_, diesel::MysqlConnection, _>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`

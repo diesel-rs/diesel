@@ -9,8 +9,8 @@ error[E0277]: `diesel::query_builder::locking_clause::ForUpdate` is no valid SQL
    = note: this usually means that the `Sqlite` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <diesel::query_builder::locking_clause::ForUpdate as QueryFragment<Mysql>>
-             <diesel::query_builder::locking_clause::ForUpdate as QueryFragment<Pg>>
+             `diesel::query_builder::locking_clause::ForUpdate` implements `QueryFragment<Mysql>`
+             `diesel::query_builder::locking_clause::ForUpdate` implements `QueryFragment<Pg>`
    = note: required for `LockingClause<ForUpdate, SkipLocked>` to implement `QueryFragment<Sqlite>`
    = note: 2 redundant requirements hidden
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>` to implement `QueryFragment<Sqlite>`
@@ -37,8 +37,8 @@ error[E0277]: `diesel::query_builder::locking_clause::SkipLocked` is no valid SQ
    = note: this usually means that the `Sqlite` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <diesel::query_builder::locking_clause::SkipLocked as QueryFragment<Mysql>>
-             <diesel::query_builder::locking_clause::SkipLocked as QueryFragment<Pg>>
+             `diesel::query_builder::locking_clause::SkipLocked` implements `QueryFragment<Mysql>`
+             `diesel::query_builder::locking_clause::SkipLocked` implements `QueryFragment<Pg>`
    = note: required for `LockingClause<ForUpdate, SkipLocked>` to implement `QueryFragment<Sqlite>`
    = note: 2 redundant requirements hidden
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>` to implement `QueryFragment<Sqlite>`

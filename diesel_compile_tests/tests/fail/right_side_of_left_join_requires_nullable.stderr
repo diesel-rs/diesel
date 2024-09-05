@@ -27,13 +27,13 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
    |
    = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -73,13 +73,13 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
    |
    = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -147,13 +147,13 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
    |
    = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -193,13 +193,13 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
    |
    = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -267,13 +267,13 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
    |
    = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -313,13 +313,13 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
    |
    = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -387,13 +387,13 @@ error[E0277]: Cannot select `posts::columns::title` from `pets::table`
    |
    = note: `posts::columns::title` is no valid selection for `pets::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -433,13 +433,13 @@ error[E0277]: Cannot select `posts::columns::title` from `pets::table`
    |
    = note: `posts::columns::title` is no valid selection for `pets::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -507,13 +507,13 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
     |
     = note: `posts::columns::title` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
-              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-              <posts::columns::title as SelectableExpression<Only<posts::table>>>
-              <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
-              <posts::columns::title as SelectableExpression<posts::table>>
-              <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-              <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+              `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+              `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+              `posts::columns::title` implements `SelectableExpression<posts::table>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
@@ -553,13 +553,13 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
     |
     = note: `posts::columns::title` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
-              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-              <posts::columns::title as SelectableExpression<Only<posts::table>>>
-              <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
-              <posts::columns::title as SelectableExpression<posts::table>>
-              <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-              <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+              `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+              `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+              `posts::columns::title` implements `SelectableExpression<posts::table>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |

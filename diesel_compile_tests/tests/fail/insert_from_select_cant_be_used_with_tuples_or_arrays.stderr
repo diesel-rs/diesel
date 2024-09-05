@@ -5,14 +5,14 @@ error[E0277]: the trait bound `users::table: UndecoratedInsertRecord<posts::tabl
    |          ^^^^^^ the trait `UndecoratedInsertRecord<posts::table>` is not implemented for `users::table`, which is required by `Vec<users::table>: diesel::Insertable<posts::table>`
    |
    = help: the following other types implement trait `UndecoratedInsertRecord<Table>`:
-             <&'a T as UndecoratedInsertRecord<Tab>>
-             <(T0, T1) as UndecoratedInsertRecord<Tab>>
-             <(T0, T1, T2) as UndecoratedInsertRecord<Tab>>
-             <(T0, T1, T2, T3) as UndecoratedInsertRecord<Tab>>
-             <(T0, T1, T2, T3, T4) as UndecoratedInsertRecord<Tab>>
-             <(T0, T1, T2, T3, T4, T5) as UndecoratedInsertRecord<Tab>>
-             <(T0, T1, T2, T3, T4, T5, T6) as UndecoratedInsertRecord<Tab>>
-             <(T0, T1, T2, T3, T4, T5, T6, T7) as UndecoratedInsertRecord<Tab>>
+             `&'a T` implements `UndecoratedInsertRecord<Tab>`
+             `(T0, T1)` implements `UndecoratedInsertRecord<Tab>`
+             `(T0, T1, T2)` implements `UndecoratedInsertRecord<Tab>`
+             `(T0, T1, T2, T3)` implements `UndecoratedInsertRecord<Tab>`
+             `(T0, T1, T2, T3, T4)` implements `UndecoratedInsertRecord<Tab>`
+             `(T0, T1, T2, T3, T4, T5)` implements `UndecoratedInsertRecord<Tab>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `UndecoratedInsertRecord<Tab>`
+             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `UndecoratedInsertRecord<Tab>`
            and $N others
    = note: required for `Vec<users::table>` to implement `diesel::Insertable<posts::table>`
 

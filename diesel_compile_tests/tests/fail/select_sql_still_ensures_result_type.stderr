@@ -8,9 +8,9 @@ error[E0277]: cannot deserialize a value of the database type `BigInt` as `*cons
    |
    = note: double check your type mappings via the documentation of `BigInt`
    = help: the following other types implement trait `FromSql<A, DB>`:
-             <*const str as FromSql<diesel::sql_types::Text, Mysql>>
-             <*const str as FromSql<diesel::sql_types::Text, Pg>>
-             <*const str as FromSql<diesel::sql_types::Text, Sqlite>>
+             `*const str` implements `FromSql<diesel::sql_types::Text, Mysql>`
+             `*const str` implements `FromSql<diesel::sql_types::Text, Pg>`
+             `*const str` implements `FromSql<diesel::sql_types::Text, Sqlite>`
    = note: required for `std::string::String` to implement `FromSql<BigInt, _>`
    = note: required for `std::string::String` to implement `Queryable<BigInt, _>`
    = note: required for `std::string::String` to implement `FromSqlRow<BigInt, _>`
