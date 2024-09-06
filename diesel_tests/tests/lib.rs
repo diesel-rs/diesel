@@ -28,6 +28,7 @@ mod filter_operators;
 mod find;
 mod group_by;
 mod having;
+mod index;
 mod insert;
 mod insert_from_select;
 mod instrumentation;
