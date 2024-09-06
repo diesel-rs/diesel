@@ -433,6 +433,7 @@ fn postgres_functions() -> _ {
         array_positions(pg_extras::array, pg_extras::id),
         array_ndims(pg_extras::array),
         array_shuffle(pg_extras::array),
+        array_sample(pg_extras::array, pg_extras::id),
         to_json(pg_extras::id),
     )
 }

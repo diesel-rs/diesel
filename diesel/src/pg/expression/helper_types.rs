@@ -467,6 +467,11 @@ pub type array_ndims<A> = super::functions::array_ndims<SqlTypeOf<A>, A>;
 #[cfg(feature = "postgres_backend")]
 pub type array_shuffle<A> = super::functions::array_shuffle<SqlTypeOf<A>, A>;
 
+/// Return type of [`array_sample(array,n)`](super::function::array_sample())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_sample<A, N> = super::functions::array_sample<SqlTypeOf<A>, A, N>;
+
 /// Return type of [`to_json(element)`](super::functions::to_json())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]

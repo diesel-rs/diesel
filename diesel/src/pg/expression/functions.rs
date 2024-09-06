@@ -1432,7 +1432,7 @@ define_sql_function! {
     /// # Example
     ///
     // This function requires postgres >= 16.0
-    // which we cannot expect to be widly used at the
+    // which we cannot expect to be widely used at the
     // point of writing this comment, so we skip running this test
     /// ```rust,no_run
     /// # include!("../../doctest_setup.rs");
@@ -1453,6 +1453,44 @@ define_sql_function! {
     /// # }
     /// ```
     fn array_shuffle<Arr: ArrayOrNullableArray + SingleValue>(array: Arr) -> Arr;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns an array of n items randomly selected from array.
+    /// n may not exceed the length of the array.
+    ///
+    /// # Example
+    ///
+    // This function requires postgres >= 16.0
+    // which we cannot expect to be widely used at the
+    // point of writing this comment, so we skip running this test
+    /// ```rust,no_run
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_sample;
+    /// #     use diesel::sql_types::{Array, Integer};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let vec = vec![1,2,3,4,5];
+    /// let sampled = diesel::select(array_sample::<Array<Integer>, _, _>(vec.clone(),3))
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(3, sampled.len());
+    /// assert!(sampled.iter().all(|x| vec.contains(x)));
+    ///
+    /// let vec: Vec<i32> = Vec::new();
+    /// let sampled = diesel::select(array_sample::<Array<Integer>, _, _>(vec,0))
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(0, sampled.len());
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_sample<Arr: ArrayOrNullableArray + SingleValue>(array:Arr,n:Integer)->Arr;
 }
 
 #[cfg(feature = "postgres_backend")]
