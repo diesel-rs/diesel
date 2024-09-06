@@ -27,7 +27,7 @@ jobs:
       matrix:
         rust: ["stable", "beta", "nightly"]
         backend: ["postgres", "sqlite", "mysql"]
-        os: [ubuntu-latest, macos-13, macos-14, windows-2019]
+        os: [ubuntu-latest, macos-13, macos-15, windows-2019]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
@@ -112,9 +112,9 @@ jobs:
           /usr/local/opt/mariadb@10.11/bin/mysql.server start
           sleep 3
           /usr/local/opt/mariadb@10.11/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'runner'@'localhost';" -urunner
-          echo "MYSQL_DATABASE_URL=mysql://runner@localhost/diesel_test" >> $GITHUB_ENV
-          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://runner@localhost/diesel_example" >> $GITHUB_ENV
-          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@localhost/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQL_DATABASE_URL=mysql://runner@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://runner@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
           echo "MYSQLCLIENT_LIB_DIR=/usr/local/opt/mariadb@10.11/lib" >> $GITHUB_ENV
           echo "MYSQLCLIENT_VERSION=10.11" >> $GITHUB_ENV
 
@@ -127,9 +127,9 @@ jobs:
           /opt/homebrew/opt/mariadb@10.11/bin/mysql.server start
           sleep 3
           /opt/homebrew/opt/mariadb@10.11/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'runner'@'localhost';" -urunner
-          echo "MYSQL_DATABASE_URL=mysql://runner@localhost/diesel_test" >> $GITHUB_ENV
-          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://runner@localhost/diesel_example" >> $GITHUB_ENV
-          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@localhost/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQL_DATABASE_URL=mysql://runner@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://runner@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
           echo "MYSQLCLIENT_LIB_DIR=/opt/homebrew/opt/mariadb@10.11/lib" >> $GITHUB_ENV
           echo "MYSQLCLIENT_VERSION=10.11" >> $GITHUB_ENV
 
@@ -155,8 +155,8 @@ jobs:
         shell: bash
         run: |
           choco install postgresql14 --force --params '/Password:root'
-          echo "C:\Program Files\PostgreSQL\14\bin" >> $GITHUB_PATH
-          echo "C:\Program Files\PostgreSQL\14\lib" >> $GITHUB_PATH
+          echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
+          echo OPENSSL_SRC_PERL=C:/Strawberry/perl/bin/perl >> $GITHUB_ENV
           echo "PQ_LIB_DIR=C:\Program Files\PostgreSQL\14\lib" >> $GITHUB_ENV
           echo "PG_DATABASE_URL=postgres://postgres:root@localhost/" >> $GITHUB_ENV
           echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres:root@localhost/diesel_example" >> $GITHUB_ENV
@@ -172,9 +172,11 @@ jobs:
         if: runner.os == 'Windows' && matrix.backend == 'mysql'
         shell: bash
         run: |
-          echo "MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test" >> $GITHUB_ENV
-          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@localhost/diesel_example" >> $GITHUB_ENV
-          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@localhost/diesel_unit_test" >> $GITHUB_ENV
+          echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
+          echo OPENSSL_SRC_PERL=C:/Strawberry/perl/bin/perl >> $GITHUB_ENV
+          echo "MYSQL_DATABASE_URL=mysql://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
           echo "MYSQLCLIENT_LIB_DIR=C:\tools\mysql\current\lib" >> $GITHUB_ENV
           echo "MYSQLCLIENT_VERSION=8.0.31" >> $GITHUB_ENV
           echo "C:\tools\mysql\current\lib" >> $GITHUB_PATH

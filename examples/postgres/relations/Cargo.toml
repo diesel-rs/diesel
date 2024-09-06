@@ -8,6 +8,8 @@ publish = false
 
 [dependencies]
 diesel = { version = "2.2.0", features = ["postgres"], path = "../../../diesel" }
+pq-sys = { workspace = true, features = ["bundled"] }
+openssl-sys = { workspace = true, features = ["vendored"] }
 dotenvy = "0.15.6"
 
 [[bin]]
