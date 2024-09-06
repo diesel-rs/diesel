@@ -117,15 +117,40 @@ where
     }
 }
 
+// we cannot use the additional
+// parenthesis for updates
+#[derive(Debug)]
+pub struct UpdateArrayIndex<L, R>(ArrayIndex<L, R>);
+
+impl<L, R> QueryFragment<Pg> for UpdateArrayIndex<L, R>
+where
+    L: QueryFragment<Pg>,
+    R: QueryFragment<Pg>,
+{
+    fn walk_ast<'b>(
+        &'b self,
+        mut out: crate::query_builder::AstPass<'_, 'b, Pg>,
+    ) -> crate::result::QueryResult<()> {
+        self.0.array_expr.walk_ast(out.reborrow())?;
+        out.push_sql("[");
+        self.0.index_expr.walk_ast(out.reborrow())?;
+        out.push_sql("]");
+        Ok(())
+    }
+}
+
 impl<L, R> AssignmentTarget for ArrayIndex<L, R>
 where
     L: Column,
 {
     type Table = <L as Column>::Table;
-    type QueryAstNode = ArrayIndex<UncorrelatedColumn<L>, R>;
+    type QueryAstNode = UpdateArrayIndex<UncorrelatedColumn<L>, R>;
 
     fn into_target(self) -> Self::QueryAstNode {
-        ArrayIndex::new(UncorrelatedColumn(self.array_expr), self.index_expr)
+        UpdateArrayIndex(ArrayIndex::new(
+            UncorrelatedColumn(self.array_expr),
+            self.index_expr,
+        ))
     }
 }
 
