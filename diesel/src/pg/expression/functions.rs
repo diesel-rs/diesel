@@ -1565,19 +1565,27 @@ define_sql_function! {
     /// #     use diesel::sql_types::{Json};
     /// #     use serde_json::Value;
     /// #     let connection = &mut establish_connection();
-    /// let json = diesel::select(json_object(vec!["hello","world"])).get_result::<Value>(connection)?;
-    /// let expected:Value = serde_json::from_str(r#"{"hello":"world"}"#).unwrap();
+    /// let json = diesel::select(json_object(vec!["hello","world"]))
+    ///                 .get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::json!({"hello":"world"});
     /// assert_eq!(expected,json);
     ///
-    /// let json = diesel::select(json_object(vec!["hello","world","John","Doe"])).get_result::<Value>(connection)?;
-    /// let expected:Value = serde_json::from_str(r#"{"hello":"world","John":"Doe"}"#).unwrap();
+    /// let json = diesel::select(json_object(vec!["hello","world","John","Doe"]))
+    ///                 .get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::json!({"hello":"world","John":"Doe"});
     /// assert_eq!(expected,json);
     ///
-    /// let json = diesel::select(json_object(vec!["hello","world","John"])).get_result::<Value>(connection);
+    /// let json = diesel::select(json_object(vec!["hello","world","John"]))
+    ///                 .get_result::<Value>(connection);
+    /// assert!(json.is_err());
+    ///
+    /// let empty:Vec<String> = Vec::new();
+    /// let json = diesel::select(json_object(empty))
+    ///                 .get_result::<Value>(connection);
     /// assert!(json.is_err());
     ///
     /// #     Ok(())
     /// # }
     /// ```
-    fn json_object(text_array:Array<Text>)->Json;
+    fn json_object(text_array:Nullable<Array<Text>>)->Json;
 }
