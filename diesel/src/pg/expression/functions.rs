@@ -1431,7 +1431,10 @@ define_sql_function! {
     ///
     /// # Example
     ///
-    /// ```rust
+    // This function requires postgres >= 16.0
+    // which we cannot expect to be widly used at the
+    // point of writing this comment, so we skip running this test
+    /// ```rust,no_run
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -1445,7 +1448,7 @@ define_sql_function! {
     /// let shuffled = diesel::select(array_shuffle::<Array<Integer>, _>(vec![1, 2, 3, 4, 5]))
     ///     .get_result::<Vec<i32>>(connection)?;
     /// assert_eq!(5, shuffled.len());
-    /// assert!(shuffled != vec![1, 2, 3, 4, 5]);  // It's very unlikely to get the same order
+    /// assert_eq!(shuffled.iter().sum::<i32>(), 15);
     /// #     Ok(())
     /// # }
     /// ```
