@@ -1427,6 +1427,36 @@ define_sql_function! {
 
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
+    /// Randomly shuffles the first dimension of the array.
+    ///
+    /// # Example
+    ///
+    // This function requires postgres >= 16.0
+    // which we cannot expect to be widly used at the
+    // point of writing this comment, so we skip running this test
+    /// ```rust,no_run
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_shuffle;
+    /// #     use diesel::sql_types::{Array, Integer};
+    /// #     let connection = &mut establish_connection();
+    /// let shuffled = diesel::select(array_shuffle::<Array<Integer>, _>(vec![1, 2, 3, 4, 5]))
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(5, shuffled.len());
+    /// assert_eq!(shuffled.iter().sum::<i32>(), 15);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_shuffle<Arr: ArrayOrNullableArray + SingleValue>(array: Arr) -> Arr;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
     /// Converts any SQL value to json
     ///
     /// # Example
