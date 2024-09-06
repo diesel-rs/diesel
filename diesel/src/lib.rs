@@ -157,10 +157,22 @@
 //!   [dependencies]
 //!   libsqlite3-sys = { version = "0.29", features = ["bundled"] }
 //!   ```
-//! - `postgres`: This feature enables the diesel postgres backend. Enabling this feature requires a compatible
-//!   copy of `libpq` for your target architecture. This features implies `postgres_backend`
-//! - `mysql`: This feature enables the idesel mysql backend. Enabling this feature requires a compatible copy
-//!   of `libmysqlclient` for your target architecture. This feature implies `mysql_backend`
+//! - `postgres`: This feature enables the diesel postgres backend. This features implies `postgres_backend`
+//!   Enabling this feature requires a compatible copy of `libpq` for your target architecture.
+//!   Alternatively, you can add `pq-sys` with the `bundled` feature as a dependency to your
+//!   crate so libpq will be bundled:
+//!   ```toml
+//!   [dependencies]
+//!   pq-sys = { version = "0.6", features = ["bundled"] }
+//!   openssl-sys = { version = "0.9.100", features = ["vendored"] }
+//!   ```
+//! - `mysql`: This feature enables the diesel mysql backend. This feature implies `mysql_backend`.
+//!   Enabling this feature requires a compatible copy of `libmysqlclient` for your target architecture.
+//!   Alternatively, you can add `mysqlclient-sys` with the `bundled` feature as a dependency to your
+//!   crate so libmysqlclient will be bundled:
+//!   ```toml
+//!   [dependencies]
+//!   mysqlclient-sys = { version = "0.4", features = ["bundled"] }
 //! - `postgres_backend`: This feature enables those parts of diesels postgres backend, that are not dependent
 //!   on `libpq`. Diesel does not provide any connection implementation with only this feature enabled.
 //!   This feature can be used to implement a custom implementation of diesels `Connection` trait for the

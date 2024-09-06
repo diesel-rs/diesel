@@ -6,6 +6,8 @@ publish = false
 
 [dependencies]
 diesel = { path = "../../../diesel", version = "2.2.0", features = ["postgres"] }
+pq-sys = { workspace = true, features = ["bundled"] }
+openssl-sys = { workspace = true, features = ["vendored"] }
 
 [[bin]]
 name = "custom-types"
