@@ -9,8 +9,8 @@ error[E0277]: `diesel::query_builder::locking_clause::ForUpdate` is no valid SQL
    = note: this usually means that the `Sqlite` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <diesel::query_builder::locking_clause::ForUpdate as QueryFragment<Mysql>>
-             <diesel::query_builder::locking_clause::ForUpdate as QueryFragment<Pg>>
+             `diesel::query_builder::locking_clause::ForUpdate` implements `QueryFragment<Mysql>`
+             `diesel::query_builder::locking_clause::ForUpdate` implements `QueryFragment<Pg>`
    = note: required for `LockingClause<ForUpdate, NoWait>` to implement `QueryFragment<Sqlite>`
    = note: 2 redundant requirements hidden
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>` to implement `QueryFragment<Sqlite>`
@@ -37,8 +37,8 @@ error[E0277]: `diesel::query_builder::locking_clause::NoWait` is no valid SQL fr
    = note: this usually means that the `Sqlite` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <diesel::query_builder::locking_clause::NoWait as QueryFragment<Mysql>>
-             <diesel::query_builder::locking_clause::NoWait as QueryFragment<Pg>>
+             `diesel::query_builder::locking_clause::NoWait` implements `QueryFragment<Mysql>`
+             `diesel::query_builder::locking_clause::NoWait` implements `QueryFragment<Pg>`
    = note: required for `LockingClause<ForUpdate, NoWait>` to implement `QueryFragment<Sqlite>`
    = note: 2 redundant requirements hidden
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>` to implement `QueryFragment<Sqlite>`

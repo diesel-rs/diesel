@@ -8,14 +8,14 @@ error[E0277]: Cannot select `f64` from `NoFromClause`
    |
    = note: `f64` is no valid selection for `NoFromClause`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <&'a T as SelectableExpression<QS>>
-             <(T0, T1) as SelectableExpression<QS>>
-             <(T0, T1, T2) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4, T5) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4, T5, T6) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4, T5, T6, T7) as SelectableExpression<QS>>
+             `&'a T` implements `SelectableExpression<QS>`
+             `(T0, T1)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4, T5)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
            and $N others
    = note: required for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)` to implement `SelectableExpression<NoFromClause>`
    = note: 1 redundant requirement hidden
@@ -45,14 +45,14 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
    |     required by a bound introduced by this call
    |
    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-             <&'a T as ValidGrouping<GB>>
-             <(T0, T1) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5, T6) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5, T6, T7) as ValidGrouping<__GroupByClause>>
+             `&'a T` implements `ValidGrouping<GB>`
+             `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `ValidGrouping<__GroupByClause>`
            and $N others
    = note: required for `(f64,)` to implement `ValidGrouping<()>`
    = note: 2 redundant requirements hidden
@@ -81,14 +81,14 @@ error[E0277]: Cannot select `f64` from `NoFromClause`
    |
    = note: `f64` is no valid selection for `NoFromClause`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <&'a T as SelectableExpression<QS>>
-             <(T0, T1) as SelectableExpression<QS>>
-             <(T0, T1, T2) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4, T5) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4, T5, T6) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4, T5, T6, T7) as SelectableExpression<QS>>
+             `&'a T` implements `SelectableExpression<QS>`
+             `(T0, T1)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4, T5)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
            and $N others
    = note: required for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)` to implement `SelectableExpression<NoFromClause>`
    = note: 1 redundant requirement hidden
@@ -118,14 +118,14 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
    |          required by a bound introduced by this call
    |
    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-             <&'a T as ValidGrouping<GB>>
-             <(T0, T1) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5, T6) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5, T6, T7) as ValidGrouping<__GroupByClause>>
+             `&'a T` implements `ValidGrouping<GB>`
+             `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `ValidGrouping<__GroupByClause>`
            and $N others
    = note: required for `(f64,)` to implement `ValidGrouping<()>`
    = note: 2 redundant requirements hidden
@@ -188,14 +188,14 @@ error[E0277]: `f64` is no valid SQL fragment for the `Pg` backend
    = note: this usually means that the `Pg` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <&'a T as QueryFragment<DB>>
-             <() as QueryFragment<DB>>
-             <(T0, T1) as QueryFragment<__DB>>
-             <(T0, T1, T2) as QueryFragment<__DB>>
-             <(T0, T1, T2, T3) as QueryFragment<__DB>>
-             <(T0, T1, T2, T3, T4) as QueryFragment<__DB>>
-             <(T0, T1, T2, T3, T4, T5) as QueryFragment<__DB>>
-             <(T0, T1, T2, T3, T4, T5, T6) as QueryFragment<__DB>>
+             `&'a T` implements `QueryFragment<DB>`
+             `()` implements `QueryFragment<DB>`
+             `(T0, T1)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3, T4)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3, T4, T5)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `QueryFragment<__DB>`
            and $N others
    = note: required for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)` to implement `QueryFragment<Pg>`
    = note: 4 redundant requirements hidden
@@ -251,14 +251,14 @@ error[E0277]: Cannot select `{integer}` from `NoFromClause`
    |
    = note: `{integer}` is no valid selection for `NoFromClause`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <&'a T as SelectableExpression<QS>>
-             <(T0, T1) as SelectableExpression<QS>>
-             <(T0, T1, T2) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4, T5) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4, T5, T6) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4, T5, T6, T7) as SelectableExpression<QS>>
+             `&'a T` implements `SelectableExpression<QS>`
+             `(T0, T1)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4, T5)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
            and $N others
    = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `SelectableExpression<NoFromClause>`
    = note: 1 redundant requirement hidden
@@ -288,14 +288,14 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
    |     required by a bound introduced by this call
    |
    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-             <&'a T as ValidGrouping<GB>>
-             <(T0, T1) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5, T6) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5, T6, T7) as ValidGrouping<__GroupByClause>>
+             `&'a T` implements `ValidGrouping<GB>`
+             `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `ValidGrouping<__GroupByClause>`
            and $N others
    = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `ValidGrouping<()>`
    = note: 1 redundant requirement hidden
@@ -324,14 +324,14 @@ error[E0277]: Cannot select `{integer}` from `NoFromClause`
    |
    = note: `{integer}` is no valid selection for `NoFromClause`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <&'a T as SelectableExpression<QS>>
-             <(T0, T1) as SelectableExpression<QS>>
-             <(T0, T1, T2) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4, T5) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4, T5, T6) as SelectableExpression<QS>>
-             <(T0, T1, T2, T3, T4, T5, T6, T7) as SelectableExpression<QS>>
+             `&'a T` implements `SelectableExpression<QS>`
+             `(T0, T1)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4, T5)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
+             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
            and $N others
    = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `SelectableExpression<NoFromClause>`
    = note: 1 redundant requirement hidden
@@ -361,14 +361,14 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
    |          required by a bound introduced by this call
    |
    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-             <&'a T as ValidGrouping<GB>>
-             <(T0, T1) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5, T6) as ValidGrouping<__GroupByClause>>
-             <(T0, T1, T2, T3, T4, T5, T6, T7) as ValidGrouping<__GroupByClause>>
+             `&'a T` implements `ValidGrouping<GB>`
+             `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
+             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `ValidGrouping<__GroupByClause>`
            and $N others
    = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `ValidGrouping<()>`
    = note: 1 redundant requirement hidden
@@ -431,14 +431,14 @@ error[E0277]: `{integer}` is no valid SQL fragment for the `Pg` backend
    = note: this usually means that the `Pg` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <&'a T as QueryFragment<DB>>
-             <() as QueryFragment<DB>>
-             <(T0, T1) as QueryFragment<__DB>>
-             <(T0, T1, T2) as QueryFragment<__DB>>
-             <(T0, T1, T2, T3) as QueryFragment<__DB>>
-             <(T0, T1, T2, T3, T4) as QueryFragment<__DB>>
-             <(T0, T1, T2, T3, T4, T5) as QueryFragment<__DB>>
-             <(T0, T1, T2, T3, T4, T5, T6) as QueryFragment<__DB>>
+             `&'a T` implements `QueryFragment<DB>`
+             `()` implements `QueryFragment<DB>`
+             `(T0, T1)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3, T4)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3, T4, T5)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `QueryFragment<__DB>`
            and $N others
    = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `QueryFragment<Pg>`
    = note: 4 redundant requirements hidden

@@ -9,8 +9,8 @@ error[E0277]: `diesel::query_builder::insert_statement::private::Replace` is no 
    = note: this usually means that the `Pg` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <diesel::query_builder::insert_statement::private::Replace as QueryFragment<Mysql>>
-             <diesel::query_builder::insert_statement::private::Replace as QueryFragment<Sqlite>>
+             `diesel::query_builder::insert_statement::private::Replace` implements `QueryFragment<Mysql>`
+             `diesel::query_builder::insert_statement::private::Replace` implements `QueryFragment<Sqlite>`
    = note: required for `InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<id, ...>>,), ...>, ...>` to implement `QueryFragment<Pg>`
    = note: required for `InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<id, ...>>,), ...>, ...>` to implement `ExecuteDsl<diesel::PgConnection, Pg>`
 note: required by a bound in `diesel::RunQueryDsl::execute`

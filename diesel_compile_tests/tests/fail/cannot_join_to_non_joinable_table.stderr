@@ -7,13 +7,13 @@ error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisf
    |                          required by a bound introduced by this call
    |
    = help: the following other types implement trait `JoinTo<T>`:
-             <users::table as JoinTo<Alias<S>>>
-             <users::table as JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>>
-             <users::table as JoinTo<JoinOn<Join, On>>>
-             <users::table as JoinTo<Only<S>>>
-             <users::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
-             <users::table as JoinTo<Tablesample<S, TSM>>>
-             <users::table as JoinTo<query_source::joins::Join<Left, Right, Kind>>>
+             `users::table` implements `JoinTo<Alias<S>>`
+             `users::table` implements `JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>`
+             `users::table` implements `JoinTo<JoinOn<Join, On>>`
+             `users::table` implements `JoinTo<Only<S>>`
+             `users::table` implements `JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>`
+             `users::table` implements `JoinTo<Tablesample<S, TSM>>`
+             `users::table` implements `JoinTo<query_source::joins::Join<Left, Right, Kind>>`
    = note: required for `users::table` to implement `JoinWithImplicitOnClause<posts::table, Inner>`
 note: required by a bound in `inner_join`
   --> $DIESEL/src/query_dsl/mod.rs
@@ -33,13 +33,13 @@ error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisf
    |                          required by a bound introduced by this call
    |
    = help: the following other types implement trait `JoinTo<T>`:
-             <users::table as JoinTo<Alias<S>>>
-             <users::table as JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>>
-             <users::table as JoinTo<JoinOn<Join, On>>>
-             <users::table as JoinTo<Only<S>>>
-             <users::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
-             <users::table as JoinTo<Tablesample<S, TSM>>>
-             <users::table as JoinTo<query_source::joins::Join<Left, Right, Kind>>>
+             `users::table` implements `JoinTo<Alias<S>>`
+             `users::table` implements `JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>`
+             `users::table` implements `JoinTo<JoinOn<Join, On>>`
+             `users::table` implements `JoinTo<Only<S>>`
+             `users::table` implements `JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>`
+             `users::table` implements `JoinTo<Tablesample<S, TSM>>`
+             `users::table` implements `JoinTo<query_source::joins::Join<Left, Right, Kind>>`
    = note: required for `users::table` to implement `JoinWithImplicitOnClause<posts::table, LeftOuter>`
 note: required by a bound in `left_outer_join`
   --> $DIESEL/src/query_dsl/mod.rs
@@ -57,13 +57,13 @@ error[E0277]: the trait bound `posts::table: JoinTo<users::table>` is not satisf
    |                          ^^^^^^^^^^ the trait `JoinTo<users::table>` is not implemented for `posts::table`, which is required by `users::table: JoinWithImplicitOnClause<_, Inner>`
    |
    = help: the following other types implement trait `JoinTo<T>`:
-             <posts::table as JoinTo<Alias<S>>>
-             <posts::table as JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>>
-             <posts::table as JoinTo<JoinOn<Join, On>>>
-             <posts::table as JoinTo<Only<S>>>
-             <posts::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
-             <posts::table as JoinTo<Tablesample<S, TSM>>>
-             <posts::table as JoinTo<comments::table>>
-             <posts::table as JoinTo<query_source::joins::Join<Left, Right, Kind>>>
+             `posts::table` implements `JoinTo<Alias<S>>`
+             `posts::table` implements `JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>`
+             `posts::table` implements `JoinTo<JoinOn<Join, On>>`
+             `posts::table` implements `JoinTo<Only<S>>`
+             `posts::table` implements `JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>`
+             `posts::table` implements `JoinTo<Tablesample<S, TSM>>`
+             `posts::table` implements `JoinTo<comments::table>`
+             `posts::table` implements `JoinTo<query_source::joins::Join<Left, Right, Kind>>`
    = note: required for `query_source::joins::Join<posts::table, comments::table, Inner>` to implement `JoinTo<users::table>`
    = note: required for `users::table` to implement `JoinWithImplicitOnClause<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>`

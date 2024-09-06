@@ -9,14 +9,14 @@ error[E0277]: `diesel::query_builder::update_statement::SetNotCalled` is no vali
    = note: this usually means that the `_` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <&'a T as QueryFragment<DB>>
-             <() as QueryFragment<DB>>
-             <(T0, T1) as QueryFragment<__DB>>
-             <(T0, T1, T2) as QueryFragment<__DB>>
-             <(T0, T1, T2, T3) as QueryFragment<__DB>>
-             <(T0, T1, T2, T3, T4) as QueryFragment<__DB>>
-             <(T0, T1, T2, T3, T4, T5) as QueryFragment<__DB>>
-             <(T0, T1, T2, T3, T4, T5, T6) as QueryFragment<__DB>>
+             `&'a T` implements `QueryFragment<DB>`
+             `()` implements `QueryFragment<DB>`
+             `(T0, T1)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3, T4)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3, T4, T5)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `QueryFragment<__DB>`
            and $N others
    = note: required for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>` to implement `QueryFragment<_>`
    = note: required for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>` to implement `ExecuteDsl<_, _>`

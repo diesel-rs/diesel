@@ -9,9 +9,9 @@ error[E0277]: `ReturningClause<(columns::id, columns::name)>` is no valid SQL fr
    = note: this usually means that the `Sqlite` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <ReturningClause<Expr> as QueryFragment<DB, PgLikeReturningClause>>
-             <ReturningClause<Expr> as QueryFragment<DB, sqlite::backend::SqliteReturningClause>>
-             <ReturningClause<Expr> as QueryFragment<DB>>
+             `ReturningClause<Expr>` implements `QueryFragment<DB, PgLikeReturningClause>`
+             `ReturningClause<Expr>` implements `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
+             `ReturningClause<Expr>` implements `QueryFragment<DB>`
    = note: required for `ReturningClause<(columns::id, columns::name)>` to implement `QueryFragment<Sqlite>`
    = note: 1 redundant requirement hidden
    = note: required for `UpdateStatement<table, WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>, Assign<..., ...>, ...>` to implement `QueryFragment<Sqlite>`
@@ -38,9 +38,9 @@ error[E0277]: `ReturningClause<columns::name>` is no valid SQL fragment for the 
    = note: this usually means that the `Sqlite` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <ReturningClause<Expr> as QueryFragment<DB, PgLikeReturningClause>>
-             <ReturningClause<Expr> as QueryFragment<DB, sqlite::backend::SqliteReturningClause>>
-             <ReturningClause<Expr> as QueryFragment<DB>>
+             `ReturningClause<Expr>` implements `QueryFragment<DB, PgLikeReturningClause>`
+             `ReturningClause<Expr>` implements `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
+             `ReturningClause<Expr>` implements `QueryFragment<DB>`
    = note: required for `ReturningClause<columns::name>` to implement `QueryFragment<Sqlite>`
    = note: 1 redundant requirement hidden
    = note: required for `UpdateStatement<table, WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>, Assign<..., ...>, ...>` to implement `QueryFragment<Sqlite>`

@@ -8,9 +8,9 @@ error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is 
    = note: `diesel::sql_query` requires the loading target to column names for loading values.
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
    = help: the following other types implement trait `FromSql<A, DB>`:
-             <i32 as FromSql<diesel::sql_types::Integer, Mysql>>
-             <i32 as FromSql<diesel::sql_types::Integer, Pg>>
-             <i32 as FromSql<diesel::sql_types::Integer, Sqlite>>
+             `i32` implements `FromSql<diesel::sql_types::Integer, Mysql>`
+             `i32` implements `FromSql<diesel::sql_types::Integer, Pg>`
+             `i32` implements `FromSql<diesel::sql_types::Integer, Sqlite>`
    = note: required for `i32` to implement `diesel::Queryable<diesel::sql_types::Text, Pg>`
    = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Pg>`
    = help: see issue #48214
@@ -23,9 +23,9 @@ error[E0277]: cannot deserialize a value of the database type `diesel::sql_types
    |
    = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`
    = help: the following other types implement trait `FromSql<A, DB>`:
-             <*const str as FromSql<diesel::sql_types::Text, Mysql>>
-             <*const str as FromSql<diesel::sql_types::Text, Pg>>
-             <*const str as FromSql<diesel::sql_types::Text, Sqlite>>
+             `*const str` implements `FromSql<diesel::sql_types::Text, Mysql>`
+             `*const str` implements `FromSql<diesel::sql_types::Text, Pg>`
+             `*const str` implements `FromSql<diesel::sql_types::Text, Sqlite>`
    = note: required for `std::string::String` to implement `FromSql<diesel::sql_types::Integer, Pg>`
    = note: required for `std::string::String` to implement `diesel::Queryable<diesel::sql_types::Integer, Pg>`
    = note: required for `std::string::String` to implement `FromSqlRow<diesel::sql_types::Integer, Pg>`

@@ -35,8 +35,8 @@ error[E0277]: `BatchInsert<Vec<ValuesClause<ColumnInsertValue<id, Bound<Integer,
    = note: this usually means that the `Sqlite` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID> as QueryFragment<DB>>
-             <BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<V, Tab>>, Tab, QId, HAS_STATIC_QUERY_ID> as QueryFragment<DB, PostgresLikeBatchInsertSupport>>
+             `BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>` implements `QueryFragment<DB>`
+             `BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<V, Tab>>, Tab, QId, HAS_STATIC_QUERY_ID>` implements `QueryFragment<DB, PostgresLikeBatchInsertSupport>`
    = note: required for `BatchInsert<Vec<ValuesClause<ColumnInsertValue<id, Bound<Integer, i32>>, table>>, table, (), false>` to implement `QueryFragment<Sqlite>`
    = note: 3 redundant requirements hidden
    = note: required for `InsertStatement<table, OnConflictValues<BatchInsert<Vec<ValuesClause<..., ...>>, ..., ..., false>, ..., ...>>` to implement `QueryFragment<Sqlite>`
