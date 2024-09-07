@@ -1519,17 +1519,17 @@ define_sql_function! {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::to_jsonb;
     /// #     use serde_json::{json, Value};
-    /// #     use diesel::sql_types::{Integer, Array, Json, Jsonb, Text, Nullable};
+    /// #     use diesel::sql_types::{Integer, Array, Jsonb, Text, Nullable};
     /// #     let connection = &mut establish_connection();
     /// let result = diesel::select(to_jsonb::<Integer, _>(1))
     ///     .get_result::<Value>(connection)?;
     ///
     /// assert_eq!(json!(1), result);
     ///
-    /// let result = diesel::select(to_jsonb::<Array<Text>, _>(vec!["abc", "xyz"]))
+    /// let result = diesel::select(to_jsonb::<Array<Text>, _>(vec!["abc", "def"]))
     ///     .get_result::<Value>(connection)?;
     ///
-    /// assert_eq!(json!(["abc", "xyz"]), result);
+    /// assert_eq!(json!(["abc", "def"]), result);
     ///
     /// let result = diesel::select(to_jsonb::<Array<Nullable<Text>>, _>(Vec::<String>::new()))
     ///     .get_result::<Value>(connection)?;
