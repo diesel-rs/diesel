@@ -1383,13 +1383,17 @@ define_sql_function! {
     ///
     ///  // diesel currently only supports 1D arrays
     /// let dims = diesel::select(array_ndims::<Array<Integer>, _>(vec![1, 2]))
-    ///     .get_result::<i32>(connection)?;
-    /// assert_eq!(1, dims);
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(1), dims);
+    ///
+    /// let dims = diesel::select(array_ndims::<Nullable<Array<Integer>>, _>(None::<Vec<i32>>))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, dims);
     ///
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_ndims<Arr: ArrayOrNullableArray + SingleValue>(arr: Arr) -> Integer;
+    fn array_ndims<Arr: ArrayOrNullableArray + SingleValue>(arr: Arr) -> Nullable<Integer>;
 }
 
 #[cfg(feature = "postgres_backend")]
