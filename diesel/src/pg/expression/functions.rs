@@ -1500,3 +1500,49 @@ define_sql_function! {
     /// ```
     fn to_json<E: MaybeNullableValue<Json>>(e: E) -> E::Out;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Converts any SQL value to jsonb
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::to_jsonb;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Integer, Array, Json, Jsonb, Text, Nullable};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(to_jsonb::<Integer, _>(1))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(1), result);
+    ///
+    /// let result = diesel::select(to_jsonb::<Array<Text>, _>(vec!["abc", "xyz"]))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(["abc", "xyz"]), result);
+    ///
+    /// let result = diesel::select(to_jsonb::<Array<Nullable<Text>>, _>(Vec::<String>::new()))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!([]), result);
+    ///
+    /// let result = diesel::select(to_jsonb::<Nullable<Text>, _>(None::<String>))
+    ///     .get_result::<Option<Value>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn to_jsonb<E: MaybeNullableValue<Jsonb>>(e: E) -> E::Out;
+}
