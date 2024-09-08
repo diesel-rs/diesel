@@ -12,15 +12,12 @@ use crate::dsl::AsExprOf;
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::IntoSql;
 use crate::expression::NonAggregate;
-use crate::expression::*;
-use crate::query_builder::from_clause::AsQuerySource;
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::limit_clause::{LimitClause, NoLimitClause};
 use crate::query_builder::limit_offset_clause::LimitOffsetClause;
 use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
 use crate::query_builder::{AsQuery, AstPass, Query, QueryFragment, QueryId, SelectQuery};
 use crate::query_dsl::methods::*;
-use crate::query_source::*;
 use crate::sql_types::BigInt;
 use crate::{CombineDsl, Insertable, QueryResult, QueryDsl, RunQueryDsl, Table};
 
@@ -86,24 +83,6 @@ impl<Combinator, Rule, Source, Rhs, LOf>
 
 impl<Combinator, Rule, Source, Rhs, LOf> QueryDsl
     for CombinationClause<Combinator, Rule, Source, Rhs, LOf> {}
-
-impl<Combinator, Rule, Source, Rhs, LOf> QuerySource
-    for CombinationClause<Combinator, Rule, Source, Rhs, LOf>
-where
-    Combinator: AsQuerySource,
-    <Combinator::QuerySource as QuerySource>::DefaultSelection: SelectableExpression<Self>,
-{
-    type FromClause = <Combinator::QuerySource as QuerySource>::FromClause;
-    type DefaultSelection = <Combinator::QuerySource as QuerySource>::DefaultSelection;
-
-    fn from_clause(&self) -> <Combinator::QuerySource as QuerySource>::FromClause {
-        self.combinator.as_query_source().from_clause()
-    }
-
-    fn default_selection(&self) -> Self::DefaultSelection {
-        self.combinator.as_query_source().default_selection()
-    }
-}
 
 impl<Combinator, Rule, Source, Rhs, LOf> Query
     for CombinationClause<Combinator, Rule, Source, Rhs, LOf>
