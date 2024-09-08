@@ -118,6 +118,64 @@ fn except() {
 }
 
 #[test]
+fn union_with_limit() {
+    use crate::schema::users::dsl::*;
+
+    let conn = &mut connection();
+    let data = vec![
+        NewUser::new("Sean", None),
+        NewUser::new("Tess", None),
+        NewUser::new("Jim", None),
+    ];
+    insert_into(users).values(&data).execute(conn).unwrap();
+    let data = users.order(id).load::<User>(conn).unwrap();
+    let sean = &data[0];
+    let tess = &data[1];
+    let _jim = &data[2];
+
+    let expected_data = vec![
+        User::new(sean.id, "Sean"),
+        User::new(tess.id, "Tess"),
+    ];
+    let data: Vec<_> = users
+        .filter(id.le(tess.id))
+        .union(users.filter(id.ge(tess.id)))
+        .limit(2)
+        .load(conn)
+        .unwrap();
+    assert_eq!(expected_data, data);
+}
+
+#[test]
+fn union_with_offset() {
+    use crate::schema::users::dsl::*;
+
+    let conn = &mut connection();
+    let data = vec![
+        NewUser::new("Sean", None),
+        NewUser::new("Tess", None),
+        NewUser::new("Jim", None),
+    ];
+    insert_into(users).values(&data).execute(conn).unwrap();
+    let data = users.order(id).load::<User>(conn).unwrap();
+    let _sean = &data[0];
+    let tess = &data[1];
+    let jim = &data[2];
+
+    let expected_data = vec![
+        User::new(tess.id, "Tess"),
+        User::new(jim.id, "Jim"),
+    ];
+    let data: Vec<_> = users
+        .filter(id.le(tess.id))
+        .union(users.filter(id.ge(tess.id)))
+        .offset(1)
+        .load(conn)
+        .unwrap();
+    assert_eq!(expected_data, data);
+}
+
+#[test]
 fn union_with_order() {
     let conn = &mut connection();
     let data = vec![

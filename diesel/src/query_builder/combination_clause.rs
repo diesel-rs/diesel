@@ -1,22 +1,46 @@
 //! Combine queries using a combinator like `UNION`, `INTERSECT` or `EXPECT`
 //! with or without `ALL` rule for duplicates
+//!
+//! Within this module, types commonly use the following abbreviations:
+//!
+//! L: Limit Clause
+//! Of: Offset Clause
+//! LOf: Limit Offset Clause
 
 use crate::backend::{Backend, DieselReserveSpecialization};
+use crate::dsl::AsExprOf;
 use crate::expression::subselect::ValidSubselect;
+use crate::expression::IntoSql;
 use crate::expression::NonAggregate;
+use crate::expression::*;
+use crate::query_builder::from_clause::AsQuerySource;
 use crate::query_builder::insert_statement::InsertFromSelect;
+use crate::query_builder::limit_clause::{LimitClause, NoLimitClause};
+use crate::query_builder::limit_offset_clause::LimitOffsetClause;
+use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
 use crate::query_builder::{AsQuery, AstPass, Query, QueryFragment, QueryId, SelectQuery};
-use crate::{CombineDsl, Insertable, QueryResult, RunQueryDsl, Table};
+use crate::query_dsl::methods::*;
+use crate::query_source::*;
+use crate::sql_types::BigInt;
+use crate::{CombineDsl, Insertable, QueryResult, QueryDsl, RunQueryDsl, Table};
 
 #[derive(Debug, Copy, Clone, QueryId)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Combine queries using a combinator like `UNION`, `INTERSECT` or `EXPECT`
 /// with or without `ALL` rule for duplicates
-pub struct CombinationClause<Combinator, Rule, Source, Rhs> {
+pub struct CombinationClause<
+    Combinator,
+    Rule,
+    Source,
+    Rhs,
+    LimitOffset = LimitOffsetClause<NoLimitClause, NoOffsetClause>,
+> {
     combinator: Combinator,
     duplicate_rule: Rule,
     source: ParenthesisWrapper<Source>,
     rhs: ParenthesisWrapper<Rhs>,
+    /// The combined limit/offset clause of the query
+    limit_offset: LimitOffset,
 }
 
 impl<Combinator, Rule, Source, Rhs> CombinationClause<Combinator, Rule, Source, Rhs> {
@@ -32,11 +56,57 @@ impl<Combinator, Rule, Source, Rhs> CombinationClause<Combinator, Rule, Source, 
             duplicate_rule,
             source: ParenthesisWrapper(source),
             rhs: ParenthesisWrapper(rhs),
+            limit_offset: LimitOffsetClause {
+                limit_clause: NoLimitClause,
+                offset_clause: NoOffsetClause,
+            },
         }
     }
 }
 
-impl<Combinator, Rule, Source, Rhs> Query for CombinationClause<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs, LOf>
+    CombinationClause<Combinator, Rule, Source, Rhs, LOf>
+{
+    pub(crate) fn new_full(
+        combinator: Combinator,
+        duplicate_rule: Rule,
+        source: Source,
+        rhs: Rhs,
+        limit_offset: LOf,
+    ) -> Self {
+        CombinationClause {
+            combinator,
+            duplicate_rule,
+            source: ParenthesisWrapper(source),
+            rhs: ParenthesisWrapper(rhs),
+            limit_offset,
+        }
+    }
+}
+
+impl<Combinator, Rule, Source, Rhs, LOf> QueryDsl
+    for CombinationClause<Combinator, Rule, Source, Rhs, LOf> {}
+
+impl<Combinator, Rule, Source, Rhs, LOf> QuerySource
+    for CombinationClause<Combinator, Rule, Source, Rhs, LOf>
+where
+    Combinator: AsQuerySource,
+    <Combinator::QuerySource as QuerySource>::DefaultSelection: SelectableExpression<Self>,
+{
+    type FromClause = <Combinator::QuerySource as QuerySource>::FromClause;
+    type DefaultSelection = <Combinator::QuerySource as QuerySource>::DefaultSelection;
+
+    fn from_clause(&self) -> <Combinator::QuerySource as QuerySource>::FromClause {
+        self.combinator.as_query_source().from_clause()
+    }
+
+    fn default_selection(&self) -> Self::DefaultSelection {
+        self.combinator.as_query_source().default_selection()
+    }
+}
+
+impl<Combinator, Rule, Source, Rhs, LOf> Query
+    for CombinationClause<Combinator, Rule, Source, Rhs, LOf>
 where
     Source: Query,
     Rhs: Query<SqlType = Source::SqlType>,
@@ -44,7 +114,8 @@ where
     type SqlType = Source::SqlType;
 }
 
-impl<Combinator, Rule, Source, Rhs> SelectQuery for CombinationClause<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs, LOf> SelectQuery
+    for CombinationClause<Combinator, Rule, Source, Rhs, LOf>
 where
     Source: SelectQuery,
     Rhs: SelectQuery<SqlType = Source::SqlType>,
@@ -52,21 +123,21 @@ where
     type SqlType = Source::SqlType;
 }
 
-impl<Combinator, Rule, Source, Rhs, QS> ValidSubselect<QS>
-    for CombinationClause<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs, LOf, QS> ValidSubselect<QS>
+    for CombinationClause<Combinator, Rule, Source, Rhs, LOf>
 where
     Source: ValidSubselect<QS>,
     Rhs: ValidSubselect<QS>,
 {
 }
 
-impl<Combinator, Rule, Source, Rhs, Conn> RunQueryDsl<Conn>
-    for CombinationClause<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs, LOf, Conn> RunQueryDsl<Conn>
+    for CombinationClause<Combinator, Rule, Source, Rhs, LOf>
 {
 }
 
-impl<Combinator, Rule, Source, Rhs, T> Insertable<T>
-    for CombinationClause<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs, LOf, T> Insertable<T>
+    for CombinationClause<Combinator, Rule, Source, Rhs, LOf>
 where
     T: Table,
     T::AllColumns: NonAggregate,
@@ -79,8 +150,8 @@ where
     }
 }
 
-impl<Combinator, Rule, Source, OriginRhs> CombineDsl
-    for CombinationClause<Combinator, Rule, Source, OriginRhs>
+impl<Combinator, Rule, Source, OriginRhs, LOf> CombineDsl
+    for CombinationClause<Combinator, Rule, Source, OriginRhs, LOf>
 where
     Self: Query,
 {
@@ -129,20 +200,88 @@ where
     }
 }
 
-impl<Combinator, Rule, Source, Rhs, DB: Backend> QueryFragment<DB>
-    for CombinationClause<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs, LOf, DB: Backend> QueryFragment<DB>
+    for CombinationClause<Combinator, Rule, Source, Rhs, LOf>
 where
     Combinator: QueryFragment<DB>,
     Rule: QueryFragment<DB>,
     ParenthesisWrapper<Source>: QueryFragment<DB>,
     ParenthesisWrapper<Rhs>: QueryFragment<DB>,
+    LOf: QueryFragment<DB>,
     DB: Backend + SupportsCombinationClause<Combinator, Rule> + DieselReserveSpecialization,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.source.walk_ast(out.reborrow())?;
         self.combinator.walk_ast(out.reborrow())?;
         self.duplicate_rule.walk_ast(out.reborrow())?;
-        self.rhs.walk_ast(out)
+        self.rhs.walk_ast(out.reborrow())?;
+        self.limit_offset.walk_ast(out)
+    }
+}
+
+#[doc(hidden)]
+type Limit = AsExprOf<i64, BigInt>;
+
+impl<ST, Combinator, Rule, Source, Rhs, L, Of> LimitDsl
+    for CombinationClause<Combinator, Rule, Source, Rhs, LimitOffsetClause<L, Of>>
+where
+    Self: SelectQuery<SqlType = ST>,
+    CombinationClause<Combinator, Rule, Source, Rhs, LimitOffsetClause<LimitClause<Limit>, Of>>:
+        SelectQuery<SqlType = ST>,
+{
+    type Output = CombinationClause<
+        Combinator,
+        Rule,
+        Source,
+        Rhs,
+        LimitOffsetClause<LimitClause<Limit>, Of>,
+    >;
+
+    fn limit(self, limit: i64) -> Self::Output {
+        let limit_clause = LimitClause(limit.into_sql::<BigInt>());
+        CombinationClause::new_full(
+            self.combinator,
+            self.duplicate_rule,
+            self.source.0,
+            self.rhs.0,
+            LimitOffsetClause {
+                limit_clause,
+                offset_clause: self.limit_offset.offset_clause,
+            },
+        )
+    }
+}
+
+#[doc(hidden)]
+type Offset = Limit;
+
+impl<ST, Combinator, Rule, Source, Rhs, L, Of> OffsetDsl
+    for CombinationClause<Combinator, Rule, Source, Rhs, LimitOffsetClause<L, Of>>
+where
+    Self: SelectQuery<SqlType = ST>,
+    CombinationClause<Combinator, Rule, Source, Rhs, LimitOffsetClause<L, OffsetClause<Offset>>>:
+        SelectQuery<SqlType = ST>,
+{
+    type Output = CombinationClause<
+        Combinator,
+        Rule,
+        Source,
+        Rhs,
+        LimitOffsetClause<L, OffsetClause<Offset>>,
+    >;
+
+    fn offset(self, offset: i64) -> Self::Output {
+        let offset_clause = OffsetClause(offset.into_sql::<BigInt>());
+        CombinationClause::new_full(
+            self.combinator,
+            self.duplicate_rule,
+            self.source.0,
+            self.rhs.0,
+            LimitOffsetClause {
+                limit_clause: self.limit_offset.limit_clause,
+                offset_clause,
+            },
+        )
     }
 }
 
