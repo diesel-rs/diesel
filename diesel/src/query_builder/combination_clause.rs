@@ -19,7 +19,7 @@ use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
 use crate::query_builder::{AsQuery, AstPass, Query, QueryFragment, QueryId, SelectQuery};
 use crate::query_dsl::methods::*;
 use crate::sql_types::BigInt;
-use crate::{CombineDsl, Insertable, QueryResult, QueryDsl, RunQueryDsl, Table};
+use crate::{CombineDsl, Insertable, QueryDsl, QueryResult, RunQueryDsl, Table};
 
 #[derive(Debug, Copy, Clone, QueryId)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -61,9 +61,7 @@ impl<Combinator, Rule, Source, Rhs> CombinationClause<Combinator, Rule, Source, 
     }
 }
 
-impl<Combinator, Rule, Source, Rhs, LOf>
-    CombinationClause<Combinator, Rule, Source, Rhs, LOf>
-{
+impl<Combinator, Rule, Source, Rhs, LOf> CombinationClause<Combinator, Rule, Source, Rhs, LOf> {
     pub(crate) fn new_full(
         combinator: Combinator,
         duplicate_rule: Rule,
@@ -82,7 +80,9 @@ impl<Combinator, Rule, Source, Rhs, LOf>
 }
 
 impl<Combinator, Rule, Source, Rhs, LOf> QueryDsl
-    for CombinationClause<Combinator, Rule, Source, Rhs, LOf> {}
+    for CombinationClause<Combinator, Rule, Source, Rhs, LOf>
+{
+}
 
 impl<Combinator, Rule, Source, Rhs, LOf> Query
     for CombinationClause<Combinator, Rule, Source, Rhs, LOf>
@@ -208,13 +208,8 @@ where
     CombinationClause<Combinator, Rule, Source, Rhs, LimitOffsetClause<LimitClause<Limit>, Of>>:
         SelectQuery<SqlType = ST>,
 {
-    type Output = CombinationClause<
-        Combinator,
-        Rule,
-        Source,
-        Rhs,
-        LimitOffsetClause<LimitClause<Limit>, Of>,
-    >;
+    type Output =
+        CombinationClause<Combinator, Rule, Source, Rhs, LimitOffsetClause<LimitClause<Limit>, Of>>;
 
     fn limit(self, limit: i64) -> Self::Output {
         let limit_clause = LimitClause(limit.into_sql::<BigInt>());
