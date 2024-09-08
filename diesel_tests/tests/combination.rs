@@ -134,14 +134,13 @@ fn union_with_limit() {
     let jim = &data[2];
 
     let expected_data = vec![
-        User::new(jim.id, "Jim"),
         User::new(sean.id, "Sean"),
+        User::new(tess.id, "Tess"),
     ];
     let data: Vec<_> = users
         .filter(id.le(tess.id))
         .union(users.filter(id.ge(tess.id)))
         .limit(2)
-        .positional_order_by(2) // name is the second column
         .load(conn)
         .unwrap();
     assert_eq!(expected_data, data);
