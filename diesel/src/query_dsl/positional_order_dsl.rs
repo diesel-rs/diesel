@@ -26,8 +26,8 @@ pub struct PositionalOrderClause<Source, Expr> {
     expr: Expr,
 }
 
-impl<Combinator, Rule, Source, Rhs, Expr: Order> PositionalOrderDsl<Expr>
-    for CombinationClause<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs, LOh, Expr: Order> PositionalOrderDsl<Expr>
+    for CombinationClause<Combinator, Rule, Source, Rhs, LOh>
 {
 }
 
