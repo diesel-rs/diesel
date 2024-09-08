@@ -163,6 +163,7 @@ fn union_with_offset() {
     let data: Vec<_> = users
         .filter(id.le(tess.id))
         .union(users.filter(id.ge(tess.id)))
+        .limit(3)
         .offset(1)
         .load(conn)
         .unwrap();
