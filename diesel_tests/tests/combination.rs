@@ -134,12 +134,13 @@ fn union_with_limit() {
     let _jim = &data[2];
 
     let expected_data = vec![User::new(sean.id, "Sean"), User::new(tess.id, "Tess")];
-    let data: Vec<_> = users
+    let mut data: Vec<_> = users
         .filter(id.le(tess.id))
         .union(users.filter(id.ge(tess.id)))
         .limit(2)
         .load(conn)
         .unwrap();
+    data.sort_by_key(|u: &User| u.id);
     assert_eq!(expected_data, data);
 }
 
@@ -160,13 +161,14 @@ fn union_with_offset() {
     let jim = &data[2];
 
     let expected_data = vec![User::new(tess.id, "Tess"), User::new(jim.id, "Jim")];
-    let data: Vec<_> = users
+    let mut data: Vec<_> = users
         .filter(id.le(tess.id))
         .union(users.filter(id.ge(tess.id)))
         .limit(3)
         .offset(1)
         .load(conn)
         .unwrap();
+    data.sort_by_key(|u: &User| u.id);
     assert_eq!(expected_data, data);
 }
 
