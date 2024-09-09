@@ -19,7 +19,6 @@ fn limit() {
     assert_eq!(expected_data, actual_data);
 }
 
-#[cfg(any(feature = "sqlite", feature = "postgres"))]
 #[test]
 fn offset() {
     use crate::schema::users::dsl::*;
