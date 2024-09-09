@@ -129,19 +129,21 @@ fn union_with_limit() {
     ];
     insert_into(users).values(&data).execute(conn).unwrap();
     let data = users.order(id).load::<User>(conn).unwrap();
-    let sean = &data[0];
+    let _sean = &data[0];
     let tess = &data[1];
     let _jim = &data[2];
 
-    let expected_data = vec![User::new(sean.id, "Sean"), User::new(tess.id, "Tess")];
-    let mut data: Vec<_> = users
+    let data: Vec<User> = users
         .filter(id.le(tess.id))
         .union(users.filter(id.ge(tess.id)))
         .limit(2)
         .load(conn)
         .unwrap();
-    data.sort_by_key(|u: &User| u.id);
-    assert_eq!(expected_data, data);
+
+    // Cannot determine any `expected_data` to match against because the database might return
+    // different rows
+    // The positional_order_by fix is not applicable, because ORDER should appear before LIMIT
+    assert_eq!(2, data.len());
 }
 
 #[test]
@@ -158,18 +160,20 @@ fn union_with_offset() {
     let data = users.order(id).load::<User>(conn).unwrap();
     let _sean = &data[0];
     let tess = &data[1];
-    let jim = &data[2];
+    let _jim = &data[2];
 
-    let expected_data = vec![User::new(tess.id, "Tess"), User::new(jim.id, "Jim")];
-    let mut data: Vec<_> = users
+    let data: Vec<User> = users
         .filter(id.le(tess.id))
         .union(users.filter(id.ge(tess.id)))
         .limit(3)
         .offset(1)
         .load(conn)
         .unwrap();
-    data.sort_by_key(|u: &User| u.id);
-    assert_eq!(expected_data, data);
+
+    // Cannot determine any `expected_data` to match against because the database might return
+    // different rows
+    // The positional_order_by fix is not applicable, because ORDER should appear before LIMIT
+    assert_eq!(2, data.len());
 }
 
 #[test]
