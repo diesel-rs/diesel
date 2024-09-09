@@ -471,3 +471,8 @@ pub type array_shuffle<A> = super::functions::array_shuffle<SqlTypeOf<A>, A>;
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type to_json<E> = super::functions::to_json<SqlTypeOf<E>, E>;
+
+/// Return type of [`to_jsonb(element)`](super::functions::to_jsonb())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type to_jsonb<E> = super::functions::to_jsonb<SqlTypeOf<E>, E>;
