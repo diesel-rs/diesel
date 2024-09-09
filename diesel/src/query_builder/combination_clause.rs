@@ -61,24 +61,6 @@ impl<Combinator, Rule, Source, Rhs> CombinationClause<Combinator, Rule, Source, 
     }
 }
 
-impl<Combinator, Rule, Source, Rhs, LOf> CombinationClause<Combinator, Rule, Source, Rhs, LOf> {
-    pub(crate) fn new_full(
-        combinator: Combinator,
-        duplicate_rule: Rule,
-        source: Source,
-        rhs: Rhs,
-        limit_offset: LOf,
-    ) -> Self {
-        CombinationClause {
-            combinator,
-            duplicate_rule,
-            source: ParenthesisWrapper(source),
-            rhs: ParenthesisWrapper(rhs),
-            limit_offset,
-        }
-    }
-}
-
 impl<Combinator, Rule, Source, Rhs, LOf> QueryDsl
     for CombinationClause<Combinator, Rule, Source, Rhs, LOf>
 {
@@ -213,16 +195,16 @@ where
 
     fn limit(self, limit: i64) -> Self::Output {
         let limit_clause = LimitClause(limit.into_sql::<BigInt>());
-        CombinationClause::new_full(
-            self.combinator,
-            self.duplicate_rule,
-            self.source.0,
-            self.rhs.0,
-            LimitOffsetClause {
+        CombinationClause {
+            combinator: self.combinator,
+            duplicate_rule: self.duplicate_rule,
+            source: self.source,
+            rhs: self.rhs,
+            limit_offset: LimitOffsetClause {
                 limit_clause,
                 offset_clause: self.limit_offset.offset_clause,
             },
-        )
+        }
     }
 }
 
@@ -246,16 +228,16 @@ where
 
     fn offset(self, offset: i64) -> Self::Output {
         let offset_clause = OffsetClause(offset.into_sql::<BigInt>());
-        CombinationClause::new_full(
-            self.combinator,
-            self.duplicate_rule,
-            self.source.0,
-            self.rhs.0,
-            LimitOffsetClause {
+        CombinationClause {
+            combinator: self.combinator,
+            duplicate_rule: self.duplicate_rule,
+            source: self.source,
+            rhs: self.rhs,
+            limit_offset: LimitOffsetClause {
                 limit_clause: self.limit_offset.limit_clause,
                 offset_clause,
             },
-        )
+        }
     }
 }
 
