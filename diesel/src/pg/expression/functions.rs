@@ -1474,7 +1474,7 @@ define_sql_function! {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::array_sample;
-    /// #     use diesel::sql_types::{Array, Integer};
+    /// #     use diesel::sql_types::{Array, Integer, Nullable};
     /// #     let connection = &mut establish_connection();
     ///
     /// let vec = vec![1,2,3,4,5];
@@ -1487,10 +1487,14 @@ define_sql_function! {
     /// let sampled = diesel::select(array_sample::<Array<Integer>, _, _>(vec,0))
     ///     .get_result::<Vec<i32>>(connection)?;
     /// assert_eq!(0, sampled.len());
+    ///
+    /// let sampled = diesel::select(array_sample::<Nullable<Array<Integer>>, _, _>(None::<Vec<i32>>,1))
+    ///     .get_result::<Option<Vec<i32>>>(connection)?;
+    /// assert!(sampled.is_none());
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_sample<Arr: ArrayOrNullableArray + SingleValue>(array:Arr,n:Integer)->Arr;
+    fn array_sample<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, n: Integer) -> Arr;
 }
 
 #[cfg(feature = "postgres_backend")]
