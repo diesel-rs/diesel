@@ -5,9 +5,9 @@ use crate::expression::functions::define_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
 use crate::pg::expression::expression_methods::MaybeNullableValue;
 use crate::pg::expression::expression_methods::MultirangeOrNullableMultirange;
-use crate::pg::expression::expression_methods::TextArrayOrNullableTextArray;
 use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
 use crate::pg::expression::expression_methods::RangeOrNullableRange;
+use crate::pg::expression::expression_methods::TextArrayOrNullableTextArray;
 use crate::sql_types::*;
 
 define_sql_function! {
@@ -1588,5 +1588,7 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn json_object<Arr:TextArrayOrNullableTextArray + MaybeNullableValue<Json>>(text_array: Arr) -> Arr::Out;
+    fn json_object<Arr: TextArrayOrNullableTextArray + MaybeNullableValue<Json>>(
+        text_array: Arr,
+    ) -> Arr::Out;
 }

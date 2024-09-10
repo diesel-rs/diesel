@@ -3,7 +3,8 @@
 pub(in crate::pg) use self::private::{
     ArrayOrNullableArray, InetOrCidr, JsonIndex, JsonOrNullableJsonOrJsonbOrNullableJsonb,
     JsonRemoveIndex, JsonbOrNullableJsonb, MaybeNullableValue, MultirangeOrNullableMultirange,
-    MultirangeOrRangeMaybeNullable, RangeHelper, RangeOrNullableRange, TextArrayOrNullableTextArray, TextOrNullableText,
+    MultirangeOrRangeMaybeNullable, RangeHelper, RangeOrNullableRange,
+    TextArrayOrNullableTextArray, TextOrNullableText,
 };
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
@@ -3713,6 +3714,11 @@ pub(in crate::pg) mod private {
         type Out = <T::IsNull as MaybeNullableType<O>>::Out;
     }
 
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `Array<Text>`, `Array<Nullable<Text>>`,\
+                   `Nullable<Array<Text>>` nor `diesel::sql_types::Nullable<Array<Nullable<Text>>>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
     pub trait TextArrayOrNullableTextArray {}
 
     impl TextArrayOrNullableTextArray for Array<Text> {}
