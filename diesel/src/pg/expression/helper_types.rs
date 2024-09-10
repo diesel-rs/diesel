@@ -476,3 +476,8 @@ pub type to_json<E> = super::functions::to_json<SqlTypeOf<E>, E>;
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type to_jsonb<E> = super::functions::to_jsonb<SqlTypeOf<E>, E>;
+
+/// Return type of [`json_object(text_array)`](super::functions::json_object())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_object<A> = super::functions::json_object<SqlTypeOf<A>,A>;

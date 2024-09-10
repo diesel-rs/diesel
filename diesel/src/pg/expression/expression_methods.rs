@@ -3,7 +3,7 @@
 pub(in crate::pg) use self::private::{
     ArrayOrNullableArray, InetOrCidr, JsonIndex, JsonOrNullableJsonOrJsonbOrNullableJsonb,
     JsonRemoveIndex, JsonbOrNullableJsonb, MaybeNullableValue, MultirangeOrNullableMultirange,
-    MultirangeOrRangeMaybeNullable, RangeHelper, RangeOrNullableRange, TextOrNullableText,
+    MultirangeOrRangeMaybeNullable, RangeHelper, RangeOrNullableRange, TextArrayOrNullableTextArray, TextOrNullableText,
 };
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
@@ -3712,4 +3712,11 @@ pub(in crate::pg) mod private {
     {
         type Out = <T::IsNull as MaybeNullableType<O>>::Out;
     }
+
+    pub trait TextArrayOrNullableTextArray {}
+
+    impl TextArrayOrNullableTextArray for Array<Text> {}
+    impl TextArrayOrNullableTextArray for Array<Nullable<Text>> {}
+    impl TextArrayOrNullableTextArray for Nullable<Array<Text>> {}
+    impl TextArrayOrNullableTextArray for Nullable<Array<Nullable<Text>>> {}
 }
