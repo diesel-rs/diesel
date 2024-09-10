@@ -17,9 +17,10 @@ use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::limit_clause::{LimitClause, NoLimitClause};
 use crate::query_builder::limit_offset_clause::LimitOffsetClause;
 use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
-use crate::query_builder::order_clause::NoOrderClause;
+use crate::query_builder::order_clause::{NoOrderClause, OrderClause};
 use crate::query_builder::{AsQuery, AstPass, Query, QueryFragment, QueryId, SelectQuery};
 use crate::query_dsl::methods::*;
+use crate::query_dsl::positional_order_dsl::{PositionalOrderDsl, PositionalOrderExpr};
 use crate::sql_types::BigInt;
 use crate::{CombineDsl, Insertable, QueryDsl, QueryResult, RunQueryDsl, Table};
 
@@ -188,6 +189,30 @@ where
     }
 }
 
+impl<ST, Combinator, Rule, Source, Rhs, O, LOf, Expr> PositionalOrderDsl<Expr>
+    for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
+where
+    Self: SelectQuery<SqlType = ST>,
+    CombinationClause<Combinator, Rule, Source, Rhs, OrderClause<Expr>, LOf>:
+        SelectQuery<SqlType = ST>,
+    Expr: PositionalOrderExpr,
+{
+    type Output = CombinationClause<Combinator, Rule, Source, Rhs, OrderClause<Expr>, LOf>;
+
+    fn positional_order_by(self, expr: Expr) -> Self::Output {
+        let order = OrderClause(expr);
+
+        CombinationClause {
+            combinator: self.combinator,
+            duplicate_rule: self.duplicate_rule,
+            source: self.source,
+            rhs: self.rhs,
+            order,
+            limit_offset: self.limit_offset,
+        }
+    }
+}
+
 #[doc(hidden)]
 type Limit = AsExprOf<i64, BigInt>;
 
@@ -198,8 +223,14 @@ where
     CombinationClause<Combinator, Rule, Source, Rhs, O, LimitOffsetClause<LimitClause<Limit>, Of>>:
         SelectQuery<SqlType = ST>,
 {
-    type Output =
-        CombinationClause<Combinator, Rule, Source, Rhs, O, LimitOffsetClause<LimitClause<Limit>, Of>>;
+    type Output = CombinationClause<
+        Combinator,
+        Rule,
+        Source,
+        Rhs,
+        O,
+        LimitOffsetClause<LimitClause<Limit>, Of>,
+    >;
 
     fn limit(self, limit: i64) -> Self::Output {
         let limit_clause = LimitClause(limit.into_sql::<BigInt>());

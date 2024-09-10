@@ -71,6 +71,10 @@ __diesel_infix_operator!(
     backend: Pg
 );
 
+use crate::query_dsl::positional_order_dsl::PositionalOrderExpr;
+impl<T: PositionalOrderExpr> PositionalOrderExpr for NullsFirst<T> {}
+impl<T: PositionalOrderExpr> PositionalOrderExpr for NullsLast<T> {}
+
 #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
 #[doc(hidden)]
 pub struct ArrayIndex<L, R> {
