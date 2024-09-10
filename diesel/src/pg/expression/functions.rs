@@ -7,6 +7,7 @@ use crate::pg::expression::expression_methods::MaybeNullableValue;
 use crate::pg::expression::expression_methods::MultirangeOrNullableMultirange;
 use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
 use crate::pg::expression::expression_methods::RangeOrNullableRange;
+use crate::pg::expression::expression_methods::TextArrayOrNullableTextArray;
 use crate::sql_types::*;
 
 define_sql_function! {
@@ -1587,4 +1588,49 @@ define_sql_function! {
     /// # }
     /// ```
     fn to_jsonb<E: MaybeNullableValue<Jsonb>>(e: E) -> E::Out;
+}
+
+define_sql_function! {
+    /// Builds a JSON object out of a text array. The array must have an even number of members,
+    /// in which case they are taken as alternating key/value pairs
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_object;
+    /// #     use diesel::sql_types::{Array, Json, Nullable, Text};
+    /// #     use serde_json::Value;
+    /// #     let connection = &mut establish_connection();
+    /// let json = diesel::select(json_object::<Array<Text>,_>(vec!["hello","world"]))
+    ///                 .get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::json!({"hello":"world"});
+    /// assert_eq!(expected,json);
+    ///
+    /// let json = diesel::select(json_object::<Array<Text>,_>(vec!["hello","world","John","Doe"]))
+    ///                 .get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::json!({"hello":"world","John":"Doe"});
+    /// assert_eq!(expected,json);
+    ///
+    /// let json = diesel::select(json_object::<Array<Text>,_>(vec!["hello","world","John"]))
+    ///                 .get_result::<Value>(connection);
+    /// assert!(json.is_err());
+    ///
+    /// let empty:Vec<String> = Vec::new();
+    /// let json = diesel::select(json_object::<Array<Nullable<Text>>,_>(empty))
+    ///                 .get_result::<Value>(connection);
+    /// assert!(json.is_err());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn json_object<Arr: TextArrayOrNullableTextArray + MaybeNullableValue<Json>>(
+        text_array: Arr,
+    ) -> Arr::Out;
 }
