@@ -9,6 +9,7 @@ use crate::pg::expression::expression_methods::MaybeNullableValue;
 use crate::pg::expression::expression_methods::MultirangeOrNullableMultirange;
 use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
 use crate::pg::expression::expression_methods::RangeOrNullableRange;
+use crate::pg::expression::expression_methods::TextArrayOrNullableTextArray;
 use crate::sql_types::*;
 
 define_sql_function! {
@@ -1434,7 +1435,7 @@ define_sql_function! {
     /// # Example
     ///
     // This function requires postgres >= 16.0
-    // which we cannot expect to be widly used at the
+    // which we cannot expect to be widely used at the
     // point of writing this comment, so we skip running this test
     /// ```rust,no_run
     /// # include!("../../doctest_setup.rs");
@@ -1455,6 +1456,48 @@ define_sql_function! {
     /// # }
     /// ```
     fn array_shuffle<Arr: ArrayOrNullableArray + SingleValue>(array: Arr) -> Arr;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns an array of n items randomly selected from array.
+    /// n may not exceed the length of the array.
+    ///
+    /// # Example
+    ///
+    // This function requires postgres >= 16.0
+    // which we cannot expect to be widely used at the
+    // point of writing this comment, so we skip running this test
+    /// ```rust,no_run
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_sample;
+    /// #     use diesel::sql_types::{Array, Integer, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let vec = vec![1,2,3,4,5];
+    /// let sampled = diesel::select(array_sample::<Array<Integer>, _, _>(vec.clone(),3))
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(3, sampled.len());
+    /// assert!(sampled.iter().all(|x| vec.contains(x)));
+    ///
+    /// let vec: Vec<i32> = Vec::new();
+    /// let sampled = diesel::select(array_sample::<Array<Integer>, _, _>(vec,0))
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(0, sampled.len());
+    ///
+    /// let sampled = diesel::select(array_sample::<Nullable<Array<Integer>>, _, _>(None::<Vec<i32>>,1))
+    ///     .get_result::<Option<Vec<i32>>>(connection)?;
+    /// assert!(sampled.is_none());
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_sample<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, n: Integer) -> Arr;
 }
 
 #[cfg(feature = "postgres_backend")]
@@ -1547,6 +1590,51 @@ define_sql_function! {
     /// # }
     /// ```
     fn to_jsonb<E: MaybeNullableValue<Jsonb>>(e: E) -> E::Out;
+}
+
+define_sql_function! {
+    /// Builds a JSON object out of a text array. The array must have an even number of members,
+    /// in which case they are taken as alternating key/value pairs
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_object;
+    /// #     use diesel::sql_types::{Array, Json, Nullable, Text};
+    /// #     use serde_json::Value;
+    /// #     let connection = &mut establish_connection();
+    /// let json = diesel::select(json_object::<Array<Text>,_>(vec!["hello","world"]))
+    ///                 .get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::json!({"hello":"world"});
+    /// assert_eq!(expected,json);
+    ///
+    /// let json = diesel::select(json_object::<Array<Text>,_>(vec!["hello","world","John","Doe"]))
+    ///                 .get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::json!({"hello":"world","John":"Doe"});
+    /// assert_eq!(expected,json);
+    ///
+    /// let json = diesel::select(json_object::<Array<Text>,_>(vec!["hello","world","John"]))
+    ///                 .get_result::<Value>(connection);
+    /// assert!(json.is_err());
+    ///
+    /// let empty:Vec<String> = Vec::new();
+    /// let json = diesel::select(json_object::<Array<Nullable<Text>>,_>(empty))
+    ///                 .get_result::<Value>(connection);
+    /// assert!(json.is_err());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn json_object<Arr: TextArrayOrNullableTextArray + MaybeNullableValue<Json>>(
+        text_array: Arr,
+    ) -> Arr::Out;
 }
 
 #[cfg(feature = "postgres_backend")]

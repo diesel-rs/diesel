@@ -467,6 +467,11 @@ pub type array_ndims<A> = super::functions::array_ndims<SqlTypeOf<A>, A>;
 #[cfg(feature = "postgres_backend")]
 pub type array_shuffle<A> = super::functions::array_shuffle<SqlTypeOf<A>, A>;
 
+/// Return type of [`array_sample(array,n)`](super::function::array_sample())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_sample<A, N> = super::functions::array_sample<SqlTypeOf<A>, A, N>;
+
 /// Return type of [`to_json(element)`](super::functions::to_json())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
@@ -476,6 +481,11 @@ pub type to_json<E> = super::functions::to_json<SqlTypeOf<E>, E>;
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type to_jsonb<E> = super::functions::to_jsonb<SqlTypeOf<E>, E>;
+
+/// Return type of [`json_object(text_array)`](super::functions::json_object())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_object<A> = super::functions::json_object<SqlTypeOf<A>, A>;
 
 /// Return type of [`json_array_length(json)`](super::functions::json_array_length())
 #[allow(non_camel_case_types)]
