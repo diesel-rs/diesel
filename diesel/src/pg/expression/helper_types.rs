@@ -490,8 +490,8 @@ pub type json_object<A> = super::functions::json_object<SqlTypeOf<A>, A>;
 /// Return type of [`json_object_with_keys_and_values(text_array, text_array)`](super::functions::json_object_with_keys_and_values())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
-pub type json_object_with_keys_and_values<A> =
-    super::functions::json_object_with_keys_and_values<SqlTypeOf<A>, A, A>;
+pub type json_object_with_keys_and_values<K, V> =
+    super::functions::json_object_with_keys_and_values<SqlTypeOf<K>, K, V>;
 
 /// Return type of [`json_typeof(json)`](super::functions::json_typeof())
 #[allow(non_camel_case_types)]

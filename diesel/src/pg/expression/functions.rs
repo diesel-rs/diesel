@@ -1609,6 +1609,7 @@ define_sql_function! {
     fn to_jsonb<E: MaybeNullableValue<Jsonb>>(e: E) -> E::Out;
 }
 
+#[cfg(feature = "postgres_backend")]
 define_sql_function! {
     /// Builds a JSON object out of a text array. The array must have an even number of members,
     /// in which case they are taken as alternating key/value pairs
