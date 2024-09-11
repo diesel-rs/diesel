@@ -435,6 +435,7 @@ fn postgres_functions() -> _ {
         array_shuffle(pg_extras::array),
         to_json(pg_extras::id),
         to_jsonb(pg_extras::id),
+        json_typeof(pg_extras::json),
     )
 }
 
