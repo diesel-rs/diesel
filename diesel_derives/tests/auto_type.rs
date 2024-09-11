@@ -438,6 +438,7 @@ fn postgres_functions() -> _ {
         to_json(pg_extras::id),
         to_jsonb(pg_extras::id),
         json_object(pg_extras::text_array),
+        jsonb_pretty(pg_extras::jsonb),
     )
 }
 
