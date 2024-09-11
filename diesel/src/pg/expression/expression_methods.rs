@@ -1,9 +1,10 @@
 //! PostgreSQL specific expression methods
 
 pub(in crate::pg) use self::private::{
-    ArrayOrNullableArray, InetOrCidr, JsonIndex, JsonOrNullableJsonOrJsonbOrNullableJsonb,
-    JsonRemoveIndex, JsonbOrNullableJsonb, MaybeNullableValue, MultirangeOrNullableMultirange,
-    MultirangeOrRangeMaybeNullable, RangeHelper, RangeOrNullableRange, TextOrNullableText,
+    ArrayOrNullableArray, InetOrCidr, JsonIndex, JsonOrNullableJson,
+    JsonOrNullableJsonOrJsonbOrNullableJsonb, JsonRemoveIndex, JsonbOrNullableJsonb,
+    MaybeNullableValue, MultirangeOrNullableMultirange, MultirangeOrRangeMaybeNullable,
+    RangeHelper, RangeOrNullableRange, TextOrNullableText,
 };
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
@@ -3712,4 +3713,8 @@ pub(in crate::pg) mod private {
     {
         type Out = <T::IsNull as MaybeNullableType<O>>::Out;
     }
+
+    pub trait JsonOrNullableJson {}
+    impl JsonOrNullableJson for Json {}
+    impl JsonOrNullableJson for Nullable<Json> {}
 }

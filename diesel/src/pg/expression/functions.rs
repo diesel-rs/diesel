@@ -3,6 +3,8 @@
 use super::expression_methods::InetOrCidr;
 use crate::expression::functions::define_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
+use crate::pg::expression::expression_methods::JsonOrNullableJson;
+use crate::pg::expression::expression_methods::JsonbOrNullableJsonb;
 use crate::pg::expression::expression_methods::MaybeNullableValue;
 use crate::pg::expression::expression_methods::MultirangeOrNullableMultirange;
 use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
@@ -1545,4 +1547,84 @@ define_sql_function! {
     /// # }
     /// ```
     fn to_jsonb<E: MaybeNullableValue<Jsonb>>(e: E) -> E::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the number of elements in the top-level JSON array
+    ///
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_array_length;
+    /// #     use serde_json::json;
+    /// #     use diesel::sql_types::{Integer, Json};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(json_array_length::<Json, _>(json!([1, 2, 3])))
+    ///     .get_result::<i32>(connection)?;
+    ///
+    /// assert_eq!(result, 3);
+    ///
+    /// let result = diesel::select(json_array_length::<Json, _>(json!([])))
+    ///     .get_result::<i32>(connection)?;
+    ///
+    /// assert_eq!(result, 0);
+    ///
+    ///
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+
+    fn json_array_length<E: JsonOrNullableJson + SingleValue>(e: E) -> Integer;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the number of elements in the top-level JSON array
+    ///
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_array_length;
+    /// #     use serde_json::json;
+    /// #     use diesel::sql_types::{Integer, Jsonb};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(jsonb_array_length::<Jsonb, _>(json!([1, 2, 3])))
+    ///     .get_result::<i32>(connection)?;
+    ///
+    /// assert_eq!(result, 3);
+    ///
+    /// let result = diesel::select(jsonb_array_length::<Jsonb, _>(json!([])))
+    ///     .get_result::<i32>(connection)?;
+    ///
+    /// assert_eq!(result, 0);
+    ///
+    ///
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+
+    fn jsonb_array_length<E: JsonbOrNullableJsonb + SingleValue>(e: E) -> Integer;
 }
