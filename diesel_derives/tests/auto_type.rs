@@ -51,7 +51,8 @@ table! {
         range -> Range<Integer>,
         multirange -> Multirange<Integer>,
         timestamptz -> Timestamptz,
-        name -> Text
+        name -> Text,
+        text_array -> Array<Text>
     }
 }
 
@@ -433,8 +434,10 @@ fn postgres_functions() -> _ {
         array_positions(pg_extras::array, pg_extras::id),
         array_ndims(pg_extras::array),
         array_shuffle(pg_extras::array),
+        array_sample(pg_extras::array, pg_extras::id),
         to_json(pg_extras::id),
         to_jsonb(pg_extras::id),
+        json_object(pg_extras::text_array),
         json_typeof(pg_extras::json),
         jsonb_typeof(pg_extras::jsonb),
     )
