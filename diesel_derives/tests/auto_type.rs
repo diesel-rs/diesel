@@ -443,6 +443,7 @@ fn postgres_functions() -> _ {
         jsonb_pretty(pg_extras::jsonb),
         json_strip_nulls(pg_extras::json),
         jsonb_strip_nulls(pg_extras::jsonb),
+        json_object_with_keys_and_values(pg_extras::text_array, pg_extras::text_array),
     )
 }
 

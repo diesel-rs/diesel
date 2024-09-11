@@ -1656,6 +1656,51 @@ define_sql_function! {
 
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
+    /// This form of json_object takes keys and values pairwise from two separate arrays.
+    /// In all other respects it is identical to the one-argument form.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_object_with_keys_and_values;
+    /// #     use diesel::sql_types::{Array, Json, Nullable, Text};
+    /// #     use serde_json::Value;
+    /// #     let connection = &mut establish_connection();
+    /// let json = diesel::select(json_object_with_keys_and_values::<Array<Text>, _, _>(
+    ///             vec!["hello","John"],vec!["world","Doe"]))
+    ///             .get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::json!({"hello":"world","John":"Doe"});
+    /// assert_eq!(expected,json);
+    ///
+    /// let json = diesel::select(json_object_with_keys_and_values::<Nullable<Array<Text>>, _, _>(
+    ///             Some(vec!["hello","John"]),None::<Vec<String>>))
+    ///             .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(None::<Value>,json);
+    ///
+    /// let empty: Vec<String> = Vec::new();
+    /// let json = diesel::select(json_object_with_keys_and_values::<Array<Text>, _, _>(
+    ///             vec!["hello","John"],empty))
+    ///             .get_result::<Value>(connection);
+    /// assert!(json.is_err());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "json_object"]
+    fn json_object_with_keys_and_values<Arr: TextArrayOrNullableTextArray + MaybeNullableValue<Json>>(
+        keys: Arr, values: Arr
+    ) -> Arr::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
     /// Returns the type of the top-level json value as a text-string
     ///
     /// # Example
