@@ -436,6 +436,7 @@ fn postgres_functions() -> _ {
         to_json(pg_extras::id),
         to_jsonb(pg_extras::id),
         json_typeof(pg_extras::json),
+        jsonb_typeof(pg_extras::jsonb),
     )
 }
 
