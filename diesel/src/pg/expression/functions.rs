@@ -1883,8 +1883,7 @@ define_sql_function! {
     ///
     /// let result = diesel::select(json_strip_nulls::<Nullable<Json>, _>(None::<Value>))
     ///     .get_result::<Option<Value>>(connection)?;
-    /// let expected: Option<Value> = None;
-    /// assert_eq!(result, expected);
+    /// assert!(result.is_none());
     ///
     /// let result = diesel::select(json_strip_nulls::<Json, _>(json!(null)))
     ///     .get_result::<Value>(connection)?;
@@ -1928,8 +1927,7 @@ define_sql_function! {
     ///
     /// let result = diesel::select(jsonb_strip_nulls::<Nullable<Jsonb>, _>(None::<Value>))
     ///     .get_result::<Option<Value>>(connection)?;
-    /// let expected: Option<Value> = None;
-    /// assert_eq!(result, expected);
+    /// assert!(result.is_none());
     ///
     /// let result = diesel::select(jsonb_strip_nulls::<Jsonb, _>(json!(null)))
     ///     .get_result::<Value>(connection)?;
