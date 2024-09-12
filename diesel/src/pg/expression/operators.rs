@@ -4,6 +4,7 @@ use crate::expression::{TypedExpressionType, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::update_statement::changeset::AssignmentTarget;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
+use crate::query_dsl::positional_order_dsl::PositionalOrderExpr;
 use crate::sql_types::{
     Array, Bigint, Bool, DieselNumericOps, Inet, Integer, Jsonb, SqlType, Text,
 };
@@ -71,7 +72,6 @@ __diesel_infix_operator!(
     backend: Pg
 );
 
-use crate::query_dsl::positional_order_dsl::PositionalOrderExpr;
 impl<T: PositionalOrderExpr> PositionalOrderExpr for NullsFirst<T> {}
 impl<T: PositionalOrderExpr> PositionalOrderExpr for NullsLast<T> {}
 

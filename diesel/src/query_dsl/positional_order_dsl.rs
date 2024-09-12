@@ -1,4 +1,4 @@
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::expression::helper_types::{Asc, Desc};
 use crate::expression::Expression;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
@@ -34,8 +34,10 @@ impl Expression for OrderColumn {
     type SqlType = crate::sql_types::Integer;
 }
 
-// XXX: Do I need to add DieselReserveSpecialization here?
-impl<DB: Backend> QueryFragment<DB> for OrderColumn {
+impl<DB> QueryFragment<DB> for OrderColumn
+where
+    DB: Backend + DieselReserveSpecialization,
+{
     fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         pass.push_sql(&self.0.to_string());
         Ok(())
