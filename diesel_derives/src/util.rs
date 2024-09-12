@@ -93,9 +93,10 @@ where
 }
 
 pub fn wrap_in_dummy_mod(item: TokenStream) -> TokenStream {
-    #[allow(unused_qualifications)] // Can remove if https://github.com/rust-lang/rust/issues/130277 gets done
+    // #[allow(unused_qualifications)] can be removed if https://github.com/rust-lang/rust/issues/130277 gets done
     quote! {
         #[allow(unused_imports)]
+        #[allow(unused_qualifications)]
         const _: () = {
             // This import is not actually redundant. When using diesel_derives
             // inside of diesel, `diesel` doesn't exist as an extern crate, and
