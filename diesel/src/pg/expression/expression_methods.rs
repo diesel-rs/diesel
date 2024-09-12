@@ -1,10 +1,10 @@
 //! PostgreSQL specific expression methods
 
 pub(in crate::pg) use self::private::{
-    ArrayOrNullableArray, InetOrCidr, JsonIndex, JsonOrNullableJsonOrJsonbOrNullableJsonb,
-    JsonRemoveIndex, JsonbOrNullableJsonb, MaybeNullableValue, MultirangeOrNullableMultirange,
-    MultirangeOrRangeMaybeNullable, RangeHelper, RangeOrNullableRange,
-    TextArrayOrNullableTextArray, TextOrNullableText,
+    ArrayOrNullableArray, InetOrCidr, JsonIndex, JsonOrNullableJson,
+    JsonOrNullableJsonOrJsonbOrNullableJsonb, JsonRemoveIndex, JsonbOrNullableJsonb,
+    MaybeNullableValue, MultirangeOrNullableMultirange, MultirangeOrRangeMaybeNullable,
+    RangeHelper, RangeOrNullableRange, TextArrayOrNullableTextArray, TextOrNullableText,
 };
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
@@ -3551,6 +3551,11 @@ pub(in crate::pg) mod private {
 
     impl JsonbOrNullableJsonb for Jsonb {}
     impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
+
+    pub trait JsonOrNullableJson {}
+
+    impl JsonOrNullableJson for Json {}
+    impl JsonOrNullableJson for Nullable<Json> {}
 
     /// A trait that describes valid json indices used by postgresql
     pub trait JsonRemoveIndex {
