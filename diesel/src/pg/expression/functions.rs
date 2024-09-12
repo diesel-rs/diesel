@@ -1654,8 +1654,8 @@ define_sql_function! {
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::json_typeof;
-    /// #     use serde_json::json;
-    /// #     use diesel::sql_types::Json;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Json, Nullable};
     /// #     let connection = &mut establish_connection();
     /// let result = diesel::select(json_typeof::<Json, _>(json!({"a": "b", "c": 1})))
     ///     .get_result::<String>(connection)?;
@@ -1686,10 +1686,16 @@ define_sql_function! {
     ///     .get_result::<String>(connection)?;
     ///
     /// assert_eq!("null".to_string(), result);
+    ///
+    /// let result = diesel::select(json_typeof::<Nullable<Json>, _>(None::<Value>))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// let expected: Option<String> = None;
+    ///
+    /// assert_eq!(expected, result);
     /// #     Ok(())
     /// # }
     /// ```
-    fn json_typeof<E: JsonOrNullableJson + SingleValue>(e: E) -> Text;
+    fn json_typeof<E: JsonOrNullableJson + SingleValue + MaybeNullableValue<Text>>(e: E) -> E::Out;
 }
 
 #[cfg(feature = "postgres_backend")]
@@ -1709,8 +1715,8 @@ define_sql_function! {
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::jsonb_typeof;
-    /// #     use serde_json::json;
-    /// #     use diesel::sql_types::Jsonb;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
     /// #     let connection = &mut establish_connection();
     /// let result = diesel::select(jsonb_typeof::<Jsonb, _>(json!({"a": "b", "c": 1})))
     ///     .get_result::<String>(connection)?;
@@ -1741,8 +1747,14 @@ define_sql_function! {
     ///     .get_result::<String>(connection)?;
     ///
     /// assert_eq!("null".to_string(), result);
+    ///
+    /// let result = diesel::select(jsonb_typeof::<Nullable<Jsonb>, _>(None::<Value>))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// let expected: Option<String> = None;
+    ///
+    /// assert_eq!(expected, result);
     /// #     Ok(())
     /// # }
     /// ```
-    fn jsonb_typeof<E: JsonbOrNullableJsonb + SingleValue>(e: E) -> Text;
+    fn jsonb_typeof<E: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Text>>(e: E) -> E::Out;
 }
