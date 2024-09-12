@@ -42,6 +42,7 @@ table! {
 table! {
     pg_extras(id) {
         id -> Integer,
+        boolean -> Bool,
         json -> Json,
         jsonb -> Jsonb,
         net -> Inet,
@@ -446,6 +447,13 @@ fn postgres_functions() -> _ {
         jsonb_strip_nulls(pg_extras::jsonb),
         json_array_length(pg_extras::json),
         jsonb_array_length(pg_extras::jsonb),
+        jsonb_insert(pg_extras::jsonb, pg_extras::text_array, pg_extras::jsonb),
+        jsonb_insert_with_option_after(
+            pg_extras::jsonb,
+            pg_extras::text_array,
+            pg_extras::jsonb,
+            pg_extras::boolean,
+        ),
     )
 }
 

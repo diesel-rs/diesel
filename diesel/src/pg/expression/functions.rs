@@ -2078,3 +2078,100 @@ define_sql_function! {
 
     fn jsonb_array_length<E: JsonbOrNullableJsonb + MaybeNullableValue<Integer>>(jsonb: E) -> E::Out;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns target with new_value inserted, if the item designated by the path is an array element.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_insert;
+    /// #     use diesel::sql_types::{Array, Jsonb, Nullable, Text};
+    /// #     use serde_json::{Value, json};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(jsonb_insert::<Jsonb, Array<Text>, _, _, _>(json!([1, 2, 3]), vec!["2"], json!(1)))
+    ///                 .get_result::<Value>(connection)?;
+    /// assert_eq!(json!([1, 2, 1, 3]), result);
+    ///
+    /// let result = diesel::select(jsonb_insert::<Jsonb, Array<Text>, _, _, _>(json!([1, 2, 3]), Vec::<String>::new(), json!(1)))
+    ///                 .get_result::<Value>(connection)?;
+    /// assert_eq!(json!([1, 2, 3]), result);
+    ///
+    /// let result = diesel::select(jsonb_insert::<Nullable<Jsonb>, Array<Text>, _, _, _>(Option::<Value>::None, vec!["1"], json!(1)))
+    ///                 .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(None, result);
+    ///
+    /// let result = diesel::select(jsonb_insert::<Jsonb, Nullable<Array<Text>>, _, _, _>(json!([1, 2, 3]), None::<Vec<String>>, json!(1)))
+    ///                 .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(None, result);
+    ///
+    /// let result = diesel::select(jsonb_insert::<Nullable<Jsonb>, Array<Text>, _, _, _>(json!([1, 2, 3]), vec!["1"], Option::<Value>::None))
+    ///                 .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(None, result);
+    ///
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn jsonb_insert<J: JsonbOrNullableJsonb + SingleValue, P: TextArrayOrNullableTextArray + CombinedNullableValue<J, Jsonb>>(target: J, path: P, value: J) -> P::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns target with new_value inserted, if the item designated by the path is an array element.
+    /// If insert_after is true, the value is inserted after the path specified
+    ///
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_insert_with_option_after;
+    /// #     use diesel::sql_types::{Array, Jsonb, Nullable, Text};
+    /// #     use serde_json::{Value, json};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(jsonb_insert_with_option_after::<Jsonb, Array<Text>, _, _, _, _>(json!([1, 2, 3]), vec!["2"], json!(1), true))
+    ///                 .get_result::<Value>(connection)?;
+    /// assert_eq!(json!([1, 2, 3, 1]), result);
+    ///
+    /// let result = diesel::select(jsonb_insert_with_option_after::<Jsonb, Array<Text>, _, _, _, _>(json!([1, 2, 3]), vec!["2"], json!(1), false))
+    ///                 .get_result::<Value>(connection)?;
+    /// assert_eq!(json!([1, 2, 1, 3]), result);
+    ///
+    /// let result = diesel::select(jsonb_insert_with_option_after::<Jsonb, Array<Text>, _, _, _, _>(json!([1, 2, 3]), Vec::<String>::new(), json!(1), true))
+    ///                 .get_result::<Value>(connection)?;
+    /// assert_eq!(json!([1, 2, 3]), result);
+    ///
+    /// let result = diesel::select(jsonb_insert_with_option_after::<Nullable<Jsonb>, Array<Text>, _, _, _, _>(Option::<Value>::None, vec!["1"], json!(1), true))
+    ///                 .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(None, result);
+    ///
+    /// let result = diesel::select(jsonb_insert_with_option_after::<Jsonb, Nullable<Array<Text>>, _, _, _, _>(json!([1, 2, 3]), None::<Vec<String>>, json!(1), true))
+    ///                 .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(None, result);
+    ///
+    /// let result = diesel::select(jsonb_insert_with_option_after::<Nullable<Jsonb>, Array<Text>, _, _, _, _>(json!([1, 2, 3]), vec!["1"], Option::<Value>::None, true))
+    ///                 .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(None, result);
+    ///
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "jsonb_insert"]
+    fn jsonb_insert_with_option_after<J: JsonbOrNullableJsonb + SingleValue, P: TextArrayOrNullableTextArray + CombinedNullableValue<J, Jsonb>>(target: J, path: P, value: J, insert_after: Bool) -> P::Out;
+}
