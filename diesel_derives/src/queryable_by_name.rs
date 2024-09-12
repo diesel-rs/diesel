@@ -7,7 +7,6 @@ use crate::field::{Field, FieldName};
 use crate::model::Model;
 use crate::util::wrap_in_dummy_mod;
 
-
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, false)?;
 
@@ -51,7 +50,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         if field.embed() {
             where_clause
                 .predicates
-               .push(parse_quote_spanned!(span=> #field_ty: QueryableByName<__DB>));
+                .push(parse_quote_spanned!(span=> #field_ty: QueryableByName<__DB>));
         } else {
             let st = sql_type(field, &model)?;
             where_clause.predicates.push(
