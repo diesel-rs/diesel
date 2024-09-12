@@ -1653,8 +1653,8 @@ define_sql_function! {
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::jsonb_pretty;
-    /// #     use serde_json::json;
-    /// #     use diesel::sql_types::Jsonb;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
     /// #     let connection = &mut establish_connection();
     /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!([{"f1":1,"f2":null},2,null,3])))
     ///     .get_result::<String>(connection)?;
@@ -1702,8 +1702,13 @@ define_sql_function! {
     ///
     /// assert_eq!(r#"{
     /// }"#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Nullable<Jsonb>, _>(None::<Value>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
     /// #     Ok(())
     /// # }
     /// ```
-    fn jsonb_pretty<E: JsonbOrNullableJsonb + SingleValue>(e: E) -> Text;
+    fn jsonb_pretty<E: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Text>>(e: E) -> E::Out;
 }
