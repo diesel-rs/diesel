@@ -1689,9 +1689,8 @@ define_sql_function! {
     ///
     /// let result = diesel::select(json_typeof::<Nullable<Json>, _>(None::<Value>))
     ///     .get_result::<Option<String>>(connection)?;
-    /// let expected: Option<String> = None;
     ///
-    /// assert_eq!(expected, result);
+    /// assert!(result.is_none());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1750,9 +1749,8 @@ define_sql_function! {
     ///
     /// let result = diesel::select(jsonb_typeof::<Nullable<Jsonb>, _>(None::<Value>))
     ///     .get_result::<Option<String>>(connection)?;
-    /// let expected: Option<String> = None;
     ///
-    /// assert_eq!(expected, result);
+    /// assert!(result.is_none());
     /// #     Ok(())
     /// # }
     /// ```
