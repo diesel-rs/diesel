@@ -20,7 +20,7 @@ use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
 use crate::query_builder::order_clause::{NoOrderClause, OrderClause};
 use crate::query_builder::{AsQuery, AstPass, Query, QueryFragment, QueryId, SelectQuery};
 use crate::query_dsl::methods::*;
-use crate::query_dsl::positional_order_dsl::{PositionalOrderDsl, PositionalOrderExpr};
+use crate::query_dsl::positional_order_dsl::{IntoPositionalOrderExpr, PositionalOrderDsl};
 use crate::sql_types::BigInt;
 use crate::{CombineDsl, Insertable, QueryDsl, QueryResult, RunQueryDsl, Table};
 
@@ -189,18 +189,18 @@ where
     }
 }
 
-impl<ST, Combinator, Rule, Source, Rhs, O, LOf, Expr> PositionalOrderDsl<Expr>
+impl<ST, Combinator, Rule, Source, Rhs, O, LOf, RawExpr, Expr> PositionalOrderDsl<RawExpr>
     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 where
     Self: SelectQuery<SqlType = ST>,
     CombinationClause<Combinator, Rule, Source, Rhs, OrderClause<Expr>, LOf>:
         SelectQuery<SqlType = ST>,
-    Expr: PositionalOrderExpr,
+    RawExpr: IntoPositionalOrderExpr<Output = Expr>,
 {
     type Output = CombinationClause<Combinator, Rule, Source, Rhs, OrderClause<Expr>, LOf>;
 
-    fn positional_order_by(self, expr: Expr) -> Self::Output {
-        let order = OrderClause(expr);
+    fn positional_order_by(self, expr: RawExpr) -> Self::Output {
+        let order = OrderClause(expr.into_positional_expr());
 
         CombinationClause {
             combinator: self.combinator,

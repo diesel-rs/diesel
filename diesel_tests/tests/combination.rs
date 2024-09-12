@@ -26,7 +26,7 @@ fn union() {
     let data: Vec<_> = users
         .filter(id.le(tess.id))
         .union(users.filter(id.ge(tess.id)))
-        .positional_order_by(OrderColumn::from(2)) // name is the second column
+        .positional_order_by(2) // name is the second column
         .load(conn)
         .unwrap();
     assert_eq!(expected_data, data);

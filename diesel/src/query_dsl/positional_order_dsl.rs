@@ -13,8 +13,8 @@ use crate::QueryResult;
 /// in their queries, so that they are not forced to drop entirely to raw SQL. The
 /// arguments to `positional_order_by` are not checked, nor is the select statement
 /// forced to be valid.
-pub trait PositionalOrderDsl<Expr: PositionalOrderExpr> {
-    /// The type returned by `.positional_order`
+pub trait PositionalOrderDsl<Expr: IntoPositionalOrderExpr> {
+    /// The type returned by `.positional_order_by`
     type Output;
 
     /// See the trait documentation.
@@ -22,6 +22,28 @@ pub trait PositionalOrderDsl<Expr: PositionalOrderExpr> {
 }
 
 pub trait PositionalOrderExpr: Expression {}
+
+pub trait IntoPositionalOrderExpr {
+    type Output: PositionalOrderExpr;
+
+    fn into_positional_expr(self) -> Self::Output;
+}
+
+impl<T: PositionalOrderExpr> IntoPositionalOrderExpr for T {
+    type Output = T;
+
+    fn into_positional_expr(self) -> Self::Output {
+        self
+    }
+}
+
+impl IntoPositionalOrderExpr for u32 {
+    type Output = OrderColumn;
+
+    fn into_positional_expr(self) -> Self::Output {
+        self.into()
+    }
+}
 
 impl PositionalOrderExpr for OrderColumn {}
 impl<T: PositionalOrderExpr> PositionalOrderExpr for Asc<T> {}
