@@ -2078,3 +2078,96 @@ define_sql_function! {
 
     fn jsonb_array_length<E: JsonbOrNullableJsonb + MaybeNullableValue<Integer>>(jsonb: E) -> E::Out;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Builds a JSON object out of a text array. The array must have an even number of members,
+    /// in which case they are taken as alternating key/value pairs. This function also has a form that
+    /// that takes keys and values as separate text array arguments.
+    /// See [jsonb_object_with_keys_and_values]
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_object;
+    /// #     use diesel::sql_types::{Array, Json, Nullable, Text};
+    /// #     use serde_json::Value;
+    /// #     let connection = &mut establish_connection();
+    /// let jsonb = diesel::select(jsonb_object::<Array<Text>,_>(vec!["hello","world"]))
+    ///                 .get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::json!({"hello":"world"});
+    /// assert_eq!(expected,jsonb);
+    ///
+    /// let jsonb = diesel::select(jsonb_object::<Array<Text>,_>(vec!["hello","world","John","Doe"]))
+    ///                 .get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::json!({"hello": "world","John": "Doe"});
+    /// assert_eq!(expected,jsonb);
+    ///
+    /// let jsonb = diesel::select(jsonb_object::<Array<Text>,_>(vec!["hello","world","John"]))
+    ///                 .get_result::<Value>(connection);
+    /// assert!(jsonb.is_err());
+    ///
+    /// let empty:Vec<String> = Vec::new();
+    /// let jsonb = diesel::select(jsonb_object::<Array<Nullable<Text>>,_>(empty))
+    ///                 .get_result::<Value>(connection);
+    /// assert!(jsonb.is_err());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn jsonb_object<Arr: TextArrayOrNullableTextArray + MaybeNullableValue<Jsonb>>(
+        text_array: Arr,
+    ) -> Arr::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// This form of jsonb_object takes keys and values pairwise from two separate arrays.
+    /// In all other respects it is identical to the one-argument form.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_object_with_keys_and_values;
+    /// #     use diesel::sql_types::{Array, Nullable, Text};
+    /// #     use serde_json::Value;
+    /// #     let connection = &mut establish_connection();
+    /// let jsonb = diesel::select(jsonb_object_with_keys_and_values::<Array<Text>, _, _>(
+    ///             vec!["hello","John"],vec!["world","Doe"]))
+    ///             .get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::json!({"hello":"world","John":"Doe"});
+    /// assert_eq!(expected,jsonb);
+    ///
+    /// let jsonb = diesel::select(jsonb_object_with_keys_and_values::<Nullable<Array<Text>>, _, _>(
+    ///             Some(vec!["hello","John"]),None::<Vec<String>>))
+    ///             .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(None::<Value>,jsonb);
+    ///
+    /// let empty: Vec<String> = Vec::new();
+    /// let jsonb = diesel::select(jsonb_object_with_keys_and_values::<Array<Text>, _, _>(
+    ///             vec!["hello","John"],empty))
+    ///             .get_result::<Value>(connection);
+    /// assert!(jsonb.is_err());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "jsonb_object"]
+    fn jsonb_object_with_keys_and_values<Arr: TextArrayOrNullableTextArray + MaybeNullableValue<Jsonb>>(
+        keys: Arr, values: Arr
+    ) -> Arr::Out;
+}
