@@ -1,6 +1,8 @@
 //! PostgreSQL specific functions
 
 use super::expression_methods::InetOrCidr;
+use super::expression_methods::JsonOrNullableJson;
+use super::expression_methods::JsonbOrNullableJsonb;
 use crate::expression::functions::define_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
 use crate::pg::expression::expression_methods::JsonOrNullableJson;
@@ -1879,6 +1881,11 @@ define_sql_function! {
     /// let expected: Value = json!([{"f1":1}, 2, null, 3]);
     /// assert_eq!(result, expected);
     ///
+    /// let result = diesel::select(json_strip_nulls::<Nullable<Json>, _>(None::<Value>))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// let expected: Option<Value> = None;
+    /// assert_eq!(result, expected);
+    ///
     /// let result = diesel::select(json_strip_nulls::<Json, _>(json!(null)))
     ///     .get_result::<Value>(connection)?;
     /// let expected = json!(null);
@@ -1888,7 +1895,7 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn json_strip_nulls<E: MaybeNullableValue<Json>>(json: E) -> E::Out;
+    fn json_strip_nulls<E: JsonOrNullableJson + SingleValue>(json: E) -> E;
 }
 
 define_sql_function! {
@@ -1919,6 +1926,11 @@ define_sql_function! {
     /// let expected: Value = json!([{"f1":1}, 2, null, 3]);
     /// assert_eq!(result, expected);
     ///
+    /// let result = diesel::select(jsonb_strip_nulls::<Nullable<Jsonb>, _>(None::<Value>))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// let expected: Option<Value> = None;
+    /// assert_eq!(result, expected);
+    ///
     /// let result = diesel::select(jsonb_strip_nulls::<Jsonb, _>(json!(null)))
     ///     .get_result::<Value>(connection)?;
     /// let expected = json!(null);
@@ -1929,5 +1941,5 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn jsonb_strip_nulls<E: MaybeNullableValue<Jsonb>>(jsonb: E) -> E::Out;
+    fn jsonb_strip_nulls<E: JsonbOrNullableJsonb + SingleValue>(jsonb: E) -> E;
 }

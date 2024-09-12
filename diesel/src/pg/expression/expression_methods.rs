@@ -3730,4 +3730,8 @@ pub(in crate::pg) mod private {
     impl TextArrayOrNullableTextArray for Array<Nullable<Text>> {}
     impl TextArrayOrNullableTextArray for Nullable<Array<Text>> {}
     impl TextArrayOrNullableTextArray for Nullable<Array<Nullable<Text>>> {}
+
+    pub trait JsonOrNullableJson {}
+    impl JsonOrNullableJson for Json {}
+    impl JsonOrNullableJson for Nullable<Json> {}
 }
