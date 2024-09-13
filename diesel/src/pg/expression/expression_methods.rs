@@ -836,6 +836,7 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     posts {
     /// #         id -> Integer,
     /// #         versions -> Range<Integer>,
+    /// #         age -> Multirange<Integer>,
     /// #     }
     /// # }
     /// #
@@ -848,10 +849,10 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     use std::collections::Bound;
     /// #     let conn = &mut establish_connection();
     /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL, age INT4MULTIRANGE)").execute(conn).unwrap();
     /// #
     /// diesel::insert_into(posts)
-    ///     .values(versions.eq((Bound::Included(5), Bound::Unbounded)))
+    ///     .values((versions.eq(5..), age.eq(vec![1..18, 60..99])))
     ///     .execute(conn)?;
     ///
     /// let cool_posts = posts.select(id)
@@ -861,6 +862,16 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     ///
     /// let amazing_posts = posts.select(id)
     ///     .filter(versions.contains(1))
+    ///     .load::<i32>(conn)?;
+    /// assert!(amazing_posts.is_empty());
+    ///
+    /// let cool_posts = posts.select(id)
+    ///     .filter(age.contains(10))
+    ///     .load::<i32>(conn)?;
+    /// assert_eq!(vec![1], cool_posts);
+    ///
+    /// let amazing_posts = posts.select(id)
+    ///     .filter(age.contains(20))
     ///     .load::<i32>(conn)?;
     /// assert!(amazing_posts.is_empty());
     /// #     Ok(())
