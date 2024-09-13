@@ -3,6 +3,7 @@
 use super::expression_methods::InetOrCidr;
 use crate::expression::functions::define_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
+use crate::pg::expression::expression_methods::CombinedNullableValue;
 use crate::pg::expression::expression_methods::JsonOrNullableJson;
 use crate::pg::expression::expression_methods::JsonbOrNullableJsonb;
 use crate::pg::expression::expression_methods::MaybeNullableValue;
@@ -1609,6 +1610,7 @@ define_sql_function! {
     fn to_jsonb<E: MaybeNullableValue<Jsonb>>(e: E) -> E::Out;
 }
 
+#[cfg(feature = "postgres_backend")]
 define_sql_function! {
     /// Builds a JSON object out of a text array. The array must have an even number of members,
     /// in which case they are taken as alternating key/value pairs
@@ -1652,6 +1654,55 @@ define_sql_function! {
     fn json_object<Arr: TextArrayOrNullableTextArray + MaybeNullableValue<Json>>(
         text_array: Arr,
     ) -> Arr::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// This form of json_object takes keys and values pairwise from two separate arrays.
+    /// In all other respects it is identical to the one-argument form.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_object_with_keys_and_values;
+    /// #     use diesel::sql_types::{Array, Json, Nullable, Text};
+    /// #     use serde_json::Value;
+    /// #     let connection = &mut establish_connection();
+    /// let json = diesel::select(json_object_with_keys_and_values::<Array<Text>, Array<Text>, _, _>(
+    ///             vec!["hello","John"],vec!["world","Doe"]))
+    ///             .get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::json!({"hello":"world","John":"Doe"});
+    /// assert_eq!(expected,json);
+    ///
+    /// let json = diesel::select(json_object_with_keys_and_values::<Nullable<Array<Text>>, Nullable<Array<Text>>, _, _>(
+    ///             Some(vec!["hello","John"]), None::<Vec<String>>))
+    ///             .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(None::<Value>,json);
+    ///
+    /// let empty: Vec<String> = Vec::new();
+    /// let json = diesel::select(json_object_with_keys_and_values::<Array<Text>, Array<Text>, _, _>(
+    ///             vec!["hello","John"], empty))
+    ///             .get_result::<Value>(connection);
+    /// assert!(json.is_err());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "json_object"]
+    fn json_object_with_keys_and_values<
+        Arr1: TextArrayOrNullableTextArray + SingleValue,
+        Arr2: TextArrayOrNullableTextArray + CombinedNullableValue<Arr1, Json>,
+    >(
+        keys: Arr1,
+        values: Arr2,
+    ) -> Arr2::Out;
 }
 
 #[cfg(feature = "postgres_backend")]
