@@ -3,6 +3,7 @@
 use super::expression_methods::InetOrCidr;
 use crate::expression::functions::define_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
+use crate::pg::expression::expression_methods::CombinedNullableValue;
 use crate::pg::expression::expression_methods::JsonOrNullableJson;
 use crate::pg::expression::expression_methods::JsonbOrNullableJsonb;
 use crate::pg::expression::expression_methods::MaybeNullableValue;
@@ -1674,20 +1675,20 @@ define_sql_function! {
     /// #     use diesel::sql_types::{Array, Json, Nullable, Text};
     /// #     use serde_json::Value;
     /// #     let connection = &mut establish_connection();
-    /// let json = diesel::select(json_object_with_keys_and_values::<Array<Text>, _, _>(
+    /// let json = diesel::select(json_object_with_keys_and_values::<Array<Text>, Array<Text>, _, _>(
     ///             vec!["hello","John"],vec!["world","Doe"]))
     ///             .get_result::<Value>(connection)?;
     /// let expected:Value = serde_json::json!({"hello":"world","John":"Doe"});
     /// assert_eq!(expected,json);
     ///
-    /// let json = diesel::select(json_object_with_keys_and_values::<Nullable<Array<Text>>, _, _>(
-    ///             Some(vec!["hello","John"]),None::<Vec<String>>))
+    /// let json = diesel::select(json_object_with_keys_and_values::<Nullable<Array<Text>>, Nullable<Array<Text>>, _, _>(
+    ///             Some(vec!["hello","John"]), None::<Vec<String>>))
     ///             .get_result::<Option<Value>>(connection)?;
     /// assert_eq!(None::<Value>,json);
     ///
     /// let empty: Vec<String> = Vec::new();
-    /// let json = diesel::select(json_object_with_keys_and_values::<Array<Text>, _, _>(
-    ///             vec!["hello","John"],empty))
+    /// let json = diesel::select(json_object_with_keys_and_values::<Array<Text>, Array<Text>, _, _>(
+    ///             vec!["hello","John"], empty))
     ///             .get_result::<Value>(connection);
     /// assert!(json.is_err());
     ///
@@ -1695,9 +1696,13 @@ define_sql_function! {
     /// # }
     /// ```
     #[sql_name = "json_object"]
-    fn json_object_with_keys_and_values<Arr: TextArrayOrNullableTextArray + MaybeNullableValue<Json>>(
-        keys: Arr, values: Arr
-    ) -> Arr::Out;
+    fn json_object_with_keys_and_values<
+        Arr1: TextArrayOrNullableTextArray + SingleValue,
+        Arr2: TextArrayOrNullableTextArray + CombinedNullableValue<Arr1, Json>,
+    >(
+        keys: Arr1,
+        values: Arr2,
+    ) -> Arr2::Out;
 }
 
 #[cfg(feature = "postgres_backend")]
