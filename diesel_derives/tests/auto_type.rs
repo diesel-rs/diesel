@@ -440,6 +440,7 @@ fn postgres_functions() -> _ {
         json_object(pg_extras::text_array),
         json_typeof(pg_extras::json),
         jsonb_typeof(pg_extras::jsonb),
+        jsonb_pretty(pg_extras::jsonb),
     )
 }
 

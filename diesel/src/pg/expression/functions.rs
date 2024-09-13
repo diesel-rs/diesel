@@ -1756,3 +1756,80 @@ define_sql_function! {
     /// ```
     fn jsonb_typeof<E: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Text>>(e: E) -> E::Out;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Converts the given json value to pretty-printed, indented text
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_pretty;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!([{"f1":1,"f2":null},2,null,3])))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"[
+    ///     {
+    ///         "f1": 1,
+    ///         "f2": null
+    ///     },
+    ///     2,
+    ///     null,
+    ///     3
+    /// ]"#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!({"a": 1, "b": "cd"})))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"{
+    ///     "a": 1,
+    ///     "b": "cd"
+    /// }"#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!("abc")))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#""abc""#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!(22)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"22"#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!(false)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"false"#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!(null)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"null"#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!({})))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"{
+    /// }"#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Nullable<Jsonb>, _>(None::<Value>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn jsonb_pretty<E: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Text>>(e: E) -> E::Out;
+}

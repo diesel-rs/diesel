@@ -496,3 +496,8 @@ pub type json_typeof<E> = super::functions::json_typeof<SqlTypeOf<E>, E>;
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_typeof<E> = super::functions::jsonb_typeof<SqlTypeOf<E>, E>;
+
+/// Return type of [`jsonb_pretty(jsonb)`](super::functions::jsonb_pretty())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_pretty<E> = super::functions::jsonb_pretty<SqlTypeOf<E>, E>;
