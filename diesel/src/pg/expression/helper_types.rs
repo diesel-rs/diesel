@@ -501,3 +501,13 @@ pub type jsonb_typeof<E> = super::functions::jsonb_typeof<SqlTypeOf<E>, E>;
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_pretty<E> = super::functions::jsonb_pretty<SqlTypeOf<E>, E>;
+
+/// Return type of [`json_strip_nulls(json)`](super::functions::json_strip_nulls())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_strip_nulls<E> = super::functions::json_strip_nulls<SqlTypeOf<E>, E>;
+
+/// Return type of [`jsonb_strip_nulls(jsonb)`](super::functions::jsonb_strip_nulls())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_strip_nulls<E> = super::functions::jsonb_strip_nulls<SqlTypeOf<E>, E>;

@@ -1850,3 +1850,92 @@ define_sql_function! {
     /// ```
     fn jsonb_pretty<E: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Text>>(e: E) -> E::Out;
 }
+
+define_sql_function! {
+    /// Deletes all object fields that have null values from the given JSON value, recursively.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_strip_nulls;
+    /// #     use diesel::sql_types::{Json, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(json_strip_nulls::<Json, _>(json!({"hello": null})))
+    ///     .get_result::<Value>(connection)?;
+    /// let expected: Value = json!({});
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(json_strip_nulls::<Json, _>(json!([{"f1":1, "f2":null}, 2, null, 3])))
+    ///     .get_result::<Value>(connection)?;
+    /// let expected: Value = json!([{"f1":1}, 2, null, 3]);
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(json_strip_nulls::<Nullable<Json>, _>(None::<Value>))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let result = diesel::select(json_strip_nulls::<Json, _>(json!(null)))
+    ///     .get_result::<Value>(connection)?;
+    /// let expected = json!(null);
+    /// assert_eq!(result, expected);
+    ///
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn json_strip_nulls<E: JsonOrNullableJson + SingleValue>(json: E) -> E;
+}
+
+define_sql_function! {
+    /// Deletes all object fields that have null values from the given JSON value, recursively.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_strip_nulls;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_strip_nulls::<Jsonb, _>(json!({"hello": null})))
+    ///     .get_result::<Value>(connection)?;
+    /// let expected: Value = json!({});
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(jsonb_strip_nulls::<Jsonb, _>(json!([{"f1":1, "f2":null}, 2, null, 3])))
+    ///     .get_result::<Value>(connection)?;
+    /// let expected: Value = json!([{"f1":1}, 2, null, 3]);
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(jsonb_strip_nulls::<Nullable<Jsonb>, _>(None::<Value>))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let result = diesel::select(jsonb_strip_nulls::<Jsonb, _>(json!(null)))
+    ///     .get_result::<Value>(connection)?;
+    /// let expected = json!(null);
+    /// assert_eq!(result, expected);
+    ///
+    ///
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn jsonb_strip_nulls<E: JsonbOrNullableJsonb + SingleValue>(jsonb: E) -> E;
+}

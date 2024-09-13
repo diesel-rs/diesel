@@ -3552,6 +3552,10 @@ pub(in crate::pg) mod private {
     impl JsonbOrNullableJsonb for Jsonb {}
     impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
 
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Json` nor `diesel::sql_types::Nullable<Json>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
     pub trait JsonOrNullableJson {}
 
     impl JsonOrNullableJson for Json {}

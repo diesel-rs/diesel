@@ -441,6 +441,8 @@ fn postgres_functions() -> _ {
         json_typeof(pg_extras::json),
         jsonb_typeof(pg_extras::jsonb),
         jsonb_pretty(pg_extras::jsonb),
+        json_strip_nulls(pg_extras::json),
+        jsonb_strip_nulls(pg_extras::jsonb),
     )
 }
 
