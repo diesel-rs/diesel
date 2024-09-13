@@ -3,6 +3,7 @@
 use super::expression_methods::InetOrCidr;
 use crate::expression::functions::define_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
+use crate::pg::expression::expression_methods::JsonOrNullableJson;
 use crate::pg::expression::expression_methods::JsonbOrNullableJsonb;
 use crate::pg::expression::expression_methods::MaybeNullableValue;
 use crate::pg::expression::expression_methods::MultirangeOrNullableMultirange;
@@ -1634,6 +1635,126 @@ define_sql_function! {
     fn json_object<Arr: TextArrayOrNullableTextArray + MaybeNullableValue<Json>>(
         text_array: Arr,
     ) -> Arr::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the type of the top-level json value as a text-string
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_typeof;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Json, Nullable};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(json_typeof::<Json, _>(json!({"a": "b", "c": 1})))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("object".to_string(), result);
+    ///
+    /// let result = diesel::select(json_typeof::<Json, _>(json!([1,2,3])))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("array".to_string(), result);
+    ///
+    /// let result = diesel::select(json_typeof::<Json, _>(json!("abc")))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("string".to_string(), result);
+    ///
+    /// let result = diesel::select(json_typeof::<Json, _>(json!(-123.4)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("number".to_string(), result);
+    ///
+    /// let result = diesel::select(json_typeof::<Json, _>(json!(true)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("boolean".to_string(), result);
+    ///
+    /// let result = diesel::select(json_typeof::<Json, _>(json!(null)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("null".to_string(), result);
+    ///
+    /// let result = diesel::select(json_typeof::<Nullable<Json>, _>(None::<Value>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn json_typeof<E: JsonOrNullableJson + SingleValue + MaybeNullableValue<Text>>(e: E) -> E::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the type of the top-level jsonb value as a text-string
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_typeof;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(jsonb_typeof::<Jsonb, _>(json!({"a": "b", "c": 1})))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("object".to_string(), result);
+    ///
+    /// let result = diesel::select(jsonb_typeof::<Jsonb, _>(json!([1,2,3])))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("array".to_string(), result);
+    ///
+    /// let result = diesel::select(jsonb_typeof::<Jsonb, _>(json!("abc")))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("string".to_string(), result);
+    ///
+    /// let result = diesel::select(jsonb_typeof::<Jsonb, _>(json!(-123.4)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("number".to_string(), result);
+    ///
+    /// let result = diesel::select(jsonb_typeof::<Jsonb, _>(json!(true)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("boolean".to_string(), result);
+    ///
+    /// let result = diesel::select(jsonb_typeof::<Jsonb, _>(json!(null)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("null".to_string(), result);
+    ///
+    /// let result = diesel::select(jsonb_typeof::<Nullable<Jsonb>, _>(None::<Value>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn jsonb_typeof<E: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Text>>(e: E) -> E::Out;
 }
 
 #[cfg(feature = "postgres_backend")]
