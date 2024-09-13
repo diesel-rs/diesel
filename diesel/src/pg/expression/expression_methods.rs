@@ -4,7 +4,7 @@ pub(in crate::pg) use self::private::{
     ArrayOrNullableArray, InetOrCidr, JsonIndex, JsonOrNullableJson,
     JsonOrNullableJsonOrJsonbOrNullableJsonb, JsonRemoveIndex, JsonbOrNullableJsonb,
     MaybeNullableValue, MultirangeOrNullableMultirange, MultirangeOrRangeMaybeNullable,
-    RangeHelper, RangeOrNullableRange, TextArrayOrNullableTextArray, TextOrNullableText,
+    RangeOrMultirange, RangeOrNullableRange, TextArrayOrNullableTextArray, TextOrNullableText,
 };
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
@@ -868,9 +868,9 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```
     fn contains<T>(self, other: T) -> dsl::RangeContains<Self, T>
     where
-        Self::SqlType: RangeHelper,
-        <Self::SqlType as RangeHelper>::Inner: SqlType + TypedExpressionType,
-        T: AsExpression<<Self::SqlType as RangeHelper>::Inner>,
+        Self::SqlType: RangeOrMultirange,
+        <Self::SqlType as RangeOrMultirange>::Inner: SqlType + TypedExpressionType,
+        T: AsExpression<<Self::SqlType as RangeOrMultirange>::Inner>,
     {
         Grouped(Contains::new(self, other.as_expression()))
     }
@@ -1779,7 +1779,7 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
 impl<T> PgRangeExpressionMethods for T
 where
     T: Expression,
-    T::SqlType: RangeOrNullableRange,
+    T::SqlType: MultirangeOrRangeMaybeNullable,
 {
 }
 
@@ -3466,12 +3466,20 @@ pub(in crate::pg) mod private {
     impl TextOrNullableText for Nullable<Text> {}
 
     /// Marker trait used to extract the inner type
-    /// of our `Range<T>` sql type, used to implement `PgRangeExpressionMethods`
-    pub trait RangeHelper: SqlType + SingleValue {
+    /// of our `Range<T>` and `Multirange<T>` sql type, used to implement `PgRangeExpressionMethods`
+    pub trait RangeOrMultirange: SqlType + SingleValue {
         type Inner: SingleValue;
     }
 
-    impl<ST> RangeHelper for Range<ST>
+    impl<ST> RangeOrMultirange for Range<ST>
+    where
+        Self: 'static,
+        ST: SingleValue,
+    {
+        type Inner = ST;
+    }
+
+    impl<ST> RangeOrMultirange for Multirange<ST>
     where
         Self: 'static,
         ST: SingleValue,

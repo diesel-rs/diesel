@@ -56,7 +56,7 @@ pub type ArrayContains<Lhs, Rhs> = Contains<Lhs, Rhs>;
 pub type RangeContains<Lhs, Rhs> = Grouped<
     super::operators::Contains<
         Lhs,
-        AsExprOf<Rhs, <SqlTypeOf<Lhs> as super::expression_methods::RangeHelper>::Inner>,
+        AsExprOf<Rhs, <SqlTypeOf<Lhs> as super::expression_methods::RangeOrMultirange>::Inner>,
     >,
 >;
 
