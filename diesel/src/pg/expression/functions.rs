@@ -1,8 +1,6 @@
 //! PostgreSQL specific functions
 
 use super::expression_methods::InetOrCidr;
-use super::expression_methods::JsonOrNullableJson;
-use super::expression_methods::JsonbOrNullableJsonb;
 use crate::expression::functions::define_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
 use crate::pg::expression::expression_methods::JsonOrNullableJson;
