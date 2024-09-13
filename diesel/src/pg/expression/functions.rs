@@ -165,22 +165,22 @@ define_sql_function! {
     /// #     use std::collections::Bound;
     /// #     use diesel::sql_types::{Nullable, Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let int = diesel::select(isempty::<Range<Integer>,  _>(1..5)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(isempty::<Range<Integer>,  _>(1..5)).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     ///
-    /// let int = diesel::select(isempty::<Range<Integer>, _>(1..1)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(true), int);
+    /// let int = diesel::select(isempty::<Range<Integer>, _>(1..1)).get_result::<bool>(connection)?;
+    /// assert_eq!(true, int);
     ///
     /// let int = diesel::select(isempty::<Nullable<Range<Integer>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<bool>>(connection)?;
     /// assert_eq!(None, int);
     ///
-    /// let int = diesel::select(isempty::<Multirange<Integer>, _>(vec![5..7])).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(isempty::<Multirange<Integer>, _>(vec![5..7])).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn isempty<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<Bool>;
+    fn isempty<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
 }
 
 define_sql_function! {
@@ -201,22 +201,22 @@ define_sql_function! {
     /// #     use std::collections::Bound;
     /// #     use diesel::sql_types::{Nullable, Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let int = diesel::select(lower_inc::<Range<Integer>,  _>(1..5)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(true), int);
+    /// let int = diesel::select(lower_inc::<Range<Integer>,  _>(1..5)).get_result::<bool>(connection)?;
+    /// assert_eq!(true, int);
     ///
-    /// let int = diesel::select(lower_inc::<Range<Integer>, _>(..5)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(lower_inc::<Range<Integer>, _>(..5)).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     ///
     /// let int = diesel::select(lower_inc::<Nullable<Range<Integer>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<bool>>(connection)?;
     /// assert_eq!(None, int);
     ///
-    /// let int = diesel::select(lower_inc::<Multirange<Integer>, _>(vec![5..7])).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(true), int);
+    /// let int = diesel::select(lower_inc::<Multirange<Integer>, _>(vec![5..7])).get_result::<bool>(connection)?;
+    /// assert_eq!(true, int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn lower_inc<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<Bool>;
+    fn lower_inc<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
 }
 
 define_sql_function! {
@@ -237,19 +237,19 @@ define_sql_function! {
     /// #     use std::collections::Bound;
     /// #     use diesel::sql_types::{Nullable, Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let int = diesel::select(upper_inc::<Range<Integer>,  _>(1..5)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(upper_inc::<Range<Integer>,  _>(1..5)).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     ///
     /// let int = diesel::select(upper_inc::<Nullable<Range<Integer>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<bool>>(connection)?;
     /// assert_eq!(None, int);
     ///
-    /// let int = diesel::select(upper_inc::<Multirange<Integer>, _>(vec![5..7])).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(upper_inc::<Multirange<Integer>, _>(vec![5..7])).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn upper_inc<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<Bool>;
+    fn upper_inc<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
 }
 
 define_sql_function! {
@@ -270,22 +270,22 @@ define_sql_function! {
     /// #     use std::collections::Bound;
     /// #     use diesel::sql_types::{Nullable, Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let int = diesel::select(lower_inf::<Range<Integer>,  _>(1..5)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(lower_inf::<Range<Integer>,  _>(1..5)).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     ///
-    /// let int = diesel::select(lower_inf::<Range<Integer>,  _>(..5)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(true), int);
+    /// let int = diesel::select(lower_inf::<Range<Integer>,  _>(..5)).get_result::<bool>(connection)?;
+    /// assert_eq!(true, int);
     ///
     /// let int = diesel::select(lower_inf::<Nullable<Range<Integer>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<bool>>(connection)?;
     /// assert_eq!(None, int);
     ///
-    /// let int = diesel::select(lower_inf::<Multirange<Integer>, _>(vec![5..7])).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(lower_inf::<Multirange<Integer>, _>(vec![5..7])).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn lower_inf<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<Bool>;
+    fn lower_inf<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
 }
 
 define_sql_function! {
@@ -306,22 +306,22 @@ define_sql_function! {
     /// #     use std::collections::Bound;
     /// #     use diesel::sql_types::{Nullable, Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let int = diesel::select(upper_inf::<Range<Integer>,  _>(1..5)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(upper_inf::<Range<Integer>,  _>(1..5)).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     ///
-    /// let int = diesel::select(upper_inf::<Range<Integer>,  _>(1..)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(true), int);
+    /// let int = diesel::select(upper_inf::<Range<Integer>,  _>(1..)).get_result::<bool>(connection)?;
+    /// assert_eq!(true, int);
     ///
     /// let int = diesel::select(upper_inf::<Nullable<Range<Integer>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<bool>>(connection)?;
     /// assert_eq!(None, int);
     ///
-    /// let int = diesel::select(upper_inf::<Multirange<Integer>, _>(vec![5..7])).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(upper_inf::<Multirange<Integer>, _>(vec![5..7])).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn upper_inf<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<Bool>;
+    fn upper_inf<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
 }
 
 define_sql_function! {
@@ -983,16 +983,16 @@ define_sql_function! {
     /// #   let connection = &mut establish_connection();
     ///
     /// let array_cardinality = diesel::select(cardinality::<Array<Integer>, _>(vec![1, 2, 3, 4]))
-    ///     .get_result::<Option<i32>>(connection)?;
-    /// assert_eq!(4, array_cardinality.unwrap());
+    ///     .get_result::<i32>(connection)?;
+    /// assert_eq!(4, array_cardinality);
     ///
     /// let array_cardinality = diesel::select(cardinality::<Array<Nullable<Integer>>, _>(vec![Some(1), Some(2), Some(3)]))
-    ///     .get_result::<Option<i32>>(connection)?;
-    /// assert_eq!(3, array_cardinality.unwrap());
+    ///     .get_result::<i32>(connection)?;
+    /// assert_eq!(3, array_cardinality);
     ///
     /// let array_cardinality = diesel::select(cardinality::<Array<Integer>, _>(Vec::<i32>::new()))
-    ///     .get_result::<Option<i32>>(connection)?;
-    /// assert_eq!(0, array_cardinality.unwrap());
+    ///     .get_result::<i32>(connection)?;
+    /// assert_eq!(0, array_cardinality);
     ///
     /// let array_cardinality = diesel::select(cardinality::<Nullable<Array<Integer>>, _>(None::<Vec<i32>>))
     ///     .get_result::<Option<i32>>(connection)?;
@@ -1000,7 +1000,7 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
-    fn cardinality<Arr:ArrayOrNullableArray + SingleValue>(a: Arr) -> Nullable<Integer>;
+    fn cardinality<Arr:ArrayOrNullableArray + SingleValue + MaybeNullableValue<Integer>>(a: Arr) -> Arr::Out;
 }
 
 #[cfg(feature = "postgres_backend")]
@@ -1092,11 +1092,19 @@ define_sql_function! {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::array_length;
-    /// #     use diesel::sql_types::{Integer, Array};
+    /// #     use diesel::sql_types::{Integer, Array, Nullable};
     /// #     let connection = &mut establish_connection();
     /// let result = diesel::select(array_length::<Array<Integer>, _, _>(vec![1, 2, 3], 1))
     ///     .get_result::<Option<i32>>(connection)?;
     /// assert_eq!(Some(3), result);
+    ///
+    /// let result = diesel::select(array_length::<Array<Integer>, _, _>(vec![1, 2, 3], 2))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, result);
+    ///
+    /// let result = diesel::select(array_length::<Nullable<Array<Integer>>, _, _>(None::<Vec<i32>>, 1))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, result);
     /// #     Ok(())
     /// # }
     /// ```
@@ -1255,6 +1263,11 @@ define_sql_function! {
     ///     vec![None::<i32>, Some(1), Some(2), Some(3)], None::<i32>))
     ///     .get_result::<Option<i32>>(connection)?;
     /// assert_eq!(Some(1), pos);
+    ///
+    /// let dims = diesel::select(array_position::<Nullable<Array<Integer>>, Integer, _, _>(None::<Vec<i32>>, 1))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, dims);
+    ///
     /// # Ok(())
     /// # }
     ///
@@ -1341,17 +1354,17 @@ define_sql_function! {
     /// #   let connection = &mut establish_connection();
     ///
     /// let pos = diesel::select(array_positions::<Array<_>, Integer, _, _>(vec![1, 1, 2, 1], 1))
-    ///     .get_result::<Option<Vec<i32>>>(connection)?;
-    /// assert_eq!(Some(vec![1,2,4]), pos);
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(vec![1,2,4], pos);
     ///
     /// let pos = diesel::select(array_positions::<Array<_>, Integer, _, _>(vec![1, 2, 3, 4], 5))
-    ///     .get_result::<Option<Vec<i32>>>(connection)?;
-    /// assert_eq!(Some(vec![]), pos);
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(Vec::<i32>::new(), pos);
     ///
     /// let pos = diesel::select(array_positions::<Array<_>, Nullable<Integer>, _, _>(
     ///     vec![None::<i32>, Some(2), Some(3), None::<i32>], None::<i32>))
-    ///     .get_result::<Option<Vec<i32>>>(connection)?;
-    /// assert_eq!(Some(vec![1,4]), pos);
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(vec![1,4], pos);
     ///
     /// let pos = diesel::select(array_positions::<Nullable<Array<_>>, Integer, _, _>(
     ///     None::<Vec<i32>>, 1))
@@ -1360,10 +1373,10 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
-    fn array_positions<Arr: ArrayOrNullableArray<Inner = E> + SingleValue, E: SingleValue>(
+    fn array_positions<Arr: ArrayOrNullableArray<Inner = E> + SingleValue + MaybeNullableValue<Array<Integer>>, E: SingleValue>(
         a: Arr,
         elem: E,
-    ) -> Nullable<Array<Integer>>;
+    ) -> Arr::Out;
 }
 
 #[cfg(feature = "postgres_backend")]
@@ -1389,10 +1402,14 @@ define_sql_function! {
     ///     .get_result::<i32>(connection)?;
     /// assert_eq!(1, dims);
     ///
+    /// let dims = diesel::select(array_ndims::<Nullable<Array<Integer>>, _>(None::<Vec<i32>>))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, dims);
+    ///
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_ndims<Arr: ArrayOrNullableArray + SingleValue>(arr: Arr) -> Integer;
+    fn array_ndims<Arr: ArrayOrNullableArray + SingleValue + MaybeNullableValue<Integer>>(arr: Arr) -> Arr::Out;
 }
 
 #[cfg(feature = "postgres_backend")]
