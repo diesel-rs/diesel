@@ -343,11 +343,11 @@ define_sql_function! {
     /// #     use std::collections::Bound;
     /// #     use diesel::sql_types::{Nullable, Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let int = diesel::select(range_merge::<Range<Integer>, Range<_>,  _, _>(5..11, 10..)).get_result::<Option<(Bound<i32>, Bound<i32>)>>(connection)?;
-    /// assert_eq!(Some((Bound::Included(5), Bound::Unbounded)), int);
+    /// let int = diesel::select(range_merge::<Range<Integer>, Range<_>,  _, _>(5..11, 10..)).get_result::<(Bound<i32>, Bound<i32>)>(connection)?;
+    /// assert_eq!((Bound::Included(5), Bound::Unbounded), int);
     ///
-    /// let int = diesel::select(range_merge::<Range<Integer>, Range<_>,  _, _>(1..3, 7..10)).get_result::<Option<(Bound<i32>, Bound<i32>)>>(connection)?;
-    /// assert_eq!(Some((Bound::Included(1), Bound::Excluded(10))), int);
+    /// let int = diesel::select(range_merge::<Range<Integer>, Range<_>,  _, _>(1..3, 7..10)).get_result::<(Bound<i32>, Bound<i32>)>(connection)?;
+    /// assert_eq!((Bound::Included(1), Bound::Excluded(10)), int);
     ///
     /// let int = diesel::select(range_merge::<Nullable<Range<Integer>>, Nullable<Range<_>>,  _, _>(None::<std::ops::Range<i32>>, 7..10)).get_result::<Option<(Bound<i32>, Bound<i32>)>>(connection)?;
     /// assert_eq!(None, int);
@@ -358,7 +358,7 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn range_merge<R1: RangeOrNullableRange + SingleValue, R2: RangeOrNullableRange<Inner=R1::Inner> + SingleValue>(lhs: R1, rhs: R2) -> Nullable<Range<R1::Inner>>;
+    fn range_merge<R1: RangeOrNullableRange + SingleValue, R2: RangeOrNullableRange<Inner=R1::Inner> + SingleValue + CombinedNullableValue<R1, Range<R1::Inner>>>(lhs: R1, rhs: R2) -> R2::Out;
 }
 
 define_sql_function! {
