@@ -1600,9 +1600,11 @@ define_sql_function! {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::json_object;
     /// #     use diesel::sql_types::{Array, Json, Nullable, Text};

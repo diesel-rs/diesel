@@ -57,7 +57,7 @@ fn union_all() {
     let data: Vec<_> = users
         .filter(id.le(tess.id))
         .union_all(users.filter(id.ge(tess.id)))
-        .positional_order_by(OrderColumn::from(2)) // name is the second column
+        .positional_order_by(2) // name is the second column
         .load(conn)
         .unwrap();
     assert_eq!(expected_data, data);
@@ -84,7 +84,7 @@ fn intersect() {
     let data: Vec<_> = users
         .filter(id.le(tess.id))
         .intersect(users.filter(id.ge(tess.id)))
-        .positional_order_by(OrderColumn::from(2)) // name is the second column
+        .positional_order_by(2) // name is the second column
         .load(conn)
         .unwrap();
     assert_eq!(expected_data, data);
@@ -111,7 +111,7 @@ fn except() {
     let data: Vec<_> = users
         .filter(id.le(tess.id))
         .except(users.filter(id.ge(tess.id)))
-        .positional_order_by(OrderColumn::from(2)) // name is the second column
+        .positional_order_by(2) // name is the second column
         .load(conn)
         .unwrap();
     assert_eq!(expected_data, data);
@@ -137,7 +137,7 @@ fn union_with_limit() {
         .filter(id.le(tess.id))
         .union(users.filter(id.ge(tess.id)))
         .limit(2)
-        .positional_order_by(OrderColumn::from(1)) // id is the first column
+        .positional_order_by(1) // id is the first column
         .load(conn)
         .unwrap();
 
@@ -164,7 +164,7 @@ fn union_with_offset() {
     let data: Vec<User> = users
         .filter(id.le(tess.id))
         .union(users.filter(id.ge(tess.id)))
-        .positional_order_by(OrderColumn::from(2)) // name is the second column
+        .positional_order_by(2) // name is the second column
         .limit(3)
         .offset(1)
         .load(conn)

@@ -18,7 +18,7 @@ pub trait CombineDsl {
     /// # extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use schema::{users, animals};
-    /// # use crate::diesel::query_dsl::positional_order_dsl::{OrderColumn, PositionalOrderDsl};
+    /// # use crate::diesel::query_dsl::positional_order_dsl::PositionalOrderDsl;
     /// #
     /// # fn main() {
     /// #     use self::users::dsl::{users, name as user_name};
@@ -26,7 +26,7 @@ pub trait CombineDsl {
     /// #     let connection = &mut establish_connection();
     /// let data = users.select(user_name.nullable())
     ///     .union(animals.select(animal_name).filter(animal_name.is_not_null()))
-    /// #   .positional_order_by(OrderColumn::from(1))
+    /// #   .positional_order_by(1)
     ///     .load(connection);
     ///
     /// let expected_data = vec![
