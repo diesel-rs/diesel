@@ -163,10 +163,8 @@ fn derive_into_single_table(
     };
 
     Ok(quote! {
-        #[allow(unused_qualifications)]
         #insert_owned
 
-        #[allow(unused_qualifications)]
         #insert_borrowed
 
         impl #impl_generics UndecoratedInsertRecord<#table_name::table>

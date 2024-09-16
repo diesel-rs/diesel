@@ -3,6 +3,7 @@
 use super::expression_methods::InetOrCidr;
 use crate::expression::functions::define_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
+use crate::pg::expression::expression_methods::CombinedNullableValue;
 use crate::pg::expression::expression_methods::JsonOrNullableJson;
 use crate::pg::expression::expression_methods::JsonbOrNullableJsonb;
 use crate::pg::expression::expression_methods::MaybeNullableValue;
@@ -165,22 +166,22 @@ define_sql_function! {
     /// #     use std::collections::Bound;
     /// #     use diesel::sql_types::{Nullable, Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let int = diesel::select(isempty::<Range<Integer>,  _>(1..5)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(isempty::<Range<Integer>,  _>(1..5)).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     ///
-    /// let int = diesel::select(isempty::<Range<Integer>, _>(1..1)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(true), int);
+    /// let int = diesel::select(isempty::<Range<Integer>, _>(1..1)).get_result::<bool>(connection)?;
+    /// assert_eq!(true, int);
     ///
     /// let int = diesel::select(isempty::<Nullable<Range<Integer>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<bool>>(connection)?;
     /// assert_eq!(None, int);
     ///
-    /// let int = diesel::select(isempty::<Multirange<Integer>, _>(vec![5..7])).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(isempty::<Multirange<Integer>, _>(vec![5..7])).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn isempty<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<Bool>;
+    fn isempty<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
 }
 
 define_sql_function! {
@@ -201,22 +202,22 @@ define_sql_function! {
     /// #     use std::collections::Bound;
     /// #     use diesel::sql_types::{Nullable, Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let int = diesel::select(lower_inc::<Range<Integer>,  _>(1..5)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(true), int);
+    /// let int = diesel::select(lower_inc::<Range<Integer>,  _>(1..5)).get_result::<bool>(connection)?;
+    /// assert_eq!(true, int);
     ///
-    /// let int = diesel::select(lower_inc::<Range<Integer>, _>(..5)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(lower_inc::<Range<Integer>, _>(..5)).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     ///
     /// let int = diesel::select(lower_inc::<Nullable<Range<Integer>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<bool>>(connection)?;
     /// assert_eq!(None, int);
     ///
-    /// let int = diesel::select(lower_inc::<Multirange<Integer>, _>(vec![5..7])).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(true), int);
+    /// let int = diesel::select(lower_inc::<Multirange<Integer>, _>(vec![5..7])).get_result::<bool>(connection)?;
+    /// assert_eq!(true, int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn lower_inc<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<Bool>;
+    fn lower_inc<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
 }
 
 define_sql_function! {
@@ -237,19 +238,19 @@ define_sql_function! {
     /// #     use std::collections::Bound;
     /// #     use diesel::sql_types::{Nullable, Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let int = diesel::select(upper_inc::<Range<Integer>,  _>(1..5)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(upper_inc::<Range<Integer>,  _>(1..5)).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     ///
     /// let int = diesel::select(upper_inc::<Nullable<Range<Integer>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<bool>>(connection)?;
     /// assert_eq!(None, int);
     ///
-    /// let int = diesel::select(upper_inc::<Multirange<Integer>, _>(vec![5..7])).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(upper_inc::<Multirange<Integer>, _>(vec![5..7])).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn upper_inc<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<Bool>;
+    fn upper_inc<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
 }
 
 define_sql_function! {
@@ -270,22 +271,22 @@ define_sql_function! {
     /// #     use std::collections::Bound;
     /// #     use diesel::sql_types::{Nullable, Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let int = diesel::select(lower_inf::<Range<Integer>,  _>(1..5)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(lower_inf::<Range<Integer>,  _>(1..5)).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     ///
-    /// let int = diesel::select(lower_inf::<Range<Integer>,  _>(..5)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(true), int);
+    /// let int = diesel::select(lower_inf::<Range<Integer>,  _>(..5)).get_result::<bool>(connection)?;
+    /// assert_eq!(true, int);
     ///
     /// let int = diesel::select(lower_inf::<Nullable<Range<Integer>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<bool>>(connection)?;
     /// assert_eq!(None, int);
     ///
-    /// let int = diesel::select(lower_inf::<Multirange<Integer>, _>(vec![5..7])).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(lower_inf::<Multirange<Integer>, _>(vec![5..7])).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn lower_inf<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<Bool>;
+    fn lower_inf<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
 }
 
 define_sql_function! {
@@ -306,22 +307,22 @@ define_sql_function! {
     /// #     use std::collections::Bound;
     /// #     use diesel::sql_types::{Nullable, Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let int = diesel::select(upper_inf::<Range<Integer>,  _>(1..5)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(upper_inf::<Range<Integer>,  _>(1..5)).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     ///
-    /// let int = diesel::select(upper_inf::<Range<Integer>,  _>(1..)).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(true), int);
+    /// let int = diesel::select(upper_inf::<Range<Integer>,  _>(1..)).get_result::<bool>(connection)?;
+    /// assert_eq!(true, int);
     ///
     /// let int = diesel::select(upper_inf::<Nullable<Range<Integer>>, _>(None::<std::ops::Range<i32>>)).get_result::<Option<bool>>(connection)?;
     /// assert_eq!(None, int);
     ///
-    /// let int = diesel::select(upper_inf::<Multirange<Integer>, _>(vec![5..7])).get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), int);
+    /// let int = diesel::select(upper_inf::<Multirange<Integer>, _>(vec![5..7])).get_result::<bool>(connection)?;
+    /// assert_eq!(false, int);
     /// #     Ok(())
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn upper_inf<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<Bool>;
+    fn upper_inf<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
 }
 
 define_sql_function! {
@@ -342,11 +343,11 @@ define_sql_function! {
     /// #     use std::collections::Bound;
     /// #     use diesel::sql_types::{Nullable, Integer, Array};
     /// #     let connection = &mut establish_connection();
-    /// let int = diesel::select(range_merge::<Range<Integer>, Range<_>,  _, _>(5..11, 10..)).get_result::<Option<(Bound<i32>, Bound<i32>)>>(connection)?;
-    /// assert_eq!(Some((Bound::Included(5), Bound::Unbounded)), int);
+    /// let int = diesel::select(range_merge::<Range<Integer>, Range<_>,  _, _>(5..11, 10..)).get_result::<(Bound<i32>, Bound<i32>)>(connection)?;
+    /// assert_eq!((Bound::Included(5), Bound::Unbounded), int);
     ///
-    /// let int = diesel::select(range_merge::<Range<Integer>, Range<_>,  _, _>(1..3, 7..10)).get_result::<Option<(Bound<i32>, Bound<i32>)>>(connection)?;
-    /// assert_eq!(Some((Bound::Included(1), Bound::Excluded(10))), int);
+    /// let int = diesel::select(range_merge::<Range<Integer>, Range<_>,  _, _>(1..3, 7..10)).get_result::<(Bound<i32>, Bound<i32>)>(connection)?;
+    /// assert_eq!((Bound::Included(1), Bound::Excluded(10)), int);
     ///
     /// let int = diesel::select(range_merge::<Nullable<Range<Integer>>, Nullable<Range<_>>,  _, _>(None::<std::ops::Range<i32>>, 7..10)).get_result::<Option<(Bound<i32>, Bound<i32>)>>(connection)?;
     /// assert_eq!(None, int);
@@ -357,7 +358,7 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn range_merge<R1: RangeOrNullableRange + SingleValue, R2: RangeOrNullableRange<Inner=R1::Inner> + SingleValue>(lhs: R1, rhs: R2) -> Nullable<Range<R1::Inner>>;
+    fn range_merge<R1: RangeOrNullableRange + SingleValue, R2: RangeOrNullableRange<Inner=R1::Inner> + SingleValue + CombinedNullableValue<R1, Range<R1::Inner>>>(lhs: R1, rhs: R2) -> R2::Out;
 }
 
 define_sql_function! {
@@ -983,16 +984,16 @@ define_sql_function! {
     /// #   let connection = &mut establish_connection();
     ///
     /// let array_cardinality = diesel::select(cardinality::<Array<Integer>, _>(vec![1, 2, 3, 4]))
-    ///     .get_result::<Option<i32>>(connection)?;
-    /// assert_eq!(4, array_cardinality.unwrap());
+    ///     .get_result::<i32>(connection)?;
+    /// assert_eq!(4, array_cardinality);
     ///
     /// let array_cardinality = diesel::select(cardinality::<Array<Nullable<Integer>>, _>(vec![Some(1), Some(2), Some(3)]))
-    ///     .get_result::<Option<i32>>(connection)?;
-    /// assert_eq!(3, array_cardinality.unwrap());
+    ///     .get_result::<i32>(connection)?;
+    /// assert_eq!(3, array_cardinality);
     ///
     /// let array_cardinality = diesel::select(cardinality::<Array<Integer>, _>(Vec::<i32>::new()))
-    ///     .get_result::<Option<i32>>(connection)?;
-    /// assert_eq!(0, array_cardinality.unwrap());
+    ///     .get_result::<i32>(connection)?;
+    /// assert_eq!(0, array_cardinality);
     ///
     /// let array_cardinality = diesel::select(cardinality::<Nullable<Array<Integer>>, _>(None::<Vec<i32>>))
     ///     .get_result::<Option<i32>>(connection)?;
@@ -1000,7 +1001,7 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
-    fn cardinality<Arr:ArrayOrNullableArray + SingleValue>(a: Arr) -> Nullable<Integer>;
+    fn cardinality<Arr:ArrayOrNullableArray + SingleValue + MaybeNullableValue<Integer>>(a: Arr) -> Arr::Out;
 }
 
 #[cfg(feature = "postgres_backend")]
@@ -1092,11 +1093,19 @@ define_sql_function! {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::array_length;
-    /// #     use diesel::sql_types::{Integer, Array};
+    /// #     use diesel::sql_types::{Integer, Array, Nullable};
     /// #     let connection = &mut establish_connection();
     /// let result = diesel::select(array_length::<Array<Integer>, _, _>(vec![1, 2, 3], 1))
     ///     .get_result::<Option<i32>>(connection)?;
     /// assert_eq!(Some(3), result);
+    ///
+    /// let result = diesel::select(array_length::<Array<Integer>, _, _>(vec![1, 2, 3], 2))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, result);
+    ///
+    /// let result = diesel::select(array_length::<Nullable<Array<Integer>>, _, _>(None::<Vec<i32>>, 1))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, result);
     /// #     Ok(())
     /// # }
     /// ```
@@ -1255,6 +1264,11 @@ define_sql_function! {
     ///     vec![None::<i32>, Some(1), Some(2), Some(3)], None::<i32>))
     ///     .get_result::<Option<i32>>(connection)?;
     /// assert_eq!(Some(1), pos);
+    ///
+    /// let dims = diesel::select(array_position::<Nullable<Array<Integer>>, Integer, _, _>(None::<Vec<i32>>, 1))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, dims);
+    ///
     /// # Ok(())
     /// # }
     ///
@@ -1341,17 +1355,17 @@ define_sql_function! {
     /// #   let connection = &mut establish_connection();
     ///
     /// let pos = diesel::select(array_positions::<Array<_>, Integer, _, _>(vec![1, 1, 2, 1], 1))
-    ///     .get_result::<Option<Vec<i32>>>(connection)?;
-    /// assert_eq!(Some(vec![1,2,4]), pos);
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(vec![1,2,4], pos);
     ///
     /// let pos = diesel::select(array_positions::<Array<_>, Integer, _, _>(vec![1, 2, 3, 4], 5))
-    ///     .get_result::<Option<Vec<i32>>>(connection)?;
-    /// assert_eq!(Some(vec![]), pos);
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(Vec::<i32>::new(), pos);
     ///
     /// let pos = diesel::select(array_positions::<Array<_>, Nullable<Integer>, _, _>(
     ///     vec![None::<i32>, Some(2), Some(3), None::<i32>], None::<i32>))
-    ///     .get_result::<Option<Vec<i32>>>(connection)?;
-    /// assert_eq!(Some(vec![1,4]), pos);
+    ///     .get_result::<Vec<i32>>(connection)?;
+    /// assert_eq!(vec![1,4], pos);
     ///
     /// let pos = diesel::select(array_positions::<Nullable<Array<_>>, Integer, _, _>(
     ///     None::<Vec<i32>>, 1))
@@ -1360,10 +1374,10 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
-    fn array_positions<Arr: ArrayOrNullableArray<Inner = E> + SingleValue, E: SingleValue>(
+    fn array_positions<Arr: ArrayOrNullableArray<Inner = E> + SingleValue + MaybeNullableValue<Array<Integer>>, E: SingleValue>(
         a: Arr,
         elem: E,
-    ) -> Nullable<Array<Integer>>;
+    ) -> Arr::Out;
 }
 
 #[cfg(feature = "postgres_backend")]
@@ -1389,10 +1403,14 @@ define_sql_function! {
     ///     .get_result::<i32>(connection)?;
     /// assert_eq!(1, dims);
     ///
+    /// let dims = diesel::select(array_ndims::<Nullable<Array<Integer>>, _>(None::<Vec<i32>>))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(None, dims);
+    ///
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_ndims<Arr: ArrayOrNullableArray + SingleValue>(arr: Arr) -> Integer;
+    fn array_ndims<Arr: ArrayOrNullableArray + SingleValue + MaybeNullableValue<Integer>>(arr: Arr) -> Arr::Out;
 }
 
 #[cfg(feature = "postgres_backend")]
@@ -1592,6 +1610,7 @@ define_sql_function! {
     fn to_jsonb<E: MaybeNullableValue<Jsonb>>(e: E) -> E::Out;
 }
 
+#[cfg(feature = "postgres_backend")]
 define_sql_function! {
     /// Builds a JSON object out of a text array. The array must have an even number of members,
     /// in which case they are taken as alternating key/value pairs
@@ -1602,9 +1621,11 @@ define_sql_function! {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::json_object;
     /// #     use diesel::sql_types::{Array, Json, Nullable, Text};
@@ -1639,6 +1660,341 @@ define_sql_function! {
 
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
+    /// This form of json_object takes keys and values pairwise from two separate arrays.
+    /// In all other respects it is identical to the one-argument form.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_object_with_keys_and_values;
+    /// #     use diesel::sql_types::{Array, Json, Nullable, Text};
+    /// #     use serde_json::Value;
+    /// #     let connection = &mut establish_connection();
+    /// let json = diesel::select(json_object_with_keys_and_values::<Array<Text>, Array<Text>, _, _>(
+    ///             vec!["hello","John"],vec!["world","Doe"]))
+    ///             .get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::json!({"hello":"world","John":"Doe"});
+    /// assert_eq!(expected,json);
+    ///
+    /// let json = diesel::select(json_object_with_keys_and_values::<Nullable<Array<Text>>, Nullable<Array<Text>>, _, _>(
+    ///             Some(vec!["hello","John"]), None::<Vec<String>>))
+    ///             .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(None::<Value>,json);
+    ///
+    /// let empty: Vec<String> = Vec::new();
+    /// let json = diesel::select(json_object_with_keys_and_values::<Array<Text>, Array<Text>, _, _>(
+    ///             vec!["hello","John"], empty))
+    ///             .get_result::<Value>(connection);
+    /// assert!(json.is_err());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "json_object"]
+    fn json_object_with_keys_and_values<
+        Arr1: TextArrayOrNullableTextArray + SingleValue,
+        Arr2: TextArrayOrNullableTextArray + CombinedNullableValue<Arr1, Json>,
+    >(
+        keys: Arr1,
+        values: Arr2,
+    ) -> Arr2::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the type of the top-level json value as a text-string
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_typeof;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Json, Nullable};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(json_typeof::<Json, _>(json!({"a": "b", "c": 1})))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("object".to_string(), result);
+    ///
+    /// let result = diesel::select(json_typeof::<Json, _>(json!([1,2,3])))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("array".to_string(), result);
+    ///
+    /// let result = diesel::select(json_typeof::<Json, _>(json!("abc")))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("string".to_string(), result);
+    ///
+    /// let result = diesel::select(json_typeof::<Json, _>(json!(-123.4)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("number".to_string(), result);
+    ///
+    /// let result = diesel::select(json_typeof::<Json, _>(json!(true)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("boolean".to_string(), result);
+    ///
+    /// let result = diesel::select(json_typeof::<Json, _>(json!(null)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("null".to_string(), result);
+    ///
+    /// let result = diesel::select(json_typeof::<Nullable<Json>, _>(None::<Value>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn json_typeof<E: JsonOrNullableJson + SingleValue + MaybeNullableValue<Text>>(e: E) -> E::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the type of the top-level jsonb value as a text-string
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_typeof;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(jsonb_typeof::<Jsonb, _>(json!({"a": "b", "c": 1})))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("object".to_string(), result);
+    ///
+    /// let result = diesel::select(jsonb_typeof::<Jsonb, _>(json!([1,2,3])))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("array".to_string(), result);
+    ///
+    /// let result = diesel::select(jsonb_typeof::<Jsonb, _>(json!("abc")))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("string".to_string(), result);
+    ///
+    /// let result = diesel::select(jsonb_typeof::<Jsonb, _>(json!(-123.4)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("number".to_string(), result);
+    ///
+    /// let result = diesel::select(jsonb_typeof::<Jsonb, _>(json!(true)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("boolean".to_string(), result);
+    ///
+    /// let result = diesel::select(jsonb_typeof::<Jsonb, _>(json!(null)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("null".to_string(), result);
+    ///
+    /// let result = diesel::select(jsonb_typeof::<Nullable<Jsonb>, _>(None::<Value>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn jsonb_typeof<E: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Text>>(e: E) -> E::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Converts the given json value to pretty-printed, indented text
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_pretty;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     let connection = &mut establish_connection();
+    /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!([{"f1":1,"f2":null},2,null,3])))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"[
+    ///     {
+    ///         "f1": 1,
+    ///         "f2": null
+    ///     },
+    ///     2,
+    ///     null,
+    ///     3
+    /// ]"#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!({"a": 1, "b": "cd"})))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"{
+    ///     "a": 1,
+    ///     "b": "cd"
+    /// }"#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!("abc")))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#""abc""#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!(22)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"22"#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!(false)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"false"#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!(null)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"null"#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Jsonb, _>(json!({})))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"{
+    /// }"#, result);
+    ///
+    /// let result = diesel::select(jsonb_pretty::<Nullable<Jsonb>, _>(None::<Value>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn jsonb_pretty<E: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Text>>(e: E) -> E::Out;
+}
+
+define_sql_function! {
+    /// Deletes all object fields that have null values from the given JSON value, recursively.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_strip_nulls;
+    /// #     use diesel::sql_types::{Json, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(json_strip_nulls::<Json, _>(json!({"hello": null})))
+    ///     .get_result::<Value>(connection)?;
+    /// let expected: Value = json!({});
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(json_strip_nulls::<Json, _>(json!([{"f1":1, "f2":null}, 2, null, 3])))
+    ///     .get_result::<Value>(connection)?;
+    /// let expected: Value = json!([{"f1":1}, 2, null, 3]);
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(json_strip_nulls::<Nullable<Json>, _>(None::<Value>))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let result = diesel::select(json_strip_nulls::<Json, _>(json!(null)))
+    ///     .get_result::<Value>(connection)?;
+    /// let expected = json!(null);
+    /// assert_eq!(result, expected);
+    ///
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn json_strip_nulls<E: JsonOrNullableJson + SingleValue>(json: E) -> E;
+}
+
+define_sql_function! {
+    /// Deletes all object fields that have null values from the given JSON value, recursively.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_strip_nulls;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_strip_nulls::<Jsonb, _>(json!({"hello": null})))
+    ///     .get_result::<Value>(connection)?;
+    /// let expected: Value = json!({});
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(jsonb_strip_nulls::<Jsonb, _>(json!([{"f1":1, "f2":null}, 2, null, 3])))
+    ///     .get_result::<Value>(connection)?;
+    /// let expected: Value = json!([{"f1":1}, 2, null, 3]);
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(jsonb_strip_nulls::<Nullable<Jsonb>, _>(None::<Value>))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let result = diesel::select(jsonb_strip_nulls::<Jsonb, _>(json!(null)))
+    ///     .get_result::<Value>(connection)?;
+    /// let expected = json!(null);
+    /// assert_eq!(result, expected);
+    ///
+    ///
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn jsonb_strip_nulls<E: JsonbOrNullableJsonb + SingleValue>(jsonb: E) -> E;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
     /// Returns the number of elements in the top-level JSON array
     ///
     ///
@@ -1655,18 +2011,21 @@ define_sql_function! {
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::json_array_length;
-    /// #     use serde_json::json;
-    /// #     use diesel::sql_types::{Integer, Json};
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Integer, Json, Nullable};
     /// #     let connection = &mut establish_connection();
+    ///
     /// let result = diesel::select(json_array_length::<Json, _>(json!([1, 2, 3])))
     ///     .get_result::<i32>(connection)?;
-    ///
     /// assert_eq!(result, 3);
     ///
     /// let result = diesel::select(json_array_length::<Json, _>(json!([])))
     ///     .get_result::<i32>(connection)?;
-    ///
     /// assert_eq!(result, 0);
+    ///
+    /// let result = diesel::select(json_array_length::<Nullable<Json>, _>(None::<Value>))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert!(result.is_none());
     ///
     ///
     ///
@@ -1674,7 +2033,7 @@ define_sql_function! {
     /// # }
     /// ```
 
-    fn json_array_length<E: JsonOrNullableJson + SingleValue>(e: E) -> Integer;
+    fn json_array_length<E: JsonOrNullableJson + MaybeNullableValue<Integer>>(json: E) -> E::Out;
 }
 
 #[cfg(feature = "postgres_backend")]
@@ -1695,18 +2054,21 @@ define_sql_function! {
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::jsonb_array_length;
-    /// #     use serde_json::json;
-    /// #     use diesel::sql_types::{Integer, Jsonb};
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Integer, Jsonb, Nullable};
     /// #     let connection = &mut establish_connection();
+    ///
     /// let result = diesel::select(jsonb_array_length::<Jsonb, _>(json!([1, 2, 3])))
     ///     .get_result::<i32>(connection)?;
-    ///
     /// assert_eq!(result, 3);
     ///
     /// let result = diesel::select(jsonb_array_length::<Jsonb, _>(json!([])))
     ///     .get_result::<i32>(connection)?;
-    ///
     /// assert_eq!(result, 0);
+    ///
+    /// let result = diesel::select(jsonb_array_length::<Nullable<Jsonb>, _>(None::<Value>))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert!(result.is_none());
     ///
     ///
     ///
@@ -1714,5 +2076,5 @@ define_sql_function! {
     /// # }
     /// ```
 
-    fn jsonb_array_length<E: JsonbOrNullableJsonb + SingleValue>(e: E) -> Integer;
+    fn jsonb_array_length<E: JsonbOrNullableJsonb + MaybeNullableValue<Integer>>(jsonb: E) -> E::Out;
 }

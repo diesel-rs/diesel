@@ -487,12 +487,43 @@ pub type to_jsonb<E> = super::functions::to_jsonb<SqlTypeOf<E>, E>;
 #[cfg(feature = "postgres_backend")]
 pub type json_object<A> = super::functions::json_object<SqlTypeOf<A>, A>;
 
+/// Return type of [`json_object_with_keys_and_values(text_array, text_array)`](super::functions::json_object_with_keys_and_values())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_object_with_keys_and_values<K, V> =
+    super::functions::json_object_with_keys_and_values<SqlTypeOf<K>, SqlTypeOf<V>, K, V>;
+
+/// Return type of [`json_typeof(json)`](super::functions::json_typeof())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_typeof<E> = super::functions::json_typeof<SqlTypeOf<E>, E>;
+
+/// Return type of [`jsonb_typeof(jsonb)`](super::functions::jsonb_typeof())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_typeof<E> = super::functions::jsonb_typeof<SqlTypeOf<E>, E>;
+
+/// Return type of [`jsonb_pretty(jsonb)`](super::functions::jsonb_pretty())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_pretty<E> = super::functions::jsonb_pretty<SqlTypeOf<E>, E>;
+
+/// Return type of [`json_strip_nulls(json)`](super::functions::json_strip_nulls())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_strip_nulls<E> = super::functions::json_strip_nulls<SqlTypeOf<E>, E>;
+
+/// Return type of [`jsonb_strip_nulls(jsonb)`](super::functions::jsonb_strip_nulls())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_strip_nulls<E> = super::functions::jsonb_strip_nulls<SqlTypeOf<E>, E>;
+
 /// Return type of [`json_array_length(json)`](super::functions::json_array_length())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type json_array_length<E> = super::functions::json_array_length<SqlTypeOf<E>, E>;
 
-/// Return type of [`jsonb_array_length(json)`](super::functions::jsonb_array_length())
+/// Return type of [`jsonb_array_length(jsonb)`](super::functions::jsonb_array_length())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_array_length<E> = super::functions::jsonb_array_length<SqlTypeOf<E>, E>;

@@ -1,7 +1,7 @@
 //! PostgreSQL specific expression methods
 
 pub(in crate::pg) use self::private::{
-    ArrayOrNullableArray, InetOrCidr, JsonIndex, JsonOrNullableJson,
+    ArrayOrNullableArray, CombinedNullableValue, InetOrCidr, JsonIndex, JsonOrNullableJson,
     JsonOrNullableJsonOrJsonbOrNullableJsonb, JsonRemoveIndex, JsonbOrNullableJsonb,
     MaybeNullableValue, MultirangeOrNullableMultirange, MultirangeOrRangeMaybeNullable,
     RangeHelper, RangeOrNullableRange, TextArrayOrNullableTextArray, TextOrNullableText,
@@ -3419,7 +3419,7 @@ where
 pub(in crate::pg) mod private {
     use crate::sql_types::{
         Array, Binary, Cidr, Inet, Integer, Json, Jsonb, MaybeNullableType, Multirange, Nullable,
-        Range, SingleValue, SqlType, Text,
+        OneIsNullable, Range, SingleValue, SqlType, Text,
     };
     use crate::{Expression, IntoSql};
 
@@ -3551,6 +3551,15 @@ pub(in crate::pg) mod private {
 
     impl JsonbOrNullableJsonb for Jsonb {}
     impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
+
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Json` nor `diesel::sql_types::Nullable<Json>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait JsonOrNullableJson {}
+
+    impl JsonOrNullableJson for Json {}
+    impl JsonOrNullableJson for Nullable<Json> {}
 
     /// A trait that describes valid json indices used by postgresql
     pub trait JsonRemoveIndex {
@@ -3714,6 +3723,21 @@ pub(in crate::pg) mod private {
         type Out = <T::IsNull as MaybeNullableType<O>>::Out;
     }
 
+    pub trait CombinedNullableValue<O, Out>: SingleValue {
+        type Out: SingleValue;
+    }
+
+    impl<T, O, Out> CombinedNullableValue<O, Out> for T
+    where
+        T: SingleValue,
+        O: SingleValue,
+        T::IsNull: OneIsNullable<O::IsNull>,
+        <T::IsNull as OneIsNullable<O::IsNull>>::Out: MaybeNullableType<Out>,
+        <<T::IsNull as OneIsNullable<O::IsNull>>::Out as MaybeNullableType<Out>>::Out: SingleValue,
+    {
+        type Out = <<T::IsNull as OneIsNullable<O::IsNull>>::Out as MaybeNullableType<Out>>::Out;
+    }
+
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `Array<Text>`, `Array<Nullable<Text>>`,\
                    `Nullable<Array<Text>>` nor `diesel::sql_types::Nullable<Array<Nullable<Text>>>`",
@@ -3725,8 +3749,4 @@ pub(in crate::pg) mod private {
     impl TextArrayOrNullableTextArray for Array<Nullable<Text>> {}
     impl TextArrayOrNullableTextArray for Nullable<Array<Text>> {}
     impl TextArrayOrNullableTextArray for Nullable<Array<Nullable<Text>>> {}
-
-    pub trait JsonOrNullableJson {}
-    impl JsonOrNullableJson for Json {}
-    impl JsonOrNullableJson for Nullable<Json> {}
 }
