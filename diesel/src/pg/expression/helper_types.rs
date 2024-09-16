@@ -517,3 +517,13 @@ pub type json_strip_nulls<E> = super::functions::json_strip_nulls<SqlTypeOf<E>, 
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_strip_nulls<E> = super::functions::jsonb_strip_nulls<SqlTypeOf<E>, E>;
+
+/// Return type of [`json_array_length(json)`](super::functions::json_array_length())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_array_length<E> = super::functions::json_array_length<SqlTypeOf<E>, E>;
+
+/// Return type of [`jsonb_array_length(jsonb)`](super::functions::jsonb_array_length())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_array_length<E> = super::functions::jsonb_array_length<SqlTypeOf<E>, E>;

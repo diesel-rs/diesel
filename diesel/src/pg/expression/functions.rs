@@ -1992,3 +1992,89 @@ define_sql_function! {
     /// ```
     fn jsonb_strip_nulls<E: JsonbOrNullableJsonb + SingleValue>(jsonb: E) -> E;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the number of elements in the top-level JSON array
+    ///
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_array_length;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Integer, Json, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(json_array_length::<Json, _>(json!([1, 2, 3])))
+    ///     .get_result::<i32>(connection)?;
+    /// assert_eq!(result, 3);
+    ///
+    /// let result = diesel::select(json_array_length::<Json, _>(json!([])))
+    ///     .get_result::<i32>(connection)?;
+    /// assert_eq!(result, 0);
+    ///
+    /// let result = diesel::select(json_array_length::<Nullable<Json>, _>(None::<Value>))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    ///
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+
+    fn json_array_length<E: JsonOrNullableJson + MaybeNullableValue<Integer>>(json: E) -> E::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns the number of elements in the top-level JSON array
+    ///
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_array_length;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Integer, Jsonb, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_array_length::<Jsonb, _>(json!([1, 2, 3])))
+    ///     .get_result::<i32>(connection)?;
+    /// assert_eq!(result, 3);
+    ///
+    /// let result = diesel::select(jsonb_array_length::<Jsonb, _>(json!([])))
+    ///     .get_result::<i32>(connection)?;
+    /// assert_eq!(result, 0);
+    ///
+    /// let result = diesel::select(jsonb_array_length::<Nullable<Jsonb>, _>(None::<Value>))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    ///
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+
+    fn jsonb_array_length<E: JsonbOrNullableJsonb + MaybeNullableValue<Integer>>(jsonb: E) -> E::Out;
+}

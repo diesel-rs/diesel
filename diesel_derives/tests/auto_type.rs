@@ -444,6 +444,8 @@ fn postgres_functions() -> _ {
         jsonb_pretty(pg_extras::jsonb),
         json_strip_nulls(pg_extras::json),
         jsonb_strip_nulls(pg_extras::jsonb),
+        json_array_length(pg_extras::json),
+        jsonb_array_length(pg_extras::jsonb),
     )
 }
 
