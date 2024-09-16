@@ -266,12 +266,14 @@ fn positional_order_by() {
         .filter(id.le(jim.id))
         .union(users.filter(id.ge(jim.id)))
         .positional_order_by((
+            // hair color is the third column
+            // Also, we don't need OrderColumn here because .asc() is the default direction
+            #[cfg(not(feature = "postgres"))]
+            3,
             // postgres doesn't sort nulls first by default, so we need to call nulls_first().
             // This also tests whether or not NullsFirst implements PositionalOrderExpr
             #[cfg(feature = "postgres")]
             OrderColumn::from(3).asc().nulls_first(), // hair color is the third column
-            #[cfg(not(feature = "postgres"))]
-            OrderColumn::from(3).asc(), // hair color is the third column
             OrderColumn::from(2).desc(), // name is the second column
         ))
         .load(conn)
