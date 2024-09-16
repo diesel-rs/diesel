@@ -26,7 +26,8 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:34:45
    |
@@ -43,7 +44,8 @@ LL |         id -> Integer,
    = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
    = note: required for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, Pg>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot box `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` for backend `Pg`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:37:50
    |
@@ -85,7 +87,8 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:48:10
    |
@@ -102,7 +105,8 @@ LL |         title -> VarChar,
    = note: required for `Grouped<Eq<name, title>>` to implement `AppearsOnTable<users::table>`
    = note: required for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, Pg>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot box `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` for backend `Pg`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:53:10
    |

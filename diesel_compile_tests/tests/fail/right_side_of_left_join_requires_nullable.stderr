@@ -54,7 +54,8 @@ LL |         title -> Text,
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:52:18
    |
@@ -111,7 +112,8 @@ LL |         title -> Text,
    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:56:31
    |
@@ -199,7 +201,8 @@ LL |         title -> Text,
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:75:18
    |
@@ -256,7 +259,8 @@ LL |         title -> Text,
    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:79:31
    |
@@ -344,7 +348,8 @@ LL |         title -> Text,
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:98:18
    |
@@ -401,7 +406,8 @@ LL |         title -> Text,
    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:102:31
     |
@@ -453,7 +459,8 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `pets::table`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:111:18
     |
@@ -478,7 +485,8 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<SelectStatement<...> as AppearsInFromClause<...>>::Count == Never`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:119:18
     |
@@ -499,7 +507,8 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `pets::table`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:119:18
     |
@@ -524,7 +533,8 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:123:31
     |
@@ -612,7 +622,8 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:140:18
     |
@@ -669,7 +680,8 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:144:31
     |

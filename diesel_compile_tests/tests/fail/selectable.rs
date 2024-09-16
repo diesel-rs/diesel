@@ -16,6 +16,8 @@ table! {
         user_id -> Integer,
     }
 }
+//~^^^^^^^ ERROR: cannot find type `titel` in module `posts`
+//~| ERROR: cannot find value `titel` in module `posts`
 
 joinable!(posts -> users(user_id));
 allow_tables_to_appear_in_same_query!(users, posts);
@@ -51,8 +53,6 @@ struct PostWithWrongField {
     id: i32,
     // There is a typo here:
     titel: String,
-    //~^ ERROR: cannot find type `titel` in module `posts`
-    //~| ERROR: cannot find value `titel` in module `posts`
 }
 
 #[derive(Selectable)]

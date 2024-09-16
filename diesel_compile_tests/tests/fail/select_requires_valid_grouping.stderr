@@ -38,7 +38,8 @@ note: required for `users::columns::id` to implement `ValidGrouping<(users::colu
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/select_requires_valid_grouping.rs:93:10
    |
@@ -81,7 +82,8 @@ note: required for `users::columns::id` to implement `ValidGrouping<(users::colu
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<(id, title) as IsContainedInGroupBy<id>>::Output == Yes`
    --> tests/fail/select_requires_valid_grouping.rs:102:10
     |
@@ -98,7 +100,8 @@ note: required for `posts::columns::id` to implement `ValidGrouping<(users::colu
     = note: required for `((users::columns::id, users::columns::name, users::columns::hair_color), posts::columns::id)` to implement `ValidGrouping<(users::columns::id, posts::columns::title)>`
     = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), posts::columns::id)>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: the trait bound `users::columns::id: IsContainedInGroupBy<comments::columns::id>` is not satisfied
    --> tests/fail/select_requires_valid_grouping.rs:107:10
     |
@@ -123,7 +126,8 @@ note: required for `comments::columns::id` to implement `ValidGrouping<(users::c
     = note: required for `((id, name, hair_color), (id, title, user_id), id)` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
     = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), (posts::columns::id, posts::columns::title, posts::columns::user_id), comments::columns::id)>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<comments::columns::id>` is not satisfied
    --> tests/fail/select_requires_valid_grouping.rs:107:10
     |
@@ -149,3 +153,5 @@ note: required for `comments::columns::id` to implement `ValidGrouping<(users::c
     = note: 2 redundant requirements hidden
     = note: required for `((id, name, hair_color), (id, title, user_id), id)` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
     = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), (posts::columns::id, posts::columns::title, posts::columns::user_id), comments::columns::id)>`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

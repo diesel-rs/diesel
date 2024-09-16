@@ -1,5 +1,6 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
+use syn::spanned::Spanned;
 use syn::{parse_quote, parse_quote_spanned, DeriveInput, Ident, LitStr, Result, Type};
 
 use crate::attrs::AttributeSpanWrapper;
@@ -45,7 +46,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
     for field in model.fields() {
         let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-        let span = field.span;
+        let span = Span::mixed_site().located_at(field.ty.span());
         let field_ty = field.ty_for_deserialize();
         if field.embed() {
             where_clause.predicates.push(
@@ -63,7 +64,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         let field_check_bound = model.fields().iter().filter(|f| !f.embed()).flat_map(|f| {
             backends.iter().map(move |b| {
                 let field_ty = f.ty_for_deserialize();
-                let span = f.span;
+                let span = Span::mixed_site().located_at(f.ty.span());
                 let ty = sql_type(f, model).unwrap();
                 quote::quote_spanned! {span =>
                     #field_ty: diesel::deserialize::FromSqlRow<#ty, #b>

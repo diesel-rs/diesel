@@ -36,7 +36,8 @@ LL |         id -> Integer,
    = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
    = note: required for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/update_requires_valid_where_clause.rs:32:10
    |
@@ -53,7 +54,8 @@ LL |         id -> Integer,
    = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
    = note: required for `UpdateStatement<table, NoWhereClause, Assign<..., ...>>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: the trait bound `SelectStatement<FromClause<table>, ..., ..., ...>: IntoUpdateTarget` is not satisfied
   --> tests/fail/update_requires_valid_where_clause.rs:23:5
    |

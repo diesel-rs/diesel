@@ -5,3 +5,5 @@ error: column `users` cannot be named the same as it's table.
   |
 LL |         users -> Integer,
   |         ^^^^^
+  |
+  = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

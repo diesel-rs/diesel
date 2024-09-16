@@ -82,6 +82,7 @@ LL |         title -> VarChar,
    |         ^^^^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>` to implement `AsChangeset`
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<title as Column>::Table == table`
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:68:10

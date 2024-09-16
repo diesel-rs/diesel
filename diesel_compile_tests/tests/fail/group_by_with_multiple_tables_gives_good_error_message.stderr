@@ -21,7 +21,8 @@ note: required for `users::columns::id` to implement `ValidGrouping<(users::colu
    = note: required for `(users::columns::id, posts::columns::user_id, CountStar)` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
    = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(users::columns::id, posts::columns::user_id, CountStar)>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: the trait bound `users::columns::id: IsContainedInGroupBy<posts::columns::user_id>` is not satisfied
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:29:10
    |
@@ -42,4 +43,5 @@ LL |         user_id -> Integer,
    = note: required for `(users::columns::id, posts::columns::user_id, CountStar)` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
    = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(users::columns::id, posts::columns::user_id, CountStar)>`
 
-   For more information about this error, try `rustc --explain E0277`.
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.

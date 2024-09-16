@@ -772,7 +772,7 @@ mod tests {
 
     fn to_value<ST, T>(
         bind: &BindData,
-    ) -> Result<T, Box<(dyn std::error::Error + Send + Sync + 'static)>>
+    ) -> Result<T, Box<dyn std::error::Error + Send + Sync + 'static>>
     where
         T: FromSql<ST, crate::mysql::Mysql> + std::fmt::Debug,
     {

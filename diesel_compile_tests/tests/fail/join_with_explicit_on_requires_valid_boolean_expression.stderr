@@ -15,7 +15,8 @@ LL |         id -> Integer,
    = note: required for `JoinOn<Join<table, table, Inner>, Grouped<Eq<id, id>>>` to implement `QuerySource`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<posts::table, Inner, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: `diesel::sql_types::Integer` is neither `diesel::sql_types::Bool` nor `diesel::sql_types::Nullable<Bool>`
    --> tests/fail/join_with_explicit_on_requires_valid_boolean_expression.rs:34:37
     |

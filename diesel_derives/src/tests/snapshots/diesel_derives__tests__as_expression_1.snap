@@ -4,8 +4,6 @@ expression: out
 info:
   input: "#[derive(AsExpression)]\n#[diesel(sql_type = diesel::sql_type::Integer)]\nenum Foo {\n    Bar,\n    Baz,\n}\n"
 ---
-#[allow(unused_imports)]
-#[allow(unused_qualifications)]
 const _: () = {
     use diesel;
     impl<'__expr> diesel::expression::AsExpression<diesel::sql_type::Integer>

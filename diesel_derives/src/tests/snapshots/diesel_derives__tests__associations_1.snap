@@ -4,8 +4,6 @@ expression: out
 info:
   input: "#[derive(Associations)]\n#[diesel(belongs_to(User))]\nstruct Post {\n    id: i32,\n    title: String,\n    user_id: i32,\n}\n"
 ---
-#[allow(unused_imports)]
-#[allow(unused_qualifications)]
 const _: () = {
     use diesel;
     impl<__FK> diesel::associations::BelongsTo<User> for Post

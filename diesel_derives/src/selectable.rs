@@ -1,5 +1,5 @@
-use proc_macro2::TokenStream;
-use quote::quote;
+use proc_macro2::{Span, TokenStream};
+use quote::{quote, quote_spanned};
 use std::borrow::Cow;
 use syn::spanned::Spanned;
 use syn::{parse_quote, DeriveInput, Result};
@@ -54,7 +54,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             .zip(&field_select_expression_type_builders)
             .flat_map(|(f, ty_builder)| {
                 backends.iter().map(move |b| {
-                    let span = f.ty.span();
+                    let span = Span::mixed_site().located_at(f.ty.span());
                     let field_ty = to_field_ty_bound(f.ty_for_deserialize())?;
                     let ty = ty_builder.type_with_backend(b);
                     Ok(syn::parse_quote_spanned! {span =>
@@ -159,8 +159,9 @@ fn field_select_expression_ty_builder<'a>(
     } else {
         let table_name = &model.table_names()[0];
         let column_name = field.column_name()?.to_ident()?;
+        let span = Span::call_site();
         Ok(FieldSelectExpressionTyBuilder::Always(
-            quote!(#table_name::#column_name),
+            quote_spanned!(span=> #table_name::#column_name),
         ))
     }
 }
@@ -191,6 +192,7 @@ fn field_column_inst(field: &Field, model: &Model) -> Result<TokenStream> {
     } else {
         let table_name = &model.table_names()[0];
         let column_name = field.column_name()?.to_ident()?;
-        Ok(quote!(#table_name::#column_name))
+        let span = Span::call_site();
+        Ok(quote_spanned!(span=> #table_name::#column_name))
     }
 }

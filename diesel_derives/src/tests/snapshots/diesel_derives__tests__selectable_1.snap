@@ -4,8 +4,6 @@ expression: out
 info:
   input: "#[derive(Selectable)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
 ---
-#[allow(unused_imports)]
-#[allow(unused_qualifications)]
 const _: () = {
     use diesel;
     use diesel::expression::Selectable;

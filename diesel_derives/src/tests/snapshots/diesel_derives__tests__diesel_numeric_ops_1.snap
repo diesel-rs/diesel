@@ -4,8 +4,6 @@ expression: out
 info:
   input: "#[derive(DieselNumericOps)]\nstruct NumericColumn;\n"
 ---
-#[allow(unused_imports)]
-#[allow(unused_qualifications)]
 const _: () = {
     use diesel;
     use diesel::internal::derives::numeric_ops as ops;

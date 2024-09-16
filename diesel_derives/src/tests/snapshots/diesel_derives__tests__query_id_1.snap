@@ -4,8 +4,6 @@ expression: out
 info:
   input: "#[derive(QueryId)]\nstruct Query;\n"
 ---
-#[allow(unused_imports)]
-#[allow(unused_qualifications)]
 const _: () = {
     use diesel;
     #[allow(non_camel_case_types)]

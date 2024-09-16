@@ -1,4 +1,4 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::spanned::Spanned as _;
 use syn::{parse_quote, DeriveInput, Expr, Path, Result, Type};
@@ -27,7 +27,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
     if fields_for_update.is_empty() {
         return Err(syn::Error::new(
-            proc_macro2::Span::call_site(),
+            proc_macro2::Span::mixed_site(),
             "deriving `AsChangeset` on a structure that only contains primary keys isn't supported.\n\
              help: if you want to change the primary key of a row, you should do so with `.set(table::id.eq(new_id))`.\n\
              note: `#[derive(AsChangeset)]` never changes the primary key of a row."
@@ -173,7 +173,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
 fn field_changeset_ty_embed(field: &Field, lifetime: Option<TokenStream>) -> TokenStream {
     let field_ty = &field.ty;
-    let span = field.span;
+    let span = Span::mixed_site().located_at(field.span);
     quote_spanned!(span=> #lifetime #field_ty)
 }
 

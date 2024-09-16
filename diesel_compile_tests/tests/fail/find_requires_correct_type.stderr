@@ -75,6 +75,7 @@ LL |     fn find<PK>(self, id: PK) -> Find<Self, PK>
 LL |     where
 LL |         Self: methods::FindDsl<PK>,
     |               ^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::find`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
    --> tests/fail/find_requires_correct_type.rs:24:36
