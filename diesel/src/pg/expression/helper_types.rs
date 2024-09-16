@@ -537,4 +537,4 @@ pub type jsonb_object<A> = super::functions::jsonb_object<SqlTypeOf<A>, A>;
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_object_with_keys_and_values<K, V> =
-    super::functions::jsonb_object_with_keys_and_values<SqlTypeOf<K>, K, V>;
+    super::functions::jsonb_object_with_keys_and_values<SqlTypeOf<K>, SqlTypeOf<V>, K, V>;

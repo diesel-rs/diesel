@@ -2103,21 +2103,27 @@ define_sql_function! {
     /// let jsonb = diesel::select(jsonb_object::<Array<Text>,_>(vec!["hello","world"]))
     ///                 .get_result::<Value>(connection)?;
     /// let expected:Value = serde_json::json!({"hello":"world"});
-    /// assert_eq!(expected,jsonb);
+    /// assert_eq!(expected, jsonb);
     ///
-    /// let jsonb = diesel::select(jsonb_object::<Array<Text>,_>(vec!["hello","world","John","Doe"]))
+    /// let jsonb = diesel::select(jsonb_object::<Array<Text>, _>(vec!["hello","world","John","Doe"]))
     ///                 .get_result::<Value>(connection)?;
     /// let expected:Value = serde_json::json!({"hello": "world","John": "Doe"});
-    /// assert_eq!(expected,jsonb);
+    /// assert_eq!(expected, jsonb);
     ///
-    /// let jsonb = diesel::select(jsonb_object::<Array<Text>,_>(vec!["hello","world","John"]))
-    ///                 .get_result::<Value>(connection);
-    /// assert!(jsonb.is_err());
+    /// let jsonb = diesel::select(jsonb_object::<Nullable<Array<Text>>, _>(None::<Vec<String>>))
+    ///                 .get_result::<Option<Value>>(connection)?;
+    /// assert!(jsonb.is_none());
     ///
     /// let empty:Vec<String> = Vec::new();
     /// let jsonb = diesel::select(jsonb_object::<Array<Nullable<Text>>,_>(empty))
+    ///                 .get_result::<Value>(connection)?;
+    /// let expected = serde_json::json!({});
+    /// assert_eq!(expected, jsonb);
+    ///
+    /// let jsonb = diesel::select(jsonb_object::<Array<Text>, _>(vec!["hello","world","John"]))
     ///                 .get_result::<Value>(connection);
     /// assert!(jsonb.is_err());
+    ///
     ///
     /// #     Ok(())
     /// # }
@@ -2146,19 +2152,19 @@ define_sql_function! {
     /// #     use diesel::sql_types::{Array, Nullable, Text};
     /// #     use serde_json::Value;
     /// #     let connection = &mut establish_connection();
-    /// let jsonb = diesel::select(jsonb_object_with_keys_and_values::<Array<Text>, _, _>(
+    /// let jsonb = diesel::select(jsonb_object_with_keys_and_values::<Array<Text>, Array<Text>, _, _>(
     ///             vec!["hello","John"],vec!["world","Doe"]))
     ///             .get_result::<Value>(connection)?;
     /// let expected:Value = serde_json::json!({"hello":"world","John":"Doe"});
-    /// assert_eq!(expected,jsonb);
+    /// assert_eq!(expected, jsonb);
     ///
-    /// let jsonb = diesel::select(jsonb_object_with_keys_and_values::<Nullable<Array<Text>>, _, _>(
+    /// let jsonb = diesel::select(jsonb_object_with_keys_and_values::<Nullable<Array<Text>>, Nullable<Array<Text>>, _, _>(
     ///             Some(vec!["hello","John"]),None::<Vec<String>>))
     ///             .get_result::<Option<Value>>(connection)?;
     /// assert_eq!(None::<Value>,jsonb);
     ///
     /// let empty: Vec<String> = Vec::new();
-    /// let jsonb = diesel::select(jsonb_object_with_keys_and_values::<Array<Text>, _, _>(
+    /// let jsonb = diesel::select(jsonb_object_with_keys_and_values::<Array<Text>, Array<Text>, _, _>(
     ///             vec!["hello","John"],empty))
     ///             .get_result::<Value>(connection);
     /// assert!(jsonb.is_err());
@@ -2167,7 +2173,11 @@ define_sql_function! {
     /// # }
     /// ```
     #[sql_name = "jsonb_object"]
-    fn jsonb_object_with_keys_and_values<Arr: TextArrayOrNullableTextArray + MaybeNullableValue<Jsonb>>(
-        keys: Arr, values: Arr
-    ) -> Arr::Out;
+    fn jsonb_object_with_keys_and_values<
+        Arr1: TextArrayOrNullableTextArray + SingleValue,
+        Arr2: TextArrayOrNullableTextArray + CombinedNullableValue<Arr1, Jsonb>
+    >(
+        keys: Arr1,
+        values: Arr2
+    ) -> Arr2::Out;
 }
