@@ -1669,9 +1669,11 @@ define_sql_function! {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::json_object_with_keys_and_values;
     /// #     use diesel::sql_types::{Array, Json, Nullable, Text};
@@ -1913,9 +1915,11 @@ define_sql_function! {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::json_strip_nulls;
     /// #     use diesel::sql_types::{Json, Nullable};
@@ -1957,9 +1961,11 @@ define_sql_function! {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::jsonb_strip_nulls;
     /// #     use diesel::sql_types::{Jsonb, Nullable};
@@ -2092,9 +2098,11 @@ define_sql_function! {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::jsonb_object;
     /// #     use diesel::sql_types::{Array, Json, Nullable, Text};
@@ -2144,9 +2152,11 @@ define_sql_function! {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::jsonb_object_with_keys_and_values;
     /// #     use diesel::sql_types::{Array, Nullable, Text};
