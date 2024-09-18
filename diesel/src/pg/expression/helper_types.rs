@@ -527,3 +527,14 @@ pub type json_array_length<E> = super::functions::json_array_length<SqlTypeOf<E>
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_array_length<E> = super::functions::jsonb_array_length<SqlTypeOf<E>, E>;
+
+/// Return type of [`jsonb_object(text_array)`](super::functions::jsonb_object())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_object<A> = super::functions::jsonb_object<SqlTypeOf<A>, A>;
+
+/// Return type of [`jsonb_object_with_keys_and_values(text_array, text_array)`](super::functions::jsonb_object_with_keys_and_values())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_object_with_keys_and_values<K, V> =
+    super::functions::jsonb_object_with_keys_and_values<SqlTypeOf<K>, SqlTypeOf<V>, K, V>;
