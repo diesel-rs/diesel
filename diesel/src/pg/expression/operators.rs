@@ -4,7 +4,7 @@ use crate::expression::{TypedExpressionType, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::update_statement::changeset::AssignmentTarget;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
-use crate::query_dsl::positional_order_dsl::PositionalOrderExpr;
+use crate::query_dsl::positional_order_dsl::{IntoPositionalOrderExpr, PositionalOrderExpr};
 use crate::sql_types::{
     Array, Bigint, Bool, DieselNumericOps, Inet, Integer, Jsonb, SqlType, Text,
 };
@@ -74,6 +74,21 @@ __diesel_infix_operator!(
 
 impl<T: PositionalOrderExpr> PositionalOrderExpr for NullsFirst<T> {}
 impl<T: PositionalOrderExpr> PositionalOrderExpr for NullsLast<T> {}
+
+impl<T: PositionalOrderExpr> IntoPositionalOrderExpr for NullsFirst<T> {
+    type Output = NullsFirst<T>;
+
+    fn into_positional_expr(self) -> Self::Output {
+        self
+    }
+}
+impl<T: PositionalOrderExpr> IntoPositionalOrderExpr for NullsLast<T> {
+    type Output = NullsLast<T>;
+
+    fn into_positional_expr(self) -> Self::Output {
+        self
+    }
+}
 
 #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
 #[doc(hidden)]

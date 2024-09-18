@@ -23,18 +23,14 @@ pub trait PositionalOrderDsl<Expr: IntoPositionalOrderExpr> {
 
 pub trait PositionalOrderExpr: Expression {}
 
+impl PositionalOrderExpr for OrderColumn {}
+impl<T: PositionalOrderExpr> PositionalOrderExpr for Asc<T> {}
+impl<T: PositionalOrderExpr> PositionalOrderExpr for Desc<T> {}
+
 pub trait IntoPositionalOrderExpr {
     type Output: PositionalOrderExpr;
 
     fn into_positional_expr(self) -> Self::Output;
-}
-
-impl<T: PositionalOrderExpr> IntoPositionalOrderExpr for T {
-    type Output = T;
-
-    fn into_positional_expr(self) -> Self::Output {
-        self
-    }
 }
 
 impl IntoPositionalOrderExpr for u32 {
@@ -44,10 +40,20 @@ impl IntoPositionalOrderExpr for u32 {
         self.into()
     }
 }
+impl<T: PositionalOrderExpr> IntoPositionalOrderExpr for Asc<T> {
+    type Output = Asc<T>;
 
-impl PositionalOrderExpr for OrderColumn {}
-impl<T: PositionalOrderExpr> PositionalOrderExpr for Asc<T> {}
-impl<T: PositionalOrderExpr> PositionalOrderExpr for Desc<T> {}
+    fn into_positional_expr(self) -> Self::Output {
+        self
+    }
+}
+impl<T: PositionalOrderExpr> IntoPositionalOrderExpr for Desc<T> {
+    type Output = Desc<T>;
+
+    fn into_positional_expr(self) -> Self::Output {
+        self
+    }
+}
 
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct OrderColumn(pub u32);
@@ -75,11 +81,23 @@ impl From<u32> for OrderColumn {
 macro_rules! impl_positional_order_expr_for_all_tuples {
     ($(
         $unused1:tt {
-            $(($idx:tt) -> $T:ident, $unused2:ident, $unused3:tt,)+
+            $(($idx:tt) -> $T:ident, $U:ident, $unused3:tt,)+
         }
     )+) => {
         $(
             impl<$($T: PositionalOrderExpr),+> PositionalOrderExpr for ($($T,)+) { }
+
+            impl<$($T, $U,)+> IntoPositionalOrderExpr for ($($T,)+)
+            where
+                $($T: IntoPositionalOrderExpr<Output = $U>,)+
+                $($U: PositionalOrderExpr,)+
+            {
+                type Output = ($($U,)+);
+
+                fn into_positional_expr(self) -> Self::Output {
+                    ($(self.$idx.into_positional_expr(),)+)
+                }
+            }
         )+
     };
 }
