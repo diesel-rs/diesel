@@ -283,13 +283,11 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), crate
                     .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_owned())))?;
 
                 if schema.lines().ne(old_buf.lines()) {
-                    // it's fine to leak here, we will
-                    // exit the application anyway soon
                     let label = path.file_name().expect("We have a file name here");
-                    let label = label.to_string_lossy().into_owned().leak();
+                    let label = label.to_string_lossy();
                     println!(
                         "{}",
-                        SimpleDiff::from_str(&old_buf, &schema, label, "new schema")
+                        SimpleDiff::from_str(&old_buf, &schema, &label, "new schema")
                     );
                     return Err(crate::errors::Error::SchemaWouldChange(
                         path.display().to_string(),
