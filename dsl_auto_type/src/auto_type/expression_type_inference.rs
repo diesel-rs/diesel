@@ -302,6 +302,54 @@ impl TypeInferrer<'_> {
                     }
                 }
             }
+            (syn::Expr::Binary(binary_expression), None) => {
+                let op_span = Span::mixed_site().located_at(binary_expression.op.span());
+                let trait_name = match binary_expression.op {
+                    syn::BinOp::Add(_) => "Add",
+                    syn::BinOp::Sub(_) => "Sub",
+                    syn::BinOp::Mul(_) => "Mul",
+                    syn::BinOp::Div(_) => "Div",
+                    syn::BinOp::Rem(_) => "Rem",
+                    syn::BinOp::BitXor(_) => "BitXor",
+                    syn::BinOp::BitAnd(_) => "BitAnd",
+                    syn::BinOp::BitOr(_) => "BitOr",
+                    syn::BinOp::Shl(_) => "Shl",
+                    syn::BinOp::Shr(_) => "Shr",
+                    syn::BinOp::And(_)
+                    | syn::BinOp::Or(_)
+                    | syn::BinOp::Eq(_)
+                    | syn::BinOp::Lt(_)
+                    | syn::BinOp::Le(_)
+                    | syn::BinOp::Ne(_)
+                    | syn::BinOp::Ge(_)
+                    | syn::BinOp::Gt(_) => return Ok(parse_quote!(bool)),
+                    syn::BinOp::AddAssign(_)
+                    | syn::BinOp::SubAssign(_)
+                    | syn::BinOp::MulAssign(_)
+                    | syn::BinOp::DivAssign(_)
+                    | syn::BinOp::RemAssign(_)
+                    | syn::BinOp::BitXorAssign(_)
+                    | syn::BinOp::BitAndAssign(_)
+                    | syn::BinOp::BitOrAssign(_)
+                    | syn::BinOp::ShlAssign(_)
+                    | syn::BinOp::ShrAssign(_) => return Ok(parse_quote!(())),
+                    _ => {
+                        // This is here because the `BinOp` enum is marked as #[non_exhaustive],
+                        // but in effect we really support all the variants
+                        return Err(syn::Error::new(
+                            op_span,
+                            format_args!(
+                                "unsupported binary operator for auto_type: {:?}",
+                                binary_expression.op
+                            ),
+                        ));
+                    }
+                };
+                let trait_name_ident = syn::Ident::new(trait_name, op_span);
+                let left_type = self.infer_expression_type(&binary_expression.left, None);
+                let right_type = self.infer_expression_type(&binary_expression.right, None);
+                parse_quote!(<#left_type as ::core::ops::#trait_name_ident<#right_type>>::Output)
+            }
             (_, None) => {
                 return Err(syn::Error::new(
                     expr.span(),
