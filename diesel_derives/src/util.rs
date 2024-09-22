@@ -1,14 +1,8 @@
-use {
-    proc_macro2::TokenStream,
-    quote::quote,
-    syn::{
-        parenthesized,
-        parse::{Parse, ParseStream, Peek, Result},
-        parse_quote,
-        token::Eq,
-        Data, DeriveInput, GenericArgument, Ident, Type,
-    },
-};
+use proc_macro2::TokenStream;
+use quote::quote;
+use syn::parse::{Parse, ParseStream, Peek, Result};
+use syn::token::Eq;
+use syn::{parenthesized, parse_quote, Data, DeriveInput, GenericArgument, Ident, Type};
 
 use crate::model::Model;
 

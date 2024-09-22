@@ -1,10 +1,10 @@
-use {
-    proc_macro2::{Span, TokenStream},
-    quote::quote,
-    syn::{parse_quote, DeriveInput, Ident, Index, Result},
-};
+use proc_macro2::{Span, TokenStream};
+use quote::quote;
+use syn::{parse_quote, DeriveInput, Ident, Index, Result};
 
-use crate::{field::Field, model::Model, util::wrap_in_dummy_mod};
+use crate::field::Field;
+use crate::model::Model;
+use crate::util::wrap_in_dummy_mod;
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, true)?;
