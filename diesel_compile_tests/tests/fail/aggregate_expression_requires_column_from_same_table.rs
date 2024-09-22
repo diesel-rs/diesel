@@ -1,4 +1,3 @@
-#![feature(diagnostic_namespace)]
 extern crate diesel;
 
 use diesel::*;
@@ -14,6 +13,8 @@ table! {
         id -> Integer,
     }
 }
+
+allow_tables_to_appear_in_same_query!(users, posts);
 
 fn main() {
     use diesel::dsl::*;

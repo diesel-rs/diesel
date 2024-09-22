@@ -1,6 +1,7 @@
 mod case;
 pub mod expression_type_inference;
 mod local_variables_map;
+mod referenced_generics;
 mod settings_builder;
 
 use {
@@ -106,30 +107,9 @@ pub(crate) fn auto_type_impl(
             "function body should not be empty for auto_type",
         )
     })?;
-    let (return_type, errors) = match input_function.sig.output {
-        syn::ReturnType::Type(_, return_type) if matches!(*return_type, Type::Infer(_)) => {
-            // Let's process intermediate let statements
-
-            let mut local_variables_map = LocalVariablesMap {
-                inferrer_settings: &inferrer_settings,
-                map: Default::default(),
-            };
-            for function_param in &input_function.sig.inputs {
-                if let syn::FnArg::Typed(syn::PatType { pat, ty, .. }) = function_param {
-                    local_variables_map.process_pat(pat, Some(ty), None)?
-                };
-            }
-            for statement in &input_function.block.stmts[0..input_function.block.stmts.len() - 1] {
-                if let syn::Stmt::Local(local) = statement {
-                    local_variables_map.process_pat(
-                        &local.pat,
-                        None,
-                        local.init.as_ref().map(|local_init| &*local_init.expr),
-                    )?
-                };
-            }
-
-            // Now we can process the last statement
+    let mut errors = Vec::new();
+    let return_type = match input_function.sig.output {
+        syn::ReturnType::Type(_, return_type) => {
             let return_expression = match last_statement {
                 syn::Stmt::Expr(expr, None) => expr,
                 syn::Stmt::Expr(
@@ -146,33 +126,62 @@ pub(crate) fn auto_type_impl(
                     .into())
                 }
             };
-            let inferrer = local_variables_map.inferrer();
-            (
-                inferrer.infer_expression_type(return_expression, None),
-                inferrer.into_errors(),
+
+            // Build a map of local variables, and get the function parameters in there
+            let mut local_variables_map = LocalVariablesMap {
+                inferrer_settings: &inferrer_settings,
+                inner: LocalVariablesMapInner {
+                    map: Default::default(),
+                    parent: None,
+                },
+            };
+            for const_generic in input_function.sig.generics.const_params() {
+                local_variables_map.process_const_generic(const_generic);
+            }
+            for function_param in &input_function.sig.inputs {
+                if let syn::FnArg::Typed(syn::PatType { pat, ty, .. }) = function_param {
+                    match local_variables_map.process_pat(pat, Some(ty), None) {
+                        Ok(()) => {}
+                        Err(e) => errors.push(Rc::new(e)),
+                    }
+                };
+            }
+
+            // Add local variables from the function body, and finally infer the type
+            local_variables_map.infer_block_expression_type(
+                return_expression,
+                Some(&return_type),
+                &input_function.block,
+                &mut errors,
             )
         }
-        syn::ReturnType::Type(_, return_type) if type_alias.is_some() => {
-            // User only wants us to generate a type alias for the return type but we don't
-            // have anything to infer
-            (*return_type, Vec::new())
-        }
         _ => {
+            // This error message is not strictly correct: we also support
+            // partially-specified return types that involve `_`, but for simplicity we just
+            // put the overwhelmingly most common case in this error message
             return Err(syn::Error::new(
                 input_function.sig.output.span(),
                 "Function return type should be explicitly specified as `-> _` for auto_type",
             )
-            .into())
+            .into());
         }
     };
 
     let type_alias = match type_alias {
         Some(type_alias) => {
+            // We're generating a type alias so we need to extract the necessary lifetimes and
+            // generic type parameters for that type alias
+            let type_alias_generics = referenced_generics::extract_referenced_generics(
+                &return_type,
+                &input_function.sig.generics,
+                &mut errors,
+            );
+
             let vis = &input_function.vis;
-            input_function.sig.output = parse_quote!(-> #type_alias);
+            input_function.sig.output = parse_quote!(-> #type_alias #type_alias_generics);
             quote! {
                 #[allow(non_camel_case_types)]
-                #vis type #type_alias = #return_type;
+                #vis type #type_alias #type_alias_generics = #return_type;
             }
         }
         None => {
@@ -183,12 +192,13 @@ pub(crate) fn auto_type_impl(
 
     let mut res = quote! {
         #type_alias
+        #[allow(clippy::needless_lifetimes)]
         #input_function
     };
 
     for error in errors {
         // Extracting from the `Rc` only if it's the last reference is an elegant way to
-        // deduplicate errors For this to work it is necessary that the rest of
+        // deduplicate errors. For this to work it is necessary that the rest of
         // the errors (those from the local variables map that weren't used) are
         // dropped before, which is the case here, and that we are iterating on the
         // errors in an owned manner.

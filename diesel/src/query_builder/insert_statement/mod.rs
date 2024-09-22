@@ -8,16 +8,17 @@ pub(crate) use self::insert_from_select::InsertFromSelect;
 pub(crate) use self::private::{Insert, InsertOrIgnore, Replace};
 
 use super::returning_clause::*;
-use crate::backend::{sql_dialect, Backend, DieselReserveSpecialization, SqlDialect};
+use crate::backend::{sql_dialect, DieselReserveSpecialization, SqlDialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::expression::{Expression, NonAggregate, SelectableExpression};
 use crate::query_builder::*;
 use crate::query_dsl::RunQueryDsl;
 use crate::query_source::{Column, Table};
-use crate::result::QueryResult;
 use crate::{insertable::*, QuerySource};
 use std::marker::PhantomData;
+
+pub(crate) use self::private::InsertAutoTypeHelper;
 
 #[cfg(feature = "sqlite")]
 mod insert_with_default_for_sqlite;
@@ -454,7 +455,7 @@ impl<T, Tab, DB> QueryFragment<DB> for ValuesClause<T, Tab>
 where
     DB: Backend,
     Tab: Table,
-    T: InsertValues<Tab, DB>,
+    T: InsertValues<DB, Tab>,
     DefaultValues: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
@@ -537,5 +538,17 @@ mod private {
             out.push_sql("REPLACE");
             Ok(())
         }
+    }
+
+    // otherwise rustc complains at a different location that this trait is more private than the other item that uses it
+    #[allow(unreachable_pub)]
+    pub trait InsertAutoTypeHelper {
+        type Table;
+        type Op;
+    }
+
+    impl<T, Op> InsertAutoTypeHelper for crate::query_builder::IncompleteInsertStatement<T, Op> {
+        type Table = T;
+        type Op = Op;
     }
 }

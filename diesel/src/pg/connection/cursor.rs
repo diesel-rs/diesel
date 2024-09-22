@@ -1,7 +1,6 @@
 use super::raw::RawConnection;
 use super::result::PgResult;
 use super::row::PgRow;
-use crate::connection::Instrumentation;
 use crate::pg::Pg;
 use crate::query_builder::QueryFragment;
 use std::rc::Rc;

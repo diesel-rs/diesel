@@ -60,7 +60,7 @@ impl<'a> MysqlValue<'a> {
     pub(crate) fn numeric_value(&self) -> deserialize::Result<NumericRepresentation<'_>> {
         Ok(match self.tpe {
             MysqlType::UnsignedTiny | MysqlType::Tiny => {
-                NumericRepresentation::Tiny(self.raw[0] as i8)
+                NumericRepresentation::Tiny(self.raw[0].try_into()?)
             }
             MysqlType::UnsignedShort | MysqlType::Short => {
                 NumericRepresentation::Small(i16::from_ne_bytes((&self.raw[..2]).try_into()?))

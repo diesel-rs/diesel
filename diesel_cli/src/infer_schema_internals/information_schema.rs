@@ -31,7 +31,7 @@ impl DefaultSchema for Pg {
 }
 
 #[cfg(feature = "mysql")]
-sql_function!(fn database() -> VarChar);
+define_sql_function!(fn database() -> VarChar);
 
 #[cfg(feature = "mysql")]
 impl DefaultSchema for Mysql {

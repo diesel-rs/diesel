@@ -11,6 +11,7 @@ mod clause_macro;
 
 pub(crate) mod ast_pass;
 pub mod bind_collector;
+mod collected_query;
 pub(crate) mod combination_clause;
 mod debug_query;
 mod delete_statement;
@@ -37,7 +38,9 @@ pub(crate) mod where_clause;
 #[doc(inline)]
 pub use self::ast_pass::AstPass;
 #[doc(inline)]
-pub use self::bind_collector::BindCollector;
+pub use self::bind_collector::{BindCollector, MoveableBindCollector};
+#[doc(inline)]
+pub use self::collected_query::CollectedQuery;
 #[doc(inline)]
 pub use self::debug_query::DebugQuery;
 #[doc(inline)]
@@ -120,6 +123,11 @@ pub(crate) use self::insert_statement::ColumnList;
 #[cfg(feature = "postgres_backend")]
 pub use crate::pg::query_builder::only::Only;
 
+#[cfg(feature = "postgres_backend")]
+pub use crate::pg::query_builder::tablesample::{Tablesample, TablesampleMethod};
+
+#[cfg(feature = "postgres_backend")]
+pub(crate) use self::bind_collector::ByteWrapper;
 use crate::backend::Backend;
 use crate::result::QueryResult;
 use std::error::Error;
@@ -202,6 +210,11 @@ pub trait SelectQuery {
 ///
 /// [`ExecuteDsl`]: crate::query_dsl::methods::ExecuteDsl
 /// [`LoadQuery`]: crate::query_dsl::methods::LoadQuery
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is no valid SQL fragment for the `{DB}` backend",
+    note = "this usually means that the `{DB}` database system does not support \n\
+            this SQL syntax"
+)]
 pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     /// Walk over this `QueryFragment` for all passes.
     ///

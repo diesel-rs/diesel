@@ -418,12 +418,9 @@ pub use diesel_derives::QueryableByName;
 ///     }
 /// }
 /// ```
-#[cfg_attr(
-    feature = "nightly-error-messages",
-    diagnostic::on_unimplemented(
-        message = "Cannot deserialize a value of the database type `{A}` as `{Self}`",
-        note = "Double check your type mappings via the documentation of `{A}`"
-    )
+#[diagnostic::on_unimplemented(
+    message = "cannot deserialize a value of the database type `{A}` as `{Self}`",
+    note = "double check your type mappings via the documentation of `{A}`"
 )]
 pub trait FromSql<A, DB: Backend>: Sized {
     /// See the trait documentation.
@@ -451,12 +448,10 @@ pub trait FromSql<A, DB: Backend>: Sized {
 /// that implement one of the following traits:
 ///    * [`Queryable`]
 ///    * [`QueryableByName`]
-#[cfg_attr(
-    feature = "nightly-error-messages",
-    diagnostic::on_unimplemented(
-        note = "`diesel::sql_query` requires the loading target to column names for loading values.\n\
-                 You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`",
-    )
+#[diagnostic::on_unimplemented(
+    note = "double check your type mappings via the documentation of `{ST}`",
+    note = "`diesel::sql_query` requires the loading target to column names for loading values.\n\
+             You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`"
 )]
 pub trait FromSqlRow<ST, DB: Backend>: Sized {
     /// See the trait documentation.
@@ -545,7 +540,13 @@ where
         use crate::row::Field;
 
         let field = row.get(0).ok_or(crate::result::UnexpectedEndOfRow)?;
-        T::from_nullable_sql(field.value())
+        T::from_nullable_sql(field.value()).map_err(|e| {
+            if e.is::<crate::result::UnexpectedNullError>() {
+                e
+            } else {
+                Box::new(crate::result::DeserializeFieldError::new(field, e))
+            }
+        })
     }
 }
 

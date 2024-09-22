@@ -14,6 +14,8 @@ mod boxed_queries;
 mod combination;
 mod connection;
 #[cfg(feature = "postgres")]
+mod copy;
+#[cfg(feature = "postgres")]
 mod custom_types;
 mod debug;
 mod delete;
@@ -26,6 +28,7 @@ mod filter_operators;
 mod find;
 mod group_by;
 mod having;
+mod index;
 mod insert;
 mod insert_from_select;
 mod instrumentation;
@@ -35,6 +38,8 @@ mod limit_offset;
 mod macros;
 #[cfg(feature = "postgres")]
 mod only;
+#[cfg(not(feature = "sqlite"))]
+mod operations;
 mod order;
 mod perf_details;
 #[cfg(feature = "postgres")]

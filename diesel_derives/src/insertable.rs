@@ -169,10 +169,8 @@ fn derive_into_single_table(
     };
 
     Ok(quote! {
-        #[allow(unused_qualifications)]
         #insert_owned
 
-        #[allow(unused_qualifications)]
         #insert_borrowed
 
         impl #impl_generics UndecoratedInsertRecord<#table_name::table>
@@ -200,8 +198,7 @@ fn field_ty_serialize_as(
     ty: &Type,
     treat_none_as_default_value: bool,
 ) -> Result<TokenStream> {
-    let column_name = field.column_name()?;
-    column_name.valid_ident()?;
+    let column_name = field.column_name()?.to_ident()?;
     let span = field.span;
     if treat_none_as_default_value {
         let inner_ty = inner_of_option_ty(ty);
@@ -229,12 +226,11 @@ fn field_expr_serialize_as(
     treat_none_as_default_value: bool,
 ) -> Result<TokenStream> {
     let field_name = &field.name;
-    let column_name = field.column_name()?;
-    column_name.valid_ident()?;
+    let column_name = field.column_name()?.to_ident()?;
     let column = quote!(#table_name::#column_name);
     if treat_none_as_default_value {
         if is_option_ty(ty) {
-            Ok(quote!(self.#field_name.map(|x| #column.eq(::std::convert::Into::<#ty>::into(x)))))
+            Ok(quote!(::std::convert::Into::<#ty>::into(self.#field_name).map(|v| #column.eq(v))))
         } else {
             Ok(
                 quote!(std::option::Option::Some(#column.eq(::std::convert::Into::<#ty>::into(self.#field_name)))),
@@ -251,8 +247,7 @@ fn field_ty(
     lifetime: Option<TokenStream>,
     treat_none_as_default_value: bool,
 ) -> Result<TokenStream> {
-    let column_name = field.column_name()?;
-    column_name.valid_ident()?;
+    let column_name = field.column_name()?.to_ident()?;
     let span = field.span;
     if treat_none_as_default_value {
         let inner_ty = inner_of_option_ty(&field.ty);
@@ -282,8 +277,7 @@ fn field_expr(
     treat_none_as_default_value: bool,
 ) -> Result<TokenStream> {
     let field_name = &field.name;
-    let column_name = field.column_name()?;
-    column_name.valid_ident()?;
+    let column_name = field.column_name()?.to_ident()?;
 
     let column: Expr = parse_quote!(#table_name::#column_name);
     if treat_none_as_default_value {

@@ -293,13 +293,19 @@ pub struct Date;
 /// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
+/// - [`chrono::Duration`][Duration] with `feature = "chrono"`
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
+/// - [`chrono::Duration`][Duration] with `feature = "chrono"`
+///     (There might be some information loss due to special behavior for literal `month` (or longer) intervals;
+///      Please read official documentation of [PostgreSQL Interval].)
 ///
 /// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
 /// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
+/// [Duration]: https://docs.rs/chrono/*/chrono/type.Duration.html
+/// [PostgreSQL Interval]: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 1186, array_oid = 1187))]
 pub struct Interval;
@@ -656,6 +662,10 @@ pub mod is_nullable {
 
 /// A marker trait for accepting expressions of the type `Bool` and
 /// `Nullable<Bool>` in the same place
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is neither `diesel::sql_types::Bool` nor `diesel::sql_types::Nullable<Bool>`",
+    note = "try to provide an expression that produces one of the expected sql types"
+)]
 pub trait BoolOrNullableBool {}
 
 impl BoolOrNullableBool for Bool {}

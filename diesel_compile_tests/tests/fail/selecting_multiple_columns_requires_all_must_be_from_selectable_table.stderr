@@ -1,129 +1,86 @@
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:22:30
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
    |
-22 |     let stuff = users::table.select((posts::id, posts::user_id));
-   |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+23 |     let stuff = users::table.select((posts::id, posts::user_id));
+   |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::id as SelectableExpression<posts::table>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
+             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::id` implements `SelectableExpression<posts::table>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
 
 error[E0277]: Cannot select `posts::columns::user_id` from `users::table`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:22:30
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
    |
-22 |     let stuff = users::table.select((posts::id, posts::user_id));
-   |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::user_id`
+23 |     let stuff = users::table.select((posts::id, posts::user_id));
+   |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::user_id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
    |
    = note: `posts::columns::user_id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::user_id as SelectableExpression<posts::table>>
-             <posts::columns::user_id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::user_id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::user_id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::user_id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::user_id as SelectableExpression<Only<posts::table>>>
+             `posts::columns::user_id` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::user_id` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::user_id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::user_id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::user_id` implements `SelectableExpression<posts::table>`
+             `posts::columns::user_id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::user_id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:22:30
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
    |
-22 |     let stuff = users::table.select((posts::id, posts::user_id));
+23 |     let stuff = users::table.select((posts::id, posts::user_id));
    |                              ^^^^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:15:9
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:14:9
    |
-15 |         id -> Integer,
+14 |         id -> Integer,
    |         ^^
-   = note: 1 redundant requirement hidden
-   = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `AppearsOnTable<users::table>`
-   = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
-
-error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:22:30
-   |
-22 |     let stuff = users::table.select((posts::id, posts::user_id));
-   |                              ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
-   |
-   = help: the following other types implement trait `TableNotEqual<T>`:
-             <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-   = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
-note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:15:9
-   |
-15 |         id -> Integer,
-   |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `AppearsOnTable<users::table>`
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:24:30
    |
-23 |     let stuff = users::table.select((posts::id, users::name));
-   |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+24 |     let stuff = users::table.select((posts::id, users::name));
+   |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::id as SelectableExpression<posts::table>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
+             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::id` implements `SelectableExpression<posts::table>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
    = note: required for `(posts::columns::id, users::columns::name)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, users::columns::name)>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:24:30
    |
-23 |     let stuff = users::table.select((posts::id, users::name));
+24 |     let stuff = users::table.select((posts::id, users::name));
    |                              ^^^^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:15:9
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:14:9
    |
-15 |         id -> Integer,
+14 |         id -> Integer,
    |         ^^
-   = note: 1 redundant requirement hidden
-   = note: required for `(posts::columns::id, users::columns::name)` to implement `AppearsOnTable<users::table>`
-   = note: required for `(posts::columns::id, users::columns::name)` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, users::columns::name)>`
-
-error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
-   |
-23 |     let stuff = users::table.select((posts::id, users::name));
-   |                              ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
-   |
-   = help: the following other types implement trait `TableNotEqual<T>`:
-             <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-   = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
-note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:15:9
-   |
-15 |         id -> Integer,
-   |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `(posts::columns::id, users::columns::name)` to implement `AppearsOnTable<users::table>`
    = note: required for `(posts::columns::id, users::columns::name)` to implement `SelectableExpression<users::table>`

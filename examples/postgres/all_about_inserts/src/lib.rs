@@ -30,7 +30,7 @@ pub struct UserForm<'a> {
 }
 
 #[derive(Queryable, PartialEq, Debug)]
-struct User {
+pub struct User {
     id: i32,
     name: String,
     hair_color: Option<String>,
@@ -368,6 +368,21 @@ fn examine_sql_from_explicit_returning() {
 
 #[cfg(test)]
 fn establish_connection() -> PgConnection {
-    let url = ::std::env::var("DATABASE_URL").unwrap();
-    PgConnection::establish(&url).unwrap()
+    use diesel_migrations::MigrationHarness;
+
+    let url = std::env::var("PG_DATABASE_URL")
+        .or_else(|_| std::env::var("DATABASE_URL"))
+        .unwrap();
+    let mut conn = PgConnection::establish(&url).unwrap();
+    conn.begin_test_transaction().unwrap();
+
+    diesel::sql_query("DROP TABLE IF EXISTS users CASCADE")
+        .execute(&mut conn)
+        .unwrap();
+
+    let migrations = diesel_migrations::FileBasedMigrations::find_migrations_directory().unwrap();
+
+    let _ = conn.run_pending_migrations(migrations);
+
+    conn
 }

@@ -205,6 +205,9 @@ pub trait QueryDsl: Sized {
     /// This is because you can only access columns from tables
     /// that appear in your query before that function call.
     ///
+    /// **Note:** When using `select` with `group_by`, the `group_by` call must appear
+    /// before the `select` call in the query chain.
+    ///
     /// [`.inner_join`]: QueryDsl::inner_join()
     /// [`.left_join`]: QueryDsl::left_join()
     /// [`.select`]: QueryDsl::select()
@@ -953,6 +956,9 @@ pub trait QueryDsl: Sized {
     ///
     /// **Note:** Queries having a `group by` clause require a custom select clause.
     /// Use [`QueryDsl::select()`] to specify one.
+    ///
+    /// **Note:** When using `group_by` with `select`, the `group_by` call must appear
+    /// before the `select` call in the query chain.
     ///
     /// If there was already a group by clause, it will be overridden.
     /// Grouping by multiple columns can be achieved by passing a tuple of those

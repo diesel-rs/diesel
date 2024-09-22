@@ -1,8 +1,5 @@
 use diesel::backend::Backend;
-use diesel::expression::{
-    is_aggregate, AppearsOnTable, Expression, SelectableExpression, TypedExpressionType,
-    ValidGrouping,
-};
+use diesel::expression::{is_aggregate, TypedExpressionType, ValidGrouping};
 use diesel::prelude::*;
 use diesel::query_builder::*;
 use std::borrow::Borrow;

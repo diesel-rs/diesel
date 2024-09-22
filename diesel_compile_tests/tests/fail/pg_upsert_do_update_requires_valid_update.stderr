@@ -1,11 +1,11 @@
 error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<...>,), ...>>, ...>`, but its trait bounds were not satisfied
-  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:42:10
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:44:10
    |
-38 | /     insert_into(users)
-39 | |         .values(&NewUser("Sean"))
-40 | |         .on_conflict(id)
-41 | |         .do_update()
-42 | |         .execute(&mut connection);
+40 | /     insert_into(users)
+41 | |         .values(&NewUser("Sean"))
+42 | |         .on_conflict(id)
+43 | |         .do_update()
+44 | |         .execute(&mut connection);
    | |         -^^^^^^^ method cannot be called due to unsatisfied trait bounds
    | |_________|
    |
@@ -13,11 +13,9 @@ error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertS
   ::: $DIESEL/src/upsert/on_conflict_extension.rs
    |
    |   pub struct IncompleteDoUpdate<Stmt, Target> {
-   |   -------------------------------------------
-   |   |
-   |   doesn't satisfy `_: RunQueryDsl<_>`
-   |   doesn't satisfy `_: Table`
+   |   ------------------------------------------- doesn't satisfy `_: RunQueryDsl<_>` or `_: Table`
    |
+   = note: consider using `--verbose` to print the full type name to the console
    = note: the following trait bounds were not satisfied:
            `IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: Table`
            which is required by `IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
@@ -27,9 +25,9 @@ error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertS
            which is required by `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
 
 error[E0271]: type mismatch resolving `<Grouped<Eq<title, Bound<Text, &str>>> as AsChangeset>::Target == table`
-  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:49:14
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:51:14
    |
-49 |         .set(posts::title.eq("Sean"));
+51 |         .set(posts::title.eq("Sean"));
    |          --- ^^^^^^^^^^^^^^^^^^^^^^^ expected `users::table`, found `posts::table`
    |          |
    |          required by a bound introduced by this call
@@ -56,9 +54,9 @@ note: `users::table` is defined in module `crate::users` of the current crate
 11 | | }
    | |_^
 note: the method call chain might not have had the expected associated types
-  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:49:27
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:51:27
    |
-49 |         .set(posts::title.eq("Sean"));
+51 |         .set(posts::title.eq("Sean"));
    |              ------------ ^^^^^^^^^^ `AsChangeset::Target` is `table` here
    |              |
    |              this expression has type `title`
@@ -73,9 +71,9 @@ note: required by a bound in `IncompleteDoUpdate::<InsertStatement<T, U, Op, Ret
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:56:10
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:58:10
    |
-56 |         .set(name.eq(posts::title));
+58 |         .set(name.eq(posts::title));
    |          ^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
@@ -83,33 +81,13 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
    |
 16 |         title -> VarChar,
    |         ^^^^^
-   = note: required for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>` to implement `AsChangeset`
-
-error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:56:10
-   |
-56 |         .set(name.eq(posts::title));
-   |          ^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
-   |
-   = help: the following other types implement trait `TableNotEqual<T>`:
-             <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-   = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
-note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:16:9
-   |
-16 |         title -> VarChar,
-   |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>` to implement `AsChangeset`
 
 error[E0271]: type mismatch resolving `<title as Column>::Table == table`
-  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:63:10
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:65:10
    |
-63 |         .set(name.eq(excluded(posts::title)));
+65 |         .set(name.eq(excluded(posts::title)));
    |          ^^^ type mismatch resolving `<title as Column>::Table == table`
    |
 note: expected this to be `posts::table`
@@ -142,9 +120,9 @@ note: `posts::table` is defined in module `crate::posts` of the current crate
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<Excluded<id> as Expression>::SqlType == Text`
-  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:70:19
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:72:19
    |
-70 |         .set(name.eq(excluded(id)));
+72 |         .set(name.eq(excluded(id)));
    |                   ^^ expected `Integer`, found `Text`
    |
    = note: required for `diesel::query_builder::upsert::on_conflict_actions::Excluded<users::columns::id>` to implement `AsExpression<diesel::sql_types::Text>`

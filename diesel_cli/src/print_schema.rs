@@ -10,7 +10,7 @@ use std::io::Write as IoWrite;
 const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 
 /// How to sort columns when querying the table schema.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy)]
 pub enum ColumnSorting {
     /// Order by ordinal position
     #[serde(rename = "ordinal_position")]
@@ -48,7 +48,9 @@ pub fn run_print_schema<W: IoWrite>(
 ) -> Result<(), crate::errors::Error> {
     let schema = output_schema(connection, config)?;
 
-    output.write_all(schema.as_bytes())?;
+    output
+        .write_all(schema.as_bytes())
+        .map_err(|e| crate::errors::Error::IoError(e, None))?;
     Ok(())
 }
 
@@ -93,6 +95,7 @@ fn common_diesel_types(types: &mut HashSet<&str>) {
 fn pg_diesel_types() -> HashSet<&'static str> {
     let mut types = HashSet::new();
     types.insert("Cidr");
+    types.insert("Citext");
     types.insert("Inet");
     types.insert("Jsonb");
     types.insert("MacAddr");
@@ -112,6 +115,12 @@ fn pg_diesel_types() -> HashSet<&'static str> {
     types.insert("Numrange");
     types.insert("Tsrange");
     types.insert("Tstzrange");
+    types.insert("Int4multirange");
+    types.insert("Int8multirange");
+    types.insert("Datemultirange");
+    types.insert("Nummultirange");
+    types.insert("Tsmultirange");
+    types.insert("Tstzmultirange");
     types.insert("SmallSerial");
     types.insert("BigSerial");
     types.insert("Serial");
@@ -157,7 +166,7 @@ pub fn output_schema(
         remove_unsafe_foreign_keys_for_codegen(connection, &foreign_keys, &table_names);
     let table_data = table_names
         .into_iter()
-        .map(|t| load_table_data(connection, t, &config.column_sorting, config.with_docs))
+        .map(|t| load_table_data(connection, t, config))
         .collect::<Result<Vec<_>, crate::errors::Error>>()?;
 
     let mut out = String::new();
@@ -184,6 +193,13 @@ pub fn output_schema(
                         .map(|c| {
                             Some(&c.ty)
                                 .filter(|ty| !diesel_provided_types.contains(ty.rust_name.as_str()))
+                                // Skip types that are that match the regexes in the configuration
+                                .filter(|ty| {
+                                    !config
+                                        .except_custom_type_definitions
+                                        .iter()
+                                        .any(|rx| rx.is_match(ty.rust_name.as_str()))
+                                })
                                 .map(|ty| match backend {
                                     #[cfg(feature = "postgres")]
                                     Backend::Pg => ty.clone(),
@@ -256,7 +272,17 @@ pub fn output_schema(
             "Found patch file to apply to the generated schema"
         );
         tracing::trace!(?out, "Schema before applying patch file");
-        let patch = std::fs::read_to_string(patch_file)?;
+        let patch = match std::fs::read_to_string(patch_file) {
+            Ok(patch) => patch,
+            Err(e) => {
+                eprintln!(
+                    "Failed to read patch file at {}: {}",
+                    patch_file.display(),
+                    e
+                );
+                return Err(crate::errors::Error::IoError(e, Some(patch_file.clone())));
+            }
+        };
         let patch = diffy::Patch::from_str(&patch)?;
 
         out = diffy::apply(&out, &patch)?;

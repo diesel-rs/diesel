@@ -4,6 +4,7 @@ error[E0599]: no method named `returning` found for struct `DeleteStatement<tabl
 22 |     query.returning(name);
    |           ^^^^^^^^^ private field, not a method
    |
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0599]: no method named `returning` found for struct `InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<...>,), ...>, ..., ...>` in the current scope
   --> tests/fail/returning_cannot_be_called_twice.rs:27:11
@@ -11,6 +12,7 @@ error[E0599]: no method named `returning` found for struct `InsertStatement<tabl
 27 |     query.returning(name);
    |           ^^^^^^^^^ private field, not a method
    |
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0599]: no method named `returning` found for struct `UpdateStatement<table, NoWhereClause, Assign<ColumnWrapperForUpdate<name>, Bound<Text, &str>>, ...>` in the current scope
   --> tests/fail/returning_cannot_be_called_twice.rs:30:11
@@ -18,3 +20,4 @@ error[E0599]: no method named `returning` found for struct `UpdateStatement<tabl
 30 |     query.returning(name);
    |           ^^^^^^^^^ private field, not a method
    |
+   = note: consider using `--verbose` to print the full type name to the console

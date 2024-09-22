@@ -154,7 +154,7 @@ fn field_column_ty(
         Ok(quote!(<#embed_ty as Selectable<__DB>>::SelectExpression))
     } else {
         let table_name = &model.table_names()[0];
-        let column_name = field.column_name()?;
+        let column_name = field.column_name()?.to_ident()?;
         Ok(quote!(#table_name::#column_name))
     }
 }
@@ -168,7 +168,7 @@ fn field_column_inst(field: &Field, model: &Model) -> Result<TokenStream> {
         Ok(quote!(<#embed_ty as Selectable<__DB>>::construct_selection()))
     } else {
         let table_name = &model.table_names()[0];
-        let column_name = field.column_name()?;
+        let column_name = field.column_name()?.to_ident()?;
         Ok(quote!(#table_name::#column_name))
     }
 }

@@ -36,7 +36,7 @@ fn with_safe_select() {
         .execute(connection)
         .unwrap();
 
-    let select_name = users.select(UserName::as_select());
+    let select_name = users.select(UserName::as_select()).order_by(name);
     let names: Vec<UserName> = select_name.load(connection).unwrap();
 
     assert_eq!(vec![UserName::new("Sean"), UserName::new("Tess")], names);

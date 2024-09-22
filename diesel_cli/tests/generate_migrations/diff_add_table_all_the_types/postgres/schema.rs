@@ -1,5 +1,3 @@
-
-
 table! {
     all_the_types(id) {
         id -> Integer,
@@ -39,6 +37,11 @@ table! {
         daterange_col -> Daterange,
         tsrange_col -> Tsrange,
         tstzrange_col -> Tstzrange,
+        int4multirange_col -> Int4multirange,
+        int8multirange_col -> Int8multirange,
+        datemultirange_col -> Datemultirange,
+        tsmultirange_col -> Tsmultirange,
+        tstzmultirange_col -> Tstzmultirange,
         small_serial_col -> SmallSerial,
         big_serial_col -> BigSerial,
         serial_col -> Serial,

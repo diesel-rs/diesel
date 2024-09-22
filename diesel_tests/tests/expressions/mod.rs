@@ -219,7 +219,7 @@ fn test_min() {
     assert_eq!(Ok(None::<i32>), source.first(connection));
 }
 
-sql_function!(fn coalesce(x: sql_types::Nullable<sql_types::VarChar>, y: sql_types::VarChar) -> sql_types::VarChar);
+define_sql_function!(fn coalesce(x: sql_types::Nullable<sql_types::VarChar>, y: sql_types::VarChar) -> sql_types::VarChar);
 
 #[test]
 fn function_with_multiple_arguments() {
@@ -445,7 +445,7 @@ fn test_arrays_a() {
 #[cfg(feature = "postgres")]
 use diesel::sql_types::{Array, Int4};
 #[cfg(feature = "postgres")]
-sql_function!(fn unnest(a: Array<Int4>) -> Int4);
+define_sql_function!(fn unnest(a: Array<Int4>) -> Int4);
 
 #[test]
 #[cfg(feature = "postgres")]

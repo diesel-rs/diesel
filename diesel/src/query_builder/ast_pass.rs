@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::backend::Backend;
-use crate::query_builder::{BindCollector, QueryBuilder};
+use crate::query_builder::{BindCollector, MoveableBindCollector, QueryBuilder};
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
@@ -90,7 +90,13 @@ where
         }
     }
 
-    #[cfg(feature = "sqlite")]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    #[cfg(any(
+        feature = "sqlite",
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    ))]
     pub(crate) fn skip_from(&mut self, value: bool) {
         if let AstPassInternals::ToSql(_, ref mut options) = self.internals {
             options.skip_from = value
@@ -252,13 +258,42 @@ where
         Ok(())
     }
 
+    /// Push bind collector values from its data onto the query
+    ///
+    /// This method works with [MoveableBindCollector] data [MoveableBindCollector::BindData]
+    /// and is used with already collected query meaning its SQL is already built and its
+    /// bind data already collected.
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub(crate) fn push_bind_collector_data<MD>(
+        &mut self,
+        bind_collector_data: &MD,
+    ) -> QueryResult<()>
+    where
+        DB: Backend,
+        for<'bc> DB::BindCollector<'bc>: MoveableBindCollector<DB, BindData = MD>,
+    {
+        match self.internals {
+            AstPassInternals::CollectBinds {
+                ref mut collector,
+                metadata_lookup: _,
+            } => collector.append_bind_data(bind_collector_data),
+            AstPassInternals::DebugBinds(ref mut f) => {
+                f.push(Box::new("Opaque bind collector data"))
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
     /// Get information about the backend that will consume this query
     #[cfg_attr(
         not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
         doc(hidden)
-    )] // This is used by the `sql_function` macro
+    )] // This is used by the `define_sql_function` macro
     #[cfg_attr(
-        doc_cfg,
+        docsrs,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub fn backend(&self) -> &DB {
@@ -271,7 +306,7 @@ where
         doc(hidden)
     )] // This is used by the `__diesel_column` macro
     #[cfg_attr(
-        doc_cfg,
+        docsrs,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub fn should_skip_from(&self) -> bool {

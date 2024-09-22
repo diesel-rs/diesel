@@ -1,4 +1,3 @@
-#![feature(diagnostic_namespace)]
 extern crate diesel;
 
 use diesel::prelude::*;
@@ -51,7 +50,7 @@ struct Post {
 struct PostWithWrongField {
     id: i32,
     // There is a typo here:
-    titel: String
+    titel: String,
 }
 
 #[derive(Selectable)]
@@ -80,9 +79,8 @@ impl Selectable<diesel::pg::Pg> for UserWithPostCount {
 #[derive(Queryable)]
 struct UserWithoutSelectable {
     id: i32,
-    name: String
+    name: String,
 }
-
 
 fn main() {
     let mut conn = PgConnection::establish("").unwrap();
@@ -90,14 +88,28 @@ fn main() {
     // supported queries
     //
     // plain queries
-    let _  = posts::table.select(Post::as_select()).load(&mut conn).unwrap();
+    let _ = posts::table
+        .select(Post::as_select())
+        .load(&mut conn)
+        .unwrap();
 
     // boxed queries
-    let _  = posts::table.into_boxed().select(Post::as_select()).load(&mut conn).unwrap();
-    let _  = posts::table.select(Post::as_select()).into_boxed().load(&mut conn).unwrap();
+    let _ = posts::table
+        .into_boxed()
+        .select(Post::as_select())
+        .load(&mut conn)
+        .unwrap();
+    let _ = posts::table
+        .select(Post::as_select())
+        .into_boxed()
+        .load(&mut conn)
+        .unwrap();
 
     // mixed clauses
-    let _ = posts::table.select((Post::as_select(), posts::title)).load::<(_, String)>(&mut conn).unwrap();
+    let _ = posts::table
+        .select((Post::as_select(), posts::title))
+        .load::<(_, String)>(&mut conn)
+        .unwrap();
 
     // This works for inner joins
     let _ = users::table
@@ -190,12 +202,25 @@ fn main() {
         .unwrap();
 
     // cannot use this method without deriving selectable
-    let _ = users::table.select(UserWithoutSelectable::as_select()).load(&mut conn).unwrap();
+    let _ = users::table
+        .select(UserWithoutSelectable::as_select())
+        .load(&mut conn)
+        .unwrap();
 
     // type locking
-    let _ = posts::table.select(Post::as_select()).load::<(i32, String)>(&mut conn).unwrap();
-    let _ = posts::table.select(Post::as_select()).into_boxed().load::<(i32, String)>(&mut conn).unwrap();
-    let _ = posts::table.select((Post::as_select(), posts::title)).load::<((i32, String), String)>(&mut conn).unwrap();
+    let _ = posts::table
+        .select(Post::as_select())
+        .load::<(i32, String)>(&mut conn)
+        .unwrap();
+    let _ = posts::table
+        .select(Post::as_select())
+        .into_boxed()
+        .load::<(i32, String)>(&mut conn)
+        .unwrap();
+    let _ = posts::table
+        .select((Post::as_select(), posts::title))
+        .load::<((i32, String), String)>(&mut conn)
+        .unwrap();
     let _ = diesel::insert_into(posts::table)
         .values(posts::title.eq(""))
         .returning(Post::as_select())

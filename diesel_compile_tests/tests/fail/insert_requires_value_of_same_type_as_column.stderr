@@ -2,16 +2,16 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
   --> tests/fail/insert_requires_value_of_same_type_as_column.rs:19:23
    |
 19 |         .values(&name.eq(1));
-   |                       ^^ the trait `diesel::Expression` is not implemented for `{integer}`
+   |                       ^^ the trait `diesel::Expression` is not implemented for `{integer}`, which is required by `{integer}: AsExpression<diesel::sql_types::Text>`
    |
    = help: the following other types implement trait `diesel::Expression`:
-             Box<T>
-             columns::hair_color
-             columns::name
-             columns::id
-             columns::star
-             diesel::expression::ops::numeric::Add<Lhs, Rhs>
-             diesel::expression::ops::numeric::Sub<Lhs, Rhs>
-             diesel::expression::ops::numeric::Mul<Lhs, Rhs>
+             &'a T
+             (T0, T1)
+             (T0, T1, T2)
+             (T0, T1, T2, T3)
+             (T0, T1, T2, T3, T4)
+             (T0, T1, T2, T3, T4, T5)
+             (T0, T1, T2, T3, T4, T5, T6)
+             (T0, T1, T2, T3, T4, T5, T6, T7)
            and $N others
    = note: required for `{integer}` to implement `AsExpression<diesel::sql_types::Text>`

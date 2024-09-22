@@ -32,7 +32,7 @@ error: Deriving `AsChangeset` on a structure that only contains primary keys isn
    |
    = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error: unexpected expression: `id`
+error: attribute value must be a literal
   --> tests/fail/derive_deprecated/deprecated_primary_key.rs:33:17
    |
 33 | #[primary_key = id]

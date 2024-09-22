@@ -11,13 +11,13 @@ use std::{slice, str};
 use super::raw::{RawConnection, RawResult};
 use super::row::PgRow;
 use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
-use crate::util::OnceCell;
+use std::cell::OnceCell;
 
 #[allow(missing_debug_implementations)]
 pub struct PgResult {
     internal_result: RawResult,
-    column_count: usize,
-    row_count: usize,
+    column_count: libc::c_int,
+    row_count: libc::c_int,
     // We store field names as pointer
     // as we cannot put a correct lifetime here
     // The value is valid as long as we haven't freed `RawResult`
@@ -31,9 +31,11 @@ impl PgResult {
         match result_status {
             ExecStatusType::PGRES_SINGLE_TUPLE
             | ExecStatusType::PGRES_COMMAND_OK
+            | ExecStatusType::PGRES_COPY_IN
+            | ExecStatusType::PGRES_COPY_OUT
             | ExecStatusType::PGRES_TUPLES_OK => {
-                let column_count = unsafe { PQnfields(internal_result.as_ptr()) as usize };
-                let row_count = unsafe { PQntuples(internal_result.as_ptr()) as usize };
+                let column_count = unsafe { PQnfields(internal_result.as_ptr()) };
+                let row_count = unsafe { PQntuples(internal_result.as_ptr()) };
                 Ok(PgResult {
                     internal_result,
                     column_count,
@@ -106,7 +108,10 @@ impl PgResult {
     }
 
     pub(super) fn num_rows(&self) -> usize {
-        self.row_count
+        self.row_count.try_into().expect(
+            "Diesel expects to run on a >= 32 bit OS \
+                (or libpq is giving out negative row count)",
+        )
     }
 
     pub(super) fn get_row(self: Rc<Self>, idx: usize) -> PgRow {
@@ -117,35 +122,45 @@ impl PgResult {
         if self.is_null(row_idx, col_idx) {
             None
         } else {
-            let row_idx = row_idx as libc::c_int;
-            let col_idx = col_idx as libc::c_int;
+            let row_idx = row_idx.try_into().ok()?;
+            let col_idx = col_idx.try_into().ok()?;
             unsafe {
                 let value_ptr =
                     PQgetvalue(self.internal_result.as_ptr(), row_idx, col_idx) as *const u8;
                 let num_bytes = PQgetlength(self.internal_result.as_ptr(), row_idx, col_idx);
-                Some(slice::from_raw_parts(value_ptr, num_bytes as usize))
+                Some(slice::from_raw_parts(
+                    value_ptr,
+                    num_bytes
+                        .try_into()
+                        .expect("Diesel expects at least a 32 bit operating system"),
+                ))
             }
         }
     }
 
     pub(super) fn is_null(&self, row_idx: usize, col_idx: usize) -> bool {
-        unsafe {
-            0 != PQgetisnull(
-                self.internal_result.as_ptr(),
-                row_idx as libc::c_int,
-                col_idx as libc::c_int,
-            )
-        }
+        let row_idx = row_idx
+            .try_into()
+            .expect("Row indices are expected to fit into 32 bit");
+        let col_idx = col_idx
+            .try_into()
+            .expect("Column indices are expected to fit into 32 bit");
+
+        unsafe { 0 != PQgetisnull(self.internal_result.as_ptr(), row_idx, col_idx) }
     }
 
-    pub(super) fn column_type(&self, col_idx: usize) -> NonZeroU32 {
-        let type_oid = unsafe { PQftype(self.internal_result.as_ptr(), col_idx as libc::c_int) };
+    pub(in crate::pg) fn column_type(&self, col_idx: usize) -> NonZeroU32 {
+        let col_idx: i32 = col_idx
+            .try_into()
+            .expect("Column indices are expected to fit into 32 bit");
+        let type_oid = unsafe { PQftype(self.internal_result.as_ptr(), col_idx) };
         NonZeroU32::new(type_oid).expect(
             "Got a zero oid from postgres. If you see this error message \
              please report it as issue on the diesel github bug tracker.",
         )
     }
 
+    #[inline(always)] // benchmarks indicate a ~1.7% improvement in instruction count for this
     pub(super) fn column_name(&self, col_idx: usize) -> Option<&str> {
         self.column_name_map
             .get_or_init(|| {
@@ -177,7 +192,10 @@ impl PgResult {
     }
 
     pub(super) fn column_count(&self) -> usize {
-        self.column_count
+        self.column_count.try_into().expect(
+            "Diesel expects to run on a >= 32 bit OS \
+                (or libpq is giving out negative column count)",
+        )
     }
 }
 

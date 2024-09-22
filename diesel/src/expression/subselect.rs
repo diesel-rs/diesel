@@ -4,7 +4,6 @@ use crate::expression::array_comparison::MaybeEmpty;
 use crate::expression::*;
 use crate::query_builder::*;
 use crate::result::QueryResult;
-use crate::sql_types::SqlType;
 
 #[derive(Debug, Copy, Clone, QueryId)]
 pub struct Subselect<T, ST> {

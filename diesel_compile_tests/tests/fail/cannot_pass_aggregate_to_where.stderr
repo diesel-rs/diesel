@@ -2,10 +2,11 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
   --> tests/fail/cannot_pass_aggregate_to_where.rs:15:24
    |
 15 |     let source = users.filter(count(id).gt(3));
-   |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
+   |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`, which is required by `SelectStatement<FromClause<users::table>>: FilterDsl<_>`
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
-             <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Yes>>
-             <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Never>>
+             `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
+             `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Yes>`
    = note: required for `Grouped<Gt<count<Integer, id>, Bound<BigInt, i64>>>` to implement `NonAggregate`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Gt<diesel::expression::count::count::count<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<BigInt, i64>>>>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Gt<diesel::expression::count::count_utils::count<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<BigInt, i64>>>>`
+   = note: consider using `--verbose` to print the full type name to the console

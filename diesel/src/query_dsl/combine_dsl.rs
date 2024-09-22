@@ -5,7 +5,7 @@ use crate::query_builder::combination_clause::{
 use crate::query_builder::{AsQuery, Query};
 use crate::Table;
 
-/// Extension trait to combine queries using a combinator like `UNION`, `INTERSECT` or `EXPECT`
+/// Extension trait to combine queries using a combinator like `UNION`, `INTERSECT` or `EXCEPT`
 /// with or without `ALL` rule for duplicates
 pub trait CombineDsl {
     /// What kind of query does this type represent?

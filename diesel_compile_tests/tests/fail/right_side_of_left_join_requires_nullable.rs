@@ -1,4 +1,3 @@
-#![feature(diagnostic_namespace)]
 extern crate diesel;
 
 use diesel::sql_types::Text;
@@ -30,7 +29,7 @@ table! {
 joinable!(posts -> users (user_id));
 joinable!(pets -> users (user_id));
 allow_tables_to_appear_in_same_query!(posts, users, pets);
-sql_function!(fn lower(x: Text) -> Text);
+define_sql_function!(fn lower(x: Text) -> Text);
 
 fn main() {}
 

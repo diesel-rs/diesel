@@ -13,13 +13,15 @@ cfg_if! {
             sql_query("CREATE TABLE users (\
                 id INTEGER PRIMARY KEY AUTOINCREMENT, \
                 name VARCHAR NOT NULL, \
-                hair_color VARCHAR DEFAULT 'Green')")
+                hair_color VARCHAR DEFAULT 'Green',
+                type VARCHAR DEFAULT 'regular')")
                 .execute(&mut conn)
                 .unwrap();
             sql_query("CREATE TABLE users_ (\
                 id INTEGER PRIMARY KEY AUTOINCREMENT, \
                 name VARCHAR NOT NULL, \
-                hair_color VARCHAR DEFAULT 'Green')")
+                hair_color VARCHAR DEFAULT 'Green',
+                type VARCHAR DEFAULT 'regular')")
                 .execute(&mut conn)
                 .unwrap();
             conn
@@ -40,13 +42,15 @@ cfg_if! {
             sql_query("CREATE TABLE users (\
                 id SERIAL PRIMARY KEY, \
                 name VARCHAR NOT NULL, \
-                hair_color VARCHAR DEFAULT 'Green')")
+                hair_color VARCHAR DEFAULT 'Green',
+                type VARCHAR DEFAULT 'regular')")
                 .execute(&mut conn)
                 .unwrap();
             sql_query("CREATE TABLE users_ (\
                 id SERIAL PRIMARY KEY, \
                 name VARCHAR NOT NULL, \
-                hair_color VARCHAR DEFAULT 'Green')")
+                hair_color VARCHAR DEFAULT 'Green',
+                type VARCHAR DEFAULT 'regular')")
                 .execute(&mut conn)
                 .unwrap();
             conn
@@ -61,18 +65,18 @@ cfg_if! {
                 .or_else(|_| dotenvy::var("DATABASE_URL"))
                 .expect("DATABASE_URL must be set in order to run tests");
             let mut conn = MysqlConnection::establish(&database_url).unwrap();
-            sql_query("DROP TABLE IF EXISTS users CASCADE").execute(&mut conn).unwrap();
-            sql_query("DROP TABLE IF EXISTS users_ CASCADE").execute(&mut conn).unwrap();
-            sql_query("CREATE TABLE users (\
+            sql_query("CREATE TEMPORARY TABLE users (\
                 id INTEGER PRIMARY KEY AUTO_INCREMENT, \
                 name TEXT NOT NULL, \
-                hair_color VARCHAR(255) DEFAULT 'Green')")
+                hair_color VARCHAR(255) DEFAULT 'Green',
+                type VARCHAR(255) DEFAULT 'regular')")
                 .execute(&mut conn)
                 .unwrap();
-            sql_query("CREATE TABLE users_ (\
+            sql_query("CREATE TEMPORARY TABLE users_ (\
                 id INTEGER PRIMARY KEY AUTO_INCREMENT, \
                 name TEXT NOT NULL, \
-                hair_color VARCHAR(255) DEFAULT 'Green')")
+                hair_color VARCHAR(255) DEFAULT 'Green',
+                type VARCHAR(255) DEFAULT 'regular')")
                 .execute(&mut conn)
                 .unwrap();
             conn.begin_test_transaction().unwrap();
@@ -94,8 +98,18 @@ pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
     let mut connection = connection();
     diesel::insert_into(users)
         .values(&vec![
-            (id.eq(1), name.eq("Sean"), hair_color.eq("black")),
-            (id.eq(2), name.eq("Tess"), hair_color.eq("brown")),
+            (
+                id.eq(1),
+                name.eq("Sean"),
+                hair_color.eq("black"),
+                r#type.eq("regular"),
+            ),
+            (
+                id.eq(2),
+                name.eq("Tess"),
+                hair_color.eq("brown"),
+                r#type.eq("admin"),
+            ),
         ])
         .execute(&mut connection)
         .unwrap();

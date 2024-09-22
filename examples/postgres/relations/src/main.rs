@@ -1,10 +1,10 @@
-use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use dotenvy::dotenv;
 use std::env;
 use std::error::Error;
 
 pub mod model;
+#[rustfmt::skip]
 pub mod schema;
 
 use crate::model::*;

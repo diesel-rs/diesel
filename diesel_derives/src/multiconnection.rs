@@ -118,6 +118,15 @@ fn generate_connection_impl(
         }
     });
 
+    let set_cache_impl = connection_types.iter().map(|c| {
+        let variant_ident = c.name;
+        quote::quote! {
+            #ident::#variant_ident(conn) => {
+                diesel::connection::Connection::set_prepared_statement_cache_size(conn, size);
+            }
+        }
+    });
+
     let get_instrumentation_impl = connection_types.iter().map(|c| {
         let variant_ident = c.name;
         quote::quote! {
@@ -212,6 +221,13 @@ fn generate_connection_impl(
         }
     });
 
+    let impl_begin_test_transaction = connection_types.iter().map(|c| {
+        let ident = c.name;
+        quote::quote! {
+            Self::#ident(conn) => conn.begin_test_transaction()
+        }
+    });
+
     let r2d2_impl = if cfg!(feature = "r2d2") {
         let impl_ping_r2d2 = connection_types.iter().map(|c| {
             let ident = c.name;
@@ -295,6 +311,9 @@ fn generate_connection_impl(
                 let mut query_builder = self.query_builder.duplicate();
                 self.inner.to_sql(&mut query_builder, &self.backend)?;
                 pass.push_sql(&query_builder.finish());
+                if !self.inner.is_safe_to_cache_prepared(&self.backend)? {
+                    pass.unsafe_to_cache_prepared();
+                }
                 if let Some((outer_collector, lookup)) = pass.bind_collector() {
                     C::handle_inner_pass(outer_collector, lookup, &self.backend, &self.inner)?;
                 }
@@ -354,6 +373,18 @@ fn generate_connection_impl(
             fn set_instrumentation(&mut self, instrumentation: impl diesel::connection::Instrumentation) {
                 match self {
                     #(#instrumentation_impl,)*
+                }
+            }
+
+            fn set_prepared_statement_cache_size(&mut self, size: diesel::connection::CacheSize) {
+                match self {
+                    #(#set_cache_impl,)*
+                }
+            }
+
+            fn begin_test_transaction(&mut self) -> diesel::QueryResult<()> {
+                match self {
+                    #(#impl_begin_test_transaction,)*
                 }
             }
         }
@@ -757,6 +788,18 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         }
     });
 
+    let push_null_to_inner_collector = connection_types
+        .iter()
+        .map(|c| {
+            let ident = c.name;
+            quote::quote! {
+                (Self::#ident(ref mut bc), super::backend::MultiTypeMetadata{ #ident: Some(metadata), .. }) => {
+                    bc.push_null_value(metadata)?;
+                }
+            }
+        })
+        .collect::<Vec<_>>();
+
     let push_bound_value_super_traits = connection_types
         .iter()
         .map(|c| {
@@ -948,20 +991,14 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
                         // set the `inner` field of `BindValue` to something for the `None`
                         // case. Therefore we need to handle that explicitly here.
                         //
-                        // We just use a specific sql + rust type here to workaround
-                        // the fact that rustc is not able to see that the underlying DBMS
-                        // must support that sql + rust type combination. All tested DBMS
-                        // (postgres, sqlite, mysql, oracle) seems to not care about the
-                        // actual type here and coerce null values to the "right" type
-                        // anyway
-                        BindValue {
-                            inner: Some(InnerBindValue {
-                                value: InnerBindValueKind::Null,
-                                push_bound_value_to_collector: &PushBoundValueToCollectorImpl {
-                                    p: std::marker::PhantomData::<(diesel::sql_types::Integer, i32)>
-                                }
-                            })
+                        let metadata = <MultiBackend as diesel::sql_types::HasSqlType<T>>::metadata(metadata_lookup);
+                        match (self, metadata) {
+                            #(#push_null_to_inner_collector)*
+                            _ => {
+                                unreachable!("We have matching metadata")
+                            },
                         }
+                       return Ok(());
                     } else {
                         out.into_inner()
                     }
@@ -970,6 +1007,14 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
                     #(#push_to_inner_collector)*
                 }
 
+                Ok(())
+            }
+
+            fn push_null_value(&mut self, metadata: super::backend::MultiTypeMetadata) -> diesel::QueryResult<()> {
+                match (self, metadata) {
+                    #(#push_null_to_inner_collector)*
+                    _ => unreachable!("We have matching metadata"),
+                }
                 Ok(())
             }
         }
@@ -1159,6 +1204,35 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
     ])
     .map(|t| generate_queryfragment_impls(t, &query_fragment_bounds));
 
+    let insert_values_impl_variants = connection_types.iter().map(|c| {
+        let ident = c.name;
+        let lower_ident = syn::Ident::new(&ident.to_string().to_lowercase(), c.name.span());
+        let ty = c.ty;
+        quote::quote! {
+            super::backend::MultiBackend::#ident(_) => {
+                <Self as diesel::insertable::InsertValues<<#ty as diesel::connection::Connection>::Backend, Col::Table>>::column_names(
+                    &self,
+                    out.cast_database(
+                        super::bind_collector::MultiBindCollector::#lower_ident,
+                        super::query_builder::MultiQueryBuilder::#lower_ident,
+                        super::backend::MultiBackend::#lower_ident,
+                        |l| {
+                            <#ty as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(l)
+                                .expect("It's possible to downcast the metadata lookup type to the correct type")
+                        },
+                    ),
+                )
+            }
+        }
+    });
+
+    let insert_values_backend_bounds = connection_types.iter().map(|c| {
+        let ty = c.ty;
+        quote::quote! {
+            diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<Col, Expr>>: diesel::insertable::InsertValues<<#ty as diesel::connection::Connection>::Backend, Col::Table>
+        }
+    });
+
     quote::quote! {
         pub enum MultiQueryBuilder {
             #(#variants,)*
@@ -1345,6 +1419,27 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
                 }
             }
         }
+
+        impl<Col, Expr> diesel::insertable::InsertValues<super::multi_connection_impl::backend::MultiBackend, Col::Table>
+            for diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<Col, Expr>>
+        where
+            Col: diesel::prelude::Column,
+            Expr: diesel::prelude::Expression<SqlType = Col::SqlType>,
+            Expr: diesel::prelude::AppearsOnTable<diesel::internal::derives::multiconnection::NoFromClause>,
+            Self: diesel::query_builder::QueryFragment<super::multi_connection_impl::backend::MultiBackend>,
+            #(#insert_values_backend_bounds,)*
+        {
+            fn column_names(
+                &self,
+                mut out: diesel::query_builder::AstPass<'_, '_, super::multi_connection_impl::backend::MultiBackend>
+            ) -> QueryResult<()> {
+                use diesel::internal::derives::multiconnection::AstPassHelper;
+
+                match out.backend() {
+                    #(#insert_values_impl_variants,)*
+                }
+            }
+        }
     }
 }
 
@@ -1368,8 +1463,8 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
     let type_metadata_variants = connection_types.iter().map(|c| {
         let ident = c.name;
         let ty = c.ty;
-        quote::quote!{
-            #ident(<<#ty as diesel::Connection>::Backend as diesel::sql_types::TypeMetadata>::TypeMetadata)
+        quote::quote! {
+            pub(super) #ident: Option<<<#ty as diesel::Connection>::Backend as diesel::sql_types::TypeMetadata>::TypeMetadata>
         }
     });
 
@@ -1394,7 +1489,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         let ident = c.name;
         let lower_ident = syn::Ident::new(&ident.to_string().to_lowercase(), ident.span());
         quote::quote! {
-            fn #lower_ident(&self) -> &<#ty as diesel::Connection>::Backend {
+            pub(super) fn #lower_ident(&self) -> &<#ty as diesel::Connection>::Backend {
                 match self {
                     Self::#ident(b) => b,
                     _ => unreachable!(),
@@ -1456,7 +1551,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
 
         quote::quote!{
             if let Some(lookup) = <#ty as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(lookup) {
-                return MultiTypeMetadata::#name(<<#ty as diesel::Connection>::Backend as diesel::sql_types::HasSqlType<ST>>::metadata(lookup));
+                ret.#name = Some(<<#ty as diesel::Connection>::Backend as diesel::sql_types::HasSqlType<ST>>::metadata(lookup));
             }
         }
 
@@ -1480,8 +1575,9 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
             pub fn lookup_sql_type<ST>(lookup: &mut dyn std::any::Any) -> MultiTypeMetadata
             where #(#lookup_sql_type_bounds,)*
             {
+                let mut ret = MultiTypeMetadata::default();
                 #(#lookup_impl)*
-                unreachable!()
+                ret
             }
         }
 
@@ -1519,7 +1615,9 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
             type BindCollector<'a> = super::bind_collector::MultiBindCollector<'a>;
         }
 
-        pub enum MultiTypeMetadata {
+        #[derive(Default)]
+        #[allow(non_snake_case)]
+        pub struct MultiTypeMetadata {
             #(#type_metadata_variants,)*
         }
 

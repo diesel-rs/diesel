@@ -1,13 +1,11 @@
-use super::{AppearsInFromClause, Plus, QuerySource};
+use super::{AppearsInFromClause, Plus};
 use crate::backend::Backend;
 use crate::backend::DieselReserveSpecialization;
 use crate::expression::grouped::Grouped;
 use crate::expression::nullable::Nullable;
-use crate::expression::SelectableExpression;
 use crate::prelude::*;
 use crate::query_builder::*;
 use crate::query_dsl::InternalJoinDsl;
-use crate::result::QueryResult;
 use crate::sql_types::BoolOrNullableBool;
 use crate::util::TupleAppend;
 

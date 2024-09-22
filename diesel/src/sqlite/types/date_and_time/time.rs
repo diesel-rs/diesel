@@ -4,9 +4,12 @@
 extern crate time;
 
 use self::time::{
-    error::ComponentRange, format_description::FormatItem, macros::format_description,
-    Date as NaiveDate, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime, UtcOffset,
+    error::ComponentRange, macros::format_description, Date as NaiveDate, OffsetDateTime,
+    PrimitiveDateTime, Time as NaiveTime, UtcOffset,
 };
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
+use self::time::format_description::FormatItem;
 
 use crate::backend::Backend;
 use crate::deserialize::{self, FromSql};
@@ -21,13 +24,23 @@ use crate::sqlite::Sqlite;
 /// since there is no format option to forgo the dot.
 /// We always print as many subsecond as his given to us,
 /// this means the subsecond part can be between 1 and 9 digits.
+///
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
 
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const ENCODE_TIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] =
     format_description!("[hour]:[minute]:[second]");
+
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const ENCODE_TIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
     format_description!("[hour]:[minute]:[second].[subsecond]");
 
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const TIME_FORMATS: [&[FormatItem<'_>]; 9] = [
     // Most likely formats
     format_description!("[hour]:[minute]:[second].[subsecond]"),
@@ -44,17 +57,29 @@ const TIME_FORMATS: [&[FormatItem<'_>]; 9] = [
     ),
 ];
 
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const ENCODE_PRIMITIVE_DATETIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] =
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
+
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const ENCODE_PRIMITIVE_DATETIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]");
 
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const ENCODE_DATETIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] = format_description!(
     "[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"
 );
+
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const ENCODE_DATETIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]");
 
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const PRIMITIVE_DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
     // Most likely formats
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]"),
@@ -78,6 +103,8 @@ const PRIMITIVE_DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
 ];
 
+// the non-deprecated variant does not exist in our minimal supported version
+#[allow(deprecated)]
 const DATETIME_FORMATS: [&[FormatItem<'_>]; 12] = [
     // Most likely formats
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
@@ -104,6 +131,7 @@ fn parse_julian(julian_days: f64) -> Result<PrimitiveDateTime, ComponentRange> {
     const EPOCH_IN_JULIAN_DAYS: f64 = 2_440_587.5;
     const SECONDS_IN_DAY: f64 = 86400.0;
     let timestamp = (julian_days - EPOCH_IN_JULIAN_DAYS) * SECONDS_IN_DAY;
+    #[allow(clippy::cast_possible_truncation)] // we multiply by 1E9 to prevent that
     OffsetDateTime::from_unix_timestamp_nanos((timestamp * 1E9) as i128).map(naive_utc)
 }
 
@@ -275,9 +303,9 @@ mod tests {
     use crate::sql_types::{Text, Time, Timestamp, TimestamptzSqlite};
     use crate::test_helpers::connection;
 
-    sql_function!(fn datetime(x: Text) -> Timestamp);
-    sql_function!(fn time(x: Text) -> Time);
-    sql_function!(fn date(x: Text) -> Date);
+    define_sql_function!(fn datetime(x: Text) -> Timestamp);
+    define_sql_function!(fn time(x: Text) -> Time);
+    define_sql_function!(fn date(x: Text) -> Date);
 
     #[test]
     fn unix_epoch_encodes_correctly() {

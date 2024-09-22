@@ -63,14 +63,14 @@ impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
 
         match sign {
             0 => Ok(PgNumeric::Positive {
-                weight: weight,
-                scale: scale,
-                digits: digits,
+                weight,
+                scale,
+                digits,
             }),
             0x4000 => Ok(PgNumeric::Negative {
-                weight: weight,
-                scale: scale,
-                digits: digits,
+                weight,
+                scale,
+                digits,
             }),
             0xC000 => Ok(PgNumeric::NaN),
             invalid => Err(Box::new(InvalidNumericSign(invalid))),
@@ -101,7 +101,7 @@ impl ToSql<sql_types::Numeric, Pg> for PgNumeric {
             PgNumeric::Positive { scale, .. } | PgNumeric::Negative { scale, .. } => scale,
             PgNumeric::NaN => 0,
         };
-        out.write_u16::<NetworkEndian>(digits.len() as u16)?;
+        out.write_u16::<NetworkEndian>(digits.len().try_into()?)?;
         out.write_i16::<NetworkEndian>(weight)?;
         out.write_u16::<NetworkEndian>(sign)?;
         out.write_u16::<NetworkEndian>(scale)?;
@@ -117,16 +117,23 @@ impl ToSql<sql_types::Numeric, Pg> for PgNumeric {
 impl FromSql<sql_types::Float, Pg> for f32 {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
-        debug_assert!(
-            bytes.len() <= 4,
-            "Received more than 4 bytes while decoding \
-             an f32. Was a double accidentally marked as float?"
-        );
-        debug_assert!(
-            bytes.len() >= 4,
-            "Received less than 4 bytes while decoding \
-             an f32."
-        );
+
+        if bytes.len() < 4 {
+            return deserialize::Result::Err(
+                "Received less than 4 bytes while decoding an f32. \
+                 Was a numeric accidentally marked as float?"
+                    .into(),
+            );
+        }
+
+        if bytes.len() > 4 {
+            return deserialize::Result::Err(
+                "Received more than 4 bytes while decoding an f32. \
+                 Was a double accidentally marked as float?"
+                    .into(),
+            );
+        }
+
         bytes
             .read_f32::<NetworkEndian>()
             .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
@@ -137,16 +144,23 @@ impl FromSql<sql_types::Float, Pg> for f32 {
 impl FromSql<sql_types::Double, Pg> for f64 {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
-        debug_assert!(
-            bytes.len() <= 8,
-            "Received less than 8 bytes while decoding \
-             an f64. Was a float accidentally marked as double?"
-        );
-        debug_assert!(
-            bytes.len() >= 8,
-            "Received more than 8 bytes while decoding \
-             an f64. Was a numeric accidentally marked as double?"
-        );
+
+        if bytes.len() < 8 {
+            return deserialize::Result::Err(
+                "Received less than 8 bytes while decoding an f64. \
+                    Was a float accidentally marked as double?"
+                    .into(),
+            );
+        }
+
+        if bytes.len() > 8 {
+            return deserialize::Result::Err(
+                "Received more than 8 bytes while decoding an f64. \
+                    Was a numeric accidentally marked as double?"
+                    .into(),
+            );
+        }
+
         bytes
             .read_f64::<NetworkEndian>()
             .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)

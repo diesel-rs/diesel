@@ -15,7 +15,7 @@ use super::result::PgResult;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub(super) struct RawConnection {
-    internal_connection: NonNull<PGconn>,
+    pub(super) internal_connection: NonNull<PGconn>,
 }
 
 impl RawConnection {
@@ -132,6 +132,49 @@ impl RawConnection {
     pub(crate) fn enable_row_by_row_mode(&self) -> QueryResult<()> {
         let res = unsafe { PQsetSingleRowMode(self.internal_connection.as_ptr()) };
         if res == 1 {
+            Ok(())
+        } else {
+            Err(Error::DatabaseError(
+                DatabaseErrorKind::Unknown,
+                Box::new(self.last_error_message()),
+            ))
+        }
+    }
+
+    pub(super) fn put_copy_data(&mut self, buf: &[u8]) -> QueryResult<()> {
+        for c in buf.chunks(i32::MAX as usize) {
+            let res = unsafe {
+                pq_sys::PQputCopyData(
+                    self.internal_connection.as_ptr(),
+                    c.as_ptr() as *const libc::c_char,
+                    c.len()
+                        .try_into()
+                        .map_err(|e| Error::SerializationError(Box::new(e)))?,
+                )
+            };
+            if res != 1 {
+                return Err(Error::DatabaseError(
+                    DatabaseErrorKind::Unknown,
+                    Box::new(self.last_error_message()),
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    pub(crate) fn finish_copy_from(&self, err: Option<String>) -> QueryResult<()> {
+        let error = err.map(CString::new).map(|r| {
+            r.unwrap_or_else(|_| {
+                CString::new("Error message contains a \\0 byte")
+                    .expect("Does not contain a null byte")
+            })
+        });
+        let error = error
+            .as_ref()
+            .map(|l| l.as_ptr())
+            .unwrap_or(std::ptr::null());
+        let ret = unsafe { pq_sys::PQputCopyEnd(self.internal_connection.as_ptr(), error) };
+        if ret == 1 {
             Ok(())
         } else {
             Err(Error::DatabaseError(

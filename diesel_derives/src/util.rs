@@ -1,8 +1,14 @@
-use proc_macro2::TokenStream;
-use quote::quote;
-use syn::parse::{Parse, ParseStream, Peek, Result};
-use syn::token::Eq;
-use syn::{parenthesized, parse_quote, Data, DeriveInput, GenericArgument, Ident, Type};
+use {
+    proc_macro2::TokenStream,
+    quote::quote,
+    syn::{
+        parenthesized,
+        parse::{Parse, ParseStream, Peek, Result},
+        parse_quote,
+        token::Eq,
+        Data, DeriveInput, GenericArgument, Ident, Type,
+    },
+};
 
 use crate::model::Model;
 
@@ -93,13 +99,18 @@ where
     content.parse_terminated(T::parse, sep)
 }
 
-pub fn wrap_in_dummy_mod(item: TokenStream, diesel_path_override: Option<&syn::Path>) -> TokenStream {
+pub fn wrap_in_dummy_mod(
+    item: TokenStream,
+    diesel_path_override: Option<&syn::Path>,
+) -> TokenStream {
     let diesel_path = match diesel_path_override {
         Some(path) => path,
         None => &parse_quote!(diesel),
     };
+    // #[allow(unused_qualifications)] can be removed if https://github.com/rust-lang/rust/issues/130277 gets done
     quote! {
         #[allow(unused_imports)]
+        #[allow(unused_qualifications)]
         const _: () = {
             // This import is not actually redundant. When using diesel_derives
             // inside of diesel, `diesel` doesn't exist as an extern crate, and
@@ -122,8 +133,17 @@ pub fn is_option_ty(ty: &Type) -> bool {
     option_ty_arg(ty).is_some()
 }
 
-fn option_ty_arg(ty: &Type) -> Option<&Type> {
+fn option_ty_arg(mut ty: &Type) -> Option<&Type> {
     use syn::PathArguments::AngleBracketed;
+
+    // Check the inner equivalent type
+    loop {
+        match ty {
+            Type::Group(group) => ty = &group.elem,
+            Type::Paren(paren) => ty = &paren.elem,
+            _ => break,
+        }
+    }
 
     match *ty {
         Type::Path(ref ty) => {

@@ -58,3 +58,19 @@ error[E0121]: the placeholder `_` is not allowed within types on item signatures
    |
 66 |             .filter(posts::id.gt(2)),
    |                                  ^ not allowed in type signatures
+
+error[E0061]: this method takes 1 argument but 0 arguments were supplied
+  --> tests/fail/auto_type.rs:56:20
+   |
+56 |     posts::user_id.eq::<_>()
+   |                    ^^^^^^^-- argument #1 is missing
+   |
+note: method defined here
+  --> $DIESEL/src/expression_methods/global_expression_methods.rs
+   |
+   |     fn eq<T>(self, other: T) -> dsl::Eq<Self, T>
+   |        ^^
+help: provide the argument
+   |
+56 |     posts::user_id.eq::<_>(/* other */)
+   |                           ~~~~~~~~~~~~~

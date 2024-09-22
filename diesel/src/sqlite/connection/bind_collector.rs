@@ -1,4 +1,4 @@
-use crate::query_builder::BindCollector;
+use crate::query_builder::{BindCollector, MoveableBindCollector};
 use crate::serialize::{IsNull, Output};
 use crate::sql_types::HasSqlType;
 use crate::sqlite::{Sqlite, SqliteType};
@@ -125,7 +125,10 @@ impl std::fmt::Display for InternalSqliteBindValue<'_> {
 
 impl InternalSqliteBindValue<'_> {
     #[allow(unsafe_code)] // ffi function calls
-    pub(in crate::sqlite) fn result_of(self, ctx: &mut libsqlite3_sys::sqlite3_context) {
+    pub(in crate::sqlite) fn result_of(
+        self,
+        ctx: &mut libsqlite3_sys::sqlite3_context,
+    ) -> Result<(), std::num::TryFromIntError> {
         use libsqlite3_sys as ffi;
         use std::os::raw as libc;
         // This unsafe block assumes the following invariants:
@@ -136,25 +139,25 @@ impl InternalSqliteBindValue<'_> {
                 InternalSqliteBindValue::BorrowedString(s) => ffi::sqlite3_result_text(
                     ctx,
                     s.as_ptr() as *const libc::c_char,
-                    s.len() as libc::c_int,
+                    s.len().try_into()?,
                     ffi::SQLITE_TRANSIENT(),
                 ),
                 InternalSqliteBindValue::String(s) => ffi::sqlite3_result_text(
                     ctx,
                     s.as_ptr() as *const libc::c_char,
-                    s.len() as libc::c_int,
+                    s.len().try_into()?,
                     ffi::SQLITE_TRANSIENT(),
                 ),
                 InternalSqliteBindValue::Binary(b) => ffi::sqlite3_result_blob(
                     ctx,
                     b.as_ptr() as *const libc::c_void,
-                    b.len() as libc::c_int,
+                    b.len().try_into()?,
                     ffi::SQLITE_TRANSIENT(),
                 ),
                 InternalSqliteBindValue::BorrowedBinary(b) => ffi::sqlite3_result_blob(
                     ctx,
                     b.as_ptr() as *const libc::c_void,
-                    b.len() as libc::c_int,
+                    b.len().try_into()?,
                     ffi::SQLITE_TRANSIENT(),
                 ),
                 InternalSqliteBindValue::I32(i) => ffi::sqlite3_result_int(ctx, i as libc::c_int),
@@ -165,6 +168,7 @@ impl InternalSqliteBindValue<'_> {
                 InternalSqliteBindValue::Null => ffi::sqlite3_result_null(ctx),
             }
         }
+        Ok(())
     }
 }
 
@@ -193,5 +197,83 @@ impl<'a> BindCollector<'a, Sqlite> for SqliteBindCollector<'a> {
             metadata,
         ));
         Ok(())
+    }
+
+    fn push_null_value(&mut self, metadata: SqliteType) -> QueryResult<()> {
+        self.binds.push((InternalSqliteBindValue::Null, metadata));
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+enum OwnedSqliteBindValue {
+    String(Box<str>),
+    Binary(Box<[u8]>),
+    I32(i32),
+    I64(i64),
+    F64(f64),
+    Null,
+}
+
+impl<'a> std::convert::From<&InternalSqliteBindValue<'a>> for OwnedSqliteBindValue {
+    fn from(value: &InternalSqliteBindValue<'a>) -> Self {
+        match value {
+            InternalSqliteBindValue::String(s) => Self::String(s.clone()),
+            InternalSqliteBindValue::BorrowedString(s) => {
+                Self::String(String::from(*s).into_boxed_str())
+            }
+            InternalSqliteBindValue::Binary(b) => Self::Binary(b.clone()),
+            InternalSqliteBindValue::BorrowedBinary(s) => {
+                Self::Binary(Vec::from(*s).into_boxed_slice())
+            }
+            InternalSqliteBindValue::I32(val) => Self::I32(*val),
+            InternalSqliteBindValue::I64(val) => Self::I64(*val),
+            InternalSqliteBindValue::F64(val) => Self::F64(*val),
+            InternalSqliteBindValue::Null => Self::Null,
+        }
+    }
+}
+
+impl<'a> std::convert::From<&OwnedSqliteBindValue> for InternalSqliteBindValue<'a> {
+    fn from(value: &OwnedSqliteBindValue) -> Self {
+        match value {
+            OwnedSqliteBindValue::String(s) => Self::String(s.clone()),
+            OwnedSqliteBindValue::Binary(b) => Self::Binary(b.clone()),
+            OwnedSqliteBindValue::I32(val) => Self::I32(*val),
+            OwnedSqliteBindValue::I64(val) => Self::I64(*val),
+            OwnedSqliteBindValue::F64(val) => Self::F64(*val),
+            OwnedSqliteBindValue::Null => Self::Null,
+        }
+    }
+}
+
+#[derive(Debug)]
+/// Sqlite bind collector data that is movable across threads
+pub struct SqliteBindCollectorData {
+    binds: Vec<(OwnedSqliteBindValue, SqliteType)>,
+}
+
+impl MoveableBindCollector<Sqlite> for SqliteBindCollector<'_> {
+    type BindData = SqliteBindCollectorData;
+
+    fn moveable(&self) -> Self::BindData {
+        let mut binds = Vec::with_capacity(self.binds.len());
+        for b in self
+            .binds
+            .iter()
+            .map(|(bind, tpe)| (OwnedSqliteBindValue::from(bind), *tpe))
+        {
+            binds.push(b);
+        }
+        SqliteBindCollectorData { binds }
+    }
+
+    fn append_bind_data(&mut self, from: &Self::BindData) {
+        self.binds.reserve_exact(from.binds.len());
+        self.binds.extend(
+            from.binds
+                .iter()
+                .map(|(bind, tpe)| (InternalSqliteBindValue::from(bind), *tpe)),
+        );
     }
 }

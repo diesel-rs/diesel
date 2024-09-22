@@ -3,7 +3,7 @@ use super::information_schema::DefaultSchema;
 use super::TableName;
 use crate::print_schema::ColumnSorting;
 use diesel::connection::DefaultLoadingMode;
-use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
+use diesel::deserialize::{self, FromStaticSqlRow};
 use diesel::dsl::AsExprOf;
 use diesel::expression::AsExpression;
 use diesel::pg::Pg;
@@ -70,7 +70,7 @@ fn regclass(table: &TableName) -> Regclass<AsExprOf<String, sql_types::Text>> {
     ))
 }
 
-diesel::sql_function!(fn col_description(table: sql_types::Oid, column_number: sql_types::BigInt) -> sql_types::Nullable<sql_types::Text>);
+diesel::define_sql_function!(fn col_description(table: sql_types::Oid, column_number: sql_types::BigInt) -> sql_types::Nullable<sql_types::Text>);
 
 pub fn get_table_data(
     conn: &mut PgConnection,
@@ -139,7 +139,7 @@ where
     }
 }
 
-sql_function!(fn obj_description(oid: sql_types::Oid, catalog: sql_types::Text) -> Nullable<Text>);
+define_sql_function!(fn obj_description(oid: sql_types::Oid, catalog: sql_types::Text) -> Nullable<Text>);
 
 pub fn get_table_comment(
     conn: &mut PgConnection,
@@ -166,7 +166,7 @@ mod information_schema {
     }
 }
 
-sql_function! {
+define_sql_function! {
     #[aggregate]
     fn array_agg(input: diesel::sql_types::Text) -> diesel::sql_types::Array<diesel::sql_types::Text>;
 }

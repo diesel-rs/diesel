@@ -8,6 +8,8 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{
     self, BigInt, Binary, Bool, Double, Float, Integer, SingleValue, SmallInt, Text,
 };
+use std::borrow::Cow;
+use std::fmt;
 
 #[allow(dead_code)]
 mod foreign_impls {
@@ -91,6 +93,7 @@ mod foreign_impls {
     #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Date))]
     #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Time))]
     #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Timestamp))]
+    #[cfg_attr(feature = "postgres_backend", diesel(sql_type = crate::sql_types::Citext))]
     struct StringProxy(String);
 
     #[derive(AsExpression)]
@@ -99,6 +102,7 @@ mod foreign_impls {
     #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Date))]
     #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Time))]
     #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Timestamp))]
+    #[cfg_attr(feature = "postgres_backend", diesel(sql_type = crate::sql_types::Citext))]
     struct StrProxy(str);
 
     #[derive(FromSqlRow)]
@@ -201,8 +205,6 @@ where
     }
 }
 
-use std::borrow::{Cow, ToOwned};
-use std::fmt;
 impl<'a, T: ?Sized, ST, DB> ToSql<ST, DB> for Cow<'a, T>
 where
     T: 'a + ToOwned + ToSql<ST, DB>,

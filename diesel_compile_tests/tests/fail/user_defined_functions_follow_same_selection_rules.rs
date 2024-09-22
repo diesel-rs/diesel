@@ -1,7 +1,7 @@
 extern crate diesel;
 
-use diesel::*;
 use diesel::sql_types::*;
+use diesel::*;
 
 table! {
     users {
@@ -17,23 +17,26 @@ table! {
     }
 }
 
+allow_tables_to_appear_in_same_query!(users, posts);
+
 #[derive(Queryable)]
 struct User {
     id: i32,
     name: String,
 }
 
-sql_function!(fn foo(x: Integer) -> Integer);
-sql_function!(fn bar(x: VarChar) -> VarChar);
+define_sql_function!(fn foo(x: Integer) -> Integer);
+define_sql_function!(fn bar(x: VarChar) -> VarChar);
 
 fn main() {
-    use self::users::name;
     use self::posts::title;
+    use self::users::name;
 
     let mut conn = PgConnection::establish("").unwrap();
 
     let _ = users::table.filter(name.eq(foo(1)));
 
-    let _ = users::table.filter(name.eq(bar(title)))
+    let _ = users::table
+        .filter(name.eq(bar(title)))
         .load::<User>(&mut conn);
 }

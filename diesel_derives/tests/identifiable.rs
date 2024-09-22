@@ -150,3 +150,49 @@ fn derive_identifiable_with_composite_pk() {
     assert_eq!((&2, &3), foo1.id());
     assert_eq!((&6, &7), foo2.id());
 }
+
+#[test]
+fn derive_identifiable_with_pk_serialize_as() {
+    #[derive(Debug, PartialEq, Eq, Hash)]
+    struct MyI32(i32);
+
+    impl From<i32> for MyI32 {
+        fn from(value: i32) -> Self {
+            MyI32(value)
+        }
+    }
+
+    #[derive(Identifiable)]
+    struct Foo {
+        #[diesel(serialize_as = MyI32)]
+        id: i32,
+    }
+
+    let foo1 = Foo { id: 1 };
+    let foo2 = Foo { id: 2 };
+    assert_eq!(MyI32(1), foo1.id());
+    assert_eq!(MyI32(2), foo2.id());
+}
+
+#[test]
+fn derive_identifiable_with_non_copy_pk_serialize() {
+    #[derive(Debug, PartialEq, Eq, Hash)]
+    struct MyString(String);
+
+    impl From<String> for MyString {
+        fn from(value: String) -> Self {
+            MyString(value)
+        }
+    }
+
+    #[derive(Identifiable)]
+    struct Foo {
+        #[diesel(serialize_as = MyString)]
+        id: String,
+    }
+
+    let foo1 = Foo { id: "1".to_owned() };
+    let foo2 = Foo { id: "2".to_owned() };
+    assert_eq!(MyString("1".to_owned()), foo1.id());
+    assert_eq!(MyString("2".to_owned()), foo2.id());
+}

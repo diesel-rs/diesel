@@ -1,13 +1,13 @@
 [package]
 name = "diesel_table_macro_syntax"
-version = "0.1.0"
+version = "0.2.0"
 description = "Internal diesel crate"
 license = "MIT OR Apache-2.0"
 documentation = "https://diesel.rs/guides/"
 homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel/"
 autotests = false
-include = ["src/**/*", "LICENSE-*"]
+include.workspace = true
 rust-version.workspace = true
 edition = "2021"
 

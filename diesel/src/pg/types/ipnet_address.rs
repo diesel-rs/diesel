@@ -16,6 +16,8 @@ const AF_INET: u8 = 2;
 // Maybe not used, but defining to follow Rust's libstd/net/sys
 #[cfg(target_os = "redox")]
 const AF_INET: u8 = 1;
+
+#[allow(clippy::cast_possible_truncation)] // it's 2
 #[cfg(not(any(windows, target_os = "redox")))]
 const AF_INET: u8 = libc::AF_INET as u8;
 
@@ -182,7 +184,7 @@ fn v6address_to_sql() {
             {
                 let mut bytes = Output::test(ByteWrapper(&mut buffer));
                 let test_address =
-                    IpNet::V6(Ipv6Net::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap());
+                    IpNet::V6(Ipv6Net::new(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0), 64).unwrap());
                 ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
             }
             assert_eq!(
@@ -193,6 +195,7 @@ fn v6address_to_sql() {
                     $net_type,
                     16,
                     0,
+                    0xfd,
                     0,
                     0,
                     0,
@@ -207,7 +210,6 @@ fn v6address_to_sql() {
                     0,
                     0,
                     0,
-                    1,
                 ]
             );
         };
@@ -222,7 +224,7 @@ fn some_v6address_from_sql() {
     macro_rules! test_some_address_from_sql {
         ($ty:tt) => {
             let input_address =
-                IpNet::V6(Ipv6Net::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap());
+                IpNet::V6(Ipv6Net::new(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0), 64).unwrap());
             let mut buffer = Vec::new();
             {
                 let mut bytes = Output::test(ByteWrapper(&mut buffer));

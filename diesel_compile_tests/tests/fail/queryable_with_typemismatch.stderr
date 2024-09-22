@@ -1,16 +1,16 @@
 error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text): load_dsl::private::CompatibleType<User, _>` is not satisfied
-  --> tests/fail/queryable_with_typemismatch.rs:23:23
+  --> tests/fail/queryable_with_typemismatch.rs:21:31
    |
-23 |         .load::<User>(&mut conn)
-   |          ----         ^^^^^^^^^ the trait `load_dsl::private::CompatibleType<User, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text)`
-   |          |
-   |          required by a bound introduced by this call
+21 |     users::table.load::<User>(&mut conn).unwrap();
+   |                  ----         ^^^^^^^^^ the trait `load_dsl::private::CompatibleType<User, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text)`, which is required by `users::table: LoadQuery<'_, _, User>`
+   |                  |
+   |                  required by a bound introduced by this call
    |
-   = note: This is a mismatch between what your query returns and what your type expects the query to return
-           Consider using `#[derive(Selectable)]` + `#[diesel(check_for_backend(_))]` on your struct `User` and
-           in your query `.select(User::as_select())` to get a better error message
+   = note: this is a mismatch between what your query returns and what your type expects the query to return
+   = note: the fields in your struct need to match the fields returned by your query in count, order and type
+   = note: consider using `#[derive(Selectable)]` or #[derive(QueryableByName)] + `#[diesel(check_for_backend(_))]`
+           on your struct `User` and in your query `.select(User::as_select())` to get a better error message
    = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
-             (ST0,)
              (ST0, ST1)
              (ST0, ST1, ST2)
              (ST0, ST1, ST2, ST3)
@@ -18,6 +18,7 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
              (ST0, ST1, ST2, ST3, ST4, ST5)
              (ST0, ST1, ST2, ST3, ST4, ST5, ST6)
              (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)
+             (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)
            and $N others
    = note: required for `users::table` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`

@@ -9,6 +9,7 @@ mod schema;
 mod as_changeset;
 mod as_expression;
 mod associations;
+mod auto_type;
 mod identifiable;
 mod insertable;
 mod multiconnection;

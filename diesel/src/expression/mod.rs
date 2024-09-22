@@ -53,7 +53,7 @@ pub(crate) mod dsl {
     use crate::dsl::SqlTypeOf;
 
     #[doc(inline)]
-    pub use super::case_when::*;
+    pub use super::case_when::case_when;
     #[doc(inline)]
     pub use super::count::*;
     #[doc(inline)]
@@ -65,6 +65,8 @@ pub(crate) mod dsl {
     #[doc(inline)]
     pub use super::functions::date_and_time::*;
     #[doc(inline)]
+    pub use super::helper_types::{case_when, IntoSql, Otherwise, When};
+    #[doc(inline)]
     pub use super::not::not;
     #[doc(inline)]
     pub use super::sql_literal::sql;
@@ -73,7 +75,7 @@ pub(crate) mod dsl {
     pub use crate::pg::expression::dsl::*;
 
     /// The return type of [`count(expr)`](crate::dsl::count())
-    pub type count<Expr> = super::count::count::HelperType<SqlTypeOf<Expr>, Expr>;
+    pub type count<Expr> = super::count::count<SqlTypeOf<Expr>, Expr>;
 
     /// The return type of [`count_star()`](crate::dsl::count_star())
     pub type count_star = super::count::CountStar;
@@ -82,12 +84,14 @@ pub(crate) mod dsl {
     pub type count_distinct<Expr> = super::count::CountDistinct<SqlTypeOf<Expr>, Expr>;
 
     /// The return type of [`date(expr)`](crate::dsl::date())
-    pub type date<Expr> = super::functions::date_and_time::date::HelperType<Expr>;
+    pub type date<Expr> = super::functions::date_and_time::date<Expr>;
 
     #[cfg(feature = "mysql_backend")]
     pub use crate::mysql::query_builder::DuplicatedKeys;
 }
 
+#[doc(inline)]
+pub use self::case_when::CaseWhen;
 #[doc(inline)]
 pub use self::sql_literal::{SqlLiteral, UncheckedBind};
 
@@ -314,12 +318,9 @@ where
 /// Notably, columns will not implement this trait for the right side of a left
 /// join. To select a column or expression using a column from the right side of
 /// a left join, you must call `.nullable()` on it.
-#[cfg_attr(
-    feature = "nightly-error-messages",
-    diagnostic::on_unimplemented(
-        message = "Cannot select `{Self}` from `{QS}`",
-        note = "`{Self}` is no valid selection for `{QS}`"
-    )
+#[diagnostic::on_unimplemented(
+    message = "Cannot select `{Self}` from `{QS}`",
+    note = "`{Self}` is no valid selection for `{QS}`"
 )]
 pub trait SelectableExpression<QS: ?Sized>: AppearsOnTable<QS> {}
 
@@ -547,16 +548,32 @@ where
 /// # }
 /// ```
 ///
-/// If you want to avoid nesting types, you can use the
-/// [`Selectable`](derive@Selectable) derive macro's
-/// `select_expression` and `select_expression_type` attributes to
-/// flatten the fields. If the `select_expression` is simple enough,
-/// it is not necessary to specify `select_expression_type`
-/// (most query fragments are supported for this).
+/// It is also possible to specify an entirely custom select expression
+/// for fields when deriving [`Selectable`](derive@Selectable).
+/// This is useful for example to
+///
+///  * avoid nesting types, or to
+///  * populate fields with values other than table columns, such as
+///    the result of an SQL function like `CURRENT_TIMESTAMP()`
+///    or a custom SQL function.
+///
+/// The select expression is specified via the `select_expression` parameter.
+///
+/// Query fragments created using [`dsl::auto_type`](crate::dsl::auto_type) are supported, which
+/// may be useful as the select expression gets large: it may not be practical to inline it in
+/// the attribute then.
+///
+/// The type of the expression is usually inferred. If it can't be fully inferred automatically,
+/// one may either:
+/// - Put type annotations in inline blocks in the query fragment itself
+/// - Use a dedicated [`dsl::auto_type`](crate::dsl::auto_type) function as `select_expression`
+///   and use [`dsl::auto_type`'s type annotation features](crate::dsl::auto_type)
+/// - Specify the type of the expression using the `select_expression_type` attribute
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
 /// use schema::{users, posts};
+/// use diesel::dsl;
 ///
 /// #[derive(Debug, PartialEq, Queryable, Selectable)]
 /// struct User {
@@ -577,8 +594,19 @@ where
 ///     id: i32,
 ///     #[diesel(select_expression = users::columns::name)]
 ///     name: String,
-///     #[diesel(select_expression = posts::columns::title)]
+///     #[diesel(select_expression = complex_fragment_for_title())]
 ///     title: String,
+/// #   #[cfg(feature = "chrono")]
+///     #[diesel(select_expression = diesel::dsl::now)]
+///     access_time: chrono::NaiveDateTime,
+///     #[diesel(select_expression = users::columns::id.eq({let id: i32 = FOO; id}))]
+///     user_id_is_foo: bool,
+/// }
+/// const FOO: i32 = 42; // Type of FOO can't be inferred automatically in the select_expression
+/// #[dsl::auto_type]
+/// fn complex_fragment_for_title() -> _ {
+///     // See the `#[dsl::auto_type]` documentation for examples of more complex usage
+///     posts::columns::title
 /// }
 ///
 /// # fn main() -> QueryResult<()> {
@@ -593,6 +621,9 @@ where
 ///     id: 1,
 ///     name: "Sean".into(),
 ///     title: "My first post".into(),
+/// #   #[cfg(feature = "chrono")]
+///     access_time: first_user_post.access_time,
+///     user_id_is_foo: false,
 /// };
 /// assert_eq!(expected_user_post, first_user_post);
 /// #

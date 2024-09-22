@@ -1,37 +1,16 @@
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:21:37
+  --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:25:10
    |
-21 |     users::table.into_boxed::<Pg>().filter(posts::title.eq("Hello"));
-   |                                     ^^^^^^ expected `Never`, found `Once`
+25 |         .filter(posts::title.eq("Hello"));
+   |          ^^^^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
   --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:16:9
    |
 16 |         title -> VarChar,
    |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<title, Bound<Text, &str>>>` to implement `AppearsOnTable<users::table>`
    = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>`
-
-error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-  --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:21:37
-   |
-21 |     users::table.into_boxed::<Pg>().filter(posts::title.eq("Hello"));
-   |                                     ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
-   |
-   = help: the following other types implement trait `TableNotEqual<T>`:
-             <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-   = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
-note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:16:9
-   |
-16 |         title -> VarChar,
-   |         ^^^^^
-   = note: 2 redundant requirements hidden
-   = note: required for `Grouped<Eq<title, Bound<Text, &str>>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>`
+   = note: consider using `--verbose` to print the full type name to the console

@@ -1,6 +1,5 @@
 use crate::schema::connection;
 use diesel::dsl::*;
-use diesel::pg::expression::dsl::OnlyDsl;
 use diesel::prelude::*;
 
 // The reason we declare tables specifically for these tests, is that we test inheritance and thus

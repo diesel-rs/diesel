@@ -594,6 +594,10 @@ mod test {
             ) {
                 self.instrumentation = Some(Box::new(instrumentation));
             }
+
+            fn set_prepared_statement_cache_size(&mut self, _size: crate::connection::CacheSize) {
+                panic!("implement, if you want to use it")
+            }
         }
     }
 

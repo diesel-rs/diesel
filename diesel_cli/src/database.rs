@@ -9,9 +9,7 @@ use diesel_migrations::FileBasedMigrations;
 
 use std::env;
 #[cfg(feature = "postgres")]
-use std::fs::{self, File};
-#[cfg(feature = "postgres")]
-use std::io::Write;
+use std::fs::{self};
 use std::path::Path;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -169,7 +167,13 @@ pub fn setup_database(
     let database_url = database_url(args)?;
 
     create_database_if_needed(&database_url)?;
-    create_default_migration_if_needed(&database_url, migrations_dir)?;
+
+    let default_migrations = !args.get_flag("NO_DEFAULT_MIGRATION");
+
+    if default_migrations {
+        create_default_migration_if_needed(&database_url, migrations_dir)?;
+    }
+
     create_schema_table_and_run_migrations_if_needed(&database_url, migrations_dir)?;
     Ok(())
 }
@@ -242,11 +246,21 @@ fn create_default_migration_if_needed(
     match Backend::for_url(database_url) {
         #[cfg(feature = "postgres")]
         Backend::Pg => {
-            fs::create_dir_all(&initial_migration_path)?;
-            let mut up_sql = File::create(initial_migration_path.join("up.sql"))?;
-            up_sql.write_all(include_bytes!("setup_sql/postgres/initial_setup/up.sql"))?;
-            let mut down_sql = File::create(initial_migration_path.join("down.sql"))?;
-            down_sql.write_all(include_bytes!("setup_sql/postgres/initial_setup/down.sql"))?;
+            fs::create_dir_all(&initial_migration_path).map_err(|e| {
+                crate::errors::Error::IoError(e, Some(initial_migration_path.clone()))
+            })?;
+            let up_sql_file = initial_migration_path.join("up.sql");
+            std::fs::write(
+                &up_sql_file,
+                include_bytes!("setup_sql/postgres/initial_setup/up.sql"),
+            )
+            .map_err(|e| crate::errors::Error::IoError(e, Some(up_sql_file.clone())))?;
+            let down_sql_file = initial_migration_path.join("down.sql");
+            std::fs::write(
+                &down_sql_file,
+                include_bytes!("setup_sql/postgres/initial_setup/down.sql"),
+            )
+            .map_err(|e| crate::errors::Error::IoError(e, Some(down_sql_file.clone())))?;
         }
         _ => {} // No default migration for this backend
     }
@@ -296,7 +310,9 @@ fn drop_database(database_url: &str) -> Result<(), crate::errors::Error> {
         Backend::Sqlite => {
             if Path::new(database_url).exists() {
                 println!("Dropping database: {database_url}");
-                std::fs::remove_file(database_url)?;
+                std::fs::remove_file(database_url).map_err(|e| {
+                    crate::errors::Error::IoError(e, Some(std::path::PathBuf::from(database_url)))
+                })?;
             }
         }
         #[cfg(feature = "mysql")]

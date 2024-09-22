@@ -26,7 +26,7 @@ where
         + Clone
         + ::std::fmt::Debug
         + 'static,
-    for<'a> dsl::BareSelect<<T as AsExpression<ST>>::Expression>:
+    for<'a> dsl::select<<T as AsExpression<ST>>::Expression>:
         AsQuery + LoadQuery<'a, TestConnection, T>,
 {
     let connection = &mut connection_without_transaction();
@@ -251,6 +251,42 @@ mod pg_types {
         (i64, u32, i64, u32),
         mk_tstz_bounds
     );
+    test_round_trip!(
+        int4multirange_roundtrips,
+        Multirange<Int4>,
+        Vec<(i32, i32)>,
+        mk_bound_list
+    );
+    test_round_trip!(
+        int8multirange_roundtrips,
+        Multirange<Int8>,
+        Vec<(i64, i64)>,
+        mk_bound_list
+    );
+    test_round_trip!(
+        datemultirange_roundtrips,
+        Multirange<Date>,
+        (u32, u32), // if we use Vec here we receive a weird values which postgres don't accept
+        mk_date_bound_lists
+    );
+    test_round_trip!(
+        numrange_multirangetrips,
+        Multirange<Numeric>,
+        Vec<(i64, u64, i64, u64)>,
+        mk_num_bound_lists
+    );
+    test_round_trip!(
+        tsrange_multirangetrips,
+        Multirange<Timestamp>,
+        (i64, u32, i64, u32), // if we use Vec here we receive a weird values which postgres don't accept
+        mk_ts_bound_lists
+    );
+    test_round_trip!(
+        tstzrange_multirangetrips,
+        Multirange<Timestamptz>,
+        (i64, u32, i64, u32), // if we use Vec here we receive a weird values which postgres don't accept
+        mk_tstz_bound_lists
+    );
 
     test_round_trip!(json_roundtrips, Json, SerdeWrapper, mk_serde_json);
     test_round_trip!(jsonb_roundtrips, Jsonb, SerdeWrapper, mk_serde_json);
@@ -331,6 +367,61 @@ mod pg_types {
         let tstz1 = mk_datetime((data.0, data.1));
         let tstz2 = mk_datetime((data.2, data.3));
         mk_bounds((tstz1, tstz2))
+    }
+
+    fn is_sorted2<T>(data: &[(T, T)]) -> bool
+    where
+        T: Ord,
+    {
+        data.windows(2).all(|w| w[0].1 < w[1].0)
+    }
+
+    fn is_sorted4<T, U>(data: &[(T, U, T, U)]) -> bool
+    where
+        T: Ord,
+    {
+        data.windows(2).all(|w| w[0].2 < w[1].0)
+    }
+
+    fn mk_bound_list<T: Ord + PartialEq>(data: Vec<(T, T)>) -> Vec<(Bound<T>, Bound<T>)> {
+        let data: Vec<_> = data.into_iter().filter(|d| d.0 < d.1).collect();
+
+        if !is_sorted2(&data) {
+            // This is invalid but we don't have a way to say that to quickcheck
+            return vec![];
+        }
+
+        data.into_iter().map(mk_bounds).collect()
+    }
+
+    fn mk_date_bound_lists(data: (u32, u32)) -> Vec<(Bound<NaiveDate>, Bound<NaiveDate>)> {
+        vec![mk_date_bounds(data)]
+    }
+
+    fn mk_num_bound_lists(
+        data: Vec<(i64, u64, i64, u64)>,
+    ) -> Vec<(Bound<BigDecimal>, Bound<BigDecimal>)> {
+        let data: Vec<_> = data.into_iter().filter(|d| d.0 < d.2).collect();
+
+        if !is_sorted4(&data) {
+            // This is invalid but we don't have a way to say that to quickcheck
+            return vec![];
+        }
+
+        data.into_iter().map(mk_num_bounds).collect()
+    }
+
+    fn mk_ts_bound_lists(
+        data: (i64, u32, i64, u32),
+    ) -> Vec<(Bound<NaiveDateTime>, Bound<NaiveDateTime>)> {
+        vec![mk_ts_bounds(data)]
+    }
+
+    #[allow(clippy::type_complexity)]
+    fn mk_tstz_bound_lists(
+        data: (i64, u32, i64, u32),
+    ) -> Vec<(Bound<DateTime<Utc>>, Bound<DateTime<Utc>>)> {
+        vec![mk_tstz_bounds(data)]
     }
 
     pub fn mk_pg_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
@@ -465,7 +556,7 @@ mod mysql_types {
             t.hour(),
             t.minute(),
             t.second(),
-            t.timestamp_subsec_micros() as _,
+            t.and_utc().timestamp_subsec_micros() as _,
             false,
             MysqlTimestampType::MYSQL_TIMESTAMP_DATETIME,
             0,
@@ -481,7 +572,7 @@ mod mysql_types {
             t.hour(),
             t.minute(),
             t.second(),
-            t.timestamp_subsec_micros() as _,
+            t.and_utc().timestamp_subsec_micros() as _,
             false,
             MysqlTimestampType::MYSQL_TIMESTAMP_DATETIME,
             0,
@@ -508,10 +599,12 @@ mod mysql_types {
             .unwrap();
 
         if seconds != 0 {
-            seconds = earliest_mysql_date.timestamp()
-                + ((latest_mysql_date.timestamp() - earliest_mysql_date.timestamp()) % seconds);
+            seconds = earliest_mysql_date.and_utc().timestamp()
+                + ((latest_mysql_date.and_utc().timestamp()
+                    - earliest_mysql_date.and_utc().timestamp())
+                    % seconds);
         } else {
-            seconds = earliest_mysql_date.timestamp();
+            seconds = earliest_mysql_date.and_utc().timestamp();
         }
 
         let r = mk_naive_datetime((seconds, nanos));
@@ -607,7 +700,7 @@ pub fn mk_naive_datetime((mut secs, mut nano): (i64, u32)) -> NaiveDateTime {
         break;
     }
 
-    NaiveDateTime::from_timestamp_opt(secs, nano).unwrap()
+    DateTime::from_timestamp(secs, nano).unwrap().naive_utc()
 }
 
 pub fn mk_naive_time((mut seconds, mut nano): (u32, u32)) -> NaiveTime {
@@ -647,7 +740,7 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
     let num_days_representable = latest_chrono_date
         .signed_duration_since(earliest_pg_date)
         .num_days();
-    earliest_pg_date + Duration::days(days as i64 % num_days_representable)
+    earliest_pg_date + Duration::try_days(days as i64 % num_days_representable).unwrap()
 }
 
 #[cfg(feature = "mysql")]
@@ -657,7 +750,7 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
     let num_days_representable = latest_mysql_date
         .signed_duration_since(earliest_mysql_date)
         .num_days();
-    earliest_mysql_date + Duration::days(days as i64 % num_days_representable)
+    earliest_mysql_date + Duration::try_days(days as i64 % num_days_representable).unwrap()
 }
 
 #[cfg(feature = "sqlite")]
@@ -667,7 +760,7 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
     let num_days_representable = latest_sqlite_date
         .signed_duration_since(earliest_sqlite_date)
         .num_days();
-    earliest_sqlite_date + Duration::days(days as i64 % num_days_representable)
+    earliest_sqlite_date + Duration::try_days(days as i64 % num_days_representable).unwrap()
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -697,7 +790,7 @@ fn mk_f64(f: DoubleWrapper) -> f64 {
 impl quickcheck::Arbitrary for DoubleWrapper {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         let mut f = f64::arbitrary(g);
-        while (cfg!(feature = "sqlite") || cfg!(featuer = "mysql")) && f.is_nan() {
+        while (cfg!(feature = "sqlite") || cfg!(feature = "mysql")) && f.is_nan() {
             f = f64::arbitrary(g);
         }
         DoubleWrapper(f)

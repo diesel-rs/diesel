@@ -412,7 +412,7 @@ fn not_affects_arguments_passed_when_they_contain_higher_operator_precedence() {
 }
 
 use diesel::sql_types::VarChar;
-sql_function!(fn lower(x: VarChar) -> VarChar);
+define_sql_function!(fn lower(x: VarChar) -> VarChar);
 
 #[test]
 fn filter_by_boxed_predicate() {
@@ -430,6 +430,19 @@ fn filter_by_boxed_predicate() {
 
     assert_eq!(Ok(sean), queried_sean);
     assert_eq!(Ok(tess), queried_tess);
+}
+
+#[test]
+fn filter_like_nullable_column() {
+    use crate::schema::users::dsl::*;
+
+    let conn = &mut connection_with_gilbert_and_jonathan_in_users_table();
+    let jonathan = find_user_by_name("Jonathan", conn);
+
+    let data = users.filter(hair_color.like("%blue%")).load(conn);
+
+    let expected = Ok(vec![jonathan]);
+    assert_eq!(expected, data);
 }
 
 #[test]
@@ -480,7 +493,10 @@ fn filter_subselect_with_boxed_query() {
 }
 
 #[test]
-#[cfg(not(feature = "mysql"))] // FIXME: this test shouldn't need to modify schema each run
+// FIXME: this test shouldn't need to modify schema each run
+#[cfg(not(feature = "mysql"))]
+// https://github.com/rust-lang/rust/issues/124396
+#[allow(unknown_lints, non_local_definitions)]
 fn filter_subselect_with_nullable_column() {
     use crate::schema_dsl::*;
     table! {
@@ -591,10 +607,7 @@ fn filter_subselect_with_nullable_column() {
 
 #[test]
 #[cfg(feature = "postgres")]
-#[allow(deprecated)]
 fn filter_subselect_with_pg_any() {
-    use diesel::dsl::any;
-
     let conn = &mut connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", conn);
 
@@ -608,9 +621,11 @@ fn filter_subselect_with_pg_any() {
 
     let users_with_published_posts = users::table
         .filter(
-            users::id.eq(any(posts::table
-                .select(posts::user_id)
-                .filter(posts::user_id.eq(users::id)))),
+            users::id.eq_any(
+                posts::table
+                    .select(posts::user_id)
+                    .filter(posts::user_id.eq(users::id)),
+            ),
         )
         .load(conn);
     assert_eq!(Ok(vec![sean]), users_with_published_posts);

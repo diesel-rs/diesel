@@ -10,6 +10,7 @@ table! {
     my_structs (foo) {
         foo -> Integer,
         bar -> Integer,
+        r#type -> Integer,
     }
 }
 
@@ -20,6 +21,7 @@ fn named_struct_definition() {
     struct MyStruct {
         foo: i32,
         bar: i32,
+        r#type: i32,
     }
 
     let conn = &mut connection();
@@ -36,6 +38,24 @@ fn tuple_struct() {
     struct MyStruct(
         #[diesel(column_name = foo)] i32,
         #[diesel(column_name = bar)] i32,
+        #[diesel(column_name = "type")] i32,
+    );
+
+    let conn = &mut connection();
+    let data = my_structs::table
+        .select(MyStruct::as_select())
+        .get_result(conn);
+    assert!(data.is_err());
+}
+
+#[test]
+fn tuple_struct_raw_type() {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
+    #[diesel(table_name = my_structs)]
+    struct MyStruct(
+        #[diesel(column_name = foo)] i32,
+        #[diesel(column_name = bar)] i32,
+        #[diesel(column_name = r#type)] i32,
     );
 
     let conn = &mut connection();
@@ -51,10 +71,12 @@ fn tuple_struct() {
 fn embedded_struct() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
     #[diesel(table_name = my_structs)]
-    struct A<B> {
+    struct A<B, T> {
         foo: i32,
         #[diesel(embed)]
         b: B,
+        #[diesel(embed)]
+        t: T,
     }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
@@ -63,9 +85,15 @@ fn embedded_struct() {
         bar: i32,
     }
 
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
+    #[diesel(table_name = my_structs)]
+    struct T {
+        r#type: i32,
+    }
+
     let conn = &mut connection();
     let data = my_structs::table
-        .select(A::<C>::as_select())
+        .select(A::<C, T>::as_select())
         .get_result(conn);
     assert!(data.is_err());
 }
@@ -78,12 +106,20 @@ fn embedded_option() {
         foo: i32,
         #[diesel(embed)]
         b: Option<B>,
+        #[diesel(embed)]
+        t: Option<T>,
     }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
     #[diesel(table_name = my_structs)]
     struct B {
         bar: i32,
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
+    #[diesel(table_name = my_structs)]
+    struct T {
+        r#type: i32,
     }
 
     let conn = &mut connection();
@@ -97,6 +133,7 @@ fn embedded_option_with_nullable_field() {
         my_structs (foo) {
             foo -> Integer,
             bar -> Nullable<Integer>,
+            r#type -> Nullable<Integer>,
         }
     }
 
@@ -106,12 +143,20 @@ fn embedded_option_with_nullable_field() {
         foo: i32,
         #[diesel(embed)]
         b: Option<B>,
+        #[diesel(embed)]
+        t: Option<T>,
     }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
     #[diesel(table_name = my_structs)]
     struct B {
         bar: Option<i32>,
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
+    #[diesel(table_name = my_structs)]
+    struct T {
+        r#type: Option<i32>,
     }
 
     let conn = &mut connection();
@@ -126,6 +171,8 @@ fn manually_specified_expression() {
             foo -> Integer,
             bar -> Nullable<Text>,
             some_int -> Nullable<Integer>,
+            r#type -> Nullable<Text>,
+            another_int -> Nullable<Integer>,
         }
     }
 
@@ -143,6 +190,16 @@ fn manually_specified_expression() {
             select_expression_type = dsl::IsNotNull<my_structs::bar>,
         )]
         bar_is_set: bool,
+        #[diesel(
+            select_expression = (my_structs::r#type.is_not_null(), my_structs::another_int),
+            select_expression_type = (dsl::IsNotNull<my_structs::r#type>, my_structs::another_int),
+        )]
+        type_is_set_and_another_int: (bool, Option<i32>),
+        #[diesel(
+            select_expression = my_structs::r#type.is_not_null(),
+            select_expression_type = dsl::IsNotNull<my_structs::r#type>,
+        )]
+        type_is_set: bool,
     }
 
     let conn = &mut connection();
@@ -157,6 +214,7 @@ fn check_for_backend_with_deserialize_as() {
         tests {
             id -> Integer,
             name -> Text,
+            r#type -> Text,
         }
     }
 
@@ -174,6 +232,8 @@ fn check_for_backend_with_deserialize_as() {
         id: i32,
         #[diesel(deserialize_as = String)]
         name: MyString,
+        #[diesel(deserialize_as = String)]
+        r#type: MyString,
     }
 }
 
@@ -185,6 +245,7 @@ fn check_with_lifetime_and_type_param() {
         test {
             id -> Integer,
             name -> Text,
+            r#type -> Text,
         }
     }
 
@@ -194,6 +255,7 @@ fn check_with_lifetime_and_type_param() {
     pub struct Account<'n0> {
         id: i32,
         name: Cow<'n0, str>,
+        r#type: Cow<'n0, str>,
     }
 
     #[derive(Queryable, Selectable)]

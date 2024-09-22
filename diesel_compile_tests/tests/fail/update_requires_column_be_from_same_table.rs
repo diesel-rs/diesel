@@ -16,6 +16,8 @@ table! {
     }
 }
 
+allow_tables_to_appear_in_same_query!(users, posts);
+
 fn main() {
     use self::users::dsl::*;
 

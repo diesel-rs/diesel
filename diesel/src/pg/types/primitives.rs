@@ -80,6 +80,30 @@ impl Queryable<sql_types::VarChar, Pg> for *const str {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
+impl ToSql<sql_types::Citext, Pg> for String {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        out.write_all(self.as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl ToSql<sql_types::Citext, Pg> for str {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        out.write_all(self.as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl FromSql<sql_types::Citext, Pg> for String {
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+        let string = String::from_utf8(value.as_bytes().to_vec())?;
+        Ok(string)
+    }
+}
+
 /// The returned pointer is *only* valid for the lifetime to the argument of
 /// `from_sql`. This impl is intended for uses where you want to write a new
 /// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a

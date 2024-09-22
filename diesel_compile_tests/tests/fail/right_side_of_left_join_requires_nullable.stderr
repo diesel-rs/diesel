@@ -1,83 +1,99 @@
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:41:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:40:18
    |
-41 |     let _ = join.select(posts::title);
+40 |     let _ = join.select(posts::title);
    |                  ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:41:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:40:18
    |
-41 |     let _ = join.select(posts::title);
-   |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+40 |     let _ = join.select(posts::title);
+   |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`, which is required by `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>: SelectDsl<_>`
    |
    = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
    = note: 1 redundant requirement hidden
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:47:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:46:18
    |
-47 |     let _ = join.select(lower(posts::title));
+46 |     let _ = join.select(lower(posts::title));
    |                  ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
-   = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
+   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:47:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:46:18
    |
-47 |     let _ = join.select(lower(posts::title));
-   |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+46 |     let _ = join.select(lower(posts::title));
+   |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`, which is required by `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>: SelectDsl<_>`
    |
    = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
    = note: 2 redundant requirements hidden
-   = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
+   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:49:31
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:48:31
    |
-49 |     let _ = join.select(lower(posts::title.nullable()));
+48 |     let _ = join.select(lower(posts::title.nullable()));
    |                         ----- ^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
    |                         |
    |                         required by a bound introduced by this call
@@ -86,16 +102,16 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
               found struct `Nullable<diesel::sql_types::Text>`
    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
 note: required by a bound in `lower`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:32:1
    |
-33 | sql_function!(fn lower(x: Text) -> Text);
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-   = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+32 | define_sql_function!(fn lower(x: Text) -> Text);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
+   = note: this error originates in the macro `define_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:49:25
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:48:25
    |
-49 |     let _ = join.select(lower(posts::title.nullable()));
+48 |     let _ = join.select(lower(posts::title.nullable()));
    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Nullable<Text>`, found `Text`
    |
    = note: expected struct `Nullable<diesel::sql_types::Text>`
@@ -103,85 +119,101 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:58:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:57:18
    |
-58 |     let _ = join.select(posts::title);
+57 |     let _ = join.select(posts::title);
    |                  ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 3 redundant requirements hidden
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:58:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:57:18
    |
-58 |     let _ = join.select(posts::title);
-   |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+57 |     let _ = join.select(posts::title);
+   |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`, which is required by `SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>: SelectDsl<_>`
    |
    = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
    = note: 3 redundant requirements hidden
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:64:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:63:18
    |
-64 |     let _ = join.select(lower(posts::title));
+63 |     let _ = join.select(lower(posts::title));
    |                  ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 4 redundant requirements hidden
-   = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
+   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:64:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:63:18
    |
-64 |     let _ = join.select(lower(posts::title));
-   |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+63 |     let _ = join.select(lower(posts::title));
+   |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`, which is required by `SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>: SelectDsl<_>`
    |
    = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
    = note: 4 redundant requirements hidden
-   = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
+   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:66:31
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:65:31
    |
-66 |     let _ = join.select(lower(posts::title.nullable()));
+65 |     let _ = join.select(lower(posts::title.nullable()));
    |                         ----- ^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
    |                         |
    |                         required by a bound introduced by this call
@@ -190,16 +222,16 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
               found struct `Nullable<diesel::sql_types::Text>`
    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
 note: required by a bound in `lower`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:32:1
    |
-33 | sql_function!(fn lower(x: Text) -> Text);
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-   = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+32 | define_sql_function!(fn lower(x: Text) -> Text);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
+   = note: this error originates in the macro `define_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:66:25
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:65:25
    |
-66 |     let _ = join.select(lower(posts::title.nullable()));
+65 |     let _ = join.select(lower(posts::title.nullable()));
    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Nullable<Text>`, found `Text`
    |
    = note: expected struct `Nullable<diesel::sql_types::Text>`
@@ -207,85 +239,101 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:75:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:74:18
    |
-75 |     let _ = join.select(posts::title);
+74 |     let _ = join.select(posts::title);
    |                  ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 3 redundant requirements hidden
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:75:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:74:18
    |
-75 |     let _ = join.select(posts::title);
-   |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+74 |     let _ = join.select(posts::title);
+   |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`, which is required by `SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>: SelectDsl<_>`
    |
    = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
    = note: 3 redundant requirements hidden
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:81:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:80:18
    |
-81 |     let _ = join.select(lower(posts::title));
+80 |     let _ = join.select(lower(posts::title));
    |                  ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 4 redundant requirements hidden
-   = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
+   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:81:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:80:18
    |
-81 |     let _ = join.select(lower(posts::title));
-   |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+80 |     let _ = join.select(lower(posts::title));
+   |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`, which is required by `SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>: SelectDsl<_>`
    |
    = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
    = note: 4 redundant requirements hidden
-   = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
+   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:83:31
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:82:31
    |
-83 |     let _ = join.select(lower(posts::title.nullable()));
+82 |     let _ = join.select(lower(posts::title.nullable()));
    |                         ----- ^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
    |                         |
    |                         required by a bound introduced by this call
@@ -294,16 +342,16 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
               found struct `Nullable<diesel::sql_types::Text>`
    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
 note: required by a bound in `lower`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:32:1
    |
-33 | sql_function!(fn lower(x: Text) -> Text);
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-   = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+32 | define_sql_function!(fn lower(x: Text) -> Text);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
+   = note: this error originates in the macro `define_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:83:25
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:82:25
    |
-83 |     let _ = join.select(lower(posts::title.nullable()));
+82 |     let _ = join.select(lower(posts::title.nullable()));
    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Nullable<Text>`, found `Text`
    |
    = note: expected struct `Nullable<diesel::sql_types::Text>`
@@ -311,85 +359,101 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
 
 error[E0271]: type mismatch resolving `<SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>> as AppearsInFromClause<...>>::Count == Never`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:90:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:89:18
    |
-90 |     let _ = join.select(posts::title);
+89 |     let _ = join.select(posts::title);
    |                  ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: Cannot select `posts::columns::title` from `pets::table`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:90:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:89:18
    |
-90 |     let _ = join.select(posts::title);
-   |                  ^^^^^^ the trait `SelectableExpression<pets::table>` is not implemented for `posts::columns::title`
+89 |     let _ = join.select(posts::title);
+   |                  ^^^^^^ the trait `SelectableExpression<pets::table>` is not implemented for `posts::columns::title`, which is required by `SelectStatement<FromClause<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>: SelectDsl<_>`
    |
    = note: `posts::columns::title` is no valid selection for `pets::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
    = note: 1 redundant requirement hidden
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0271]: type mismatch resolving `<SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>> as AppearsInFromClause<...>>::Count == Never`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:96:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:95:18
    |
-96 |     let _ = join.select(lower(posts::title));
+95 |     let _ = join.select(lower(posts::title));
    |                  ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
-   = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
+   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: Cannot select `posts::columns::title` from `pets::table`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:96:18
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:95:18
    |
-96 |     let _ = join.select(lower(posts::title));
-   |                  ^^^^^^ the trait `SelectableExpression<pets::table>` is not implemented for `posts::columns::title`
+95 |     let _ = join.select(lower(posts::title));
+   |                  ^^^^^^ the trait `SelectableExpression<pets::table>` is not implemented for `posts::columns::title`, which is required by `SelectStatement<FromClause<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>: SelectDsl<_>`
    |
    = note: `posts::columns::title` is no valid selection for `pets::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::title as SelectableExpression<posts::table>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<posts::table>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
-17 |         title -> Text,
+16 |         title -> Text,
    |         ^^^^^
    = note: 2 redundant requirements hidden
-   = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
+   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:98:31
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:97:31
    |
-98 |     let _ = join.select(lower(posts::title.nullable()));
+97 |     let _ = join.select(lower(posts::title.nullable()));
    |                         ----- ^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
    |                         |
    |                         required by a bound introduced by this call
@@ -398,16 +462,16 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
               found struct `Nullable<diesel::sql_types::Text>`
    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
 note: required by a bound in `lower`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:32:1
    |
-33 | sql_function!(fn lower(x: Text) -> Text);
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-   = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+32 | define_sql_function!(fn lower(x: Text) -> Text);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
+   = note: this error originates in the macro `define_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:98:25
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:97:25
    |
-98 |     let _ = join.select(lower(posts::title.nullable()));
+97 |     let _ = join.select(lower(posts::title.nullable()));
    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Nullable<Text>`, found `Text`
    |
    = note: expected struct `Nullable<diesel::sql_types::Text>`
@@ -415,85 +479,101 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
-   --> tests/fail/right_side_of_left_join_requires_nullable.rs:105:18
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:104:18
     |
-105 |     let _ = join.select(posts::title);
+104 |     let _ = join.select(posts::title);
     |                  ^^^^^^ expected `Once`, found `Never`
     |
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-   --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
-17  |         title -> Text,
+16  |         title -> Text,
     |         ^^^^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 4 redundant requirements hidden
     = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+    = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-   --> tests/fail/right_side_of_left_join_requires_nullable.rs:105:18
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:104:18
     |
-105 |     let _ = join.select(posts::title);
-    |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+104 |     let _ = join.select(posts::title);
+    |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`, which is required by `SelectStatement<FromClause<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>: SelectDsl<_>`
     |
     = note: `posts::columns::title` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
-              <posts::columns::title as SelectableExpression<posts::table>>
-              <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-              <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-              <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-              <posts::columns::title as SelectableExpression<Only<posts::table>>>
+              `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+              `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+              `posts::columns::title` implements `SelectableExpression<posts::table>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-   --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
-17  |         title -> Text,
+16  |         title -> Text,
     |         ^^^^^
     = note: 4 redundant requirements hidden
     = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+    = note: consider using `--verbose` to print the full type name to the console
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
-   --> tests/fail/right_side_of_left_join_requires_nullable.rs:111:18
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:110:18
     |
-111 |     let _ = join.select(lower(posts::title));
+110 |     let _ = join.select(lower(posts::title));
     |                  ^^^^^^ expected `Once`, found `Never`
     |
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-   --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
-17  |         title -> Text,
+16  |         title -> Text,
     |         ^^^^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 5 redundant requirements hidden
-    = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
+    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+    = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-   --> tests/fail/right_side_of_left_join_requires_nullable.rs:111:18
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:110:18
     |
-111 |     let _ = join.select(lower(posts::title));
-    |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+110 |     let _ = join.select(lower(posts::title));
+    |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`, which is required by `SelectStatement<FromClause<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>: SelectDsl<_>`
     |
     = note: `posts::columns::title` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
-              <posts::columns::title as SelectableExpression<posts::table>>
-              <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-              <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-              <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
-              <posts::columns::title as SelectableExpression<Only<posts::table>>>
+              `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
+              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
+              `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+              `posts::columns::title` implements `SelectableExpression<posts::table>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
-   --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
-17  |         title -> Text,
+16  |         title -> Text,
     |         ^^^^^
     = note: 5 redundant requirements hidden
-    = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
+    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+    = note: consider using `--verbose` to print the full type name to the console
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-   --> tests/fail/right_side_of_left_join_requires_nullable.rs:113:31
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:112:31
     |
-113 |     let _ = join.select(lower(posts::title.nullable()));
+112 |     let _ = join.select(lower(posts::title.nullable()));
     |                         ----- ^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
     |                         |
     |                         required by a bound introduced by this call
@@ -502,16 +582,16 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
                found struct `Nullable<diesel::sql_types::Text>`
     = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
 note: required by a bound in `lower`
-   --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:32:1
     |
-33  | sql_function!(fn lower(x: Text) -> Text);
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-    = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+32  | define_sql_function!(fn lower(x: Text) -> Text);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
+    = note: this error originates in the macro `define_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-   --> tests/fail/right_side_of_left_join_requires_nullable.rs:113:25
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:112:25
     |
-113 |     let _ = join.select(lower(posts::title.nullable()));
+112 |     let _ = join.select(lower(posts::title.nullable()));
     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Nullable<Text>`, found `Text`
     |
     = note: expected struct `Nullable<diesel::sql_types::Text>`

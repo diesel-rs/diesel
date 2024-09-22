@@ -6,6 +6,13 @@ use clap_complete::Shell;
 
 use crate::print_schema;
 
+fn position_sensitive_flag(arg: Arg) -> Arg {
+    arg.num_args(0)
+        .value_parser(clap::value_parser!(bool))
+        .default_missing_value("true")
+        .default_value("false")
+}
+
 pub fn build_cli() -> Command {
     let database_arg = Arg::new("DATABASE_URL")
         .long("database-url")
@@ -149,6 +156,18 @@ pub fn build_cli() -> Command {
                         .require_equals(true),
                 )
                 .arg(
+                    Arg::new("sqlite-integer-primary-key-is-bigint")
+                        .long("sqlite-integer-primary-key-is-bigint")
+                        .requires("SCHEMA_RS")
+                        .action(ArgAction::SetTrue)
+                        .help(
+                            "For SQLite 3.37 and above, detect `INTEGER PRIMARY KEY` columns as `BigInt`, \
+                             when the table isn't declared with `WITHOUT ROWID`.\n\
+                             See https://www.sqlite.org/lang_createtable.html#rowid for more information.\n\
+                             Only used with the `--diff-schema` argument."
+                        ),
+                )
+                .arg(
                     Arg::new("table-name")
                         .index(2)
                         .num_args(1..)
@@ -156,41 +175,49 @@ pub fn build_cli() -> Command {
                         .help("Table names to filter."),
                 )
                 .arg(
-                    Arg::new("only-tables")
+                    position_sensitive_flag(Arg::new("only-tables"))
                         .short('o')
                         .long("only-tables")
-                        .action(ArgAction::SetTrue)
-                        .help("Only include tables from table-name that matches regexp.")
-                        .conflicts_with("except-tables"),
+                        .action(ArgAction::Append)
+                        .help("Only include tables from table-name that matches regexp."),
                 )
                 .arg(
-                    Arg::new("except-tables")
+                    position_sensitive_flag(Arg::new("except-tables"))
                         .short('e')
                         .long("except-tables")
-                        .action(ArgAction::SetTrue)
-                        .help("Exclude tables from table-name that matches regex.")
-                        .conflicts_with("only-tables"),
+                        .action(ArgAction::Append)
+                        .help("Exclude tables from table-name that matches regex."),
+                )
+                .arg(
+                    Arg::new("schema-key")
+                        .long("schema-key")
+                        .action(clap::ArgAction::Append)
+                        .help("select schema key from diesel.toml, use 'default' for print_schema without key."),
                 ),
         )
         .subcommand_required(true)
         .arg_required_else_help(true);
 
-    let setup_subcommand = Command::new("setup").arg(migration_dir_arg()).about(
-        "Creates the migrations directory, creates the database \
+    let setup_subcommand = Command::new("setup")
+        .arg(migration_dir_arg())
+        .arg(no_default_migration_arg())
+        .about(
+            "Creates the migrations directory, creates the database \
              specified in your DATABASE_URL, and runs existing migrations.",
-    );
+        );
 
     let database_subcommand = Command::new("database")
         .alias("db")
         .arg(migration_dir_arg())
         .about("A group of commands for setting up and resetting your database.")
-        .subcommand(Command::new("setup").about(
-            "Creates the database specified in your DATABASE_URL, \
-             and then runs any existing migrations.",
+        .subcommand(Command::new("setup").arg(no_default_migration_arg()).about(
+            "Creates the database specified in your DATABASE_URL, and \
+                     then runs any existing migrations.",
         ))
-        .subcommand(Command::new("reset").about(
+        .subcommand(Command::new("reset").arg(no_default_migration_arg()).about(
             "Resets your database by dropping the database specified \
-             in your DATABASE_URL and then running `diesel database setup`.",
+                     in your DATABASE_URL and then running `diesel database \
+                     setup`.",
         ))
         .subcommand(
             Command::new("drop")
@@ -226,25 +253,23 @@ pub fn build_cli() -> Command {
                 .help("Table names to filter."),
         )
         .arg(
-            Arg::new("only-tables")
+            position_sensitive_flag(Arg::new("only-tables"))
                 .short('o')
                 .long("only-tables")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::Append)
                 .help("Only include tables from table-name that matches regexp.")
-                .conflicts_with("except-tables"),
         )
         .arg(
-            Arg::new("except-tables")
+            position_sensitive_flag(Arg::new("except-tables"))
                 .short('e')
                 .long("except-tables")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::Append)
                 .help("Exclude tables from table-name that matches regex.")
-                .conflicts_with("only-tables"),
         )
         .arg(
-            Arg::new("with-docs")
+            position_sensitive_flag(Arg::new("with-docs"))
                 .long("with-docs")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::Append)
                 .help("Render documentation comments for tables and columns."),
         )
         .arg(
@@ -252,6 +277,7 @@ pub fn build_cli() -> Command {
                 .long("with-docs-config")
                 .help("Render documentation comments for tables and columns.")
                 .num_args(1)
+                .action(ArgAction::Append)
                 .value_parser(PossibleValuesParser::new(print_schema::DocConfig::VARIANTS_STR)),
         )
         .arg(
@@ -259,12 +285,14 @@ pub fn build_cli() -> Command {
                 .long("column-sorting")
                 .help("Sort order for table columns.")
                 .num_args(1)
+                .action(ArgAction::Append)
                 .value_parser(PossibleValuesParser::new(["ordinal_position", "name"])),
         )
         .arg(
             Arg::new("patch-file")
                 .long("patch-file")
                 .num_args(1)
+                .action(ArgAction::Append)
                 .value_parser(clap::value_parser!(std::path::PathBuf))
                 .help("A unified diff file to be applied to the final schema."),
         )
@@ -272,15 +300,24 @@ pub fn build_cli() -> Command {
             Arg::new("import-types")
                 .long("import-types")
                 .num_args(1..)
+                .action(ArgAction::Append)
                 .action(clap::ArgAction::Append)
                 .number_of_values(1)
                 .help("A list of types to import for every table, separated by commas."),
         )
         .arg(
-            Arg::new("generate-custom-type-definitions")
+            position_sensitive_flag(Arg::new("generate-custom-type-definitions"))
                 .long("no-generate-missing-sql-type-definitions")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::Append)
                 .help("Generate SQL type definitions for types not provided by diesel"),
+        )
+        .arg(
+            Arg::new("except-custom-type-definitions")
+                .action(ArgAction::Append)
+                .long("except-custom-type-definitions")
+                .num_args(1..)
+                .action(ArgAction::Append)
+                .help("A list of regexes to filter the custom types definitions generated")
         )
         .arg(
             Arg::new("custom-type-derives")
@@ -289,7 +326,23 @@ pub fn build_cli() -> Command {
                 .action(clap::ArgAction::Append)
                 .number_of_values(1)
                 .help("A list of derives to implement for every automatically generated SqlType in the schema, separated by commas."),
-        );
+        )
+        .arg(
+            Arg::new("schema-key")
+                .long("schema-key")
+                .action(ArgAction::Append)
+                .default_values(["default"])
+                .help("select schema key from diesel.toml, use 'default' for print_schema without key."),
+        ).arg(
+        position_sensitive_flag(Arg::new("sqlite-integer-primary-key-is-bigint"))
+            .long("sqlite-integer-primary-key-is-bigint")
+            .action(ArgAction::Append)
+            .help(
+                "For SQLite 3.37 and above, detect `INTEGER PRIMARY KEY` columns as `BigInt`, \
+                     when the table isn't declared with `WITHOUT ROWID`.\n\
+                     See https://www.sqlite.org/lang_createtable.html#rowid for more information."
+            ),
+    );
 
     let config_arg = Arg::new("CONFIG_FILE")
         .value_parser(clap::value_parser!(std::path::PathBuf))
@@ -352,4 +405,11 @@ fn migration_dir_arg() -> Arg {
         .num_args(1)
         .value_parser(clap::value_parser!(std::path::PathBuf))
         .global(true)
+}
+
+fn no_default_migration_arg() -> Arg {
+    Arg::new("NO_DEFAULT_MIGRATION")
+        .long("no-default-migration")
+        .help("Don't generate the default migration.")
+        .action(ArgAction::SetTrue)
 }

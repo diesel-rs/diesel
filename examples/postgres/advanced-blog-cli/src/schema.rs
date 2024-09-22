@@ -37,4 +37,8 @@ diesel::joinable!(comments -> posts (post_id));
 diesel::joinable!(comments -> users (user_id));
 diesel::joinable!(posts -> users (user_id));
 
-diesel::allow_tables_to_appear_in_same_query!(comments, posts, users,);
+diesel::allow_tables_to_appear_in_same_query!(
+    comments,
+    posts,
+    users,
+);

@@ -1,6 +1,5 @@
 //! Errors, type aliases, and functions related to working with `Result`.
 
-use std::convert::From;
 use std::error::Error as StdError;
 use std::ffi::NulError;
 use std::fmt::{self, Display};
@@ -290,6 +289,31 @@ impl<T> OptionalExtension<T> for QueryResult<T> {
     }
 }
 
+/// See the [method documentation](OptionalEmptyChangesetExtension::optional_empty_changeset).
+pub trait OptionalEmptyChangesetExtension<T> {
+    /// By default, Diesel treats an empty update as a `QueryBuilderError`. This method will
+    /// convert that error into `None`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::{QueryResult, OptionalEmptyChangesetExtension, result::Error::QueryBuilderError, result::EmptyChangeset};
+    /// let result: QueryResult<i32> = Err(QueryBuilderError(Box::new(EmptyChangeset)));
+    /// assert_eq!(Ok(None), result.optional_empty_changeset());
+    /// ```
+    fn optional_empty_changeset(self) -> Result<Option<T>, Error>;
+}
+
+impl<T> OptionalEmptyChangesetExtension<T> for QueryResult<T> {
+    fn optional_empty_changeset(self) -> Result<Option<T>, Error> {
+        match self {
+            Ok(value) => Ok(Some(value)),
+            Err(Error::QueryBuilderError(e)) if e.is::<EmptyChangeset>() => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+}
+
 impl From<NulError> for ConnectionError {
     fn from(e: NulError) -> Self {
         ConnectionError::InvalidCString(e)
@@ -414,3 +438,79 @@ impl fmt::Display for UnexpectedEndOfRow {
 }
 
 impl StdError for UnexpectedEndOfRow {}
+
+/// Expected when an update has no changes to save.
+///
+/// When using `optional_empty_changeset`, this error is turned into `None`.
+#[derive(Debug, Clone, Copy)]
+pub struct EmptyChangeset;
+
+impl fmt::Display for EmptyChangeset {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "There are no changes to save. This query cannot be built"
+        )
+    }
+}
+
+impl StdError for EmptyChangeset {}
+
+/// Expected when you try to execute an empty query
+#[derive(Debug, Clone, Copy)]
+pub struct EmptyQuery;
+
+impl fmt::Display for EmptyQuery {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Detected an empty query. These are not supported by your database system"
+        )
+    }
+}
+
+impl StdError for EmptyQuery {}
+
+/// An error occurred while deserializing a field
+#[derive(Debug)]
+#[non_exhaustive]
+pub struct DeserializeFieldError {
+    /// The name of the field that failed to deserialize
+    pub field_name: Option<String>,
+    /// The error that occurred while deserializing the field
+    pub error: Box<dyn StdError + Send + Sync>,
+}
+
+impl DeserializeFieldError {
+    #[cold]
+    pub(crate) fn new<'a, F, DB>(field: F, error: Box<dyn std::error::Error + Send + Sync>) -> Self
+    where
+        DB: crate::backend::Backend,
+        F: crate::row::Field<'a, DB>,
+    {
+        DeserializeFieldError {
+            field_name: field.field_name().map(|s| s.to_string()),
+            error,
+        }
+    }
+}
+
+impl StdError for DeserializeFieldError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        Some(&*self.error)
+    }
+}
+
+impl fmt::Display for DeserializeFieldError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(ref field_name) = self.field_name {
+            write!(
+                f,
+                "Error deserializing field '{}': {}",
+                field_name, self.error
+            )
+        } else {
+            write!(f, "Error deserializing field: {}", self.error)
+        }
+    }
+}

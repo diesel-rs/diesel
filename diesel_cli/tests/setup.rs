@@ -69,6 +69,17 @@ fn setup_creates_default_migration_file_if_project_is_otherwise_setup() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn setup_no_default_migration() {
+    let p = project("setup_no_default_migration").build();
+
+    let result = p.command("setup").arg("--no-default-migration").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file(Path::new("migrations").join("00000000000000_diesel_initial_setup")));
+}
+
+#[test]
 fn setup_creates_schema_table() {
     let p = project("setup_creates_schema_table").build();
     let db = database(&p.database_url());
@@ -168,6 +179,41 @@ fn setup_works_with_migration_dir_by_arg() {
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(!p.has_file("migrations"));
     assert!(p.has_file("foo"));
+}
+
+#[test]
+fn setup_writes_migration_dir_by_arg_to_config_file() {
+    let p = project("setup_writes_migration_dir_by_arg_to_config_file").build();
+
+    // make sure the project builder doesn't create it for us
+    assert!(!p.has_file("migrations"));
+    assert!(!p.has_file("foo"));
+
+    let result = p.command("setup").arg("--migration-dir=foo").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file("migrations"));
+    assert!(p.has_file("foo"));
+    assert!(p.file_contents("diesel.toml").contains("dir = \"foo\""));
+}
+
+#[test]
+#[cfg(windows)]
+fn setup_writes_migration_dir_by_arg_to_config_file_win() {
+    let p = project("setup_writes_migration_dir_by_arg_to_config_file_win").build();
+
+    // make sure the project builder doesn't create it for us
+    assert!(!p.has_file("migrations"));
+    assert!(!p.has_file("foo"));
+
+    let result = p.command("setup").arg("--migration-dir=foo\\bar").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file("migrations"));
+    assert!(p.has_file("foo"));
+    assert!(p
+        .file_contents("diesel.toml")
+        .contains("dir = \"foo\\\\bar\""));
 }
 
 #[test]

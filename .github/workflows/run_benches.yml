@@ -1,0 +1,102 @@
+on:
+  pull_request:
+    types: [labeled, opened, reopened, synchronize]
+
+name: Run and Cache Benchmarks
+
+jobs:
+  run_benchmarks:
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-benchmarks')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: ["postgres", "sqlite", "mysql"]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install postgres (Linux)
+        if: matrix.backend == 'postgres'
+        env:
+          PG_VERSION: 16
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get --purge remove postgresql\* -y
+          sudo apt-get install gnupg2 -y
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev postgresql-$PG_VERSION
+          sudo tee /etc/postgresql/$PG_VERSION/main/pg_hba.conf <<'EOF'
+          local   all             postgres                                peer
+          local   all             all                                     peer
+          host    all             all             127.0.0.1/32            trust
+          host    all             all             ::1/128                 trust
+          EOF
+          sudo service postgresql start $PG_VERSION && sleep 3
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+          sudo service postgresql restart $PG_VERSION && sleep 3
+          echo 'DATABASE_URL=postgres://postgres:postgres@localhost:5432/' >> $GITHUB_ENV
+
+      - name: Install sqlite (Linux)
+        if: matrix.backend == 'sqlite'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
+          echo 'DATABASE_URL=/tmp/test.db' >> $GITHUB_ENV
+
+      - name: Install mysql (Linux)
+        if: matrix.backend == 'mysql'
+        run: |
+          sudo systemctl start mysql.service
+          sudo apt-get update
+          sudo apt-get -y install libmysqlclient-dev
+          mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
+          echo 'DATABASE_URL=mysql://root:root@localhost/diesel_test' >> $GITHUB_ENV
+
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install critcmp
+        run: cargo +stable install critcmp
+
+      - name: Benchmark PR ${{ matrix.backend }}
+        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" -- --save-baseline changes > pr_${{ matrix.backend }}.txt
+
+      - name: Upload PR ${{ matrix.backend }} Benchmark Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr_${{ matrix.backend }}.txt
+          path: ./pr_${{ matrix.backend }}.txt
+
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          repository: ${{ github.event.pull_request.base.repo.full_name }}
+
+      - name: Benchmark base ${{ matrix.backend }}
+        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" -- --save-baseline master > base_${{ matrix.backend }}.txt
+
+      - name: Upload base ${{ matrix.backend }} Benchmark Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: base_${{ matrix.backend }}.txt
+          path: ./base_${{ matrix.backend }}.txt
+
+      - name: Upload GitHub Event
+        uses: actions/upload-artifact@v4
+        with:
+          name: event_${{ matrix.backend }}.json
+          path: ${{ github.event_path }}
+
+      - name: Critcmp
+        run: |
+          cd diesel_bench
+          critcmp master changes
+          echo "# ${{matrix.backend}}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          critcmp master changes >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

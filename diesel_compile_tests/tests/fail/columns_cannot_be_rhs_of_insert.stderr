@@ -11,9 +11,10 @@ note: required for `columns::hair_color` to implement `AppearsOnTable<NoFromClau
    |
 10 |         hair_color -> Text,
    |         ^^^^^^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `&columns::hair_color` to implement `AppearsOnTable<NoFromClause>`
-   = note: required for `ColumnInsertValue<columns::name, &columns::hair_color>` to implement `InsertValues<users::table, _>`
+   = note: required for `ColumnInsertValue<columns::name, &columns::hair_color>` to implement `InsertValues<_, users::table>`
    = note: required for `diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<columns::name, &columns::hair_color>, users::table>` to implement `QueryFragment<_>`
    = note: 1 redundant requirement hidden
    = note: required for `InsertStatement<table, ValuesClause<ColumnInsertValue<name, &hair_color>, table>>` to implement `QueryFragment<_>`
@@ -26,3 +27,5 @@ note: required by a bound in `diesel::RunQueryDsl::execute`
 ...
    |         Self: methods::ExecuteDsl<Conn>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: consider using `--verbose` to print the full type name to the console

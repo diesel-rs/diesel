@@ -1,13 +1,16 @@
 [package]
 name = "all_about_inserts"
 version = "0.1.0"
-edition = "2018"
+edition.workspace = true
 publish = false
 
 [dependencies]
-diesel = { version = "2.1.0", path = "../../../diesel", features = ["postgres"] }
+diesel = { version = "2.2.0", path = "../../../diesel", features = ["postgres"] }
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.68"
+
+[dev-dependencies]
+diesel_migrations = { version = "2.2.0", path = "../../../diesel_migrations" }
 
 [lib]
 doc = false

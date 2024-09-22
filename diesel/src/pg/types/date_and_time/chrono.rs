@@ -4,11 +4,11 @@
 extern crate chrono;
 use self::chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 
-use super::{PgDate, PgTime, PgTimestamp};
+use super::{PgDate, PgInterval, PgTime, PgTimestamp};
 use crate::deserialize::{self, FromSql};
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, Output, ToSql};
-use crate::sql_types::{Date, Time, Timestamp, Timestamptz};
+use crate::sql_types::{Date, Interval, Time, Timestamp, Timestamptz};
 
 // Postgres timestamps start from January 1st 2000.
 fn pg_epoch() -> NaiveDateTime {
@@ -116,7 +116,7 @@ fn pg_epoch_date() -> NaiveDate {
 impl ToSql<Date, Pg> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let days_since_epoch = self.signed_duration_since(pg_epoch_date()).num_days();
-        ToSql::<Date, Pg>::to_sql(&PgDate(days_since_epoch as i32), &mut out.reborrow())
+        ToSql::<Date, Pg>::to_sql(&PgDate(days_since_epoch.try_into()?), &mut out.reborrow())
     }
 }
 
@@ -124,7 +124,9 @@ impl ToSql<Date, Pg> for NaiveDate {
 impl FromSql<Date, Pg> for NaiveDate {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         let PgDate(offset) = FromSql::<Date, Pg>::from_sql(bytes)?;
-        match pg_epoch_date().checked_add_signed(Duration::days(i64::from(offset))) {
+        #[allow(deprecated)] // otherwise we would need to bump our minimal chrono version
+        let duration = Duration::days(i64::from(offset));
+        match pg_epoch_date().checked_add_signed(duration) {
             Some(date) => Ok(date),
             None => {
                 let error_message = format!(
@@ -134,6 +136,48 @@ impl FromSql<Date, Pg> for NaiveDate {
                 Err(error_message.into())
             }
         }
+    }
+}
+
+const DAYS_PER_MONTH: i32 = 30;
+const SECONDS_PER_DAY: i64 = 60 * 60 * 24;
+const MICROSECONDS_PER_SECOND: i64 = 1_000_000;
+
+#[cfg(all(feature = "chrono", feature = "postgres_backend"))]
+impl ToSql<Interval, Pg> for Duration {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        let microseconds: i64 = if let Some(v) = self.num_microseconds() {
+            v % (MICROSECONDS_PER_SECOND * SECONDS_PER_DAY)
+        } else {
+            return Err("Failed to create microseconds by overflow".into());
+        };
+        let days: i32 = self
+            .num_days()
+            .try_into()
+            .expect("Failed to get i32 days from i64");
+        // We don't use months here, because in PostgreSQL
+        // `timestamp - timestamp` returns interval where
+        // every delta is contained in days and microseconds, and 0 months.
+        // https://www.postgresql.org/docs/current/functions-datetime.html
+        let interval = PgInterval {
+            microseconds,
+            days,
+            months: 0,
+        };
+        <PgInterval as ToSql<Interval, Pg>>::to_sql(&interval, &mut out.reborrow())
+    }
+}
+
+#[cfg(all(feature = "chrono", feature = "postgres_backend"))]
+impl FromSql<Interval, Pg> for Duration {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        let interval: PgInterval = FromSql::<Interval, Pg>::from_sql(bytes)?;
+        // We use 1 month = 30 days and 1 day = 24 hours, as postgres
+        // use those ratios as default when explicitly converted.
+        // For reference, please read `justify_interval` from this page.
+        // https://www.postgresql.org/docs/current/functions-datetime.html
+        let days = interval.months * DAYS_PER_MONTH + interval.days;
+        Ok(Duration::days(days as i64) + Duration::microseconds(interval.microseconds))
     }
 }
 
@@ -147,7 +191,7 @@ mod tests {
     use crate::dsl::{now, sql};
     use crate::prelude::*;
     use crate::select;
-    use crate::sql_types::{Date, Time, Timestamp, Timestamptz};
+    use crate::sql_types::{Date, Interval, Time, Timestamp, Timestamptz};
     use crate::test_helpers::connection;
 
     #[test]
@@ -205,11 +249,11 @@ mod tests {
     #[test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
-        let time = Utc::now().naive_utc() + Duration::seconds(60);
+        let time = Utc::now().naive_utc() + Duration::try_seconds(60).unwrap();
         let query = select(now.at_time_zone("utc").lt(time));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let time = Utc::now().naive_utc() - Duration::seconds(60);
+        let time = Utc::now().naive_utc() - Duration::try_seconds(60).unwrap();
         let query = select(now.at_time_zone("utc").gt(time));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
@@ -328,5 +372,46 @@ mod tests {
             Ok(distant_future),
             query.get_result::<NaiveDate>(connection)
         );
+    }
+
+    /// Get test duration and corresponding literal SQL strings.
+    fn get_test_duration_and_literal_strings() -> (Duration, Vec<&'static str>) {
+        (
+            Duration::days(60) + Duration::minutes(1) + Duration::microseconds(123456),
+            vec![
+                "60 days 1 minute 123456 microseconds",
+                "2 months 1 minute 123456 microseconds",
+                "5184060 seconds 123456 microseconds",
+                "60 days 60123456 microseconds",
+                "59 days 24 hours 60.123456 seconds",
+                "60 0:01:00.123456",
+                "58 48:01:00.123456",
+                "P0Y2M0DT0H1M0.123456S",
+                "0-2 0:01:00.123456",
+                "P0000-02-00T00:01:00.123456",
+                "1440:01:00.123456",
+                "1 month 30 days 0.5 minutes 30.123456 seconds",
+            ],
+        )
+    }
+
+    #[test]
+    fn duration_encode_correctly() {
+        let connection = &mut connection();
+        let (duration, literal_strings) = get_test_duration_and_literal_strings();
+        for literal in literal_strings {
+            let query = select(sql::<Interval>(&format!("'{}'::interval", literal)).eq(duration));
+            assert!(query.get_result::<bool>(connection).unwrap());
+        }
+    }
+
+    #[test]
+    fn duration_decode_correctly() {
+        let connection = &mut connection();
+        let (duration, literal_strings) = get_test_duration_and_literal_strings();
+        for literal in literal_strings {
+            let query = select(sql::<Interval>(&format!("'{}'::interval", literal)));
+            assert_eq!(Ok(duration), query.get_result::<Duration>(connection));
+        }
     }
 }

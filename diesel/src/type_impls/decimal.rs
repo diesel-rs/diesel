@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-#[cfg(feature = "bigdecimal")]
+#[cfg(feature = "numeric")]
 mod bigdecimal {
     extern crate bigdecimal;
     use self::bigdecimal::BigDecimal;

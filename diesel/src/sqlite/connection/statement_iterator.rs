@@ -92,7 +92,7 @@ impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
     fn next(&mut self) -> Option<Self::Item> {
         use PrivateStatementIterator::{NotStarted, Started};
         match &mut self.inner {
-            NotStarted(ref mut stmt) if stmt.is_some() => {
+            NotStarted(ref mut stmt @ Some(_)) => {
                 let mut stmt = stmt
                     .take()
                     .expect("It must be there because we checked that above");
@@ -104,7 +104,10 @@ impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
                     Err(e) => Some(Err(e)),
                     Ok(false) => None,
                     Ok(true) => {
-                        let field_count = stmt.column_count() as usize;
+                        let field_count = stmt
+                            .column_count()
+                            .try_into()
+                            .expect("Diesel expects to run at least on a 32 bit platform");
                         self.field_count = field_count;
                         let inner = Rc::new(RefCell::new(PrivateSqliteRow::Direct(stmt)));
                         self.inner = Started(inner.clone());
@@ -161,12 +164,12 @@ impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
                     )
                 }
             }
-            NotStarted(_) => unreachable!(
-                "You've reached an impossible internal state. \
-                             If you ever see this error message please open \
-                             an issue at https://github.com/diesel-rs/diesel \
-                             providing example code how to trigger this error."
-            ),
+            NotStarted(_s) => {
+                // we likely got an error while executing the other
+                // `NotStarted` branch above. In this case we just want to stop
+                // iterating here
+                None
+            }
         }
     }
 }

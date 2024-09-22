@@ -350,6 +350,7 @@ fn select_then_join() {
     let expected_data = vec![1, 2];
     let data: Vec<i32> = users
         .select(id)
+        .order(id)
         .left_outer_join(posts::table)
         .load(connection)
         .unwrap();
@@ -358,7 +359,7 @@ fn select_then_join() {
 }
 
 use diesel::sql_types::Text;
-sql_function!(fn lower(x: Text) -> Text);
+define_sql_function!(fn lower(x: Text) -> Text);
 
 #[test]
 fn selecting_complex_expression_from_right_side_of_left_join() {
@@ -437,12 +438,14 @@ fn join_with_explicit_on_clause() {
 
     let data = users::table
         .inner_join(posts::table.on(posts::title.eq("Post One")))
+        .order(users::id)
         .load(connection);
 
     assert_eq!(expected_data, data);
 
     let data = users::table
         .inner_join(posts::table.on(posts::title.eq_any(vec!["Post One"])))
+        .order(users::id)
         .load(connection);
 
     assert_eq!(expected_data, data);

@@ -1,5 +1,4 @@
 use super::{BatchInsert, InsertStatement};
-use crate::connection::Connection;
 use crate::insertable::InsertValues;
 use crate::insertable::{CanInsertInSingleQuery, ColumnInsertValue, DefaultableColumnInsertValue};
 use crate::prelude::*;
@@ -7,7 +6,6 @@ use crate::query_builder::{AstPass, QueryId, ValuesClause};
 use crate::query_builder::{DebugQuery, QueryFragment};
 use crate::query_dsl::methods::ExecuteDsl;
 use crate::sqlite::Sqlite;
-use crate::{QueryResult, Table};
 use std::fmt::{self, Debug, Display};
 
 pub trait DebugQueryHelper<ContainsDefaultableValue> {
@@ -237,7 +235,7 @@ where
     T: Table + Copy + QueryId + 'static,
     T::FromClause: QueryFragment<Sqlite>,
     Op: Copy + QueryId + QueryFragment<Sqlite>,
-    V: InsertValues<T, Sqlite> + CanInsertInSingleQuery<Sqlite> + QueryId,
+    V: InsertValues<Sqlite, T> + CanInsertInSingleQuery<Sqlite> + QueryId,
 {
     fn execute((Yes, query): Self, conn: &mut C) -> QueryResult<usize> {
         conn.transaction(|conn| {

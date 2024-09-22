@@ -30,7 +30,7 @@ pub struct UserForm<'a> {
 }
 
 #[derive(Queryable, PartialEq, Debug)]
-struct User {
+pub struct User {
     id: i32,
     name: String,
     hair_color: Option<String>,
@@ -320,7 +320,7 @@ fn examine_sql_from_insert_get_results_batch() {
                     `users`.`hair_color`, `users`.`created_at`, \
                     `users`.`updated_at` \
                     FROM `users` \
-                    ORDER BY `users`.`id` DESC  \
+                    ORDER BY `users`.`id` DESC \
                     -- binds: []";
     assert_eq!(load_sql, debug_query::<Mysql, _>(&load_query).to_string());
 }
@@ -372,7 +372,7 @@ fn examine_sql_from_insert_get_result() {
                     `users`.`hair_color`, `users`.`created_at`, \
                     `users`.`updated_at` \
                     FROM `users` \
-                    ORDER BY `users`.`id` DESC  \
+                    ORDER BY `users`.`id` DESC \
                     -- binds: []";
     assert_eq!(load_sql, debug_query::<Mysql, _>(&load_query).to_string());
 }
@@ -399,12 +399,28 @@ fn examine_sql_from_explicit_returning() {
         debug_query::<Mysql, _>(&insert_query).to_string()
     );
     let load_query = users.select(id).order(id.desc());
-    let load_sql = "SELECT `users`.`id` FROM `users` ORDER BY `users`.`id` DESC  -- binds: []";
+    let load_sql = "SELECT `users`.`id` FROM `users` ORDER BY `users`.`id` DESC -- binds: []";
     assert_eq!(load_sql, debug_query::<Mysql, _>(&load_query).to_string());
 }
 
 #[cfg(test)]
 fn establish_connection() -> MysqlConnection {
-    let url = ::std::env::var("DATABASE_URL").unwrap();
-    MysqlConnection::establish(&url).unwrap()
+    let url = std::env::var("MYSQL_DATABASE_URL")
+        .or_else(|_| std::env::var("DATABASE_URL"))
+        .unwrap();
+    let mut conn = MysqlConnection::establish(&url).unwrap();
+    diesel::sql_query(
+        "CREATE TEMPORARY TABLE users ( \
+            id INTEGER PRIMARY KEY AUTO_INCREMENT, \
+            name TEXT NOT NULL, \
+            hair_color TEXT, \
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP \
+        );\
+    ",
+    )
+    .execute(&mut conn)
+    .unwrap();
+    conn.begin_test_transaction().unwrap();
+    conn
 }

@@ -57,7 +57,7 @@
 //!   They live in [the `dsl` module](dsl).
 //!   Diesel only supports a very small number of these functions.
 //!   You can declare additional functions you want to use
-//!   with [the `sql_function!` macro][`sql_function!`].
+//!   with [the `define_sql_function!` macro][`define_sql_function!`].
 //!
 //! [`std::ops`]: //doc.rust-lang.org/stable/std/ops/index.html
 //!
@@ -93,9 +93,6 @@
 //! As a general note it's always useful to read the complete error message as emitted
 //! by rustc, including the `required because of …` part of the message.
 //! Your IDE might hide important parts!
-//!
-//! If you use a nightly compiler you might want to enable the `nightly-error-messages`
-//! feature flag to automatically improve some error messages.
 //!
 //! The following error messages are common:
 //!
@@ -154,78 +151,72 @@
 
 //!
 //! - `sqlite`: This feature enables the diesel sqlite backend. Enabling this feature requires per default
-//! a compatible copy of `libsqlite3` for your target architecture. Alternatively, you can add `libsqlite3-sys`
-//! with the `bundled` feature as a dependency to your crate so SQLite will be bundled:
-//! ```toml
-//! [dependencies]
-//! libsqlite3-sys = { version = "0.25.2", features = ["bundled"] }
-//! ```
+//!   a compatible copy of `libsqlite3` for your target architecture. Alternatively, you can add `libsqlite3-sys`
+//!   with the `bundled` feature as a dependency to your crate so SQLite will be bundled:
+//!   ```toml
+//!   [dependencies]
+//!   libsqlite3-sys = { version = "0.29", features = ["bundled"] }
+//!   ```
 //! - `postgres`: This feature enables the diesel postgres backend. Enabling this feature requires a compatible
-//! copy of `libpq` for your target architecture. This features implies `postgres_backend`
+//!   copy of `libpq` for your target architecture. This features implies `postgres_backend`
 //! - `mysql`: This feature enables the idesel mysql backend. Enabling this feature requires a compatible copy
-//! of `libmysqlclient` for your target architecture. This feature implies `mysql_backend`
+//!   of `libmysqlclient` for your target architecture. This feature implies `mysql_backend`
 //! - `postgres_backend`: This feature enables those parts of diesels postgres backend, that are not dependent
-//! on `libpq`. Diesel does not provide any connection implementation with only this feature enabled.
-//! This feature can be used to implement a custom implementation of diesels `Connection` trait for the
-//! postgres backend outside of diesel itself, while reusing the existing query dsl extensions for the
-//! postgres backend
+//!   on `libpq`. Diesel does not provide any connection implementation with only this feature enabled.
+//!   This feature can be used to implement a custom implementation of diesels `Connection` trait for the
+//!   postgres backend outside of diesel itself, while reusing the existing query dsl extensions for the
+//!   postgres backend
 //! - `mysql_backend`: This feature enables those parts of diesels mysql backend, that are not dependent
-//! on `libmysqlclient`. Diesel does not provide any connection implementation with only this feature enabled.
-//! This feature can be used to implement a custom implementation of diesels `Connection` trait for the
-//! mysql backend outside of diesel itself, while reusing the existing query dsl extensions for the
-//! mysql backend
+//!   on `libmysqlclient`. Diesel does not provide any connection implementation with only this feature enabled.
+//!   This feature can be used to implement a custom implementation of diesels `Connection` trait for the
+//!   mysql backend outside of diesel itself, while reusing the existing query dsl extensions for the
+//!   mysql backend
 //! - `returning_clauses_for_sqlite_3_35`: This feature enables support for `RETURNING` clauses in the sqlite backend.
-//! Enabling this feature requires sqlite 3.35.0 or newer.
+//!   Enabling this feature requires sqlite 3.35.0 or newer.
 //! - `32-column-tables`: This feature enables support for tables with up to 32 columns.
-//! This feature is enabled by default. Consider disabling this feature if you write a library crate
-//! providing general extensions for diesel or if you do not need to support tables with more than 16 columns
-//! and you want to minimize your compile times.
+//!   This feature is enabled by default. Consider disabling this feature if you write a library crate
+//!   providing general extensions for diesel or if you do not need to support tables with more than 16 columns
+//!   and you want to minimize your compile times.
 //! - `64-column-tables`: This feature enables support for tables with up to 64 columns. It implies the
-//! `32-column-tables` feature. Enabling this feature will increase your compile times.
+//!   `32-column-tables` feature. Enabling this feature will increase your compile times.
 //! - `128-column-tables`: This feature enables support for tables with up to 128 columns. It implies the
-//! `64-column-tables` feature. Enabling this feature will increase your compile times significantly.
+//!   `64-column-tables` feature. Enabling this feature will increase your compile times significantly.
 //! - `i-implement-a-third-party-backend-and-opt-into-breaking-changes`: This feature opens up some otherwise
-//! private API, that can be useful to implement a third party [`Backend`](crate::backend::Backend)
-//! or write a custom [`Connection`] implementation. **Do not use this feature for
-//! any other usecase**. By enabling this feature you explicitly opt out diesel stability guarantees. We explicitly
-//! reserve us the right to break API's exported under this feature flag in any upcoming minor version release.
-//! If you publish a crate depending on this feature flag consider to restrict the supported diesel version to the
-//! currently released minor version.
+//!   private API, that can be useful to implement a third party [`Backend`](crate::backend::Backend)
+//!   or write a custom [`Connection`] implementation. **Do not use this feature for
+//!   any other usecase**. By enabling this feature you explicitly opt out diesel stability guarantees. We explicitly
+//!   reserve us the right to break API's exported under this feature flag in any upcoming minor version release.
+//!   If you publish a crate depending on this feature flag consider to restrict the supported diesel version to the
+//!   currently released minor version.
 //! - `serde_json`: This feature flag enables support for (de)serializing json values from the database using
-//! types provided by `serde_json`.
+//!   types provided by `serde_json`.
 //! - `chrono`: This feature flags enables support for (de)serializing date/time values from the database using
-//! types provided by `chrono`
+//!   types provided by `chrono`
 //! - `uuid`: This feature flag enables support for (de)serializing uuid values from the database using types
-//! provided by `uuid`
+//!   provided by `uuid`
 //! - `network-address`: This feature flag enables support for (de)serializing
-//! IP values from the database using types provided by `ipnetwork`.
+//!   IP values from the database using types provided by `ipnetwork`.
 //! - `ipnet-address`: This feature flag enables support for (de)serializing IP
-//! values from the database using types provided by `ipnet`.
+//!   values from the database using types provided by `ipnet`.
 //! - `numeric`: This feature flag enables support for (de)serializing numeric values from the database using types
-//! provided by `bigdecimal`
+//!   provided by `bigdecimal`
 //! - `r2d2`: This feature flag enables support for the `r2d2` connection pool implementation.
 //! - `extras`: This feature enables the feature flagged support for any third party crate. This implies the
-//! following feature flags: `serde_json`, `chrono`, `uuid`, `network-address`, `numeric`, `r2d2`
+//!   following feature flags: `serde_json`, `chrono`, `uuid`, `network-address`, `numeric`, `r2d2`
 //! - `with-deprecated`: This feature enables items marked as `#[deprecated]`. It is enabled by default.
-//! disabling this feature explicitly opts out diesels stability guarantee.
+//!   disabling this feature explicitly opts out diesels stability guarantee.
 //! - `without-deprecated`: This feature disables any item marked as `#[deprecated]`. Enabling this feature
-//! explicitly opts out the stability guarantee given by diesel. This feature overrides the `with-deprecated`.
-//! Note that this may also remove items that are not shown as `#[deprecated]` in our documentation, due to
-//! various bugs in rustdoc. It can be used to check if you depend on any such hidden `#[deprecated]` item.
-//! - `nightly-error-messages`: This feature enables the generation of improved compiler error messages for
-//! common mistakes using diesel. This feature requires a nightly rust compiler and is considered to be unstable.
-//! It requires adding `#![feature(diagnostic_namespace)]` to your crate.
-//! We might remove it in future diesel versions without replacement or deprecation.
-//!
+//!   explicitly opts out the stability guarantee given by diesel. This feature overrides the `with-deprecated`.
+//!   Note that this may also remove items that are not shown as `#[deprecated]` in our documentation, due to
+//!   various bugs in rustdoc. It can be used to check if you depend on any such hidden `#[deprecated]` item.
 //!
 //! By default the following features are enabled:
 //!
 //! - `with-deprecated`
 //! - `32-column-tables`
 
-#![cfg_attr(feature = "nightly-error-messages", feature(diagnostic_namespace))]
 #![cfg_attr(feature = "unstable", feature(trait_alias))]
-#![cfg_attr(doc_cfg, feature(doc_cfg, doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![cfg_attr(feature = "128-column-tables", recursion_limit = "256")]
 // Built-in Lints
 #![warn(
@@ -253,7 +244,10 @@
     clippy::enum_glob_use,
     clippy::if_not_else,
     clippy::items_after_statements,
-    clippy::used_underscore_binding
+    clippy::used_underscore_binding,
+    clippy::cast_possible_wrap,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss
 )]
 #![deny(unsafe_code)]
 #![cfg_attr(test, allow(clippy::map_unwrap_or, clippy::unwrap_used))]
@@ -333,7 +327,19 @@ pub mod dsl {
     };
 
     #[doc(inline)]
+    #[cfg(feature = "postgres_backend")]
+    pub use crate::query_builder::functions::{copy_from, copy_to};
+
+    #[doc(inline)]
     pub use diesel_derives::auto_type;
+
+    #[cfg(feature = "postgres_backend")]
+    #[doc(inline)]
+    pub use crate::pg::expression::extensions::OnlyDsl;
+
+    #[cfg(feature = "postgres_backend")]
+    #[doc(inline)]
+    pub use crate::pg::expression::extensions::TablesampleDsl;
 }
 
 pub mod helper_types {
@@ -361,6 +367,14 @@ pub mod helper_types {
     pub type Select<Source, Selection> = <Source as SelectDsl<Selection>>::Output;
 
     /// Represents the return type of [`diesel::select(selection)`](crate::select)
+    #[allow(non_camel_case_types)] // required for `#[auto_type]`
+    pub type select<Selection> = crate::query_builder::SelectStatement<
+        crate::query_builder::NoFromClause,
+        SelectClause<Selection>,
+    >;
+
+    #[doc(hidden)]
+    #[deprecated(note = "Use `select` instead")]
     pub type BareSelect<Selection> = crate::query_builder::SelectStatement<
         crate::query_builder::NoFromClause,
         SelectClause<Selection>,
@@ -408,10 +422,12 @@ pub mod helper_types {
     pub type ThenOrderBy<Source, Ordering> = <Source as ThenOrderDsl<Ordering>>::Output;
 
     /// Represents the return type of [`.limit()`](crate::prelude::QueryDsl::limit)
-    pub type Limit<Source> = <Source as LimitDsl>::Output;
+    pub type Limit<Source, DummyArgForAutoType = i64> =
+        <Source as LimitDsl<DummyArgForAutoType>>::Output;
 
     /// Represents the return type of [`.offset()`](crate::prelude::QueryDsl::offset)
-    pub type Offset<Source> = <Source as OffsetDsl>::Output;
+    pub type Offset<Source, DummyArgForAutoType = i64> =
+        <Source as OffsetDsl<DummyArgForAutoType>>::Output;
 
     /// Represents the return type of [`.inner_join(rhs)`](crate::prelude::QueryDsl::inner_join)
     pub type InnerJoin<Source, Rhs> =
@@ -623,6 +639,50 @@ pub mod helper_types {
     #[deprecated(note = "Use `LoadQuery::RowIter` directly")]
     pub type LoadIter<'conn, 'query, Q, Conn, U, B = crate::connection::DefaultLoadingMode> =
         <Q as load_dsl::LoadQuery<'query, Conn, U, B>>::RowIter<'conn>;
+
+    /// Represents the return type of [`diesel::delete`]
+    #[allow(non_camel_case_types)] // required for `#[auto_type]`
+    pub type delete<T> = crate::query_builder::DeleteStatement<
+        <T as HasTable>::Table,
+        <T as IntoUpdateTarget>::WhereClause,
+    >;
+
+    /// Represents the return type of [`diesel::insert_into`]
+    #[allow(non_camel_case_types)] // required for `#[auto_type]`
+    pub type insert_into<T> = crate::query_builder::IncompleteInsertStatement<T>;
+
+    /// Represents the return type of [`diesel::insert_or_ignore_into`]
+    #[allow(non_camel_case_types)] // required for `#[auto_type]`
+    pub type insert_or_ignore_into<T> = crate::query_builder::IncompleteInsertOrIgnoreStatement<T>;
+
+    /// Represents the return type of [`diesel::replace_into`]
+    #[allow(non_camel_case_types)] // required for `#[auto_type]`
+    pub type replace_into<T> = crate::query_builder::IncompleteReplaceStatement<T>;
+
+    /// Represents the return type of
+    /// [`IncompleteInsertStatement::values()`](crate::query_builder::IncompleteInsertStatement::values)
+    pub type Values<I, U> = crate::query_builder::InsertStatement<
+        <I as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Table,
+        <U as crate::Insertable<
+            <I as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Table,
+        >>::Values,
+        <I as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Op,
+    >;
+
+    /// Represents the return type of
+    /// [`UpdateStatement::set()`](crate::query_builder::UpdateStatement::set)
+    pub type Set<U, V> = crate::query_builder::UpdateStatement<
+        <U as crate::query_builder::update_statement::UpdateAutoTypeHelper>::Table,
+        <U as crate::query_builder::update_statement::UpdateAutoTypeHelper>::Where,
+        <V as crate::AsChangeset>::Changeset,
+    >;
+
+    /// Represents the return type of
+    /// [`InsertStatement::returning`](crate::query_builder::InsertStatement::returning),
+    /// [`UpdateStatement::returning`] and
+    /// [`DeleteStatement::returning`](crate::query_builder::DeleteStatement::returning)
+    pub type Returning<Q, S> =
+        <Q as crate::query_builder::returning_clause::ReturningClauseHelper<S>>::WithReturning;
 }
 
 pub mod prelude {
@@ -638,8 +698,15 @@ pub mod prelude {
     pub use crate::expression::{
         AppearsOnTable, BoxableExpression, Expression, IntoSql, Selectable, SelectableExpression,
     };
+    // If [`IntoSql`](crate::expression::helper_types::IntoSql) the type gets imported at the
+    // same time as IntoSql the trait (this one) gets imported via the prelude, then
+    // methods of the trait won't be resolved because the type may take priority over the trait.
+    // That issue can be avoided by also importing it anonymously:
+    pub use crate::expression::IntoSql as _;
 
     #[doc(inline)]
+    pub use crate::expression::functions::define_sql_function;
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
     pub use crate::expression::functions::sql_function;
 
     #[doc(inline)]
@@ -662,13 +729,19 @@ pub mod prelude {
     #[doc(inline)]
     pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
     #[doc(inline)]
-    pub use crate::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
+    pub use crate::result::{
+        ConnectionError, ConnectionResult, OptionalEmptyChangesetExtension, OptionalExtension,
+        QueryResult,
+    };
     #[doc(inline)]
     pub use diesel_derives::table_proc as table;
 
     #[cfg(feature = "mysql")]
     #[doc(inline)]
     pub use crate::mysql::MysqlConnection;
+    #[doc(inline)]
+    #[cfg(feature = "postgres_backend")]
+    pub use crate::pg::query_builder::copy::ExecuteCopyFromDsl;
     #[cfg(feature = "postgres")]
     #[doc(inline)]
     pub use crate::pg::PgConnection;
@@ -682,6 +755,9 @@ pub use crate::macros::table;
 pub use crate::prelude::*;
 #[doc(inline)]
 pub use crate::query_builder::debug_query;
+#[doc(inline)]
+#[cfg(feature = "postgres")]
+pub use crate::query_builder::functions::{copy_from, copy_to};
 #[doc(inline)]
 pub use crate::query_builder::functions::{
     delete, insert_into, insert_or_ignore_into, replace_into, select, sql_query, update,

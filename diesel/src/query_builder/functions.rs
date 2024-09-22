@@ -460,10 +460,10 @@ pub fn insert_or_ignore_into<T: Table>(target: T) -> IncompleteInsertOrIgnoreSta
 /// Creates a bare select statement, with no from clause. Primarily used for
 /// testing diesel itself, but likely useful for third party crates as well. The
 /// given expressions must be selectable from anywhere.
-pub fn select<T>(expression: T) -> crate::dsl::BareSelect<T>
+pub fn select<T>(expression: T) -> crate::dsl::select<T>
 where
     T: Expression,
-    crate::dsl::BareSelect<T>: AsQuery,
+    crate::dsl::select<T>: AsQuery,
 {
     SelectStatement::new(
         SelectClause(expression),
@@ -603,3 +603,8 @@ pub fn replace_into<T: Table>(target: T) -> IncompleteReplaceStatement<T> {
 pub fn sql_query<T: Into<String>>(query: T) -> SqlQuery {
     SqlQuery::from_sql(query.into())
 }
+
+#[cfg(feature = "postgres_backend")]
+pub use crate::pg::query_builder::copy::copy_from::copy_from;
+#[cfg(feature = "postgres_backend")]
+pub use crate::pg::query_builder::copy::copy_to::copy_to;

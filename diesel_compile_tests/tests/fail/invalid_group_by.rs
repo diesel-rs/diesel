@@ -16,6 +16,7 @@ table! {
     }
 }
 
+allow_tables_to_appear_in_same_query!(users, posts);
 allow_columns_to_appear_in_same_group_by_clause!(users::id, posts::id);
 
 fn main() {

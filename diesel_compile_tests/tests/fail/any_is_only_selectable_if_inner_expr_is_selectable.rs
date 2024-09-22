@@ -16,6 +16,8 @@ table! {
     }
 }
 
+allow_tables_to_appear_in_same_query!(stuff, more_stuff);
+
 #[derive(Queryable)]
 struct Stuff {
     id: i32,
@@ -27,6 +29,7 @@ fn main() {
 
     let mut conn = PgConnection::establish("").unwrap();
 
-    let _ = stuff.filter(name.eq(any(more_stuff::names)))
+    let _ = stuff
+        .filter(name.eq(any(more_stuff::names)))
         .load(&mut conn);
 }

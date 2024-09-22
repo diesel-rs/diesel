@@ -3,15 +3,49 @@
 All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
-For any named minimal supported Rust version we guarantee that it is possible to build Diesel with the 
-default features enabled using some set of dependencies. Those set of dependencies is not necessarily 
-an up to date version of the specific dependency. We check this by using the unstable `-Z minimal-version` cargo flag. 
+For any named minimal supported Rust version we guarantee that it is possible to build Diesel with the
+default features enabled using some set of dependencies. Those set of dependencies is not necessarily
+an up to date version of the specific dependency. We check this by using the unstable `-Z minimal-version` cargo flag.
 Increasing the minimal supported Rust version will always be coupled at least with a minor release.
 
 ## Unreleased
 
 ### Added
 
+* Added `limit()` and `offset()` DSL to combination clauses such as `UNION`
+* Fixed `#[derive(Identifiable)]` ignoring attribute `#[diesel(serialize_as)]` on primary keys
+* Added embedded struct support for `AsChangeset` via `#[diesel(embed)]`
+* Support for libsqlite3-sys 0.30.0
+* Add support for built-in PostgreSQL range operators and functions
+* Support for postgres multirange type
+* Added `diesel::r2d2::TestCustomizer`, which allows users to customize their `diesel::r2d2::Pool`s
+in a way that makes the pools suitable for use in parallel tests.
+
+## [2.2.2] 2024-07-19
+
+### Fixed
+
+* Support for libsqlite3-sys 0.29.0
+* Fixed a potential panic in the sqlite cursor implementation
+* Fixed support for rust numeric operators with columns of the type `Numeric`
+* Removed the `SerializedDatabase::new` function due to unsoundness
+
+## [2.2.1] 2024-06-12
+
+## Fixed
+
+* Fixed using `#[dsl::auto_type]` with functions that accept reference arguments
+* Fixed using `#[derive(Queryable)]` with structs that use a type named `Row` as field type
+* Fixed a regression that prevented using `mysqlclient-sys` 0.2.x with diesel 2.2
+* Fixed connecting to postgres database using the scram-sha-256 authentication method on windows while using the bundled postgres builds
+* Improved the error messages in diesel-cli for cases where a file/folder was not found
+* Fixed several version detection bugs in mysqlclient-sys to use pre-generated bindings in more situations
+
+## [2.2.0] 2024-05-31
+
+### Added
+
+* Support `[print_schema] except_custom_type_definitions = ["Vector"]`. If a `custom type` matches one element on the list it's skipped.
 * Added automatic usage of all sqlite `rowid` aliases when no explicit primary key is defined for `print-schema`
 * Added a `#[dsl::auto_type]` attribute macro, allowing to infer type of query fragment functions
 * Added the same type inference on `Selectable` derives, which allows skipping specifying `select_expression_type` most of the time, in turn enabling most queries to be written using just a `Selectable` derive.
@@ -19,21 +53,75 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Support for connection instrumentation. This allows to inspect any query run by your application
 * Logging in diesel-cli
 * Support for libsqlite3-sys 0.28
+* Add `sqlite-integer-primary-key-is-bigint` configuration option, usable with SQLite 3.37 or above, allowing to use `BigInt` for `INTEGER PRIMARY KEY` columns in SQLite for tables without the `WITHOUT ROWID` attribute ([SQLite doc](https://www.sqlite.org/lang_createtable.html#rowid)).
+* Support for multiple `print_schema` entry in `diesel.toml` (e.g. `[print_schema.user1]`), which allows generating multiple schema.rs files
+* Add support for `COPY TO` and `COPY FROM` statements
+* Add support for mapping `chrono::Duration` to postgresql's `INTERVAL` sql type
+* Added `serialize_database_to_buffer` and `deserialize_readonly_database_from_buffer` methods in `SqliteConnection` to support serialization/deserialization of SQLite databases to and from byte buffers.
+* Added `SerializedDatabase` wrapper type for a serialized database that is dynamically allocated by calling `serialize_database_to_buffer`. This RAII wrapper deallocates the memory when it goes out of scope with `sqlite3_free`.
 
 ### Changed
 
-* The minimal officially supported rustc version is now 1.70.0
+* The minimal officially supported rustc version is now 1.78.0
+* Deprecated `sql_function!` in favour of `define_sql_function!` which provides compatibility with `#[dsl::auto_type]`
+* Deserialization error messages now contain information about the field that failed to deserialize
+
+## [2.1.6] 2024-04-19
+
+* Fix using `BoxableExpression` with having clauses
+* Fix using numeric expressions with aliased fields
+* Minor documentation fixes
+
+## [2.1.5] 2024-03-15
+
+* Fix `impl SqlOrd` postgres > postgres_backend feature flag.
+* Allow `Queryable` to be used with multiple table names.
+* Fix an inconsistent unit test
+* Fix a clippy lint
+* Fix ./bin/test feature flag calls.
+* Update `libsqlite3-sys` to allow version 0.28 as well
+
+## [2.1.4] 2023-11-14
+
+* Update `libsqlite3-sys` to allow version 0.27 as well
+
+## [2.1.3] 2023-10-05
+
+* Increased accidently decreased limit around element count in  `DISTINCT ON` and `ORDER BY` clauses again as that broke existing code
+
+## [2.1.2] 2023-09-25
+
+## Fixed
+
+* Fixed another potential breaking chaneg around queries containing `DISTINCT ON` and `ORDER BY` clauses consisting of custom sql expressions (e.g. `.nullable()`)
+* Fixed an issue where `#[derive(Selectable)]` and `#[diesel(check_for_backend)]` generates invalid rust code if the struct contains lifetimes/generic types
+
+## [2.1.1] 2023-08-25
+
+## Fixed
+
+* Fixed an issue in diesel-cli that lead to using unquoted table names in one of the internal queries
+* Fixed a bug in `diesel print-schema` that lead to generating invalid `table!` macros if both the `#[sql_name]` and the `#[max_length]` attribute are present
+* Fixed an issue in diesel-cli that lead to ignoring certain foreign key constraints for postgresql
+* Fixed an crash while using `diesel print-schema` with really old sqlite versions
+* Fixed an issue where `#[diesel(check_for_backend)]` ignored `#[diesel(deserialize_as)]` attributes
+* Fixed several issues with the new `#[derive(MultiConnection)]` feature
+* Fixed some edge cases in our sqlite timestamp parsing behaviour
+* `diesel migration generate --diff-schema` now respects table filters as setup for `print-schema` via `diesel.toml`
+* Fixed a potential breaking change around queries containing `DISTINCT ON` and `ORDER BY` clauses consisting of custom sql expressions (e.g. `diesel::dsl::sql`)
+
+## Added
+
+* Support for bigdecimal 0.4
 
 ## [2.1.0] 2023-05-26
 
-### Changed 
+### Changed
 
 * The minimal officially supported rustc version is now 1.65.0
 
 ### Added
 
-* Added `serialize_database_to_buffer` and `deserialize_readonly_database_from_buffer` methods in `SqliteConnection` to support serialization/deserialization of SQLite databases to and from byte buffers.
-* Added `SerializedDatabase` wrapper type for a serialized database that is dynamically allocated by calling `serialize_database_to_buffer`. This RAII wrapper deallocates the memory when it goes out of scope with `sqlite3_free`.
 * Added the `custom_type_derives` config option to customize the derives for SQL
   type definitions automatically generated by Diesel CLI.
 * Add a `#[derive(MultiConnection)]` proc-macro that lets you easily implement `diesel::Connection`
@@ -48,7 +136,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## [2.0.4] 2023-04-18
 
-## Fixed 
+## Fixed
 
 * Workaround the missing name resolution in rust-analyzer. This should fix type inference for some diesel queries. (It remains broken for queries containing `.filter()`/`.inner_join()`/`.left_join()`. These require fixes in rust-analyzer itself)
 * Fixed a bug that could lead to inserting null values instead of empty values for custom sqlite types
@@ -59,9 +147,9 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 * Support for `libsqlite3-sys` 0.26
 
-## [diesel_derives 2.0.2] 2023-03-13 
+## [diesel_derives 2.0.2] 2023-03-13
 
-## Fixed 
+## Fixed
 
 * Fixing the fallout of a breaking change from `quote` by not using their internal API
 
@@ -130,7 +218,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
   in such a way to support constructing a dynamic value depending on this type.
 
 * Added a `without-deprecated` feature that unconditionally disables deprecated items.
-  Use this feature flag to verify that none of your dependencies is setting 
+  Use this feature flag to verify that none of your dependencies is setting
   the `with-deprecated` flag internally.
 
 * Added support for PostgreSQL's `SIMILAR TO` and `NOT SIMILAR TO`.
@@ -154,7 +242,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 * Diesel CLI will now generate SQL type definitions for SQL types that are not supported by diesel out of the box. It's possible to disable this behavior via the `generate_missing_sql_type_definitions` config option.
 
-* Added an option to `#[derive(Insertable)]` that let you insert `NULL` values instead of `DEFAULT` values for `Option<T>` 
+* Added an option to `#[derive(Insertable)]` that let you insert `NULL` values instead of `DEFAULT` values for `Option<T>`
 
 * Added support for all the derive attributes being inside `#[diesel(...)]`
 
@@ -259,12 +347,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
   card implementations for types implementing `Queryable<ST, DB>` or `QueryableByName<DB>`
   so non generic code does not require any change. For generic code you likely need to
   replace a trait bound on `Queryable<ST, DB>` with a trait bound on `FromSqlRow<ST, DB>`
-  and a bound to `QueryableByName<DB>` with `FromSqlRow<Untyped, DB>`. 
+  and a bound to `QueryableByName<DB>` with `FromSqlRow<Untyped, DB>`.
 
 * CLI flags of `only-tables` and `except-tables` are now interpreted as regular expressions.
   Similarly, `only_tables` and `except_tables` in `diesel.toml` are treated as regular expressions.
 
-* Now you can sort column fields by name with the `column-sorting` option. 
+* Now you can sort column fields by name with the `column-sorting` option.
   It can be set to either `ordinal_position` (default) or `name`.
   This ensures stable sorting even if columns are removed and re-added.
 
@@ -277,25 +365,25 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 * `TypeMetadata::MetadataLookup` is now `?Sized`.
 
-* Multiple implementations of `Connection<Backend=Pg>` are now possible 
+* Multiple implementations of `Connection<Backend=Pg>` are now possible
   because of the new `PgMetadataLookup` trait.
 
 * For the `Pg` backend, `TypeMetadata::MetadataLookup` has changed to `dyn PgMetadataLookup`.
 
-* Diesel's migration framework was rewritten from the ground. Existing migrations continue to 
+* Diesel's migration framework was rewritten from the ground. Existing migrations continue to
   be compatible with the rewrite, but code calling into `diesel_migrations` requires an update.
   See the [migration guide](2-0-migration) for details.
 
 * `eq_any()` now emits a `= ANY()` expression for the postgresql backend instead of `IN()`
 * `ne_all()` now emits a `!= ALL()` expression for the postgresql backend instead of `NOT IN()`
-* The sqlite backend now uses a single batch insert statement if there are now default values present 
+* The sqlite backend now uses a single batch insert statement if there are now default values present
   in the values clause
 
 * The MySQL connection is using the CLIENT_FOUND_ROWS from now on. This means that updating rows without changing any values will return the number of matched rows (like most other SQL servers do), as opposed to the number of changed rows.
 
-* The definition of `ToSql::to_sql` and `QueryFragment::walk_ast` has changed to allow serializing values without 
+* The definition of `ToSql::to_sql` and `QueryFragment::walk_ast` has changed to allow serializing values without
   copying the value itself. This is useful for database backends like sqlite where you can directly share a buffer
-  with the database. Beside of the changed signature, existing impls of this trait should remain unchanged in almost 
+  with the database. Beside of the changed signature, existing impls of this trait should remain unchanged in almost
   all cases.
 
 * The `PIPES_AS_CONCAT` sql_mode is no longer set
@@ -342,14 +430,14 @@ queries or set `PIPES_AS_CONCAT` manually.
 * We've refactored our type level representation of nullable values. This allowed us to
   fix multiple long standing bugs regarding the correct handling of nullable values in some
   corner cases (#104, #2274)
-  
+
 * Parenthesis are now inserted around all infix operations provided by diesel's `ExpressionMethods` traits
 
 * Queries containing a `distinct on` clause check now on compile time that a compatible order clause was set.
 
 * Implementations of custom SQLite SQL functions now check for panics
 
-* `diesel print-schema` now generates `Array<Nullable<ST>>` rather than `Array<ST>` for Postgres Array types. Existence of 
+* `diesel print-schema` now generates `Array<Nullable<ST>>` rather than `Array<ST>` for Postgres Array types. Existence of
   `NULL` values in database arrays would previously result in deserialization errors. Non-nullable arrays are now opt
   in (by schema patching).
 
@@ -363,8 +451,8 @@ queries or set `PIPES_AS_CONCAT` manually.
 
 * `diesel::pg::upsert` has been deprecated to support upsert queries on more than one backend.
   Please use `diesel::upsert` instead.
-  
-* `diesel::dsl::any` and `diesel::dsl::all` are now deprecated in 
+
+* `diesel::dsl::any` and `diesel::dsl::all` are now deprecated in
    favour of `ExpressionMethods::eq_any()` and `ExpressionMethods::ne_all()`
 
 
@@ -2041,3 +2129,12 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.0.3]: https://github.com/diesel-rs/diesel/compare/v.2.0.2...v2.0.3
 [2.0.4]: https://github.com/diesel-rs/diesel/compare/v.2.0.3...v2.0.4
 [2.1.0]: https://github.com/diesel-rs/diesel/compare/v.2.0.0...v2.1.0
+[2.1.1]: https://github.com/diesel-rs/diesel/compare/v.2.1.0...v2.1.1
+[2.1.2]: https://github.com/diesel-rs/diesel/compare/v.2.1.1...v2.1.2
+[2.1.3]: https://github.com/diesel-rs/diesel/compare/v.2.1.2...v2.1.3
+[2.1.4]: https://github.com/diesel-rs/diesel/compare/v.2.1.3...v2.1.4
+[2.1.5]: https://github.com/diesel-rs/diesel/compare/v.2.1.4...v2.1.5
+[2.1.6]: https://github.com/diesel-rs/diesel/compare/v.2.1.5...v2.1.6
+[2.2.0]: https://github.com/diesel-rs/diesel/compare/v.2.1.0...v2.2.0
+[2.2.1]: https://github.com/diesel-rs/diesel/compare/v.2.2.0...v2.2.1
+[2.2.2]: https://github.com/diesel-rs/diesel/compare/v.2.2.1...v2.2.2

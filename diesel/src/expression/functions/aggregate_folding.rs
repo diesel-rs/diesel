@@ -1,7 +1,7 @@
-use crate::expression::functions::sql_function;
+use crate::expression::functions::define_sql_function;
 use crate::sql_types::Foldable;
 
-sql_function! {
+define_sql_function! {
     /// Represents a SQL `SUM` function. This function can only take types which are
     /// Foldable.
     ///
@@ -21,7 +21,7 @@ sql_function! {
     fn sum<ST: Foldable>(expr: ST) -> ST::Sum;
 }
 
-sql_function! {
+define_sql_function! {
     /// Represents a SQL `AVG` function. This function can only take types which are
     /// Foldable.
     ///
@@ -30,7 +30,7 @@ sql_function! {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// # use diesel::dsl::*;
-    /// # #[cfg(feature = "bigdecimal")]
+    /// # #[cfg(feature = "numeric")]
     /// # extern crate bigdecimal;
     /// #
     /// # fn main() {
@@ -48,8 +48,7 @@ sql_function! {
     /// #     use bigdecimal::BigDecimal;
     /// #     use self::numbers::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS numbers").execute(conn)?;
-    /// #     diesel::sql_query("CREATE TABLE numbers (number INTEGER)").execute(conn)?;
+    /// #     diesel::sql_query("CREATE TEMPORARY TABLE numbers (number INTEGER)").execute(conn)?;
     /// diesel::insert_into(numbers)
     ///     .values(&vec![number.eq(1), number.eq(2)])
     ///     .execute(conn)?;

@@ -1,17 +1,15 @@
 // Function to connect to database.
-use diesel_postgres_composite_type::establish_connection;
+use composite_types::establish_connection;
 
 // Bring column names of the table into scope
-use diesel_postgres_composite_type::schema::coordinates::{
-    coord_id, dsl::coordinates, xcoord, ycoord,
-};
+use composite_types::schema::coordinates::{coord_id, dsl::coordinates, xcoord, ycoord};
 
 // Define the signature of the SQL function we want to call:
-use diesel::sql_function;
+use diesel::define_sql_function;
 use diesel::sql_types::Integer;
-sql_function!(fn distance_from_origin(re: Integer,im: Integer) -> Float);
-sql_function!(fn shortest_distance() -> Record<(Integer,Float)>);
-sql_function!(fn longest_distance() -> Record<(Integer,Float)>);
+define_sql_function!(fn distance_from_origin(re: Integer,im: Integer) -> Float);
+define_sql_function!(fn shortest_distance() -> Record<(Integer,Float)>);
+define_sql_function!(fn longest_distance() -> Record<(Integer,Float)>);
 
 // Needed to select, construct the query and submit it.
 use diesel::select;

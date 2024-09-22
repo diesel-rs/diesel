@@ -13,6 +13,7 @@ mod json;
 mod mac_addr;
 #[doc(hidden)]
 pub(in crate::pg) mod money;
+mod multirange;
 #[cfg(feature = "network-address")]
 mod network_address;
 mod numeric;
@@ -135,6 +136,11 @@ pub mod sql_types {
     /// ### [`ToSql`] impls
     ///
     /// - [`(Bound<T>, Bound<T>)`][bound] for any `T` which implements `ToSql<ST>`.
+    /// - [`Range<T>`][std::range] (aka `start..end`) for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeInclusive<T>`] (aka `start..=end`) for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeFrom<T>`] (aka `start..`) for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeTo<T>`] (aka `..end`) for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeToInclusive<T>`] (aka `..=end`) for any `T` which implements `ToSql<ST>`.
     ///
     /// ### [`FromSql`] impls
     ///
@@ -143,6 +149,11 @@ pub mod sql_types {
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
     /// [bound]: std::collections::Bound
+    /// [std::range]: std::ops::Range
+    /// [`RangeInclusive<T>`]: std::ops::RangeInclusive
+    /// [`RangeFrom<T>`]: std::ops::RangeFrom
+    /// [`RangeTo<T>`]: std::ops::RangeTo
+    /// [`RangeToInclusive<T>`]: std::ops::RangeToInclusive
     /// [`Range`]: https://www.postgresql.org/docs/current/rangetypes.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[cfg(feature = "postgres_backend")]
@@ -160,6 +171,64 @@ pub mod sql_types {
     pub type Tsrange = Range<crate::sql_types::Timestamp>;
     #[doc(hidden)]
     pub type Tstzrange = Range<crate::sql_types::Timestamptz>;
+
+    /// The [`Multirange`] SQL type.
+    ///
+    /// This wraps another type to represent a SQL range of that type.
+    ///
+    /// ### [`ToSql`] impls
+    ///
+    /// - [`Vec<T>`][Vec] for any `T` which `Range<T>` implements `ToSql<ST>`
+    /// - [`&[T]`][slice] for any `T` which `Range<T>` implements `ToSql<ST>`
+    ///
+    /// ### [`FromSql`] impls
+    ///
+    /// - [`Vec<T>`][Vec] for any `T` which implements `ToSql<Range<ST>>`
+    ///
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [Vec]: std::vec::Vec
+    /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
+    /// [`Multirange`]: https://www.postgresql.org/docs/current/rangetypes.html
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[cfg(feature = "postgres_backend")]
+    pub struct Multirange<ST: 'static>(ST);
+
+    #[doc(hidden)]
+    pub type Int4multirange = Multirange<crate::sql_types::Int4>;
+    #[doc(hidden)]
+    pub type Int8multirange = Multirange<crate::sql_types::Int8>;
+    #[doc(hidden)]
+    pub type Datemultirange = Multirange<crate::sql_types::Date>;
+    #[doc(hidden)]
+    pub type Nummultirange = Multirange<crate::sql_types::Numeric>;
+    #[doc(hidden)]
+    pub type Tsmultirange = Multirange<crate::sql_types::Timestamp>;
+    #[doc(hidden)]
+    pub type Tstzmultirange = Multirange<crate::sql_types::Timestamptz>;
+
+    /// This is a wrapper for [`RangeBound`] to represent range bounds: '[]', '(]', '[)', '()',
+    /// used in functions int4range, int8range, numrange, tsrange, tstzrange, daterange.
+    #[derive(Debug, Clone, Copy, QueryId, SqlType)]
+    #[cfg(feature = "postgres_backend")]
+    #[diesel(postgres_type(name = "text"))]
+    pub struct RangeBoundEnum;
+
+    /// Represent postgres range bounds: '[]', '(]', '[)', '()',
+    /// used in functions int4range, int8range, numrange, tsrange, tstzrange, daterange.
+    #[derive(Debug, Clone, Copy, diesel_derives::AsExpression)]
+    #[diesel(sql_type = RangeBoundEnum)]
+    #[allow(clippy::enum_variant_names)]
+    pub enum RangeBound {
+        /// postgres '[]'
+        LowerBoundInclusiveUpperBoundInclusive,
+        /// postgres '[)'
+        LowerBoundInclusiveUpperBoundExclusive,
+        /// postgres '(]'
+        LowerBoundExclusiveUpperBoundInclusive,
+        /// postgres '()'
+        LowerBoundExclusiveUpperBoundExclusive,
+    }
 
     /// The [`Record`] (a.k.a. tuple) SQL type.
     ///
@@ -428,20 +497,35 @@ pub mod sql_types {
     ///
     /// ### [`ToSql`] impls
     ///
-    #[cfg_attr(feature = "ipnetwork", doc = " - [`ipnetwork::IpNetwork`][IpNetwork]")]
-    #[cfg_attr(feature = "ipnet", doc = " - [`ipnet::IpNet`][IpNet]")]
-    #[cfg_attr(not(any(feature = "ipnetwork", feature = "ipnet")), doc = "N/A")]
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(
+        not(any(feature = "network-address", feature = "ipnet-address")),
+        doc = "N/A"
+    )]
     ///
     /// ### [`FromSql`] impls
     ///
-    #[cfg_attr(feature = "ipnetwork", doc = " - [`ipnetwork::IpNetwork`][IpNetwork]")]
-    #[cfg_attr(feature = "ipnet", doc = " - [`ipnet::IpNet`][IpNet]")]
-    #[cfg_attr(not(any(feature = "ipnetwork", feature = "ipnet")), doc = "N/A")]
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(
+        not(any(feature = "network-address", feature = "ipnet-address")),
+        doc = "N/A"
+    )]
     ///
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
-    #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
-    #[cfg_attr(feature = "ipnet", doc = " [IpNet]: ipnet::IpNet")]
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " [IpNetwork]: ipnetwork::IpNetwork"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " [IpNet]: ipnet::IpNet")]
     ///
     /// # Examples
     ///
@@ -487,20 +571,35 @@ pub mod sql_types {
     ///
     /// ### [`ToSql`] impls
     ///
-    #[cfg_attr(feature = "ipnetwork", doc = " - [`ipnetwork::IpNetwork`][IpNetwork]")]
-    #[cfg_attr(feature = "ipnet", doc = " - [`ipnet::IpNet`][IpNet]")]
-    #[cfg_attr(not(any(feature = "ipnetwork", feature = "ipnet")), doc = "N/A")]
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(
+        not(any(feature = "network-address", feature = "ipnet-address")),
+        doc = "N/A"
+    )]
     ///
     /// ### [`FromSql`] impls
     ///
-    #[cfg_attr(feature = "ipnetwork", doc = " - [`ipnetwork::IpNetwork`][IpNetwork]")]
-    #[cfg_attr(feature = "ipnet", doc = " - [`ipnet::IpNet`][IpNet]")]
-    #[cfg_attr(not(any(feature = "ipnetwork", feature = "ipnet")), doc = "N/A")]
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(
+        not(any(feature = "network-address", feature = "ipnet-address")),
+        doc = "N/A"
+    )]
     ///
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
-    #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
-    #[cfg_attr(feature = "ipnet", doc = " [IpNet]: ipnet::IpNet")]
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " [IpNetwork]: ipnetwork::IpNetwork"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " [IpNet]: ipnet::IpNet")]
     ///
     /// # Examples
     ///
@@ -561,12 +660,33 @@ pub mod sql_types {
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 18, array_oid = 1002))]
     pub struct CChar;
+
+    /// The [`Citext`] SQL type. This is a PostgreSQL specific type.
+    ///
+    /// Strings must be valid UTF-8.
+    ///
+    /// ### [`ToSql`] impls
+    ///
+    /// - [`String`]
+    /// - [`&str`][str]
+    ///
+    /// ### [`FromSql`] impls
+    ///
+    /// - [`String`]
+    ///
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [`Citext`]: https://www.postgresql.org/docs/current/citext.html
+    #[cfg(feature = "postgres_backend")]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[diesel(postgres_type(name = "citext"))]
+    pub struct Citext;
 }
 
 mod ops {
     use super::sql_types::*;
     use crate::sql_types::ops::*;
-    use crate::sql_types::{Bigint, Cidr, Inet, Interval};
+    use crate::sql_types::{Bigint, Interval};
 
     impl Add for Timestamptz {
         type Rhs = Interval;

@@ -176,16 +176,14 @@ mod private {
     }
 
     #[cfg_attr(
-        doc_cfg,
+        docsrs,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
-    #[cfg_attr(
-        feature = "nightly-error-messages",
-        diagnostic::on_unimplemented(
-            note = "This is a mismatch between what your query returns and what your type expects the query to return\n\
-                Consider using `#[derive(Selectable)]` + `#[diesel(check_for_backend({DB}))]` on your struct `{U}` and \n\
-                in your query `.select({U}::as_select())` to get a better error message",
-        )
+    #[diagnostic::on_unimplemented(
+        note = "this is a mismatch between what your query returns and what your type expects the query to return",
+        note = "the fields in your struct need to match the fields returned by your query in count, order and type",
+        note = "consider using `#[derive(Selectable)]` or #[derive(QueryableByName)] + `#[diesel(check_for_backend({DB}))]` \n\
+                on your struct `{U}` and in your query `.select({U}::as_select())` to get a better error message"
     )]
     pub trait CompatibleType<U, DB> {
         type SqlType;

@@ -10,11 +10,13 @@
 ///     use schema::users;
 ///     let connection = &mut establish_connection();
 ///     let (users1, users2) = diesel::alias!(schema::users as user1, schema::users as user2);
+/// # #[cfg(not(feature = "mysql"))] // self joins are not supported with mysql temporary tables
 ///     let res = users1
 ///         .inner_join(users2.on(users1.field(users::id).eq(users2.field(users::id))))
 ///         .select((users1.fields((users::id, users::name)), users2.field(users::name)))
 ///         .order_by(users2.field(users::id))
 ///         .load::<((i32, String), String)>(connection);
+/// # #[cfg(not(feature = "mysql"))] // self joins are not supported with mysql temporary tables
 ///     assert_eq!(
 ///         res,
 ///         Ok(vec![

@@ -153,6 +153,39 @@ fn database_setup_respects_migration_dir_by_arg() {
 }
 
 #[test]
+fn database_setup_respects_migration_nested_dir_by_arg() {
+    let p = project("database_setup_respects_migration_nested_dir_by_arg")
+        .folder("foo/bar")
+        .build();
+    let db = database(&p.database_url());
+
+    p.create_migration_in_directory(
+        "foo/bar",
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        Some("DROP TABLE users"),
+        None,
+    );
+
+    // sanity check
+    assert!(!db.exists());
+
+    let result = p
+        .command("database")
+        .arg("setup")
+        .arg("--migration-dir=foo/bar")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(db.table_exists("users"));
+}
+
+#[test]
 fn database_setup_respects_migration_dir_by_env() {
     let p = project("database_setup_respects_migration_dir_by_env")
         .folder("bar")
@@ -219,4 +252,33 @@ fn database_setup_respects_migrations_dir_from_diesel_toml() {
         result.stdout()
     );
     assert!(db.table_exists("users"));
+}
+
+#[test]
+fn database_setup_no_default_migrations() {
+    let p = project("database_setup_no_default_migrations")
+        .folder("custom_migrations")
+        .file(
+            "diesel.toml",
+            r#"
+            [migrations_directory]
+            dir = "custom_migrations"
+            "#,
+        )
+        .build();
+    let db = database(&p.database_url());
+
+    // sanity check
+    assert!(!db.exists());
+
+    let result = p
+        .command("database")
+        .arg("setup")
+        .arg("--no-default-migration")
+        .run();
+
+    use std::path::Path;
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file(Path::new("custom_migrations").join("00000000000000_diesel_initial_setup")));
 }

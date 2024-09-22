@@ -115,14 +115,14 @@ where
     }
 }
 
-pub trait InsertValues<T: Table, DB: Backend>: QueryFragment<DB> {
+pub trait InsertValues<DB: Backend, T: Table>: QueryFragment<DB> {
     fn column_names(&self, out: AstPass<'_, '_, DB>) -> QueryResult<()>;
 }
 
 #[derive(Debug, Copy, Clone, QueryId)]
 #[doc(hidden)]
 pub struct ColumnInsertValue<Col, Expr> {
-    expr: Expr,
+    pub(crate) expr: Expr,
     p: PhantomData<Col>,
 }
 
@@ -154,7 +154,7 @@ impl<T> Default for DefaultableColumnInsertValue<T> {
     }
 }
 
-impl<Col, Expr, DB> InsertValues<Col::Table, DB>
+impl<Col, Expr, DB> InsertValues<DB, Col::Table>
     for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
     DB: Backend + SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>,
@@ -168,7 +168,7 @@ where
     }
 }
 
-impl<Col, Expr, DB> InsertValues<Col::Table, DB> for ColumnInsertValue<Col, Expr>
+impl<Col, Expr, DB> InsertValues<DB, Col::Table> for ColumnInsertValue<Col, Expr>
 where
     DB: Backend,
     Col: Column,
@@ -218,7 +218,7 @@ where
 }
 
 #[cfg(feature = "sqlite")]
-impl<Col, Expr> InsertValues<Col::Table, crate::sqlite::Sqlite>
+impl<Col, Expr> InsertValues<crate::sqlite::Sqlite, Col::Table>
     for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
     Col: Column,
@@ -291,14 +291,8 @@ where
 {
     type Values = BatchInsert<Vec<T::Values>, Tab, [T::Values; N], true>;
 
-    // We must use the deprecated `IntoIter` function
-    // here as 1.51 (MSRV) does not support the new not
-    // deprecated variant
-    #[allow(deprecated)]
     fn values(self) -> Self::Values {
-        let values = std::array::IntoIter::new(self)
-            .map(Insertable::values)
-            .collect::<Vec<_>>();
+        let values = self.into_iter().map(Insertable::values).collect::<Vec<_>>();
         BatchInsert::new(values)
     }
 }

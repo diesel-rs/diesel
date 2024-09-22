@@ -25,7 +25,7 @@ impl ToSql<TinyInt, Mysql> for i8 {
 impl FromSql<TinyInt, Mysql> for i8 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         let bytes = value.as_bytes();
-        Ok(bytes[0] as i8)
+        Ok(i8::from_be_bytes([bytes[0]]))
     }
 }
 
@@ -69,12 +69,14 @@ where
 #[cfg(feature = "mysql_backend")]
 impl ToSql<Unsigned<TinyInt>, Mysql> for u8 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
-        ToSql::<TinyInt, Mysql>::to_sql(&(*self as i8), &mut out.reborrow())
+        out.write_u8(*self)?;
+        Ok(IsNull::No)
     }
 }
 
 #[cfg(feature = "mysql_backend")]
 impl FromSql<Unsigned<TinyInt>, Mysql> for u8 {
+    #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)] // that's what we want
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let signed: i8 = FromSql::<TinyInt, Mysql>::from_sql(bytes)?;
         Ok(signed as u8)
@@ -84,12 +86,18 @@ impl FromSql<Unsigned<TinyInt>, Mysql> for u8 {
 #[cfg(feature = "mysql_backend")]
 impl ToSql<Unsigned<SmallInt>, Mysql> for u16 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
-        ToSql::<SmallInt, Mysql>::to_sql(&(*self as i16), &mut out.reborrow())
+        out.write_u16::<NativeEndian>(*self)?;
+        Ok(IsNull::No)
     }
 }
 
 #[cfg(feature = "mysql_backend")]
 impl FromSql<Unsigned<SmallInt>, Mysql> for u16 {
+    #[allow(
+        clippy::cast_possible_wrap,
+        clippy::cast_sign_loss,
+        clippy::cast_possible_truncation
+    )] // that's what we want
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let signed: i32 = FromSql::<Integer, Mysql>::from_sql(bytes)?;
         Ok(signed as u16)
@@ -99,12 +107,18 @@ impl FromSql<Unsigned<SmallInt>, Mysql> for u16 {
 #[cfg(feature = "mysql_backend")]
 impl ToSql<Unsigned<Integer>, Mysql> for u32 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
-        ToSql::<Integer, Mysql>::to_sql(&(*self as i32), &mut out.reborrow())
+        out.write_u32::<NativeEndian>(*self)?;
+        Ok(IsNull::No)
     }
 }
 
 #[cfg(feature = "mysql_backend")]
 impl FromSql<Unsigned<Integer>, Mysql> for u32 {
+    #[allow(
+        clippy::cast_possible_wrap,
+        clippy::cast_sign_loss,
+        clippy::cast_possible_truncation
+    )] // that's what we want
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let signed: i64 = FromSql::<BigInt, Mysql>::from_sql(bytes)?;
         Ok(signed as u32)
@@ -114,12 +128,18 @@ impl FromSql<Unsigned<Integer>, Mysql> for u32 {
 #[cfg(feature = "mysql_backend")]
 impl ToSql<Unsigned<BigInt>, Mysql> for u64 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
-        ToSql::<BigInt, Mysql>::to_sql(&(*self as i64), &mut out.reborrow())
+        out.write_u64::<NativeEndian>(*self)?;
+        Ok(IsNull::No)
     }
 }
 
 #[cfg(feature = "mysql_backend")]
 impl FromSql<Unsigned<BigInt>, Mysql> for u64 {
+    #[allow(
+        clippy::cast_possible_wrap,
+        clippy::cast_sign_loss,
+        clippy::cast_possible_truncation
+    )] // that's what we want
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let signed: i64 = FromSql::<BigInt, Mysql>::from_sql(bytes)?;
         Ok(signed as u64)

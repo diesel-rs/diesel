@@ -207,6 +207,13 @@ mod postgres {
         ts: (Bound<NaiveDateTime>, Bound<NaiveDateTime>),
         tstz: (Bound<DateTime<Utc>>, Bound<DateTime<Utc>>),
         date: (Bound<NaiveDate>, Bound<NaiveDate>),
+        int4multi: Vec<(Bound<i32>, Bound<i32>)>,
+        int8multi: Vec<(Bound<i64>, Bound<i64>)>,
+        nummulti: Vec<(Bound<PgNumeric>, Bound<PgNumeric>)>,
+        tsmulti: Vec<(Bound<NaiveDateTime>, Bound<NaiveDateTime>)>,
+        #[allow(clippy::type_complexity)]
+        tstzmulti: Vec<(Bound<DateTime<Utc>>, Bound<DateTime<Utc>>)>,
+        datemulti: Vec<(Bound<NaiveDate>, Bound<NaiveDate>)>,
     }
 
     #[test]
@@ -225,13 +232,22 @@ mod postgres {
         let inferred_ranges = InferredRanges {
             int4: (Bound::Included(5), Bound::Excluded(12)),
             int8: (Bound::Included(5), Bound::Excluded(13)),
-            num: (Bound::Included(numeric), Bound::Unbounded),
+            num: (Bound::Included(numeric.clone()), Bound::Unbounded),
             ts: (Bound::Included(dt), Bound::Unbounded),
             tstz: (
                 Bound::Unbounded,
                 Bound::Excluded(Utc.from_utc_datetime(&dt)),
             ),
             date: (Bound::Included(dt.date()), Bound::Unbounded),
+            int4multi: vec![(Bound::Included(5), Bound::Excluded(12))],
+            int8multi: vec![(Bound::Included(5), Bound::Excluded(13))],
+            nummulti: vec![(Bound::Included(numeric), Bound::Unbounded)],
+            tsmulti: vec![(Bound::Included(dt), Bound::Unbounded)],
+            tstzmulti: vec![(
+                Bound::Unbounded,
+                Bound::Excluded(Utc.from_utc_datetime(&dt)),
+            )],
+            datemulti: vec![(Bound::Included(dt.date()), Bound::Unbounded)],
         };
 
         insert_into(all_the_ranges::table)

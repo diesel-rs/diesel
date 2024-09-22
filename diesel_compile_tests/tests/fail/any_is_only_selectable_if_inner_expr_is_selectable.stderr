@@ -1,15 +1,15 @@
 warning: use of deprecated function `diesel::dsl::any`: Use `ExpressionMethods::eq_any` instead
-  --> tests/fail/any_is_only_selectable_if_inner_expr_is_selectable.rs:30:34
+  --> tests/fail/any_is_only_selectable_if_inner_expr_is_selectable.rs:33:25
    |
-30 |     let _ = stuff.filter(name.eq(any(more_stuff::names)))
-   |                                  ^^^
+33 |         .filter(name.eq(any(more_stuff::names)))
+   |                         ^^^
    |
    = note: `#[warn(deprecated)]` on by default
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/any_is_only_selectable_if_inner_expr_is_selectable.rs:31:15
+  --> tests/fail/any_is_only_selectable_if_inner_expr_is_selectable.rs:34:15
    |
-31 |         .load(&mut conn);
+34 |         .load(&mut conn);
    |          ---- ^^^^^^^^^ expected `Once`, found `Never`
    |          |
    |          required by a bound introduced by this call
@@ -19,6 +19,7 @@ note: required for `more_stuff::columns::names` to implement `AppearsOnTable<stu
    |
 15 |         names -> Array<VarChar>,
    |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 3 redundant requirements hidden
    = note: required for `Grouped<Eq<name, Any<names>>>` to implement `AppearsOnTable<stuff::table>`
    = note: required for `WhereClause<Grouped<Eq<name, Any<names>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<stuff::table>>`
@@ -32,38 +33,7 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-
-error[E0277]: the trait bound `stuff::table: TableNotEqual<more_stuff::table>` is not satisfied
-  --> tests/fail/any_is_only_selectable_if_inner_expr_is_selectable.rs:31:15
-   |
-31 |         .load(&mut conn);
-   |          ---- ^^^^^^^^^ the trait `TableNotEqual<more_stuff::table>` is not implemented for `stuff::table`
-   |          |
-   |          required by a bound introduced by this call
-   |
-   = help: the following other types implement trait `TableNotEqual<T>`:
-             <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
-             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-   = note: required for `stuff::table` to implement `AppearsInFromClause<more_stuff::table>`
-note: required for `more_stuff::columns::names` to implement `AppearsOnTable<stuff::table>`
-  --> tests/fail/any_is_only_selectable_if_inner_expr_is_selectable.rs:15:9
-   |
-15 |         names -> Array<VarChar>,
-   |         ^^^^^
-   = note: 3 redundant requirements hidden
-   = note: required for `Grouped<Eq<name, Any<names>>>` to implement `AppearsOnTable<stuff::table>`
-   = note: required for `WhereClause<Grouped<Eq<name, Any<names>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<stuff::table>>`
-   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `Query`
-   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `LoadQuery<'_, _, _>`
-note: required by a bound in `diesel::RunQueryDsl::load`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-   |        ---- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: consider using `--verbose` to print the full type name to the console
