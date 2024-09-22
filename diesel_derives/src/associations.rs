@@ -1,14 +1,12 @@
-use {
-    proc_macro2::{Span, TokenStream},
-    quote::quote,
-    syn::{fold::Fold, parse_quote, DeriveInput, Ident, Lifetime, Result},
-};
+use proc_macro2::{Span, TokenStream};
+use quote::quote;
+use syn::fold::Fold;
+use syn::parse_quote;
+use syn::{DeriveInput, Ident, Lifetime, Result};
 
-use crate::{
-    model::Model,
-    parsers::BelongsTo,
-    util::{camel_to_snake, wrap_in_dummy_mod},
-};
+use crate::model::Model;
+use crate::parsers::BelongsTo;
+use crate::util::{camel_to_snake, wrap_in_dummy_mod};
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, false)?;

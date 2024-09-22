@@ -1,26 +1,21 @@
 use std::fmt::{Display, Formatter};
 
-use {
-    proc_macro2::{Span, TokenStream},
-    quote::ToTokens,
-    syn::{
-        parse::{discouraged::Speculative, Parse, ParseStream, Result},
-        punctuated::Punctuated,
-        spanned::Spanned,
-        token::Comma,
-        Attribute, Expr, Ident, LitBool, LitStr, Path, Type, TypePath,
-    },
-};
+use proc_macro2::{Span, TokenStream};
+use quote::ToTokens;
+use syn::parse::discouraged::Speculative;
+use syn::parse::{Parse, ParseStream, Result};
+use syn::punctuated::Punctuated;
+use syn::spanned::Spanned;
+use syn::token::Comma;
+use syn::{Attribute, Expr, Ident, LitBool, LitStr, Path, Type, TypePath};
 
-use crate::{
-    deprecated::ParseDeprecated,
-    parsers::{BelongsTo, MysqlType, PostgresType, SqliteType},
-    util::{
-        parse_eq, parse_paren, unknown_attribute, BELONGS_TO_NOTE, COLUMN_NAME_NOTE,
-        DESERIALIZE_AS_NOTE, DIESEL_PATH_NOTE, MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE,
-        SELECT_EXPRESSION_NOTE, SELECT_EXPRESSION_TYPE_NOTE, SERIALIZE_AS_NOTE, SQLITE_TYPE_NOTE,
-        SQL_TYPE_NOTE, TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE,
-    },
+use crate::deprecated::ParseDeprecated;
+use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
+use crate::util::{
+    parse_eq, parse_paren, unknown_attribute, BELONGS_TO_NOTE, COLUMN_NAME_NOTE,
+    DESERIALIZE_AS_NOTE, MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE, SELECT_EXPRESSION_NOTE,
+    SELECT_EXPRESSION_TYPE_NOTE, SERIALIZE_AS_NOTE, SQLITE_TYPE_NOTE, SQL_TYPE_NOTE,
+    TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE,
 };
 
 use crate::util::{parse_paren_list, CHECK_FOR_BACKEND_NOTE};
