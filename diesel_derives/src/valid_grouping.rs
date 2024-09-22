@@ -1,11 +1,13 @@
-use proc_macro2::TokenStream;
-use quote::quote;
-use syn::parse_quote;
-use syn::DeriveInput;
-use syn::Result;
+use {
+    proc_macro2::TokenStream,
+    quote::quote,
+    syn::{parse_quote, DeriveInput, Result},
+};
 
-use crate::model::Model;
-use crate::util::{ty_for_foreign_derive, wrap_in_dummy_mod};
+use crate::{
+    model::Model,
+    util::{ty_for_foreign_derive, wrap_in_dummy_mod},
+};
 
 pub fn derive(mut item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, true, false)?;
@@ -28,15 +30,18 @@ pub fn derive(mut item: DeriveInput) -> Result<TokenStream> {
         item.generics.params.push(parse_quote!(__GroupByClause));
         let (impl_generics, _, where_clause) = item.generics.split_for_impl();
 
-        Ok(wrap_in_dummy_mod(quote! {
-            use diesel::expression::{ValidGrouping, MixedAggregates, is_aggregate};
+        Ok(wrap_in_dummy_mod(
+            quote! {
+                use diesel::expression::{ValidGrouping, MixedAggregates, is_aggregate};
 
-            impl #impl_generics ValidGrouping<__GroupByClause> for #struct_ty
-            #where_clause
-            {
-                type IsAggregate = is_aggregate::Yes;
-            }
-        }))
+                impl #impl_generics ValidGrouping<__GroupByClause> for #struct_ty
+                #where_clause
+                {
+                    type IsAggregate = is_aggregate::Yes;
+                }
+            },
+            model.diesel_path.as_ref(),
+        ))
     } else {
         let mut aggregates = item
             .generics
@@ -61,14 +66,17 @@ pub fn derive(mut item: DeriveInput) -> Result<TokenStream> {
         item.generics.params.push(parse_quote!(__GroupByClause));
         let (impl_generics, _, where_clause) = item.generics.split_for_impl();
 
-        Ok(wrap_in_dummy_mod(quote! {
-            use diesel::expression::{ValidGrouping, MixedAggregates, is_aggregate};
+        Ok(wrap_in_dummy_mod(
+            quote! {
+                use diesel::expression::{ValidGrouping, MixedAggregates, is_aggregate};
 
-            impl #impl_generics ValidGrouping<__GroupByClause> for #struct_ty
-            #where_clause
-            {
-                type IsAggregate = #is_aggregate;
-            }
-        }))
+                impl #impl_generics ValidGrouping<__GroupByClause> for #struct_ty
+                #where_clause
+                {
+                    type IsAggregate = #is_aggregate;
+                }
+            },
+            model.diesel_path.as_ref(),
+        ))
     }
 }

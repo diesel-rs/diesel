@@ -1,11 +1,15 @@
-use proc_macro2::TokenStream;
-use quote::quote;
-use syn::{parse_quote, parse_quote_spanned, DeriveInput, Ident, LitStr, Result, Type};
+use {
+    proc_macro2::TokenStream,
+    quote::quote,
+    syn::{parse_quote, parse_quote_spanned, DeriveInput, Ident, LitStr, Result, Type},
+};
 
-use crate::attrs::AttributeSpanWrapper;
-use crate::field::{Field, FieldName};
-use crate::model::Model;
-use crate::util::wrap_in_dummy_mod;
+use crate::{
+    attrs::AttributeSpanWrapper,
+    field::{Field, FieldName},
+    model::Model,
+    util::wrap_in_dummy_mod,
+};
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, false)?;
@@ -81,30 +85,33 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-    Ok(wrap_in_dummy_mod(quote! {
-        use diesel::deserialize::{self, QueryableByName};
-        use diesel::row::{NamedRow};
-        use diesel::sql_types::Untyped;
+    Ok(wrap_in_dummy_mod(
+        quote! {
+            use diesel::deserialize::{self, QueryableByName};
+            use diesel::row::{NamedRow};
+            use diesel::sql_types::Untyped;
 
-        impl #impl_generics QueryableByName<__DB>
-            for #struct_name #ty_generics
-        #where_clause
-        {
-            fn build<'__a>(row: &impl NamedRow<'__a, __DB>) -> deserialize::Result<Self>
+            impl #impl_generics QueryableByName<__DB>
+                for #struct_name #ty_generics
+            #where_clause
             {
-                #(
-                    let mut #fields = #initial_field_expr;
-                )*
-                deserialize::Result::Ok(Self {
+                fn build<'__a>(row: &impl NamedRow<'__a, __DB>) -> deserialize::Result<Self>
+                {
                     #(
-                        #field_names: #fields,
+                        let mut #fields = #initial_field_expr;
                     )*
-                })
+                    deserialize::Result::Ok(Self {
+                        #(
+                            #field_names: #fields,
+                        )*
+                    })
+                }
             }
-        }
 
-        #check_function
-    }))
+            #check_function
+        },
+        model.diesel_path.as_ref(),
+    ))
 }
 
 fn get_ident(field: &Field) -> Ident {

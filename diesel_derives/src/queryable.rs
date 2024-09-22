@@ -1,10 +1,10 @@
-use proc_macro2::{Span, TokenStream};
-use quote::quote;
-use syn::{parse_quote, DeriveInput, Ident, Index, Result};
+use {
+    proc_macro2::{Span, TokenStream},
+    quote::quote,
+    syn::{parse_quote, DeriveInput, Ident, Index, Result},
+};
 
-use crate::field::Field;
-use crate::model::Model;
-use crate::util::wrap_in_dummy_mod;
+use crate::{field::Field, model::Model, util::wrap_in_dummy_mod};
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, true)?;
@@ -44,21 +44,26 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     }
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-    Ok(wrap_in_dummy_mod(quote! {
-        use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
-        use diesel::row::{Row, Field};
-        use std::convert::TryInto;
+    Ok(wrap_in_dummy_mod(
+        quote! {
+            use diesel::{
+                deserialize::{self, FromStaticSqlRow, Queryable},
+                row::{Row, Field},
+            };
+            use std::convert::TryInto;
 
-        impl #impl_generics Queryable<(#(#sql_type,)*), __DB> for #struct_name #ty_generics
-            #where_clause
-        {
-            type Row = (#(#field_ty,)*);
+            impl #impl_generics Queryable<(#(#sql_type,)*), __DB> for #struct_name #ty_generics
+                #where_clause
+            {
+                type Row = (#(#field_ty,)*);
 
-            fn build(row: Self::Row) -> deserialize::Result<Self> {
-                Ok(Self {
-                    #(#build_expr,)*
-                })
+                fn build(row: Self::Row) -> deserialize::Result<Self> {
+                    Ok(Self {
+                        #(#build_expr,)*
+                    })
+                }
             }
-        }
-    }))
+        },
+        model.diesel_path.as_ref(),
+    ))
 }

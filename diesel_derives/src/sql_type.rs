@@ -1,11 +1,10 @@
-use proc_macro2::{Span, TokenStream};
-use quote::quote;
-use syn::Result;
-use syn::{DeriveInput, Ident};
+use {
+    proc_macro2::{Span, TokenStream},
+    quote::quote,
+    syn::{DeriveInput, Ident, Result},
+};
 
-use crate::model::Model;
-use crate::parsers::PostgresType;
-use crate::util::wrap_in_dummy_mod;
+use crate::{model::Model, parsers::PostgresType, util::wrap_in_dummy_mod};
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, true, false)?;
@@ -17,24 +16,27 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let mysql_tokens = mysql_tokens(&item, &model);
     let pg_tokens = pg_tokens(&item, &model);
 
-    Ok(wrap_in_dummy_mod(quote! {
-        impl #impl_generics diesel::sql_types::SqlType
-            for #struct_name #ty_generics
-        #where_clause
-        {
-            type IsNull = diesel::sql_types::is_nullable::NotNull;
-        }
+    Ok(wrap_in_dummy_mod(
+        quote! {
+            impl #impl_generics diesel::sql_types::SqlType
+                for #struct_name #ty_generics
+            #where_clause
+            {
+                type IsNull = diesel::sql_types::is_nullable::NotNull;
+            }
 
-        impl #impl_generics diesel::sql_types::SingleValue
-            for #struct_name #ty_generics
-        #where_clause
-        {
-        }
+            impl #impl_generics diesel::sql_types::SingleValue
+                for #struct_name #ty_generics
+            #where_clause
+            {
+            }
 
-        #sqlite_tokens
-        #mysql_tokens
-        #pg_tokens
-    }))
+            #sqlite_tokens
+            #mysql_tokens
+            #pg_tokens
+        },
+        model.diesel_path.as_ref(),
+    ))
 }
 
 fn sqlite_tokens(item: &DeriveInput, model: &Model) -> Option<TokenStream> {

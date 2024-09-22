@@ -1,17 +1,18 @@
-use proc_macro2::Span;
-use std::slice::from_ref;
-use syn::punctuated::Punctuated;
-use syn::token::Comma;
-use syn::Result;
-use syn::{
-    Data, DataStruct, DeriveInput, Field as SynField, Fields, FieldsNamed, FieldsUnnamed, Ident,
-    LitBool, Path, Type,
+use {
+    proc_macro2::Span,
+    std::{borrow::Cow, slice::from_ref},
+    syn::{
+        punctuated::Punctuated, token::Comma, Data, DataStruct, DeriveInput, Field as SynField,
+        Fields, FieldsNamed, FieldsUnnamed, Ident, LitBool, Path, Result, Type,
+    },
 };
 
-use crate::attrs::{parse_attributes, StructAttr};
-use crate::field::Field;
-use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
-use crate::util::camel_to_snake;
+use crate::{
+    attrs::{parse_attributes, StructAttr},
+    field::Field,
+    parsers::{BelongsTo, MysqlType, PostgresType, SqliteType},
+    util::camel_to_snake,
+};
 
 pub struct Model {
     name: Path,
@@ -28,6 +29,7 @@ pub struct Model {
     pub sqlite_type: Option<SqliteType>,
     pub postgres_type: Option<PostgresType>,
     pub check_for_backend: Option<syn::punctuated::Punctuated<syn::TypePath, syn::Token![,]>>,
+    pub diesel_path: Option<syn::Path>,
     fields: Vec<Field>,
 }
 
@@ -72,6 +74,7 @@ impl Model {
         let mut sqlite_type = None;
         let mut postgres_type = None;
         let mut check_for_backend = None;
+        let mut diesel_path = None;
 
         for attr in parse_attributes(attrs)? {
             match attr.item {
@@ -103,6 +106,9 @@ impl Model {
                 StructAttr::CheckForBackend(_, b) => {
                     check_for_backend = Some(b);
                 }
+                StructAttr::DieselPath(_, path) => {
+                    diesel_path = Some(path);
+                }
             }
         }
 
@@ -124,6 +130,7 @@ impl Model {
             postgres_type,
             fields: fields_from_item_data(fields)?,
             check_for_backend,
+            diesel_path,
         })
     }
 

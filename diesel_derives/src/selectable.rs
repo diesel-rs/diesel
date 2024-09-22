@@ -1,12 +1,10 @@
-use proc_macro2::TokenStream;
-use quote::quote;
-use syn::spanned::Spanned;
-use syn::DeriveInput;
-use syn::{parse_quote, Result};
+use {
+    proc_macro2::TokenStream,
+    quote::quote,
+    syn::{parse_quote, spanned::Spanned, DeriveInput, Result},
+};
 
-use crate::field::Field;
-use crate::model::Model;
-use crate::util::wrap_in_dummy_mod;
+use crate::{field::Field, model::Model, util::wrap_in_dummy_mod};
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, false)?;
@@ -78,24 +76,27 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         .map(|e| e.into_compile_error())
         .collect();
 
-    Ok(wrap_in_dummy_mod(quote! {
-        use diesel::expression::Selectable;
+    Ok(wrap_in_dummy_mod(
+        quote! {
+            use diesel::expression::Selectable;
 
-        impl #impl_generics Selectable<__DB>
-            for #struct_name #ty_generics
-        #where_clause
-        {
-            type SelectExpression = (#(#field_columns_ty,)*);
+            impl #impl_generics Selectable<__DB>
+                for #struct_name #ty_generics
+            #where_clause
+            {
+                type SelectExpression = (#(#field_columns_ty,)*);
 
-            fn construct_selection() -> Self::SelectExpression {
-                (#(#field_columns_inst,)*)
+                fn construct_selection() -> Self::SelectExpression {
+                    (#(#field_columns_inst,)*)
+                }
             }
-        }
 
-        #check_function
+            #check_function
 
-        #errors
-    }))
+            #errors
+        },
+        model.diesel_path.as_ref(),
+    ))
 }
 
 fn to_field_ty_bound(field_ty: &syn::Type) -> Result<TokenStream> {
