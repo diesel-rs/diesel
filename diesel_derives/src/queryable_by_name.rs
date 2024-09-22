@@ -1,15 +1,11 @@
-use {
-    proc_macro2::TokenStream,
-    quote::quote,
-    syn::{parse_quote, parse_quote_spanned, DeriveInput, Ident, LitStr, Result, Type},
-};
+use proc_macro2::TokenStream;
+use quote::quote;
+use syn::{parse_quote, parse_quote_spanned, DeriveInput, Ident, LitStr, Result, Type};
 
-use crate::{
-    attrs::AttributeSpanWrapper,
-    field::{Field, FieldName},
-    model::Model,
-    util::wrap_in_dummy_mod,
-};
+use crate::attrs::AttributeSpanWrapper;
+use crate::field::{Field, FieldName};
+use crate::model::Model;
+use crate::util::wrap_in_dummy_mod;
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, false)?;

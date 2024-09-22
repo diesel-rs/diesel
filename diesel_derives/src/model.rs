@@ -1,18 +1,17 @@
-use {
-    proc_macro2::Span,
-    std::{borrow::Cow, slice::from_ref},
-    syn::{
-        punctuated::Punctuated, token::Comma, Data, DataStruct, DeriveInput, Field as SynField,
-        Fields, FieldsNamed, FieldsUnnamed, Ident, LitBool, Path, Result, Type,
-    },
+use proc_macro2::Span;
+use std::slice::from_ref;
+use syn::punctuated::Punctuated;
+use syn::token::Comma;
+use syn::Result;
+use syn::{
+    Data, DataStruct, DeriveInput, Field as SynField, Fields, FieldsNamed, FieldsUnnamed, Ident,
+    LitBool, Path, Type,
 };
 
-use crate::{
-    attrs::{parse_attributes, StructAttr},
-    field::Field,
-    parsers::{BelongsTo, MysqlType, PostgresType, SqliteType},
-    util::camel_to_snake,
-};
+use crate::attrs::{parse_attributes, StructAttr};
+use crate::field::Field;
+use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
+use crate::util::camel_to_snake;
 
 pub struct Model {
     name: Path,
