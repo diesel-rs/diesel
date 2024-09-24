@@ -41,7 +41,7 @@ impl FromSql<sql_types::Jsonb, Sqlite> for serde_json::Value {
         }
 
         // Read the JSONB value from the byte stream
-        read_jsonb_value(&bytes)
+        read_jsonb_value(&bytes).map(|(v, _)| v)
     }
 }
 
@@ -61,7 +61,7 @@ impl ToSql<sql_types::Jsonb, Sqlite> for serde_json::Value {
 }
 
 // Helper function to read a JSONB value from the byte stream
-fn read_jsonb_value(bytes: &[u8]) -> deserialize::Result<serde_json::Value> {
+fn read_jsonb_value(bytes: &[u8]) -> deserialize::Result<(serde_json::Value, usize)> {
     if bytes.is_empty() {
         return Err("Empty JSONB data".into());
     }
@@ -69,52 +69,90 @@ fn read_jsonb_value(bytes: &[u8]) -> deserialize::Result<serde_json::Value> {
     // The first byte contains both the element type and potentially the payload size
     let first_byte = bytes[0];
     let element_type = first_byte & 0x0F;
-    let payload_size_hint = (first_byte & 0xF0) >> 4;
+    let size_hint = (first_byte & 0xF0) >> 4;
 
-    // Determine payload size and handle accordingly
-    let (payload_size, payload_start) = match payload_size_hint {
-        0x00..=0x0B => (payload_size_hint as usize, 1), // Payload size is encoded in the upper four bits directly
-        0x0C => (bytes[1] as usize, 2),                 // 1 additional byte for payload size
-        0x0D => (u16::from_be_bytes([bytes[1], bytes[2]]) as usize, 3), // 2 additional bytes for payload size
-        0x0E => (
-            u32::from_be_bytes([bytes[1], bytes[2], bytes[3], bytes[4]]) as usize,
-            5,
-        ), // 4 additional bytes
-        0x0F => (
-            u64::from_be_bytes([
-                bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7], bytes[8],
-            ]) as usize,
-            9,
-        ), // 8 additional bytes for payload size (unlikely in practice)
+    let (payload_size, header_size) = match size_hint {
+        0x00..=0x0B => (size_hint as usize, 1), // Payload size is directly in the upper nibble
+        0x0C => {
+            if bytes.len() < 2 {
+                return Err("Invalid JSONB data: insufficient bytes for payload size".into());
+            }
+            (bytes[1] as usize, 2) // 1 additional byte for payload size
+        }
+        0x0D => {
+            if bytes.len() < 3 {
+                return Err("Invalid JSONB data: insufficient bytes for payload size".into());
+            }
+            (u16::from_be_bytes([bytes[1], bytes[2]]) as usize, 3) // 2 additional bytes
+        }
+        0x0E => {
+            if bytes.len() < 5 {
+                return Err("Invalid JSONB data: insufficient bytes for payload size".into());
+            }
+            (
+                u32::from_be_bytes([bytes[1], bytes[2], bytes[3], bytes[4]]) as usize,
+                5,
+            ) // 4 additional bytes
+        }
+        0x0F => {
+            if bytes.len() < 9 {
+                return Err("Invalid JSONB data: insufficient bytes for payload size".into());
+            }
+            (
+                u64::from_be_bytes([
+                    bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7], bytes[8],
+                ]) as usize,
+                9,
+            ) // 8 additional bytes
+        }
         _ => return Err("Invalid payload size hint".into()),
     };
 
-    let remaining_bytes = &bytes[payload_start..];
-
-    match element_type {
-        JSONB_NULL => Ok(serde_json::Value::Null), // Null has no payload
-        JSONB_TRUE => Ok(serde_json::Value::Bool(true)), // True has no payload
-        JSONB_FALSE => Ok(serde_json::Value::Bool(false)), // False has no payload
-        JSONB_INT => read_jsonb_int(remaining_bytes, payload_size),
-        JSONB_INT5 => Err("INT5 is not supported in this implementation".into()), // INT5 not supported
-        JSONB_FLOAT => read_jsonb_float(remaining_bytes, payload_size),
-        JSONB_FLOAT5 => Err("FLOAT5 is not supported in this implementation".into()), // FLOAT5 not supported
-        JSONB_TEXT => read_jsonb_text(remaining_bytes, payload_size),
-        JSONB_TEXTJ => read_jsonb_text(remaining_bytes, payload_size), // Handle TEXTJ similarly to TEXT for now
-        JSONB_TEXT5 => Err("TEXT5 is not supported in this implementation".into()), // TEXT5 not supported
-        JSONB_TEXTRAW => read_jsonb_text(remaining_bytes, payload_size), // Handle TEXTRAW similarly to TEXT for now
-        JSONB_ARRAY => read_jsonb_array(remaining_bytes, payload_size),
-        JSONB_OBJECT => read_jsonb_object(remaining_bytes, payload_size),
-        _ => Err(format!("Unsupported or reserved JSONB type: {}", element_type).into()),
+    let total_size = header_size + payload_size;
+    if bytes.len() < total_size {
+        return Err("Invalid JSONB data: insufficient bytes for value".into());
     }
+
+    let payload_bytes = &bytes[header_size..total_size];
+
+    let value = match element_type {
+        JSONB_NULL => Ok(serde_json::Value::Null),
+        JSONB_TRUE => Ok(serde_json::Value::Bool(true)),
+        JSONB_FALSE => Ok(serde_json::Value::Bool(false)),
+        JSONB_INT => read_jsonb_int(payload_bytes, payload_size),
+        JSONB_INT5 => Err("INT5 is not supported in this implementation".into()),
+        JSONB_FLOAT => read_jsonb_float(payload_bytes, payload_size),
+        JSONB_FLOAT5 => Err("FLOAT5 is not supported in this implementation".into()),
+        JSONB_TEXT | JSONB_TEXTJ | JSONB_TEXTRAW => read_jsonb_text(payload_bytes, payload_size),
+        JSONB_TEXT5 => Err("TEXT5 is not supported in this implementation".into()),
+        JSONB_ARRAY => read_jsonb_array(payload_bytes, payload_size),
+        JSONB_OBJECT => read_jsonb_object(payload_bytes, payload_size),
+        _ => Err(format!("Unsupported or reserved JSONB type: {}", element_type).into()),
+    }?;
+
+    Ok((value, total_size))
 }
 
 // Read a JSON integer in canonical format (INT)
-fn read_jsonb_int(bytes: &[u8], _payload_size: usize) -> deserialize::Result<serde_json::Value> {
-    let int_str = std::str::from_utf8(bytes).map_err(|_| "Invalid UTF-8 in JSONB integer")?;
+fn read_jsonb_int(bytes: &[u8], payload_size: usize) -> deserialize::Result<serde_json::Value> {
+    // Ensure the bytes are at least as large as the payload size
+    if bytes.len() < payload_size {
+        return Err(format!(
+            "Expected payload of size {}, but got {}",
+            payload_size,
+            bytes.len()
+        )
+        .into());
+    }
+
+    // Read only the number of bytes specified by the payload size
+    let int_str = std::str::from_utf8(&bytes[..payload_size])
+        .map_err(|_| "Invalid ASCII in JSONB integer")?;
+    // Parse the integer string into an i64
     let int_value = int_str
         .parse::<i64>()
         .map_err(|_| "Failed to parse JSONB integer")?;
+
     Ok(serde_json::Value::Number(serde_json::Number::from(
         int_value,
     )))
@@ -141,58 +179,51 @@ fn read_jsonb_text(bytes: &[u8], payload_size: usize) -> deserialize::Result<ser
 // Read a JSON array
 fn read_jsonb_array(bytes: &[u8], payload_size: usize) -> deserialize::Result<serde_json::Value> {
     let mut elements = Vec::new();
-    let mut remaining_bytes = bytes;
     let mut total_read = 0;
 
-    // Loop through the array elements and parse each one
     while total_read < payload_size {
-        let element = read_jsonb_value(remaining_bytes)?;
-        let element_size = remaining_bytes.len() - bytes.len();
+        let (element, consumed) = read_jsonb_value(&bytes[total_read..payload_size])?;
+
         elements.push(element);
-        remaining_bytes = &remaining_bytes[element_size..];
-        total_read += element_size;
+        total_read += consumed;
+    }
+
+    if total_read != payload_size {
+        return Err("Array payload size mismatch".into());
     }
 
     Ok(serde_json::Value::Array(elements))
 }
 
-// Read a JSON object
 fn read_jsonb_object(bytes: &[u8], payload_size: usize) -> deserialize::Result<serde_json::Value> {
     let mut object = serde_json::Map::new();
-    let mut remaining_bytes = bytes;
     let mut total_read = 0;
 
-    // Loop through the object key-value pairs and parse each one
     while total_read < payload_size {
-        let key_type = remaining_bytes[0] & 0x0F;
-
-        // Ensure the key is a valid string type (TEXT, TEXTJ, TEXT5, TEXTRAW)
-        if key_type != JSONB_TEXT
-            && key_type != JSONB_TEXTJ
-            && key_type != JSONB_TEXT5
-            && key_type != JSONB_TEXTRAW
-        {
-            return Err(format!("Invalid JSONB object key type: {}", key_type).into());
-        }
-
         // Read the key
-        let key = read_jsonb_text(&remaining_bytes[1..], payload_size)?
+        let (key_value, key_consumed) = read_jsonb_value(&bytes[total_read..payload_size])?;
+        let key_str = key_value
             .as_str()
-            .ok_or("Invalid object key in JSONB")?
+            .ok_or("Object key is not a string")?
             .to_string();
-        let key_size = remaining_bytes.len() - bytes.len();
-        remaining_bytes = &remaining_bytes[key_size + 1..];
-        total_read += key_size + 1;
+        total_read += key_consumed;
 
         // Read the value
-        let value = read_jsonb_value(remaining_bytes)?;
-        let value_size = remaining_bytes.len() - bytes.len();
-        object.insert(key, value);
-        remaining_bytes = &remaining_bytes[value_size..];
-        total_read += value_size;
+        let (value, value_consumed) = read_jsonb_value(&bytes[total_read..payload_size])?;
+        total_read += value_consumed;
+
+        object.insert(key_str, value);
+    }
+
+    if total_read != payload_size {
+        return Err("Object payload size mismatch".into());
     }
 
     Ok(serde_json::Value::Object(object))
+}
+
+fn write_jsonb_header(buffer: &mut Vec<u8>, element_type: u8, payload_size: u8) {
+    buffer.push((payload_size << 4) | element_type);
 }
 
 // Helper function to write a JSON value into a JSONB binary format
@@ -209,8 +240,7 @@ fn write_jsonb_value(value: &serde_json::Value, buffer: &mut Vec<u8>) -> seriali
 
 // Write a JSON null
 fn write_jsonb_null(buffer: &mut Vec<u8>) -> serialize::Result {
-    // Use the constant for null
-    buffer.push(JSONB_NULL);
+    write_jsonb_header(buffer, JSONB_NULL, 0x0);
     Ok(IsNull::No)
 }
 
@@ -237,30 +267,31 @@ fn write_jsonb_number(n: &serde_json::Number, buffer: &mut Vec<u8>) -> serialize
 
 // Write an integer in JSONB format
 fn write_jsonb_int(i: i64, buffer: &mut Vec<u8>) -> serialize::Result {
-    // Use the constant for INT
-    buffer.push(JSONB_INT);
+    let int_str = i.to_string();
+
+    write_jsonb_header(buffer, JSONB_INT, int_str.len() as u8);
 
     // Write the ASCII text representation of the integer as the payload
-    buffer.extend_from_slice(i.to_string().as_bytes());
+    buffer.extend_from_slice(int_str.as_bytes());
 
     Ok(IsNull::No)
 }
 
 // Write a floating-point number in JSONB format
 fn write_jsonb_float(f: f64, buffer: &mut Vec<u8>) -> serialize::Result {
-    // Use the constant for FLOAT
-    buffer.push(JSONB_FLOAT);
+    let float_str = f.to_string();
+
+    write_jsonb_header(buffer, JSONB_FLOAT, float_str.len() as u8);
 
     // Write the ASCII text representation of the float as the payload
-    buffer.extend_from_slice(f.to_string().as_bytes());
+    buffer.extend_from_slice(float_str.as_bytes());
 
     Ok(IsNull::No)
 }
 
 // Write a JSON string
 fn write_jsonb_string(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
-    // Use the constant for TEXT
-    buffer.push(JSONB_TEXT);
+    write_jsonb_header(buffer, JSONB_TEXT, s.len() as u8);
 
     // Write the UTF-8 text of the string as the payload (no delimiters)
     buffer.extend_from_slice(s.as_bytes());
@@ -270,13 +301,16 @@ fn write_jsonb_string(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
 
 // Write a JSON array
 fn write_jsonb_array(arr: &[serde_json::Value], buffer: &mut Vec<u8>) -> serialize::Result {
-    // Use the constant for ARRAY
-    buffer.push(JSONB_ARRAY);
+    let mut tmp_buffer = Vec::new();
 
     // Recursively write each element of the array
     for element in arr {
-        write_jsonb_value(element, buffer)?;
+        write_jsonb_value(element, &mut tmp_buffer)?;
     }
+
+    write_jsonb_header(buffer, JSONB_ARRAY, tmp_buffer.len() as u8);
+
+    buffer.extend_from_slice(&tmp_buffer);
 
     Ok(IsNull::No)
 }
@@ -286,47 +320,205 @@ fn write_jsonb_object(
     obj: &serde_json::Map<String, serde_json::Value>,
     buffer: &mut Vec<u8>,
 ) -> serialize::Result {
-    // Use the constant for OBJECT
-    buffer.push(JSONB_OBJECT);
+    let mut tmp_buffer = Vec::new();
 
     // Recursively write each key-value pair of the object
     for (key, value) in obj {
         // Write the key (which must be a string)
-        write_jsonb_string(key, buffer)?;
+        write_jsonb_string(key, &mut tmp_buffer)?;
 
         // Write the value
-        write_jsonb_value(value, buffer)?;
+        write_jsonb_value(value, &mut tmp_buffer)?;
     }
+
+    write_jsonb_header(buffer, JSONB_OBJECT, tmp_buffer.len() as u8);
+
+    buffer.extend_from_slice(&tmp_buffer);
 
     Ok(IsNull::No)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::deserialize::FromSql;
-    use crate::dsl::sql;
-    use crate::prelude::*;
-    use crate::select;
-    use crate::serialize::{Output, ToSql};
-    use crate::sql_types;
-    use crate::sql_types::Jsonb;
-    use crate::sql_types::{Json, Text};
-    use crate::sqlite::connection::SqliteBindCollector;
-    use crate::sqlite::Sqlite;
-    use crate::sqlite::SqliteBindValue;
-    use crate::sqlite::SqliteValue;
-    use crate::test_helpers::connection;
-    use serde_json::json;
+    use super::*;
+    use serde_json::{json, Value};
+
+    // Helper function to create a basic JSONB header byte
+    fn create_header(element_type: u8, payload_size: u8) -> u8 {
+        (payload_size << 4) | element_type
+    }
 
     #[test]
-    fn json_to_sql() {
-        let conn = &mut connection();
-        let value = json!(true);
-        let res = diesel::select(value.into_sql::<Jsonb>().eq(sql("true")))
-            .get_result::<bool>(conn)
-            .unwrap();
-        assert!(res);
+    fn test_read_jsonb_null() {
+        let data = vec![JSONB_NULL];
+        let result = read_jsonb_value(&data).unwrap().0;
+        assert_eq!(result, Value::Null);
     }
+
+    #[test]
+    fn test_read_jsonb_true() {
+        let data = vec![JSONB_TRUE];
+        let result = read_jsonb_value(&data).unwrap().0;
+        assert_eq!(result, Value::Bool(true));
+    }
+
+    #[test]
+    fn test_read_jsonb_false() {
+        let data = vec![JSONB_FALSE];
+        let result = read_jsonb_value(&data).unwrap().0;
+        assert_eq!(result, Value::Bool(false));
+    }
+
+    #[test]
+    fn test_read_jsonb_int() {
+        let data = vec![create_header(JSONB_INT, 0x01), b'1']; // JSONB_INT with payload "1"
+        let result = read_jsonb_value(&data).unwrap().0;
+        assert_eq!(result, json!(1));
+    }
+
+    #[test]
+    fn test_read_jsonb_float() {
+        let data = vec![create_header(JSONB_FLOAT, 0x03), b'1', b'.', b'5']; // JSONB_FLOAT with payload "1.5"
+        let result = read_jsonb_value(&data).unwrap().0;
+        assert_eq!(result, json!(1.5));
+    }
+
+    #[test]
+    fn test_read_jsonb_text() {
+        let data = vec![create_header(JSONB_TEXT, 0x03), b'f', b'o', b'o']; // JSONB_TEXT with payload "foo"
+        let result = read_jsonb_value(&data).unwrap().0;
+        assert_eq!(result, json!("foo"));
+    }
+
+    #[test]
+    fn test_read_jsonb_array() {
+        // JSONB_ARRAY with two elements: 1 and true
+        let data = vec![
+            create_header(JSONB_ARRAY, 0x03), // Array header
+            create_header(JSONB_INT, 0x01),
+            b'1',                            // Element 1: integer "1"
+            create_header(JSONB_TRUE, 0x00), // Element 2: true
+        ];
+        let result = read_jsonb_value(&data).unwrap().0;
+        assert_eq!(result, json!([1, true]));
+    }
+
+    #[test]
+    fn test_read_jsonb_object() {
+        // JSONB_OBJECT with one key-value pair: "key": 42
+        let data = vec![
+            create_header(JSONB_OBJECT, 0x07), // Object header
+            create_header(JSONB_TEXT, 0x03),
+            b'k',
+            b'e',
+            b'y', // Key: "key"
+            create_header(JSONB_INT, 0x02),
+            b'4',
+            b'2', // Value: 42
+        ];
+        let result = read_jsonb_value(&data).unwrap().0;
+        assert_eq!(result, json!({"key": 42}));
+    }
+
+    #[test]
+    fn test_write_jsonb_null() {
+        let value = serde_json::Value::Null;
+        let mut buffer = Vec::new();
+        write_jsonb_value(&value, &mut buffer).unwrap();
+        assert_eq!(buffer, vec![JSONB_NULL]);
+    }
+
+    #[test]
+    fn test_write_jsonb_true() {
+        let value = serde_json::Value::Bool(true);
+        let mut buffer = Vec::new();
+        write_jsonb_value(&value, &mut buffer).unwrap();
+        assert_eq!(buffer, vec![JSONB_TRUE]);
+    }
+
+    #[test]
+    fn test_write_jsonb_false() {
+        let value = serde_json::Value::Bool(false);
+        let mut buffer = Vec::new();
+        write_jsonb_value(&value, &mut buffer).unwrap();
+        assert_eq!(buffer, vec![JSONB_FALSE]);
+    }
+
+    #[test]
+    fn test_write_jsonb_int() {
+        let value = serde_json::Value::Number(serde_json::Number::from(1));
+        let mut buffer = Vec::new();
+        write_jsonb_value(&value, &mut buffer).unwrap();
+        assert_eq!(buffer, vec![create_header(JSONB_INT, 0x01), b'1']);
+    }
+
+    #[test]
+    fn test_write_jsonb_float() {
+        let value = serde_json::Value::Number(serde_json::Number::from_f64(1.5).unwrap());
+        let mut buffer = Vec::new();
+        write_jsonb_value(&value, &mut buffer).unwrap();
+        assert_eq!(
+            buffer,
+            vec![create_header(JSONB_FLOAT, 0x03), b'1', b'.', b'5']
+        );
+    }
+
+    #[test]
+    fn test_write_jsonb_text() {
+        let value = serde_json::Value::String("foo".to_string());
+        let mut buffer = Vec::new();
+        write_jsonb_value(&value, &mut buffer).unwrap();
+        assert_eq!(
+            buffer,
+            vec![create_header(JSONB_TEXT, 0x03), b'f', b'o', b'o']
+        );
+    }
+
+    #[test]
+    fn test_write_jsonb_array() {
+        let value = json!([1, true]);
+        let mut buffer = Vec::new();
+        write_jsonb_value(&value, &mut buffer).unwrap();
+        assert_eq!(
+            buffer,
+            vec![
+                create_header(JSONB_ARRAY, 0x03), // Array header
+                create_header(JSONB_INT, 0x01),   // Integer header
+                b'1',                             // Integer payload "1"
+                create_header(JSONB_TRUE, 0x00),  // Boolean header for "true"
+            ]
+        );
+    }
+
+    #[test]
+    fn test_write_jsonb_object() {
+        let value = json!({"key": 42});
+        let mut buffer = Vec::new();
+        write_jsonb_value(&value, &mut buffer).unwrap();
+        assert_eq!(
+            buffer,
+            vec![
+                create_header(JSONB_OBJECT, 0x07), // Object header
+                create_header(JSONB_TEXT, 0x03),   // Key header: "key"
+                b'k',
+                b'e',
+                b'y',                           // Key: "key"
+                create_header(JSONB_INT, 0x02), // Value header: integer "42"
+                b'4',
+                b'2', // Value: 42
+            ]
+        );
+    }
+
+    // #[test]
+    // fn json_to_sql() {
+    //     let conn = &mut connection();
+    //     let value = json!(true);
+    //     let res = diesel::select(value.into_sql::<Jsonb>().eq(sql("true")))
+    //         .get_result::<bool>(conn)
+    //         .unwrap();
+    //     assert!(res);
+    // }
 
     // #[test]
     // fn some_json_from_sql() {
