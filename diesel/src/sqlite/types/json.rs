@@ -41,7 +41,7 @@ impl FromSql<sql_types::Jsonb, Sqlite> for serde_json::Value {
         }
 
         // Read the JSONB value from the byte stream
-        read_jsonb_value(&bytes).map(|(v, _)| v)
+        read_jsonb_value(bytes).map(|(v, _)| v)
     }
 }
 
@@ -99,9 +99,10 @@ fn read_jsonb_value(bytes: &[u8]) -> deserialize::Result<(serde_json::Value, usi
                 return Err("Invalid JSONB data: insufficient bytes for payload size".into());
             }
             (
-                u64::from_be_bytes([
+                usize::try_from(u64::from_be_bytes([
                     bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7], bytes[8],
-                ]) as usize,
+                ]))
+                .map_err(Box::new)?,
                 9,
             ) // 8 additional bytes
         }
@@ -165,7 +166,7 @@ fn read_jsonb_float(bytes: &[u8], _payload_size: usize) -> deserialize::Result<s
         .parse::<f64>()
         .map_err(|_| "Failed to parse JSONB float")?;
     Ok(serde_json::Value::Number(
-        serde_json::Number::from_f64(float_value).unwrap(),
+        serde_json::Number::from_f64(float_value).ok_or("Invalid float value")?,
     ))
 }
 
@@ -222,8 +223,16 @@ fn read_jsonb_object(bytes: &[u8], payload_size: usize) -> deserialize::Result<s
     Ok(serde_json::Value::Object(object))
 }
 
-fn write_jsonb_header(buffer: &mut Vec<u8>, element_type: u8, payload_size: u8) {
+fn write_jsonb_header(
+    buffer: &mut Vec<u8>,
+    element_type: u8,
+    payload_size: usize,
+) -> serialize::Result {
+    let payload_size = u8::try_from(payload_size).map_err(Box::new)?;
+
     buffer.push((payload_size << 4) | element_type);
+
+    Ok(IsNull::No)
 }
 
 // Helper function to write a JSON value into a JSONB binary format
@@ -240,7 +249,7 @@ fn write_jsonb_value(value: &serde_json::Value, buffer: &mut Vec<u8>) -> seriali
 
 // Write a JSON null
 fn write_jsonb_null(buffer: &mut Vec<u8>) -> serialize::Result {
-    write_jsonb_header(buffer, JSONB_NULL, 0x0);
+    write_jsonb_header(buffer, JSONB_NULL, 0x0)?;
     Ok(IsNull::No)
 }
 
@@ -269,7 +278,7 @@ fn write_jsonb_number(n: &serde_json::Number, buffer: &mut Vec<u8>) -> serialize
 fn write_jsonb_int(i: i64, buffer: &mut Vec<u8>) -> serialize::Result {
     let int_str = i.to_string();
 
-    write_jsonb_header(buffer, JSONB_INT, int_str.len() as u8);
+    write_jsonb_header(buffer, JSONB_INT, int_str.len())?;
 
     // Write the ASCII text representation of the integer as the payload
     buffer.extend_from_slice(int_str.as_bytes());
@@ -281,7 +290,7 @@ fn write_jsonb_int(i: i64, buffer: &mut Vec<u8>) -> serialize::Result {
 fn write_jsonb_float(f: f64, buffer: &mut Vec<u8>) -> serialize::Result {
     let float_str = f.to_string();
 
-    write_jsonb_header(buffer, JSONB_FLOAT, float_str.len() as u8);
+    write_jsonb_header(buffer, JSONB_FLOAT, float_str.len())?;
 
     // Write the ASCII text representation of the float as the payload
     buffer.extend_from_slice(float_str.as_bytes());
@@ -291,7 +300,7 @@ fn write_jsonb_float(f: f64, buffer: &mut Vec<u8>) -> serialize::Result {
 
 // Write a JSON string
 fn write_jsonb_string(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
-    write_jsonb_header(buffer, JSONB_TEXT, s.len() as u8);
+    write_jsonb_header(buffer, JSONB_TEXT, s.len())?;
 
     // Write the UTF-8 text of the string as the payload (no delimiters)
     buffer.extend_from_slice(s.as_bytes());
@@ -308,7 +317,7 @@ fn write_jsonb_array(arr: &[serde_json::Value], buffer: &mut Vec<u8>) -> seriali
         write_jsonb_value(element, &mut tmp_buffer)?;
     }
 
-    write_jsonb_header(buffer, JSONB_ARRAY, tmp_buffer.len() as u8);
+    write_jsonb_header(buffer, JSONB_ARRAY, tmp_buffer.len())?;
 
     buffer.extend_from_slice(&tmp_buffer);
 
@@ -331,7 +340,7 @@ fn write_jsonb_object(
         write_jsonb_value(value, &mut tmp_buffer)?;
     }
 
-    write_jsonb_header(buffer, JSONB_OBJECT, tmp_buffer.len() as u8);
+    write_jsonb_header(buffer, JSONB_OBJECT, tmp_buffer.len())?;
 
     buffer.extend_from_slice(&tmp_buffer);
 
@@ -341,7 +350,11 @@ fn write_jsonb_object(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::query_dsl::RunQueryDsl;
+    use crate::test_helpers::connection;
+    use crate::{dsl::sql, IntoSql};
     use serde_json::{json, Value};
+    use sql_types::Jsonb;
 
     // Helper function to create a basic JSONB header byte
     fn create_header(element_type: u8, payload_size: u8) -> u8 {
@@ -510,15 +523,15 @@ mod tests {
         );
     }
 
-    // #[test]
-    // fn json_to_sql() {
-    //     let conn = &mut connection();
-    //     let value = json!(true);
-    //     let res = diesel::select(value.into_sql::<Jsonb>().eq(sql("true")))
-    //         .get_result::<bool>(conn)
-    //         .unwrap();
-    //     assert!(res);
-    // }
+    #[test]
+    fn json_to_sql() {
+        let conn = &mut connection();
+        let value = json!(true);
+        let res = diesel::select(value.into_sql::<Jsonb>().eq(&sql("true")))
+            .get_result::<bool>(conn)
+            .unwrap();
+        assert!(res);
+    }
 
     // #[test]
     // fn some_json_from_sql() {
