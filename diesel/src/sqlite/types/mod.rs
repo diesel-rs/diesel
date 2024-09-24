@@ -1,4 +1,5 @@
 mod date_and_time;
+#[cfg(all(feature = "sqlite", feature = "serde_json"))]
 mod json;
 mod numeric;
 
