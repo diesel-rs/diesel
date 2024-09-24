@@ -461,6 +461,7 @@ mod tests {
     use std::sync::mpsc;
     use std::sync::Arc;
     use std::thread;
+    use std::time::Duration;
 
     use crate::r2d2::*;
     use crate::test_helpers::*;
@@ -636,6 +637,9 @@ mod tests {
         assert_eq!(release_count.load(Ordering::Relaxed), 2);
         assert_eq!(checkin_count.load(Ordering::Relaxed), 3);
         assert_eq!(checkout_count.load(Ordering::Relaxed), 3);
+        // this is required to workaround a segfault while shutting down
+        // the pool
+        std::thread::sleep(Duration::from_millis(100));
     }
 
     #[cfg(feature = "postgres")]
