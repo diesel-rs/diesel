@@ -526,8 +526,7 @@ mod tests {
     #[test]
     fn json_to_sql() {
         let conn = &mut connection();
-        let value = json!(true);
-        let res = diesel::select(value.into_sql::<Json>().eq(&sql("json('true')")))
+        let res = diesel::select(json!(true).into_sql::<Json>().eq(&sql("json('true')")))
             .get_result::<bool>(conn);
         assert!(res.unwrap());
     }
@@ -535,80 +534,42 @@ mod tests {
     #[test]
     fn jsonb_to_sql() {
         let conn = &mut connection();
-        let value = json!(true);
-        let res = diesel::select(value.into_sql::<Jsonb>().eq(&sql("jsonb('true')")))
+        let res = diesel::select(json!(true).into_sql::<Jsonb>().eq(&sql("jsonb('true')")))
             .get_result::<bool>(conn);
         assert!(res.unwrap());
     }
 
-    // #[test]
-    // fn some_json_from_sql() {
-    //     let input_json = b"true";
-    //     let output_json: serde_json::Value =
-    //         FromSql::<sql_types::Json, Sqlite>::from_sql(SqliteValue::for_test(input_json))
-    //             .unwrap();
-    //     assert_eq!(output_json, serde_json::Value::Bool(true));
-    // }
+    #[test]
+    fn bad_json_from_sql() {
+        let conn = &mut connection();
+        let res = diesel::select(json!(true).into_sql::<Json>().eq(&sql("json('boom')")))
+            .get_result::<bool>(conn);
+        assert_eq!(res.unwrap_err().to_string(), "malformed JSON");
+    }
 
-    // #[test]
-    // fn bad_json_from_sql() {
-    //     let uuid: Result<serde_json::Value, _> =
-    //         FromSql::<sql_types::Json, Sqlite>::from_sql(SqliteValue::for_test(b"boom"));
-    //     assert_eq!(uuid.unwrap_err().to_string(), "Invalid Json");
-    // }
+    #[test]
+    fn bad_jsonb_from_sql() {
+        let conn = &mut connection();
+        let res = diesel::select(json!(true).into_sql::<Jsonb>().eq(&sql("jsonb('boom')")))
+            .get_result::<bool>(conn);
+        assert_eq!(res.unwrap_err().to_string(), "malformed JSON");
+    }
 
-    // #[test]
-    // fn no_json_from_sql() {
-    //     let uuid: Result<serde_json::Value, _> =
-    //         FromSql::<sql_types::Json, Sqlite>::from_nullable_sql(None);
-    //     assert_eq!(
-    //         uuid.unwrap_err().to_string(),
-    //         "Unexpected null for non-null column"
-    //     );
-    // }
+    #[test]
+    fn no_json_from_sql() {
+        let uuid: Result<serde_json::Value, _> = FromSql::<Json, Sqlite>::from_nullable_sql(None);
+        assert_eq!(
+            uuid.unwrap_err().to_string(),
+            "Unexpected null for non-null column"
+        );
+    }
 
-    // #[test]
-    // fn jsonb_to_sql() {
-    //     let mut buffer = Vec::new();
-    //     let mut bytes = Output::test(ByteWrapper(&mut buffer));
-    //     let test_json = serde_json::Value::Bool(true);
-    //     ToSql::<sql_types::Jsonb, Sqlite>::to_sql(&test_json, &mut bytes).unwrap();
-    //     assert_eq!(buffer, b"\x01true");
-    // }
-
-    // #[test]
-    // fn some_jsonb_from_sql() {
-    //     let input_json = b"\x01true";
-    //     let output_json: serde_json::Value =
-    //         FromSql::<sql_types::Jsonb, Sqlite>::from_sql(SqliteValue::for_test(input_json))
-    //             .unwrap();
-    //     assert_eq!(output_json, serde_json::Value::Bool(true));
-    // }
-
-    // #[test]
-    // fn bad_jsonb_from_sql() {
-    //     let uuid: Result<serde_json::Value, _> =
-    //         FromSql::<sql_types::Jsonb, Sqlite>::from_sql(SqliteValue::for_test(b"\x01boom"));
-    //     assert_eq!(uuid.unwrap_err().to_string(), "Invalid Json");
-    // }
-
-    // #[test]
-    // fn bad_jsonb_version_from_sql() {
-    //     let uuid: Result<serde_json::Value, _> =
-    //         FromSql::<sql_types::Jsonb, Sqlite>::from_sql(SqliteValue::for_test(b"\x02true"));
-    //     assert_eq!(
-    //         uuid.unwrap_err().to_string(),
-    //         "Unsupported JSONB encoding version"
-    //     );
-    // }
-
-    // #[test]
-    // fn no_jsonb_from_sql() {
-    //     let uuid: Result<serde_json::Value, _> =
-    //         FromSql::<sql_types::Jsonb, Sqlite>::from_nullable_sql(None);
-    //     assert_eq!(
-    //         uuid.unwrap_err().to_string(),
-    //         "Unexpected null for non-null column"
-    //     );
-    // }
+    #[test]
+    fn no_jsonb_from_sql() {
+        let uuid: Result<serde_json::Value, _> = FromSql::<Jsonb, Sqlite>::from_nullable_sql(None);
+        assert_eq!(
+            uuid.unwrap_err().to_string(),
+            "Unexpected null for non-null column"
+        );
+    }
 }
