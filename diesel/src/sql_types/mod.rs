@@ -412,7 +412,24 @@ pub struct Json;
 /// The [`jsonb`] SQL type.  This type can only be used with `feature =
 /// "serde_json"`
 ///
-/// `jsonb` offers [several advantages][adv] over regular JSON:
+/// In SQLite, `jsonb` brings mainly [performance improvements][sqlite-adv] over
+/// regular JSON:
+///
+/// > The advantage of JSONB in SQLite is that it is smaller and faster than
+/// > text JSON - potentially several times faster. There is space in the
+/// > on-disk JSONB format to add enhancements and future versions of SQLite
+/// > might include options to provide O(1) lookup of elements in JSONB, but no
+/// > such capability is currently available.
+///
+/// <div class="warning">
+/// In SQLite, JSONB is intended for internal use by SQLite only. Thus, future
+/// SQLite updates might break our JSONB implementation. And one might have to
+/// wait and then upgrade <code>diesel</code> for those changes to be  accounted
+/// for. If you do not want this, prefer the regular
+/// <a href="./struct.Json.html"><code>Json</code></a> type.
+/// </div>
+///
+/// In PostgreSQL, `jsonb` offers [several advantages][pg-adv] over regular JSON:
 ///
 /// > There are two JSON data types: `json` and `jsonb`. They accept almost
 /// > identical sets of values as input. The major practical difference
@@ -428,7 +445,8 @@ pub struct Json;
 /// > `jsonb`, unless there are quite specialized needs, such as legacy
 /// > assumptions about ordering of object keys.
 ///
-/// [adv]: https://www.postgresql.org/docs/current/static/datatype-json.html
+/// [pg-adv]: https://www.postgresql.org/docs/current/static/datatype-json.html
+/// [sqlite-adv]: https://sqlite.org/draft/jsonb.html
 ///
 /// ### [`ToSql`] impls
 ///
