@@ -472,7 +472,7 @@ pub struct Json;
 ///
 /// ```rust
 /// # #![allow(dead_code)]
-/// # include!("../../doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// table! {
 ///     contacts {
