@@ -256,8 +256,7 @@ fn write_jsonb_null(buffer: &mut Vec<u8>) -> serialize::Result {
 // Write a JSON boolean
 fn write_jsonb_bool(b: bool, buffer: &mut Vec<u8>) -> serialize::Result {
     // Use the constants for true and false
-    let byte = if b { JSONB_TRUE } else { JSONB_FALSE };
-    buffer.push(byte);
+    write_jsonb_header(buffer, if b { JSONB_TRUE } else { JSONB_FALSE }, 0x0)?;
     Ok(IsNull::No)
 }
 
@@ -352,9 +351,10 @@ mod tests {
     use super::*;
     use crate::query_dsl::RunQueryDsl;
     use crate::test_helpers::connection;
+    use crate::ExpressionMethods;
     use crate::{dsl::sql, IntoSql};
     use serde_json::{json, Value};
-    use sql_types::Jsonb;
+    use sql_types::{Json, Jsonb};
 
     // Helper function to create a basic JSONB header byte
     fn create_header(element_type: u8, payload_size: u8) -> u8 {
@@ -527,10 +527,18 @@ mod tests {
     fn json_to_sql() {
         let conn = &mut connection();
         let value = json!(true);
-        let res = diesel::select(value.into_sql::<Jsonb>().eq(&sql("true")))
-            .get_result::<bool>(conn)
-            .unwrap();
-        assert!(res);
+        let res = diesel::select(value.into_sql::<Json>().eq(&sql("json('true')")))
+            .get_result::<bool>(conn);
+        assert!(res.unwrap());
+    }
+
+    #[test]
+    fn jsonb_to_sql() {
+        let conn = &mut connection();
+        let value = json!(true);
+        let res = diesel::select(value.into_sql::<Jsonb>().eq(&sql("jsonb('true')")))
+            .get_result::<bool>(conn);
+        assert!(res.unwrap());
     }
 
     // #[test]
