@@ -41,7 +41,7 @@ impl FromSql<sql_types::Jsonb, Sqlite> for serde_json::Value {
         }
 
         // Read the JSONB value from the byte stream
-        let (jsonb, size) = read_jsonb_value(bytes)?;
+        let (jsonb, _size) = read_jsonb_value(bytes)?;
 
         Ok(jsonb)
     }
@@ -54,9 +54,6 @@ impl ToSql<sql_types::Jsonb, Sqlite> for serde_json::Value {
 
         // Write the JSON value into the buffer in JSONB format
         write_jsonb_value(self, &mut buffer)?;
-
-        let (test, size): (serde_json::Value, _) = read_jsonb_value(&buffer).unwrap();
-        let test = serde_json::to_string_pretty(&test).unwrap();
 
         // Set the serialized binary data to the output
         out.set_value(buffer);
@@ -258,19 +255,19 @@ fn create_jsonb_header(element_type: u8, payload_size: usize) -> Result<Vec<u8>,
 
     if payload_size <= 0x0B {
         // Small payloads (size fits in 4 bits)
-        header.push((payload_size as u8) << 4 | element_type);
+        header.push((u8::try_from(payload_size).unwrap()) << 4 | element_type);
     } else if payload_size <= 0xFF {
         // Medium payloads, 1 additional byte for size
         header.push(0x0C << 4 | element_type);
-        header.push(payload_size as u8);
+        header.push(u8::try_from(payload_size).unwrap());
     } else if payload_size <= 0xFFFF {
         // Larger payloads, 2 additional bytes for size
         header.push(0x0D << 4 | element_type);
-        header.extend_from_slice(&(payload_size as u16).to_be_bytes());
+        header.extend_from_slice(&(u16::try_from(payload_size).unwrap()).to_be_bytes());
     } else {
         // Very large payloads, 4 additional bytes for size (up to 2 GiB)
         header.push(0x0E << 4 | element_type);
-        header.extend_from_slice(&(payload_size as u32).to_be_bytes());
+        header.extend_from_slice(&(u32::try_from(payload_size).unwrap()).to_be_bytes());
     }
 
     Ok(header)
@@ -696,7 +693,7 @@ mod tests {
     #[test]
     fn jsonb_to_sql_float() {
         let conn = &mut connection();
-        let res = diesel::select(json!(3.14).into_sql::<Jsonb>().eq(&sql("jsonb('3.14')")))
+        let res = diesel::select(json!(42.23).into_sql::<Jsonb>().eq(&sql("jsonb('42.23')")))
             .get_result::<bool>(conn)
             .unwrap();
         assert!(res);
