@@ -132,11 +132,13 @@ fn read_jsonb_value(bytes: &[u8]) -> deserialize::Result<(serde_json::Value, usi
         JSONB_TRUE => Ok(serde_json::Value::Bool(true)),
         JSONB_FALSE => Ok(serde_json::Value::Bool(false)),
         JSONB_INT => read_jsonb_int(payload_bytes, payload_size),
-        JSONB_INT5 => Err("INT5 is not supported in this implementation".into()),
+        JSONB_INT5 => Err("INT5 is not supported".into()),
         JSONB_FLOAT => read_jsonb_float(payload_bytes, payload_size),
-        JSONB_FLOAT5 => Err("FLOAT5 is not supported in this implementation".into()),
-        JSONB_TEXT | JSONB_TEXTJ | JSONB_TEXTRAW => read_jsonb_text(payload_bytes, payload_size),
-        JSONB_TEXT5 => read_jsonb_text(payload_bytes, payload_size),
+        JSONB_FLOAT5 => Err("FLOAT5 is not supported".into()),
+        JSONB_TEXT => read_jsonb_text(payload_bytes, payload_size),
+        JSONB_TEXTJ => read_jsonb_textj(payload_bytes, payload_size),
+        JSONB_TEXTRAW => Err("TEXTRAW is not supported".into()),
+        JSONB_TEXT5 => Err("TEXT5 is not supported".into()),
         JSONB_ARRAY => read_jsonb_array(payload_bytes, payload_size),
         JSONB_OBJECT => read_jsonb_object(payload_bytes, payload_size),
         _ => Err(format!("Unsupported or reserved JSONB type: {}", element_type).into()),
@@ -186,6 +188,17 @@ fn read_jsonb_text(bytes: &[u8], payload_size: usize) -> deserialize::Result<ser
     let text_bytes = &bytes[..payload_size];
     let text = std::str::from_utf8(text_bytes).map_err(|_| "Invalid UTF-8 in JSONB string")?;
     Ok(serde_json::Value::String(text.to_string()))
+}
+
+fn read_jsonb_textj(bytes: &[u8], payload_size: usize) -> deserialize::Result<serde_json::Value> {
+    let text_bytes = &bytes[..payload_size];
+    let text = std::str::from_utf8(text_bytes).map_err(|_| "Invalid UTF-8 in JSONB string")?;
+
+    // Unescape JSON escape sequences (e.g., "\n", "\u0020")
+    let unescaped_text = serde_json::from_str(&format!("\"{}\"", text))
+        .map_err(|_| "Failed to parse JSON-escaped text in TEXTJ")?;
+
+    Ok(unescaped_text)
 }
 
 // Read a JSON array
@@ -336,12 +349,31 @@ fn write_jsonb_float(f: f64, buffer: &mut Vec<u8>) -> serialize::Result {
     Ok(IsNull::No)
 }
 
-// Write a JSON string
 fn write_jsonb_string(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
-    write_jsonb_header(buffer, JSONB_TEXT, s.len())?;
+    if s.chars().any(|c| c.is_control()) {
+        // If the string contains control characters, treat it as TEXTJ (escaped JSON)
+        write_jsonb_textj(s, buffer)
+    } else {
+        write_jsonb_header(buffer, JSONB_TEXT, s.len())?;
+        // Write the UTF-8 text of the string as the payload (no delimiters)
+        buffer.extend_from_slice(s.as_bytes());
+        Ok(IsNull::No)
+    }
+}
 
-    // Write the UTF-8 text of the string as the payload (no delimiters)
-    buffer.extend_from_slice(s.as_bytes());
+fn write_jsonb_textj(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
+    // Escaping the string for JSON (e.g., \n, \uXXXX)
+    let escaped_string =
+        serde_json::to_string(s).map_err(|_| "Failed to serialize string for TEXTJ")?;
+
+    // Remove the surrounding quotes from serde_json::to_string result
+    let escaped_string = &escaped_string[1..escaped_string.len() - 1];
+
+    // Write the header (JSONB_TEXTJ) and the length of the escaped string
+    write_jsonb_header(buffer, JSONB_TEXTJ, escaped_string.len())?;
+
+    // Write the escaped string as the payload
+    buffer.extend_from_slice(escaped_string.as_bytes());
 
     Ok(IsNull::No)
 }
@@ -519,10 +551,10 @@ mod tests {
         assert_eq!(
             result,
             json!({
+                "additional_key": true,
                 "outer_key": {
                     "inner_key": 42
                 },
-                "additional_key": true
             })
         );
     }
@@ -579,13 +611,26 @@ mod tests {
 
     #[test]
     fn test_write_jsonb_text() {
-        let value = serde_json::Value::String("foo".to_string());
         let mut buffer = Vec::new();
-        write_jsonb_value(&value, &mut buffer).unwrap();
+        let input_string = "hello";
+        write_jsonb_string(input_string, &mut buffer).unwrap();
 
         let mut expected_buffer = Vec::new();
-        expected_buffer.extend(create_jsonb_header(JSONB_TEXT, 0x03).unwrap());
-        expected_buffer.extend_from_slice(b"foo"); // Payload: text "foo"
+        expected_buffer.extend(create_jsonb_header(JSONB_TEXT, 0x05).unwrap());
+        expected_buffer.extend_from_slice(b"hello");
+
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_write_jsonb_textj() {
+        let mut buffer = Vec::new();
+        let input_string = "hello\nworld"; // Contains a newline, requires escaping
+        write_jsonb_string(input_string, &mut buffer).unwrap();
+
+        let mut expected_buffer = Vec::new();
+        expected_buffer.extend(create_jsonb_header(JSONB_TEXTJ, 12).unwrap());
+        expected_buffer.extend_from_slice(b"hello\\nworld");
 
         assert_eq!(buffer, expected_buffer);
     }
@@ -658,8 +703,10 @@ mod tests {
     }
 
     #[test]
-    fn jsonb_to_sql_string() {
+    fn jsonb_to_sql_text() {
         let conn = &mut connection();
+
+        // Test for TEXT (simple string)
         let res = diesel::select(
             json!("hello")
                 .into_sql::<Jsonb>()
@@ -667,6 +714,23 @@ mod tests {
         )
         .get_result::<bool>(conn)
         .unwrap();
+
+        assert!(res);
+    }
+
+    #[test]
+    fn jsonb_to_sql_textj() {
+        let conn = &mut connection();
+
+        // Test for TEXTJ (JSON-escaped string, e.g., containing \n or \uXXXX)
+        let res = diesel::select(
+            json!("hello\nworld")
+                .into_sql::<Jsonb>()
+                .eq(&sql("jsonb('\"hello\\nworld\"')")), // The string is JSON-escaped
+        )
+        .get_result::<bool>(conn)
+        .unwrap();
+
         assert!(res);
     }
 
