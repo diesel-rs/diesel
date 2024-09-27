@@ -887,10 +887,10 @@ mod tests {
     #[test]
     fn jsonb_from_sql_float() {
         let conn = &mut connection();
-        let res = diesel::select(sql::<Jsonb>("jsonb('3.14')"))
+        let res = diesel::select(sql::<Jsonb>("jsonb('42.23')"))
             .get_result::<serde_json::Value>(conn)
             .unwrap();
-        assert_eq!(res, serde_json::json!(3.14));
+        assert_eq!(res, serde_json::json!(42.23));
     }
 
     #[test]
