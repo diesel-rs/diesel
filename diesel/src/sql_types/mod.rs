@@ -467,12 +467,11 @@ pub struct Json;
 ///
 /// ## Examples
 ///
-/// ### PostgreSQL
-///
 /// ```rust
 /// # #![allow(dead_code)]
 /// # include!("../doctest_setup.rs");
 /// #
+/// # #[cfg(all(feature = "postgres_backend", feature = "serde_json"))]
 /// table! {
 ///     contacts {
 ///         id -> Integer,
@@ -480,8 +479,20 @@ pub struct Json;
 ///         address -> Jsonb,
 ///     }
 /// }
+/// # #[cfg(all(
+/// #    feature = "sqlite",
+/// #    feature = "serde_json",
+/// #    feature = "returning_clauses_for_sqlite_3_35"
+/// # ))]
+/// table! {
+///     contacts {
+///         id -> Integer,
+///         name -> Text,
+///         address -> Jsonb,
+///     }
+/// }
 ///
-/// # #[cfg(feature = "serde_json")]
+/// # #[cfg(all(feature = "postgres_backend", feature = "serde_json"))]
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// #     use diesel::insert_into;
 /// #     use self::contacts::dsl::*;
@@ -491,40 +502,11 @@ pub struct Json;
 /// #         name VARCHAR NOT NULL,
 /// #         address JSONB NOT NULL
 /// #     )").execute(connection)?;
-///
-/// let santas_address: serde_json::Value = serde_json::from_str(r#"{
-///     "street": "Article Circle Expressway 1",
-///     "city": "North Pole",
-///     "postcode": "99705",
-///     "state": "Alaska"
-/// }"#)?;
-/// let inserted_address = insert_into(contacts)
-///     .values((name.eq("Claus"), address.eq(&santas_address)))
-///     .returning(address)
-///     .get_result::<serde_json::Value>(connection)?;
-/// assert_eq!(santas_address, inserted_address);
-/// #     Ok(())
-/// # }
-/// # #[cfg(not(feature = "serde_json"))]
-/// # fn main() {}
-/// ```
-///
-/// ### SQLite
-///
-/// ```rust
-/// # #![allow(dead_code)]
-/// # include!("../doctest_setup.rs");
-/// #
-/// # #[cfg(all(feature = "sqlite", feature = "serde_json"))]
-/// table! {
-///     contacts {
-///         id -> Integer,
-///         name -> Text,
-///         address -> Jsonb,
-///     }
-/// }
-///
-/// # #[cfg(all(feature = "sqlite", feature = "serde_json"))]
+/// # #[cfg(all(
+/// #    feature = "sqlite",
+/// #    feature = "serde_json",
+/// #    feature = "returning_clauses_for_sqlite_3_35"
+/// # ))]
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// #     use diesel::insert_into;
 /// #     use diesel::query_dsl::RunQueryDsl;
@@ -532,11 +514,6 @@ pub struct Json;
 /// #     use diesel::ExpressionMethods;
 /// #     use diesel::dsl::*;
 /// #     let connection = &mut connection();
-/// #     diesel::sql_query("CREATE TABLE contacts (
-/// #         id INT PRIMARY KEY,
-/// #         name TEXT NOT NULL,
-/// #         address BLOB NOT NULL
-/// #     )").execute(connection)?;
 /// let santas_address: serde_json::Value = serde_json::from_str(r#"{
 ///     "street": "Article Circle Expressway 1",
 ///     "city": "North Pole",
