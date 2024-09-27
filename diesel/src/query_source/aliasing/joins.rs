@@ -6,11 +6,12 @@ use super::{Alias, AliasSource, AliasedField};
 use crate::expression::{AppearsOnTable, SelectableExpression};
 use crate::query_builder::AsQuery;
 use crate::query_dsl::InternalJoinDsl;
-use crate::query_source::joins::ToInnerJoin;
 use crate::query_source::joins::{
-    AppendSelection, Inner, Join, JoinOn, JoinTo, LeftOuter, OnClauseWrapper,
+    AppendSelection, Inner, Join, JoinOn, JoinTo, LeftOuter, OnClauseWrapper, ToInnerJoin,
 };
-use crate::query_source::{AppearsInFromClause, Never, Pick, QuerySource, Table};
+use crate::query_source::{
+    AppearsInFromClause, FromClause, Never, Pick, QuerySource, SelectStatement, Table,
+};
 
 impl<T, S> JoinTo<T> for Alias<S>
 where
@@ -50,6 +51,26 @@ impl<S, Rhs, On> JoinTo<OnClauseWrapper<Rhs, On>> for Alias<S> {
 
     fn join_target(rhs: OnClauseWrapper<Rhs, On>) -> (Self::FromClause, Self::OnClause) {
         (rhs.source, rhs.on)
+    }
+}
+
+impl<S, F, Select, D, W, O, L, Of, G>
+    JoinTo<SelectStatement<FromClause<F>, Select, D, W, O, L, Of, G>> for Alias<S>
+where
+    F: QuerySource,
+    S: AliasSource + Default,
+    SelectStatement<FromClause<F>, Select, D, W, O, L, Of, G>: JoinTo<Alias<S>>,
+{
+    type FromClause = SelectStatement<FromClause<F>, Select, D, W, O, L, Of, G>;
+    type OnClause =
+        <SelectStatement<FromClause<F>, Select, D, W, O, L, Of, G> as JoinTo<Alias<S>>>::OnClause;
+
+    fn join_target(
+        rhs: SelectStatement<FromClause<F>, Select, D, W, O, L, Of, G>,
+    ) -> (Self::FromClause, Self::OnClause) {
+        let (_, on_clause) =
+            diesel::internal::table_macro::SelectStatement::join_target(Self::default());
+        (rhs, on_clause)
     }
 }
 
