@@ -23,6 +23,7 @@ mod ranges;
 mod record;
 #[cfg(feature = "uuid")]
 mod uuid;
+mod json_path;
 
 /// PostgreSQL specific SQL types
 ///
@@ -644,6 +645,13 @@ pub mod sql_types {
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(name = "citext"))]
     pub struct Citext;
+
+
+    /// The [`Jsonpath`] SQL type. This is a PostgreSQL specific type.
+    #[cfg(feature = "postgres_backend")]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[diesel(postgres_type(name = "jsonpath"))]
+    pub struct Jsonpath;
 }
 
 mod ops {

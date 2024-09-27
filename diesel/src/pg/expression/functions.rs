@@ -2279,3 +2279,8 @@ define_sql_function! {
     #[sql_name = "row_to_json"]
     fn row_to_json<R: RecordOrNullableRecord + MaybeNullableValue<Json>>(record: R) -> R::Out;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function!{
+    fn jsonb_path_exists<J: JsonbOrNullableJsonb + SingleValue, >(jsonb:J,path:Jsonb);
+}
