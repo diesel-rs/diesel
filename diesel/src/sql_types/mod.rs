@@ -395,13 +395,10 @@ pub struct Timestamp;
 /// [`ToSql`]: /serialize/trait.ToSql.html
 /// [`FromSql`]: /deserialize/trait.FromSql.html
 /// [`serde_json::Value`]: /../serde_json/value/enum.Value.html
-#[cfg(all(
-    any(
-        feature = "postgres_backend",
-        feature = "sqlite",
-        feature = "mysql_backend"
-    ),
-    feature = "serde_json"
+#[cfg(any(
+    feature = "postgres_backend",
+    feature = "mysql_backend",
+    all(feature = "sqlite", feature = "serde_json")
 ))]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 114, array_oid = 199))]
@@ -468,7 +465,9 @@ pub struct Json;
     doc = "[`serde_json::Value`]: https://docs.rs/serde_json/1.0.64/serde_json/value/enum.Value.html"
 )]
 ///
-/// # Examples
+/// ## Examples
+///
+/// ### PostgreSQL
 ///
 /// ```rust
 /// # #![allow(dead_code)]
@@ -492,6 +491,7 @@ pub struct Json;
 /// #         name VARCHAR NOT NULL,
 /// #         address JSONB NOT NULL
 /// #     )").execute(connection)?;
+///
 /// let santas_address: serde_json::Value = serde_json::from_str(r#"{
 ///     "street": "Article Circle Expressway 1",
 ///     "city": "North Pole",
@@ -508,9 +508,54 @@ pub struct Json;
 /// # #[cfg(not(feature = "serde_json"))]
 /// # fn main() {}
 /// ```
-#[cfg(all(
-    any(feature = "postgres_backend", feature = "sqlite"),
-    feature = "serde_json"
+///
+/// ### SQLite
+///
+/// ```rust
+/// # #![allow(dead_code)]
+/// # include!("../doctest_setup.rs");
+/// #
+/// # #[cfg(all(feature = "sqlite", feature = "serde_json"))]
+/// table! {
+///     contacts {
+///         id -> Integer,
+///         name -> Text,
+///         address -> Jsonb,
+///     }
+/// }
+///
+/// # #[cfg(all(feature = "sqlite", feature = "serde_json"))]
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// #     use diesel::insert_into;
+/// #     use diesel::query_dsl::RunQueryDsl;
+/// #     use diesel::test_helpers::connection;
+/// #     use diesel::ExpressionMethods;
+/// #     use diesel::{dsl::sql, IntoSql};
+/// #     let connection = &mut connection();
+/// #     diesel::sql_query("CREATE TABLE contacts (
+/// #         id INT PRIMARY KEY,
+/// #         name TEXT NOT NULL,
+/// #         address BLOB NOT NULL
+/// #     )").execute(connection)?;
+/// let santas_address: serde_json::Value = serde_json::from_str(r#"{
+///     "street": "Article Circle Expressway 1",
+///     "city": "North Pole",
+///     "postcode": "99705",
+///     "state": "Alaska"
+/// }"#)?;
+/// let inserted_address = insert_into(contacts)
+///     .values((name.eq("Claus"), address.eq(&santas_address)))
+///     .returning(address)
+///     .get_result::<serde_json::Value>(connection)?;
+/// assert_eq!(santas_address, inserted_address);
+/// #     Ok(())
+/// # }
+/// # #[cfg(not(feature = "serde_json"))]
+/// # fn main() {}
+/// ```
+#[cfg(any(
+    feature = "postgres_backend",
+    all(feature = "sqlite", feature = "serde_json")
 ))]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 3802, array_oid = 3807))]
