@@ -73,9 +73,9 @@ jobs:
         run: |
           sudo systemctl start mysql.service
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
-          echo "MYSQL_DATABASE_URL=mysql://root:root@localhost/diesel_test" >> $GITHUB_ENV
-          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root:root@localhost/diesel_example" >> $GITHUB_ENV
-          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root:root@localhost/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQL_DATABASE_URL=mysql://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root:root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
 
       - name: Install postgres (MacOS)
         if: matrix.os == 'macos-13' && matrix.backend == 'postgres'
@@ -227,7 +227,8 @@ jobs:
 
       - name: Run tests
         shell: bash
-        run: cargo xtask run-tests ${{ matrix.backend }} $NO_DOC_TESTS $EXAMPLE_SCHEMA_CHECKS -- --no-fail-fast $FLAGS
+        run: |
+          cargo xtask run-tests ${{ matrix.backend }} $NO_DOC_TESTS $EXAMPLE_SCHEMA_CHECKS -- --no-fail-fast $FLAGS
 
       - name: Run diesel_benches
         if: runner.os == 'Linux'
