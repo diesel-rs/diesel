@@ -849,6 +849,128 @@ mod tests {
     }
 
     #[test]
+    fn jsonb_from_sql_null() {
+        let conn = &mut connection();
+        let res = diesel::select(sql::<Jsonb>("jsonb('null')"))
+            .get_result::<serde_json::Value>(conn)
+            .unwrap();
+        assert_eq!(res, serde_json::json!(null));
+    }
+
+    #[test]
+    fn jsonb_from_sql_true() {
+        let conn = &mut connection();
+        let res = diesel::select(sql::<Jsonb>("jsonb('true')"))
+            .get_result::<serde_json::Value>(conn)
+            .unwrap();
+        assert_eq!(res, serde_json::json!(true));
+    }
+
+    #[test]
+    fn jsonb_from_sql_false() {
+        let conn = &mut connection();
+        let res = diesel::select(sql::<Jsonb>("jsonb('false')"))
+            .get_result::<serde_json::Value>(conn)
+            .unwrap();
+        assert_eq!(res, serde_json::json!(false));
+    }
+
+    #[test]
+    fn jsonb_from_sql_int() {
+        let conn = &mut connection();
+        let res = diesel::select(sql::<Jsonb>("jsonb('42')"))
+            .get_result::<serde_json::Value>(conn)
+            .unwrap();
+        assert_eq!(res, serde_json::json!(42));
+    }
+
+    #[test]
+    fn jsonb_from_sql_float() {
+        let conn = &mut connection();
+        let res = diesel::select(sql::<Jsonb>("jsonb('3.14')"))
+            .get_result::<serde_json::Value>(conn)
+            .unwrap();
+        assert_eq!(res, serde_json::json!(3.14));
+    }
+
+    #[test]
+    fn jsonb_from_sql_object() {
+        let conn = &mut connection();
+        let res = diesel::select(sql::<Jsonb>("jsonb('{\"key\": \"value\"}')"))
+            .get_result::<serde_json::Value>(conn)
+            .unwrap();
+        assert_eq!(res, serde_json::json!({"key": "value"}));
+    }
+
+    #[test]
+    fn jsonb_from_sql_array() {
+        let conn = &mut connection();
+        let res = diesel::select(sql::<Jsonb>("jsonb('[1, 2, 3]')"))
+            .get_result::<serde_json::Value>(conn)
+            .unwrap();
+        assert_eq!(res, serde_json::json!([1, 2, 3]));
+    }
+
+    #[test]
+    fn jsonb_from_sql_nested_objects() {
+        let conn = &mut connection();
+        let res = diesel::select(sql::<Jsonb>("jsonb('{\"outer\": {\"inner\": 42}}')"))
+            .get_result::<serde_json::Value>(conn)
+            .unwrap();
+        assert_eq!(res, serde_json::json!({"outer": {"inner": 42}}));
+    }
+
+    #[test]
+    fn jsonb_from_sql_nested_arrays() {
+        let conn = &mut connection();
+        let res = diesel::select(sql::<Jsonb>("jsonb('[[1, 2], [3, 4]]')"))
+            .get_result::<serde_json::Value>(conn)
+            .unwrap();
+        assert_eq!(res, serde_json::json!([[1, 2], [3, 4]]));
+    }
+
+    #[test]
+    fn jsonb_from_sql_nested_arrays_in_objects() {
+        let conn = &mut connection();
+        let res = diesel::select(sql::<Jsonb>("jsonb('{\"array\": [1, 2, 3]}')"))
+            .get_result::<serde_json::Value>(conn)
+            .unwrap();
+        assert_eq!(res, serde_json::json!({"array": [1, 2, 3]}));
+    }
+
+    #[test]
+    fn jsonb_from_sql_nested_objects_in_arrays() {
+        let conn = &mut connection();
+        let res = diesel::select(sql::<Jsonb>(
+            "jsonb('[{\"key1\": \"value1\"}, {\"key2\": \"value2\"}]')",
+        ))
+        .get_result::<serde_json::Value>(conn)
+        .unwrap();
+        assert_eq!(
+            res,
+            serde_json::json!([{"key1": "value1"}, {"key2": "value2"}])
+        );
+    }
+
+    #[test]
+    fn jsonb_from_sql_text() {
+        let conn = &mut connection();
+        let res = diesel::select(sql::<Jsonb>("jsonb('\"hello\"')"))
+            .get_result::<serde_json::Value>(conn)
+            .unwrap();
+        assert_eq!(res, serde_json::json!("hello"));
+    }
+
+    #[test]
+    fn jsonb_from_sql_textj() {
+        let conn = &mut connection();
+        let res = diesel::select(sql::<Jsonb>("jsonb('\"hello\\nworld\"')"))
+            .get_result::<serde_json::Value>(conn)
+            .unwrap();
+        assert_eq!(res, serde_json::json!("hello\nworld"));
+    }
+
+    #[test]
     fn bad_json_from_sql() {
         let conn = &mut connection();
         let res = diesel::select(json!(true).into_sql::<Json>().eq(&sql("json('boom')")))
