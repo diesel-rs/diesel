@@ -530,7 +530,7 @@ pub struct Json;
 /// #     use diesel::query_dsl::RunQueryDsl;
 /// #     use diesel::test_helpers::connection;
 /// #     use diesel::ExpressionMethods;
-/// #     use diesel::{dsl::sql, IntoSql};
+/// #     use diesel::dsl::*;
 /// #     let connection = &mut connection();
 /// #     diesel::sql_query("CREATE TABLE contacts (
 /// #         id INT PRIMARY KEY,
