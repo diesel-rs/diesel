@@ -651,6 +651,11 @@ pub mod helper_types {
     #[allow(non_camel_case_types)] // required for `#[auto_type]`
     pub type insert_into<T> = crate::query_builder::IncompleteInsertStatement<T>;
 
+    /// Represents the return type of [`diesel::update`]
+    #[allow(non_camel_case_types)] // required for `#[auto_type]`
+    pub type update<T> =
+        UpdateStatement<<T as HasTable>::Table, <T as IntoUpdateTarget>::WhereClause>;
+
     /// Represents the return type of [`diesel::insert_or_ignore_into`]
     #[allow(non_camel_case_types)] // required for `#[auto_type]`
     pub type insert_or_ignore_into<T> = crate::query_builder::IncompleteInsertOrIgnoreStatement<T>;

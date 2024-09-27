@@ -481,6 +481,15 @@ fn delete_returning() -> _ {
     delete(users::table).returning(users::id)
 }
 
+#[cfg(feature = "postgres")]
+#[auto_type]
+fn update_and_binary_operator_and_block() -> _ {
+    update(pg_extras::table).set(pg_extras::timestamp.eq(pg_extras::timestamp + {
+        let v: diesel::data_types::PgInterval = 1.year();
+        v
+    }))
+}
+
 // #[auto_type]
 // fn test_sql_fragment() -> _ {
 //     sql("foo")
