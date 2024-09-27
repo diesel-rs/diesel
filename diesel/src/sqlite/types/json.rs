@@ -157,8 +157,7 @@ fn read_jsonb_int(bytes: &[u8], payload_size: usize) -> deserialize::Result<serd
     }
 
     // Read only the number of bytes specified by the payload size
-    let int_str = std::str::from_utf8(&bytes[..payload_size])
-        .map_err(|_| "Invalid ASCII in JSONB integer")?;
+    let int_str = std::str::from_utf8(bytes).map_err(|_| "Invalid ASCII in JSONB integer")?;
     // Parse the integer string into an i64
     let int_value = int_str
         .parse::<i64>()
@@ -170,7 +169,16 @@ fn read_jsonb_int(bytes: &[u8], payload_size: usize) -> deserialize::Result<serd
 }
 
 // Read a JSON float in canonical format (FLOAT)
-fn read_jsonb_float(bytes: &[u8], _payload_size: usize) -> deserialize::Result<serde_json::Value> {
+fn read_jsonb_float(bytes: &[u8], payload_size: usize) -> deserialize::Result<serde_json::Value> {
+    if bytes.len() < payload_size {
+        return Err(format!(
+            "Expected payload of size {}, but got {}",
+            payload_size,
+            bytes.len()
+        )
+        .into());
+    }
+
     let float_str = std::str::from_utf8(bytes).map_err(|_| "Invalid UTF-8 in JSONB float")?;
     let float_value = float_str
         .parse::<f64>()
@@ -182,14 +190,30 @@ fn read_jsonb_float(bytes: &[u8], _payload_size: usize) -> deserialize::Result<s
 
 // Read a JSON string
 fn read_jsonb_text(bytes: &[u8], payload_size: usize) -> deserialize::Result<serde_json::Value> {
-    let text_bytes = &bytes[..payload_size];
-    let text = std::str::from_utf8(text_bytes).map_err(|_| "Invalid UTF-8 in JSONB string")?;
+    if bytes.len() < payload_size {
+        return Err(format!(
+            "Expected payload of size {}, but got {}",
+            payload_size,
+            bytes.len()
+        )
+        .into());
+    }
+
+    let text = std::str::from_utf8(bytes).map_err(|_| "Invalid UTF-8 in JSONB string")?;
     Ok(serde_json::Value::String(text.to_string()))
 }
 
 fn read_jsonb_textj(bytes: &[u8], payload_size: usize) -> deserialize::Result<serde_json::Value> {
-    let text_bytes = &bytes[..payload_size];
-    let text = std::str::from_utf8(text_bytes).map_err(|_| "Invalid UTF-8 in JSONB string")?;
+    if bytes.len() < payload_size {
+        return Err(format!(
+            "Expected payload of size {}, but got {}",
+            payload_size,
+            bytes.len()
+        )
+        .into());
+    }
+
+    let text = std::str::from_utf8(bytes).map_err(|_| "Invalid UTF-8 in JSONB string")?;
 
     // Unescape JSON escape sequences (e.g., "\n", "\u0020")
     let unescaped_text = serde_json::from_str(&format!("\"{}\"", text))
