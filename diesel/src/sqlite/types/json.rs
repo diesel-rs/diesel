@@ -255,19 +255,23 @@ fn create_jsonb_header(element_type: u8, payload_size: usize) -> Result<Vec<u8>,
 
     if payload_size <= 0x0B {
         // Small payloads (size fits in 4 bits)
-        header.push((u8::try_from(payload_size).unwrap()) << 4 | element_type);
+        header.push((u8::try_from(payload_size).map_err(|e| e.to_string())?) << 4 | element_type);
     } else if payload_size <= 0xFF {
         // Medium payloads, 1 additional byte for size
         header.push(0x0C << 4 | element_type);
-        header.push(u8::try_from(payload_size).unwrap());
+        header.push(u8::try_from(payload_size).map_err(|e| e.to_string())?);
     } else if payload_size <= 0xFFFF {
         // Larger payloads, 2 additional bytes for size
         header.push(0x0D << 4 | element_type);
-        header.extend_from_slice(&(u16::try_from(payload_size).unwrap()).to_be_bytes());
+        header.extend_from_slice(
+            &(u16::try_from(payload_size).map_err(|e| e.to_string())?).to_be_bytes(),
+        );
     } else {
         // Very large payloads, 4 additional bytes for size (up to 2 GiB)
         header.push(0x0E << 4 | element_type);
-        header.extend_from_slice(&(u32::try_from(payload_size).unwrap()).to_be_bytes());
+        header.extend_from_slice(
+            &(u32::try_from(payload_size).map_err(|e| e.to_string())?).to_be_bytes(),
+        );
     }
 
     Ok(header)
