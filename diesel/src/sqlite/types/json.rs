@@ -275,28 +275,36 @@ fn create_jsonb_header(element_type: u8, payload_size: usize) -> Result<Vec<u8>,
         return Err("Payload size exceeds the maximum allowed size of 2GB".into());
     }
 
-    let mut header = Vec::new();
-
-    if payload_size <= 0x0B {
-        // Small payloads (size fits in 4 bits)
-        header.push((u8::try_from(payload_size).map_err(|e| e.to_string())?) << 4 | element_type);
+    let header = if payload_size <= 0x0B {
+        // Small payloads, 0 additional byte for size
+        vec![(u8::try_from(payload_size).map_err(|e| e.to_string())?) << 4 | element_type]
     } else if payload_size <= 0xFF {
         // Medium payloads, 1 additional byte for size
-        header.push(0x0C << 4 | element_type);
-        header.push(u8::try_from(payload_size).map_err(|e| e.to_string())?);
+        vec![
+            0x0C << 4 | element_type,
+            u8::try_from(payload_size).map_err(|e| e.to_string())?,
+        ]
     } else if payload_size <= 0xFFFF {
+        let mut header = Vec::with_capacity(3);
+
         // Larger payloads, 2 additional bytes for size
         header.push(0x0D << 4 | element_type);
         header.extend_from_slice(
             &(u16::try_from(payload_size).map_err(|e| e.to_string())?).to_be_bytes(),
         );
+
+        header
     } else {
+        let mut header = Vec::with_capacity(5);
+
         // Very large payloads, 4 additional bytes for size (up to 2 GiB)
         header.push(0x0E << 4 | element_type);
         header.extend_from_slice(
             &(u32::try_from(payload_size).map_err(|e| e.to_string())?).to_be_bytes(),
         );
-    }
+
+        header
+    };
 
     Ok(header)
 }
