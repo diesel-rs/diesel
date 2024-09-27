@@ -471,19 +471,6 @@ pub struct Json;
 /// # #![allow(dead_code)]
 /// # include!("../doctest_setup.rs");
 /// #
-/// # #[cfg(all(feature = "postgres_backend", feature = "serde_json"))]
-/// table! {
-///     contacts {
-///         id -> Integer,
-///         name -> VarChar,
-///         address -> Jsonb,
-///     }
-/// }
-/// # #[cfg(all(
-/// #    feature = "sqlite",
-/// #    feature = "serde_json",
-/// #    feature = "returning_clauses_for_sqlite_3_35"
-/// # ))]
 /// table! {
 ///     contacts {
 ///         id -> Integer,
@@ -492,11 +479,11 @@ pub struct Json;
 ///     }
 /// }
 ///
-/// # #[cfg(all(feature = "postgres_backend", feature = "serde_json"))]
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// #     use diesel::insert_into;
 /// #     use self::contacts::dsl::*;
 /// #     let connection = &mut connection_no_data();
+/// # #[cfg(all(feature = "postgres_backend", feature = "serde_json"))]
 /// #     diesel::sql_query("CREATE TABLE contacts (
 /// #         id SERIAL PRIMARY KEY,
 /// #         name VARCHAR NOT NULL,
@@ -507,13 +494,11 @@ pub struct Json;
 /// #    feature = "serde_json",
 /// #    feature = "returning_clauses_for_sqlite_3_35"
 /// # ))]
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// #     use diesel::insert_into;
-/// #     use diesel::query_dsl::RunQueryDsl;
-/// #     use diesel::test_helpers::connection;
-/// #     use diesel::ExpressionMethods;
-/// #     use diesel::dsl::*;
-/// #     let connection = &mut connection();
+/// #     diesel::sql_query("CREATE TABLE contacts (
+/// #         id INT PRIMARY KEY,
+/// #         name TEXT NOT NULL,
+/// #         address BLOB NOT NULL
+/// #     )").execute(connection)?;
 /// let santas_address: serde_json::Value = serde_json::from_str(r#"{
 ///     "street": "Article Circle Expressway 1",
 ///     "city": "North Pole",
