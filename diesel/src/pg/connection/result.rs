@@ -73,6 +73,12 @@ impl PgResult {
                             DatabaseErrorKind::NotNullViolation
                         }
                         Some(error_codes::CHECK_VIOLATION) => DatabaseErrorKind::CheckViolation,
+                        Some(error_codes::RESTRICT_VIOLATION) => {
+                            DatabaseErrorKind::RestrictViolation
+                        }
+                        Some(error_codes::EXCLUSION_VIOLATION) => {
+                            DatabaseErrorKind::ExclusionViolation
+                        }
                         Some(error_codes::CONNECTION_EXCEPTION)
                         | Some(error_codes::CONNECTION_FAILURE)
                         | Some(error_codes::SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION)
@@ -269,10 +275,12 @@ mod error_codes {
     pub(in crate::pg::connection) const SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION: &str = "08001";
     pub(in crate::pg::connection) const SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION: &str =
         "08004";
+    pub(in crate::pg::connection) const RESTRICT_VIOLATION: &str = "23501";
     pub(in crate::pg::connection) const NOT_NULL_VIOLATION: &str = "23502";
     pub(in crate::pg::connection) const FOREIGN_KEY_VIOLATION: &str = "23503";
     pub(in crate::pg::connection) const UNIQUE_VIOLATION: &str = "23505";
     pub(in crate::pg::connection) const CHECK_VIOLATION: &str = "23514";
+    pub(in crate::pg::connection) const EXCLUSION_VIOLATION: &str = "23P01";
     pub(in crate::pg::connection) const READ_ONLY_TRANSACTION: &str = "25006";
     pub(in crate::pg::connection) const SERIALIZATION_FAILURE: &str = "40001";
 }
