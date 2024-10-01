@@ -395,11 +395,6 @@ pub struct Timestamp;
 /// [`ToSql`]: /serialize/trait.ToSql.html
 /// [`FromSql`]: /deserialize/trait.FromSql.html
 /// [`serde_json::Value`]: /../serde_json/value/enum.Value.html
-#[cfg(any(
-    feature = "postgres_backend",
-    feature = "mysql_backend",
-    all(feature = "sqlite", feature = "serde_json")
-))]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 114, array_oid = 199))]
 #[diesel(mysql_type(name = "String"))]
@@ -479,21 +474,24 @@ pub struct Json;
 ///     }
 /// }
 ///
+/// # #[cfg(all(
+/// #   feature = "serde_json",
+/// #   any(
+/// #       feature = "postgres_backend",
+/// #       all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"),
+/// #   )
+/// # ))]
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// #     use diesel::insert_into;
 /// #     use self::contacts::dsl::*;
 /// #     let connection = &mut connection_no_data();
-/// # #[cfg(all(feature = "postgres_backend", feature = "serde_json"))]
+/// # #[cfg(feature = "postgres_backend")]
 /// #     diesel::sql_query("CREATE TABLE contacts (
 /// #         id SERIAL PRIMARY KEY,
 /// #         name VARCHAR NOT NULL,
 /// #         address JSONB NOT NULL
 /// #     )").execute(connection)?;
-/// # #[cfg(all(
-/// #    feature = "sqlite",
-/// #    feature = "serde_json",
-/// #    feature = "returning_clauses_for_sqlite_3_35"
-/// # ))]
+/// # #[cfg(feature = "sqlite")]
 /// #     diesel::sql_query("CREATE TABLE contacts (
 /// #         id INT PRIMARY KEY,
 /// #         name TEXT NOT NULL,
@@ -512,13 +510,15 @@ pub struct Json;
 /// assert_eq!(santas_address, inserted_address);
 /// #     Ok(())
 /// # }
-/// # #[cfg(not(feature = "serde_json"))]
+/// # #[cfg(not(all(
+/// #   feature = "serde_json",
+/// #   any(
+/// #       feature = "postgres_backend",
+/// #       all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"),
+/// #   )
+/// # )))]
 /// # fn main() {}
 /// ```
-#[cfg(any(
-    feature = "postgres_backend",
-    all(feature = "sqlite", feature = "serde_json")
-))]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 3802, array_oid = 3807))]
 #[diesel(sqlite_type(name = "Binary"))]
