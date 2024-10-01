@@ -275,7 +275,7 @@ mod error_codes {
     pub(in crate::pg::connection) const SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION: &str = "08001";
     pub(in crate::pg::connection) const SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION: &str =
         "08004";
-    pub(in crate::pg::connection) const RESTRICT_VIOLATION: &str = "23501";
+    pub(in crate::pg::connection) const RESTRICT_VIOLATION: &str = "23001";
     pub(in crate::pg::connection) const NOT_NULL_VIOLATION: &str = "23502";
     pub(in crate::pg::connection) const FOREIGN_KEY_VIOLATION: &str = "23503";
     pub(in crate::pg::connection) const UNIQUE_VIOLATION: &str = "23505";
