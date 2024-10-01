@@ -133,11 +133,17 @@ pub enum DatabaseErrorKind {
     /// to lock the rows.
     ReadOnlyTransaction,
 
+    /// A restrict constraint was violated.
+    RestrictViolation,
+
     /// A not null constraint was violated.
     NotNullViolation,
 
     /// A check constraint was violated.
     CheckViolation,
+
+    /// An exclusion constraint was violated.
+    ExclusionViolation,
 
     /// The connection to the server was unexpectedly closed.
     ///
