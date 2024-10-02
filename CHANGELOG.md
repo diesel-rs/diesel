@@ -20,6 +20,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Support for postgres multirange type
 * Added `diesel::r2d2::TestCustomizer`, which allows users to customize their `diesel::r2d2::Pool`s
 in a way that makes the pools suitable for use in parallel tests.
+* Added `Json` and `Jsonb` support for the SQLite backend.
 
 ## [2.2.2] 2024-07-19
 
