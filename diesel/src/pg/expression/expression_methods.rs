@@ -832,48 +832,20 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #         age -> Multirange<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
-    /// #     use std::collections::Bound;
-    /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL, age INT4MULTIRANGE)").execute(conn).unwrap();
+    /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #
-    /// diesel::insert_into(posts)
-    ///     .values((versions.eq(5..), age.eq(vec![1..18, 60..99])))
-    ///     .execute(conn)?;
+    /// #     let conn = &mut establish_connection();
+    /// assert!(diesel::select((1..5).into_sql::<Range<Integer>>().contains(4)).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select((1..5).into_sql::<Range<Integer>>().contains(8)).first::<bool>(conn).unwrap());
     ///
-    /// let cool_posts = posts.select(id)
-    ///     .filter(versions.contains(42))
-    ///     .load::<i32>(conn)?;
-    /// assert_eq!(vec![1], cool_posts);
+    /// assert!(diesel::select((vec![1..5]).into_sql::<Multirange<Integer>>().contains(4)).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select((vec![1..5]).into_sql::<Multirange<Integer>>().contains(8)).first::<bool>(conn).unwrap());
     ///
-    /// let amazing_posts = posts.select(id)
-    ///     .filter(versions.contains(1))
-    ///     .load::<i32>(conn)?;
-    /// assert!(amazing_posts.is_empty());
-    ///
-    /// let cool_posts = posts.select(id)
-    ///     .filter(age.contains(10))
-    ///     .load::<i32>(conn)?;
-    /// assert_eq!(vec![1], cool_posts);
-    ///
-    /// let amazing_posts = posts.select(id)
-    ///     .filter(age.contains(20))
-    ///     .load::<i32>(conn)?;
-    /// assert!(amazing_posts.is_empty());
     /// #     Ok(())
     /// # }
     /// ```
