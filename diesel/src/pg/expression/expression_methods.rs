@@ -896,37 +896,30 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
-    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
-    /// #
-    /// diesel::insert_into(posts)
-    ///     .values(versions.eq((Bound::Included(5), Bound::Unbounded)))
-    ///     .execute(conn)?;
+    /// assert!(diesel::select(
+    ///     (1..5).into_sql::<Range<Integer>>().contains_range(1..5)
+    ///     ).first::<bool>(conn).unwrap());
     ///
-    /// let cool_posts = posts.select(id)
-    ///     .filter(versions.contains_range((Bound::Included(10), Bound::Included(50))))
-    ///     .load::<i32>(conn)?;
-    /// assert_eq!(vec![1], cool_posts);
+    /// assert!(diesel::select(
+    ///     (1..5).into_sql::<Range<Integer>>().contains_range(1..5)
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     (1..5).into_sql::<Range<Integer>>().contains_range(3..7)
+    ///     ).first::<bool>(conn).unwrap());
     ///
-    /// let amazing_posts = posts.select(id)
-    ///     .filter(versions.contains_range((Bound::Included(2), Bound::Included(7))))
-    ///     .load::<i32>(conn)?;
-    /// assert!(amazing_posts.is_empty());
+    /// assert!(diesel::select(
+    ///     vec![1..5].into_sql::<Multirange<Integer>>().contains_range(vec![1..5])
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     vec![1..5].into_sql::<Multirange<Integer>>().contains_range(vec![3..7])
+    ///     ).first::<bool>(conn).unwrap());
     /// #     Ok(())
     /// # }
     /// ```
