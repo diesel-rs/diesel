@@ -57,8 +57,8 @@ impl<Combinator, Rule, Source, Rhs> CombinationClause<Combinator, Rule, Source, 
         CombinationClause {
             combinator,
             duplicate_rule,
-            source: ParenthesisWrapper(source),
-            rhs: ParenthesisWrapper(rhs),
+            source: ParenthesisWrapper { inner: source },
+            rhs: ParenthesisWrapper { inner: rhs },
             order: NoOrderClause,
             limit_offset: LimitOffsetClause {
                 limit_clause: NoLimitClause,

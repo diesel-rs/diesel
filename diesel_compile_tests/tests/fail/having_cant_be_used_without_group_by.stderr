@@ -38,10 +38,8 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
-   = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `SelectStatement<FromClause<table>, SelectClause<name>, NoDistinctClause, NoWhereClause, ..., ..., ...>` to implement `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
+   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>` to implement `AppearsOnTable<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>` to implement `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/having_cant_be_used_without_group_by.rs:32:71
@@ -56,6 +54,5 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
-   = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
+   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>` to implement `AppearsOnTable<users::table>`
    = note: required for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::id>` to implement `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
-   = note: consider using `--verbose` to print the full type name to the console
