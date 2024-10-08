@@ -1520,34 +1520,20 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
-    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
-    /// #
-    /// diesel::insert_into(posts)
-    ///     .values(&vec![
-    ///         (versions.eq((Bound::Included(1), Bound::Included(2))))
-    ///     ])
-    ///     .execute(conn)?;
+    /// assert!(diesel::select(
+    ///     (1..=2).into_sql::<Range<Integer>>().union_range(2..=6).eq(1..=6)
+    ///     ).first::<bool>(conn).unwrap());
     ///
-    /// let data = posts.select(versions.union_range((Bound::Included(2),Bound::Included(6))))
-    ///     .load::<(Bound<i32>,Bound<i32>)>(conn)?;
-    /// let expected_range = (Bound::Included(1),Bound::Excluded(7));
-    /// assert_eq!(expected_range, data[0]);
+    /// assert!(diesel::select(
+    ///     vec![1..=2].into_sql::<Multirange<Integer>>().union_range(vec![1..=6]).eq(vec![1..=6])
+    ///     ).first::<bool>(conn).unwrap());
     /// #     Ok(())
     /// # }
     /// ```
