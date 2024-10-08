@@ -1206,39 +1206,33 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
-    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
     /// #
-    /// diesel::insert_into(posts)
-    ///     .values(versions.eq((Bound::Included(1), Bound::Excluded(20))))
-    ///     .execute(conn)?;
+    /// assert!(diesel::select(
+    ///     (1..20).into_sql::<Range<Integer>>().range_extends_left_to(-10..5)
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(diesel::select(
+    ///     (1..20).into_sql::<Range<Integer>>().range_extends_left_to(-10..-5)
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     (1..20).into_sql::<Range<Integer>>().range_extends_left_to(25..30)
+    ///     ).first::<bool>(conn).unwrap());
     ///
-    /// let cool_posts = posts.select(versions.range_extends_left_to((Bound::Included(-10), Bound::Excluded(5))))
-    ///     .get_result::<bool>(conn)?;
-    /// assert_eq!(true, cool_posts);
-    ///
-    /// let cool_posts = posts.select(versions.range_extends_left_to((Bound::Included(-10), Bound::Excluded(-5))))
-    ///     .get_result::<bool>(conn)?;
-    /// assert_eq!(true, cool_posts);
-    ///
-    /// let amazing_posts = posts.select(versions.range_extends_left_to((Bound::Included(25), Bound::Excluded(30))))
-    ///     .get_result::<bool>(conn)?;
-    /// assert_eq!(false, amazing_posts);
+    /// assert!(diesel::select(
+    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_left_to(vec![-10..5])
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(diesel::select(
+    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_left_to(vec![-10..-5])
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_left_to(vec![25..30])
+    ///     ).first::<bool>(conn).unwrap());
     /// #     Ok(())
     /// # }
     /// ```
