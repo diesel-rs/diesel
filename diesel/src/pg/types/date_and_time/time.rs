@@ -9,7 +9,7 @@ use self::time::{
 };
 
 use super::{PgDate, PgTime, PgTimestamp};
-use crate::deserialize::{self, FromSql};
+use crate::deserialize::{self, Defaultable, FromSql};
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, Output, ToSql};
 use crate::sql_types::{Date, Time, Timestamp, Timestamptz};
@@ -58,6 +58,13 @@ impl ToSql<Timestamptz, Pg> for PrimitiveDateTime {
 }
 
 #[cfg(all(feature = "time", feature = "postgres_backend"))]
+impl Defaultable for PrimitiveDateTime {
+    fn default_value() -> Self {
+        PG_EPOCH
+    }
+}
+
+#[cfg(all(feature = "time", feature = "postgres_backend"))]
 impl FromSql<Timestamptz, Pg> for OffsetDateTime {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         let primitive_date_time = <PrimitiveDateTime as FromSql<Timestamptz, Pg>>::from_sql(bytes)?;
@@ -71,6 +78,13 @@ impl ToSql<Timestamptz, Pg> for OffsetDateTime {
         let as_utc = self.to_offset(UtcOffset::UTC);
         let primitive_date_time = PrimitiveDateTime::new(as_utc.date(), as_utc.time());
         ToSql::<Timestamptz, Pg>::to_sql(&primitive_date_time, &mut out.reborrow())
+    }
+}
+
+#[cfg(all(feature = "time", feature = "postgres_backend"))]
+impl Defaultable for OffsetDateTime {
+    fn default_value() -> Self {
+        datetime!(2000-01-01 0:00:00 UTC)
     }
 }
 
@@ -116,6 +130,13 @@ impl FromSql<Date, Pg> for NaiveDate {
                 Err(error_message.into())
             }
         }
+    }
+}
+
+#[cfg(all(feature = "time", feature = "postgres_backend"))]
+impl Defaultable for NaiveDate {
+    fn default_value() -> Self {
+        PG_EPOCH_DATE
     }
 }
 
