@@ -163,7 +163,7 @@ impl SqlFileMigration {
     fn from_path(path: &Path) -> Result<Self, MigrationError> {
         if migrations_internals::valid_sql_migration_directory(path) {
             let metadata = TomlMetadataWrapper(
-                TomlMetadata::read_from_file(&path.join("metadata.toml"))?
+                TomlMetadata::read_from_file(&path.join("metadata.toml")).unwrap_or_default(),
             );
             Ok(Self {
                 base_path: path.to_path_buf(),
