@@ -52,7 +52,8 @@ table! {
         multirange -> Multirange<Integer>,
         timestamptz -> Timestamptz,
         name -> Text,
-        text_array -> Array<Text>
+        text_array -> Array<Text>,
+        record -> Record,
     }
 }
 
@@ -449,6 +450,7 @@ fn postgres_functions() -> _ {
         jsonb_array_length(pg_extras::jsonb),
         jsonb_object(pg_extras::text_array),
         jsonb_object_with_keys_and_values(pg_extras::text_array, pg_extras::text_array),
+        row_to_json(pg_extras::record),
     )
 }
 
