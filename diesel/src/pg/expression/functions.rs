@@ -1520,6 +1520,49 @@ define_sql_function! {
 
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
+    /// Converts any Array to json.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::array_to_json;
+    /// #     use diesel::sql_types::{Array, Integer, Text, Nullable};
+    /// #     use serde_json::Value;
+    /// #     let connection = &mut establish_connection();
+    /// let json = diesel::select(array_to_json::<Array<Integer>, _>(vec![1, 2, 3, 4, 5]))
+    ///                 .get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::json!([1, 2, 3, 4, 5]);
+    /// assert_eq!(expected,json);
+    /// let json = diesel::select(array_to_json::<Array<Text>,_>(vec!["hello","world","John","Doe"]))
+    ///                 .get_result::<Value>(connection)?;
+    /// let expected:Value = serde_json::json!(["hello","world","John","Doe"]);
+    /// assert_eq!(expected,json);
+    /// let empty:Vec<String> = Vec::new();
+    /// let json = diesel::select(array_to_json::<Array<Nullable<Text>>,_>(empty))
+    ///                 .get_result::<Value>(connection)?;
+    /// assert_eq!(serde_json::json!([]),json);
+    /// let json = diesel::select(array_to_json::<Nullable<Array<Integer>>, _>(None::<Vec<i32>>))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(None, json);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn array_to_json<Arr: ArrayOrNullableArray + MaybeNullableValue<Json>>(
+        array: Arr,
+    ) -> Arr::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
     /// Converts any SQL value to json
     ///
     /// # Example

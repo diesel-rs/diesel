@@ -435,6 +435,7 @@ fn postgres_functions() -> _ {
         array_ndims(pg_extras::array),
         array_shuffle(pg_extras::array),
         array_sample(pg_extras::array, pg_extras::id),
+        array_to_json(pg_extras::array),
         to_json(pg_extras::id),
         to_jsonb(pg_extras::id),
         json_object(pg_extras::text_array),
