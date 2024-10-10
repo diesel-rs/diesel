@@ -10,6 +10,7 @@ use crate::pg::expression::expression_methods::MaybeNullableValue;
 use crate::pg::expression::expression_methods::MultirangeOrNullableMultirange;
 use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
 use crate::pg::expression::expression_methods::RangeOrNullableRange;
+use crate::pg::expression::expression_methods::RecordOrNullableRecord;
 use crate::pg::expression::expression_methods::TextArrayOrNullableTextArray;
 use crate::sql_types::*;
 
@@ -2233,4 +2234,54 @@ define_sql_function! {
         keys: Arr1,
         values: Arr2
     ) -> Arr2::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// This form of jsonb_object takes keys and values pairwise from two separate arrays.
+    /// In all other respects it is identical to the one-argument form.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::sql;
+    /// #     use diesel::sql_types::{Record, Text, Integer};
+    /// #     use serde_json::Value;
+    /// #     let connection = &mut establish_connection();
+    ///
+    ///     // Example SQL query selecting a custom record type
+    ///     let query = diesel::select(sql::<Record<(Text, Integer)>>("ROW('John', 30)::record"));
+    ///
+    ///     // Running the query and fetching the result as JSON
+    ///     let (name, age): (String, i32) = query.get_result(connection)?;
+    ///
+    ///     // Create a Json Value
+    ///     let json_value: Value = serde_json::json!({
+    ///         "name": name,
+    ///         "age": age
+    ///     });
+    ///
+    ///     // Expected JSON output from the Record type
+    ///     let expected: Value = serde_json::json!({
+    ///         "name": "John",
+    ///         "age": 30
+    ///     });
+    ///
+    ///     // Asserting the result
+    ///     assert_eq!(expected, json_value);
+    ///
+    ///     Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "jsonb_object"]
+    fn row_to_json<R: RecordOrNullableRecord + SingleValue + CombinedNullableValue<Record<Text>, Jsonb>>(record: R) -> R::Out;
 }

@@ -4,7 +4,8 @@ pub(in crate::pg) use self::private::{
     ArrayOrNullableArray, CombinedNullableValue, InetOrCidr, JsonIndex, JsonOrNullableJson,
     JsonOrNullableJsonOrJsonbOrNullableJsonb, JsonRemoveIndex, JsonbOrNullableJsonb,
     MaybeNullableValue, MultirangeOrNullableMultirange, MultirangeOrRangeMaybeNullable,
-    RangeOrMultirange, RangeOrNullableRange, TextArrayOrNullableTextArray, TextOrNullableText,
+    RangeOrMultirange, RangeOrNullableRange, RecordOrNullableRecord, TextArrayOrNullableTextArray,
+    TextOrNullableText,
 };
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
@@ -3302,7 +3303,7 @@ where
 pub(in crate::pg) mod private {
     use crate::sql_types::{
         Array, Binary, Cidr, Inet, Integer, Json, Jsonb, MaybeNullableType, Multirange, Nullable,
-        OneIsNullable, Range, SingleValue, SqlType, Text,
+        OneIsNullable, Range, Record, SingleValue, SqlType, Text,
     };
     use crate::{Expression, IntoSql};
 
@@ -3640,4 +3641,16 @@ pub(in crate::pg) mod private {
     impl TextArrayOrNullableTextArray for Array<Nullable<Text>> {}
     impl TextArrayOrNullableTextArray for Nullable<Array<Text>> {}
     impl TextArrayOrNullableTextArray for Nullable<Array<Nullable<Text>>> {}
+
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `Record<Text>`, `Record<Nullable<Text>>`,\
+                   `Nullable<Record<Text>>` nor `diesel::sql_types::Nullable<Record<Nullable<Text>>>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait RecordOrNullableRecord {}
+
+    impl RecordOrNullableRecord for Record<Text> {}
+    impl RecordOrNullableRecord for Record<Nullable<Text>> {}
+    impl RecordOrNullableRecord for Nullable<Record<Text>> {}
+    impl RecordOrNullableRecord for Nullable<Record<Nullable<Text>>> {}
 }

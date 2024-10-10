@@ -543,3 +543,8 @@ pub type jsonb_object<A> = super::functions::jsonb_object<SqlTypeOf<A>, A>;
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_object_with_keys_and_values<K, V> =
     super::functions::jsonb_object_with_keys_and_values<SqlTypeOf<K>, SqlTypeOf<V>, K, V>;
+
+/// Return type of [`row_to_json(record)`](super::functions::row_to_json())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type row_to_json<R> = super::functions::row_to_json<SqlTypeOf<R>, R>;
