@@ -65,6 +65,10 @@ pub use self::update_statement::target::{IntoUpdateTarget, UpdateTarget};
 pub use self::update_statement::{BoxedUpdateStatement, UpdateStatement};
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::combination_clause::{
+    All, Distinct, Except, Intersect, ParenthesisWrapper, SupportsCombinationClause, Union,
+};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::limit_clause::{LimitClause, NoLimitClause};
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
@@ -83,7 +87,7 @@ pub(crate) use self::insert_statement::{UndecoratedInsertRecord, ValuesClause};
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
-pub use self::insert_statement::DefaultValues;
+pub use self::insert_statement::{DefaultValues, InsertOrIgnore, Replace};
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]

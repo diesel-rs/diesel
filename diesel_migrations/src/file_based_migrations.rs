@@ -98,7 +98,7 @@ impl FileBasedMigrations {
         })
     }
 
-    /// Create a new file based migration source by searching the migration diretcory
+    /// Create a new file based migration source by searching the migration directory
     ///
     /// This method looks in the current and all parent directories for a folder named
     /// `migrations`
@@ -108,7 +108,7 @@ impl FileBasedMigrations {
         Self::find_migrations_directory_in_path(std::env::current_dir()?.as_path())
     }
 
-    /// Create a new file based migration source by searching a give path for the migration
+    /// Create a new file based migration source by searching a given path for the migration
     /// directory
     ///
     /// This method looks in the passed directory and all parent directories for a folder

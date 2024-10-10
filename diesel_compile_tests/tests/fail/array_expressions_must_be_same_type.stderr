@@ -19,10 +19,10 @@ error[E0277]: Cannot select `f64` from `NoFromClause`
            and $N others
    = note: required for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)` to implement `SelectableExpression<NoFromClause>`
    = note: 1 redundant requirement hidden
-   = note: required for `ArrayLiteral<(Bound<Integer, i32>, f64), Integer>` to implement `SelectableExpression<NoFromClause>`
-   = note: required for `SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<NoFromClause>`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>>` to implement `Query`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>>` to implement `AsQuery`
+   = note: required for `diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>` to implement `SelectableExpression<NoFromClause>`
+   = note: required for `diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<NoFromClause>`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>` to implement `Query`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>` to implement `AsQuery`
 note: required by a bound in `diesel::select`
   --> $DIESEL/src/query_builder/functions.rs
    |
@@ -31,10 +31,6 @@ note: required by a bound in `diesel::select`
 ...
    |     crate::dsl::select<T>: AsQuery,
    |                            ^^^^^^^ required by this bound in `select`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
   --> tests/fail/array_expressions_must_be_same_type.rs:15:12
@@ -56,9 +52,9 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
            and $N others
    = note: required for `(f64,)` to implement `ValidGrouping<()>`
    = note: 2 redundant requirements hidden
-   = note: required for `ArrayLiteral<(Bound<Integer, i32>, f64), Integer>` to implement `ValidGrouping<()>`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>>` to implement `Query`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>>` to implement `AsQuery`
+   = note: required for `diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>` to implement `ValidGrouping<()>`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>` to implement `Query`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>` to implement `AsQuery`
 note: required by a bound in `diesel::select`
   --> $DIESEL/src/query_builder/functions.rs
    |
@@ -67,9 +63,6 @@ note: required by a bound in `diesel::select`
 ...
    |     crate::dsl::select<T>: AsQuery,
    |                            ^^^^^^^ required by this bound in `select`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: Cannot select `f64` from `NoFromClause`
   --> tests/fail/array_expressions_must_be_same_type.rs:16:33
@@ -92,10 +85,10 @@ error[E0277]: Cannot select `f64` from `NoFromClause`
            and $N others
    = note: required for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)` to implement `SelectableExpression<NoFromClause>`
    = note: 1 redundant requirement hidden
-   = note: required for `ArrayLiteral<(Bound<Integer, i32>, f64), Integer>` to implement `SelectableExpression<NoFromClause>`
-   = note: required for `SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<NoFromClause>`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>>` to implement `Query`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>>` to implement `LoadQuery<'_, _, Vec<i32>>`
+   = note: required for `diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>` to implement `SelectableExpression<NoFromClause>`
+   = note: required for `diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<NoFromClause>`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>` to implement `Query`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>` to implement `LoadQuery<'_, _, Vec<i32>>`
 note: required by a bound in `get_result`
   --> $DIESEL/src/query_dsl/mod.rs
    |
@@ -104,10 +97,6 @@ note: required by a bound in `get_result`
    |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
   --> tests/fail/array_expressions_must_be_same_type.rs:16:33
@@ -129,9 +118,9 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
            and $N others
    = note: required for `(f64,)` to implement `ValidGrouping<()>`
    = note: 2 redundant requirements hidden
-   = note: required for `ArrayLiteral<(Bound<Integer, i32>, f64), Integer>` to implement `ValidGrouping<()>`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>>` to implement `Query`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>>` to implement `LoadQuery<'_, _, Vec<i32>>`
+   = note: required for `diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>` to implement `ValidGrouping<()>`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>` to implement `Query`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>` to implement `LoadQuery<'_, _, Vec<i32>>`
 note: required by a bound in `get_result`
   --> $DIESEL/src/query_dsl/mod.rs
    |
@@ -140,9 +129,6 @@ note: required by a bound in `get_result`
    |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: the trait bound `f64: QueryId` is not satisfied
   --> tests/fail/array_expressions_must_be_same_type.rs:16:33
@@ -164,8 +150,8 @@ error[E0277]: the trait bound `f64: QueryId` is not satisfied
            and $N others
    = note: required for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)` to implement `QueryId`
    = note: 3 redundant requirements hidden
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>>` to implement `QueryId`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>>` to implement `LoadQuery<'_, _, Vec<i32>>`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>` to implement `QueryId`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>` to implement `LoadQuery<'_, _, Vec<i32>>`
 note: required by a bound in `get_result`
   --> $DIESEL/src/query_dsl/mod.rs
    |
@@ -174,8 +160,6 @@ note: required by a bound in `get_result`
    |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: `f64` is no valid SQL fragment for the `Pg` backend
   --> tests/fail/array_expressions_must_be_same_type.rs:16:33
@@ -199,8 +183,8 @@ error[E0277]: `f64` is no valid SQL fragment for the `Pg` backend
            and $N others
    = note: required for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)` to implement `QueryFragment<Pg>`
    = note: 4 redundant requirements hidden
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>>` to implement `QueryFragment<Pg>`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>>` to implement `LoadQuery<'_, _, Vec<i32>>`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>` to implement `QueryFragment<Pg>`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>` to implement `LoadQuery<'_, _, Vec<i32>>`
 note: required by a bound in `get_result`
   --> $DIESEL/src/query_dsl/mod.rs
    |
@@ -209,8 +193,6 @@ note: required by a bound in `get_result`
    |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: the trait bound `f64: diesel::Expression` is not satisfied
   --> tests/fail/array_expressions_must_be_same_type.rs:15:22
@@ -262,10 +244,10 @@ error[E0277]: Cannot select `{integer}` from `NoFromClause`
            and $N others
    = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `SelectableExpression<NoFromClause>`
    = note: 1 redundant requirement hidden
-   = note: required for `ArrayLiteral<({integer}, Bound<Double, f64>), Double>` to implement `SelectableExpression<NoFromClause>`
-   = note: required for `SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<NoFromClause>`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>>` to implement `Query`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>>` to implement `AsQuery`
+   = note: required for `diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>` to implement `SelectableExpression<NoFromClause>`
+   = note: required for `diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<NoFromClause>`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>` to implement `Query`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>` to implement `AsQuery`
 note: required by a bound in `diesel::select`
   --> $DIESEL/src/query_builder/functions.rs
    |
@@ -274,10 +256,6 @@ note: required by a bound in `diesel::select`
 ...
    |     crate::dsl::select<T>: AsQuery,
    |                            ^^^^^^^ required by this bound in `select`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
   --> tests/fail/array_expressions_must_be_same_type.rs:18:12
@@ -299,9 +277,9 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
            and $N others
    = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `ValidGrouping<()>`
    = note: 1 redundant requirement hidden
-   = note: required for `ArrayLiteral<({integer}, Bound<Double, f64>), Double>` to implement `ValidGrouping<()>`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>>` to implement `Query`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>>` to implement `AsQuery`
+   = note: required for `diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>` to implement `ValidGrouping<()>`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>` to implement `Query`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>` to implement `AsQuery`
 note: required by a bound in `diesel::select`
   --> $DIESEL/src/query_builder/functions.rs
    |
@@ -310,9 +288,6 @@ note: required by a bound in `diesel::select`
 ...
    |     crate::dsl::select<T>: AsQuery,
    |                            ^^^^^^^ required by this bound in `select`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: Cannot select `{integer}` from `NoFromClause`
   --> tests/fail/array_expressions_must_be_same_type.rs:19:33
@@ -335,10 +310,10 @@ error[E0277]: Cannot select `{integer}` from `NoFromClause`
            and $N others
    = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `SelectableExpression<NoFromClause>`
    = note: 1 redundant requirement hidden
-   = note: required for `ArrayLiteral<({integer}, Bound<Double, f64>), Double>` to implement `SelectableExpression<NoFromClause>`
-   = note: required for `SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<NoFromClause>`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>>` to implement `Query`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>>` to implement `LoadQuery<'_, _, Vec<f64>>`
+   = note: required for `diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>` to implement `SelectableExpression<NoFromClause>`
+   = note: required for `diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<NoFromClause>`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>` to implement `Query`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>` to implement `LoadQuery<'_, _, Vec<f64>>`
 note: required by a bound in `get_result`
   --> $DIESEL/src/query_dsl/mod.rs
    |
@@ -347,10 +322,6 @@ note: required by a bound in `get_result`
    |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
   --> tests/fail/array_expressions_must_be_same_type.rs:19:33
@@ -372,9 +343,9 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
            and $N others
    = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `ValidGrouping<()>`
    = note: 1 redundant requirement hidden
-   = note: required for `ArrayLiteral<({integer}, Bound<Double, f64>), Double>` to implement `ValidGrouping<()>`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>>` to implement `Query`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>>` to implement `LoadQuery<'_, _, Vec<f64>>`
+   = note: required for `diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>` to implement `ValidGrouping<()>`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>` to implement `Query`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>` to implement `LoadQuery<'_, _, Vec<f64>>`
 note: required by a bound in `get_result`
   --> $DIESEL/src/query_dsl/mod.rs
    |
@@ -383,9 +354,6 @@ note: required by a bound in `get_result`
    |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: the trait bound `{integer}: QueryId` is not satisfied
   --> tests/fail/array_expressions_must_be_same_type.rs:19:33
@@ -407,8 +375,8 @@ error[E0277]: the trait bound `{integer}: QueryId` is not satisfied
            and $N others
    = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `QueryId`
    = note: 3 redundant requirements hidden
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>>` to implement `QueryId`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>>` to implement `LoadQuery<'_, _, Vec<f64>>`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>` to implement `QueryId`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>` to implement `LoadQuery<'_, _, Vec<f64>>`
 note: required by a bound in `get_result`
   --> $DIESEL/src/query_dsl/mod.rs
    |
@@ -417,8 +385,6 @@ note: required by a bound in `get_result`
    |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: `{integer}` is no valid SQL fragment for the `Pg` backend
   --> tests/fail/array_expressions_must_be_same_type.rs:19:33
@@ -442,8 +408,8 @@ error[E0277]: `{integer}` is no valid SQL fragment for the `Pg` backend
            and $N others
    = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `QueryFragment<Pg>`
    = note: 4 redundant requirements hidden
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>>` to implement `QueryFragment<Pg>`
-   = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>>` to implement `LoadQuery<'_, _, Vec<f64>>`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>` to implement `QueryFragment<Pg>`
+   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>` to implement `LoadQuery<'_, _, Vec<f64>>`
 note: required by a bound in `get_result`
   --> $DIESEL/src/query_dsl/mod.rs
    |
@@ -452,8 +418,6 @@ note: required by a bound in `get_result`
    |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
   --> tests/fail/array_expressions_must_be_same_type.rs:18:19
