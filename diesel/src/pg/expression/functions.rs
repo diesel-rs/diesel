@@ -2234,3 +2234,8 @@ define_sql_function! {
         values: Arr2
     ) -> Arr2::Out;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function!{
+    fn jsonb_path_exists<J: JsonbOrNullableJsonb + SingleValue, >(jsonb:J,path:Jsonb);
+}
