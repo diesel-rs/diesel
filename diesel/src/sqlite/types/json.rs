@@ -1,4 +1,4 @@
-//! Support for JSON and JSONB values under PostgreSQL.
+//! Support for JSON and JSONB values under SQLite.
 
 use crate::deserialize::{self, FromSql};
 use crate::serialize::{self, IsNull, Output, ToSql};
