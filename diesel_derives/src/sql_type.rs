@@ -41,7 +41,7 @@ fn sqlite_tokens(item: &DeriveInput, model: &Model) -> Option<TokenStream> {
     model
         .sqlite_type
         .as_ref()
-        .map(|sqlite_type| Ident::new(&sqlite_type.name.value(), Span::call_site()))
+        .map(|sqlite_type| Ident::new(&sqlite_type.name.value(), Span::mixed_site()))
         .and_then(|ty| {
             if cfg!(not(feature = "sqlite")) {
                 return None;
@@ -67,7 +67,7 @@ fn mysql_tokens(item: &DeriveInput, model: &Model) -> Option<TokenStream> {
     model
         .mysql_type
         .as_ref()
-        .map(|mysql_type| Ident::new(&mysql_type.name.value(), Span::call_site()))
+        .map(|mysql_type| Ident::new(&mysql_type.name.value(), Span::mixed_site()))
         .and_then(|ty| {
             if cfg!(not(feature = "mysql")) {
                 return None;
