@@ -578,3 +578,26 @@ where
 {
     const FIELD_COUNT: usize = <ST as crate::util::TupleSize>::SIZE;
 }
+
+/// A helper trait for giving a type a useful default value.
+///
+/// This is needed for types that can be used as range to represent the empty range as
+/// (Bound::Excluded(DEFAULT), Bound::Excluded(DEFAULT)).
+/// When possible, implementations of this trait should fall back to using std::default::Default.
+#[allow(dead_code)]
+pub(crate) trait Defaultable {
+    /// Returns the "default value" for a type.
+    fn default_value() -> Self;
+}
+
+// We cannot have this impl because rustc
+// then complains in third party crates that
+// diesel may implement `Default`in the future.
+// If we get negative trait impls at some point in time
+// it should be possible to make this work.
+//// Defaultable for types that has Default
+//impl<T: Default> Defaultable for T {
+//    fn default_value() -> Self {
+//        T::default()
+//    }
+//}

@@ -10,7 +10,7 @@ mod bigdecimal {
     use self::num_integer::Integer;
     use self::num_traits::{Signed, ToPrimitive, Zero};
 
-    use crate::deserialize::{self, FromSql};
+    use crate::deserialize::{self, Defaultable, FromSql};
     use crate::pg::data_types::PgNumeric;
     use crate::pg::{Pg, PgValue};
     use crate::serialize::{self, Output, ToSql};
@@ -166,6 +166,13 @@ mod bigdecimal {
     impl FromSql<Numeric, Pg> for BigDecimal {
         fn from_sql(numeric: PgValue<'_>) -> deserialize::Result<Self> {
             PgNumeric::from_sql(numeric)?.try_into()
+        }
+    }
+
+    #[cfg(all(feature = "postgres_backend", feature = "numeric"))]
+    impl Defaultable for BigDecimal {
+        fn default_value() -> Self {
+            Self::default()
         }
     }
 

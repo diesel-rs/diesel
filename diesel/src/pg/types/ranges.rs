@@ -3,7 +3,7 @@ use std::collections::Bound;
 use std::error::Error;
 use std::io::Write;
 
-use crate::deserialize::{self, FromSql, Queryable};
+use crate::deserialize::{self, Defaultable, FromSql, Queryable};
 use crate::expression::bound::Bound as SqlBound;
 use crate::expression::AsExpression;
 use crate::pg::{Pg, PgTypeMetadata, PgValue};
@@ -74,7 +74,7 @@ range_as_expression!(&'a std::ops::RangeTo<T>; Nullable<Range<ST>>);
 #[cfg(feature = "postgres_backend")]
 impl<T, ST> FromSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
-    T: FromSql<ST, Pg>,
+    T: FromSql<ST, Pg> + Defaultable,
 {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
@@ -82,7 +82,9 @@ where
         let mut lower_bound = Bound::Unbounded;
         let mut upper_bound = Bound::Unbounded;
 
-        if !flags.contains(RangeFlags::LB_INF) {
+        if flags.contains(RangeFlags::EMPTY) {
+            lower_bound = Bound::Excluded(T::default_value());
+        } else if !flags.contains(RangeFlags::LB_INF) {
             let elem_size = bytes.read_i32::<NetworkEndian>()?;
             let (elem_bytes, new_bytes) = bytes.split_at(elem_size.try_into()?);
             bytes = new_bytes;
@@ -95,7 +97,9 @@ where
             };
         }
 
-        if !flags.contains(RangeFlags::UB_INF) {
+        if flags.contains(RangeFlags::EMPTY) {
+            upper_bound = Bound::Excluded(T::default_value());
+        } else if !flags.contains(RangeFlags::UB_INF) {
             let _size = bytes.read_i32::<NetworkEndian>()?;
             let value = T::from_sql(PgValue::new_internal(bytes, &value))?;
 
@@ -113,7 +117,7 @@ where
 #[cfg(feature = "postgres_backend")]
 impl<T, ST> Queryable<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
-    T: FromSql<ST, Pg>,
+    T: FromSql<ST, Pg> + Defaultable,
 {
     type Row = Self;
 
