@@ -20,7 +20,7 @@ where
     /// The implementation will decide whether to cache statement or not
     /// * `prepare_fn` - will be invoked if prepared statement wasn't cached already
     ///   * first argument is sql query string
-    ///   * second argument specify whether statement will be cached (true) or not (false).
+    ///   * second argument specifies whether statement will be cached (true) or not (false).
     fn get(
         &mut self,
         key: StatementCacheKey<DB>,
@@ -131,12 +131,15 @@ mod testing_utils {
     }
 
     pub fn count_cache_calls(conn: &mut impl Connection) -> usize {
-        conn.instrumentation()
+        if let Some(events) = conn
+            .instrumentation()
             .as_any()
             .downcast_ref::<RecordCacheEvents>()
-            .unwrap()
-            .list
-            .len()
+        {
+            events.list.len()
+        } else {
+            0
+        }
     }
 }
 
