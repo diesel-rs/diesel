@@ -38,37 +38,40 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         }
     }
 
-    Ok(wrap_in_dummy_mod(quote! {
-        use diesel::associations::{HasTable, Identifiable};
+    Ok(wrap_in_dummy_mod(
+        quote! {
+            use diesel::associations::{HasTable, Identifiable};
 
-        impl #impl_generics HasTable for #struct_name #ty_generics
-        #where_clause
-        {
-            type Table = #table_name::table;
-
-            fn table() -> Self::Table {
-                #table_name::table
-            }
-        }
-
-        impl #ref_generics Identifiable for &'ident #struct_name #ty_generics
-        #where_clause
-        {
-            type Id = (#(#field_ty),*);
-
-            fn id(self) -> Self::Id {
-                (#(#field_name),*)
-            }
-        }
-
-        impl #ref_generics Identifiable for &'_ &'ident #struct_name #ty_generics
+            impl #impl_generics HasTable for #struct_name #ty_generics
             #where_clause
-        {
-            type Id = (#(#field_ty),*);
+            {
+                type Table = #table_name::table;
 
-            fn id(self) -> Self::Id {
-                (#(#field_name),*)
+                fn table() -> Self::Table {
+                    #table_name::table
+                }
             }
-        }
-    }))
+
+            impl #ref_generics Identifiable for &'ident #struct_name #ty_generics
+            #where_clause
+            {
+                type Id = (#(#field_ty),*);
+
+                fn id(self) -> Self::Id {
+                    (#(#field_name),*)
+                }
+            }
+
+            impl #ref_generics Identifiable for &'_ &'ident #struct_name #ty_generics
+                #where_clause
+            {
+                type Id = (#(#field_ty),*);
+
+                fn id(self) -> Self::Id {
+                    (#(#field_name),*)
+                }
+            }
+        },
+        model.diesel_path.as_ref(),
+    ))
 }

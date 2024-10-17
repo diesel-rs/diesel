@@ -18,13 +18,16 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         .map(|table_name| derive_into_single_table(&item, &model, table_name))
         .collect::<Result<Vec<_>>>()?;
 
-    Ok(wrap_in_dummy_mod(quote! {
-        use diesel::insertable::Insertable;
-        use diesel::internal::derives::insertable::UndecoratedInsertRecord;
-        use diesel::prelude::*;
+    Ok(wrap_in_dummy_mod(
+        quote! {
+            use diesel::insertable::Insertable;
+            use diesel::internal::derives::insertable::UndecoratedInsertRecord;
+            use diesel::prelude::*;
 
-        #(#tokens)*
-    }))
+            #(#tokens)*
+        },
+        model.diesel_path.as_ref(),
+    ))
 }
 
 fn derive_into_single_table(
@@ -118,7 +121,10 @@ fn derive_into_single_table(
                     treat_none_as_default_value,
                 )?);
 
-                generate_borrowed_insert = false; // as soon as we hit one field with #[diesel(serialize_as)] there is no point in generating the impl of Insertable for borrowed structs
+                generate_borrowed_insert = false; // as soon as we hit one field with
+                                                  // #[diesel(serialize_as)] there is no point in
+                                                  // generating the impl of Insertable for borrowed
+                                                  // structs
             }
             (Some(AttributeSpanWrapper { attribute_span, .. }), true) => {
                 return Err(syn::Error::new(
