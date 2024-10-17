@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["WithCacheStrategy","WithoutCacheStrategy"],"trait":["StatementCacheStrategy"]};
