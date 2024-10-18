@@ -1,4 +1,4 @@
-use crate::deserialize::{self, FromSql};
+use crate::deserialize::{self, Defaultable, FromSql};
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
@@ -123,6 +123,20 @@ impl ToSql<sql_types::BigInt, Pg> for i64 {
         out.write_i64::<NetworkEndian>(*self)
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<_>)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl Defaultable for i32 {
+    fn default_value() -> Self {
+        Self::default()
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl Defaultable for i64 {
+    fn default_value() -> Self {
+        Self::default()
     }
 }
 

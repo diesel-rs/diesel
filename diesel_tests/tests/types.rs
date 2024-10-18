@@ -1422,10 +1422,45 @@ fn test_range_from_sql() {
         query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
     );
 
-    let query = "SELECT '(1,1]'::int4range";
+    let query = "SELECT '[2,1)'::int4range";
     assert!(sql::<Range<Int4>>(query)
         .load::<(Bound<i32>, Bound<i32>)>(connection)
         .is_err());
+
+    let query = "'empty'::int4range";
+    let expected_value = (Bound::Excluded(0), Bound::Excluded(0));
+    assert_eq!(
+        expected_value,
+        query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
+    );
+
+    let query = "'(1,1)'::int4range";
+    let expected_value = (Bound::Excluded(0), Bound::Excluded(0));
+    assert_eq!(
+        expected_value,
+        query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
+    );
+
+    let query = "'(1,1]'::int4range";
+    let expected_value = (Bound::Excluded(0), Bound::Excluded(0));
+    assert_eq!(
+        expected_value,
+        query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
+    );
+
+    let query = "'[1,1)'::int4range";
+    let expected_value = (Bound::Excluded(0), Bound::Excluded(0));
+    assert_eq!(
+        expected_value,
+        query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
+    );
+
+    let query = "'[1,1]'::int4range";
+    let expected_value = (Bound::Included(1), Bound::Excluded(2));
+    assert_eq!(
+        expected_value,
+        query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
+    );
 }
 
 #[cfg(feature = "postgres")]

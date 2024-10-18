@@ -5,7 +5,7 @@ extern crate chrono;
 use self::chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 
 use super::{PgDate, PgInterval, PgTime, PgTimestamp};
-use crate::deserialize::{self, FromSql};
+use crate::deserialize::{self, Defaultable, FromSql};
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, Output, ToSql};
 use crate::sql_types::{Date, Interval, Time, Timestamp, Timestamptz};
@@ -62,6 +62,13 @@ impl ToSql<Timestamptz, Pg> for NaiveDateTime {
 }
 
 #[cfg(all(feature = "chrono", feature = "postgres_backend"))]
+impl Defaultable for NaiveDateTime {
+    fn default_value() -> Self {
+        Self::default()
+    }
+}
+
+#[cfg(all(feature = "chrono", feature = "postgres_backend"))]
 impl FromSql<Timestamptz, Pg> for DateTime<Utc> {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         let naive_date_time = <NaiveDateTime as FromSql<Timestamptz, Pg>>::from_sql(bytes)?;
@@ -70,10 +77,24 @@ impl FromSql<Timestamptz, Pg> for DateTime<Utc> {
 }
 
 #[cfg(all(feature = "chrono", feature = "postgres_backend"))]
+impl Defaultable for DateTime<Utc> {
+    fn default_value() -> Self {
+        Self::default()
+    }
+}
+
+#[cfg(all(feature = "chrono", feature = "postgres_backend"))]
 impl FromSql<Timestamptz, Pg> for DateTime<Local> {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         let naive_date_time = <NaiveDateTime as FromSql<Timestamptz, Pg>>::from_sql(bytes)?;
         Ok(Local::from_utc_datetime(&Local, &naive_date_time))
+    }
+}
+
+#[cfg(all(feature = "chrono", feature = "postgres_backend"))]
+impl Defaultable for DateTime<Local> {
+    fn default_value() -> Self {
+        Self::default()
     }
 }
 
@@ -136,6 +157,13 @@ impl FromSql<Date, Pg> for NaiveDate {
                 Err(error_message.into())
             }
         }
+    }
+}
+
+#[cfg(all(feature = "chrono", feature = "postgres_backend"))]
+impl Defaultable for NaiveDate {
+    fn default_value() -> Self {
+        Self::default()
     }
 }
 

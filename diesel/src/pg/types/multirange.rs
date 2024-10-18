@@ -2,7 +2,7 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::io::Write;
 use std::ops::Bound;
 
-use crate::deserialize::{self, FromSql};
+use crate::deserialize::{self, Defaultable, FromSql};
 use crate::expression::bound::Bound as SqlBound;
 use crate::expression::AsExpression;
 use crate::pg::{Pg, PgTypeMetadata, PgValue};
@@ -68,7 +68,7 @@ multirange_as_expressions!(std::ops::RangeTo<T>);
 #[cfg(feature = "postgres_backend")]
 impl<T, ST> FromSql<Multirange<ST>, Pg> for Vec<(Bound<T>, Bound<T>)>
 where
-    T: FromSql<ST, Pg>,
+    T: FromSql<ST, Pg> + Defaultable,
 {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
