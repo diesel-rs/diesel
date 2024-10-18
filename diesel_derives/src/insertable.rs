@@ -2,7 +2,7 @@ use crate::attrs::AttributeSpanWrapper;
 use crate::field::Field;
 use crate::model::Model;
 use crate::util::{inner_of_option_ty, is_option_ty, wrap_in_dummy_mod};
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use quote::quote_spanned;
 use syn::parse_quote;
@@ -177,7 +177,7 @@ fn derive_into_single_table(
 
 fn field_ty_embed(field: &Field, lifetime: Option<TokenStream>) -> TokenStream {
     let field_ty = &field.ty;
-    let span = field.span;
+    let span = Span::mixed_site().located_at(field.span);
     quote_spanned!(span=> #lifetime #field_ty)
 }
 
@@ -193,7 +193,7 @@ fn field_ty_serialize_as(
     treat_none_as_default_value: bool,
 ) -> Result<TokenStream> {
     let column_name = field.column_name()?.to_ident()?;
-    let span = field.span;
+    let span = Span::mixed_site().located_at(field.span);
     if treat_none_as_default_value {
         let inner_ty = inner_of_option_ty(ty);
 
@@ -242,7 +242,7 @@ fn field_ty(
     treat_none_as_default_value: bool,
 ) -> Result<TokenStream> {
     let column_name = field.column_name()?.to_ident()?;
-    let span = field.span;
+    let span = Span::mixed_site().located_at(field.span);
     if treat_none_as_default_value {
         let inner_ty = inner_of_option_ty(&field.ty);
 

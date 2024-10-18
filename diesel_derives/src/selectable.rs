@@ -1,4 +1,4 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::spanned::Spanned;
 use syn::DeriveInput;
@@ -51,7 +51,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             .filter(|(f, _)| !f.embed())
             .flat_map(|(f, ty)| {
                 backends.iter().map(move |b| {
-                    let span = f.ty.span();
+                    let span = Span::mixed_site().located_at(f.ty.span());
                     let field_ty = to_field_ty_bound(f.ty_for_deserialize())?;
                     Ok(syn::parse_quote_spanned! {span =>
                         #field_ty: diesel::deserialize::FromSqlRow<diesel::dsl::SqlTypeOf<#ty>, #b>
