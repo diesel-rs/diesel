@@ -5,12 +5,6 @@ CREATE TABLE self_referential_fk (
 
 ALTER TABLE self_referential_fk ADD CONSTRAINT self_referential_fk_parent_id_fk FOREIGN KEY (parent_id) REFERENCES self_referential_fk (id);
 
-ALTER TABLE posts ADD CONSTRAINT title_is_unique UNIQUE (title);
-CREATE TABLE fk_doesnt_reference_pk (
-  id INTEGER PRIMARY KEY AUTO_INCREMENT,
-  random VARCHAR(200) REFERENCES posts (title)
-);
-
 CREATE TABLE composite_fk (
   id INTEGER PRIMARY KEY AUTO_INCREMENT,
   post_id INTEGER NOT NULL,

@@ -285,7 +285,6 @@ fn copy_to_csv_all_options() {
     let mut out = String::new();
     let mut copy = diesel::copy_to(users::table)
         .with_format(CopyFormat::Csv)
-        .with_freeze(true)
         .with_delimiter(';')
         .with_quote('"')
         .with_escape('\\')
