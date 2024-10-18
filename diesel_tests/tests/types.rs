@@ -1073,7 +1073,7 @@ fn pg_macaddress_to_sql_macaddress() {
 #[test]
 #[cfg(feature = "postgres")]
 fn pg_macaddress8_from_sql() {
-    let query = "'08:00:2b:01:02:03:04:05'::macaddr";
+    let query = "'08:00:2b:01:02:03:04:05'::macaddr8";
     let expected_value = [0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05];
     assert_eq!(
         expected_value,
@@ -1084,7 +1084,7 @@ fn pg_macaddress8_from_sql() {
 #[test]
 #[cfg(feature = "postgres")]
 fn pg_macaddress8_to_sql_macaddress() {
-    let expected_value = "'08:00:2b:01:02:03:04:05'::macaddr";
+    let expected_value = "'08:00:2b:01:02:03:04:05'::macaddr8";
     let value = [0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05];
     assert!(query_to_sql_equality::<MacAddr, [u8; 8]>(
         expected_value,
