@@ -187,7 +187,7 @@ mod pg_types {
         mk_macaddr
     );
     test_round_trip!(
-        macaddr_roundtrips,
+        macaddr8_roundtrips,
         MacAddr8,
         (u8, u8, u8, u8, u8, u8, u8, u8),
         mk_macaddr
