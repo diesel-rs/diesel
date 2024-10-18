@@ -186,6 +186,12 @@ mod pg_types {
         (u8, u8, u8, u8, u8, u8),
         mk_macaddr
     );
+    test_round_trip!(
+        macaddr_roundtrips,
+        MacAddr8,
+        (u8, u8, u8, u8, u8, u8, u8, u8),
+        mk_macaddr
+    );
     test_round_trip!(cidr_v4_roundtrips, Cidr, (u8, u8, u8, u8), mk_ipv4);
     test_round_trip!(
         cidr_v4_roundtrips_ipnet,

@@ -27,6 +27,7 @@ table! {
         inet_col -> Inet,
         jsonb_col -> Jsonb,
         macaddr_col -> MacAddr,
+        macaddr8_col -> MacAddr8,
         money_col -> Money,
         oid_col -> Oid,
         timestamptz_col -> Timestamptz,

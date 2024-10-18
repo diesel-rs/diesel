@@ -11,6 +11,7 @@ mod ipnet_address;
 #[cfg(feature = "serde_json")]
 mod json;
 mod mac_addr;
+mod mac_addr_8;
 #[doc(hidden)]
 pub(in crate::pg) mod money;
 mod multirange;
@@ -406,6 +407,54 @@ pub mod sql_types {
 
     /// Alias for `MacAddr` to be able to use it with `diesel print-schema`.
     pub type Macaddr = MacAddr;
+
+    /// The [`MACADDR8`](https://www.postgresql.org/docs/current/static/datatype-net-types.html) SQL type.
+    ///
+    /// ### [`ToSql`] impls
+    ///
+    /// - `[u8; 8]`
+    ///
+    /// ### [`FromSql`] impls
+    ///
+    /// - `[u8; 8]`
+    ///
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// table! {
+    ///     devices {
+    ///         id -> Integer,
+    ///         macaddr -> MacAddr8,
+    ///     }
+    /// }
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// #     use diesel::insert_into;
+    /// #     use self::devices::dsl::*;
+    /// #     let connection = &mut connection_no_data();
+    /// #     diesel::sql_query("CREATE TABLE devices (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         macaddr MACADDR8 NOT NULL
+    /// #     )").execute(connection)?;
+    /// let inserted_macaddr = insert_into(devices)
+    ///     .values(macaddr.eq([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05]))
+    ///     .returning(macaddr)
+    ///     .get_result::<[u8; 8]>(connection)?;
+    /// assert_eq!([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x0], inserted_macaddr);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[diesel(postgres_type(oid = 774, array_oid = 775))]
+    pub struct MacAddr8;
+
+    /// Alias for `MacAddr` to be able to use it with `diesel print-schema`.
+    pub type Macaddr8 = MacAddr8;
 
     /// The [`INET`](https://www.postgresql.org/docs/current/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"` or `feature = "ipnet-address"`.
     ///
