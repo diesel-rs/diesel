@@ -160,6 +160,11 @@ impl<'a> StatementUse<'a> {
             .map_err(|e| Error::DeserializationError(Box::new(e)))
     }
 
+    /// SAFETY:  This should only be called for INSERT queries.
+    pub(in crate::mysql::connection) unsafe fn insert_id(&self) -> u64 {
+        ffi::mysql_stmt_insert_id(self.inner.stmt.as_ptr())
+    }
+
     /// This function should be called after `execute` only
     /// otherwise it's not guaranteed to return a valid result
     pub(in crate::mysql::connection) unsafe fn result_size(&mut self) -> QueryResult<usize> {
