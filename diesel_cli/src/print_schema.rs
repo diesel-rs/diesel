@@ -99,6 +99,7 @@ fn pg_diesel_types() -> HashSet<&'static str> {
     types.insert("Inet");
     types.insert("Jsonb");
     types.insert("MacAddr");
+    types.insert("MacAddr8");
     types.insert("Money");
     types.insert("Oid");
     types.insert("Range");
