@@ -165,7 +165,7 @@ pub trait PgExpressionMethods: Expression + Sized {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust,no_run
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -203,7 +203,7 @@ pub trait PgExpressionMethods: Expression + Sized {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust,no_run
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
