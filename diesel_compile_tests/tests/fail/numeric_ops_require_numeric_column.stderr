@@ -13,6 +13,3 @@ note: an implementation of `std::ops::Add` might be missing for `columns::name`
    |         ^^^^ must implement `std::ops::Add`
 note: the trait `std::ops::Add` must be implemented
   --> $RUST/core/src/ops/arith.rs
-   |
-   | pub trait Add<Rhs = Self> {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^
