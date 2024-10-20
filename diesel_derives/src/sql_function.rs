@@ -1,11 +1,14 @@
-use proc_macro2::TokenStream;
-use quote::quote;
-use quote::ToTokens;
-use syn::parse::{Parse, ParseStream, Result};
-use syn::punctuated::Punctuated;
-use syn::{
-    parenthesized, parse_quote, Attribute, GenericArgument, Generics, Ident, Meta, MetaNameValue,
-    PathArguments, Token, Type,
+use {
+    proc_macro2::TokenStream,
+    quote::{quote, ToTokens},
+    syn::{
+        parenthesized,
+        parse::{Parse, ParseStream, Result},
+        parse_quote,
+        punctuated::Punctuated,
+        Attribute, GenericArgument, Generics, Ident, Meta, MetaNameValue, PathArguments, Token,
+        Type,
+    },
 };
 
 pub(crate) fn expand(input: SqlFunctionDecl, legacy_helper_type_and_module: bool) -> TokenStream {
@@ -405,7 +408,7 @@ pub(crate) fn expand(input: SqlFunctionDecl, legacy_helper_type_and_module: bool
                     #[doc = #helper_type_doc]
                     pub type #fn_name #ty_generics = #internals_module_name::#fn_name <
                         #(#type_args,)*
-                        #(<#arg_name as ::diesel::expression::AsExpression<#arg_type>>::Expression,)*
+                        #(<#arg_name as diesel::expression::AsExpression<#arg_type>>::Expression,)*
                     >;
                 }),
                 quote! { #fn_name },
@@ -419,7 +422,7 @@ pub(crate) fn expand(input: SqlFunctionDecl, legacy_helper_type_and_module: bool
         pub #fn_token #fn_name #impl_generics (#(#args_iter,)*)
             -> #return_type_path #ty_generics
         #where_clause
-            #(#arg_name: ::diesel::expression::AsExpression<#arg_type>,)*
+            #(#arg_name: diesel::expression::AsExpression<#arg_type>,)*
         {
             #internals_module_name::#fn_name {
                 #(#arg_struct_assign,)*
