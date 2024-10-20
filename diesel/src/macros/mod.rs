@@ -112,7 +112,7 @@ macro_rules! joinable_inner {
     ) => {
         impl $crate::JoinTo<$right_table_ty> for $left_table_ty {
             type FromClause = $right_table_ty;
-            type OnClause = $crate::dsl::Eq<
+            type OnClause = $crate::dsl::EqCoerce<
                 $crate::internal::table_macro::NullableExpression<$foreign_key>,
                 $crate::internal::table_macro::NullableExpression<$primary_key_ty>,
             >;
@@ -122,7 +122,9 @@ macro_rules! joinable_inner {
 
                 (
                     rhs,
-                    $foreign_key.nullable().eq($primary_key_expr.nullable()),
+                    $foreign_key
+                        .nullable()
+                        .eq_coerce($primary_key_expr.nullable()),
                 )
             }
         }
