@@ -1,14 +1,11 @@
-use {
-    proc_macro2::TokenStream,
-    quote::{quote, ToTokens},
-    syn::{
-        parenthesized,
-        parse::{Parse, ParseStream, Result},
-        parse_quote,
-        punctuated::Punctuated,
-        Attribute, GenericArgument, Generics, Ident, Meta, MetaNameValue, PathArguments, Token,
-        Type,
-    },
+use proc_macro2::TokenStream;
+use quote::quote;
+use quote::ToTokens;
+use syn::parse::{Parse, ParseStream, Result};
+use syn::punctuated::Punctuated;
+use syn::{
+    parenthesized, parse_quote, Attribute, GenericArgument, Generics, Ident, Meta, MetaNameValue,
+    PathArguments, Token, Type,
 };
 
 pub(crate) fn expand(input: SqlFunctionDecl, legacy_helper_type_and_module: bool) -> TokenStream {
