@@ -2238,8 +2238,7 @@ define_sql_function! {
 
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
-    /// This form of jsonb_object takes keys and values pairwise from two separate arrays.
-    /// In all other respects it is identical to the one-argument form.
+    /// This function row_to_json takes Record type as an Input o convert it to JSON.
     ///
     /// # Example
     ///
@@ -2282,6 +2281,6 @@ define_sql_function! {
     ///     Ok(())
     /// # }
     /// ```
-    #[sql_name = "jsonb_object"]
-    fn row_to_json<R: RecordOrNullableRecord + SingleValue + CombinedNullableValue<Record<Text>, Jsonb>>(record: R) -> R::Out;
+    #[sql_name = "row_to_json"]
+    fn row_to_json<R: RecordOrNullableRecord + SingleValue + CombinedNullableValue<Record<(Text, Integer, Date)>, Jsonb>>(record: R) -> R::Out;
 }

@@ -53,7 +53,7 @@ table! {
         timestamptz -> Timestamptz,
         name -> Text,
         text_array -> Array<Text>,
-        record -> Record,
+        record -> Record<(Integer, Text, Date)>,
     }
 }
 
