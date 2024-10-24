@@ -115,12 +115,15 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         }
     });
 
-    Ok(wrap_in_dummy_mod(quote! {
-        use diesel::expression::AsExpression;
-        use diesel::internal::derives::as_expression::Bound;
-        use diesel::sql_types::Nullable;
-        use diesel::serialize::{self, ToSql, Output};
+    Ok(wrap_in_dummy_mod(
+        quote! {
+            use diesel::expression::AsExpression;
+            use diesel::internal::derives::as_expression::Bound;
+            use diesel::sql_types::Nullable;
+            use diesel::serialize::{self, ToSql, Output};
 
-        #(#tokens)*
-    }))
+            #(#tokens)*
+        },
+        model.diesel_path.as_ref(),
+    ))
 }

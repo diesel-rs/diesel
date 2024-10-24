@@ -17,24 +17,27 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let mysql_tokens = mysql_tokens(&item, &model);
     let pg_tokens = pg_tokens(&item, &model);
 
-    Ok(wrap_in_dummy_mod(quote! {
-        impl #impl_generics diesel::sql_types::SqlType
-            for #struct_name #ty_generics
-        #where_clause
-        {
-            type IsNull = diesel::sql_types::is_nullable::NotNull;
-        }
+    Ok(wrap_in_dummy_mod(
+        quote! {
+            impl #impl_generics diesel::sql_types::SqlType
+                for #struct_name #ty_generics
+            #where_clause
+            {
+                type IsNull = diesel::sql_types::is_nullable::NotNull;
+            }
 
-        impl #impl_generics diesel::sql_types::SingleValue
-            for #struct_name #ty_generics
-        #where_clause
-        {
-        }
+            impl #impl_generics diesel::sql_types::SingleValue
+                for #struct_name #ty_generics
+            #where_clause
+            {
+            }
 
-        #sqlite_tokens
-        #mysql_tokens
-        #pg_tokens
-    }))
+            #sqlite_tokens
+            #mysql_tokens
+            #pg_tokens
+        },
+        model.diesel_path.as_ref(),
+    ))
 }
 
 fn sqlite_tokens(item: &DeriveInput, model: &Model) -> Option<TokenStream> {

@@ -28,6 +28,7 @@ pub struct Model {
     pub sqlite_type: Option<SqliteType>,
     pub postgres_type: Option<PostgresType>,
     pub check_for_backend: Option<syn::punctuated::Punctuated<syn::TypePath, syn::Token![,]>>,
+    pub diesel_path: Option<syn::Path>,
     fields: Vec<Field>,
 }
 
@@ -72,6 +73,7 @@ impl Model {
         let mut sqlite_type = None;
         let mut postgres_type = None;
         let mut check_for_backend = None;
+        let mut diesel_path = None;
 
         for attr in parse_attributes(attrs)? {
             match attr.item {
@@ -103,6 +105,9 @@ impl Model {
                 StructAttr::CheckForBackend(_, b) => {
                     check_for_backend = Some(b);
                 }
+                StructAttr::DieselPath(_, path) => {
+                    diesel_path = Some(path);
+                }
             }
         }
 
@@ -124,6 +129,7 @@ impl Model {
             postgres_type,
             fields: fields_from_item_data(fields)?,
             check_for_backend,
+            diesel_path,
         })
     }
 
