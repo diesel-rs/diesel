@@ -3643,8 +3643,7 @@ pub(in crate::pg) mod private {
     impl TextArrayOrNullableTextArray for Nullable<Array<Nullable<Text>>> {}
 
     #[diagnostic::on_unimplemented(
-        message = "`{Self}` is neither `Record<Text>`, `Record<Nullable<Text>>`,\
-                   `Nullable<Record<Text>>` nor `diesel::sql_types::Nullable<Record<Nullable<Text>>>`",
+        message = "`{Self}` is neither `Record<T>` nor `Nullable<Record<T>>`",
         note = "try to provide an expression that produces one of the expected sql types"
     )]
     pub trait RecordOrNullableRecord {}
