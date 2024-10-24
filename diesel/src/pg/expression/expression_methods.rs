@@ -4,7 +4,7 @@ pub(in crate::pg) use self::private::{
     ArrayOrNullableArray, CombinedNullableValue, InetOrCidr, JsonIndex, JsonOrNullableJson,
     JsonOrNullableJsonOrJsonbOrNullableJsonb, JsonRemoveIndex, JsonbOrNullableJsonb,
     MaybeNullableValue, MultirangeOrNullableMultirange, MultirangeOrRangeMaybeNullable,
-    RangeHelper, RangeOrNullableRange, TextArrayOrNullableTextArray, TextOrNullableText,
+    RangeOrMultirange, RangeOrNullableRange, TextArrayOrNullableTextArray, TextOrNullableText,
 };
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
@@ -832,45 +832,28 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
-    /// #     use std::collections::Bound;
-    /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
+    /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #
-    /// diesel::insert_into(posts)
-    ///     .values(versions.eq((Bound::Included(5), Bound::Unbounded)))
-    ///     .execute(conn)?;
+    /// #     let conn = &mut establish_connection();
+    /// assert!(diesel::select((1..5).into_sql::<Range<Integer>>().contains(4)).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select((1..5).into_sql::<Range<Integer>>().contains(8)).first::<bool>(conn).unwrap());
     ///
-    /// let cool_posts = posts.select(id)
-    ///     .filter(versions.contains(42))
-    ///     .load::<i32>(conn)?;
-    /// assert_eq!(vec![1], cool_posts);
+    /// assert!(diesel::select((vec![1..5]).into_sql::<Multirange<Integer>>().contains(4)).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select((vec![1..5]).into_sql::<Multirange<Integer>>().contains(8)).first::<bool>(conn).unwrap());
     ///
-    /// let amazing_posts = posts.select(id)
-    ///     .filter(versions.contains(1))
-    ///     .load::<i32>(conn)?;
-    /// assert!(amazing_posts.is_empty());
     /// #     Ok(())
     /// # }
     /// ```
     fn contains<T>(self, other: T) -> dsl::RangeContains<Self, T>
     where
-        Self::SqlType: RangeHelper,
-        <Self::SqlType as RangeHelper>::Inner: SqlType + TypedExpressionType,
-        T: AsExpression<<Self::SqlType as RangeHelper>::Inner>,
+        Self::SqlType: RangeOrMultirange,
+        <Self::SqlType as RangeOrMultirange>::Inner: SqlType + TypedExpressionType,
+        T: AsExpression<<Self::SqlType as RangeOrMultirange>::Inner>,
     {
         Grouped(Contains::new(self, other.as_expression()))
     }
@@ -913,37 +896,26 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
-    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
-    /// #
-    /// diesel::insert_into(posts)
-    ///     .values(versions.eq((Bound::Included(5), Bound::Unbounded)))
-    ///     .execute(conn)?;
+    /// assert!(diesel::select(
+    ///     (1..5).into_sql::<Range<Integer>>().contains_range(1..5)
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     (1..5).into_sql::<Range<Integer>>().contains_range(3..7)
+    ///     ).first::<bool>(conn).unwrap());
     ///
-    /// let cool_posts = posts.select(id)
-    ///     .filter(versions.contains_range((Bound::Included(10), Bound::Included(50))))
-    ///     .load::<i32>(conn)?;
-    /// assert_eq!(vec![1], cool_posts);
-    ///
-    /// let amazing_posts = posts.select(id)
-    ///     .filter(versions.contains_range((Bound::Included(2), Bound::Included(7))))
-    ///     .load::<i32>(conn)?;
-    /// assert!(amazing_posts.is_empty());
+    /// assert!(diesel::select(
+    ///     vec![1..5].into_sql::<Multirange<Integer>>().contains_range(vec![1..5])
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     vec![1..5].into_sql::<Multirange<Integer>>().contains_range(vec![3..7])
+    ///     ).first::<bool>(conn).unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -993,37 +965,26 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
-    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
-    /// #
-    /// diesel::insert_into(posts)
-    ///     .values(versions.eq((Bound::Included(5), Bound::Unbounded)))
-    ///     .execute(conn)?;
+    /// assert!(diesel::select(
+    ///     (1..5).into_sql::<Range<Integer>>().is_contained_by(1..5)
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     (1..5).into_sql::<Range<Integer>>().is_contained_by(3..7)
+    ///     ).first::<bool>(conn).unwrap());
     ///
-    /// let cool_posts = posts.select(id)
-    ///     .filter(versions.is_contained_by((Bound::Included(1), Bound::Unbounded)))
-    ///     .load::<i32>(conn)?;
-    /// assert_eq!(vec![1], cool_posts);
-    ///
-    /// let amazing_posts = posts.select(id)
-    ///     .filter(versions.is_contained_by((Bound::Included(1), Bound::Included(2))))
-    ///     .load::<i32>(conn)?;
-    /// assert!(amazing_posts.is_empty());
+    /// assert!(diesel::select(
+    ///     vec![1..5].into_sql::<Multirange<Integer>>().is_contained_by(vec![1..5])
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     vec![1..5].into_sql::<Multirange<Integer>>().is_contained_by(vec![3..7])
+    ///     ).first::<bool>(conn).unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1084,41 +1045,26 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
-    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
-    /// #
-    /// diesel::insert_into(posts)
-    ///     .values(&vec![
-    ///         (versions.eq((Bound::Included(1), Bound::Included(2)))),
-    ///         (versions.eq((Bound::Included(3), Bound::Included(4)))),
-    ///         (versions.eq((Bound::Included(5), Bound::Included(6))))
-    ///     ])
-    ///     .execute(conn)?;
+    /// assert!(diesel::select(
+    ///     (1..5).into_sql::<Range<Integer>>().overlaps_with(3..7)
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     (1..5).into_sql::<Range<Integer>>().overlaps_with(10..15)
+    ///     ).first::<bool>(conn).unwrap());
     ///
-    /// let data = posts.select(id)
-    ///     .filter(versions.overlaps_with((Bound::Included(1), Bound::Included(4))))
-    ///     .load::<i32>(conn)?;
-    /// assert_eq!(vec![1, 2], data);
-    ///
-    /// let data = posts.select(id)
-    ///     .filter(versions.overlaps_with((Bound::Included(7), Bound::Included(8))))
-    ///     .load::<i32>(conn)?;
-    /// assert!(data.is_empty());
+    /// assert!(diesel::select(
+    ///     vec![1..5].into_sql::<Multirange<Integer>>().overlaps_with(vec![3..7])
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     vec![1..5].into_sql::<Multirange<Integer>>().overlaps_with(vec![10..15])
+    ///     ).first::<bool>(conn).unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1176,39 +1122,33 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
-    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
     /// #
-    /// diesel::insert_into(posts)
-    ///     .values(versions.eq((Bound::Included(1), Bound::Excluded(20))))
-    ///     .execute(conn)?;
+    /// assert!(diesel::select(
+    ///     (1..20).into_sql::<Range<Integer>>().range_extends_right_to(18..20)
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(diesel::select(
+    ///     (1..20).into_sql::<Range<Integer>>().range_extends_right_to(25..30)
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     (1..20).into_sql::<Range<Integer>>().range_extends_right_to(-10..0)
+    ///     ).first::<bool>(conn).unwrap());
     ///
-    /// let cool_posts = posts.select(versions.range_extends_right_to((Bound::Included(18), Bound::Excluded(20))))
-    ///     .get_result::<bool>(conn)?;
-    /// assert_eq!(true, cool_posts);
-    ///
-    /// let cool_posts = posts.select(versions.range_extends_right_to((Bound::Included(25), Bound::Excluded(30))))
-    ///     .get_result::<bool>(conn)?;
-    /// assert_eq!(true, cool_posts);
-    ///
-    /// let amazing_posts = posts.select(versions.range_extends_right_to((Bound::Included(-10), Bound::Excluded(0))))
-    ///     .get_result::<bool>(conn)?;
-    /// assert_eq!(false, amazing_posts);
+    /// assert!(diesel::select(
+    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_right_to(vec![18..20])
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(diesel::select(
+    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_right_to(vec![25..30])
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_right_to(vec![-10..0])
+    ///     ).first::<bool>(conn).unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1266,39 +1206,33 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
-    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
     /// #
-    /// diesel::insert_into(posts)
-    ///     .values(versions.eq((Bound::Included(1), Bound::Excluded(20))))
-    ///     .execute(conn)?;
+    /// assert!(diesel::select(
+    ///     (1..20).into_sql::<Range<Integer>>().range_extends_left_to(-10..5)
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(diesel::select(
+    ///     (1..20).into_sql::<Range<Integer>>().range_extends_left_to(-10..-5)
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     (1..20).into_sql::<Range<Integer>>().range_extends_left_to(25..30)
+    ///     ).first::<bool>(conn).unwrap());
     ///
-    /// let cool_posts = posts.select(versions.range_extends_left_to((Bound::Included(-10), Bound::Excluded(5))))
-    ///     .get_result::<bool>(conn)?;
-    /// assert_eq!(true, cool_posts);
-    ///
-    /// let cool_posts = posts.select(versions.range_extends_left_to((Bound::Included(-10), Bound::Excluded(-5))))
-    ///     .get_result::<bool>(conn)?;
-    /// assert_eq!(true, cool_posts);
-    ///
-    /// let amazing_posts = posts.select(versions.range_extends_left_to((Bound::Included(25), Bound::Excluded(30))))
-    ///     .get_result::<bool>(conn)?;
-    /// assert_eq!(false, amazing_posts);
+    /// assert!(diesel::select(
+    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_left_to(vec![-10..5])
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(diesel::select(
+    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_left_to(vec![-10..-5])
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_left_to(vec![25..30])
+    ///     ).first::<bool>(conn).unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1528,35 +1462,26 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
-    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
-    /// #
-    /// diesel::insert_into(posts)
-    ///     .values(&vec![
-    ///         (versions.eq((Bound::Included(1), Bound::Excluded(2)))),
-    ///         (versions.eq((Bound::Included(4), Bound::Excluded(7))))
-    ///     ])
-    ///     .execute(conn)?;
+    /// assert!(diesel::select(
+    ///     (1..2).into_sql::<Range<Integer>>().range_adjacent(2..=6)
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     (4..7).into_sql::<Range<Integer>>().range_adjacent(2..=6)
+    ///     ).first::<bool>(conn).unwrap());
     ///
-    /// let data = posts.select(versions.range_adjacent((Bound::Included(2),Bound::Included(6))))
-    ///     .load::<bool>(conn)?;
-    /// let expected = vec![true, false];
-    /// assert_eq!(expected, data);
+    /// assert!(diesel::select(
+    ///     vec![1..2].into_sql::<Multirange<Integer>>().range_adjacent(vec![2..=6])
+    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(!diesel::select(
+    ///     vec![4..7].into_sql::<Multirange<Integer>>().range_adjacent(vec![2..=6])
+    ///     ).first::<bool>(conn).unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1595,34 +1520,20 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
-    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
-    /// #
-    /// diesel::insert_into(posts)
-    ///     .values(&vec![
-    ///         (versions.eq((Bound::Included(1), Bound::Included(2))))
-    ///     ])
-    ///     .execute(conn)?;
+    /// assert!(diesel::select(
+    ///     (1..=2).into_sql::<Range<Integer>>().union_range(2..=6).eq(1..=6)
+    ///     ).first::<bool>(conn).unwrap());
     ///
-    /// let data = posts.select(versions.union_range((Bound::Included(2),Bound::Included(6))))
-    ///     .load::<(Bound<i32>,Bound<i32>)>(conn)?;
-    /// let expected_range = (Bound::Included(1),Bound::Excluded(7));
-    /// assert_eq!(expected_range, data[0]);
+    /// assert!(diesel::select(
+    ///     vec![1..=2].into_sql::<Multirange<Integer>>().union_range(vec![1..=6]).eq(vec![1..=6])
+    ///     ).first::<bool>(conn).unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1664,34 +1575,20 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
-    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
-    /// #
-    /// diesel::insert_into(posts)
-    ///     .values(&vec![
-    ///         (versions.eq((Bound::Included(1), Bound::Included(8))))
-    ///     ])
-    ///     .execute(conn)?;
+    /// assert!(diesel::select(
+    ///     (1..=8).into_sql::<Range<Integer>>().difference_range(3..=8).eq(1..3)
+    ///     ).first::<bool>(conn).unwrap());
     ///
-    /// let data = posts.select(versions.difference_range((Bound::Included(3),Bound::Included(8))))
-    ///     .load::<(Bound<i32>,Bound<i32>)>(conn)?;
-    /// let expected_range = (Bound::Included(1),Bound::Excluded(3));
-    /// assert_eq!(expected_range, data[0]);
+    /// assert!(diesel::select(
+    ///     vec![1..=8].into_sql::<Multirange<Integer>>().difference_range(vec![3..=8]).eq(vec![1..3])
+    ///     ).first::<bool>(conn).unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1736,34 +1633,20 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         versions -> Range<Integer>,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::posts::dsl::*;
-    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
-    /// #
-    /// diesel::insert_into(posts)
-    ///     .values(&vec![
-    ///         (versions.eq((Bound::Included(1), Bound::Included(8))))
-    ///     ])
-    ///     .execute(conn)?;
+    /// assert!(diesel::select(
+    ///     (1..=8).into_sql::<Range<Integer>>().intersection_range(3..=8).eq(3..=8)
+    ///     ).first::<bool>(conn).unwrap());
     ///
-    /// let data = posts.select(versions.intersection_range((Bound::Included(3),Bound::Included(8))))
-    ///     .load::<(Bound<i32>,Bound<i32>)>(conn)?;
-    /// let expected_range = (Bound::Included(3),Bound::Excluded(9));
-    /// assert_eq!(expected_range, data[0]);
+    /// assert!(diesel::select(
+    ///     vec![1..=8].into_sql::<Multirange<Integer>>().intersection_range(vec![3..=8]).eq(vec![3..=8])
+    ///     ).first::<bool>(conn).unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1779,7 +1662,7 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
 impl<T> PgRangeExpressionMethods for T
 where
     T: Expression,
-    T::SqlType: RangeOrNullableRange,
+    T::SqlType: MultirangeOrRangeMaybeNullable,
 {
 }
 
@@ -3466,12 +3349,20 @@ pub(in crate::pg) mod private {
     impl TextOrNullableText for Nullable<Text> {}
 
     /// Marker trait used to extract the inner type
-    /// of our `Range<T>` sql type, used to implement `PgRangeExpressionMethods`
-    pub trait RangeHelper: SqlType + SingleValue {
+    /// of our `Range<T>` and `Multirange<T>` sql type, used to implement `PgRangeExpressionMethods`
+    pub trait RangeOrMultirange: SqlType + SingleValue {
         type Inner: SingleValue;
     }
 
-    impl<ST> RangeHelper for Range<ST>
+    impl<ST> RangeOrMultirange for Range<ST>
+    where
+        Self: 'static,
+        ST: SingleValue,
+    {
+        type Inner = ST;
+    }
+
+    impl<ST> RangeOrMultirange for Multirange<ST>
     where
         Self: 'static,
         ST: SingleValue,
