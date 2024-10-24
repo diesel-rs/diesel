@@ -3758,8 +3758,6 @@ pub(in crate::pg) mod private {
     )]
     pub trait RecordOrNullableRecord {}
 
-    impl RecordOrNullableRecord for Record<Text> {}
-    impl RecordOrNullableRecord for Record<Nullable<Text>> {}
-    impl RecordOrNullableRecord for Nullable<Record<Text>> {}
-    impl RecordOrNullableRecord for Nullable<Record<Nullable<Text>>> {}
+    impl<T> RecordOrNullableRecord for Record<T> {}
+    impl<T> RecordOrNullableRecord for Nullable<Record<T>> {}
 }
