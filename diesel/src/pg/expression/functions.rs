@@ -2282,5 +2282,5 @@ define_sql_function! {
     /// # }
     /// ```
     #[sql_name = "row_to_json"]
-    fn row_to_json<R: RecordOrNullableRecord + SingleValue + CombinedNullableValue<Record<(Text, Integer, Date)>, Jsonb>>(record: R) -> R::Out;
+    fn row_to_json<R: RecordOrNullableRecord + SingleValue + MaybeNullableValue<Json>>(record: R) -> R::Out;
 }
