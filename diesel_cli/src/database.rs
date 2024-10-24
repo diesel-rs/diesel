@@ -420,7 +420,7 @@ pub fn database_url(matches: &ArgMatches) -> Result<String, crate::errors::Error
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 fn change_database_of_url(
     database_url: &str,
-    default_database: &str,
+    mut default_database: &str,
 ) -> Result<(String, String), crate::errors::Error> {
     let base = url::Url::parse(database_url)?;
     let database = base
@@ -429,6 +429,11 @@ fn change_database_of_url(
         .last()
         .expect("The database url has at least one path segment")
         .to_owned();
+
+    if database.eq("postgres") {
+        default_database = "template1";
+    }
+
     let mut new_url = base
         .join(default_database)
         .expect("The provided database is always valid");
@@ -506,6 +511,18 @@ mod tests {
         let postgres_url = format!("{}/{}{}", base_url, "postgres", query);
         assert_eq!(
             (database, postgres_url),
+            change_database_of_url(&database_url, "postgres").unwrap()
+        );
+    }
+
+    #[test]
+    fn split_pg_connection_string_for_postgres_returns_template1_url() {
+        let database = "postgres".to_owned();
+        let base_url = "postgresql://localhost:5432".to_owned();
+        let database_url = format!("{base_url}/{database}");
+        let template1_url = format!("{}/{}", base_url, "template1");
+        assert_eq!(
+            (database, template1_url),
             change_database_of_url(&database_url, "postgres").unwrap()
         );
     }
