@@ -2238,7 +2238,7 @@ define_sql_function! {
 
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
-    /// This function row_to_json takes Record type as an Input o convert it to JSON.
+    /// This function `row_to_json` takes a Record type as an input and converts it to JSON.
     ///
     /// # Example
     ///
@@ -2252,35 +2252,30 @@ define_sql_function! {
     /// #
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::row_to_json;
     /// #     use diesel::dsl::sql;
     /// #     use diesel::sql_types::{Record, Text, Integer};
     /// #     use serde_json::Value;
     /// #     let connection = &mut establish_connection();
     ///
-    ///     // Example SQL query selecting a custom record type
-    ///     let query = diesel::select(sql::<Record<(Text, Integer)>>("ROW('John', 30)::record"));
+    /// let json_value = diesel::select(row_to_json(sql::<Record<(Text, Integer)>>(
+    ///     "ROW('John', 30)"
+    /// )))
+    /// .get_result::<Value>(connection)?;
+    /// let expected: Value = serde_json::json!({
+    ///     "f1": "John",
+    ///     "f2": 30
+    /// });
+    /// assert_eq!(expected, json_value);
     ///
-    ///     // Running the query and fetching the result as JSON
-    ///     let (name, age): (String, i32) = query.get_result(connection)?;
+    /// let json_value = diesel::select(row_to_json(sql::<Record<()>>("ROW()")))
+    /// .get_result::<Value>(connection)?;
+    /// let expected: Value = serde_json::json!({});
+    /// assert_eq!(expected, json_value);
     ///
-    ///     // Create a Json Value
-    ///     let json_value: Value = serde_json::json!({
-    ///         "name": name,
-    ///         "age": age
-    ///     });
-    ///
-    ///     // Expected JSON output from the Record type
-    ///     let expected: Value = serde_json::json!({
-    ///         "name": "John",
-    ///         "age": 30
-    ///     });
-    ///
-    ///     // Asserting the result
-    ///     assert_eq!(expected, json_value);
-    ///
-    ///     Ok(())
+    /// #    Ok(())
     /// # }
     /// ```
     #[sql_name = "row_to_json"]
-    fn row_to_json<R: RecordOrNullableRecord + SingleValue + MaybeNullableValue<Json>>(record: R) -> R::Out;
+    fn row_to_json<R: RecordOrNullableRecord + MaybeNullableValue<Json>>(record: R) -> R::Out;
 }
