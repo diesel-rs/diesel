@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["auto_type_proc_macro_attribute"],"mod":["auto_type"]};
