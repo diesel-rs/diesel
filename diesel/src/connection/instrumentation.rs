@@ -69,16 +69,16 @@ impl DebugQuery for StrQueryHelper<'_> {}
 /// implementation of the enum itself and any of its fields
 /// is not guarantee to be stable.
 //
-// This types is carefully designed
+// This type is carefully designed
 // to avoid any potential overhead by
 // taking references for all things
 // and by not performing any additional
 // work until required.
 // In addition it's carefully designed
 // not to be dependent on the actual backend
-// type, as that makes it easier to to reuse
+// type, as that makes it easier to reuse
 // `Instrumentation` implementations in
-// different a different context
+// a different context
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum InstrumentationEvent<'a> {
@@ -243,7 +243,7 @@ impl<'a> InstrumentationEvent<'a> {
 /// `tracing` and `log` are supposed to be part of their own
 /// crates.
 pub trait Instrumentation: Downcast + Send + 'static {
-    /// The function that is invoced for each event
+    /// The function that is invoked for each event
     fn on_connection_event(&mut self, event: InstrumentationEvent<'_>);
 }
 downcast_rs::impl_downcast!(Instrumentation);
