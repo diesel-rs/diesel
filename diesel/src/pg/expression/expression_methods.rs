@@ -158,6 +158,82 @@ pub trait PgExpressionMethods: Expression + Sized {
     {
         Grouped(IsContainedBy::new(self, other.as_expression()))
     }
+
+    /// Creates a PostgreSQL `IS JSON` expression.
+    /// Requires PostgreSQL>=16
+    ///
+    /// This operator returns true whether an object is a valid JSON
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::Text;
+    /// #
+    /// #     let conn = &mut establish_connection();
+    /// #
+    ///
+    /// let res = diesel::select(("1".into_sql::<Text>().is_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("(1,2,3)".into_sql::<Text>().is_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// #
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
+    fn is_json(self) -> dsl::IsJson<Self> {
+        IsJson::new(self)
+    }
+
+    /// Creates a PostgreSQL `IS NOT JSON` expression.
+    /// Requires PostgreSQL>=16
+    ///
+    /// This operator returns true whether an object is not a valid JSON
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::Text;
+    /// #
+    /// #     let conn = &mut establish_connection();
+    /// #
+    ///
+    /// let res = diesel::select(("1".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("(1,2,3)".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// #
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
+    fn is_not_json(self) -> dsl::IsNotJson<Self> {
+        IsNotJson::new(self)
+    }
 }
 
 impl<T: Expression> PgExpressionMethods for T {}

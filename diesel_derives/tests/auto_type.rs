@@ -282,6 +282,8 @@ fn test_pg_jsonb_expression_methods() -> _ {
         .and(pg_extras::jsonb.remove(1_i32).eq(pg_extras::jsonb))
         .and(pg_extras::jsonb.remove_by_path(v).eq(pg_extras::jsonb))
         .and(pg_extras::jsonb.is_contained_by(pg_extras::jsonb))
+        .and(pg_extras::id.is_json())
+        .and(pg_extras::id.is_not_json())
 }
 
 #[cfg(feature = "postgres")]

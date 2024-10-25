@@ -130,6 +130,14 @@ pub type IntersectionRange<Lhs, Rhs> = Intersection<Lhs, Rhs>;
 #[cfg(feature = "postgres_backend")]
 pub type NullsFirst<T> = super::operators::NullsFirst<T>;
 
+/// The return type of [`expr.is_json()`](super::expression_methods::PgExpressionMethods::is_json)
+#[cfg(feature = "postgres_backend")]
+pub type IsJson<T> = super::operators::IsJson<T>;
+
+/// The return type of [`expr.is_not_json()`](super::expression_methods::PgExpressionMethods::is_not_json)
+#[cfg(feature = "postgres_backend")]
+pub type IsNotJson<T> = super::operators::IsNotJson<T>;
+
 /// The return type of [`expr.nulls_last()`](super::expression_methods::PgSortExpressionMethods::nulls_last)
 #[cfg(feature = "postgres_backend")]
 pub type NullsLast<T> = super::operators::NullsLast<T>;
