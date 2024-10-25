@@ -436,6 +436,7 @@ fn change_database_of_url(
     Ok((database, new_url.into()))
 }
 
+#[cfg(any(feature = "postgres", feature = "mysql"))]
 fn get_database_and_url(database_url: &str) -> Result<(String, url::Url), crate::errors::Error> {
     let base = url::Url::parse(database_url)?;
     let database = base
