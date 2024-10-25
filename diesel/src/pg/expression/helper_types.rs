@@ -130,6 +130,14 @@ pub type IntersectionRange<Lhs, Rhs> = Intersection<Lhs, Rhs>;
 #[cfg(feature = "postgres_backend")]
 pub type NullsFirst<T> = super::operators::NullsFirst<T>;
 
+/// The return type of [`expr.is_json()`](super::expression_methods::PgExpressionMethods::is_json)
+#[cfg(feature = "postgres_backend")]
+pub type IsJson<T> = super::operators::IsJson<T>;
+
+/// The return type of [`expr.is_not_json()`](super::expression_methods::PgExpressionMethods::is_not_json)
+#[cfg(feature = "postgres_backend")]
+pub type IsNotJson<T> = super::operators::IsNotJson<T>;
+
 /// The return type of [`expr.nulls_last()`](super::expression_methods::PgSortExpressionMethods::nulls_last)
 #[cfg(feature = "postgres_backend")]
 pub type NullsLast<T> = super::operators::NullsLast<T>;
@@ -543,3 +551,8 @@ pub type jsonb_object<A> = super::functions::jsonb_object<SqlTypeOf<A>, A>;
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_object_with_keys_and_values<K, V> =
     super::functions::jsonb_object_with_keys_and_values<SqlTypeOf<K>, SqlTypeOf<V>, K, V>;
+
+/// Return type of [`row_to_json(record)`](super::functions::row_to_json())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type row_to_json<R> = super::functions::row_to_json<SqlTypeOf<R>, R>;

@@ -4,7 +4,8 @@ pub(in crate::pg) use self::private::{
     ArrayOrNullableArray, CombinedNullableValue, InetOrCidr, JsonIndex, JsonOrNullableJson,
     JsonOrNullableJsonOrJsonbOrNullableJsonb, JsonRemoveIndex, JsonbOrNullableJsonb,
     MaybeNullableValue, MultirangeOrNullableMultirange, MultirangeOrRangeMaybeNullable,
-    RangeOrMultirange, RangeOrNullableRange, TextArrayOrNullableTextArray, TextOrNullableText,
+    RangeOrMultirange, RangeOrNullableRange, RecordOrNullableRecord, TextArrayOrNullableTextArray,
+    TextOrNullableText,
 };
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
@@ -156,6 +157,82 @@ pub trait PgExpressionMethods: Expression + Sized {
         T: AsExpression<Range<Self::SqlType>>,
     {
         Grouped(IsContainedBy::new(self, other.as_expression()))
+    }
+
+    /// Creates a PostgreSQL `IS JSON` expression.
+    /// Requires PostgreSQL>=16
+    ///
+    /// This operator returns true whether an object is a valid JSON
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::Text;
+    /// #
+    /// #     let conn = &mut establish_connection();
+    /// #
+    ///
+    /// let res = diesel::select(("1".into_sql::<Text>().is_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("(1,2,3)".into_sql::<Text>().is_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// #
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
+    fn is_json(self) -> dsl::IsJson<Self> {
+        IsJson::new(self)
+    }
+
+    /// Creates a PostgreSQL `IS NOT JSON` expression.
+    /// Requires PostgreSQL>=16
+    ///
+    /// This operator returns true whether an object is not a valid JSON
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::Text;
+    /// #
+    /// #     let conn = &mut establish_connection();
+    /// #
+    ///
+    /// let res = diesel::select(("1".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("(1,2,3)".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// #
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
+    fn is_not_json(self) -> dsl::IsNotJson<Self> {
+        IsNotJson::new(self)
     }
 }
 
@@ -3302,7 +3379,7 @@ where
 pub(in crate::pg) mod private {
     use crate::sql_types::{
         Array, Binary, Cidr, Inet, Integer, Json, Jsonb, MaybeNullableType, Multirange, Nullable,
-        OneIsNullable, Range, SingleValue, SqlType, Text,
+        OneIsNullable, Range, Record, SingleValue, SqlType, Text,
     };
     use crate::{Expression, IntoSql};
 
@@ -3640,4 +3717,13 @@ pub(in crate::pg) mod private {
     impl TextArrayOrNullableTextArray for Array<Nullable<Text>> {}
     impl TextArrayOrNullableTextArray for Nullable<Array<Text>> {}
     impl TextArrayOrNullableTextArray for Nullable<Array<Nullable<Text>>> {}
+
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `Record<T>` nor `Nullable<Record<T>>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait RecordOrNullableRecord {}
+
+    impl<T> RecordOrNullableRecord for Record<T> {}
+    impl<T> RecordOrNullableRecord for Nullable<Record<T>> {}
 }

@@ -52,7 +52,8 @@ table! {
         multirange -> Multirange<Integer>,
         timestamptz -> Timestamptz,
         name -> Text,
-        text_array -> Array<Text>
+        text_array -> Array<Text>,
+        record -> Record<(Integer, Text, Date)>,
     }
 }
 
@@ -281,6 +282,8 @@ fn test_pg_jsonb_expression_methods() -> _ {
         .and(pg_extras::jsonb.remove(1_i32).eq(pg_extras::jsonb))
         .and(pg_extras::jsonb.remove_by_path(v).eq(pg_extras::jsonb))
         .and(pg_extras::jsonb.is_contained_by(pg_extras::jsonb))
+        .and(pg_extras::id.is_json())
+        .and(pg_extras::id.is_not_json())
 }
 
 #[cfg(feature = "postgres")]
@@ -449,6 +452,7 @@ fn postgres_functions() -> _ {
         jsonb_array_length(pg_extras::jsonb),
         jsonb_object(pg_extras::text_array),
         jsonb_object_with_keys_and_values(pg_extras::text_array, pg_extras::text_array),
+        row_to_json(pg_extras::record),
     )
 }
 

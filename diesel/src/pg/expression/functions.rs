@@ -10,6 +10,7 @@ use crate::pg::expression::expression_methods::MaybeNullableValue;
 use crate::pg::expression::expression_methods::MultirangeOrNullableMultirange;
 use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
 use crate::pg::expression::expression_methods::RangeOrNullableRange;
+use crate::pg::expression::expression_methods::RecordOrNullableRecord;
 use crate::pg::expression::expression_methods::TextArrayOrNullableTextArray;
 use crate::sql_types::*;
 
@@ -2233,4 +2234,48 @@ define_sql_function! {
         keys: Arr1,
         values: Arr2
     ) -> Arr2::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// This function `row_to_json` takes a Record type as an input and converts it to JSON.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::row_to_json;
+    /// #     use diesel::dsl::sql;
+    /// #     use diesel::sql_types::{Record, Text, Integer};
+    /// #     use serde_json::Value;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let json_value = diesel::select(row_to_json(sql::<Record<(Text, Integer)>>(
+    ///     "ROW('John', 30)"
+    /// )))
+    /// .get_result::<Value>(connection)?;
+    /// let expected: Value = serde_json::json!({
+    ///     "f1": "John",
+    ///     "f2": 30
+    /// });
+    /// assert_eq!(expected, json_value);
+    ///
+    /// let json_value = diesel::select(row_to_json(sql::<Record<()>>("ROW()")))
+    /// .get_result::<Value>(connection)?;
+    /// let expected: Value = serde_json::json!({});
+    /// assert_eq!(expected, json_value);
+    ///
+    /// #    Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "row_to_json"]
+    fn row_to_json<R: RecordOrNullableRecord + MaybeNullableValue<Json>>(record: R) -> R::Out;
 }
