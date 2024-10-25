@@ -29,7 +29,7 @@ error[E0107]: type alias takes 0 generic arguments but 1 generic argument was su
 36 | |         .filter(user_has_post_with_id_greater_than(id_greater_than))
    | |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
    | |_________________|________________________________|
-   |                   |                                help: remove these generics
+   |                   |                                help: remove the unnecessary generics
    |                   expected 0 generic arguments
    |
 note: type alias defined here, with 0 generic parameters
