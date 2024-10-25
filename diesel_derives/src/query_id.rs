@@ -22,6 +22,12 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
         .map(|ty_param| &ty_param.ident)
         .collect::<Vec<_>>();
 
+    let consts = item
+        .generics
+        .const_params()
+        .map(|const_param| &const_param.ident)
+        .collect::<Vec<_>>();
+
     let query_id_ty_params = ty_params
         .iter()
         .map(|ty_param| quote!(<#ty_param as diesel::query_builder::QueryId>::QueryId));
@@ -34,7 +40,7 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
         impl #impl_generics diesel::query_builder::QueryId for #struct_name #ty_generics
         #where_clause
         {
-            type QueryId = #struct_name<#(#lifetimes,)* #(#query_id_ty_params,)*>;
+            type QueryId = #struct_name<#(#lifetimes,)* #(#query_id_ty_params,)* #(#consts,)*>;
 
             const HAS_STATIC_QUERY_ID: bool = #(#has_static_query_id &&)* true;
         }

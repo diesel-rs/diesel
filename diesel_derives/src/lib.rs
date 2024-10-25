@@ -2104,17 +2104,11 @@ pub fn declare_sql_function(
         let expanded = res
             .function_decls
             .into_iter()
-            .map(|decl| sql_function::expand(decl, false));
+            .map(|decl| sql_function::expand(decl, false))
+            .collect::<Vec<_>>();
         quote::quote! {
             #(#expanded)*
         }
     });
-    match result {
-        Ok(token_stream) => token_stream.into(),
-        Err(e) => {
-            let mut output = input;
-            output.extend(e.into_compile_error());
-            output.into()
-        }
-    }
+    result.unwrap_or_else(syn::Error::into_compile_error).into()
 }
