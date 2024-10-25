@@ -141,7 +141,7 @@ where
     T: QueryFragment<Pg>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
-        out.push_sql("(");
+        out.push_sql("ROW(");
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(")");
         Ok(())
@@ -198,6 +198,9 @@ mod tests {
         >("SELECT ((4, NULL), NULL)")
         .get_result::<((Option<i32>, Option<String>), Option<i32>)>(conn);
         assert_eq!(Ok(((Some(4), None), None)), tup);
+
+        let tup = sql::<Record<(Integer,)>>("SELECT ROW(1)").get_result::<(i32,)>(conn);
+        assert_eq!(Ok((1,)), tup);
     }
 
     #[test]
@@ -210,6 +213,10 @@ mod tests {
 
         let tup = sql::<Record<(Record<(Integer, Text)>, Integer)>>("((2, 'bye'::text), 3)");
         let res = crate::select(tup.eq(((2, "bye"), 3))).get_result(conn);
+        assert_eq!(Ok(true), res);
+
+        let tup = sql::<Record<(Integer,)>>("ROW(3)");
+        let res = crate::select(tup.eq((3,))).get_result(conn);
         assert_eq!(Ok(true), res);
 
         let tup = sql::<
