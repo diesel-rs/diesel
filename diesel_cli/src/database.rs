@@ -292,7 +292,13 @@ fn drop_database(database_url: &str) -> Result<(), crate::errors::Error> {
     match Backend::for_url(database_url) {
         #[cfg(feature = "postgres")]
         Backend::Pg => {
-            let (database, postgres_url) = change_database_of_url(database_url, "postgres")?;
+            let (current_database, _) = get_database_and_url(database_url)?;
+            let default_database = if current_database.eq("postgres") {
+                "template1"
+            } else {
+                "postgres"
+            };
+            let (database, postgres_url) = change_database_of_url(database_url, default_database)?;
             let mut conn = PgConnection::establish(&postgres_url).map_err(|e| {
                 crate::errors::Error::ConnectionError {
                     error: e,
@@ -420,8 +426,17 @@ pub fn database_url(matches: &ArgMatches) -> Result<String, crate::errors::Error
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 fn change_database_of_url(
     database_url: &str,
-    mut default_database: &str,
+    default_database: &str,
 ) -> Result<(String, String), crate::errors::Error> {
+    let (database, base) = get_database_and_url(database_url)?;
+    let mut new_url = base
+        .join(default_database)
+        .expect("The provided database is always valid");
+    new_url.set_query(base.query());
+    Ok((database, new_url.into()))
+}
+
+fn get_database_and_url(database_url: &str) -> Result<(String, url::Url), crate::errors::Error> {
     let base = url::Url::parse(database_url)?;
     let database = base
         .path_segments()
@@ -429,16 +444,7 @@ fn change_database_of_url(
         .last()
         .expect("The database url has at least one path segment")
         .to_owned();
-
-    if database.eq("postgres") {
-        default_database = "template1";
-    }
-
-    let mut new_url = base
-        .join(default_database)
-        .expect("The provided database is always valid");
-    new_url.set_query(base.query());
-    Ok((database, new_url.into()))
+    Ok((database, base))
 }
 
 #[cfg(feature = "sqlite")]
@@ -511,18 +517,6 @@ mod tests {
         let postgres_url = format!("{}/{}{}", base_url, "postgres", query);
         assert_eq!(
             (database, postgres_url),
-            change_database_of_url(&database_url, "postgres").unwrap()
-        );
-    }
-
-    #[test]
-    fn split_pg_connection_string_for_postgres_returns_template1_url() {
-        let database = "postgres".to_owned();
-        let base_url = "postgresql://localhost:5432".to_owned();
-        let database_url = format!("{base_url}/{database}");
-        let template1_url = format!("{}/{}", base_url, "template1");
-        assert_eq!(
-            (database, template1_url),
             change_database_of_url(&database_url, "postgres").unwrap()
         );
     }
