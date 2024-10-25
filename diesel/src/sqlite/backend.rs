@@ -67,6 +67,13 @@ impl SqlDialect for Sqlite {
     type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
     type ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison;
     type AliasSyntax = sql_dialect::alias_syntax::AsAliasSyntax;
+
+    type WindowFrameClauseGroupSupport =
+        sql_dialect::window_frame_clause_group_support::IsoGroupWindowFrameUnit;
+    type WindowFrameExclusionSupport =
+        sql_dialect::window_frame_exclusion_support::FrameExclusionSupport;
+    type AggregateFunctionExpressions =
+        sql_dialect::aggregate_function_expressions::PostgresLikeAggregateFunctionExpressions;
 }
 
 impl DieselReserveSpecialization for Sqlite {}

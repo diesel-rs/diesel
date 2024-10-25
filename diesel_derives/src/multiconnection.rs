@@ -1200,7 +1200,7 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
         quote::quote! {
             <S> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiAliasSyntax>
                 for diesel::query_source::Alias<S>
-        }
+        },
     ])
     .map(|t| generate_queryfragment_impls(t, &query_fragment_bounds));
 
@@ -1638,6 +1638,10 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         pub struct MultiSelectStatementSyntax;
         pub struct MultiAliasSyntax;
 
+        pub struct MultiWindowFrameClauseGroupSupport;
+        pub struct MultiWindowFrameExclusionSupport;
+        pub struct MultiAggregateFunctionExpressions;
+
         impl diesel::backend::SqlDialect for MultiBackend {
             type ReturningClause = MultiReturningClause;
             // no on conflict support is also the default
@@ -1651,6 +1655,9 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
             type ConcatClause = MultiConcatClauseSyntax;
             type SelectStatementSyntax = MultiSelectStatementSyntax;
             type AliasSyntax = MultiAliasSyntax;
+            type WindowFrameClauseGroupSupport = MultiWindowFrameClauseGroupSupport;
+            type WindowFrameExclusionSupport = MultiWindowFrameExclusionSupport;
+            type AggregateFunctionExpressions = MultiAggregateFunctionExpressions;
         }
 
         impl diesel::internal::derives::multiconnection::TrustedBackend for MultiBackend {}

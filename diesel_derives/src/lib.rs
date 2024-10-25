@@ -22,7 +22,6 @@ extern crate proc_macro2;
 extern crate quote;
 extern crate syn;
 
-use darling::{ast::NestedMeta, FromMeta};
 use proc_macro::TokenStream;
 use sql_function::ExternSqlBlock;
 use syn::{parse_macro_input, parse_quote};
@@ -2173,12 +2172,13 @@ pub fn declare_sql_function(
 ) -> proc_macro::TokenStream {
     let input = proc_macro2::TokenStream::from(input);
 
-    let attr = match DeclareSqlFunctionArgs::parse_from_macro_input(attr) {
-        Err(e) => {
-            return e.into_compile_error().into();
-        }
-        Ok(attr) => attr,
-    };
+    let attr =
+        match crate::sql_function::DeclareSqlFunctionArgs::parse_from_macro_input(attr.into()) {
+            Err(e) => {
+                return e.into_compile_error().into();
+            }
+            Ok(attr) => attr,
+        };
 
     let result = syn::parse2::<ExternSqlBlock>(input.clone()).map(|res| {
         sql_function::expand(res.function_decls, false, attr.generate_return_type_helpers)
@@ -2191,18 +2191,5 @@ pub fn declare_sql_function(
             output.extend(e.into_compile_error());
             output.into()
         }
-    }
-}
-
-#[derive(darling::FromMeta, Default)]
-#[darling(default)]
-struct DeclareSqlFunctionArgs {
-    generate_return_type_helpers: bool,
-}
-
-impl DeclareSqlFunctionArgs {
-    fn parse_from_macro_input(input: TokenStream) -> syn::Result<Self> {
-        let args = NestedMeta::parse_meta_list(input.into())?;
-        Ok(DeclareSqlFunctionArgs::from_list(&args)?)
     }
 }
