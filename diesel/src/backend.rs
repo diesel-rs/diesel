@@ -317,6 +317,27 @@ pub trait SqlDialect: self::private::TrustedBackend {
         doc = "See [`sql_dialect::alias_syntax`] for provided default implementations"
     )]
     type AliasSyntax;
+
+    /// Configures how this backend support the `GROUP` frame unit for window functions
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "See [`sql_dialect::window_frame_clause_group_support`] for provided default implementations"
+    )]
+    type WindowFrameClauseGroupSupport;
+
+    /// Configures how this backend supports frame exclusion clauses
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "See [`sql_dialect::window_frame_exclusion_support`] for provided default implementations"
+    )]
+    type WindowFrameExclusionSupport;
+
+    /// Configures how this backend supports aggregate function expressions
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "See [`sql_dialect::window_frame_clause_group_support`] for provided default implementations"
+    )]
+    type AggregateFunctionExpressions;
 }
 
 /// This module contains all options provided by diesel to configure the [`SqlDialect`] trait.
@@ -538,6 +559,50 @@ pub(crate) mod sql_dialect {
         /// defining table aliases
         #[derive(Debug, Copy, Clone)]
         pub struct AsAliasSyntax;
+    }
+
+    /// This module contains all reusable options to configure [`SqlDialect::WindowFrameClauseGroupSupport`]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub mod window_frame_clause_group_support {
+        /// Indicates that this backend does not support the `GROUPS` frame unit
+        #[derive(Debug, Copy, Clone)]
+        pub struct NoGroupWindowFrameUnit;
+
+        /// Indicates that this backend does support the `GROUPS` frame unit as specified by the standard
+        #[derive(Debug, Copy, Clone)]
+        pub struct IsoGroupWindowFrameUnit;
+    }
+
+    /// This module contains all reusable options to configure [`SqlDialect::AggregateFunctionExpressions`]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub mod aggregate_function_expressions {
+        /// Indicates that this backend does not support aggregate function expressions
+        #[derive(Debug, Copy, Clone)]
+        pub struct NoAggregateFunctionExpressions;
+
+        /// Indicates that this backend supports aggregate function expressions similar to PostgreSQL
+        #[derive(Debug, Copy, Clone)]
+        pub struct PostgresLikeAggregateFunctionExpressions;
+    }
+
+    /// This module contains all reusable options to configure [`SqlDialect::WindowFrameExclusionSupport`]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub mod window_frame_exclusion_support {
+        /// Indicates that this backend support frame exclusion clauses
+        /// for window functions
+        #[derive(Debug, Copy, Clone)]
+        pub struct FrameExclusionSupport;
+
+        /// Indicates that this backend does not support frame exclusion clauses
+        /// for window functions
+        #[derive(Debug, Copy, Clone)]
+        pub struct NoFrameFrameExclusionSupport;
     }
 }
 
