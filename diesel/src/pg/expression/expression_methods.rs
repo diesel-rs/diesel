@@ -234,6 +234,246 @@ pub trait PgExpressionMethods: Expression + Sized {
     fn is_not_json(self) -> dsl::IsNotJson<Self> {
         IsNotJson::new(self)
     }
+
+    /// Creates a PostgreSQL `IS JSON OBJECT` expression.
+    /// Requires PostgreSQL>=16
+    ///
+    /// This operator returns true whether an object is a valid JSON
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::Text;
+    /// #
+    /// #     let conn = &mut establish_connection();
+    /// #
+    ///
+    /// let res = diesel::select(("123".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("abc".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// #
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
+    fn is_json_object(self) -> dsl::IsJsonObject<Self> {
+        IsJsonObject::new(self)
+    }
+
+    /// Creates a PostgreSQL `IS NOT JSON OBJECT` expression.
+    /// Requires PostgreSQL>=16
+    ///
+    /// This operator returns true whether an object is not a valid JSON
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::Text;
+    /// #
+    /// #     let conn = &mut establish_connection();
+    /// #
+    ///
+    /// let res = diesel::select(("123".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("abc".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// #
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
+    fn is_not_json_object(self) -> dsl::IsNotJsonObject<Self> {
+        IsNotJsonObject::new(self)
+    }
+
+    /// Creates a PostgreSQL `IS JSON ARRAY` expression.
+    /// Requires PostgreSQL>=16
+    ///
+    /// This operator returns true whether an object is a valid JSON ARRAY
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::Text;
+    /// #
+    /// #     let conn = &mut establish_connection();
+    /// #
+    ///
+    /// let res = diesel::select(("123".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("abc".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// #
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
+    fn is_json_array(self) -> dsl::IsJsonArray<Self> {
+        IsJsonArray::new(self)
+    }
+
+    /// Creates a PostgreSQL `IS NOT JSON ARRAY` expression.
+    /// Requires PostgreSQL>=16
+    ///
+    /// This operator returns true whether an object is not a valid JSON ARRAY
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::Text;
+    /// #
+    /// #     let conn = &mut establish_connection();
+    /// #
+    ///
+    /// let res = diesel::select(("123".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("abc".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// #
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
+    fn is_not_json_array(self) -> dsl::IsNotJsonArray<Self> {
+        IsNotJsonArray::new(self)
+    }
+
+    /// Creates a PostgreSQL `IS JSON SCALAR` expression.
+    /// Requires PostgreSQL>=16
+    ///
+    /// This operator returns true whether an object is a valid JSON SCALAR
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::Text;
+    /// #
+    /// #     let conn = &mut establish_connection();
+    /// #
+    ///
+    /// let res = diesel::select(("123".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("abc".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// #
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
+    fn is_json_scalar(self) -> dsl::IsJsonScalar<Self> {
+        IsJsonScalar::new(self)
+    }
+
+    /// Creates a PostgreSQL `IS NOT JSON SCALAR` expression.
+    /// Requires PostgreSQL>=16
+    ///
+    /// This operator returns true whether an object is not a valid JSON SCALAR
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::Bound;
+    /// #     use diesel::sql_types::Text;
+    /// #
+    /// #     let conn = &mut establish_connection();
+    /// #
+    ///
+    /// let res = diesel::select(("123".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// let res = diesel::select(("abc".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, true);
+    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// assert_eq!(res, false);
+    /// #
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
+    fn is_not_json_scalar(self) -> dsl::IsNotJsonScalar<Self> {
+        IsNotJsonScalar::new(self)
+    }
 }
 
 impl<T: Expression> PgExpressionMethods for T {}
