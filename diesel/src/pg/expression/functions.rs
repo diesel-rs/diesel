@@ -2279,3 +2279,121 @@ define_sql_function! {
     #[sql_name = "row_to_json"]
     fn row_to_json<R: RecordOrNullableRecord + MaybeNullableValue<Json>>(record: R) -> R::Out;
 }
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// This function `json_populate_record` takes a Record base and Json as an input and converts it to top-level
+    /// JSON object to a row having the composite type of the base argument.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_populate_record;
+    /// #     use diesel::dsl::sql;
+    /// #     use diesel::sql_types::{Record, Text, Integer, Json};
+    /// #     use serde_json::Value;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let expected: Value = serde_json::json!({
+    ///     "f1": "Alice",
+    ///     "f2": 16
+    /// });
+    /// let record: (String, i32) = diesel::select(json_populate_record::<Record<(Text, Integer)>, Json, _, _>(
+    ///         sql::<Record<(Text, Integer)>>("ROW('John', 30)"),
+    ///         expected
+    /// )).get_result(connection)?;
+    /// assert_eq!(record, ("Alice".to_string(), 16));
+    ///
+    /// let expected: Value = serde_json::json!({});
+    /// let record: (String, i32) = diesel::select(json_populate_record::<Record<(Text, Integer)>, Json, _, _>(
+    ///         sql::<Record<(Text, Integer)>>("ROW('John', 30)"),
+    ///         expected
+    /// )).get_result(connection)?;
+    /// assert_eq!(record, ("John".to_string(), 30));
+    ///
+    /// let expected: Value = serde_json::json!({
+    ///     "f1": "Alice"
+    /// });
+    /// let record: (String, i32) = diesel::select(json_populate_record::<Record<(Text, Integer)>, Json, _, _>(
+    ///         sql::<Record<(Text, Integer)>>("ROW('John', 30)"),
+    ///         expected
+    /// )).get_result(connection)?;
+    /// assert_eq!(record, ("Alice".to_string(), 30));
+    ///
+    /// #    Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "json_populate_record"]
+    fn json_populate_record<
+        B: RecordOrNullableRecord + SingleValue,
+        J: JsonOrNullableJson + CombinedNullableValue<Json, B>
+    >(base: B, from_json: J) -> J::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// This function `jsonb_populate_record` takes a Record base and Jsonb as an input and converts it to top-level
+    /// JSON object to a row having the composite type of the base argument.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_populate_record;
+    /// #     use diesel::dsl::sql;
+    /// #     use diesel::sql_types::{Record, Text, Integer, Jsonb};
+    /// #     use serde_json::Value;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let expected: Value = serde_json::json!({
+    ///     "f1": "Alice",
+    ///     "f2": 16
+    /// });
+    /// let record: (String, i32) = diesel::select(jsonb_populate_record::<Record<(Text, Integer)>, Jsonb, _, _>(
+    ///         sql::<Record<(Text, Integer)>>("ROW('John', 30)"),
+    ///         expected
+    /// )).get_result(connection)?;
+    /// assert_eq!(record, ("Alice".to_string(), 16));
+    ///
+    /// let expected: Value = serde_json::json!({});
+    /// let record: (String, i32) = diesel::select(jsonb_populate_record::<Record<(Text, Integer)>, Jsonb, _, _>(
+    ///         sql::<Record<(Text, Integer)>>("ROW('John', 30)"),
+    ///         expected
+    /// )).get_result(connection)?;
+    /// assert_eq!(record, ("John".to_string(), 30));
+    ///
+    /// let expected: Value = serde_json::json!({
+    ///     "f2": 42,
+    /// });
+    /// let record: (String, i32) = diesel::select(jsonb_populate_record::<Record<(Text, Integer)>, Jsonb, _, _>(
+    ///         sql::<Record<(Text, Integer)>>("ROW('John', 30)"),
+    ///         expected
+    /// )).get_result(connection)?;
+    /// assert_eq!(record, ("John".to_string(), 42));
+    ///
+    /// #    Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "jsonb_populate_record"]
+    fn jsonb_populate_record<
+        B: RecordOrNullableRecord + SingleValue,
+        J: JsonbOrNullableJsonb + CombinedNullableValue<Jsonb, B>
+    >(base: B, from_json: J) -> J::Out;
+}
