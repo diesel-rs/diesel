@@ -190,7 +190,7 @@ mod pg_types {
         macaddr8_roundtrips,
         MacAddr8,
         (u8, u8, u8, u8, u8, u8, u8, u8),
-        mk_macaddr
+        mk_macaddr8
     );
     test_round_trip!(cidr_v4_roundtrips, Cidr, (u8, u8, u8, u8), mk_ipv4);
     test_round_trip!(
@@ -308,6 +308,12 @@ mod pg_types {
 
     fn mk_macaddr(data: (u8, u8, u8, u8, u8, u8)) -> [u8; 6] {
         [data.0, data.1, data.2, data.3, data.4, data.5]
+    }
+
+    fn mk_macaddr8(data: (u8, u8, u8, u8, u8, u8, u8, u8)) -> [u8; 8] {
+        [
+            data.0, data.1, data.2, data.3, data.4, data.5, data.6, data.7,
+        ]
     }
 
     fn mk_ipv4(data: (u8, u8, u8, u8)) -> ipnetwork::IpNetwork {

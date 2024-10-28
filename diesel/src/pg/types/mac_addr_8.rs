@@ -1,9 +1,9 @@
 use std::io::prelude::*;
 
+use super::sql_types::MacAddr8;
 use crate::deserialize::{self, FromSql};
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
-use super::sql_types::MacAddr8;
 
 #[allow(dead_code)]
 mod foreign_derives {
