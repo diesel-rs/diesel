@@ -135,7 +135,7 @@ pub mod expression_types {
     #[derive(Clone, Copy, Debug)]
     pub struct Untyped;
 
-    /// Query nodes witch cannot be part of a select clause.
+    /// Query nodes which cannot be part of a select clause.
     ///
     /// If you see an error message containing `FromSqlRow` and this type
     /// recheck that you have written a valid select clause
