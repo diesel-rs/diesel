@@ -31,6 +31,7 @@ CREATE TABLE "all_the_types"(
 	"inet_col" INET NOT NULL,
 	"jsonb_col" JSONB NOT NULL,
 	"macaddr_col" MACADDR NOT NULL,
+	"macaddr8_col" MACADDR8 NOT NULL,
 	"money_col" MONEY NOT NULL,
 	"oid_col" OID NOT NULL,
 	"timestamptz_col" TIMESTAMPTZ NOT NULL,

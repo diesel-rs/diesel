@@ -99,6 +99,7 @@ fn pg_diesel_types() -> HashSet<&'static str> {
     types.insert("Inet");
     types.insert("Jsonb");
     types.insert("MacAddr");
+    types.insert("MacAddr8");
     types.insert("Money");
     types.insert("Oid");
     types.insert("Range");
@@ -127,6 +128,7 @@ fn pg_diesel_types() -> HashSet<&'static str> {
     types.insert("Bytea");
     types.insert("Bpchar");
     types.insert("Macaddr");
+    types.insert("Macaddr8");
 
     common_diesel_types(&mut types);
     types
