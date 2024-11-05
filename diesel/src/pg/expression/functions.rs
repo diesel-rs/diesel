@@ -2301,11 +2301,11 @@ define_sql_function! {
     /// #     use jsonpath_rust::JsonPath;
     /// #     let connection = &mut establish_connection();
     /// let jsonb:Value = serde_json::json!({"a":[1,2,3,4,5]});
-    /// let json_path = jsonpath_rust::path!("$.a[*] ? (@ >= 2 && @ <= 4)");
-    /// let exists = jsonb_path_exists::<Jsonb,Jsonpath,_,_>(jsonb,json_path);
+    /// let json_path = jsonpath_rust::path!("$.a[ ? (@ >= 2 && @ <= 4)]");
+    /// let exists = jsonb_path_exists::<Jsonb,Jsonpath,_,_>(jsonb,json_path).get_result::<bool>(connection)?;
     /// assert!(exists);
     /// #     Ok(())
     /// # }
     /// ```
-    fn jsonb_path_exists<J: JsonbOrNullableJsonb + SingleValue,P:MaybeNullableValue<Jsonpath>>(jsonb:J,path:P)->Bool;
+    fn jsonb_path_exists<J: JsonbOrNullableJsonb + SingleValue, P: MaybeNullableValue<Jsonpath>>(jsonb: J, path: P) -> Bool;
 }

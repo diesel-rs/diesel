@@ -1,12 +1,12 @@
-use crate::deserialize::FromSql;
-use crate::pg::{backend::Pg, PgValue};
-use crate::serialize::{IsNull, Output, ToSql};
-use crate::{deserialize, serialize, sql_types};
 use std::error::Error;
-use std::fmt::{Debug, Display};
 use std::io::Write;
 use std::str;
 use std::str::FromStr;
+
+use crate::{deserialize, serialize, sql_types};
+use crate::deserialize::FromSql;
+use crate::pg::{backend::Pg, PgValue};
+use crate::serialize::{IsNull, Output, ToSql};
 
 impl FromSql<sql_types::Jsonpath, Pg> for jsonpath_rust::JsonPath {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
@@ -29,10 +29,12 @@ impl ToSql<sql_types::Jsonpath, Pg> for jsonpath_rust::JsonPath {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use jsonpath_rust::JsonPath;
+
     use crate::pg::PgValue;
     use crate::query_builder::bind_collector::ByteWrapper;
-    use jsonpath_rust::{path, JsonPath};
+
+    use super::*;
 
     #[test]
     fn json_to_sql() {
@@ -40,7 +42,6 @@ mod tests {
         let mut bytes = Output::test(ByteWrapper(&mut buffer));
         let test_json_path = JsonPath::from_str("$.a[?(@ >= 2 && @ <= 4)]").unwrap();
         ToSql::<sql_types::Jsonpath, Pg>::to_sql(&test_json_path, &mut bytes).unwrap();
-        println!("{}",String::from_utf8(buffer.clone()).unwrap());
         assert_eq!(buffer, b"$.'a'[?(@ >= 2 && @ <= 4)]");
     }
 
