@@ -2281,6 +2281,31 @@ define_sql_function! {
 }
 
 #[cfg(feature = "postgres_backend")]
-define_sql_function!{
-    fn jsonb_path_exists<J: JsonbOrNullableJsonb + SingleValue, >(jsonb:J,path:Jsonb);
+define_sql_function! {
+    /// This form of jsonb_object takes keys and values pairwise from two separate arrays.
+    /// In all other respects it is identical to the one-argument form.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{jsonb_path_exists};
+    /// #     use diesel::sql_types::{Array, Nullable, Text,Jsonb, Jsonpath};
+    /// #     use serde_json::Value;
+    /// #     use jsonpath_rust::JsonPath;
+    /// #     let connection = &mut establish_connection();
+    /// let jsonb:Value = serde_json::json!({"a":[1,2,3,4,5]});
+    /// let json_path = jsonpath_rust::path!("$.a[*] ? (@ >= 2 && @ <= 4)");
+    /// let exists = jsonb_path_exists::<Jsonb,Jsonpath,_,_>(jsonb,json_path);
+    /// assert!(exists);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn jsonb_path_exists<J: JsonbOrNullableJsonb + SingleValue,P:MaybeNullableValue<Jsonpath>>(jsonb:J,path:P)->Bool;
 }
