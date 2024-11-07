@@ -55,7 +55,7 @@ diesel_table_macro_syntax = { version = "0.2", path = "../diesel_table_macro_syn
 syn = { version = "2", features = ["visit"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3.10", features = ["env-filter"] }
-thiserror = "1.0.10"
+thiserror = "2.0.0"
 
 [dependencies.diesel]
 version = "~2.2.0"
