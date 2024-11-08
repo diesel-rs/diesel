@@ -6,8 +6,7 @@ use wtx::{
         client::postgres::{Config, Executor, ExecutorBuffer},
         Executor as _, Record as _,
     },
-    misc::{Either, UriRef},
-    rng::StdRng,
+    misc::{simple_seed, Either, IterWrapper, UriRef, Xorshift64},
 };
 
 pub struct Comment {
@@ -92,7 +91,7 @@ pub fn bench_loading_associations_sequentially(b: &mut Bencher) {
             let mut posts = Vec::with_capacity(LEN);
             conn.fetch_many_with_stmt(
                 posts_query.as_str(),
-                &mut users.iter().map(|user| user.id),
+                IterWrapper(users.iter().map(|user| user.id)),
                 |record| {
                     posts.push(Post {
                         body: record.decode_opt(3).unwrap(),
@@ -116,7 +115,7 @@ pub fn bench_loading_associations_sequentially(b: &mut Bencher) {
             let mut comments = Vec::with_capacity(LEN);
             conn.fetch_many_with_stmt(
                 comments_query.as_str(),
-                &mut posts.iter().map(|post| post.id),
+                IterWrapper(posts.iter().map(|post| post.id)),
                 |record| {
                     comments.push(Comment {
                         id: record.decode(0).unwrap(),
@@ -259,10 +258,10 @@ async fn connection() -> Executor<wtx::Error, ExecutorBuffer, TcpStream> {
         .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let uri = UriRef::new(url.as_str());
-    let mut rng = StdRng::default();
+    let mut rng = Xorshift64::from(simple_seed());
     let mut conn = Executor::connect(
         &Config::from_uri(&uri).unwrap(),
-        ExecutorBuffer::with_default_params(&mut rng),
+        ExecutorBuffer::with_capacity((512, 8192, 512, 32), 32, &mut rng).unwrap(),
         &mut rng,
         TcpStream::connect(uri.host()).await.unwrap(),
     )
@@ -315,9 +314,12 @@ async fn insert_posts<const N: usize>(conn: &mut Executor<wtx::Error, ExecutorBu
         },
     );
 
-    conn.execute_with_stmt(insert_stmt.as_str(), &mut params.into_iter().flatten())
-        .await
-        .unwrap();
+    conn.execute_with_stmt(
+        insert_stmt.as_str(),
+        IterWrapper(params.into_iter().flatten()),
+    )
+    .await
+    .unwrap();
 }
 
 async fn insert_users<const N: usize>(
@@ -331,14 +333,14 @@ async fn insert_users<const N: usize>(
             .unwrap();
     });
 
-    let mut params = (0..N).into_iter().flat_map(|idx| {
+    let params = (0..N).into_iter().flat_map(|idx| {
         [
             Either::Left(format!("User {idx}")),
             Either::Right(hair_color_init(idx)),
         ]
     });
 
-    conn.execute_with_stmt(query.as_str(), &mut params)
+    conn.execute_with_stmt(query.as_str(), IterWrapper(params))
         .await
         .unwrap();
 }
