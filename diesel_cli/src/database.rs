@@ -292,7 +292,13 @@ fn drop_database(database_url: &str) -> Result<(), crate::errors::Error> {
     match Backend::for_url(database_url) {
         #[cfg(feature = "postgres")]
         Backend::Pg => {
-            let (database, postgres_url) = change_database_of_url(database_url, "postgres")?;
+            let (current_database, _) = get_database_and_url(database_url)?;
+            let default_database = if current_database.eq("postgres") {
+                "template1"
+            } else {
+                "postgres"
+            };
+            let (database, postgres_url) = change_database_of_url(database_url, default_database)?;
             let mut conn = PgConnection::establish(&postgres_url).map_err(|e| {
                 crate::errors::Error::ConnectionError {
                     error: e,
@@ -422,6 +428,16 @@ fn change_database_of_url(
     database_url: &str,
     default_database: &str,
 ) -> Result<(String, String), crate::errors::Error> {
+    let (database, base) = get_database_and_url(database_url)?;
+    let mut new_url = base
+        .join(default_database)
+        .expect("The provided database is always valid");
+    new_url.set_query(base.query());
+    Ok((database, new_url.into()))
+}
+
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+fn get_database_and_url(database_url: &str) -> Result<(String, url::Url), crate::errors::Error> {
     let base = url::Url::parse(database_url)?;
     let database = base
         .path_segments()
@@ -429,11 +445,7 @@ fn change_database_of_url(
         .last()
         .expect("The database url has at least one path segment")
         .to_owned();
-    let mut new_url = base
-        .join(default_database)
-        .expect("The provided database is always valid");
-    new_url.set_query(base.query());
-    Ok((database, new_url.into()))
+    Ok((database, base))
 }
 
 #[cfg(feature = "sqlite")]
