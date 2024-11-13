@@ -10,7 +10,17 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
-## [2.2.4] 2024-09-3
+## [2.2.5] 2024-11-18
+
+### Fixed
+
+* Add a typedef for `Returning` so that `#[auto_type]` works with such queries
+
+### Removed
+
+* Do not mention the gitter channel in our docs anymore
+
+## [2.2.4] 2024-09-03
 
 ### Fixed
 
@@ -2144,3 +2154,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.2.2]: https://github.com/diesel-rs/diesel/compare/v.2.2.1...v2.2.2
 [2.2.3]: https://github.com/diesel-rs/diesel/compare/v.2.2.2...v2.2.3
 [2.2.4]: https://github.com/diesel-rs/diesel/compare/v.2.2.3...v2.2.4
+[2.2.5]: https://github.com/diesel-rs/diesel/compare/v.2.2.4...v2.2.5
