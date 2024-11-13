@@ -3,6 +3,7 @@
 use super::expression_methods::InetOrCidr;
 use crate::expression::functions::define_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
+use crate::pg::expression::expression_methods::CombinedAllNullableValue;
 use crate::pg::expression::expression_methods::CombinedNullableValue;
 use crate::pg::expression::expression_methods::JsonOrNullableJson;
 use crate::pg::expression::expression_methods::JsonbOrNullableJsonb;
@@ -2335,7 +2336,7 @@ define_sql_function! {
     #[sql_name = "json_populate_record"]
     fn json_populate_record<
         B: RecordOrNullableRecord + SingleValue,
-        J: JsonOrNullableJson + CombinedNullableValue<Json, B>
+        J: JsonOrNullableJson + CombinedAllNullableValue<Json, B>
     >(base: B, from_json: J) -> J::Out;
 }
 
@@ -2394,6 +2395,6 @@ define_sql_function! {
     #[sql_name = "jsonb_populate_record"]
     fn jsonb_populate_record<
         B: RecordOrNullableRecord + SingleValue,
-        J: JsonbOrNullableJsonb + CombinedNullableValue<Jsonb, B>
+        J: JsonbOrNullableJsonb + CombinedAllNullableValue<Jsonb, B>
     >(base: B, from_json: J) -> J::Out;
 }
