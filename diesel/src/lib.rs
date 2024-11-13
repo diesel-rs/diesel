@@ -137,9 +137,8 @@
 //! ## Getting help
 //!
 //! If you run into problems, Diesel has an active community.
-//! Either open a new [discussion] thread at diesel github repository or
-//! use the active Gitter room at
-//! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
+//! Open a new [discussion] thread at diesel github repository
+//! and we will try to help you
 //!
 //! [discussion]: https://github.com/diesel-rs/diesel/discussions/categories/q-a
 //!
