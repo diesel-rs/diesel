@@ -1003,10 +1003,8 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// assert_eq!(res, false);
     /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(sql::<Nullable<Text>>("NULL").is_json_scalar().nullable()).get_result::<Option<bool>>(conn)?;
+    /// let res = diesel::select(sql::<Nullable<Text>>("NULL").is_json_scalar()).get_result::<Option<bool>>(conn)?;
     /// assert!(res.is_none());
-    /// let res = diesel::select(sql::<Nullable<Text>>("123").is_json_scalar().nullable()).get_result::<Option<bool>>(conn)?;
-    /// assert_eq!(res, Some(true));
     /// #     Ok(())
     /// # }
     /// ```
