@@ -41,7 +41,7 @@ pub trait BoolExpressionMethods: Expression + Sized {
     fn and<T, ST>(self, other: T) -> dsl::And<Self, T, ST>
     where
         Self::SqlType: SqlType,
-        ST: SqlType + TypedExpressionType,
+        ST: SqlType + TypedExpressionType + BoolOrNullableBool,
         T: AsExpression<ST>,
         And<Self, T::Expression>: Expression,
     {
@@ -89,7 +89,7 @@ pub trait BoolExpressionMethods: Expression + Sized {
     fn or<T, ST>(self, other: T) -> dsl::Or<Self, T, ST>
     where
         Self::SqlType: SqlType,
-        ST: SqlType + TypedExpressionType,
+        ST: SqlType + TypedExpressionType + BoolOrNullableBool,
         T: AsExpression<ST>,
         Or<Self, T::Expression>: Expression,
     {
