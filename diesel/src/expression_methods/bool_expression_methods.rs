@@ -92,6 +92,7 @@ pub trait BoolExpressionMethods: Expression + Sized {
         Self::SqlType: SqlType,
         ST: SqlType + TypedExpressionType,
         T: AsExpression<ST>,
+        <T::Expression as Expression>::SqlType: BoolOrNullableBool,
         Or<Self, T::Expression>: Expression,
     {
         Grouped(Or::new(self, other.as_expression()))
