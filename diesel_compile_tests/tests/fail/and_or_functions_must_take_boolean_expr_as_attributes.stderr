@@ -1,10 +1,8 @@
 error[E0277]: `diesel::sql_types::Integer` is neither `diesel::sql_types::Bool` nor `diesel::sql_types::Nullable<Bool>`
-  --> tests/fail/and_or_functions_must_take_boolean_expr_as_attributes.rs:15:37
+  --> tests/fail/and_or_functions_must_take_boolean_expr_as_attributes.rs:15:33
    |
 15 |         .filter(users::id.eq(1).and(users::id).or(users::id))
-   |                                 --- ^^^^^^^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Integer`
-   |                                 |
-   |                                 required by a bound introduced by this call
+   |                                 ^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Integer`
    |
    = note: try to provide an expression that produces one of the expected sql types
    = help: the following other types implement trait `BoolOrNullableBool`:
@@ -16,16 +14,14 @@ note: required by a bound in `diesel::BoolExpressionMethods::and`
    |     fn and<T, ST>(self, other: T) -> dsl::And<Self, T, ST>
    |        --- required by a bound in this associated function
 ...
-   |         <T::Expression as Expression>::SqlType: BoolOrNullableBool,
-   |                                                 ^^^^^^^^^^^^^^^^^^ required by this bound in `BoolExpressionMethods::and`
+   |         ST: SqlType + TypedExpressionType + BoolOrNullableBool,
+   |                                             ^^^^^^^^^^^^^^^^^^ required by this bound in `BoolExpressionMethods::and`
 
 error[E0277]: `diesel::sql_types::Integer` is neither `diesel::sql_types::Bool` nor `diesel::sql_types::Nullable<Bool>`
-  --> tests/fail/and_or_functions_must_take_boolean_expr_as_attributes.rs:15:51
+  --> tests/fail/and_or_functions_must_take_boolean_expr_as_attributes.rs:15:48
    |
 15 |         .filter(users::id.eq(1).and(users::id).or(users::id))
-   |                                                -- ^^^^^^^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Integer`
-   |                                                |
-   |                                                required by a bound introduced by this call
+   |                                                ^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Integer`
    |
    = note: try to provide an expression that produces one of the expected sql types
    = help: the following other types implement trait `BoolOrNullableBool`:
@@ -37,5 +33,5 @@ note: required by a bound in `diesel::BoolExpressionMethods::or`
    |     fn or<T, ST>(self, other: T) -> dsl::Or<Self, T, ST>
    |        -- required by a bound in this associated function
 ...
-   |         <T::Expression as Expression>::SqlType: BoolOrNullableBool,
-   |                                                 ^^^^^^^^^^^^^^^^^^ required by this bound in `BoolExpressionMethods::or`
+   |         ST: SqlType + TypedExpressionType + BoolOrNullableBool,
+   |                                             ^^^^^^^^^^^^^^^^^^ required by this bound in `BoolExpressionMethods::or`
