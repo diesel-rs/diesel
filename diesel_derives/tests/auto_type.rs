@@ -453,6 +453,8 @@ fn postgres_functions() -> _ {
         jsonb_object(pg_extras::text_array),
         jsonb_object_with_keys_and_values(pg_extras::text_array, pg_extras::text_array),
         row_to_json(pg_extras::record),
+        json_populate_record(pg_extras::record, pg_extras::json),
+        jsonb_populate_record(pg_extras::record, pg_extras::jsonb),
     )
 }
 

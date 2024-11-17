@@ -556,3 +556,15 @@ pub type jsonb_object_with_keys_and_values<K, V> =
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type row_to_json<R> = super::functions::row_to_json<SqlTypeOf<R>, R>;
+
+/// Return type of [`json_populate_record(base, json)`](super::functions::json_populate_record())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_populate_record<B, J> =
+    super::functions::json_populate_record<SqlTypeOf<B>, SqlTypeOf<J>, B, J>;
+
+/// Return type of [`jsonb_populate_record(base, json)`](super::functions::jsonb_populate_record())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_populate_record<B, J> =
+    super::functions::jsonb_populate_record<SqlTypeOf<B>, SqlTypeOf<J>, B, J>;

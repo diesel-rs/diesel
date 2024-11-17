@@ -1,11 +1,11 @@
 //! PostgreSQL specific expression methods
 
 pub(in crate::pg) use self::private::{
-    ArrayOrNullableArray, CombinedNullableValue, InetOrCidr, JsonIndex, JsonOrNullableJson,
-    JsonOrNullableJsonOrJsonbOrNullableJsonb, JsonRemoveIndex, JsonbOrNullableJsonb,
-    MaybeNullableValue, MultirangeOrNullableMultirange, MultirangeOrRangeMaybeNullable,
-    RangeOrMultirange, RangeOrNullableRange, RecordOrNullableRecord, TextArrayOrNullableTextArray,
-    TextOrNullableText,
+    ArrayOrNullableArray, CombinedAllNullableValue, CombinedNullableValue, InetOrCidr, JsonIndex,
+    JsonOrNullableJson, JsonOrNullableJsonOrJsonbOrNullableJsonb, JsonRemoveIndex,
+    JsonbOrNullableJsonb, MaybeNullableValue, MultirangeOrNullableMultirange,
+    MultirangeOrRangeMaybeNullable, RangeOrMultirange, RangeOrNullableRange,
+    RecordOrNullableRecord, TextArrayOrNullableTextArray, TextOrNullableText,
 };
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
@@ -3378,8 +3378,8 @@ where
 
 pub(in crate::pg) mod private {
     use crate::sql_types::{
-        Array, Binary, Cidr, Inet, Integer, Json, Jsonb, MaybeNullableType, Multirange, Nullable,
-        OneIsNullable, Range, Record, SingleValue, SqlType, Text,
+        AllAreNullable, Array, Binary, Cidr, Inet, Integer, Json, Jsonb, MaybeNullableType,
+        Multirange, Nullable, OneIsNullable, Range, Record, SingleValue, SqlType, Text,
     };
     use crate::{Expression, IntoSql};
 
@@ -3726,4 +3726,19 @@ pub(in crate::pg) mod private {
 
     impl<T> RecordOrNullableRecord for Record<T> {}
     impl<T> RecordOrNullableRecord for Nullable<Record<T>> {}
+
+    pub trait CombinedAllNullableValue<O, Out>: SingleValue {
+        type Out: SingleValue;
+    }
+
+    impl<T, O, Out> CombinedAllNullableValue<O, Out> for T
+    where
+        T: SingleValue,
+        O: SingleValue,
+        T::IsNull: AllAreNullable<O::IsNull>,
+        <T::IsNull as AllAreNullable<O::IsNull>>::Out: MaybeNullableType<Out>,
+        <<T::IsNull as AllAreNullable<O::IsNull>>::Out as MaybeNullableType<Out>>::Out: SingleValue,
+    {
+        type Out = <<T::IsNull as AllAreNullable<O::IsNull>>::Out as MaybeNullableType<Out>>::Out;
+    }
 }
