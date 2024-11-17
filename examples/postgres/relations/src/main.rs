@@ -10,6 +10,8 @@ pub mod schema;
 use crate::model::*;
 use crate::schema::*;
 
+type DbResult<T> = Result<T, Box<dyn Error + Send + Sync>>;
+
 fn establish_connection() -> PgConnection {
     dotenv().ok();
 
@@ -18,7 +20,7 @@ fn establish_connection() -> PgConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {database_url}"))
 }
 
-fn new_author(conn: &mut PgConnection, name: &str) -> Result<Author, Box<dyn Error + Send + Sync>> {
+fn new_author(conn: &mut PgConnection, name: &str) -> DbResult<Author> {
     let author = diesel::insert_into(authors::table)
         .values(authors::name.eq(name))
         .returning(Author::as_returning())
@@ -26,7 +28,7 @@ fn new_author(conn: &mut PgConnection, name: &str) -> Result<Author, Box<dyn Err
     Ok(author)
 }
 
-fn new_book(conn: &mut PgConnection, title: &str) -> Result<Book, Box<dyn Error + Send + Sync>> {
+fn new_book(conn: &mut PgConnection, title: &str) -> DbResult<Book> {
     let book = diesel::insert_into(books::table)
         .values(books::title.eq(title))
         .returning(Book::as_returning())
@@ -34,11 +36,7 @@ fn new_book(conn: &mut PgConnection, title: &str) -> Result<Book, Box<dyn Error 
     Ok(book)
 }
 
-fn new_books_author(
-    conn: &mut PgConnection,
-    book_id: i32,
-    author_id: i32,
-) -> Result<BookAuthor, Box<dyn Error + Send + Sync>> {
+fn new_books_author(conn: &mut PgConnection, book_id: i32, author_id: i32) -> DbResult<BookAuthor> {
     let book_author = diesel::insert_into(books_authors::table)
         .values((
             books_authors::book_id.eq(book_id),
@@ -54,7 +52,7 @@ fn new_page(
     page_number: i32,
     content: &str,
     book_id: i32,
-) -> Result<Page, Box<dyn Error + Send + Sync>> {
+) -> DbResult<Page> {
     let page = diesel::insert_into(pages::table)
         .values((
             pages::page_number.eq(page_number),
@@ -66,7 +64,7 @@ fn new_page(
     Ok(page)
 }
 
-fn joins(conn: &mut PgConnection) -> Result<(), Box<dyn Error + Send + Sync>> {
+fn joins(conn: &mut PgConnection) -> DbResult<()> {
     let page_with_book = pages::table
         .inner_join(books::table)
         .filter(books::title.eq("Momo"))
@@ -84,7 +82,7 @@ fn joins(conn: &mut PgConnection) -> Result<(), Box<dyn Error + Send + Sync>> {
     Ok(())
 }
 
-fn one_to_n_relations(conn: &mut PgConnection) -> Result<(), Box<dyn Error + Send + Sync>> {
+fn one_to_n_relations(conn: &mut PgConnection) -> DbResult<()> {
     let momo = books::table
         .filter(books::title.eq("Momo"))
         .select(Book::as_select())
@@ -117,7 +115,7 @@ fn one_to_n_relations(conn: &mut PgConnection) -> Result<(), Box<dyn Error + Sen
     Ok(())
 }
 
-fn m_to_n_relations(conn: &mut PgConnection) -> Result<(), Box<dyn Error + Send + Sync>> {
+fn m_to_n_relations(conn: &mut PgConnection) -> DbResult<()> {
     let astrid_lindgren = authors::table
         .filter(authors::name.eq("Astrid Lindgren"))
         .select(Author::as_select())
@@ -172,7 +170,7 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     Ok(())
 }
 
-fn setup_data(conn: &mut PgConnection) -> Result<(), Box<dyn Error + Send + Sync>> {
+fn setup_data(conn: &mut PgConnection) -> DbResult<()> {
     // create a book
     let momo = new_book(conn, "Momo")?;
 
