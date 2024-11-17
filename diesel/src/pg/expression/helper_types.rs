@@ -138,6 +138,30 @@ pub type IsJson<T> = super::operators::IsJson<T>;
 #[cfg(feature = "postgres_backend")]
 pub type IsNotJson<T> = super::operators::IsNotJson<T>;
 
+/// The return type of [`expr.is_json_object()`](super::expression_methods::PgExpressionMethods::is_json_object)
+#[cfg(feature = "postgres_backend")]
+pub type IsJsonObject<T> = super::operators::IsJsonObject<T>;
+
+/// The return type of [`expr.is_not_json_object()`](super::expression_methods::PgExpressionMethods::is_not_json_object)
+#[cfg(feature = "postgres_backend")]
+pub type IsNotJsonObject<T> = super::operators::IsNotJsonObject<T>;
+
+/// The return type of [`expr.is_json_array()`](super::expression_methods::PgExpressionMethods::is_json_array)
+#[cfg(feature = "postgres_backend")]
+pub type IsJsonArray<T> = super::operators::IsJsonArray<T>;
+
+/// The return type of [`expr.is_not_json_array()`](super::expression_methods::PgExpressionMethods::is_not_json_array)
+#[cfg(feature = "postgres_backend")]
+pub type IsNotJsonArray<T> = super::operators::IsNotJsonArray<T>;
+
+/// The return type of [`expr.is_json_scalar()`](super::expression_methods::PgExpressionMethods::is_json_scalar)
+#[cfg(feature = "postgres_backend")]
+pub type IsJsonScalar<T> = super::operators::IsJsonScalar<T>;
+
+/// The return type of [`expr.is_not_json_scalar()`](super::expression_methods::PgExpressionMethods::is_not_json_scalar)
+#[cfg(feature = "postgres_backend")]
+pub type IsNotJsonScalar<T> = super::operators::IsNotJsonScalar<T>;
+
 /// The return type of [`expr.nulls_last()`](super::expression_methods::PgSortExpressionMethods::nulls_last)
 #[cfg(feature = "postgres_backend")]
 pub type NullsLast<T> = super::operators::NullsLast<T>;

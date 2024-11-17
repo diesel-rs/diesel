@@ -282,8 +282,6 @@ fn test_pg_jsonb_expression_methods() -> _ {
         .and(pg_extras::jsonb.remove(1_i32).eq(pg_extras::jsonb))
         .and(pg_extras::jsonb.remove_by_path(v).eq(pg_extras::jsonb))
         .and(pg_extras::jsonb.is_contained_by(pg_extras::jsonb))
-        .and(pg_extras::id.is_json())
-        .and(pg_extras::id.is_not_json())
 }
 
 #[cfg(feature = "postgres")]
@@ -349,6 +347,14 @@ fn test_pg_any_json_expression_methods() -> _ {
                 .retrieve_by_path_as_text(s2)
                 .eq(s),
         )
+        .and(pg_extras::name.is_json())
+        .and(pg_extras::name.is_not_json())
+        .and(pg_extras::name.is_json_object())
+        .and(pg_extras::name.is_not_json_object())
+        .and(pg_extras::name.is_json_array())
+        .and(pg_extras::name.is_not_json_array())
+        .and(pg_extras::name.is_json_scalar())
+        .and(pg_extras::name.is_not_json_scalar())
 }
 
 #[cfg(feature = "postgres")]
