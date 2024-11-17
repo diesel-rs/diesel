@@ -426,10 +426,7 @@ macro_rules! postfix_operator {
             operator = $operator,
             return_ty = (
                 $crate::sql_types::is_nullable::MaybeNullable<
-                    $crate::sql_types::is_nullable::IsOneNullable<
-                        <Expr as $crate::expression::Expression>::SqlType,
-                        $return_ty
-                    >,
+                    <<Expr as $crate::expression::Expression>::SqlType as $crate::sql_types::SqlType>::IsNull,
                     $return_ty
                 >
             ),
