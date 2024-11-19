@@ -369,6 +369,7 @@ pub mod helper_types {
     use super::query_dsl::methods::*;
     use super::query_dsl::*;
     use super::query_source::{aliasing, joins};
+    use crate::dsl::CountStar;
     use crate::query_builder::select_clause::SelectClause;
 
     #[doc(inline)]
@@ -699,6 +700,9 @@ pub mod helper_types {
     /// [`DeleteStatement::returning`](crate::query_builder::DeleteStatement::returning)
     pub type Returning<Q, S> =
         <Q as crate::query_builder::returning_clause::ReturningClauseHelper<S>>::WithReturning;
+
+    #[doc(hidden)] // used for `QueryDsl::count`
+    pub type Count<Q> = Select<Q, CountStar>;
 }
 
 pub mod prelude {

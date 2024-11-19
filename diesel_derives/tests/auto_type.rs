@@ -503,6 +503,11 @@ fn update_and_binary_operator_and_block() -> _ {
     }))
 }
 
+#[auto_type]
+fn count_query() -> _ {
+    users::table.count()
+}
+
 // #[auto_type]
 // fn test_sql_fragment() -> _ {
 //     sql("foo")
