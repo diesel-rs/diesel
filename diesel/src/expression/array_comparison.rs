@@ -61,11 +61,45 @@ impl<T, U> In<T, U> {
     pub(crate) fn new(left: T, values: U) -> Self {
         In { left, values }
     }
+
+    pub(crate) fn walk_ansi_ast<'b, DB>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        DB: Backend,
+        T: QueryFragment<DB>,
+        U: QueryFragment<DB> + InExpression,
+    {
+        if self.values.is_empty() {
+            out.push_sql("1=0");
+        } else {
+            self.left.walk_ast(out.reborrow())?;
+            out.push_sql(" IN (");
+            self.values.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+        }
+        Ok(())
+    }
 }
 
 impl<T, U> NotIn<T, U> {
     pub(crate) fn new(left: T, values: U) -> Self {
         NotIn { left, values }
+    }
+
+    pub(crate) fn walk_ansi_ast<'b, DB>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        DB: Backend,
+        T: QueryFragment<DB>,
+        U: QueryFragment<DB> + InExpression,
+    {
+        if self.values.is_empty() {
+            out.push_sql("1=1");
+        } else {
+            self.left.walk_ast(out.reborrow())?;
+            out.push_sql(" NOT IN (");
+            self.values.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+        }
+        Ok(())
     }
 }
 
@@ -114,16 +148,8 @@ where
     T: QueryFragment<DB>,
     U: QueryFragment<DB> + InExpression,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        if self.values.is_empty() {
-            out.push_sql("1=0");
-        } else {
-            self.left.walk_ast(out.reborrow())?;
-            out.push_sql(" IN (");
-            self.values.walk_ast(out.reborrow())?;
-            out.push_sql(")");
-        }
-        Ok(())
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.walk_ansi_ast(out)
     }
 }
 
@@ -145,16 +171,8 @@ where
     T: QueryFragment<DB>,
     U: QueryFragment<DB> + InExpression,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        if self.values.is_empty() {
-            out.push_sql("1=1");
-        } else {
-            self.left.walk_ast(out.reborrow())?;
-            out.push_sql(" NOT IN (");
-            self.values.walk_ast(out.reborrow())?;
-            out.push_sql(")");
-        }
-        Ok(())
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.walk_ansi_ast(out)
     }
 }
 
@@ -217,6 +235,10 @@ pub trait InExpression {
     /// Returns `true` if self represents an empty collection
     /// Otherwise `false` is returned.
     fn is_empty(&self) -> bool;
+
+    /// Returns `true` if the values clause represents
+    /// bind values and each bind value is a postgres array type
+    fn is_array(&self) -> bool;
 }
 
 impl<ST, F, S, D, W, O, LOf, G, H, LC> AsInExpression<ST>
@@ -306,6 +328,10 @@ where
     fn is_empty(&self) -> bool {
         self.values.is_empty()
     }
+
+    fn is_array(&self) -> bool {
+        ST::IS_ARRAY
+    }
 }
 
 impl<ST, I, QS> SelectableExpression<QS> for Many<ST, I>
@@ -345,7 +371,18 @@ where
     ST: SingleValue,
     I: ToSql<ST, DB>,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.walk_ansi_ast(out)
+    }
+}
+
+impl<ST, I> Many<ST, I> {
+    pub(crate) fn walk_ansi_ast<'b, DB>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        DB: Backend + HasSqlType<ST>,
+        ST: SingleValue,
+        I: ToSql<ST, DB>,
+    {
         out.unsafe_to_cache_prepared();
         let mut first = true;
         for value in &self.values {

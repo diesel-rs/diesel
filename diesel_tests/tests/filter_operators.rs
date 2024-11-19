@@ -338,6 +338,21 @@ fn filter_array_by_in() {
     assert_eq!(result, &[] as &[i32]);
 }
 
+#[test]
+#[cfg(feature = "postgres")]
+fn filter_array_by_not_in() {
+    use crate::schema::posts::dsl::*;
+
+    let connection: &mut PgConnection = &mut connection();
+    let tag_combinations_to_look_for: &[&[&str]] = &[&["foo"], &["foo", "bar"], &["baz"]];
+    let result: Vec<i32> = posts
+        .filter(tags.ne_all(tag_combinations_to_look_for))
+        .select(id)
+        .load(connection)
+        .unwrap();
+    assert_eq!(result, &[] as &[i32]);
+}
+
 fn connection_with_3_users() -> TestConnection {
     let mut connection = connection_with_sean_and_tess_in_users_table();
     diesel::sql_query("INSERT INTO users (id, name) VALUES (3, 'Jim')")
