@@ -14,7 +14,7 @@ use crate::query_builder::{
 };
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
-use crate::sql_types::{Bool, HasSqlType, SingleValue, SqlType};
+use crate::sql_types::{self, HasSqlType, SingleValue, SqlType};
 use std::marker::PhantomData;
 
 /// Query dsl node that represents a `left IN (values)`
@@ -73,16 +73,28 @@ impl<T, U> Expression for In<T, U>
 where
     T: Expression,
     U: InExpression<SqlType = T::SqlType>,
+    T::SqlType: SqlType,
+    sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>:
+        sql_types::MaybeNullableType<sql_types::Bool>,
 {
-    type SqlType = Bool;
+    type SqlType = sql_types::is_nullable::MaybeNullable<
+        sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>,
+        sql_types::Bool,
+    >;
 }
 
 impl<T, U> Expression for NotIn<T, U>
 where
     T: Expression,
     U: InExpression<SqlType = T::SqlType>,
+    T::SqlType: SqlType,
+    sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>:
+        sql_types::MaybeNullableType<sql_types::Bool>,
 {
-    type SqlType = Bool;
+    type SqlType = sql_types::is_nullable::MaybeNullable<
+        sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>,
+        sql_types::Bool,
+    >;
 }
 
 impl<T, U, DB> QueryFragment<DB> for In<T, U>
