@@ -419,7 +419,14 @@ pub fn database_url(matches: &ArgMatches) -> Result<String, crate::errors::Error
     matches
         .get_one::<String>("DATABASE_URL")
         .cloned()
-        .or_else(|| env::var("DATABASE_URL").ok())
+        .or_else(|| {
+            let is_test_db = matches.get_one::<bool>("TEST_DB").cloned().unwrap_or(false);
+            if is_test_db {
+                env::var("TEST_DATABASE_URL").ok()
+            } else {
+                env::var("DATABASE_URL").ok()
+            }
+        })
         .ok_or(crate::errors::Error::DatabaseUrlMissing)
 }
 
@@ -481,44 +488,183 @@ fn path_from_sqlite_url(database_url: &str) -> Result<std::path::PathBuf, crate:
     }
 }
 
-#[cfg(all(test, any(feature = "postgres", feature = "mysql")))]
+#[cfg(test)]
 mod tests {
-    use super::change_database_of_url;
+    mod database_url {
+        use super::super::database_url;
+        use crate::cli::build_cli;
 
-    #[test]
-    fn split_pg_connection_string_returns_postgres_url_and_database() {
-        let database = "database".to_owned();
-        let base_url = "postgresql://localhost:5432".to_owned();
-        let database_url = format!("{base_url}/{database}");
-        let postgres_url = format!("{}/{}", base_url, "postgres");
-        assert_eq!(
-            (database, postgres_url),
-            change_database_of_url(&database_url, "postgres").unwrap()
-        );
+        #[test]
+        fn when_no_database_url_arg_returns_database_url_env() {
+            let cli = build_cli();
+            temp_env::with_vars(
+                [
+                    ("DATABASE_URL", Some("sqlite:///prod.sqlite")),
+                    ("TEST_DATABASE_URL", Some("sqlite:///test.sqlite")),
+                ],
+                || {
+                    let matches = cli
+                        .clone()
+                        .try_get_matches_from(["diesel", "setup"])
+                        .unwrap();
+                    let ret = database_url(&matches);
+                    assert!(ret.is_ok());
+                    assert_eq!(ret.unwrap(), "sqlite:///prod.sqlite");
+                },
+            );
+        }
+
+        #[test]
+        fn when_no_database_url_arg_nor_env_returns_error() {
+            let cli = build_cli();
+            temp_env::with_vars(
+                [
+                    ("DATABASE_URL", None::<&str>),
+                    ("TEST_DATABASE_URL", None::<&str>),
+                ],
+                || {
+                    let matches = cli
+                        .clone()
+                        .try_get_matches_from(["diesel", "setup"])
+                        .unwrap();
+                    let ret = database_url(&matches);
+                    assert!(ret.is_err());
+                    assert!(matches!(
+                        ret.unwrap_err(),
+                        crate::errors::Error::DatabaseUrlMissing
+                    ));
+                },
+            );
+        }
+
+        #[test]
+        fn when_database_url_arg_returns_database_url_arg() {
+            let cli = build_cli();
+            temp_env::with_vars(
+                [
+                    ("DATABASE_URL", Some("sqlite:///prod.sqlite")),
+                    ("TEST_DATABASE_URL", Some("sqlite:///test.sqlite")),
+                ],
+                || {
+                    let matches = cli
+                        .clone()
+                        .try_get_matches_from([
+                            "diesel",
+                            "setup",
+                            "--database-url",
+                            "sqlite:///arg.sqlite",
+                        ])
+                        .unwrap();
+                    let ret = database_url(&matches);
+                    assert!(ret.is_ok());
+                    assert_eq!(ret.unwrap(), "sqlite:///arg.sqlite");
+                },
+            );
+        }
+
+        #[test]
+        fn when_test_db_and_no_database_url_arg_returns_test_database_url_env() {
+            let cli = build_cli();
+            temp_env::with_vars(
+                [
+                    ("DATABASE_URL", Some("sqlite:///prod.sqlite")),
+                    ("TEST_DATABASE_URL", Some("sqlite:///test.sqlite")),
+                ],
+                || {
+                    let matches = cli
+                        .clone()
+                        .try_get_matches_from(["diesel", "setup", "--test-db"])
+                        .unwrap();
+                    let ret = database_url(&matches);
+                    assert!(ret.is_ok());
+                    assert_eq!(ret.unwrap(), "sqlite:///test.sqlite");
+                },
+            );
+        }
+
+        #[test]
+        fn when_test_db_and_no_test_url_env_returns_error() {
+            let cli = build_cli();
+            temp_env::with_vars([("DATABASE_URL", Some("sqlite:///prod.sqlite"))], || {
+                let matches = cli
+                    .clone()
+                    .try_get_matches_from(["diesel", "setup", "--test-db"])
+                    .unwrap();
+                let ret = database_url(&matches);
+                assert!(ret.is_err());
+                assert!(matches!(
+                    ret.unwrap_err(),
+                    crate::errors::Error::DatabaseUrlMissing
+                ));
+            });
+        }
+
+        #[test]
+        fn when_test_db_and_database_url_arg_returns_database_url_arg() {
+            let cli = build_cli();
+            temp_env::with_vars(
+                [
+                    ("DATABASE_URL", Some("sqlite:///prod.sqlite")),
+                    ("TEST_DATABASE_URL", Some("sqlite:///test.sqlite")),
+                ],
+                || {
+                    let matches = cli
+                        .clone()
+                        .try_get_matches_from([
+                            "diesel",
+                            "setup",
+                            "--test-db",
+                            "--database-url",
+                            "sqlite:///arg.sqlite",
+                        ])
+                        .unwrap();
+                    let ret = database_url(&matches);
+                    assert!(ret.is_ok());
+                    assert_eq!(ret.unwrap(), "sqlite:///arg.sqlite");
+                },
+            );
+        }
     }
 
-    #[test]
-    fn split_pg_connection_string_handles_user_and_password() {
-        let database = "database".to_owned();
-        let base_url = "postgresql://user:password@localhost:5432".to_owned();
-        let database_url = format!("{base_url}/{database}");
-        let postgres_url = format!("{}/{}", base_url, "postgres");
-        assert_eq!(
-            (database, postgres_url),
-            change_database_of_url(&database_url, "postgres").unwrap()
-        );
-    }
+    #[cfg(any(feature = "postgres", feature = "mysql"))]
+    mod change_of_url_tests {
+        use super::super::change_database_of_url;
 
-    #[test]
-    fn split_pg_connection_string_handles_query_string() {
-        let database = "database".to_owned();
-        let query = "?sslmode=true".to_owned();
-        let base_url = "postgresql://user:password@localhost:5432".to_owned();
-        let database_url = format!("{base_url}/{database}{query}");
-        let postgres_url = format!("{}/{}{}", base_url, "postgres", query);
-        assert_eq!(
-            (database, postgres_url),
-            change_database_of_url(&database_url, "postgres").unwrap()
-        );
+        #[test]
+        fn split_pg_connection_string_returns_postgres_url_and_database() {
+            let database = "database".to_owned();
+            let base_url = "postgresql://localhost:5432".to_owned();
+            let database_url = format!("{base_url}/{database}");
+            let postgres_url = format!("{}/{}", base_url, "postgres");
+            assert_eq!(
+                (database, postgres_url),
+                change_database_of_url(&database_url, "postgres").unwrap()
+            );
+        }
+
+        #[test]
+        fn split_pg_connection_string_handles_user_and_password() {
+            let database = "database".to_owned();
+            let base_url = "postgresql://user:password@localhost:5432".to_owned();
+            let database_url = format!("{base_url}/{database}");
+            let postgres_url = format!("{}/{}", base_url, "postgres");
+            assert_eq!(
+                (database, postgres_url),
+                change_database_of_url(&database_url, "postgres").unwrap()
+            );
+        }
+
+        #[test]
+        fn split_pg_connection_string_handles_query_string() {
+            let database = "database".to_owned();
+            let query = "?sslmode=true".to_owned();
+            let base_url = "postgresql://user:password@localhost:5432".to_owned();
+            let database_url = format!("{base_url}/{database}{query}");
+            let postgres_url = format!("{}/{}{}", base_url, "postgres", query);
+            assert_eq!(
+                (database, postgres_url),
+                change_database_of_url(&database_url, "postgres").unwrap()
+            );
+        }
     }
 }
