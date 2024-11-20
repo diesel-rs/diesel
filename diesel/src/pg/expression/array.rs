@@ -43,7 +43,7 @@ use std::marker::PhantomData;
 /// assert_eq!(expected, ids);
 ///
 /// let ids = diesel::select(array(users.select(id)))
-///     .get_results::<Vec<i32>>(connection)?;
+///     .first::<Vec<i32>>(connection)?;
 /// assert_eq!(vec![1, 2], ids);
 /// #     Ok(())
 /// # }
