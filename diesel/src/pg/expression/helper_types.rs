@@ -1,7 +1,6 @@
 use crate::dsl::{AsExpr, AsExprOf, SqlTypeOf};
 use crate::expression::grouped::Grouped;
 use crate::expression::Expression;
-use crate::pg::expression::array::IntoArrayExpression;
 use crate::pg::expression::expression_methods::private::{JsonIndex, JsonRemoveIndex};
 use crate::pg::types::sql_types::Array;
 use crate::sql_types::{Inet, Integer, VarChar};
@@ -340,11 +339,6 @@ pub type NotLikeBinary<Lhs, Rhs> = crate::dsl::NotLike<Lhs, Rhs>;
 #[doc(hidden)]
 #[deprecated(note = "Use `dsl::Concat` instead")]
 pub type ConcatArray<Lhs, Rhs> = crate::dsl::Concat<Lhs, Rhs>;
-
-/// Return type of [`array(tuple_or_subselect)`](super::dsl::array)
-#[allow(non_camel_case_types)]
-#[cfg(feature = "postgres_backend")]
-pub type array<ST, T> = <T as IntoArrayExpression<ST>>::ArrayExpression;
 
 /// Return type of [`array_to_string_with_null_string(arr, delim, null_str)`](super::functions::array_to_string_with_null_string)
 #[allow(non_camel_case_types)]

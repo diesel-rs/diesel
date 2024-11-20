@@ -57,6 +57,12 @@ where
     elements.into_array_expression()
 }
 
+/// Return type of [`array(tuple_or_subselect)`](super::dsl::array)
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array<ST, T> = <T as IntoArrayExpression<ST>>::ArrayExpression;
+
+/// Trait for types which can be converted into an expression of type `Array`
 pub trait IntoArrayExpression<ST: SqlType + TypedExpressionType> {
     /// Type of the expression returned by [AsArrayExpression::as_in_expression]
     type ArrayExpression: Expression<SqlType = sql_types::Array<ST>>;
