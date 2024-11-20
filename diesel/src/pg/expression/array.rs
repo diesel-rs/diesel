@@ -1,6 +1,6 @@
 use crate::expression::subselect::Subselect;
 use crate::expression::{
-    AppearsOnTable, AsExpressionList, Expression, SelectableExpression, TypedExpressionType,
+    AppearsOnTable, AsExpression, Expression, SelectableExpression, TypedExpressionType,
     ValidGrouping,
 };
 use crate::pg::Pg;
@@ -48,7 +48,6 @@ use std::marker::PhantomData;
 /// #     Ok(())
 /// # }
 /// ```
-#[cfg(feature = "postgres_backend")]
 pub fn array<ST, T>(elements: T) -> <T as IntoArrayExpression<ST>>::ArrayExpression
 where
     T: IntoArrayExpression<ST>,
@@ -66,21 +65,6 @@ pub trait IntoArrayExpression<ST: SqlType + TypedExpressionType> {
     fn into_array_expression(self) -> Self::ArrayExpression;
 }
 
-impl<ST, T> IntoArrayExpression<ST> for T
-where
-    T: AsExpressionList<ST>,
-    ST: SqlType + TypedExpressionType,
-{
-    type ArrayExpression = ArrayLiteral<T::Expression, ST>;
-
-    fn into_array_expression(self) -> Self::ArrayExpression {
-        ArrayLiteral {
-            elements: self.as_expression_list(),
-            _marker: PhantomData,
-        }
-    }
-}
-
 /// An ARRAY[...] literal.
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct ArrayLiteral<T, ST> {
@@ -91,6 +75,7 @@ pub struct ArrayLiteral<T, ST> {
 impl<T, ST> Expression for ArrayLiteral<T, ST>
 where
     ST: 'static,
+    T: Expression,
 {
     type SqlType = sql_types::Array<ST>;
 }
@@ -223,3 +208,33 @@ where
 {
     type IsAggregate = <Subselect<T, ST> as ValidGrouping<GB>>::IsAggregate;
 }
+
+// This has to be implemented for each tuple directly because an intermediate trait would cause
+// conflicting impls.
+// This is not implemented with other tuple impls because this is feature-flagged by
+// `postgres-backend`
+macro_rules! tuple_impls {
+    ($(
+        $Tuple:tt {
+            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
+        }
+    )+) => {
+        $(
+            impl<$($T,)+ ST> IntoArrayExpression<ST> for ($($T,)+) where
+                $($T: AsExpression<ST>,)+
+                ST: SqlType + TypedExpressionType,
+            {
+                type ArrayExpression = ArrayLiteral<($($T::Expression,)+), ST>;
+
+                fn into_array_expression(self) -> Self::ArrayExpression {
+                    ArrayLiteral {
+                        elements: ($(self.$idx.as_expression(),)+),
+                        _marker: PhantomData,
+                    }
+                }
+            }
+        )+
+    }
+}
+
+diesel_derives::__diesel_for_each_tuple!(tuple_impls);
