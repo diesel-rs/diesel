@@ -1,4 +1,3 @@
-use crate::dsl;
 use crate::expression::subselect::Subselect;
 use crate::expression::{
     AppearsOnTable, AsExpression, Expression, SelectableExpression, TypedExpressionType,
@@ -49,22 +48,22 @@ use std::marker::PhantomData;
 /// #     Ok(())
 /// # }
 /// ```
-pub fn array<ST, T>(elements: T) -> dsl::AsExprOf<T, sql_types::Array<ST>>
+pub fn array<ST, T>(elements: T) -> <T as IntoArrayExpression<ST>>::ArrayExpression
 where
-    T: AsExpression<sql_types::Array<ST>>,
+    T: IntoArrayExpression<ST>,
     ST: SqlType + TypedExpressionType,
 {
-    elements.as_expression()
+    elements.into_array_expression()
 }
 
-/*pub trait IntoArrayExpression<ST: SqlType + TypedExpressionType> {
+pub trait IntoArrayExpression<ST: SqlType + TypedExpressionType> {
     /// Type of the expression returned by [AsArrayExpression::as_in_expression]
     type ArrayExpression: Expression<SqlType = sql_types::Array<ST>>;
 
     /// Construct the diesel query dsl representation of
     /// the `ARRAY (values)` clause for the given type
     fn into_array_expression(self) -> Self::ArrayExpression;
-}*/
+}
 
 /// An ARRAY[...] literal.
 #[derive(Debug, Clone, Copy, QueryId)]
@@ -114,44 +113,43 @@ where
     type IsAggregate = T::IsAggregate;
 }
 
-impl<ST, F, S, D, W, O, LOf, G, H, LC> AsExpression<sql_types::Array<ST>>
+impl<ST, F, S, D, W, O, LOf, G, H, LC> IntoArrayExpression<ST>
     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
     ST: SqlType + TypedExpressionType,
     ArraySubselect<Self, ST>: Expression<SqlType = sql_types::Array<ST>>,
     Self: SelectQuery<SqlType = ST>,
 {
-    type Expression = ArraySubselect<Self, ST>;
+    type ArrayExpression = ArraySubselect<Self, ST>;
 
-    fn as_expression(self) -> Self::Expression {
+    fn into_array_expression(self) -> Self::ArrayExpression {
         ArraySubselect::new(self)
     }
 }
 
-impl<'a, ST, QS, DB, GB> AsExpression<sql_types::Array<ST>>
-    for BoxedSelectStatement<'a, ST, QS, DB, GB>
+impl<'a, ST, QS, DB, GB> IntoArrayExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB, GB>
 where
     ST: SqlType + TypedExpressionType,
     ArraySubselect<BoxedSelectStatement<'a, ST, QS, DB, GB>, ST>:
         Expression<SqlType = sql_types::Array<ST>>,
 {
-    type Expression = ArraySubselect<Self, ST>;
+    type ArrayExpression = ArraySubselect<Self, ST>;
 
-    fn as_expression(self) -> Self::Expression {
+    fn into_array_expression(self) -> Self::ArrayExpression {
         ArraySubselect::new(self)
     }
 }
 
-impl<ST, Combinator, Rule, Source, Rhs> AsExpression<sql_types::Array<ST>>
+impl<ST, Combinator, Rule, Source, Rhs> IntoArrayExpression<ST>
     for CombinationClause<Combinator, Rule, Source, Rhs>
 where
     ST: SqlType + TypedExpressionType,
     Self: SelectQuery<SqlType = ST>,
     ArraySubselect<Self, ST>: Expression<SqlType = sql_types::Array<ST>>,
 {
-    type Expression = ArraySubselect<Self, ST>;
+    type ArrayExpression = ArraySubselect<Self, ST>;
 
-    fn as_expression(self) -> Self::Expression {
+    fn into_array_expression(self) -> Self::ArrayExpression {
         ArraySubselect::new(self)
     }
 }
@@ -222,13 +220,13 @@ macro_rules! tuple_impls {
         }
     )+) => {
         $(
-            impl<$($T,)+ ST> AsExpression<sql_types::Array<ST>> for ($($T,)+) where
+            impl<$($T,)+ ST> IntoArrayExpression<ST> for ($($T,)+) where
                 $($T: AsExpression<ST>,)+
                 ST: SqlType + TypedExpressionType,
             {
-                type Expression = ArrayLiteral<($($T::Expression,)+), ST>;
+                type ArrayExpression = ArrayLiteral<($($T::Expression,)+), ST>;
 
-                fn as_expression(self) -> Self::Expression {
+                fn into_array_expression(self) -> Self::ArrayExpression {
                     ArrayLiteral {
                         elements: ($(self.$idx.as_expression(),)+),
                         _marker: PhantomData,
