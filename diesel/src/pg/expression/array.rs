@@ -1,3 +1,4 @@
+use crate::dsl;
 use crate::expression::subselect::Subselect;
 use crate::expression::{
     AppearsOnTable, AsExpression, Expression, SelectableExpression, TypedExpressionType,
@@ -48,7 +49,7 @@ use std::marker::PhantomData;
 /// #     Ok(())
 /// # }
 /// ```
-pub fn array<ST, T>(elements: T) -> <T as IntoArrayExpression<ST>>::ArrayExpression
+pub fn array<ST, T>(elements: T) -> dsl::array<ST, T>
 where
     T: IntoArrayExpression<ST>,
     ST: SqlType + TypedExpressionType,
