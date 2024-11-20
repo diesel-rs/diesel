@@ -63,6 +63,8 @@ where
 pub type array<ST, T> = <T as IntoArrayExpression<ST>>::ArrayExpression;
 
 /// Trait for types which can be converted into an expression of type `Array`
+///
+/// This includes tuples of expressions with the same SQL type, and subselects with a single column.
 pub trait IntoArrayExpression<ST: SqlType + TypedExpressionType> {
     /// Type of the expression returned by [AsArrayExpression::as_in_expression]
     type ArrayExpression: Expression<SqlType = sql_types::Array<ST>>;
