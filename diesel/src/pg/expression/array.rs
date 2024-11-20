@@ -80,7 +80,7 @@ pub trait IntoArrayExpression<ST: SqlType + TypedExpressionType> {
     fn into_array_expression(self) -> Self::ArrayExpression;
 }
 
-/// Implement as a no-op for things that were already arrays (that is, don't wrap in ARRAY[]).
+/// Implement as a no-op for expressions that were already arrays (that is, don't wrap in ARRAY[]).
 impl<ST, T> IntoArrayExpression<ST> for T
 where
     T: AsExpression<sql_types::Array<ST>>,
