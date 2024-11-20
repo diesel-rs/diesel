@@ -295,27 +295,22 @@ fn filter_by_in_explicit_array() {
         query_subselect.load(connection).unwrap()
     );
 
-    define_sql_function! {
-        fn coalesce(x: sql_types::Nullable<sql_types::Text>, y: sql_types::Text) -> sql_types::Text;
-    }
     let query_array_construct = users
         .filter(
-            name.eq_any(dsl::array::<sql_types::Text, _>((
-                coalesce(
-                    users_alias
-                        .filter(users_alias.field(id).eq(1))
-                        .select(users_alias.field(name))
-                        .single_value(),
-                    "Jim",
-                ),
+            name.eq_any(dsl::array::<sql_types::Nullable<sql_types::Text>, _>((
+                users_alias
+                    .filter(users_alias.field(id).eq(1))
+                    .select(users_alias.field(name))
+                    .single_value(),
                 "Tess",
+                None::<&str>,
             ))),
         )
         .order_by(id);
 
     let debug_array_construct: String =
         debug_query::<diesel::pg::Pg, _>(&query_array_construct).to_string();
-    if !debug_array_construct.contains("= ANY(ARRAY[coalesce((SELECT") {
+    if !debug_array_construct.contains("= ANY(ARRAY[(SELECT") {
         panic!(
             "Generated query (array construct) does not contain expected SQL: {}",
             debug_array_construct
