@@ -1,4 +1,4 @@
-use crate::expression::array_comparison::{In, Many, MaybeEmpty, NotIn};
+use crate::expression::array_comparison::{In, InExpression, Many, NotIn};
 use crate::pg::backend::PgStyleArrayComparison;
 use crate::pg::types::sql_types::Array;
 use crate::pg::Pg;
@@ -63,7 +63,7 @@ impl QueryFragment<Pg> for NoWait {
 impl<T, U> QueryFragment<Pg, PgStyleArrayComparison> for In<T, U>
 where
     T: QueryFragment<Pg>,
-    U: QueryFragment<Pg> + MaybeEmpty,
+    U: QueryFragment<Pg> + InExpression,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         self.left.walk_ast(out.reborrow())?;
@@ -77,7 +77,7 @@ where
 impl<T, U> QueryFragment<Pg, PgStyleArrayComparison> for NotIn<T, U>
 where
     T: QueryFragment<Pg>,
-    U: QueryFragment<Pg> + MaybeEmpty,
+    U: QueryFragment<Pg> + InExpression,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         self.left.walk_ast(out.reborrow())?;

@@ -1,4 +1,5 @@
 use crate::dsl;
+use crate::expression::array_comparison::{AsInExpression, InExpression};
 use crate::expression::subselect::Subselect;
 use crate::expression::{
     AppearsOnTable, AsExpression, Expression, SelectableExpression, TypedExpressionType,
@@ -92,6 +93,37 @@ where
     }
 }
 
+// This has to be implemented for each tuple directly because an intermediate trait would cause
+// conflicting impls. (Compiler says people could implement AsExpression<CustomSqlType> for
+// SelectStatement<CustomType, ...>)
+// This is not implemented with other tuple impls because this is feature-flagged by
+// `postgres-backend`
+macro_rules! tuple_impls {
+    ($(
+        $Tuple:tt {
+            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
+        }
+    )+) => {
+        $(
+            impl<$($T,)+ ST> IntoArrayExpression<ST> for ($($T,)+) where
+                $($T: AsExpression<ST>,)+
+                ST: SqlType + TypedExpressionType,
+            {
+                type ArrayExpression = ArrayLiteral<($($T::Expression,)+), ST>;
+
+                fn into_array_expression(self) -> Self::ArrayExpression {
+                    ArrayLiteral {
+                        elements: ($(self.$idx.as_expression(),)+),
+                        _marker: PhantomData,
+                    }
+                }
+            }
+        )+
+    }
+}
+
+diesel_derives::__diesel_for_each_tuple!(tuple_impls);
+
 /// An ARRAY[...] literal.
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct ArrayLiteral<T, ST> {
@@ -138,6 +170,28 @@ where
     T: ValidGrouping<GB>,
 {
     type IsAggregate = T::IsAggregate;
+}
+
+impl<T, ST> InExpression for ArrayLiteral<T, ST>
+where
+    Self: Expression<SqlType = sql_types::Array<ST>>,
+    ST: SqlType,
+{
+    type SqlType = ST;
+    fn is_empty(&self) -> bool {
+        false
+    }
+}
+
+impl<T, ST> AsInExpression<ST> for ArrayLiteral<T, ST>
+where
+    Self: Expression<SqlType = sql_types::Array<ST>>,
+    ST: SqlType,
+{
+    type InExpression = Self;
+    fn as_in_expression(self) -> Self::InExpression {
+        self
+    }
 }
 
 impl<ST, F, S, D, W, O, LOf, G, H, LC> IntoArrayExpression<ST>
@@ -236,32 +290,24 @@ where
     type IsAggregate = <Subselect<T, ST> as ValidGrouping<GB>>::IsAggregate;
 }
 
-// This has to be implemented for each tuple directly because an intermediate trait would cause
-// conflicting impls.
-// This is not implemented with other tuple impls because this is feature-flagged by
-// `postgres-backend`
-macro_rules! tuple_impls {
-    ($(
-        $Tuple:tt {
-            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
-        }
-    )+) => {
-        $(
-            impl<$($T,)+ ST> IntoArrayExpression<ST> for ($($T,)+) where
-                $($T: AsExpression<ST>,)+
-                ST: SqlType + TypedExpressionType,
-            {
-                type ArrayExpression = ArrayLiteral<($($T::Expression,)+), ST>;
-
-                fn into_array_expression(self) -> Self::ArrayExpression {
-                    ArrayLiteral {
-                        elements: ($(self.$idx.as_expression(),)+),
-                        _marker: PhantomData,
-                    }
-                }
-            }
-        )+
+impl<T, ST> InExpression for ArraySubselect<T, ST>
+where
+    Self: Expression<SqlType = sql_types::Array<ST>>,
+    ST: SqlType,
+{
+    type SqlType = ST;
+    fn is_empty(&self) -> bool {
+        false
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(tuple_impls);
+impl<T, ST> AsInExpression<ST> for ArraySubselect<T, ST>
+where
+    Self: Expression<SqlType = sql_types::Array<ST>>,
+    ST: SqlType,
+{
+    type InExpression = Self;
+    fn as_in_expression(self) -> Self::InExpression {
+        self
+    }
+}

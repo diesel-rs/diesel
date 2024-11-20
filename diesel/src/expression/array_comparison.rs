@@ -1,9 +1,8 @@
 //! This module contains the query dsl node definitions
 //! for array comparison operations like `IN` and `NOT IN`
 
-use crate::backend::sql_dialect;
-use crate::backend::Backend;
-use crate::backend::SqlDialect;
+use super::expression_types::NotSelectable;
+use crate::backend::{sql_dialect, Backend, SqlDialect};
 use crate::expression::subselect::Subselect;
 use crate::expression::{
     AppearsOnTable, AsExpression, Expression, SelectableExpression, TypedExpressionType,
@@ -15,8 +14,7 @@ use crate::query_builder::{
 };
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
-use crate::sql_types::HasSqlType;
-use crate::sql_types::{Bool, SingleValue, SqlType};
+use crate::sql_types::{Bool, HasSqlType, SingleValue, SqlType};
 use std::marker::PhantomData;
 
 /// Query dsl node that represents a `left IN (values)`
@@ -74,7 +72,7 @@ impl<T, U> NotIn<T, U> {
 impl<T, U> Expression for In<T, U>
 where
     T: Expression,
-    U: Expression<SqlType = T::SqlType>,
+    U: InExpression<SqlType = T::SqlType>,
 {
     type SqlType = Bool;
 }
@@ -82,7 +80,7 @@ where
 impl<T, U> Expression for NotIn<T, U>
 where
     T: Expression,
-    U: Expression<SqlType = T::SqlType>,
+    U: InExpression<SqlType = T::SqlType>,
 {
     type SqlType = Bool;
 }
@@ -102,7 +100,7 @@ where
     DB: Backend
         + SqlDialect<ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison>,
     T: QueryFragment<DB>,
-    U: QueryFragment<DB> + MaybeEmpty,
+    U: QueryFragment<DB> + InExpression,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         if self.values.is_empty() {
@@ -133,7 +131,7 @@ where
     DB: Backend
         + SqlDialect<ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison>,
     T: QueryFragment<DB>,
-    U: QueryFragment<DB> + MaybeEmpty,
+    U: QueryFragment<DB> + InExpression,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         if self.values.is_empty() {
@@ -167,9 +165,9 @@ impl_selectable_expression!(NotIn<T, U>);
 ///  This trait is exposed for custom third party backends so
 ///  that they can restrict the [`QueryFragment`] implementations
 ///  for [`In`] and [`NotIn`].
-pub trait AsInExpression<T: SqlType + TypedExpressionType> {
+pub trait AsInExpression<T: SqlType> {
     /// Type of the expression returned by [AsInExpression::as_in_expression]
-    type InExpression: MaybeEmpty + Expression<SqlType = T>;
+    type InExpression: InExpression<SqlType = T>;
 
     /// Construct the diesel query dsl representation of
     /// the `IN (values)` clause for the given type
@@ -195,9 +193,15 @@ where
     }
 }
 
-/// A helper trait to check if the values clause of
-/// an [`In`] or [`NotIn`] query dsl node is empty or not
-pub trait MaybeEmpty {
+/// A marker trait that identifies query fragments that can be used in `IN(...)` and `NOT IN(...)`
+/// clauses, (or `= ANY (...)` clauses on the Postgres backend)
+///
+/// These can be wrapped in [`In`] or [`NotIn`] query dsl nodes
+pub trait InExpression {
+    /// The SQL type of the inner values, which should be the same as the left of the `IN` or
+    /// `NOT IN` clause
+    type SqlType: SqlType;
+
     /// Returns `true` if self represents an empty collection
     /// Otherwise `false` is returned.
     fn is_empty(&self) -> bool;
@@ -206,7 +210,7 @@ pub trait MaybeEmpty {
 impl<ST, F, S, D, W, O, LOf, G, H, LC> AsInExpression<ST>
     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
-    ST: SqlType + TypedExpressionType,
+    ST: SqlType,
     Subselect<Self, ST>: Expression<SqlType = ST>,
     Self: SelectQuery<SqlType = ST>,
 {
@@ -219,7 +223,7 @@ where
 
 impl<'a, ST, QS, DB, GB> AsInExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB, GB>
 where
-    ST: SqlType + TypedExpressionType,
+    ST: SqlType,
     Subselect<BoxedSelectStatement<'a, ST, QS, DB, GB>, ST>: Expression<SqlType = ST>,
 {
     type InExpression = Subselect<Self, ST>;
@@ -232,7 +236,7 @@ where
 impl<ST, Combinator, Rule, Source, Rhs> AsInExpression<ST>
     for CombinationClause<Combinator, Rule, Source, Rhs>
 where
-    ST: SqlType + TypedExpressionType,
+    ST: SqlType,
     Self: SelectQuery<SqlType = ST>,
     Subselect<Self, ST>: Expression<SqlType = ST>,
 {
@@ -243,8 +247,8 @@ where
     }
 }
 
-/// Query dsl node for an `IN (values)` clause containing
-/// a variable number of bind values.
+/// Query dsl node for the `values` part of an `IN (values)` clause
+/// containing a variable number of bind values.
 ///
 /// Third party backend can customize the [`QueryFragment`]
 /// implementation of this query dsl node via
@@ -275,10 +279,18 @@ impl<ST, I> Expression for Many<ST, I>
 where
     ST: TypedExpressionType,
 {
-    type SqlType = ST;
+    // Comma-ed fake expressions are not usable directly in SQL
+    // This is only implemented so that we can use the usual SelectableExpression & co traits
+    // as constraints for the same implementations on [`In`] and [`NotIn`]
+    type SqlType = NotSelectable;
 }
 
-impl<ST, I> MaybeEmpty for Many<ST, I> {
+impl<ST, I> InExpression for Many<ST, I>
+where
+    ST: SqlType,
+{
+    type SqlType = ST;
+
     fn is_empty(&self) -> bool {
         self.values.is_empty()
     }

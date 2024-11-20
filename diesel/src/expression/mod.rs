@@ -139,6 +139,9 @@ pub mod expression_types {
     ///
     /// If you see an error message containing `FromSqlRow` and this type
     /// recheck that you have written a valid select clause
+    ///
+    /// These may notably be used as intermediate Expression nodes of the query builder
+    /// which do not map to actual SQL expressions (for implementation simplicity).
     #[derive(Debug, Clone, Copy)]
     pub struct NotSelectable;
 
