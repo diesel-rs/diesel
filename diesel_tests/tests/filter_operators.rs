@@ -297,7 +297,7 @@ fn filter_by_in_explicit_array() {
 
     let query_array_construct = users
         .filter(
-            name.eq_any(dsl::array::<sql_types::Nullable<sql_types::Text>, _>((
+            name.nullable().eq_any(dsl::array((
                 users_alias
                     .filter(users_alias.field(id).eq(1))
                     .select(users_alias.field(name))
