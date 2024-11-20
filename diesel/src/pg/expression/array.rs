@@ -11,10 +11,10 @@ use crate::query_builder::{
 use crate::sql_types::{self, SqlType};
 use std::marker::PhantomData;
 
-/// Creates an `ARRAY[...]` expression.
+/// Creates an `ARRAY[e1, e2, ...]` or `ARRAY(subselect)` expression.
 ///
 /// The argument should be a tuple of expressions which can be represented by the
-/// same SQL type.
+/// same SQL type, or a subquery.
 ///
 /// # Examples
 ///
