@@ -9,7 +9,11 @@ use crate::result::QueryResult;
 /// will be handled by SQL as an expression of type `ST`.
 /// It also implements the usual `SelectableExpression` and `AppearsOnTable` traits
 /// (which is useful when using this as an expression). To enforce correctness here, it checks
-/// the dedicated [`ValidSubselect`] trait.
+/// the dedicated [`ValidSubselect`]. This however does not check that the `SqlType` of
+/// [`SelectQuery`], matches `ST`, so appropriate constraints should be checked in places that
+/// construct Subselect. (It's not always equal, notably .single_value() makes `ST` nullable, and
+/// `exists` checks bounds on `SubSelect<T, Bool>` although there is actually no such subquery in
+/// the final SQL.)
 #[derive(Debug, Copy, Clone, QueryId)]
 pub struct Subselect<T, ST> {
     values: T,
