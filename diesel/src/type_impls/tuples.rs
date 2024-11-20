@@ -4,9 +4,8 @@ use crate::deserialize::{
     self, FromSqlRow, FromStaticSqlRow, Queryable, SqlTypeOrSelectable, StaticallySizedRow,
 };
 use crate::expression::{
-    is_contained_in_group_by, AppearsOnTable, AsExpression, AsExpressionList, Expression,
-    IsContainedInGroupBy, MixedAggregates, QueryMetadata, Selectable, SelectableExpression,
-    TypedExpressionType, ValidGrouping,
+    is_contained_in_group_by, AppearsOnTable, Expression, IsContainedInGroupBy, MixedAggregates,
+    QueryMetadata, Selectable, SelectableExpression, TypedExpressionType, ValidGrouping,
 };
 use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable, InsertableOptionHelper};
 use crate::query_builder::*;
@@ -236,17 +235,6 @@ macro_rules! tuple_impls {
                 fn tuple_append(self, next: Next) -> Self::Output {
                     let ($($T,)+) = self;
                     ($($T,)+ next)
-                }
-            }
-
-            impl<$($T,)+ ST> AsExpressionList<ST> for ($($T,)+) where
-                $($T: AsExpression<ST>,)+
-                ST: SqlType + TypedExpressionType,
-            {
-                type Expression = ($($T::Expression,)+);
-
-                fn as_expression_list(self) -> Self::Expression {
-                    ($(self.$idx.as_expression(),)+)
                 }
             }
 
