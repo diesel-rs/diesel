@@ -70,7 +70,6 @@ impl<ST, T> IntoArrayExpression<ST> for T
 where
     T: AsExpressionList<ST>,
     ST: SqlType + TypedExpressionType,
-    T::Expression: Expression<SqlType = ST>,
 {
     type ArrayExpression = ArrayLiteral<T::Expression, ST>;
 
@@ -92,7 +91,6 @@ pub struct ArrayLiteral<T, ST> {
 impl<T, ST> Expression for ArrayLiteral<T, ST>
 where
     ST: 'static,
-    T: Expression,
 {
     type SqlType = sql_types::Array<ST>;
 }
@@ -174,13 +172,13 @@ where
 /// An ARRAY(...) subselect.
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct ArraySubselect<T, ST> {
-    elements: Subselect<T, ST>,
+    subquery: Subselect<T, ST>,
 }
 
 impl<T, ST> ArraySubselect<T, ST> {
     pub(crate) fn new(elements: T) -> Self {
         Self {
-            elements: Subselect::new(elements),
+            subquery: Subselect::new(elements),
         }
     }
 }
@@ -188,40 +186,40 @@ impl<T, ST> ArraySubselect<T, ST> {
 impl<T, ST> Expression for ArraySubselect<T, ST>
 where
     ST: 'static,
-    T: Expression,
+    Subselect<T, ST>: Expression<SqlType = ST>,
 {
     type SqlType = sql_types::Array<ST>;
 }
 
 impl<T, ST> QueryFragment<Pg> for ArraySubselect<T, ST>
 where
-    T: QueryFragment<Pg>,
+    Subselect<T, ST>: QueryFragment<Pg>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> crate::result::QueryResult<()> {
-        out.push_sql("ARRAY[");
-        QueryFragment::walk_ast(&self.elements, out.reborrow())?;
-        out.push_sql("]");
+        out.push_sql("ARRAY(");
+        QueryFragment::walk_ast(&self.subquery, out.reborrow())?;
+        out.push_sql(")");
         Ok(())
     }
 }
 
 impl<T, ST, QS> SelectableExpression<QS> for ArraySubselect<T, ST>
 where
-    T: SelectableExpression<QS>,
+    Subselect<T, ST>: SelectableExpression<QS>,
     ArraySubselect<T, ST>: AppearsOnTable<QS>,
 {
 }
 
 impl<T, ST, QS> AppearsOnTable<QS> for ArraySubselect<T, ST>
 where
-    T: AppearsOnTable<QS>,
+    Subselect<T, ST>: AppearsOnTable<QS>,
     ArraySubselect<T, ST>: Expression,
 {
 }
 
 impl<T, ST, GB> ValidGrouping<GB> for ArraySubselect<T, ST>
 where
-    T: ValidGrouping<GB>,
+    Subselect<T, ST>: ValidGrouping<GB>,
 {
-    type IsAggregate = T::IsAggregate;
+    type IsAggregate = <Subselect<T, ST> as ValidGrouping<GB>>::IsAggregate;
 }
