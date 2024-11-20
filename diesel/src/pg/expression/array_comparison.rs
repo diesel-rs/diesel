@@ -130,6 +130,17 @@ where
 
 impl_selectable_expression!(All<Expr>);
 
+/// Deprecated trait used for implementing `any` and `all` (which are themselves deprecated).
+///
+/// It has several quirks:
+/// - `All<Expr: Expression<SqlType = Array<ST>>>` pretends to be an expression of type `ST`,
+///   but it's in fact some custom that can really be only used in combination with the `=`
+///   operator in some select places.
+/// - Implementations that use Subelect below are lying: they pretend to be expressions of type
+///   `Array<ST>`, but they're actually subselects, which are processed differently by Postgres
+///   and may result in different query plans.
+///   The `IntoArrayExpression` trait represents this more accurately, actually building an
+///   actual expression of type array from a subselect (by wrapping it in `ARRAY(subselect)`).
 pub trait AsArrayExpression<ST: 'static> {
     type Expression: Expression<SqlType = Array<ST>>;
 
