@@ -6,13 +6,13 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
-             <posts::columns::id as SelectableExpression<posts::table>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::id` implements `SelectableExpression<posts::table>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
    = note: required for `diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>>`
 
@@ -41,13 +41,13 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
-             <posts::columns::id as SelectableExpression<posts::table>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::id` implements `SelectableExpression<posts::table>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
    = note: required for `diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>>`
 
@@ -76,13 +76,13 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
-             <posts::columns::id as SelectableExpression<posts::table>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::id` implements `SelectableExpression<posts::table>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
    = note: required for `diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>>`
 
@@ -111,13 +111,13 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
-             <posts::columns::id as SelectableExpression<posts::table>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::id` implements `SelectableExpression<posts::table>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
    = note: required for `diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>>`
 

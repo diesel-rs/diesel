@@ -4,6 +4,16 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::expression::func
 13 |     let source = stuff::table.select(max(stuff::b));
    |                                      ^^^^^^^^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`, which is required by `diesel::sql_types::Bool: diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
    |
+   = help: the following other types implement trait `SqlOrd`:
+             Array<T>
+             BigInt
+             Datetime
+             Interval
+             Nullable<T>
+             Unsigned<BigInt>
+             Unsigned<diesel::sql_types::Integer>
+             Unsigned<diesel::sql_types::SmallInt>
+           and $N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
 note: required by a bound in `diesel::dsl::max`
   --> $DIESEL/src/expression/functions/aggregate_ordering.rs
@@ -37,6 +47,16 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::expression::func
 14 |     let source = stuff::table.select(min(stuff::b));
    |                                      ^^^^^^^^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`, which is required by `diesel::sql_types::Bool: diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
    |
+   = help: the following other types implement trait `SqlOrd`:
+             Array<T>
+             BigInt
+             Datetime
+             Interval
+             Nullable<T>
+             Unsigned<BigInt>
+             Unsigned<diesel::sql_types::Integer>
+             Unsigned<diesel::sql_types::SmallInt>
+           and $N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
 note: required by a bound in `diesel::dsl::min`
   --> $DIESEL/src/expression/functions/aggregate_ordering.rs

@@ -373,6 +373,23 @@ fn with_const_generics<const N: i32>() -> _ {
     users::id.eq(N)
 }
 
+#[auto_type]
+fn insert_returning() -> _ {
+    insert_into(users::table)
+        .values(users::id.eq(42_i32))
+        .returning(users::id)
+}
+
+#[auto_type]
+fn delete_returning() -> _ {
+    delete(users::table).returning(users::id)
+}
+
+#[auto_type]
+fn count_query() -> _ {
+    users::table.count()
+}
+
 // #[auto_type]
 // fn test_sql_fragment() -> _ {
 //     sql("foo")

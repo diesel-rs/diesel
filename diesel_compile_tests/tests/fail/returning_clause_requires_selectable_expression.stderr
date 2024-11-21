@@ -8,13 +8,13 @@ error[E0277]: Cannot select `non_users::columns::noname` from `users::table`
    |
    = note: `non_users::columns::noname` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <non_users::columns::noname as SelectableExpression<JoinOn<Join, On>>>
-             <non_users::columns::noname as SelectableExpression<Only<non_users::table>>>
-             <non_users::columns::noname as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <non_users::columns::noname as SelectableExpression<Tablesample<non_users::table, TSM>>>
-             <non_users::columns::noname as SelectableExpression<non_users::table>>
-             <non_users::columns::noname as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <non_users::columns::noname as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             `non_users::columns::noname` implements `SelectableExpression<JoinOn<Join, On>>`
+             `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
+             `non_users::columns::noname` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+             `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
+             `non_users::columns::noname` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `non_users::columns::noname` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required by a bound in `DeleteStatement::<T, U>::returning`
   --> $DIESEL/src/query_builder/delete_statement/mod.rs
    |
@@ -34,14 +34,14 @@ error[E0277]: Cannot select `non_users::columns::noname` from `users::table`
    |
    = note: `non_users::columns::noname` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <non_users::columns::noname as SelectableExpression<JoinOn<Join, On>>>
-             <non_users::columns::noname as SelectableExpression<Only<non_users::table>>>
-             <non_users::columns::noname as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <non_users::columns::noname as SelectableExpression<Tablesample<non_users::table, TSM>>>
-             <non_users::columns::noname as SelectableExpression<non_users::table>>
-             <non_users::columns::noname as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <non_users::columns::noname as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-   = note: required for `InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<...>,), ...>, ..., ...>` to implement `Query`
+             `non_users::columns::noname` implements `SelectableExpression<JoinOn<Join, On>>`
+             `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
+             `non_users::columns::noname` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+             `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
+             `non_users::columns::noname` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `non_users::columns::noname` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+   = note: required for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, ReturningClause<non_users::columns::noname>>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
   --> $DIESEL/src/query_builder/insert_statement/mod.rs
    |
@@ -50,7 +50,6 @@ note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    |     where
    |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: Cannot select `non_users::columns::noname` from `users::table`
   --> tests/fail/returning_clause_requires_selectable_expression.rs:35:20
@@ -62,14 +61,14 @@ error[E0277]: Cannot select `non_users::columns::noname` from `users::table`
    |
    = note: `non_users::columns::noname` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <non_users::columns::noname as SelectableExpression<JoinOn<Join, On>>>
-             <non_users::columns::noname as SelectableExpression<Only<non_users::table>>>
-             <non_users::columns::noname as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <non_users::columns::noname as SelectableExpression<Tablesample<non_users::table, TSM>>>
-             <non_users::columns::noname as SelectableExpression<non_users::table>>
-             <non_users::columns::noname as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <non_users::columns::noname as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-   = note: required for `UpdateStatement<table, NoWhereClause, Assign<ColumnWrapperForUpdate<name>, Bound<Text, &str>>, ...>` to implement `Query`
+             `non_users::columns::noname` implements `SelectableExpression<JoinOn<Join, On>>`
+             `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
+             `non_users::columns::noname` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+             `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
+             `non_users::columns::noname` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `non_users::columns::noname` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+   = note: required for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<users::columns::name>, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<non_users::columns::noname>>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
   --> $DIESEL/src/query_builder/update_statement/mod.rs
    |
@@ -78,4 +77,3 @@ note: required by a bound in `UpdateStatement::<T, U, V>::returning`
 ...
    |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
-   = note: consider using `--verbose` to print the full type name to the console

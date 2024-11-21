@@ -130,7 +130,7 @@ dependencies = [
 
 [[package]]
 name = "diesel"
-version = "2.2.0"
+version = "2.2.5"
 dependencies = [
  "bigdecimal",
  "bitflags",
@@ -164,7 +164,7 @@ dependencies = [
 
 [[package]]
 name = "diesel_derives"
-version = "2.2.0"
+version = "2.2.3"
 dependencies = [
  "diesel_table_macro_syntax",
  "dsl_auto_type",
@@ -182,7 +182,7 @@ dependencies = [
 
 [[package]]
 name = "dsl_auto_type"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "darling",
  "either",
@@ -578,6 +578,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "target-triple"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42a4d50cdb458045afc8131fd91b64904da29548bcb63c7236e0844936c13078"
+
+[[package]]
 name = "termcolor"
 version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -668,15 +674,15 @@ dependencies = [
 
 [[package]]
 name = "trybuild"
-version = "1.0.92"
+version = "1.0.101"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35b69ff3ed900f74eb1e0d9bdd3df38da829dc4a26531674f6f019ca7c093c8d"
+checksum = "8dcd332a5496c026f1e14b7f3d2b7bd98e509660c04239c58b0ba38a12daded4"
 dependencies = [
  "glob",
- "once_cell",
  "serde",
  "serde_derive",
  "serde_json",
+ "target-triple",
  "termcolor",
  "toml",
 ]

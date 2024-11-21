@@ -17,5 +17,4 @@ note: required for `columns::id` to implement `ValidGrouping<columns::name>`
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `AliasedField<user1, columns::id>` to implement `ValidGrouping<AliasedField<user1, columns::name>>`
-   = note: required for `SelectStatement<FromClause<Alias<user1>>, DefaultSelectClause<FromClause<...>>, ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, columns::id>>`
-   = note: consider using `--verbose` to print the full type name to the console
+   = note: required for `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<Alias<user1>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<AliasedField<user1, columns::name>>>` to implement `SelectDsl<AliasedField<user1, columns::id>>`
