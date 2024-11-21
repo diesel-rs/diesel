@@ -14,7 +14,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Fixed
 
-* Add a typedef for `Returning` so that `#[auto_type]` works with such queries
+* Add a typedef for `Returning` and `Count` so that `#[auto_type]` works with such queries
+* Fixed an issue that allowed to pass non-boolean expressions to `.and()` and `.or()` which would
+  result in queries failing at runtime
+* Officially deprecating the gitter room
 
 ### Removed
 
