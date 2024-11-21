@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 extern crate dotenvy;
 
 use crate::prelude::*;
