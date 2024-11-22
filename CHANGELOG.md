@@ -10,6 +10,13 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.2.7] 2025-01-31
+
+### Fixed
+
+* Fixed diesel thinking `a.eq_any(b)` was non-nullable even if `a` and `b` were nullable.
+
+
 ## [2.2.6] 2024-12-03
 
 ### Fixed 
@@ -2161,7 +2168,3 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.2.0]: https://github.com/diesel-rs/diesel/compare/v.2.1.0...v2.2.0
 [2.2.1]: https://github.com/diesel-rs/diesel/compare/v.2.2.0...v2.2.1
 [2.2.2]: https://github.com/diesel-rs/diesel/compare/v.2.2.1...v2.2.2
-[2.2.3]: https://github.com/diesel-rs/diesel/compare/v.2.2.2...v2.2.3
-[2.2.4]: https://github.com/diesel-rs/diesel/compare/v.2.2.3...v2.2.4
-[2.2.5]: https://github.com/diesel-rs/diesel/compare/v.2.2.4...v2.2.5
-[2.2.6]: https://github.com/diesel-rs/diesel/compare/v.2.2.5...v2.2.6
