@@ -37,6 +37,7 @@ pub(crate) mod nullable;
 #[macro_use]
 pub(crate) mod operators;
 mod case_when;
+pub mod cast;
 pub(crate) mod select_by;
 mod sql_literal;
 pub(crate) mod subselect;

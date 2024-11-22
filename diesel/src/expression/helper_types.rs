@@ -91,6 +91,10 @@ pub type NotBetween<Lhs, Lower, Upper> = Grouped<
 pub type Concat<Lhs, Rhs> = Grouped<super::operators::Concat<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
+/// [`expr.cast<ST>()`](crate::expression_methods::ExpressionMethods::cast())
+pub type Cast<Expr, ST> = super::cast::Cast<Expr, ST>;
+
+/// The return type of
 /// [`expr.desc()`](crate::expression_methods::ExpressionMethods::desc())
 pub type Desc<Expr> = super::operators::Desc<Expr>;
 
