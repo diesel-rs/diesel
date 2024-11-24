@@ -2,7 +2,6 @@
 
 use super::expression_methods::InetOrCidr;
 use crate::expression::functions::define_sql_function;
-use crate::pg::expression::expression_methods;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
 use crate::pg::expression::expression_methods::CombinedAllNullableValue;
 use crate::pg::expression::expression_methods::CombinedNullableValue;
