@@ -2428,7 +2428,7 @@ define_sql_function! {
     /// #     use serde_json::{json,Value};
     /// #     let connection = &mut establish_connection();
     ///
-    /// let result = diesel::select(jsonb_set::<Jsonb, _, _, _, _>(
+    /// let result = diesel::select(jsonb_set::<Jsonb, Array<Text>, _, _, _>(
     ///         json!([{"f1":1,"f2":null},2,null,3]),
     ///         vec!["0","f1"],
     ///         json!([2,3,4])
@@ -2436,7 +2436,7 @@ define_sql_function! {
     /// let expected: Value = json!([{"f1": [2, 3, 4], "f2": null}, 2, null, 3]);
     /// assert_eq!(result, expected);
     ///
-    /// let result = diesel::select(jsonb_set::<Jsonb, _, _, _, _>(
+    /// let result = diesel::select(jsonb_set::<Jsonb, Array<Text>, _, _, _>(
     ///         json!({"odd":[2,4,6,8]}),
     ///         vec!["odd"],
     ///         json!([1,3,5,7])
@@ -2444,14 +2444,14 @@ define_sql_function! {
     /// let expected: Value = json!({"odd":[1,3,5,7]});
     /// assert_eq!(result, expected);
     ///
-    /// let result = diesel::select(jsonb_set::<Nullable<Jsonb>, _, _, _, _>(
+    /// let result = diesel::select(jsonb_set::<Nullable<Jsonb>, Array<Nullable<Text>>, _, _, _>(
     ///         None::<Value>,
     ///         vec![],
     ///         None::<Value>
     ///     )).get_result::<Option<Value>>(connection)?;
     /// assert!(result.is_none());
     ///
-    /// let result = diesel::select(jsonb_set::<Jsonb, _, _, _, _>(
+    /// let result = diesel::select(jsonb_set::<Jsonb, Array<Nullable<Text>>, _, _, _>(
     ///         json!(null),
     ///         vec![],
     ///         json!(null)
