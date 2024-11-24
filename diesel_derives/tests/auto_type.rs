@@ -54,6 +54,7 @@ table! {
         name -> Text,
         text_array -> Array<Text>,
         record -> Record<(Integer, Text, Date)>,
+        bool -> Bool,
     }
 }
 
@@ -461,6 +462,13 @@ fn postgres_functions() -> _ {
         row_to_json(pg_extras::record),
         json_populate_record(pg_extras::record, pg_extras::json),
         jsonb_populate_record(pg_extras::record, pg_extras::jsonb),
+        jsonb_set(pg_extras::jsonb, pg_extras::text_array, pg_extras::jsonb),
+        jsonb_set_with_create_if_missing(
+            pg_extras::jsonb,
+            pg_extras::text_array,
+            pg_extras::jsonb,
+            pg_extras::bool,
+        ),
     )
 }
 

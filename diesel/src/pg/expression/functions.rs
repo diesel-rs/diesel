@@ -2,6 +2,7 @@
 
 use super::expression_methods::InetOrCidr;
 use crate::expression::functions::define_sql_function;
+use crate::pg::expression::expression_methods;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
 use crate::pg::expression::expression_methods::CombinedAllNullableValue;
 use crate::pg::expression::expression_methods::CombinedNullableValue;
@@ -2397,4 +2398,153 @@ define_sql_function! {
         B: RecordOrNullableRecord + SingleValue,
         J: JsonbOrNullableJsonb + CombinedAllNullableValue<Jsonb, B>
     >(base: B, from_json: J) -> J::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns target with the item designated by path replaced by new_value,
+    ///     or with new_value added if create_if_missing is true (which is the default)
+    ///     and the item designated by path does not exist. (see jsonb_set_with_create_if_missing below)
+    ///
+    /// All earlier steps in the path must exist, or the target is returned unchanged.
+    /// As with the path oriented operators, negative integers that appear in the path count from the end of JSON arrays.
+    /// If the last path step is an array index that is out of range,
+    ///     and create_if_missing is true, the new value is added at the beginning of the array if the index is negative,
+    ///     or at the end of the array if it is positive.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_set;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::sql_types::{Array, Json, Nullable, Text};
+    /// #     use serde_json::{json,Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_set::<Jsonb, _>(
+    ///         json!([{"f1":1,"f2":null},2,null,3]),
+    ///         vec!["0","f1"],
+    ///         json!([2,3,4])
+    ///     )).get_result::<Value>(connection)?;
+    /// let expected: Value = json!([{"f1": [2, 3, 4], "f2": null}, 2, null, 3]);
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(jsonb_set::<Jsonb, _>(
+    ///         json!({"odd":[2,4,6,8]}),
+    ///         vec!["odd"],
+    ///         json!([1,3,5,7])
+    ///     )).get_result::<Value>(connection)?;
+    /// let expected: Value = json!({"odd":[1,3,5,7]});
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(jsonb_set::<Nullable<Jsonb>, _>(
+    ///         None::<Value>,
+    ///         vec![],
+    ///         None::<Value>
+    ///     )).get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let result = diesel::select(jsonb_set::<Jsonb, _>(
+    ///         json!(null),
+    ///         vec![],
+    ///         json!(null)
+    ///     )).get_result::<Value>(connection)?;
+    /// let expected = json!(null);
+    /// assert_eq!(result, expected);
+    ///
+    ///
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn jsonb_set<
+        E: JsonbOrNullableJsonb + SingleValue,
+        Arr: TextArrayOrNullableTextArray + SingleValue
+    >(base: E, path: Arr, new_value: E) -> E;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns target with the item designated by path replaced by new_value,
+    ///     or with new_value added if create_if_missing is true (which is the default)
+    ///     and the item designated by path does not exist.
+    ///
+    /// All earlier steps in the path must exist, or the target is returned unchanged.
+    /// As with the path oriented operators, negative integers that appear in the path count from the end of JSON arrays.
+    /// If the last path step is an array index that is out of range,
+    ///     and create_if_missing is true, the new value is added at the beginning of the array if the index is negative,
+    ///     or at the end of the array if it is positive.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_set;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::sql_types::{Array, Json, Nullable, Text};
+    /// #     use serde_json::{json,Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_set_with_create_if_missing::<Jsonb, _>(
+    ///         json!([{"f2":null},2,null,3]),
+    ///         vec!["0","f1"],
+    ///         json!([2,3,4]),
+    ///         true
+    ///     )).get_result::<Value>(connection)?;
+    /// let expected: Value = json!([{"f1": [2, 3, 4], "f2": null}, 2, null, 3]);
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(jsonb_set_with_create_if_missing::<Jsonb, _>(
+    ///         json!({"odd":[2,4,6,8]}),
+    ///         vec!["odd"],
+    ///         json!([1,3,5,7])
+    ///         true
+    ///     )).get_result::<Value>(connection)?;
+    /// let expected: Value = json!({"odd":[1,3,5,7]});
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(jsonb_set_with_create_if_missing::<Nullable<Jsonb>, _>(
+    ///         None::<Value>,
+    ///         vec![],
+    ///         None::<Value>
+    ///     )).get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let result = diesel::select(jsonb_set_with_create_if_missing::<Jsonb, _>(
+    ///         json!(null),
+    ///         vec![],
+    ///         json!({"hello":"world"}),
+    ///         false
+    ///     )).get_result::<Value>(connection)?;
+    /// let expected = json!(null);
+    /// assert_eq!(result, expected);
+    ///
+    ///
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+
+    #[sql_name = "jsonb_set"]
+    fn jsonb_set_with_create_if_missing<
+        E: JsonbOrNullableJsonb + SingleValue,
+        Arr: TextArrayOrNullableTextArray + SingleValue
+    >(base: E, path: Arr, new_value: E, create_if_missing: bool) -> E;
 }
