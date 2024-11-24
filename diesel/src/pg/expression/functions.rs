@@ -2444,16 +2444,18 @@ define_sql_function! {
     /// let expected: Value = json!({"odd":[1,3,5,7]});
     /// assert_eq!(result, expected);
     ///
+    /// let empty:Vec<String> = Vec::new();
     /// let result = diesel::select(jsonb_set::<Nullable<Jsonb>, Array<Nullable<Text>>, _, _, _>(
     ///         None::<Value>,
-    ///         vec![],
+    ///         empty,
     ///         None::<Value>
     ///     )).get_result::<Option<Value>>(connection)?;
     /// assert!(result.is_none());
     ///
+    /// let empty:Vec<String> = Vec::new();
     /// let result = diesel::select(jsonb_set::<Jsonb, Array<Nullable<Text>>, _, _, _>(
     ///         json!(null),
-    ///         vec![],
+    ///         empty,
     ///         json!(null)
     ///     )).get_result::<Value>(connection)?;
     /// let expected = json!(null);
