@@ -2403,7 +2403,9 @@ define_sql_function! {
 define_sql_function! {
     /// Returns target with the item designated by path replaced by new_value,
     ///     or with new_value added if create_if_missing is true (which is the default)
-    ///     and the item designated by path does not exist. (see jsonb_set_with_create_if_missing below)
+    ///     and the item designated by path does not exist.
+    ///
+    /// It can't set path in scalar
     ///
     /// All earlier steps in the path must exist, or the target is returned unchanged.
     /// As with the path oriented operators, negative integers that appear in the path count from the end of JSON arrays.
@@ -2437,11 +2439,12 @@ define_sql_function! {
     /// assert_eq!(result, expected);
     ///
     /// let result = diesel::select(jsonb_set::<Jsonb, Array<Text>, _, _, _>(
-    ///         json!({"odd":[2,4,6,8]}),
-    ///         vec!["odd"],
+    ///         json!([{"odd":[2,4,6,8]}]),
+    ///         // not vec!["odd"], cannot set path in scalar
+    ///         vec!["0","odd"],
     ///         json!([1,3,5,7])
     ///     )).get_result::<Value>(connection)?;
-    /// let expected: Value = json!({"odd":[1,3,5,7]});
+    /// let expected: Value = json!([{"odd":[1,3,5,7]}]);
     /// assert_eq!(result, expected);
     ///
     /// let empty:Vec<String> = Vec::new();
@@ -2454,11 +2457,12 @@ define_sql_function! {
     ///
     /// let empty:Vec<String> = Vec::new();
     /// let result = diesel::select(jsonb_set::<Jsonb, Array<Nullable<Text>>, _, _, _>(
-    ///         json!(null),
+    ///         // cannot be json!(null)
+    ///         json!([]),
     ///         empty,
     ///         json!(null)
     ///     )).get_result::<Value>(connection)?;
-    /// let expected = json!(null);
+    /// let expected = json!([]);
     /// assert_eq!(result, expected);
     ///
     ///
