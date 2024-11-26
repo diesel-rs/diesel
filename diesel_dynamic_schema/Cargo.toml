@@ -1,6 +1,6 @@
 [package]
 name = "diesel-dynamic-schema"
-version = "0.2.2"
+version = "0.2.3"
 license = "MIT OR Apache-2.0"
 edition = "2018"
 autotests = false
