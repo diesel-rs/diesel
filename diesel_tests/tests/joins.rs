@@ -1,4 +1,5 @@
 use crate::schema::*;
+use diesel::sql_types::Text;
 use diesel::*;
 
 #[diesel_test_helper::test]
@@ -358,8 +359,10 @@ fn select_then_join() {
     assert_eq!(expected_data, data);
 }
 
-use diesel::sql_types::Text;
-define_sql_function!(fn lower(x: Text) -> Text);
+#[declare_sql_function]
+extern "SQL" {
+    fn lower(x: Text) -> Text;
+}
 
 #[diesel_test_helper::test]
 fn selecting_complex_expression_from_right_side_of_left_join() {

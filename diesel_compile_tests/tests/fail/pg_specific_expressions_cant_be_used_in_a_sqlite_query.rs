@@ -12,7 +12,10 @@ table! {
     }
 }
 
-define_sql_function!(fn lower(x: VarChar) -> VarChar);
+#[declare_sql_function]
+extern "SQL" {
+    fn lower(x: VarChar) -> VarChar;
+}
 
 #[derive(Insertable)]
 #[diesel(table_name = users)]

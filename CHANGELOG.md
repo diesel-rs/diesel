@@ -21,7 +21,14 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Support for postgres multirange type
 * Added `diesel::r2d2::TestCustomizer`, which allows users to customize their `diesel::r2d2::Pool`s
 in a way that makes the pools suitable for use in parallel tests.
+* Added support for built-in PostgreSQL range operators and functions
+* Added support for various built-in PostgreSQL array functions
 * Added `Json` and `Jsonb` support for the SQLite backend.
+* Added a `#[diesel::declare_sql_function]` attribute macro to easily define support for 
+  multiple sql functions at once via an `extern "SQL"` block
+
+### Fixed 
+
 * Fixed diesel thinking `a.eq_any(b)` was non-nullable even if `a` and `b` were nullable.
 * Generate `InstrumentationEvent::BeginTransaction` for immediate and exclusive transactions in SQLite
 * Added `wasm32-unknown-unknown` target support for sqlite backend.

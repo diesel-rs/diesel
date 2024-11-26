@@ -31,7 +31,10 @@ impl DefaultSchema for Pg {
 }
 
 #[cfg(feature = "mysql")]
-define_sql_function!(fn database() -> VarChar);
+#[diesel::declare_sql_function]
+extern "SQL" {
+    fn database() -> VarChar;
+}
 
 #[cfg(feature = "mysql")]
 impl DefaultSchema for Mysql {

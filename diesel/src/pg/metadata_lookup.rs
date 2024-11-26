@@ -214,4 +214,7 @@ table! {
 joinable!(pg_type -> pg_namespace(typnamespace));
 allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
 
-define_sql_function! { fn pg_my_temp_schema() -> Oid; }
+#[declare_sql_function]
+extern "SQL" {
+    fn pg_my_temp_schema() -> Oid;
+}

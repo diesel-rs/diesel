@@ -1,5 +1,5 @@
 //! SQLite specific functions
-use crate::expression::functions::define_sql_function;
+use crate::expression::functions::declare_sql_function;
 use crate::sql_types::*;
 use crate::sqlite::expression::expression_methods::BinaryOrNullableBinary;
 use crate::sqlite::expression::expression_methods::JsonOrNullableJsonOrJsonbOrNullableJsonb;
@@ -7,7 +7,8 @@ use crate::sqlite::expression::expression_methods::MaybeNullableValue;
 use crate::sqlite::expression::expression_methods::TextOrNullableText;
 
 #[cfg(feature = "sqlite")]
-define_sql_function! {
+#[declare_sql_function]
+extern "SQL" {
     /// Verifies that its argument is a valid JSON string or JSONB blob and returns a minified
     /// version of that JSON string with all unnecessary whitespace removed.
     ///
@@ -47,10 +48,7 @@ define_sql_function! {
     /// # }
     /// ```
     fn json<E: TextOrNullableText + MaybeNullableValue<Json>>(e: E) -> E::Out;
-}
 
-#[cfg(feature = "sqlite")]
-define_sql_function! {
     /// The jsonb(X) function returns the binary JSONB representation of the JSON provided as argument X.
     ///
     /// # Example
@@ -105,10 +103,7 @@ define_sql_function! {
     /// # }
     /// ```
     fn jsonb<E: BinaryOrNullableBinary + MaybeNullableValue<Jsonb>>(e: E) -> E::Out;
-}
 
-#[cfg(feature = "sqlite")]
-define_sql_function! {
     /// Converts the given json value to pretty-printed, indented text
     ///
     /// # Example
@@ -248,11 +243,10 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn json_pretty<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Text>>(j: J) -> J::Out;
-}
+    fn json_pretty<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Text>>(
+        j: J,
+    ) -> J::Out;
 
-#[cfg(feature = "sqlite")]
-define_sql_function! {
     /// Converts the given json value to pretty-printed, indented text
     ///
     /// # Example
@@ -420,5 +414,10 @@ define_sql_function! {
     /// # }
     /// ```
     #[sql_name = "json_pretty"]
-    fn json_pretty_with_indentation<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Text>>(j: J, indentation: Nullable<Text>) -> J::Out;
+    fn json_pretty_with_indentation<
+        J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Text>,
+    >(
+        j: J,
+        indentation: Nullable<Text>,
+    ) -> J::Out;
 }
