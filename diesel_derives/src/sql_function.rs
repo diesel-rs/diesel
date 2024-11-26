@@ -3,6 +3,7 @@ use quote::quote;
 use quote::ToTokens;
 use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
+use syn::spanned::Spanned;
 use syn::{
     parenthesized, parse_quote, Attribute, GenericArgument, Generics, Ident, Meta, MetaNameValue,
     PathArguments, Token, Type,
@@ -434,6 +435,32 @@ pub(crate) fn expand(input: SqlFunctionDecl, legacy_helper_type_and_module: bool
         pub(crate) mod #internals_module_name {
             #tokens
         }
+    }
+}
+
+pub(crate) struct ExternSqlBlock {
+    pub(crate) function_decls: Vec<SqlFunctionDecl>,
+}
+
+impl Parse for ExternSqlBlock {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let block = syn::ItemForeignMod::parse(input)?;
+        if block.abi.name.as_ref().map(|n| n.value()) != Some("SQL".into()) {
+            return Err(syn::Error::new(block.abi.span(), "expect `SQL` as ABI"));
+        }
+        if block.unsafety.is_some() {
+            return Err(syn::Error::new(
+                block.unsafety.unwrap().span(),
+                "expect `SQL` function blocks to be safe",
+            ));
+        }
+        let function_decls = block
+            .items
+            .into_iter()
+            .map(|i| syn::parse2(quote! { #i }))
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(ExternSqlBlock { function_decls })
     }
 }
 

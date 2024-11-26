@@ -25,8 +25,11 @@ struct User {
     name: String,
 }
 
-define_sql_function!(fn foo(x: Integer) -> Integer);
-define_sql_function!(fn bar(x: VarChar) -> VarChar);
+#[declare_sql_function]
+extern "SQL" {
+    fn foo(x: Integer) -> Integer;
+    fn bar(x: VarChar) -> VarChar;
+}
 
 fn main() {
     use self::posts::title;

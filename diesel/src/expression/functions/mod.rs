@@ -1,6 +1,9 @@
 //! Helper macros to define custom sql functions
 
 #[doc(inline)]
+pub use diesel_derives::declare_sql_function;
+
+#[doc(inline)]
 pub use diesel_derives::define_sql_function;
 
 #[doc(inline)]
