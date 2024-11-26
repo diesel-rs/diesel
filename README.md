@@ -3,7 +3,6 @@
 # A safe, extensible ORM and Query Builder for Rust
 
 [![Build Status](https://github.com/diesel-rs/diesel/workflows/CI%20Tests/badge.svg)](https://github.com/diesel-rs/diesel/actions?query=workflow%3A%22CI+Tests%22+branch%3Amaster)
-[![Gitter](https://badges.gitter.im/diesel-rs/diesel.svg)](https://gitter.im/diesel-rs/diesel?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Crates.io](https://img.shields.io/crates/v/diesel.svg)](https://crates.io/crates/diesel)
 
 API Documentation: [latest release](https://docs.rs/diesel) – [master branch](https://docs.diesel.rs/master/diesel/index.html)
