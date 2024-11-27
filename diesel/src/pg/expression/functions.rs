@@ -2465,6 +2465,12 @@ define_sql_function! {
     /// let expected = json!([]);
     /// assert_eq!(result, expected);
     ///
+    /// let result = diesel::select(jsonb_set::<Jsonb, Nullable<Array<Nullable<Text>>>, _, _, _,>(
+    ///         json!(null),
+    ///         None::<Vec<String>>,
+    ///         json!({"foo": 42})
+    ///     )).get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
     ///
     ///
     /// #     Ok(())
@@ -2472,6 +2478,6 @@ define_sql_function! {
     /// ```
     fn jsonb_set<
         E: JsonbOrNullableJsonb + SingleValue,
-        Arr: TextArrayOrNullableTextArray + SingleValue
-    >(base: E, path: Arr, new_value: E) -> E;
+        Arr: TextArrayOrNullableTextArray + CombinedNullableValue<E,Jsonb>
+    >(base: E, path: Arr, new_value: E) -> Arr::Out;
 }
