@@ -139,6 +139,9 @@ pub mod expression_types {
     ///
     /// If you see an error message containing `FromSqlRow` and this type
     /// recheck that you have written a valid select clause
+    ///
+    /// These may notably be used as intermediate Expression nodes of the query builder
+    /// which do not map to actual SQL expressions (for implementation simplicity).
     #[derive(Debug, Clone, Copy)]
     pub struct NotSelectable;
 
@@ -1041,18 +1044,12 @@ impl<'a, QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
     type IsAggregate = IsAggregate;
 }
 
-/// Converts a tuple of values into a tuple of Diesel expressions.
-///
-/// This trait is similar to [`AsExpression`], but it operates on tuples.
-/// The expressions must all be of the same SQL type.
-///
-pub trait AsExpressionList<ST> {
-    /// The final output expression
-    type Expression;
-
-    /// Perform the conversion
-    // That's public API, we cannot change
-    // that to appease clippy
-    #[allow(clippy::wrong_self_convention)]
-    fn as_expression_list(self) -> Self::Expression;
-}
+// Some amount of backwards-compat
+// We used to require `AsExpressionList` on the `array` function.
+// Now we require `IntoArrayExpression` instead, which means something very different.
+// However for most people just checking this bound to call `array`, this won't break.
+// Only people who directly implement `AsExpressionList` would break, but I expect that to be
+// nobody.
+#[doc(hidden)]
+#[cfg(feature = "postgres_backend")]
+pub use crate::pg::expression::array::IntoArrayExpression as AsExpressionList;

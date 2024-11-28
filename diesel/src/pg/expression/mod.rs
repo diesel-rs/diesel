@@ -27,7 +27,7 @@ pub mod dsl {
     pub use super::array_comparison::{all, any};
 
     #[doc(inline)]
-    pub use super::array::array;
+    pub use super::array::{array, IntoArrayExpression};
 
     #[doc(inline)]
     pub use super::extensions::*;

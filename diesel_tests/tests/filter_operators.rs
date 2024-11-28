@@ -264,6 +264,65 @@ fn filter_by_in() {
     );
 }
 
+#[test]
+#[cfg(feature = "postgres")]
+fn filter_by_in_explicit_array() {
+    use crate::schema::users::dsl::*;
+
+    let connection = &mut connection_with_3_users();
+    let sean = User::new(1, "Sean");
+    let tess = User::new(2, "Tess");
+    let jim = User::new(3, "Jim");
+
+    let users_alias = alias!(crate::schema::users as users_alias);
+
+    let query_subselect = users
+        .filter(name.eq_any(dsl::array(users_alias.select(users_alias.field(name)))))
+        .order_by(id);
+
+    let debug_subselect: String = debug_query::<diesel::pg::Pg, _>(&query_subselect).to_string();
+    if !debug_subselect
+        .contains(r#"= ANY(ARRAY(SELECT "users_alias"."name" FROM "users" AS "users_alias"))"#)
+    {
+        panic!(
+            "Generated query (subselect) does not contain expected SQL: {}",
+            debug_subselect
+        );
+    }
+
+    assert_eq!(
+        &[sean.clone(), tess.clone(), jim] as &[_],
+        query_subselect.load(connection).unwrap()
+    );
+
+    let query_array_construct = users
+        .filter(
+            name.nullable().eq_any(dsl::array((
+                users_alias
+                    .filter(users_alias.field(id).eq(1))
+                    .select(users_alias.field(name))
+                    .single_value(),
+                "Tess",
+                None::<&str>,
+            ))),
+        )
+        .order_by(id);
+
+    let debug_array_construct: String =
+        debug_query::<diesel::pg::Pg, _>(&query_array_construct).to_string();
+    if !debug_array_construct.contains("= ANY(ARRAY[(SELECT") {
+        panic!(
+            "Generated query (array construct) does not contain expected SQL: {}",
+            debug_array_construct
+        );
+    }
+
+    assert_eq!(
+        &[sean, tess] as &[_],
+        query_array_construct.load(connection).unwrap()
+    );
+}
+
 fn connection_with_3_users() -> TestConnection {
     let mut connection = connection_with_sean_and_tess_in_users_table();
     diesel::sql_query("INSERT INTO users (id, name) VALUES (3, 'Jim')")

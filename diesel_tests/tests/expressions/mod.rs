@@ -467,6 +467,24 @@ fn test_arrays_b() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn test_arrays_c() {
+    use self::numbers::columns::*;
+    use self::numbers::table as numbers;
+
+    let connection = &mut connection();
+    diesel::sql_query("INSERT INTO numbers (n) VALUES (7), (8)")
+        .execute(connection)
+        .unwrap();
+
+    let value = diesel::select(array(numbers.select(n).order_by(n)))
+        .first::<Vec<i32>>(connection)
+        .unwrap();
+
+    assert_eq!(value, vec![7, 8]);
+}
+
+#[test]
 fn test_operator_precedence() {
     use self::numbers;
 
