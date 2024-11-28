@@ -27,7 +27,10 @@ use std::marker::PhantomData;
 /// `IN` expression.
 ///
 /// The postgres backend provided a specialized implementation
-/// by using `left = ANY(values)` as optimized variant instead.
+/// by using `left = ANY(values)` as optimized variant instead
+/// if this is possible. For cases where this is not possible
+/// like for example if values is a vector of arrays we
+/// generate an ordinary `IN` expression instead.
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 #[non_exhaustive]
 pub struct In<T, U> {
@@ -47,7 +50,10 @@ pub struct In<T, U> {
 /// `NOT IN` expression.0
 ///
 /// The postgres backend provided a specialized implementation
-/// by using `left = ALL(values)` as optimized variant instead.
+/// by using `left != ALL(values)` as optimized variant instead
+/// if this is possible. For cases where this is not possible
+/// like for example if values is a vector of arrays we
+/// generate a ordinary `NOT IN` expression instead
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 #[non_exhaustive]
 pub struct NotIn<T, U> {

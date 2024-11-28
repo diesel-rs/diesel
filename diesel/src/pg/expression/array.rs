@@ -195,6 +195,7 @@ where
     ST: SqlType,
 {
     type InExpression = Self;
+
     fn as_in_expression(self) -> Self::InExpression {
         self
     }
@@ -319,6 +320,7 @@ where
     ST: SqlType,
 {
     type InExpression = Self;
+
     fn as_in_expression(self) -> Self::InExpression {
         self
     }
