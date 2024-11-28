@@ -461,6 +461,7 @@ fn postgres_functions() -> _ {
         row_to_json(pg_extras::record),
         json_populate_record(pg_extras::record, pg_extras::json),
         jsonb_populate_record(pg_extras::record, pg_extras::jsonb),
+        jsonb_set(pg_extras::jsonb, pg_extras::text_array, pg_extras::jsonb),
     )
 }
 
@@ -501,6 +502,11 @@ fn update_and_binary_operator_and_block() -> _ {
         let v: diesel::data_types::PgInterval = 1.year();
         v
     }))
+}
+
+#[auto_type]
+fn count_query() -> _ {
+    users::table.count()
 }
 
 // #[auto_type]

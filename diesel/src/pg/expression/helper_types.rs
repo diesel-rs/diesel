@@ -592,3 +592,8 @@ pub type json_populate_record<B, J> =
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_populate_record<B, J> =
     super::functions::jsonb_populate_record<SqlTypeOf<B>, SqlTypeOf<J>, B, J>;
+
+/// Return type of [`jsonb_set(base, path, new_value)`](super::functions::jsonb_set())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_set<B, J, R> = super::functions::jsonb_set<SqlTypeOf<B>, SqlTypeOf<J>, B, J, R>;

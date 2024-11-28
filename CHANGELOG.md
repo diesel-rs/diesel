@@ -21,6 +21,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `diesel::r2d2::TestCustomizer`, which allows users to customize their `diesel::r2d2::Pool`s
 in a way that makes the pools suitable for use in parallel tests.
 * Added `Json` and `Jsonb` support for the SQLite backend.
+* Fixed diesel thinking `a.eq_any(b)` was non-nullable even if `a` and `b` were nullable.
 
 ## [2.2.2] 2024-07-19
 
