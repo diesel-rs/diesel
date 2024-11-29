@@ -129,7 +129,7 @@ struct FunctionRow<'a> {
     marker: PhantomData<&'a ffi::sqlite3_value>,
 }
 
-impl<'a> Drop for FunctionRow<'a> {
+impl Drop for FunctionRow<'_> {
     #[allow(unsafe_code)] // manual drop calls
     fn drop(&mut self) {
         if let Some(args) = Rc::get_mut(&mut self.args) {
@@ -146,7 +146,7 @@ impl<'a> Drop for FunctionRow<'a> {
     }
 }
 
-impl<'a> FunctionRow<'a> {
+impl FunctionRow<'_> {
     #[allow(unsafe_code)] // complicated ptr cast
     fn new(args: &mut [*mut ffi::sqlite3_value]) -> Self {
         let lengths = args.len();
@@ -190,7 +190,11 @@ impl<'a> FunctionRow<'a> {
 impl RowSealed for FunctionRow<'_> {}
 
 impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
-    type Field<'f> = FunctionArgument<'f> where 'a: 'f, Self: 'f;
+    type Field<'f>
+        = FunctionArgument<'f>
+    where
+        'a: 'f,
+        Self: 'f;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
@@ -214,7 +218,7 @@ impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
     }
 }
 
-impl<'a> RowIndex<usize> for FunctionRow<'a> {
+impl RowIndex<usize> for FunctionRow<'_> {
     fn idx(&self, idx: usize) -> Option<usize> {
         if idx < self.field_count() {
             Some(idx)
@@ -224,7 +228,7 @@ impl<'a> RowIndex<usize> for FunctionRow<'a> {
     }
 }
 
-impl<'a, 'b> RowIndex<&'a str> for FunctionRow<'b> {
+impl<'a> RowIndex<&'a str> for FunctionRow<'_> {
     fn idx(&self, _idx: &'a str) -> Option<usize> {
         None
     }

@@ -38,7 +38,7 @@ impl<'a> StatementIterator<'a> {
     }
 }
 
-impl<'a> Iterator for StatementIterator<'a> {
+impl Iterator for StatementIterator<'_> {
     type Item = QueryResult<MysqlRow>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -125,7 +125,7 @@ impl<'a> Iterator for StatementIterator<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for StatementIterator<'a> {
+impl ExactSizeIterator for StatementIterator<'_> {
     fn len(&self) -> usize {
         self.len
     }
@@ -154,7 +154,11 @@ impl PrivateMysqlRow {
 impl RowSealed for MysqlRow {}
 
 impl<'a> Row<'a, Mysql> for MysqlRow {
-    type Field<'f> = MysqlField<'f> where 'a: 'f, Self: 'f;
+    type Field<'f>
+        = MysqlField<'f>
+    where
+        'a: 'f,
+        Self: 'f;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {

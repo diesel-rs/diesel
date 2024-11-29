@@ -165,7 +165,7 @@ error[E0277]: the trait bound `users::table: JoinTo<pets::table>` is not satisfi
    |
    = help: the following other types implement trait `JoinTo<T>`:
              `users::table` implements `JoinTo<Alias<S>>`
-             `users::table` implements `JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>`
+             `users::table` implements `JoinTo<BoxedSelectStatement<'_, FromClause<QS>, ST, DB>>`
              `users::table` implements `JoinTo<JoinOn<Join, On>>`
              `users::table` implements `JoinTo<Only<S>>`
              `users::table` implements `JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>`

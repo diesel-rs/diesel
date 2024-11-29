@@ -18,7 +18,7 @@ where
     }
 }
 
-impl<'a> QueryFragment<Pg> for BoxedLimitOffsetClause<'a, Pg> {
+impl QueryFragment<Pg> for BoxedLimitOffsetClause<'_, Pg> {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         if let Some(ref limit) = self.limit {
             limit.walk_ast(out.reborrow())?;

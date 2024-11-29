@@ -152,7 +152,7 @@ pub(super) struct StatementUse<'a> {
     inner: MaybeCached<'a, Statement>,
 }
 
-impl<'a> StatementUse<'a> {
+impl StatementUse<'_> {
     pub(in crate::mysql::connection) fn affected_rows(&self) -> QueryResult<usize> {
         let affected_rows = unsafe { ffi::mysql_stmt_affected_rows(self.inner.stmt.as_ptr()) };
         affected_rows
@@ -211,7 +211,7 @@ impl<'a> StatementUse<'a> {
     }
 }
 
-impl<'a> Drop for StatementUse<'a> {
+impl Drop for StatementUse<'_> {
     fn drop(&mut self) {
         unsafe {
             ffi::mysql_stmt_free_result(self.inner.stmt.as_ptr());

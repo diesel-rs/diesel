@@ -186,7 +186,7 @@ pub trait Query {
     type SqlType;
 }
 
-impl<'a, T: Query> Query for &'a T {
+impl<T: Query> Query for &T {
     type SqlType = T::SqlType;
 }
 
@@ -300,7 +300,7 @@ where
     }
 }
 
-impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T
+impl<T: ?Sized, DB> QueryFragment<DB> for &T
 where
     DB: Backend,
     T: QueryFragment<DB>,

@@ -86,7 +86,7 @@ impl Display for EmbeddedName {
     }
 }
 
-impl<'a, DB: Backend> Migration<DB> for &'a EmbeddedMigration {
+impl<DB: Backend> Migration<DB> for &EmbeddedMigration {
     fn run(&self, conn: &mut dyn diesel::connection::BoxableConnection<DB>) -> Result<()> {
         Ok(conn.batch_execute(self.up).map_err(|e| {
             let name = DieselMigrationName::from_name(self.name.name)

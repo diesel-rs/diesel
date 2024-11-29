@@ -80,7 +80,7 @@ impl<T: QueryId + ?Sized> QueryId for Box<T> {
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
 }
 
-impl<'a, T: QueryId + ?Sized> QueryId for &'a T {
+impl<T: QueryId + ?Sized> QueryId for &T {
     type QueryId = T::QueryId;
 
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;

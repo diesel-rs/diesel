@@ -1,0 +1,11 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    allow:
+      dependency-type: "direct"
+    schedule:
+      interval: "weekly"
+    reviewers:
+      - "diesel/reviewer"
+    versioning-strategy: "widen"

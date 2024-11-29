@@ -40,7 +40,7 @@ pub(in crate::mysql::connection) struct MysqlFieldMetadata<'a>(
     std::marker::PhantomData<&'a ()>,
 );
 
-impl<'a> MysqlFieldMetadata<'a> {
+impl MysqlFieldMetadata<'_> {
     pub(in crate::mysql::connection) fn field_name(&self) -> Option<&str> {
         if self.0.name.is_null() {
             None

@@ -26,7 +26,11 @@ impl OwnedSqliteRow {
 impl RowSealed for OwnedSqliteRow {}
 
 impl<'a> Row<'a, Sqlite> for OwnedSqliteRow {
-    type Field<'field> = OwnedSqliteField<'field> where 'a: 'field, Self: 'field;
+    type Field<'field>
+        = OwnedSqliteField<'field>
+    where
+        'a: 'field,
+        Self: 'field;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
