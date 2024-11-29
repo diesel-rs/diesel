@@ -7,5 +7,5 @@ updates:
     schedule:
       interval: "weekly"
     reviewers:
-      - "diesel/reviewer"
+      - "diesel/reviewers"
     versioning-strategy: "widen"
