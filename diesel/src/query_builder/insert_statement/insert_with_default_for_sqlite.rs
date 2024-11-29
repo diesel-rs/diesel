@@ -13,9 +13,9 @@ pub trait DebugQueryHelper<ContainsDefaultableValue> {
     fn fmt_display(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
 
-impl<'a, T, V, QId, Op, Ret, const STATIC_QUERY_ID: bool> DebugQueryHelper<Yes>
+impl<T, V, QId, Op, Ret, const STATIC_QUERY_ID: bool> DebugQueryHelper<Yes>
     for DebugQuery<
-        'a,
+        '_,
         InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op, Ret>,
         Sqlite,
     >
@@ -108,9 +108,9 @@ where
     }
 }
 
-impl<'a, T, V, QId, Op, O, const STATIC_QUERY_ID: bool> Display
+impl<T, V, QId, Op, O, const STATIC_QUERY_ID: bool> Display
     for DebugQuery<
-        'a,
+        '_,
         InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>,
         Sqlite,
     >
@@ -124,9 +124,9 @@ where
     }
 }
 
-impl<'a, T, V, QId, Op, O, const STATIC_QUERY_ID: bool> Debug
+impl<T, V, QId, Op, O, const STATIC_QUERY_ID: bool> Debug
     for DebugQuery<
-        'a,
+        '_,
         InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>,
         Sqlite,
     >
@@ -204,7 +204,7 @@ where
     type Out = I::Out;
 }
 
-impl<'a, T> ContainsDefaultableValue for &'a T
+impl<T> ContainsDefaultableValue for &T
 where
     T: ContainsDefaultableValue,
 {

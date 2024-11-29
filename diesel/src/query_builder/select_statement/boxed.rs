@@ -181,26 +181,26 @@ impl<'a, ST, QS, DB, GB> BoxedQueryHelper<'a, QS, DB> for BoxedSelectStatement<'
     }
 }
 
-impl<'a, ST, QS, DB, GB> Query for BoxedSelectStatement<'a, ST, QS, DB, GB>
+impl<ST, QS, DB, GB> Query for BoxedSelectStatement<'_, ST, QS, DB, GB>
 where
     DB: Backend,
 {
     type SqlType = ST;
 }
 
-impl<'a, ST, QS, DB, GB> SelectQuery for BoxedSelectStatement<'a, ST, QS, DB, GB>
+impl<ST, QS, DB, GB> SelectQuery for BoxedSelectStatement<'_, ST, QS, DB, GB>
 where
     DB: Backend,
 {
     type SqlType = ST;
 }
 
-impl<'a, ST, QS, QS2, DB, GB> ValidSubselect<QS2> for BoxedSelectStatement<'a, ST, QS, DB, GB> where
+impl<ST, QS, QS2, DB, GB> ValidSubselect<QS2> for BoxedSelectStatement<'_, ST, QS, DB, GB> where
     Self: Query<SqlType = ST>
 {
 }
 
-impl<'a, ST, QS, DB, GB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB, GB>
+impl<ST, QS, DB, GB> QueryFragment<DB> for BoxedSelectStatement<'_, ST, QS, DB, GB>
 where
     DB: Backend,
     Self: QueryFragment<DB, DB::SelectStatementSyntax>,
@@ -225,7 +225,7 @@ where
     }
 }
 
-impl<'a, ST, QS, DB, GB> QueryId for BoxedSelectStatement<'a, ST, QS, DB, GB> {
+impl<ST, QS, DB, GB> QueryId for BoxedSelectStatement<'_, ST, QS, DB, GB> {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
@@ -256,7 +256,7 @@ where
     }
 }
 
-impl<'a, ST, QS, DB, GB> DistinctDsl for BoxedSelectStatement<'a, ST, QS, DB, GB>
+impl<ST, QS, DB, GB> DistinctDsl for BoxedSelectStatement<'_, ST, QS, DB, GB>
 where
     DB: Backend,
     DistinctClause: QueryFragment<DB>,
@@ -379,7 +379,7 @@ where
     }
 }
 
-impl<'a, ST, QS, DB, GB> LimitDsl for BoxedSelectStatement<'a, ST, QS, DB, GB>
+impl<ST, QS, DB, GB> LimitDsl for BoxedSelectStatement<'_, ST, QS, DB, GB>
 where
     DB: Backend,
     LimitClause<AsExprOf<i64, BigInt>>: QueryFragment<DB>,
@@ -392,7 +392,7 @@ where
     }
 }
 
-impl<'a, ST, QS, DB, GB> OffsetDsl for BoxedSelectStatement<'a, ST, QS, DB, GB>
+impl<ST, QS, DB, GB> OffsetDsl for BoxedSelectStatement<'_, ST, QS, DB, GB>
 where
     DB: Backend,
     OffsetClause<AsExprOf<i64, BigInt>>: QueryFragment<DB>,
@@ -439,7 +439,7 @@ where
     }
 }
 
-impl<'a, ST, QS, DB, Rhs> JoinTo<Rhs> for BoxedSelectStatement<'a, ST, FromClause<QS>, DB, ()>
+impl<ST, QS, DB, Rhs> JoinTo<Rhs> for BoxedSelectStatement<'_, ST, FromClause<QS>, DB, ()>
 where
     QS: JoinTo<Rhs> + QuerySource,
 {
@@ -451,11 +451,11 @@ where
     }
 }
 
-impl<'a, ST, QS, DB, GB> QueryDsl for BoxedSelectStatement<'a, ST, QS, DB, GB> {}
+impl<ST, QS, DB, GB> QueryDsl for BoxedSelectStatement<'_, ST, QS, DB, GB> {}
 
-impl<'a, ST, QS, DB, Conn, GB> RunQueryDsl<Conn> for BoxedSelectStatement<'a, ST, QS, DB, GB> {}
+impl<ST, QS, DB, Conn, GB> RunQueryDsl<Conn> for BoxedSelectStatement<'_, ST, QS, DB, GB> {}
 
-impl<'a, ST, QS, DB, T, GB> Insertable<T> for BoxedSelectStatement<'a, ST, QS, DB, GB>
+impl<ST, QS, DB, T, GB> Insertable<T> for BoxedSelectStatement<'_, ST, QS, DB, GB>
 where
     T: Table,
     Self: Query,
@@ -469,7 +469,7 @@ where
     }
 }
 
-impl<'a, 'b, ST, QS, DB, T, GB> Insertable<T> for &'b BoxedSelectStatement<'a, ST, QS, DB, GB>
+impl<ST, QS, DB, T, GB> Insertable<T> for &BoxedSelectStatement<'_, ST, QS, DB, GB>
 where
     T: Table,
     Self: Query,
@@ -522,7 +522,7 @@ where
     }
 }
 
-impl<'a, ST, QS, DB, GB> CombineDsl for BoxedSelectStatement<'a, ST, QS, DB, GB>
+impl<ST, QS, DB, GB> CombineDsl for BoxedSelectStatement<'_, ST, QS, DB, GB>
 where
     Self: Query,
 {

@@ -204,7 +204,7 @@ pub struct DropTable<'a> {
     pub can_drop: bool,
 }
 
-impl<'a> Drop for DropTable<'a> {
+impl Drop for DropTable<'_> {
     fn drop(&mut self) {
         if self.can_drop {
             diesel::sql_query(format!("DROP TABLE {}", self.table_name))

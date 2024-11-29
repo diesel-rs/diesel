@@ -8,7 +8,7 @@ error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisf
    |
    = help: the following other types implement trait `JoinTo<T>`:
              `users::table` implements `JoinTo<Alias<S>>`
-             `users::table` implements `JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>`
+             `users::table` implements `JoinTo<BoxedSelectStatement<'_, FromClause<QS>, ST, DB>>`
              `users::table` implements `JoinTo<JoinOn<Join, On>>`
              `users::table` implements `JoinTo<Only<S>>`
              `users::table` implements `JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>`
@@ -34,7 +34,7 @@ error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisf
    |
    = help: the following other types implement trait `JoinTo<T>`:
              `users::table` implements `JoinTo<Alias<S>>`
-             `users::table` implements `JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>`
+             `users::table` implements `JoinTo<BoxedSelectStatement<'_, FromClause<QS>, ST, DB>>`
              `users::table` implements `JoinTo<JoinOn<Join, On>>`
              `users::table` implements `JoinTo<Only<S>>`
              `users::table` implements `JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>`
@@ -58,7 +58,7 @@ error[E0277]: the trait bound `posts::table: JoinTo<users::table>` is not satisf
    |
    = help: the following other types implement trait `JoinTo<T>`:
              `posts::table` implements `JoinTo<Alias<S>>`
-             `posts::table` implements `JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>`
+             `posts::table` implements `JoinTo<BoxedSelectStatement<'_, FromClause<QS>, ST, DB>>`
              `posts::table` implements `JoinTo<JoinOn<Join, On>>`
              `posts::table` implements `JoinTo<Only<S>>`
              `posts::table` implements `JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>`

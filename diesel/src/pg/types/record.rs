@@ -240,7 +240,7 @@ mod tests {
         #[diesel(sql_type = MyType)]
         struct MyStruct<'a>(i32, &'a str);
 
-        impl<'a> ToSql<MyType, Pg> for MyStruct<'a> {
+        impl ToSql<MyType, Pg> for MyStruct<'_> {
             fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
                 WriteTuple::<(Integer, Text)>::write_tuple(&(self.0, self.1), out)
             }

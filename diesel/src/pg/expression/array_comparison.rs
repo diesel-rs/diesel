@@ -175,7 +175,7 @@ where
     }
 }
 
-impl<'a, ST, QS, DB, GB> AsArrayExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB, GB>
+impl<ST, QS, DB, GB> AsArrayExpression<ST> for BoxedSelectStatement<'_, ST, QS, DB, GB>
 where
     ST: 'static,
     Self: SelectQuery<SqlType = ST>,

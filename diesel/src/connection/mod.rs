@@ -601,6 +601,9 @@ pub(crate) mod private {
     where
         T: super::LoadConnection<B>,
     {
-        type Cursor<'conn, 'query> = <T as super::LoadConnection<B>>::Cursor<'conn, 'query> where T: 'conn;
+        type Cursor<'conn, 'query>
+            = <T as super::LoadConnection<B>>::Cursor<'conn, 'query>
+        where
+            T: 'conn;
     }
 }

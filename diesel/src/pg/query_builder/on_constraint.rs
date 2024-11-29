@@ -53,14 +53,14 @@ pub struct OnConstraint<'a> {
     constraint_name: &'a str,
 }
 
-impl<'a> QueryId for OnConstraint<'a> {
+impl QueryId for OnConstraint<'_> {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<'a> QueryFragment<Pg, crate::pg::backend::PgOnConflictClause>
-    for ConflictTarget<OnConstraint<'a>>
+impl QueryFragment<Pg, crate::pg::backend::PgOnConflictClause>
+    for ConflictTarget<OnConstraint<'_>>
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
@@ -70,4 +70,4 @@ impl<'a> QueryFragment<Pg, crate::pg::backend::PgOnConflictClause>
     }
 }
 
-impl<'a, Table> OnConflictTarget<Table> for ConflictTarget<OnConstraint<'a>> {}
+impl<Table> OnConflictTarget<Table> for ConflictTarget<OnConstraint<'_>> {}

@@ -5,7 +5,7 @@ error[E0277]: the trait bound `users::table: UndecoratedInsertRecord<posts::tabl
    |          ^^^^^^ the trait `UndecoratedInsertRecord<posts::table>` is not implemented for `users::table`, which is required by `Vec<users::table>: diesel::Insertable<posts::table>`
    |
    = help: the following other types implement trait `UndecoratedInsertRecord<Table>`:
-             `&'a T` implements `UndecoratedInsertRecord<Tab>`
+             `&T` implements `UndecoratedInsertRecord<Tab>`
              `(T0, T1)` implements `UndecoratedInsertRecord<Tab>`
              `(T0, T1, T2)` implements `UndecoratedInsertRecord<Tab>`
              `(T0, T1, T2, T3)` implements `UndecoratedInsertRecord<Tab>`

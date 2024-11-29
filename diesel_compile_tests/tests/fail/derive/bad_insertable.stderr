@@ -5,7 +5,7 @@ error[E0277]: the trait bound `std::string::String: diesel::Expression` is not s
    |          ^^^^^^^^^^ the trait `diesel::Expression` is not implemented for `std::string::String`, which is required by `std::string::String: AsExpression<diesel::sql_types::Integer>`
    |
    = help: the following other types implement trait `diesel::Expression`:
-             &'a T
+             &T
              (T0, T1)
              (T0, T1, T2)
              (T0, T1, T2, T3)
@@ -24,7 +24,7 @@ error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
    |          ^^^^^^^^^^ the trait `diesel::Expression` is not implemented for `i32`, which is required by `i32: AsExpression<diesel::sql_types::Text>`
    |
    = help: the following other types implement trait `diesel::Expression`:
-             &'a T
+             &T
              (T0, T1)
              (T0, T1, T2)
              (T0, T1, T2, T3)
@@ -43,7 +43,7 @@ error[E0277]: the trait bound `std::string::String: diesel::Expression` is not s
    |          ^^^^^^^^^^ the trait `diesel::Expression` is not implemented for `std::string::String`, which is required by `&'insert std::string::String: AsExpression<diesel::sql_types::Integer>`
    |
    = help: the following other types implement trait `diesel::Expression`:
-             &'a T
+             &T
              (T0, T1)
              (T0, T1, T2)
              (T0, T1, T2, T3)
@@ -63,7 +63,7 @@ error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
    |          ^^^^^^^^^^ the trait `diesel::Expression` is not implemented for `i32`, which is required by `&'insert i32: AsExpression<diesel::sql_types::Text>`
    |
    = help: the following other types implement trait `diesel::Expression`:
-             &'a T
+             &T
              (T0, T1)
              (T0, T1, T2)
              (T0, T1, T2, T3)
@@ -83,7 +83,7 @@ error[E0277]: the trait bound `std::string::String: diesel::Expression` is not s
    |     ^^ the trait `diesel::Expression` is not implemented for `std::string::String`, which is required by `std::string::String: AsExpression<diesel::sql_types::Integer>`
    |
    = help: the following other types implement trait `diesel::Expression`:
-             &'a T
+             &T
              (T0, T1)
              (T0, T1, T2)
              (T0, T1, T2, T3)
@@ -101,7 +101,7 @@ error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
    |     ^^^^ the trait `diesel::Expression` is not implemented for `i32`, which is required by `i32: AsExpression<diesel::sql_types::Text>`
    |
    = help: the following other types implement trait `diesel::Expression`:
-             &'a T
+             &T
              (T0, T1)
              (T0, T1, T2)
              (T0, T1, T2, T3)
@@ -119,7 +119,7 @@ error[E0277]: the trait bound `std::string::String: diesel::Expression` is not s
    |     ^^ the trait `diesel::Expression` is not implemented for `std::string::String`, which is required by `&'insert std::string::String: AsExpression<diesel::sql_types::Integer>`
    |
    = help: the following other types implement trait `diesel::Expression`:
-             &'a T
+             &T
              (T0, T1)
              (T0, T1, T2)
              (T0, T1, T2, T3)
@@ -138,7 +138,7 @@ error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
    |     ^^^^ the trait `diesel::Expression` is not implemented for `i32`, which is required by `&'insert i32: AsExpression<diesel::sql_types::Text>`
    |
    = help: the following other types implement trait `diesel::Expression`:
-             &'a T
+             &T
              (T0, T1)
              (T0, T1, T2)
              (T0, T1, T2, T3)

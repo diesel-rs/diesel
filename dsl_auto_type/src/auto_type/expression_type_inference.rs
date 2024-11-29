@@ -44,7 +44,7 @@ pub struct InferrerSettings {
     pub(crate) function_types_case: Case,
 }
 
-impl<'a, 'p> LocalVariablesMap<'a, 'p> {
+impl<'a> LocalVariablesMap<'a, '_> {
     pub(crate) fn inferrer(&'a self) -> TypeInferrer<'a> {
         TypeInferrer {
             local_variables_map: self,
@@ -133,7 +133,7 @@ impl TypeInferrer<'_> {
                 // This is either a local variable or we should assume that the type exists at
                 // the same path as the function (with applied casing for last segment)
                 let path_is_ident = path.get_ident();
-                if path_is_ident.map_or(false, |ident| ident == "self") {
+                if path_is_ident.is_some_and(|ident| ident == "self") {
                     parse_quote!(Self)
                 } else if let Some(LetStatementInferredType { type_, errors }) = path_is_ident
                     .and_then(|path_single_ident| {

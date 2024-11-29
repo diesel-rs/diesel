@@ -49,12 +49,15 @@ where
     U: FromSqlRow<<T::SqlType as CompatibleType<U, DB>>::SqlType, DB> + 'static,
     <T::SqlType as CompatibleType<U, DB>>::SqlType: 'static,
 {
-    type RowIter<'conn> = LoadIter<
+    type RowIter<'conn>
+        = LoadIter<
         U,
         <Conn as LoadConnection<B>>::Cursor<'conn, 'query>,
         <T::SqlType as CompatibleType<U, DB>>::SqlType,
         DB,
-    > where Conn: 'conn;
+    >
+    where
+        Conn: 'conn;
 
     fn internal_load(self, conn: &mut Conn) -> QueryResult<Self::RowIter<'_>> {
         Ok(LoadIter {

@@ -84,7 +84,7 @@ impl<'conn, 'query> RowByRowCursor<'conn, 'query> {
     }
 }
 
-impl<'conn, 'query> Iterator for RowByRowCursor<'conn, 'query> {
+impl Iterator for RowByRowCursor<'_, '_> {
     type Item = crate::QueryResult<PgRow>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -121,7 +121,7 @@ impl<'conn, 'query> Iterator for RowByRowCursor<'conn, 'query> {
     }
 }
 
-impl<'conn, 'query> Drop for RowByRowCursor<'conn, 'query> {
+impl Drop for RowByRowCursor<'_, '_> {
     fn drop(&mut self) {
         loop {
             let res = super::update_transaction_manager_status(

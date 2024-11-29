@@ -9,7 +9,7 @@ error[E0277]: `diesel::query_builder::upsert::into_conflict_clause::OnConflictSe
    = note: this usually means that the `Sqlite` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<BoxedSelectStatement<'a, ST, QS, Sqlite, GB>>` implements `QueryFragment<Sqlite>`
+             `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<BoxedSelectStatement<'_, ST, QS, Sqlite, GB>>` implements `QueryFragment<Sqlite>`
              `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S>` implements `QueryFragment<Mysql>`
              `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S>` implements `QueryFragment<Pg>`
              `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<SelectStatement<F, S, D, diesel::query_builder::where_clause::WhereClause<W>, O, LOf, G, H, LC>>` implements `QueryFragment<Sqlite>`

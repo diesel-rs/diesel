@@ -21,7 +21,11 @@ impl PgRow {
 impl RowSealed for PgRow {}
 
 impl<'a> Row<'a, Pg> for PgRow {
-    type Field<'f> = PgField<'f> where 'a: 'f, Self: 'f;
+    type Field<'f>
+        = PgField<'f>
+    where
+        'a: 'f,
+        Self: 'f;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
@@ -81,7 +85,7 @@ impl<'a> Field<'a, Pg> for PgField<'a> {
     }
 }
 
-impl<'a> TypeOidLookup for PgField<'a> {
+impl TypeOidLookup for PgField<'_> {
     fn lookup(&self) -> std::num::NonZeroU32 {
         self.db_result.column_type(self.col_idx)
     }

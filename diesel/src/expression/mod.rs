@@ -161,7 +161,7 @@ impl<T: Expression + ?Sized> Expression for Box<T> {
     type SqlType = T::SqlType;
 }
 
-impl<'a, T: Expression + ?Sized> Expression for &'a T {
+impl<T: Expression + ?Sized> Expression for &T {
     type SqlType = T::SqlType;
 }
 
@@ -701,7 +701,7 @@ impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for Box<T> {
     type IsAggregate = T::IsAggregate;
 }
 
-impl<'a, T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for &'a T {
+impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for &T {
     type IsAggregate = T::IsAggregate;
 }
 
@@ -1030,16 +1030,16 @@ where
 {
 }
 
-impl<'a, QS, ST, DB, GB, IsAggregate> QueryId
-    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a
+impl<QS, ST, DB, GB, IsAggregate> QueryId
+    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + '_
 {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<'a, QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
-    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a
+impl<QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
+    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + '_
 {
     type IsAggregate = IsAggregate;
 }

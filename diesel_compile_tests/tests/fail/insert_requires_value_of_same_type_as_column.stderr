@@ -5,7 +5,7 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
    |                       ^^ the trait `diesel::Expression` is not implemented for `{integer}`, which is required by `{integer}: AsExpression<diesel::sql_types::Text>`
    |
    = help: the following other types implement trait `diesel::Expression`:
-             &'a T
+             &T
              (T0, T1)
              (T0, T1, T2)
              (T0, T1, T2, T3)

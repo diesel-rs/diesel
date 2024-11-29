@@ -71,7 +71,7 @@ where
     }
 }
 
-impl<'a, T, ST> AsExpression<Nullable<ST>> for &'a Option<T>
+impl<T, ST> AsExpression<Nullable<ST>> for &Option<T>
 where
     ST: SqlType<IsNull = is_nullable::NotNull>,
     Nullable<ST>: TypedExpressionType,

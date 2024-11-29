@@ -47,7 +47,7 @@ where
     }
 }
 
-impl<'a> QueryFragment<Sqlite> for BoxedLimitOffsetClause<'a, Sqlite> {
+impl QueryFragment<Sqlite> for BoxedLimitOffsetClause<'_, Sqlite> {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
         match (self.limit.as_ref(), self.offset.as_ref()) {
             (Some(limit), Some(offset)) => {

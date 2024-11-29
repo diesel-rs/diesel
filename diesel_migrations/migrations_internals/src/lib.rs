@@ -65,7 +65,7 @@ pub fn search_for_migrations_directory(path: &Path) -> Option<PathBuf> {
 }
 
 pub fn valid_sql_migration_directory(path: &Path) -> bool {
-    file_names(path).map_or(false, |files| files.iter().any(|f| f == "up.sql"))
+    file_names(path).is_ok_and(|files| files.iter().any(|f| f == "up.sql"))
 }
 
 pub fn version_from_string(path: &str) -> Option<String> {

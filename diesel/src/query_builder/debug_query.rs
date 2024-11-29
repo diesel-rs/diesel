@@ -27,7 +27,7 @@ impl<'a, T, DB> DebugQuery<'a, T, DB> {
     }
 }
 
-impl<'a, T, DB> Display for DebugQuery<'a, T, DB>
+impl<T, DB> Display for DebugQuery<'_, T, DB>
 where
     DB: Backend + Default,
     DB::QueryBuilder: Default,
@@ -43,7 +43,7 @@ where
     }
 }
 
-impl<'a, T, DB> Debug for DebugQuery<'a, T, DB>
+impl<T, DB> Debug for DebugQuery<'_, T, DB>
 where
     DB: Backend + Default,
     DB::QueryBuilder: Default,
@@ -78,7 +78,7 @@ impl<'a, T, DB> DebugBinds<'a, T, DB> {
     }
 }
 
-impl<'a, T, DB> Debug for DebugBinds<'a, T, DB>
+impl<T, DB> Debug for DebugBinds<'_, T, DB>
 where
     DB: Backend + Default,
     T: QueryFragment<DB>,
