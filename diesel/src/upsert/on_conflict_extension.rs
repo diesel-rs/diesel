@@ -146,7 +146,6 @@ where
     /// let user = User { id: 1, name: "Sean" };
     /// let same_name_different_id = User { id: 2, name: "Sean" };
     /// let same_id_different_name = User { id: 1, name: "Pascal" };
-
     /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
     ///
     /// let query = diesel::insert_into(users)

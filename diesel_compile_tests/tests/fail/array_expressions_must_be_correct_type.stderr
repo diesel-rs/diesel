@@ -41,7 +41,7 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
   |     required by a bound introduced by this call
   |
   = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-            `&'a T` implements `ValidGrouping<GB>`
+            `&T` implements `ValidGrouping<GB>`
             `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
             `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
             `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
@@ -107,7 +107,7 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
   |                                 required by a bound introduced by this call
   |
   = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-            `&'a T` implements `ValidGrouping<GB>`
+            `&T` implements `ValidGrouping<GB>`
             `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
             `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
             `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
@@ -139,7 +139,7 @@ error[E0277]: the trait bound `f64: QueryId` is not satisfied
   |                                 required by a bound introduced by this call
   |
   = help: the following other types implement trait `QueryId`:
-            &'a T
+            &T
             ()
             (T0, T1)
             (T0, T1, T2)
@@ -172,7 +172,7 @@ error[E0277]: `f64` is no valid SQL fragment for the `Pg` backend
   = note: this usually means that the `Pg` database system does not support
           this SQL syntax
   = help: the following other types implement trait `QueryFragment<DB, SP>`:
-            `&'a T` implements `QueryFragment<DB>`
+            `&T` implements `QueryFragment<DB>`
             `()` implements `QueryFragment<DB>`
             `(T0, T1)` implements `QueryFragment<__DB>`
             `(T0, T1, T2)` implements `QueryFragment<__DB>`
@@ -203,7 +203,7 @@ error[E0277]: the trait bound `f64: diesel::Expression` is not satisfied
   |            required by a bound introduced by this call
   |
   = help: the following other types implement trait `diesel::Expression`:
-            &'a T
+            &T
             (T0, T1)
             (T0, T1, T2)
             (T0, T1, T2, T3)

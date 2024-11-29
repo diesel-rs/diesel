@@ -127,10 +127,14 @@ impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
     }
 }
 
-impl<'stmt, 'query> RowSealed for SqliteRow<'stmt, 'query> {}
+impl RowSealed for SqliteRow<'_, '_> {}
 
-impl<'stmt, 'query> Row<'stmt, Sqlite> for SqliteRow<'stmt, 'query> {
-    type Field<'field> = SqliteField<'field, 'field> where 'stmt: 'field, Self: 'field;
+impl<'stmt> Row<'stmt, Sqlite> for SqliteRow<'stmt, '_> {
+    type Field<'field>
+        = SqliteField<'field, 'field>
+    where
+        'stmt: 'field,
+        Self: 'field;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
@@ -154,7 +158,7 @@ impl<'stmt, 'query> Row<'stmt, Sqlite> for SqliteRow<'stmt, 'query> {
     }
 }
 
-impl<'stmt, 'query> RowIndex<usize> for SqliteRow<'stmt, 'query> {
+impl RowIndex<usize> for SqliteRow<'_, '_> {
     fn idx(&self, idx: usize) -> Option<usize> {
         if idx < self.field_count {
             Some(idx)
@@ -164,7 +168,7 @@ impl<'stmt, 'query> RowIndex<usize> for SqliteRow<'stmt, 'query> {
     }
 }
 
-impl<'stmt, 'idx, 'query> RowIndex<&'idx str> for SqliteRow<'stmt, 'query> {
+impl<'idx> RowIndex<&'idx str> for SqliteRow<'_, '_> {
     fn idx(&self, field_name: &'idx str) -> Option<usize> {
         match &mut *self.inner.borrow_mut() {
             PrivateSqliteRow::Direct(stmt) => stmt.index_for_column_name(field_name),
@@ -181,7 +185,7 @@ pub struct SqliteField<'stmt, 'query> {
     pub(super) col_idx: usize,
 }
 
-impl<'stmt, 'query> Field<'stmt, Sqlite> for SqliteField<'stmt, 'query> {
+impl<'stmt> Field<'stmt, Sqlite> for SqliteField<'stmt, '_> {
     fn field_name(&self) -> Option<&str> {
         match &*self.row {
             PrivateSqliteRow::Direct(stmt) => stmt.field_name(

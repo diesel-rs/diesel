@@ -303,7 +303,7 @@ pub enum MaybeCached<'a, T: 'a> {
     Cached(&'a mut T),
 }
 
-impl<'a, T> Deref for MaybeCached<'a, T> {
+impl<T> Deref for MaybeCached<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -314,7 +314,7 @@ impl<'a, T> Deref for MaybeCached<'a, T> {
     }
 }
 
-impl<'a, T> DerefMut for MaybeCached<'a, T> {
+impl<T> DerefMut for MaybeCached<'_, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match *self {
             MaybeCached::CannotCache(ref mut x) => x,

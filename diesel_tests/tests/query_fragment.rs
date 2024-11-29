@@ -11,7 +11,7 @@ pub struct LiteralSelect<'a> {
     pub(crate) literal: String,
 }
 
-impl<'a> QueryFragment<Pg> for LiteralSelect<'a> {
+impl QueryFragment<Pg> for LiteralSelect<'_> {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
 
@@ -24,15 +24,15 @@ impl<'a> QueryFragment<Pg> for LiteralSelect<'a> {
     }
 }
 
-impl<'a> QueryId for LiteralSelect<'a> {
+impl QueryId for LiteralSelect<'_> {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<'a, Conn> RunQueryDsl<Conn> for LiteralSelect<'a> {}
+impl<Conn> RunQueryDsl<Conn> for LiteralSelect<'_> {}
 
-impl<'a> Query for LiteralSelect<'a> {
+impl Query for LiteralSelect<'_> {
     type SqlType = Text;
 }
 

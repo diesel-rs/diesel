@@ -39,7 +39,7 @@ impl RawConnection {
             ffi::mysql_options(
                 result.0.as_ptr(),
                 ffi::mysql_option::MYSQL_SET_CHARSET_NAME,
-                b"utf8mb4\0".as_ptr() as *const libc::c_void,
+                c"utf8mb4".as_ptr() as *const libc::c_void,
             )
         };
         assert_eq!(

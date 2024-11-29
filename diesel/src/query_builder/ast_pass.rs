@@ -90,6 +90,8 @@ where
         }
     }
 
+    /// Register an internal flag whether or not diesel should
+    /// generate explicitly qualified column names
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]

@@ -86,7 +86,7 @@ pub trait CanInsertInSingleQuery<DB: Backend> {
     fn rows_to_insert(&self) -> Option<usize>;
 }
 
-impl<'a, T, DB> CanInsertInSingleQuery<DB> for &'a T
+impl<T, DB> CanInsertInSingleQuery<DB> for &T
 where
     T: ?Sized + CanInsertInSingleQuery<DB>,
     DB: Backend,

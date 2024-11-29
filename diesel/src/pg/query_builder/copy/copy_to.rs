@@ -152,7 +152,7 @@ impl<'f> Field<'f, Pg> for CopyField<'f> {
 }
 
 #[cfg(feature = "postgres")]
-impl<'a> TypeOidLookup for CopyField<'a> {
+impl TypeOidLookup for CopyField<'_> {
     fn lookup(&self) -> std::num::NonZeroU32 {
         self.result.column_type(self.col_idx)
     }
@@ -181,7 +181,8 @@ impl<'a> RowIndex<&'a str> for CopyRow<'_> {
 
 #[cfg(feature = "postgres")]
 impl<'a> Row<'a, Pg> for CopyRow<'_> {
-    type Field<'f> = CopyField<'f>
+    type Field<'f>
+        = CopyField<'f>
     where
         'a: 'f,
         Self: 'f;

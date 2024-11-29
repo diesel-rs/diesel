@@ -3804,7 +3804,7 @@ pub(in crate::pg) mod private {
         }
     }
 
-    impl<'a> JsonRemoveIndex for Vec<&'a str> {
+    impl JsonRemoveIndex for Vec<&str> {
         type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
 
         fn into_json_index_expression(self) -> Self::Expression {

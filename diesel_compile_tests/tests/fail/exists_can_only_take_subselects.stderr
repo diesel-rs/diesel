@@ -5,7 +5,7 @@ error[E0277]: the trait bound `bool: SelectQuery` is not satisfied
    |                  ^^^^^^ the trait `SelectQuery` is not implemented for `bool`, which is required by `SelectStatement<FromClause<users::table>>: FilterDsl<_>`
    |
    = help: the following other types implement trait `SelectQuery`:
-             BoxedSelectStatement<'a, ST, QS, DB, GB>
+             BoxedSelectStatement<'_, ST, QS, DB, GB>
              SelectStatement<F, S, D, W, O, LOf, G, H, LC>
              diesel::query_builder::combination_clause::CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
    = note: required for `diesel::expression::subselect::Subselect<bool, Bool>` to implement `diesel::Expression`
@@ -20,7 +20,7 @@ error[E0277]: the trait bound `users::columns::id: SelectQuery` is not satisfied
    |                  ^^^^^^ the trait `SelectQuery` is not implemented for `users::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: FilterDsl<_>`
    |
    = help: the following other types implement trait `SelectQuery`:
-             BoxedSelectStatement<'a, ST, QS, DB, GB>
+             BoxedSelectStatement<'_, ST, QS, DB, GB>
              SelectStatement<F, S, D, W, O, LOf, G, H, LC>
              diesel::query_builder::combination_clause::CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
    = note: required for `diesel::expression::subselect::Subselect<users::columns::id, Bool>` to implement `diesel::Expression`

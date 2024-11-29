@@ -24,7 +24,7 @@ pub struct SqliteBindValue<'a> {
     pub(in crate::sqlite) inner: InternalSqliteBindValue<'a>,
 }
 
-impl<'a> From<i32> for SqliteBindValue<'a> {
+impl From<i32> for SqliteBindValue<'_> {
     fn from(i: i32) -> Self {
         Self {
             inner: InternalSqliteBindValue::I32(i),
@@ -32,7 +32,7 @@ impl<'a> From<i32> for SqliteBindValue<'a> {
     }
 }
 
-impl<'a> From<i64> for SqliteBindValue<'a> {
+impl From<i64> for SqliteBindValue<'_> {
     fn from(i: i64) -> Self {
         Self {
             inner: InternalSqliteBindValue::I64(i),
@@ -40,7 +40,7 @@ impl<'a> From<i64> for SqliteBindValue<'a> {
     }
 }
 
-impl<'a> From<f64> for SqliteBindValue<'a> {
+impl From<f64> for SqliteBindValue<'_> {
     fn from(f: f64) -> Self {
         Self {
             inner: InternalSqliteBindValue::F64(f),
@@ -70,7 +70,7 @@ impl<'a> From<&'a str> for SqliteBindValue<'a> {
     }
 }
 
-impl<'a> From<String> for SqliteBindValue<'a> {
+impl From<String> for SqliteBindValue<'_> {
     fn from(s: String) -> Self {
         Self {
             inner: InternalSqliteBindValue::String(s.into_boxed_str()),
@@ -78,7 +78,7 @@ impl<'a> From<String> for SqliteBindValue<'a> {
     }
 }
 
-impl<'a> From<Vec<u8>> for SqliteBindValue<'a> {
+impl From<Vec<u8>> for SqliteBindValue<'_> {
     fn from(b: Vec<u8>) -> Self {
         Self {
             inner: InternalSqliteBindValue::Binary(b.into_boxed_slice()),
@@ -234,7 +234,7 @@ impl<'a> std::convert::From<&InternalSqliteBindValue<'a>> for OwnedSqliteBindVal
     }
 }
 
-impl<'a> std::convert::From<&OwnedSqliteBindValue> for InternalSqliteBindValue<'a> {
+impl std::convert::From<&OwnedSqliteBindValue> for InternalSqliteBindValue<'_> {
     fn from(value: &OwnedSqliteBindValue) -> Self {
         match value {
             OwnedSqliteBindValue::String(s) => Self::String(s.clone()),

@@ -24,7 +24,7 @@ pub type Result<T> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
 #[diesel(sql_type = Text)]
 pub struct MigrationVersion<'a>(Cow<'a, str>);
 
-impl<'a> MigrationVersion<'a> {
+impl MigrationVersion<'_> {
     /// Convert the current migration version into
     /// an owned variant with static life time
     pub fn as_owned(&self) -> MigrationVersion<'static> {
@@ -32,7 +32,7 @@ impl<'a> MigrationVersion<'a> {
     }
 }
 
-impl<'a, DB> FromSql<Text, DB> for MigrationVersion<'a>
+impl<DB> FromSql<Text, DB> for MigrationVersion<'_>
 where
     String: FromSql<Text, DB>,
     DB: Backend,
@@ -56,7 +56,7 @@ where
     }
 }
 
-impl<'a> From<String> for MigrationVersion<'a> {
+impl From<String> for MigrationVersion<'_> {
     fn from(s: String) -> Self {
         MigrationVersion(Cow::Owned(s))
     }
@@ -74,7 +74,7 @@ impl<'a> From<&'a String> for MigrationVersion<'a> {
     }
 }
 
-impl<'a> Display for MigrationVersion<'a> {
+impl Display for MigrationVersion<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.0.as_ref())
     }
@@ -140,7 +140,7 @@ pub trait MigrationSource<DB: Backend> {
     fn migrations(&self) -> Result<Vec<Box<dyn Migration<DB>>>>;
 }
 
-impl<'a, DB: Backend> Migration<DB> for Box<dyn Migration<DB> + 'a> {
+impl<DB: Backend> Migration<DB> for Box<dyn Migration<DB> + '_> {
     fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
         (**self).run(conn)
     }
@@ -158,7 +158,7 @@ impl<'a, DB: Backend> Migration<DB> for Box<dyn Migration<DB> + 'a> {
     }
 }
 
-impl<'a, DB: Backend> Migration<DB> for &'a dyn Migration<DB> {
+impl<DB: Backend> Migration<DB> for &dyn Migration<DB> {
     fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
         (**self).run(conn)
     }

@@ -173,6 +173,7 @@ pub enum InstrumentationEvent<'a> {
 // these constructors exist to
 // keep `#[non_exhaustive]` on all the variants
 // and to gate the constructors on the unstable feature
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 impl<'a> InstrumentationEvent<'a> {
     /// Create a new `InstrumentationEvent::StartEstablishConnection` event
     #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
@@ -351,6 +352,7 @@ impl DerefMut for DynInstrumentation {
 }
 
 impl DynInstrumentation {
+    /// Create a instance of the default instrumentation provider
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
@@ -361,6 +363,7 @@ impl DynInstrumentation {
         }
     }
 
+    /// Create a noop instrumentation provider instance
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
@@ -371,6 +374,7 @@ impl DynInstrumentation {
         }
     }
 
+    /// register an event with the given instrumentation implementation
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]

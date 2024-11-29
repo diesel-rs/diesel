@@ -113,7 +113,7 @@ mod serde_impls {
         {
             struct TableNameVisitor;
 
-            impl<'de> Visitor<'de> for TableNameVisitor {
+            impl Visitor<'_> for TableNameVisitor {
                 type Value = TableName;
 
                 fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

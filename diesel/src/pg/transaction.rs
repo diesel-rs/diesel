@@ -312,7 +312,7 @@ where
     }
 }
 
-impl<'a, C> QueryFragment<Pg> for TransactionBuilder<'a, C> {
+impl<C> QueryFragment<Pg> for TransactionBuilder<'_, C> {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         out.push_sql("BEGIN TRANSACTION");
         if let Some(ref isolation_level) = self.isolation_level {

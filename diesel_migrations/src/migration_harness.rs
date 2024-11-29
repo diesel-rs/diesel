@@ -262,7 +262,7 @@ impl<'a, C> HarnessWithOutput<'a, C, std::io::Stdout> {
     }
 }
 
-impl<'a, C, W, DB> MigrationHarness<DB> for HarnessWithOutput<'a, C, W>
+impl<C, W, DB> MigrationHarness<DB> for HarnessWithOutput<'_, C, W>
 where
     W: Write,
     C: MigrationHarness<DB>,

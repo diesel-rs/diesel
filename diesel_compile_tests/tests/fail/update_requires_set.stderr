@@ -9,7 +9,7 @@ error[E0277]: `diesel::query_builder::update_statement::SetNotCalled` is no vali
    = note: this usually means that the `_` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             `&'a T` implements `QueryFragment<DB>`
+             `&T` implements `QueryFragment<DB>`
              `()` implements `QueryFragment<DB>`
              `(T0, T1)` implements `QueryFragment<__DB>`
              `(T0, T1, T2)` implements `QueryFragment<__DB>`

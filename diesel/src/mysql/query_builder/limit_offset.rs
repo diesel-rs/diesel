@@ -33,7 +33,7 @@ where
     }
 }
 
-impl<'a> QueryFragment<Mysql> for BoxedLimitOffsetClause<'a, Mysql> {
+impl QueryFragment<Mysql> for BoxedLimitOffsetClause<'_, Mysql> {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         match (self.limit.as_ref(), self.offset.as_ref()) {
             (Some(limit), Some(offset)) => {
