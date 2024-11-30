@@ -248,6 +248,18 @@ impl fmt::Display for Error {
 
 impl ::std::error::Error for Error {}
 
+impl From<crate::result::Error> for Error {
+    fn from(other: crate::result::Error) -> Self {
+        Self::QueryError(other)
+    }
+}
+
+impl From<ConnectionError> for Error {
+    fn from(other: ConnectionError) -> Self {
+        Self::ConnectionError(other)
+    }
+}
+
 /// A trait indicating a connection could be used inside a r2d2 pool
 pub trait R2D2Connection: Connection {
     /// Check if a connection is still valid
