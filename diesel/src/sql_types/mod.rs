@@ -676,6 +676,9 @@ pub trait SqlType: 'static {
     ///
     /// ['is_nullable`]: is_nullable
     type IsNull: OneIsNullable<is_nullable::IsNullable> + OneIsNullable<is_nullable::NotNull>;
+
+    #[doc(hidden)]
+    const IS_ARRAY: bool = false;
 }
 
 /// Is one value of `IsNull` nullable?

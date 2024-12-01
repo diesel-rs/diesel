@@ -42,6 +42,9 @@ impl<T, ST: SqlType> InExpression for Subselect<T, ST> {
     fn is_empty(&self) -> bool {
         false
     }
+    fn is_array(&self) -> bool {
+        false
+    }
 }
 
 impl<T, ST, QS> SelectableExpression<QS> for Subselect<T, ST>

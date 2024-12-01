@@ -11,11 +11,14 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, true, false)?;
 
     let struct_name = &item.ident;
+    let generic_count = item.generics.params.len();
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
     let sqlite_tokens = sqlite_tokens(&item, &model);
     let mysql_tokens = mysql_tokens(&item, &model);
     let pg_tokens = pg_tokens(&item, &model);
+
+    let is_array = struct_name == "Array" && generic_count == 1;
 
     Ok(wrap_in_dummy_mod(quote! {
         impl #impl_generics diesel::sql_types::SqlType
@@ -23,6 +26,8 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         #where_clause
         {
             type IsNull = diesel::sql_types::is_nullable::NotNull;
+
+            const IS_ARRAY: bool = #is_array;
         }
 
         impl #impl_generics diesel::sql_types::SingleValue

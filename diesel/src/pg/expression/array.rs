@@ -178,7 +178,13 @@ where
     ST: SqlType,
 {
     type SqlType = ST;
+
     fn is_empty(&self) -> bool {
+        false
+    }
+
+    fn is_array(&self) -> bool {
+        // we want to use the `= ANY(_)` syntax
         false
     }
 }
@@ -189,6 +195,7 @@ where
     ST: SqlType,
 {
     type InExpression = Self;
+
     fn as_in_expression(self) -> Self::InExpression {
         self
     }
@@ -296,7 +303,13 @@ where
     ST: SqlType,
 {
     type SqlType = ST;
+
     fn is_empty(&self) -> bool {
+        false
+    }
+
+    fn is_array(&self) -> bool {
+        // we want to use the `= ANY(_)` syntax
         false
     }
 }
@@ -307,6 +320,7 @@ where
     ST: SqlType,
 {
     type InExpression = Self;
+
     fn as_in_expression(self) -> Self::InExpression {
         self
     }
