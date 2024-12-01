@@ -83,7 +83,10 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                     treat_none_as_null,
                 )?);
 
-                generate_borrowed_changeset = false; // as soon as we hit one field with #[diesel(serialize_as)] there is no point in generating the impl of AsChangeset for borrowed structs
+                generate_borrowed_changeset = false; // as soon as we hit one field with
+                                                     // #[diesel(serialize_as)] there is no point in
+                                                     // generating the impl of AsChangeset for
+                                                     // borrowed structs
             }
             (Some(AttributeSpanWrapper { attribute_span, .. }), true) => {
                 return Err(syn::Error::new(
@@ -160,14 +163,17 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         quote! {}
     };
 
-    Ok(wrap_in_dummy_mod(quote!(
-        use diesel::query_builder::AsChangeset;
-        use diesel::prelude::*;
+    Ok(wrap_in_dummy_mod(
+        quote!(
+            use diesel::query_builder::AsChangeset;
+            use diesel::prelude::*;
 
-        #changeset_owned
+            #changeset_owned
 
-        #changeset_borrowed
-    )))
+            #changeset_borrowed
+        ),
+        model.diesel_path.as_ref(),
+    ))
 }
 
 fn field_changeset_ty_embed(field: &Field, lifetime: Option<TokenStream>) -> TokenStream {

@@ -13,9 +13,9 @@ use crate::deprecated::ParseDeprecated;
 use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
 use crate::util::{
     parse_eq, parse_paren, unknown_attribute, BELONGS_TO_NOTE, COLUMN_NAME_NOTE,
-    DESERIALIZE_AS_NOTE, MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE, SELECT_EXPRESSION_NOTE,
-    SELECT_EXPRESSION_TYPE_NOTE, SERIALIZE_AS_NOTE, SQLITE_TYPE_NOTE, SQL_TYPE_NOTE,
-    TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE,
+    DESERIALIZE_AS_NOTE, DIESEL_PATH_NOTE, MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE,
+    SELECT_EXPRESSION_NOTE, SELECT_EXPRESSION_TYPE_NOTE, SERIALIZE_AS_NOTE, SQLITE_TYPE_NOTE,
+    SQL_TYPE_NOTE, TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE
 };
 
 use crate::util::{parse_paren_list, CHECK_FOR_BACKEND_NOTE};
@@ -228,6 +228,8 @@ pub enum StructAttr {
     PostgresType(Ident, PostgresType),
     PrimaryKey(Ident, Punctuated<Ident, Comma>),
     CheckForBackend(Ident, syn::punctuated::Punctuated<TypePath, syn::Token![,]>),
+
+    DieselPath(Ident, Path),
 }
 
 impl Parse for StructAttr {
@@ -278,6 +280,10 @@ impl Parse for StructAttr {
                 name,
                 parse_paren_list(input, CHECK_FOR_BACKEND_NOTE, syn::Token![,])?,
             )),
+            "crate" => Ok(StructAttr::DieselPath(
+                name,
+                parse_eq(input, DIESEL_PATH_NOTE)?,
+            )),
 
             _ => Err(unknown_attribute(
                 &name,
@@ -316,7 +322,8 @@ impl MySpanned for StructAttr {
             | StructAttr::SqliteType(ident, _)
             | StructAttr::PostgresType(ident, _)
             | StructAttr::CheckForBackend(ident, _)
-            | StructAttr::PrimaryKey(ident, _) => ident.span(),
+            | StructAttr::PrimaryKey(ident, _)
+            | StructAttr::DieselPath(ident, _) => ident.span(),
         }
     }
 }

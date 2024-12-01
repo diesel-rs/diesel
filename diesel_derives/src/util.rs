@@ -23,6 +23,7 @@ pub const SELECT_EXPRESSION_NOTE: &str =
 pub const SELECT_EXPRESSION_TYPE_NOTE: &str =
     "select_expression_type = dsl::IsNotNull<schema::table_name::column_name>";
 pub const CHECK_FOR_BACKEND_NOTE: &str = "diesel::pg::Pg";
+pub const DIESEL_PATH_NOTE: &str = "crate = \"diesel_renamed\"";
 
 pub fn unknown_attribute(name: &Ident, valid: &[&str]) -> syn::Error {
     let prefix = if valid.len() == 1 { "" } else { " one of" };
@@ -92,7 +93,14 @@ where
     content.parse_terminated(T::parse, sep)
 }
 
-pub fn wrap_in_dummy_mod(item: TokenStream) -> TokenStream {
+pub fn wrap_in_dummy_mod(
+    item: TokenStream,
+    diesel_path_override: Option<&syn::Path>,
+) -> TokenStream {
+    let diesel_path = match diesel_path_override {
+        Some(path) => path,
+        None => &parse_quote!(diesel),
+    };
     // #[allow(unused_qualifications)] can be removed if https://github.com/rust-lang/rust/issues/130277 gets done
     quote! {
         #[allow(unused_imports)]
@@ -104,7 +112,7 @@ pub fn wrap_in_dummy_mod(item: TokenStream) -> TokenStream {
             // `mod diesel { pub use super::*; }` that this import will then
             // refer to. In all other cases, this imports refers to the extern
             // crate diesel.
-            use diesel;
+            use #diesel_path as diesel;
 
             #item
         };
