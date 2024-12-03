@@ -10,6 +10,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.2.6] 2024-12-03
+
+### Fixed 
+
+* Remove more mentions of gitter from the documentation
+
 ## [2.2.5] 2024-11-21
 
 ### Fixed
@@ -2158,3 +2164,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.2.3]: https://github.com/diesel-rs/diesel/compare/v.2.2.2...v2.2.3
 [2.2.4]: https://github.com/diesel-rs/diesel/compare/v.2.2.3...v2.2.4
 [2.2.5]: https://github.com/diesel-rs/diesel/compare/v.2.2.4...v2.2.5
+[2.2.6]: https://github.com/diesel-rs/diesel/compare/v.2.2.5...v2.2.6
