@@ -3,8 +3,7 @@
 Thanks for your interest in contributing to Diesel! We very much look forward to
 your suggestions, bug reports, and pull requests.
 
-We run an active [Gitter
-channel](https://gitter.im/diesel-rs/diesel) where you can ask Diesel-related questions and
+We run an active [discussion forum](https://github.com/diesel-rs/diesel/discussions) where you can ask Diesel-related questions and
 get help. Feel free to ask there before opening a GitHub issue or
 pull request.
 

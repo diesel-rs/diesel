@@ -3,7 +3,6 @@
 # A safe, extensible ORM and Query Builder for Rust
 
 [![Build Status](https://github.com/diesel-rs/diesel/workflows/CI%20Tests/badge.svg)](https://github.com/diesel-rs/diesel/actions?query=workflow%3A%22CI+Tests%22+branch%3Amaster)
-[![Gitter](https://badges.gitter.im/diesel-rs/diesel.svg)](https://gitter.im/diesel-rs/diesel?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Crates.io](https://img.shields.io/crates/v/diesel.svg)](https://crates.io/crates/diesel)
 
 API Documentation: [latest release](https://docs.rs/diesel) – [master branch](https://docs.diesel.rs/master/diesel/index.html)
@@ -36,10 +35,8 @@ Guides on more specific features are coming soon.
 ## Getting help
 
 If you run into problems, Diesel has a very active Gitter room.
-You can come ask for help at
-[gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel).
-For help with longer questions and discussion about the future of Diesel,
-open a discussion on [GitHub Discussions](https://github.com/diesel-rs/diesel/discussions).
+You can come ask for help at in our [GitHub Discussions](https://github.com/diesel-rs/diesel/discussions) forum. 
+This is also the right place to propose new features or show your applications.
 
 ## Usage
 
