@@ -46,6 +46,10 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let mut ref_field_assign = Vec::with_capacity(fields_for_update.len());
 
     for field in fields_for_update {
+        // skip this field while generating the update
+        if field.skip_update() {
+            continue;
+        }
         // Use field-level attr. with fallback to the struct-level one.
         let treat_none_as_null = match &field.treat_none_as_null {
             Some(attr) => {

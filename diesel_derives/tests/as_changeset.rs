@@ -891,3 +891,40 @@ fn embedded_struct() {
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
 }
+
+#[test]
+fn skip_update() {
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    #[diesel(primary_key(name))]
+    #[allow(dead_code)]
+    struct UserForm<'a> {
+        #[diesel(skip_update)]
+        name: &'a str,
+        hair_color: &'a str,
+        r#type: &'a str,
+        #[diesel(skip_update)]
+        non_existing: i32,
+    }
+
+    diesel::update(users::table.find(1))
+        .set(UserForm {
+            name: "John",
+            hair_color: "green",
+            r#type: "admin",
+            non_existing: 42,
+        })
+        .execute(connection)
+        .unwrap();
+
+    let res = users::table
+        .find(1)
+        .first::<(i32, String, Option<String>, Option<String>)>(connection)
+        .unwrap();
+
+    assert_eq!(res.1, "Sean");
+    assert_eq!(res.2, Some("green".into()));
+    assert_eq!(res.3, Some("admin".into()));
+}
