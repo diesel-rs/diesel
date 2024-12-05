@@ -15,6 +15,20 @@ use diesel::query_builder::*;
 use diesel::sql_types::SqlType;
 use diesel::*;
 
+#[declare_sql_function]
+extern "SQL" {
+    fn coalesce(
+        x: sql_types::Nullable<sql_types::VarChar>,
+        y: sql_types::VarChar,
+    ) -> sql_types::VarChar;
+}
+
+#[cfg(feature = "postgres")]
+#[declare_sql_function]
+extern "SQL" {
+    fn unnest(a: sql_types::Array<sql_types::Int4>) -> sql_types::Int4;
+}
+
 #[test]
 fn test_count_counts_the_rows() {
     let connection = &mut connection();
@@ -218,8 +232,6 @@ fn test_min() {
         .unwrap();
     assert_eq!(Ok(None::<i32>), source.first(connection));
 }
-
-define_sql_function!(fn coalesce(x: sql_types::Nullable<sql_types::VarChar>, y: sql_types::VarChar) -> sql_types::VarChar);
 
 #[test]
 fn function_with_multiple_arguments() {
@@ -441,11 +453,6 @@ fn test_arrays_a() {
 
     assert_eq!(value, vec![1, 2]);
 }
-
-#[cfg(feature = "postgres")]
-use diesel::sql_types::{Array, Int4};
-#[cfg(feature = "postgres")]
-define_sql_function!(fn unnest(a: Array<Int4>) -> Int4);
 
 #[test]
 #[cfg(feature = "postgres")]

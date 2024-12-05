@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<id as Column>::Table == table`
-  --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:38:22
+  --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:41:22
    |
-38 |         .on_conflict(posts::id);
+41 |         .on_conflict(posts::id);
    |          ----------- ^^^^^^^^^ type mismatch resolving `<id as Column>::Table == table`
    |          |
    |          required by a bound introduced by this call
@@ -43,9 +43,9 @@ note: required by a bound in `upsert::on_conflict_extension::<impl InsertStateme
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `lower_utils::lower<posts::columns::title>: Column` is not satisfied
-  --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:42:22
+  --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:45:22
    |
-42 |         .on_conflict(lower(posts::title));
+45 |         .on_conflict(lower(posts::title));
    |          ----------- ^^^^^^^^^^^^^^^^^^^ the trait `Column` is not implemented for `lower_utils::lower<posts::columns::title>`, which is required by `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<lower_utils::lower<posts::columns::title>>: diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>`
    |          |
    |          required by a bound introduced by this call
@@ -71,9 +71,9 @@ note: required by a bound in `upsert::on_conflict_extension::<impl InsertStateme
    |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
 
 error[E0277]: the trait bound `&str: Column` is not satisfied
-  --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:46:22
+  --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:49:22
    |
-46 |         .on_conflict("id");
+49 |         .on_conflict("id");
    |          ----------- ^^^^ the trait `Column` is not implemented for `&str`, which is required by `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<&str>: diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>`
    |          |
    |          required by a bound introduced by this call
