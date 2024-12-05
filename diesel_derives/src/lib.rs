@@ -111,6 +111,8 @@ mod valid_grouping;
 ///    the actual field type.
 /// * `#[diesel(treat_none_as_null = true/false)]`, overrides the container-level
 ///   `treat_none_as_null` attribute for the current field.
+/// * `#[diesel(skip_update)]`, skips updating this field. Useful for working with
+///    generated columns.
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(
