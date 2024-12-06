@@ -29,6 +29,7 @@ define_sql_function! {
     /// # }
     /// ```
     #[aggregate]
+    #[window]
     fn count<T: SqlType + SingleValue>(expr: T) -> BigInt;
 }
 

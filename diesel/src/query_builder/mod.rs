@@ -136,6 +136,8 @@ use crate::backend::Backend;
 use crate::result::QueryResult;
 use std::error::Error;
 
+pub(crate) use self::private::NotSpecialized;
+
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
 /// A specialized Result type used with the query builder.
