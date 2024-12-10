@@ -1,7 +1,8 @@
 use self::private::SqlOrdAggregate;
-use crate::expression::functions::define_sql_function;
+use crate::expression::functions::declare_sql_function;
 
-define_sql_function! {
+#[declare_sql_function]
+extern "SQL" {
     /// Represents a SQL `MAX` function. This function can only take types which are
     /// ordered.
     ///
@@ -18,9 +19,7 @@ define_sql_function! {
     /// # }
     #[aggregate]
     fn max<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
-}
 
-define_sql_function! {
     /// Represents a SQL `MIN` function. This function can only take types which are
     /// ordered.
     ///

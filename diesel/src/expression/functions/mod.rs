@@ -1,6 +1,10 @@
 //! Helper macros to define custom sql functions
 
 #[doc(inline)]
+pub use diesel_derives::declare_sql_function;
+
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+#[doc(inline)]
 pub use diesel_derives::define_sql_function;
 
 #[doc(inline)]

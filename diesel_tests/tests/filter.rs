@@ -1,4 +1,5 @@
 use crate::schema::*;
+use diesel::sql_types::VarChar;
 use diesel::*;
 
 macro_rules! assert_sets_eq {
@@ -411,8 +412,10 @@ fn not_affects_arguments_passed_when_they_contain_higher_operator_precedence() {
     assert_eq!(Ok(2), count);
 }
 
-use diesel::sql_types::VarChar;
-define_sql_function!(fn lower(x: VarChar) -> VarChar);
+#[declare_sql_function]
+extern "SQL" {
+    fn lower(x: VarChar) -> VarChar;
+}
 
 #[test]
 fn filter_by_boxed_predicate() {

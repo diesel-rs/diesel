@@ -212,15 +212,20 @@ fn distinct_of_multiple_columns() {
         .inner_join(users::table)
         .order(users::id)
         .distinct_on((users::id, posts::body))
-        .load(&mut connection);
-    let expected = vec![
-        (posts[0].clone(), sean.clone()),
-        (posts[1].clone(), sean.clone()),
-        (posts[4].clone(), tess.clone()),
-        (posts[7].clone(), tess.clone()),
-    ];
+        .load::<(Post, User)>(&mut connection);
 
-    assert_eq!(Ok(expected), data);
+    assert!(data.is_ok(), "{:?}", data.unwrap_err());
+    let data = data.unwrap();
+    assert_eq!(data.len(), 4);
+    assert_eq!(data[0].1, sean.clone());
+    assert_eq!(data[1].1, sean.clone());
+    assert_eq!(data[2].1, tess.clone());
+    assert_eq!(data[3].1, tess.clone());
+    // post id's are non-deterministic
+    assert_eq!(data[0].0.body, Some("1".into()));
+    assert_eq!(data[1].0.body, Some("2".into()));
+    assert_eq!(data[2].0.body, Some("1".into()));
+    assert_eq!(data[3].0.body, Some("2".into()));
 
     // multi order by
     // multi distinct on
@@ -283,16 +288,20 @@ fn distinct_of_multiple_columns() {
         .left_join(users::table)
         .order((users::id.nullable(), posts::body.nullable().desc()))
         .distinct_on((users::id.nullable(), posts::body.nullable()))
-        .load(&mut connection);
+        .load::<(Post, Option<User>)>(&mut connection);
 
-    let expected = vec![
-        (posts[1].clone(), Some(sean.clone())),
-        (posts[0].clone(), Some(sean.clone())),
-        (posts[7].clone(), Some(tess.clone())),
-        (posts[6].clone(), Some(tess.clone())),
-    ];
-
-    assert_eq!(Ok(expected), data);
+    assert!(data.is_ok(), "{:?}", data.unwrap_err());
+    let data = data.unwrap();
+    assert_eq!(data.len(), 4);
+    assert_eq!(data[0].1, Some(sean.clone()));
+    assert_eq!(data[1].1, Some(sean.clone()));
+    assert_eq!(data[2].1, Some(tess.clone()));
+    assert_eq!(data[3].1, Some(tess.clone()));
+    // post id's are non-deterministic
+    assert_eq!(data[0].0.body, Some("2".into()));
+    assert_eq!(data[1].0.body, Some("1".into()));
+    assert_eq!(data[2].0.body, Some("2".into()));
+    assert_eq!(data[3].0.body, Some("1".into()));
 
     let data = posts::table
         .left_join(users::table)
