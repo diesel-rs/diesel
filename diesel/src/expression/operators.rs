@@ -626,11 +626,11 @@ postfix_operator!(
 prefix_operator!(Not, " NOT ");
 
 use crate::backend::{sql_dialect, Backend, SqlDialect};
-use crate::expression::{TypedExpressionType, ValidGrouping};
+use crate::expression::{Expression, TypedExpressionType, ValidGrouping};
 use crate::insertable::{ColumnInsertValue, Insertable};
 use crate::query_builder::{QueryFragment, QueryId, ValuesClause};
 use crate::query_source::Column;
-use crate::sql_types::{DieselNumericOps, SqlType};
+use crate::sql_types::{self, DieselNumericOps, SqlType};
 
 impl<T, U> Insertable<T::Table> for Eq<T, U>
 where
@@ -654,6 +654,31 @@ where
         Eq::new(self.left, &self.right).values()
     }
 }
+
+impl<T, U> Eq<T, U> {
+    pub(crate) fn new_unchecked(left: T, right: U) -> super::grouped::Grouped<Self>
+    where
+        T: Expression,
+        U: Expression,
+    {
+        super::grouped::Grouped(Eq::new(left, right))
+    }
+}
+/// Marker trait representing that SQL supports the ` = ` operator for `Self` and T
+///
+/// It's used to typecheck [`.eq_coerce()`](crate::expression_methods::ExpressionMethods::eq_coerce())
+pub trait CoerceEqual<ST> {}
+impl<ST> CoerceEqual<ST> for ST {}
+// All the types below work on all 3 supported backends.
+// If adding more types here and they don't all work on all backends, it will be necessary to
+// prevent coercions that don't work from compiling by restricting the QueryFragment impl on
+// coercions that do work.
+// If adding significantly more impls here, these impls should probably become a macro call
+// so that it doesn't become too verbose.
+impl CoerceEqual<sql_types::Int4> for sql_types::Int8 {}
+impl CoerceEqual<sql_types::Int8> for sql_types::Int4 {}
+impl CoerceEqual<sql_types::Nullable<sql_types::Int4>> for sql_types::Nullable<sql_types::Int8> {}
+impl CoerceEqual<sql_types::Nullable<sql_types::Int8>> for sql_types::Nullable<sql_types::Int4> {}
 
 /// This type represents a string concat operator
 #[diesel_derives::__diesel_public_if(
