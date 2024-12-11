@@ -25,7 +25,7 @@ define_sql_function! {
     /// #     use serde_json::{json, Value};
     /// #     use diesel::sql_types::{Text, Json, Jsonb, Nullable};
     /// #     let connection = &mut establish_connection();
-    /// 
+    ///
     /// let result = diesel::select(json::<Json, _>(json!({"a": "b", "c": 1})))
     ///     .get_result::<String>(connection)?;
     ///
@@ -100,7 +100,7 @@ define_sql_function! {
     ///
     /// assert!(result.is_none());
     /// println!("json null");
-    /// 
+    ///
     /// let result = diesel::select(jsonb::<Nullable<Jsonb>, _>(None::<Value>))
     ///     .get_result::<Option<Value>>(connection)?;
     ///
