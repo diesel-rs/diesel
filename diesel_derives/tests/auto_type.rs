@@ -57,6 +57,16 @@ table! {
     }
 }
 
+#[cfg(feature = "sqlite")]
+table! {
+    sqlite_extras {
+        id -> Integer,
+        text -> Text,
+        json -> Json,
+        jsonb -> Jsonb,
+    }
+}
+
 joinable!(posts -> users(user_id));
 joinable!(posts2 -> users(user_id));
 joinable!(posts3 -> users(user_id));
@@ -462,6 +472,18 @@ fn postgres_functions() -> _ {
         json_populate_record(pg_extras::record, pg_extras::json),
         jsonb_populate_record(pg_extras::record, pg_extras::jsonb),
         jsonb_set(pg_extras::jsonb, pg_extras::text_array, pg_extras::jsonb),
+    )
+}
+
+#[cfg(feature = "sqlite")]
+#[auto_type]
+fn sqlite_functions() -> _ {
+    use diesel::sqlite::expression::functions::{json, jsonb};
+    (
+        json(sqlite_extras::json),
+        json(sqlite_extras::jsonb),
+        jsonb(sqlite_extras::json),
+        jsonb(sqlite_extras::jsonb),
     )
 }
 

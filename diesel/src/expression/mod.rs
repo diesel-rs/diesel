@@ -74,6 +74,9 @@ pub(crate) mod dsl {
     #[cfg(feature = "postgres_backend")]
     pub use crate::pg::expression::dsl::*;
 
+    #[cfg(feature = "sqlite")]
+    pub use crate::sqlite::expression::dsl::*;
+
     /// The return type of [`count(expr)`](crate::dsl::count())
     pub type count<Expr> = super::count::count<SqlTypeOf<Expr>, Expr>;
 

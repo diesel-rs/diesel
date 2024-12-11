@@ -6,7 +6,7 @@
 
 pub(crate) mod backend;
 mod connection;
-pub(crate) mod expression;
+pub mod expression;
 
 pub mod query_builder;
 
