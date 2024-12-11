@@ -2,7 +2,7 @@ use crate::dsl;
 use crate::expression::array_comparison::{AsInExpression, In, NotIn};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::*;
-use crate::expression::{assume_not_null, nullable, AsExpression, Expression};
+use crate::expression::{assume_not_null, cast, nullable, AsExpression, Expression};
 use crate::sql_types::{SingleValue, SqlType};
 
 /// Methods present on all expressions, except tuples
@@ -440,6 +440,47 @@ pub trait ExpressionMethods: Expression + Sized {
             self,
             And::new(lower.as_expression(), upper.as_expression()),
         ))
+    }
+
+    /// Generates a `CAST(expr AS sql_type)` expression
+    ///
+    /// It is necessary that the expression's SQL type can be casted to the
+    /// target SQL type (represented by the [`CastsTo`](cast::CastsTo) trait),
+    /// and that we know how the corresponding SQL type is named for the
+    /// specific backend (represented by the
+    /// [`KnownCastSqlTypeName`](cast::KnownCastSqlTypeName) trait).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::animals::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// use diesel::sql_types;
+    ///
+    /// let data = diesel::select(
+    ///     12_i32
+    ///         .into_sql::<sql_types::Int4>()
+    ///         .cast::<sql_types::Text>(),
+    /// )
+    /// .first::<String>(connection)?;
+    /// assert_eq!("12", data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn cast<ST>(self) -> dsl::Cast<Self, ST>
+    where
+        ST: SingleValue,
+        Self::SqlType: cast::CastsTo<ST>,
+    {
+        cast::Cast::new(self)
     }
 
     /// Creates a SQL `DESC` expression, representing this expression in
