@@ -597,3 +597,9 @@ pub type jsonb_populate_record<B, J> =
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_set<B, J, R> = super::functions::jsonb_set<SqlTypeOf<B>, SqlTypeOf<J>, B, J, R>;
+
+/// Return type of [`jsonb_set_create_if_missing(base, path, new_value, create_if_missing)`](super::functions::jsonb_set_create_if_missing())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_set_create_if_missing<B, J, R, C> =
+    super::functions::jsonb_set_create_if_missing<SqlTypeOf<B>, SqlTypeOf<J>, B, J, R, C>;
