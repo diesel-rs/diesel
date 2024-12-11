@@ -1,5 +1,8 @@
 //! Sqlite specific expression methods.
 
+pub(in crate::sqlite) use self::private::{
+    JsonOrNullableJsonOrJsonbOrNullableJsonb, MaybeNullableValue,
+};
 use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
@@ -82,3 +85,26 @@ pub trait SqliteExpressionMethods: Expression + Sized {
 }
 
 impl<T: Expression> SqliteExpressionMethods for T {}
+
+pub(in crate::sqlite) mod private {
+    use crate::sql_types::{Json, Jsonb, MaybeNullableType, Nullable, SingleValue};
+
+    pub trait JsonOrNullableJsonOrJsonbOrNullableJsonb {}
+    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Json {}
+    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Json> {}
+    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Jsonb {}
+    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Jsonb> {}
+
+    pub trait MaybeNullableValue<T>: SingleValue {
+        type Out: SingleValue;
+    }
+
+    impl<T, O> MaybeNullableValue<O> for T
+    where
+        T: SingleValue,
+        T::IsNull: MaybeNullableType<O>,
+        <T::IsNull as MaybeNullableType<O>>::Out: SingleValue,
+    {
+        type Out = <T::IsNull as MaybeNullableType<O>>::Out;
+    }
+}
