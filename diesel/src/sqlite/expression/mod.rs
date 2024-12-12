@@ -13,7 +13,7 @@ mod operators;
 ///
 /// This module will be glob imported by
 /// [`diesel::dsl`](crate::dsl) when compiled with the `feature =
-/// "postgres"` flag.
+/// "sqlite"` flag.
 pub mod dsl {
     #[doc(inline)]
     pub use super::functions::*;

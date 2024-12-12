@@ -62,6 +62,7 @@ table! {
     sqlite_extras {
         id -> Integer,
         text -> Text,
+        blob -> Binary,
         json -> Json,
         jsonb -> Jsonb,
     }
@@ -478,13 +479,7 @@ fn postgres_functions() -> _ {
 #[cfg(feature = "sqlite")]
 #[auto_type]
 fn sqlite_functions() -> _ {
-    use diesel::sqlite::expression::functions::{json, jsonb};
-    (
-        json(sqlite_extras::json),
-        json(sqlite_extras::jsonb),
-        jsonb(sqlite_extras::json),
-        jsonb(sqlite_extras::jsonb),
-    )
+    (json(sqlite_extras::text), jsonb(sqlite_extras::blob))
 }
 
 #[auto_type]
