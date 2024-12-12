@@ -2402,15 +2402,14 @@ define_sql_function! {
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
     /// Returns target with the item designated by path replaced by new_value,
-    ///     or with new_value added if create_if_missing is true (which is the default)
-    ///     and the item designated by path does not exist.
+    ///     or with new_value added and the item designated by path does not exist.
     ///
     /// It can't set path in scalar
     ///
     /// All earlier steps in the path must exist, or the target is returned unchanged.
     /// As with the path oriented operators, negative integers that appear in the path count from the end of JSON arrays.
     /// If the last path step is an array index that is out of range,
-    ///     and create_if_missing is true, the new value is added at the beginning of the array if the index is negative,
+    ///    the new value is added at the beginning of the array if the index is negative,
     ///     or at the end of the array if it is positive.
     ///
     /// # Example
@@ -2480,4 +2479,102 @@ define_sql_function! {
         E: JsonbOrNullableJsonb + SingleValue,
         Arr: TextArrayOrNullableTextArray + CombinedNullableValue<E,Jsonb>
     >(base: E, path: Arr, new_value: E) -> Arr::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns target with the item designated by path replaced by new_value,
+    ///     or with new_value added if create_if_missing is true (which is the default)
+    ///     and the item designated by path does not exist.
+    ///
+    /// It can't set path in scalar
+    ///
+    /// All earlier steps in the path must exist, or the target is returned unchanged.
+    /// As with the path oriented operators, negative integers that appear in the path count from the end of JSON arrays.
+    /// If the last path step is an array index that is out of range,
+    ///     and create_if_missing is true, the new value is added at the beginning of the array if the index is negative,
+    ///     or at the end of the array if it is positive.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_set_create_if_missing;
+    /// #     use diesel::sql_types::{Jsonb, Array, Json, Nullable, Text};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_set_create_if_missing::<Jsonb, Array<Text>, _, _, _, _>(
+    ///         json!([{"f1":1,"f2":null},2,null,3]),
+    ///         vec!["0","f1"],
+    ///         json!([2,3,4]),
+    ///         true
+    ///     )).get_result::<Value>(connection)?;
+    /// let expected: Value = json!([{"f1": [2, 3, 4], "f2": null}, 2, null, 3]);
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(jsonb_set_create_if_missing::<Jsonb, Array<Text>, _, _, _, _>(
+    ///         json!([{"f1":1,"f2":null},2,null,3]),
+    ///         vec!["0","f3"],
+    ///         json!([2,3,4]),
+    ///         false
+    ///     )).get_result::<Value>(connection)?;
+    /// let expected: Value = json!([{"f1":1, "f2": null},2, null, 3]);
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(jsonb_set_create_if_missing::<Jsonb, Array<Text>, _, _, _, _>(
+    ///         json!([{"odd":[2,4,6,8]}]),
+    ///         // not vec!["odd"], cannot set path in scalar
+    ///         vec!["0","odd"],
+    ///         json!([1,3,5,7]),
+    ///         true
+    ///     )).get_result::<Value>(connection)?;
+    /// let expected: Value = json!([{"odd":[1,3,5,7]}]);
+    /// assert_eq!(result, expected);
+    ///
+    /// let empty:Vec<String> = Vec::new();
+    /// let result = diesel::select(jsonb_set_create_if_missing::<Nullable<Jsonb>, Array<Nullable<Text>>, _, _, _, _>(
+    ///         None::<Value>,
+    ///         empty,
+    ///         None::<Value>,
+    ///         true
+    ///     )).get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let empty:Vec<String> = Vec::new();
+    /// let result = diesel::select(jsonb_set_create_if_missing::<Jsonb, Array<Nullable<Text>>, _, _, _, _>(
+    ///         // cannot be json!(null)
+    ///         json!([]),
+    ///         empty,
+    ///         json!(null),
+    ///         true
+    ///     )).get_result::<Value>(connection)?;
+    /// let expected = json!([]);
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(jsonb_set_create_if_missing::<Jsonb, Nullable<Array<Nullable<Text>>>, _, _, _, _>(
+    ///         json!(null),
+    ///         None::<Vec<String>>,
+    ///         json!({"foo": 42}),
+    ///         true
+    ///     )).get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "jsonb_set"]
+    fn jsonb_set_create_if_missing<
+        E: JsonbOrNullableJsonb + SingleValue,
+        Arr: TextArrayOrNullableTextArray + CombinedNullableValue<E,Jsonb>
+    >(base: E, path: Arr, new_value: E, create_if_missing: Bool) -> Arr::Out;
 }
