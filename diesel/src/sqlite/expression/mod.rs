@@ -10,7 +10,7 @@ pub(crate) mod helper_types;
 mod operators;
 
 /// SQLite specific expression DSL methods.
-/// 
+///
 /// This module will be glob imported by
 /// [`diesel::dsl`](crate::dsl) when compiled with the `feature =
 /// "postgres"` flag.
