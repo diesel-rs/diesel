@@ -89,14 +89,6 @@ impl<T: Expression> SqliteExpressionMethods for T {}
 pub(in crate::sqlite) mod private {
     use crate::sql_types::{Binary, MaybeNullableType, Nullable, SingleValue, Text};
 
-    /*
-    pub trait JsonOrNullableJsonOrJsonbOrNullableJsonb {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Json {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Json> {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Jsonb {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Jsonb> {}
-    */
-
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Text` nor `diesel::sql_types::Nullable<Text>`",
         note = "try to provide an expression that produces one of the expected sql types"
