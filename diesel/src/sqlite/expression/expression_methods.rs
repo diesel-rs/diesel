@@ -1,5 +1,8 @@
 //! Sqlite specific expression methods.
 
+pub(in crate::sqlite) use self::private::{
+    BinaryOrNullableBinary, MaybeNullableValue, TextOrNullableText,
+};
 use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
@@ -82,3 +85,38 @@ pub trait SqliteExpressionMethods: Expression + Sized {
 }
 
 impl<T: Expression> SqliteExpressionMethods for T {}
+
+pub(in crate::sqlite) mod private {
+    use crate::sql_types::{Binary, MaybeNullableType, Nullable, SingleValue, Text};
+
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Text` nor `diesel::sql_types::Nullable<Text>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait TextOrNullableText {}
+
+    impl TextOrNullableText for Text {}
+    impl TextOrNullableText for Nullable<Text> {}
+
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Binary` nor `diesel::sql_types::Nullable<Binary>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait BinaryOrNullableBinary {}
+
+    impl BinaryOrNullableBinary for Binary {}
+    impl BinaryOrNullableBinary for Nullable<Binary> {}
+
+    pub trait MaybeNullableValue<T>: SingleValue {
+        type Out: SingleValue;
+    }
+
+    impl<T, O> MaybeNullableValue<O> for T
+    where
+        T: SingleValue,
+        T::IsNull: MaybeNullableType<O>,
+        <T::IsNull as MaybeNullableType<O>>::Out: SingleValue,
+    {
+        type Out = <T::IsNull as MaybeNullableType<O>>::Out;
+    }
+}

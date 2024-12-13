@@ -58,6 +58,17 @@ table! {
     }
 }
 
+#[cfg(feature = "sqlite")]
+table! {
+    sqlite_extras {
+        id -> Integer,
+        text -> Text,
+        blob -> Binary,
+        json -> Json,
+        jsonb -> Jsonb,
+    }
+}
+
 joinable!(posts -> users(user_id));
 joinable!(posts2 -> users(user_id));
 joinable!(posts3 -> users(user_id));
@@ -470,6 +481,12 @@ fn postgres_functions() -> _ {
             pg_extras::boolean,
         ),
     )
+}
+
+#[cfg(feature = "sqlite")]
+#[auto_type]
+fn sqlite_functions() -> _ {
+    (json(sqlite_extras::text), jsonb(sqlite_extras::blob))
 }
 
 #[auto_type]
