@@ -316,15 +316,19 @@ impl AnsiTransactionManager {
         Conn: Connection<TransactionManager = Self>,
     {
         let state = Self::get_transaction_state(conn)?;
-        match state.transaction_depth() {
-            None => {
-                conn.batch_execute(sql)?;
-                Self::get_transaction_state(conn)?
-                    .change_transaction_depth(TransactionDepthChange::IncreaseDepth)?;
-                Ok(())
-            }
-            Some(_depth) => Err(Error::AlreadyInTransaction),
+        if let Some(_depth) = state.transaction_depth() {
+            return Err(Error::AlreadyInTransaction);
         }
+        conn.instrumentation().on_connection_event(
+            super::instrumentation::InstrumentationEvent::BeginTransaction {
+                depth: NonZeroU32::new(1).expect("Transaction depth is too large"),
+            },
+        );
+        conn.batch_execute(sql)?;
+        Self::get_transaction_state(conn)?
+            .change_transaction_depth(TransactionDepthChange::IncreaseDepth)?;
+
+        Ok(())
     }
 }
 
