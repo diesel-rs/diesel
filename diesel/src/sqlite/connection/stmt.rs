@@ -22,11 +22,18 @@ pub(super) struct Statement {
     inner_statement: NonNull<ffi::sqlite3_stmt>,
 }
 
+// This relies on the invariant that RawConnection or Statement are never
+// leaked. If a reference to one of those was held on a different thread, this
+// would not be thread safe.
+#[allow(unsafe_code)]
+unsafe impl Send for Statement {}
+
 impl Statement {
     pub(super) fn prepare(
         raw_connection: &RawConnection,
         sql: &str,
         is_cached: PrepareForCache,
+        _: &[SqliteType],
     ) -> QueryResult<Self> {
         let mut stmt = ptr::null_mut();
         let mut unused_portion = ptr::null();

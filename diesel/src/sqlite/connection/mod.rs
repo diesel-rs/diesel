@@ -373,7 +373,8 @@ impl SqliteConnection {
             &source,
             &Sqlite,
             &[],
-            |sql, is_cached| Statement::prepare(raw_connection, sql, is_cached),
+            raw_connection,
+            Statement::prepare,
             &mut *self.instrumentation,
         ) {
             Ok(statement) => statement,

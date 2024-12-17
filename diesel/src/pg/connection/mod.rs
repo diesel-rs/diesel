@@ -5,8 +5,6 @@ mod result;
 mod row;
 mod stmt;
 
-use statement_cache::PrepareForCache;
-
 use self::copy::{CopyFromSink, CopyToBuffer};
 use self::cursor::*;
 use self::private::ConnectionAndTransactionManager;
@@ -512,13 +510,8 @@ impl PgConnection {
             &source,
             &Pg,
             &metadata,
-            |sql, is_cached| {
-                let query_name = match is_cached {
-                    PrepareForCache::Yes { counter } => Some(format!("__diesel_stmt_{counter}")),
-                    PrepareForCache::No => None,
-                };
-                Statement::prepare(conn, sql, query_name.as_deref(), &metadata)
-            },
+            conn,
+            Statement::prepare,
             &mut *self.connection_and_transaction_manager.instrumentation,
         );
         if !execute_returning_count {
