@@ -24,6 +24,10 @@ in a way that makes the pools suitable for use in parallel tests.
 * Added `Json` and `Jsonb` support for the SQLite backend.
 * Fixed diesel thinking `a.eq_any(b)` was non-nullable even if `a` and `b` were nullable.
 
+### Fixed
+
+* Use a single space instead of two spaces between `DELETE FROM`.
+
 ## [2.2.2] 2024-07-19
 
 ### Fixed
