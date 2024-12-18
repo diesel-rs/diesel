@@ -128,6 +128,19 @@ define_sql_function! {
     /// #     use diesel::sql_types::{Text, Binary, Nullable};
     /// #     let connection = &mut establish_connection();
     ///
+    /// // Querying SQLite version should not fail.
+    /// let version_components: Vec<&str> = version.split('.').collect();
+    /// let major: u32 = version_components[0].parse().unwrap();
+    /// let minor: u32 = version_components[1].parse().unwrap();
+    /// let patch: u32 = version_components[2].parse().unwrap();
+    ///
+    /// if major > 3 || (major == 3 && minor >= 46) {
+    ///     /* Valid sqlite version, do nothing */
+    /// } else {
+    ///     println!("SQLite version is too old, skipping the test.");
+    ///     return Ok(());
+    /// }
+    ///
     /// let result = diesel::select(json_pretty::<Text, _>(r#"[{"f1":1,"f2":null},2,null,3]"#))
     ///     .get_result::<String>(connection)?;
     ///
