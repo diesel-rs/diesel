@@ -13,6 +13,7 @@ use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
 use crate::pg::expression::expression_methods::RangeOrNullableRange;
 use crate::pg::expression::expression_methods::RecordOrNullableRecord;
 use crate::pg::expression::expression_methods::TextArrayOrNullableTextArray;
+use crate::pg::expression::expression_methods::TextOrNullableText;
 use crate::sql_types::*;
 
 define_sql_function! {
@@ -2577,4 +2578,102 @@ define_sql_function! {
         E: JsonbOrNullableJsonb + SingleValue,
         Arr: TextArrayOrNullableTextArray + CombinedNullableValue<E,Jsonb>
     >(base: E, path: Arr, new_value: E, create_if_missing: Bool) -> Arr::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns target with the item designated by path replaced by new_value,
+    ///     or with new_value added and the item designated by path does not exist.
+    ///
+    /// It can't set path in scalar
+    ///
+    /// All earlier steps in the path must exist, or the target is returned unchanged.
+    /// As with the path oriented operators, negative integers that appear in the path count from the end of JSON arrays.
+    /// If the last path step is an array index that is out of range,
+    ///    the new value is added at the beginning of the array if the index is negative,
+    ///     or at the end of the array if it is positive.
+    ///
+    /// If new_value is not NULL, behaves identically to jsonb_set.
+    ///    Otherwise behaves according to the value of null_value_treatment
+    ///    which must be one of 'raise_exception', 'use_json_null', 'delete_key', or 'return_target'.
+    ///    The default is 'use_json_null'.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_set;
+    /// #     use diesel::sql_types::{Jsonb,Array, Json, Nullable, Text};
+    /// #     use serde_json::{json,Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let null_value_treatment : String = "use_json_null".into();
+    /// let result = diesel::select(jsonb_set_lax::<Jsonb, Array<Text>, Text, _, _, _, _, _>(
+    ///         json!([{"f1":1,"f2":null},2,null,3]),
+    ///         vec!["0","f1"],
+    ///         json!([2,3,4]),
+    ///         true,
+    ///         null_value_treatment
+    ///     )).get_result::<Value>(connection)?;
+    /// let expected: Value = json!([{"f1": [2, 3, 4], "f2": null}, 2, null, 3]);
+    /// assert_eq!(result, expected);
+    ///
+    /// let null_value_treatment : String = "return_target".into();
+    /// let result = diesel::select(jsonb_set_lax::<Nullable<Jsonb>, Array<Nullable<Text>>, Text, _, _, _, _, _>(
+    ///         json!([{"f1":99,"f2":null},2]),
+    ///         vec!["0","f3"],
+    ///         None::<Value>,
+    ///         true,
+    ///         null_value_treatment
+    ///     )).get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(result, Some(json!([{"f1":99,"f2":null},2])));
+    ///
+    /// let null_value_treatment : String = "use_json_null".into();
+    /// let empty:Vec<String> = Vec::new();
+    /// let result = diesel::select(jsonb_set_lax::<Jsonb, Array<Nullable<Text>>, Text, _, _, _, _, _>(
+    ///         // cannot be json!(null)
+    ///         json!([]),
+    ///         empty,
+    ///         json!(null),
+    ///         true,
+    ///         null_value_treatment
+    ///     )).get_result::<Value>(connection)?;
+    /// let expected = json!([]);
+    /// assert_eq!(result, expected);
+    ///
+    /// let null_value_treatment : String = "use_json_null".into();
+    /// let result = diesel::select(jsonb_set_lax::<Jsonb, Nullable<Array<Nullable<Text>>>, Text, _, _, _, _, _,>(
+    ///         json!(null),
+    ///         None::<Vec<String>>,
+    ///         json!({"foo": 42}),
+    ///         true,
+    ///         null_value_treatment
+    ///     )).get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let result = diesel::select(jsonb_set_lax::<Jsonb, Nullable<Array<Nullable<Text>>>, Nullable<Text>, _, _, _, _, _,>(
+    ///         json!(null),
+    ///         None::<Vec<String>>,
+    ///         json!({"foo": 42}),
+    ///         true,
+    ///         None::<String>
+    ///     )).get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn jsonb_set_lax<
+        E: JsonbOrNullableJsonb + SingleValue,
+        Arr: TextArrayOrNullableTextArray + CombinedNullableValue<E,Jsonb>,
+        T: TextOrNullableText + SingleValue,
+    >(base: E, path: Arr, new_value: E, create_if_missing: Bool, null_value_treatment: T) -> Arr::Out;
 }

@@ -480,6 +480,13 @@ fn postgres_functions() -> _ {
             pg_extras::jsonb,
             pg_extras::boolean,
         ),
+        jsonb_set_lax(
+            pg_extras::jsonb,
+            pg_extras::text_array,
+            pg_extras::jsonb,
+            pg_extras::boolean,
+            pg_extras::name,
+        ),
     )
 }
 
