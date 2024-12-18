@@ -486,7 +486,12 @@ fn postgres_functions() -> _ {
 #[cfg(feature = "sqlite")]
 #[auto_type]
 fn sqlite_functions() -> _ {
-    (json(sqlite_extras::text), jsonb(sqlite_extras::blob))
+    (
+        json(sqlite_extras::text),
+        jsonb(sqlite_extras::blob),
+        json_pretty(sqlite_extras::text),
+        json_pretty(sqlite_extras::blob),
+    )
 }
 
 #[auto_type]
