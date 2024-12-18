@@ -123,7 +123,7 @@ define_sql_function! {
     /// #
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use diesel::dsl::json_pretty;
+    /// #     use diesel::dsl::{sql, json_pretty};
     /// #     use serde_json::{json, Value};
     /// #     use diesel::sql_types::{Text, Binary, Nullable};
     /// #     let connection = &mut establish_connection();
