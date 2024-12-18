@@ -128,6 +128,9 @@ define_sql_function! {
     /// #     use diesel::sql_types::{Text, Binary, Nullable};
     /// #     let connection = &mut establish_connection();
     ///
+    /// let version = diesel::select(sql::<Text>("sqlite_version();"))
+    ///         .get_result::<String>(connection)?;
+    ///
     /// // Querying SQLite version should not fail.
     /// let version_components: Vec<&str> = version.split('.').collect();
     /// let major: u32 = version_components[0].parse().unwrap();
