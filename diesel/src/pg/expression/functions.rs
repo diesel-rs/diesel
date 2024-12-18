@@ -2610,7 +2610,7 @@ define_sql_function! {
     /// #
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use diesel::dsl::jsonb_set;
+    /// #     use diesel::dsl::jsonb_set_lax;
     /// #     use diesel::sql_types::{Jsonb,Array, Json, Nullable, Text};
     /// #     use serde_json::{json,Value};
     /// #     let connection = &mut establish_connection();
