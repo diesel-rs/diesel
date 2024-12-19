@@ -4,6 +4,7 @@
 
 [![Build Status](https://github.com/diesel-rs/diesel/workflows/CI%20Tests/badge.svg)](https://github.com/diesel-rs/diesel/actions?query=workflow%3A%22CI+Tests%22+branch%3Amaster)
 [![Crates.io](https://img.shields.io/crates/v/diesel.svg)](https://crates.io/crates/diesel)
+[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Diesel%20Guru-006BFF)](https://gurubase.io/g/diesel)
 
 API Documentation: [latest release](https://docs.rs/diesel) – [master branch](https://docs.diesel.rs/master/diesel/index.html)
 
