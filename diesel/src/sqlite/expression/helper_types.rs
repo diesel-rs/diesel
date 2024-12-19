@@ -21,3 +21,9 @@ pub type jsonb<E> = super::functions::jsonb<SqlTypeOf<E>, E>;
 #[allow(non_camel_case_types)]
 #[cfg(feature = "sqlite")]
 pub type json_pretty<E> = super::functions::json_pretty<SqlTypeOf<E>, E>;
+
+/// Return type of [`json_pretty(json, indent)`](super::functions::json_pretty_with_indentation())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_pretty_with_indentation<J, I> =
+    super::functions::json_pretty_with_indentation<SqlTypeOf<J>, J, I>;

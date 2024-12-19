@@ -489,8 +489,10 @@ fn sqlite_functions() -> _ {
     (
         json(sqlite_extras::text),
         jsonb(sqlite_extras::blob),
-        json_pretty(sqlite_extras::text),
-        json_pretty(sqlite_extras::blob),
+        json_pretty(sqlite_extras::json),
+        json_pretty(sqlite_extras::jsonb),
+        json_pretty_with_indentation(sqlite_extras::json, "  "),
+        json_pretty_with_indentation(sqlite_extras::jsonb, "  "),
     )
 }
 

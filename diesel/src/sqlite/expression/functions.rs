@@ -2,9 +2,9 @@
 use crate::expression::functions::define_sql_function;
 use crate::sql_types::*;
 use crate::sqlite::expression::expression_methods::BinaryOrNullableBinary;
+use crate::sqlite::expression::expression_methods::JsonOrNullableJsonOrJsonbOrNullableJsonb;
 use crate::sqlite::expression::expression_methods::MaybeNullableValue;
 use crate::sqlite::expression::expression_methods::TextOrNullableText;
-use crate::sqlite::expression::expression_methods::TextOrNullableTextOrBinaryOrNullableBinary;
 
 #[cfg(feature = "sqlite")]
 define_sql_function! {
@@ -111,7 +111,7 @@ define_sql_function! {
 define_sql_function! {
     /// Converts the given json value to pretty-printed, indented text
     ///
-    /// /// # Example
+    /// # Example
     ///
     /// ```rust
     /// # include!("../../doctest_setup.rs");
@@ -125,7 +125,7 @@ define_sql_function! {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::{sql, json_pretty};
     /// #     use serde_json::{json, Value};
-    /// #     use diesel::sql_types::{Text, Binary, Nullable};
+    /// #     use diesel::sql_types::{Text, Json, Jsonb, Nullable};
     /// #     let connection = &mut establish_connection();
     ///
     /// let version = diesel::select(sql::<Text>("sqlite_version();"))
@@ -144,7 +144,7 @@ define_sql_function! {
     ///     return Ok(());
     /// }
     ///
-    /// let result = diesel::select(json_pretty::<Text, _>(r#"[{"f1":1,"f2":null},2,null,3]"#))
+    /// let result = diesel::select(json_pretty::<Json, _>(json!([{"f1":1,"f2":null},2,null,3])))
     ///     .get_result::<String>(connection)?;
     ///
     /// assert_eq!(r#"[
@@ -157,20 +157,7 @@ define_sql_function! {
     ///     3
     /// ]"#, result);
     ///
-    /// let result = diesel::select(json_pretty::<Binary, _>(br#"[{"f1":1,"f2":null},2,null,3]"#))
-    ///     .get_result::<String>(connection)?;
-    ///
-    /// assert_eq!(r#"[
-    ///     {
-    ///         "f1": 1,
-    ///         "f2": null
-    ///     },
-    ///     2,
-    ///     null,
-    ///     3
-    /// ]"#, result);
-    ///
-    /// let result = diesel::select(json_pretty::<Text, _>(r#"{"a": 1, "b": "cd"}"#))
+    /// let result = diesel::select(json_pretty::<Json, _>(json!({"a": 1, "b": "cd"})))
     ///     .get_result::<String>(connection)?;
     ///
     /// assert_eq!(r#"{
@@ -178,32 +165,253 @@ define_sql_function! {
     ///     "b": "cd"
     /// }"#, result);
     ///
-    /// let result = diesel::select(json_pretty::<Text, _>(r#""abc""#))
+    /// let result = diesel::select(json_pretty::<Json, _>(json!("abc")))
     ///     .get_result::<String>(connection)?;
     ///
     /// assert_eq!(r#""abc""#, result);
     ///
-    /// let result = diesel::select(json_pretty::<Text, _>(r#"22"#))
+    /// let result = diesel::select(json_pretty::<Json, _>(json!(22)))
     ///     .get_result::<String>(connection)?;
     ///
     /// assert_eq!(r#"22"#, result);
     ///
-    /// let result = diesel::select(json_pretty::<Text, _>(r#"false"#))
+    /// let result = diesel::select(json_pretty::<Json, _>(json!(false)))
     ///     .get_result::<String>(connection)?;
     ///
     /// assert_eq!(r#"false"#, result);
     ///
-    /// let result = diesel::select(json_pretty::<Text, _>(r#"null"#))
+    /// let result = diesel::select(json_pretty::<Json, _>(json!(null)))
     ///     .get_result::<String>(connection)?;
     ///
     /// assert_eq!(r#"null"#, result);
     ///
-    /// let result = diesel::select(json_pretty::<Text, _>(r#"{}"#))
+    /// let result = diesel::select(json_pretty::<Json, _>(json!({})))
     ///     .get_result::<String>(connection)?;
     ///
     /// assert_eq!(r#"{}"#, result);
     ///
-    /// let result = diesel::select(json_pretty::<Nullable<Text>, _>(None::<&str>))
+    /// let result = diesel::select(json_pretty::<Nullable<Json>, _>(None::<Value>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    ///
+    /// let result = diesel::select(json_pretty::<Jsonb, _>(json!([{"f1":1,"f2":null},2,null,3])))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"[
+    ///     {
+    ///         "f1": 1,
+    ///         "f2": null
+    ///     },
+    ///     2,
+    ///     null,
+    ///     3
+    /// ]"#, result);
+    ///
+    /// let result = diesel::select(json_pretty::<Jsonb, _>(json!({"a": 1, "b": "cd"})))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"{
+    ///     "a": 1,
+    ///     "b": "cd"
+    /// }"#, result);
+    ///
+    /// let result = diesel::select(json_pretty::<Jsonb, _>(json!("abc")))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#""abc""#, result);
+    ///
+    /// let result = diesel::select(json_pretty::<Jsonb, _>(json!(22)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"22"#, result);
+    ///
+    /// let result = diesel::select(json_pretty::<Jsonb, _>(json!(false)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"false"#, result);
+    ///
+    /// let result = diesel::select(json_pretty::<Jsonb, _>(json!(null)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"null"#, result);
+    ///
+    /// let result = diesel::select(json_pretty::<Jsonb, _>(json!({})))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"{}"#, result);
+    ///
+    /// let result = diesel::select(json_pretty::<Nullable<Jsonb>, _>(None::<Value>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn json_pretty<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Text>>(j: J) -> J::Out;
+}
+
+#[cfg(feature = "sqlite")]
+define_sql_function! {
+    /// Converts the given json value to pretty-printed, indented text
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{sql, json_pretty_with_indentation};
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Text, Json, Jsonb, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let version = diesel::select(sql::<Text>("sqlite_version();"))
+    ///         .get_result::<String>(connection)?;
+    ///
+    /// // Querying SQLite version should not fail.
+    /// let version_components: Vec<&str> = version.split('.').collect();
+    /// let major: u32 = version_components[0].parse().unwrap();
+    /// let minor: u32 = version_components[1].parse().unwrap();
+    /// let patch: u32 = version_components[2].parse().unwrap();
+    ///
+    /// if major > 3 || (major == 3 && minor >= 46) {
+    ///     /* Valid sqlite version, do nothing */
+    /// } else {
+    ///     println!("SQLite version is too old, skipping the test.");
+    ///     return Ok(());
+    /// }
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Json, _, _>(json!([{"f1":1,"f2":null},2,null,3]), "  "))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"[
+    ///   {
+    ///     "f1": 1,
+    ///     "f2": null
+    ///   },
+    ///   2,
+    ///   null,
+    ///   3
+    /// ]"#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Json, _, _>(json!([{"f1":1,"f2":null},2,null,3]), None::<&str>))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"[
+    ///     {
+    ///         "f1": 1,
+    ///         "f2": null
+    ///     },
+    ///     2,
+    ///     null,
+    ///     3
+    /// ]"#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Json, _, _>(json!({"a": 1, "b": "cd"}), "  "))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"{
+    ///   "a": 1,
+    ///   "b": "cd"
+    /// }"#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Json, _, _>(json!("abc"), "  "))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#""abc""#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Json, _, _>(json!(22), "  "))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"22"#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Json, _, _>(json!(false), None::<&str>))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"false"#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Json, _, _>(json!(null), None::<&str>))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"null"#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Json, _, _>(json!({}), "  "))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"{}"#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Nullable<Json>, _, _>(None::<Value>, None::<&str>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Jsonb, _, _>(json!([{"f1":1,"f2":null},2,null,3]), "  "))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"[
+    ///   {
+    ///     "f1": 1,
+    ///     "f2": null
+    ///   },
+    ///   2,
+    ///   null,
+    ///   3
+    /// ]"#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Jsonb, _, _>(json!([{"f1":1,"f2":null},2,null,3]), None::<&str>))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"[
+    ///     {
+    ///         "f1": 1,
+    ///         "f2": null
+    ///     },
+    ///     2,
+    ///     null,
+    ///     3
+    /// ]"#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Jsonb, _, _>(json!({"a": 1, "b": "cd"}), "  "))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"{
+    ///   "a": 1,
+    ///   "b": "cd"
+    /// }"#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Jsonb, _, _>(json!("abc"), "  "))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#""abc""#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Jsonb, _, _>(json!(22), "  "))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"22"#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Jsonb, _, _>(json!(false), None::<&str>))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"false"#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Jsonb, _, _>(json!(null), None::<&str>))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"null"#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Jsonb, _, _>(json!({}), "  "))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!(r#"{}"#, result);
+    ///
+    /// let result = diesel::select(json_pretty_with_indentation::<Nullable<Jsonb>, _, _>(None::<Value>, None::<&str>))
     ///     .get_result::<Option<String>>(connection)?;
     ///
     /// assert!(result.is_none());
@@ -211,5 +419,6 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn json_pretty<E: TextOrNullableTextOrBinaryOrNullableBinary + MaybeNullableValue<Text>>(e: E) -> E::Out;
+    #[sql_name = "json_pretty"]
+    fn json_pretty_with_indentation<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Text>>(j: J, indentation: Nullable<Text>) -> J::Out;
 }
