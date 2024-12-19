@@ -66,6 +66,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
   See the [SQL Injection isn't Dead: Smuggling Queries at Protocol Level](http://web.archive.org/web/20240812130923/https://media.defcon.org/DEF%20CON%2032/DEF%20CON%2032%20presentations/DEF%20CON%2032%20-%20Paul%20Gerste%20-%20SQL%20Injection%20Isn't%20Dead%20Smuggling%20Queries%20at%20the%20Protocol%20Level.pdf>) presentation from DEF CON for details
 * Fixed an issue with a possibly ambiguous trait resolution in `#[derive(QueryableByName)]`
 
+### Fixed
+
+* Use a single space instead of two spaces between `DELETE FROM`.
+
 ## [2.2.2] 2024-07-19
 
 ### Fixed
