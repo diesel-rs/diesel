@@ -23,6 +23,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 in a way that makes the pools suitable for use in parallel tests.
 * Added `Json` and `Jsonb` support for the SQLite backend.
 * Fixed diesel thinking `a.eq_any(b)` was non-nullable even if `a` and `b` were nullable.
+* Generate `InstrumentationEvent::BeginTransaction` for immediate and exclusive transactions in SQLite
 
 ### Fixed
 
