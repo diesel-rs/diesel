@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["json","jsonb"],"type":["json","jsonb"]};
