@@ -29,7 +29,11 @@ table! {
 joinable!(posts -> users (user_id));
 joinable!(pets -> users (user_id));
 allow_tables_to_appear_in_same_query!(posts, users, pets);
-define_sql_function!(fn lower(x: Text) -> Text);
+
+#[declare_sql_function]
+extern "SQL" {
+    fn lower(x: Text) -> Text;
+}
 
 fn main() {}
 

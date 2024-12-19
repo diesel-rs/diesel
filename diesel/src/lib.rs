@@ -725,6 +725,8 @@ pub mod prelude {
     pub use crate::expression::IntoSql as _;
 
     #[doc(inline)]
+    pub use crate::expression::functions::declare_sql_function;
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
     pub use crate::expression::functions::define_sql_function;
     #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
     pub use crate::expression::functions::sql_function;

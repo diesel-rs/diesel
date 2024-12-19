@@ -7,7 +7,12 @@ use crate::schema::*;
 use diesel::sql_types::{BigInt, VarChar};
 use diesel::*;
 
-define_sql_function!(fn my_lower(x: VarChar) -> VarChar);
+#[declare_sql_function]
+extern "SQL" {
+    fn my_lower(x: VarChar) -> VarChar;
+    fn setval(x: VarChar, y: BigInt);
+    fn currval(x: VarChar) -> BigInt;
+}
 
 #[test]
 fn test_sql_function() {
@@ -39,9 +44,6 @@ fn test_sql_function() {
             .unwrap()
     );
 }
-
-define_sql_function!(fn setval(x: VarChar, y: BigInt));
-define_sql_function!(fn currval(x: VarChar) -> BigInt);
 
 #[test]
 fn sql_function_without_return_type() {

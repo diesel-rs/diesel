@@ -5,12 +5,16 @@ use composite_types::establish_connection;
 use composite_types::schema::colors::{blue, color_id, color_name, dsl::colors, green, red};
 
 // Define the signature of the SQL function we want to call:
-use diesel::define_sql_function;
+use diesel::declare_sql_function;
 use diesel::pg::Pg;
 use diesel::pg::PgValue;
 use diesel::sql_types::{Float, Integer, Record, Text};
-define_sql_function!(fn color2grey(r: Integer, g: Integer,b: Integer) -> Record<(Float,Text)>);
-define_sql_function!(fn color2gray(r: Integer, g: Integer,b: Integer) -> PgGrayType);
+
+#[declare_sql_function]
+extern "SQL" {
+    fn color2grey(r: Integer, g: Integer, b: Integer) -> Record<(Float, Text)>;
+    fn color2gray(r: Integer, g: Integer, b: Integer) -> PgGrayType;
+}
 
 // Needed to select, construct the query and submit it.
 use diesel::deserialize::{self, FromSql, FromSqlRow};

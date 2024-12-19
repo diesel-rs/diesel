@@ -563,10 +563,23 @@ mod tests {
     use super::*;
     use crate::dsl::sql;
     use crate::prelude::*;
-    use crate::sql_types::Integer;
+    use crate::sql_types::{Integer, Text};
 
     fn connection() -> SqliteConnection {
         SqliteConnection::establish(":memory:").unwrap()
+    }
+
+    #[declare_sql_function]
+    extern "SQL" {
+        fn fun_case(x: Text) -> Text;
+        fn my_add(x: Integer, y: Integer) -> Integer;
+        fn answer() -> Integer;
+        fn add_counter(x: Integer) -> Integer;
+
+        #[aggregate]
+        fn my_sum(expr: Integer) -> Integer;
+        #[aggregate]
+        fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Nullable<Integer>;
     }
 
     #[test]
@@ -604,9 +617,6 @@ mod tests {
         assert_eq!(expected_users, actual_users);
     }
 
-    use crate::sql_types::Text;
-    define_sql_function!(fn fun_case(x: Text) -> Text);
-
     #[test]
     fn register_custom_function() {
         let connection = &mut connection();
@@ -630,8 +640,6 @@ mod tests {
         assert_eq!("fOoBaR", mapped_string);
     }
 
-    define_sql_function!(fn my_add(x: Integer, y: Integer) -> Integer);
-
     #[test]
     fn register_multiarg_function() {
         let connection = &mut connection();
@@ -640,8 +648,6 @@ mod tests {
         let added = crate::select(my_add(1, 2)).get_result::<i32>(connection);
         assert_eq!(Ok(3), added);
     }
-
-    define_sql_function!(fn answer() -> Integer);
 
     #[test]
     fn register_noarg_function() {
@@ -661,8 +667,6 @@ mod tests {
         assert_eq!(Ok(42), answer);
     }
 
-    define_sql_function!(fn add_counter(x: Integer) -> Integer);
-
     #[test]
     fn register_nondeterministic_function() {
         let connection = &mut connection();
@@ -676,11 +680,6 @@ mod tests {
         let added = crate::select((add_counter(1), add_counter(1), add_counter(1)))
             .get_result::<(i32, i32, i32)>(connection);
         assert_eq!(Ok((2, 3, 4)), added);
-    }
-
-    define_sql_function! {
-        #[aggregate]
-        fn my_sum(expr: Integer) -> Integer;
     }
 
     #[derive(Default)]
@@ -746,11 +745,6 @@ mod tests {
             .select(my_sum(value))
             .get_result::<i32>(connection);
         assert_eq!(Ok(0), result);
-    }
-
-    define_sql_function! {
-        #[aggregate]
-        fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Nullable<Integer>;
     }
 
     #[derive(Default)]

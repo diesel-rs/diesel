@@ -1,7 +1,7 @@
 //! PostgreSQL specific functions
 
 use super::expression_methods::InetOrCidr;
-use crate::expression::functions::define_sql_function;
+use crate::expression::functions::declare_sql_function;
 use crate::pg::expression::expression_methods::ArrayOrNullableArray;
 use crate::pg::expression::expression_methods::CombinedAllNullableValue;
 use crate::pg::expression::expression_methods::CombinedNullableValue;
@@ -15,66 +15,58 @@ use crate::pg::expression::expression_methods::RecordOrNullableRecord;
 use crate::pg::expression::expression_methods::TextArrayOrNullableTextArray;
 use crate::sql_types::*;
 
-define_sql_function! {
+#[declare_sql_function]
+extern "SQL" {
     /// Creates an abbreviated display format as text.
     #[cfg(feature = "postgres_backend")]
     fn abbrev<T: InetOrCidr + SingleValue>(addr: T) -> Text;
-}
-define_sql_function! {
+
     /// Computes the broadcast address for the address's network.
     #[cfg(feature = "postgres_backend")]
     fn broadcast<T: InetOrCidr + SingleValue>(addr: T) -> Inet;
-}
-define_sql_function! {
+
     /// Returns the address's family: 4 for IPv4, 6 for IPv6.
     #[cfg(feature = "postgres_backend")]
     fn family<T: InetOrCidr + SingleValue>(addr: T) -> Integer;
-}
-define_sql_function! {
+
     /// Returns the IP address as text, ignoring the netmask.
     #[cfg(feature = "postgres_backend")]
     fn host<T: InetOrCidr + SingleValue>(addr: T) -> Text;
-}
-define_sql_function! {
+
     /// Computes the host mask for the address's network.
     #[cfg(feature = "postgres_backend")]
     fn hostmask<T: InetOrCidr + SingleValue>(addr: T) -> Inet;
-}
-define_sql_function! {
+
     /// Computes the smallest network that includes both of the given networks.
     #[cfg(feature = "postgres_backend")]
     fn inet_merge<T: InetOrCidr + SingleValue, U: InetOrCidr + SingleValue>(a: T, b: U) -> Cidr;
-}
-define_sql_function! {
+
     /// Tests whether the addresses belong to the same IP family.
     #[cfg(feature = "postgres_backend")]
-    fn inet_same_family<T: InetOrCidr + SingleValue, U: InetOrCidr + SingleValue>(a: T, b: U) -> Bool;
-}
-define_sql_function! {
+    fn inet_same_family<T: InetOrCidr + SingleValue, U: InetOrCidr + SingleValue>(
+        a: T,
+        b: U,
+    ) -> Bool;
+
     /// Returns the netmask length in bits.
     #[cfg(feature = "postgres_backend")]
     fn masklen<T: InetOrCidr + SingleValue>(addr: T) -> Integer;
-}
-define_sql_function! {
+
     /// Computes the network mask for the address's network.
     #[cfg(feature = "postgres_backend")]
     fn netmask<T: InetOrCidr + SingleValue>(addr: T) -> Inet;
-}
-define_sql_function! {
+
     /// Returns the network part of the address, zeroing out whatever is to the right of the
     /// netmask. (This is equivalent to casting the value to cidr.)
     #[cfg(feature = "postgres_backend")]
     fn network<T: InetOrCidr + SingleValue>(addr: T) -> Cidr;
-}
-define_sql_function! {
+
     /// Sets the netmask length for an inet or cidr value.
     /// For inet, the address part does not changes. For cidr, address bits to the right of the new
     /// netmask are set to zero.
     #[cfg(feature = "postgres_backend")]
     fn set_masklen<T: InetOrCidr + SingleValue>(addr: T, len: Integer) -> T;
-}
 
-define_sql_function! {
     /// Returns the lower bound of the range
     ///
     /// If the range is empty or has no lower bound, it returns NULL.
@@ -110,9 +102,7 @@ define_sql_function! {
     /// ```
     #[cfg(feature = "postgres_backend")]
     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inner>;
-}
 
-define_sql_function! {
     /// Returns the upper bound of the range
     ///
     /// If the range is empty or has no upper bound, it returns NULL.
@@ -148,9 +138,7 @@ define_sql_function! {
     /// ```
     #[cfg(feature = "postgres_backend")]
     fn upper<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inner>;
-}
 
-define_sql_function! {
     /// Returns true if the range is empty
     ///
     /// # Example
@@ -183,10 +171,10 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn isempty<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
-}
+    fn isempty<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(
+        range: R,
+    ) -> R::Out;
 
-define_sql_function! {
     /// Returns true if the range's lower bound is inclusive
     ///
     /// # Example
@@ -219,10 +207,10 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn lower_inc<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
-}
+    fn lower_inc<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(
+        range: R,
+    ) -> R::Out;
 
-define_sql_function! {
     /// Returns true if the range's upper bound is inclusive
     ///
     /// # Example
@@ -252,10 +240,10 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn upper_inc<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
-}
+    fn upper_inc<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(
+        range: R,
+    ) -> R::Out;
 
-define_sql_function! {
     /// Returns true if the range's lower bound is unbounded
     ///
     /// # Example
@@ -288,10 +276,10 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn lower_inf<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
-}
+    fn lower_inf<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(
+        range: R,
+    ) -> R::Out;
 
-define_sql_function! {
     /// Returns true if the range's upper bound is unbounded
     ///
     /// # Example
@@ -324,10 +312,10 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn upper_inf<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(range: R) -> R::Out;
-}
+    fn upper_inf<R: MultirangeOrRangeMaybeNullable + SingleValue + MaybeNullableValue<Bool>>(
+        range: R,
+    ) -> R::Out;
 
-define_sql_function! {
     /// Returns the smallest range which includes both of the given ranges
     ///
     /// # Example
@@ -360,10 +348,16 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn range_merge<R1: RangeOrNullableRange + SingleValue, R2: RangeOrNullableRange<Inner=R1::Inner> + SingleValue + CombinedNullableValue<R1, Range<R1::Inner>>>(lhs: R1, rhs: R2) -> R2::Out;
-}
+    fn range_merge<
+        R1: RangeOrNullableRange + SingleValue,
+        R2: RangeOrNullableRange<Inner = R1::Inner>
+            + SingleValue
+            + CombinedNullableValue<R1, Range<R1::Inner>>,
+    >(
+        lhs: R1,
+        rhs: R2,
+    ) -> R2::Out;
 
-define_sql_function! {
     /// Returns the smallest range which includes all ranges in the multirange
     ///
     /// # Example
@@ -391,10 +385,9 @@ define_sql_function! {
     /// ```
     #[cfg(feature = "postgres_backend")]
     #[sql_name = "range_merge"]
-    fn multirange_merge<R: MultirangeOrNullableMultirange + SingleValue>(multirange: R) -> R::Range;
-}
+    fn multirange_merge<R: MultirangeOrNullableMultirange + SingleValue>(multirange: R)
+        -> R::Range;
 
-define_sql_function! {
     /// Returns range of integer
     ///
     /// # Example
@@ -439,10 +432,12 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn int4range(lower: Nullable<Integer>, upper: Nullable<Integer>, bound: RangeBoundEnum) -> Int4range;
-}
+    fn int4range(
+        lower: Nullable<Integer>,
+        upper: Nullable<Integer>,
+        bound: RangeBoundEnum,
+    ) -> Int4range;
 
-define_sql_function! {
     /// Returns range of big ints
     ///
     /// # Example
@@ -487,10 +482,12 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn int8range(lower: Nullable<BigInt>, upper: Nullable<BigInt>, bound: RangeBoundEnum) -> Int8range;
-}
+    fn int8range(
+        lower: Nullable<BigInt>,
+        upper: Nullable<BigInt>,
+        bound: RangeBoundEnum,
+    ) -> Int8range;
 
-define_sql_function! {
     /// Returns range of numeric values
     ///
     /// # Example
@@ -538,10 +535,12 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn numrange(lower: Nullable<Numeric>, upper: Nullable<Numeric>, bound: RangeBoundEnum) -> Numrange;
-}
+    fn numrange(
+        lower: Nullable<Numeric>,
+        upper: Nullable<Numeric>,
+        bound: RangeBoundEnum,
+    ) -> Numrange;
 
-define_sql_function! {
     /// Returns range of timestamps without timezone
     ///
     /// # Example
@@ -589,10 +588,12 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn tsrange(lower: Nullable<Timestamp>, upper: Nullable<Timestamp>, bound: RangeBoundEnum) -> Tsrange;
-}
+    fn tsrange(
+        lower: Nullable<Timestamp>,
+        upper: Nullable<Timestamp>,
+        bound: RangeBoundEnum,
+    ) -> Tsrange;
 
-define_sql_function! {
     /// Returns range of timestamps with timezone
     ///
     /// # Example
@@ -640,10 +641,12 @@ define_sql_function! {
     /// # }
     /// ```
     #[cfg(feature = "postgres_backend")]
-    fn tstzrange(lower: Nullable<Timestamptz>, upper: Nullable<Timestamptz>, bound: RangeBoundEnum) -> Tstzrange;
-}
+    fn tstzrange(
+        lower: Nullable<Timestamptz>,
+        upper: Nullable<Timestamptz>,
+        bound: RangeBoundEnum,
+    ) -> Tstzrange;
 
-define_sql_function! {
     /// Returns range of dates
     ///
     /// # Example
@@ -692,10 +695,7 @@ define_sql_function! {
     /// ```
     #[cfg(feature = "postgres_backend")]
     fn daterange(lower: Nullable<Date>, upper: Nullable<Date>, bound: RangeBoundEnum) -> Daterange;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Append an element to the end of an array
     ///
     /// # Example
@@ -729,11 +729,13 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_append<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue>(a: Arr, e: T) -> Array<T>;
-}
+    ///
+    #[cfg(feature = "postgres_backend")]
+    fn array_append<Arr: ArrayOrNullableArray<Inner = T> + SingleValue, T: SingleValue>(
+        a: Arr,
+        e: T,
+    ) -> Array<T>;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Replace all occurrences of an element in an array with a given element
     ///
     /// # Example
@@ -766,11 +768,13 @@ define_sql_function! {
     /// #    Ok(())
     /// # }
     /// ```
-    fn array_replace<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue>(a: Arr, e: T, r: T) -> Arr;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn array_replace<Arr: ArrayOrNullableArray<Inner = T> + SingleValue, T: SingleValue>(
+        a: Arr,
+        e: T,
+        r: T,
+    ) -> Arr;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns a text representation of the array's dimensions
     ///
     /// # Example
@@ -800,11 +804,9 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
-    fn array_dims<Arr:ArrayOrNullableArray<> + SingleValue>(arr:Arr) -> Text;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn array_dims<Arr: ArrayOrNullableArray + SingleValue>(arr: Arr) -> Text;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Prepends an element to the beginning of an array
     ///
     /// # Example
@@ -838,11 +840,12 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_prepend<T: SingleValue, Arr: ArrayOrNullableArray<Inner=T> + SingleValue>(e: T, a: Arr) -> Array<T>;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn array_prepend<T: SingleValue, Arr: ArrayOrNullableArray<Inner = T> + SingleValue>(
+        e: T,
+        a: Arr,
+    ) -> Array<T>;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Removes all elements equal to the given value from the array
     ///
     /// # Example
@@ -872,11 +875,12 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_remove<Arr: ArrayOrNullableArray<Inner=T> + SingleValue, T: SingleValue>(a: Arr, e: T) -> Arr;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn array_remove<Arr: ArrayOrNullableArray<Inner = T> + SingleValue, T: SingleValue>(
+        a: Arr,
+        e: T,
+    ) -> Arr;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Converts each array element to its text representation and concatenates those elements
     /// separated by the delimiter string. If `null_string` is provided and is not `NULL`, then `NULL`
     /// array entries are represented by that string; otherwise, they are omitted.
@@ -916,14 +920,14 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     #[sql_name = "array_to_string"]
     fn array_to_string_with_null_string<Arr: ArrayOrNullableArray + SingleValue>(
-        array: Arr, del: Text, null: Text
+        array: Arr,
+        del: Text,
+        null: Text,
     ) -> Text;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Converts each array element to its text representation and concatenates those elements
     /// separated by the delimiter string. `NULL` entries are omitted in this variant.
     /// See [array_to_string_with_null_string] for a variant with that argument.
@@ -963,13 +967,9 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_to_string<Arr: ArrayOrNullableArray + SingleValue>(
-        array: Arr, del: Text
-    ) -> Text;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn array_to_string<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, del: Text) -> Text;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns the total number of elements in the array, or 0 if the array is empty.
     ///
     /// # Example
@@ -1003,11 +1003,11 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
-    fn cardinality<Arr:ArrayOrNullableArray + SingleValue + MaybeNullableValue<Integer>>(a: Arr) -> Arr::Out;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn cardinality<Arr: ArrayOrNullableArray + SingleValue + MaybeNullableValue<Integer>>(
+        a: Arr,
+    ) -> Arr::Out;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Trims an array by removing the last n elements. If the array is multidimensional, only the first dimension is trimmed.
     ///
     /// # Example
@@ -1045,11 +1045,9 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
-    fn trim_array<Arr:ArrayOrNullableArray + SingleValue>(a: Arr, n: Integer) -> Arr;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn trim_array<Arr: ArrayOrNullableArray + SingleValue>(a: Arr, n: Integer) -> Arr;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Concatenates two arrays
     ///
     /// # Example
@@ -1077,11 +1075,9 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     fn array_cat<Arr: ArrayOrNullableArray + SingleValue>(a: Arr, b: Arr) -> Arr;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns the length of the requested array
     ///
     /// # Example
@@ -1111,11 +1107,12 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_length<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, dimension: Integer) -> Nullable<Integer>;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn array_length<Arr: ArrayOrNullableArray + SingleValue>(
+        array: Arr,
+        dimension: Integer,
+    ) -> Nullable<Integer>;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns an array initialized with supplied value and dimensions,
     /// optionally with lower bounds other than 1. This function omits the optional
     /// lower bound argument. See [array_fill_with_lower_bound] for that.
@@ -1151,11 +1148,9 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
-    fn array_fill<E:SingleValue>(value: E, dim: Array<Integer>) -> Array<E>;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn array_fill<E: SingleValue>(value: E, dim: Array<Integer>) -> Array<E>;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns an array initialized with supplied value and dimensions,
     /// with lower bounds other than 1
     ///
@@ -1191,11 +1186,13 @@ define_sql_function! {
     /// # }
     ///
     #[sql_name = "array_fill"]
-    fn array_fill_with_lower_bound<E:SingleValue>(value: E, dim: Array<Integer>, lower_bound: Array<Integer>) -> Array<E>;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn array_fill_with_lower_bound<E: SingleValue>(
+        value: E,
+        dim: Array<Integer>,
+        lower_bound: Array<Integer>,
+    ) -> Array<E>;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns the lower bound of the requested array
     ///
     /// This function returns null for dimensions that do not exist
@@ -1224,11 +1221,12 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_lower<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, dimension: Integer) -> Nullable<Integer>;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn array_lower<Arr: ArrayOrNullableArray + SingleValue>(
+        array: Arr,
+        dimension: Integer,
+    ) -> Nullable<Integer>;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns the subscript of the first occurrence of the second argument in the array, or NULL if it's not present.
     /// If the third argument is given, the search begins at that subscript. This function omits the third argument.
     /// See [array_position_with_subscript].
@@ -1274,14 +1272,12 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
+    #[cfg(feature = "postgres_backend")]
     fn array_position<Arr: ArrayOrNullableArray<Inner = E> + SingleValue, E: SingleValue>(
         a: Arr,
         elem: E,
     ) -> Nullable<Integer>;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns the subscript of the first occurrence of the second argument in the array,
     /// or NULL if it's not present, beginning at the subscript given as the third argument.
     ///
@@ -1324,6 +1320,7 @@ define_sql_function! {
     /// # }
     ///
     #[sql_name = "array_position"]
+    #[cfg(feature = "postgres_backend")]
     fn array_position_with_subscript<
         Arr: ArrayOrNullableArray<Inner = E> + SingleValue,
         E: SingleValue,
@@ -1332,10 +1329,7 @@ define_sql_function! {
         elem: E,
         subscript: Integer,
     ) -> Nullable<Integer>;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns an array of the subscripts of all occurrences of the second argument in the
     /// array given as first argument.
     ///
@@ -1376,14 +1370,15 @@ define_sql_function! {
     /// # Ok(())
     /// # }
     ///
-    fn array_positions<Arr: ArrayOrNullableArray<Inner = E> + SingleValue + MaybeNullableValue<Array<Integer>>, E: SingleValue>(
+    #[cfg(feature = "postgres_backend")]
+    fn array_positions<
+        Arr: ArrayOrNullableArray<Inner = E> + SingleValue + MaybeNullableValue<Array<Integer>>,
+        E: SingleValue,
+    >(
         a: Arr,
         elem: E,
     ) -> Arr::Out;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns the number of dimensions of the array
     ///
     /// # Example
@@ -1412,11 +1407,11 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_ndims<Arr: ArrayOrNullableArray + SingleValue + MaybeNullableValue<Integer>>(arr: Arr) -> Arr::Out;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn array_ndims<Arr: ArrayOrNullableArray + SingleValue + MaybeNullableValue<Integer>>(
+        arr: Arr,
+    ) -> Arr::Out;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns the upper bound of the requested array
     ///
     /// This function returns null for dimensions that do not exist
@@ -1445,11 +1440,12 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_upper<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, dimension: Integer) -> Nullable<Integer>;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn array_upper<Arr: ArrayOrNullableArray + SingleValue>(
+        array: Arr,
+        dimension: Integer,
+    ) -> Nullable<Integer>;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Randomly shuffles the first dimension of the array.
     ///
     /// # Example
@@ -1475,11 +1471,9 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     fn array_shuffle<Arr: ArrayOrNullableArray + SingleValue>(array: Arr) -> Arr;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns an array of n items randomly selected from array.
     /// n may not exceed the length of the array.
     ///
@@ -1517,11 +1511,9 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     fn array_sample<Arr: ArrayOrNullableArray + SingleValue>(array: Arr, n: Integer) -> Arr;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Converts any Array to json.
     ///
     /// # Example
@@ -1558,13 +1550,9 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn array_to_json<Arr: ArrayOrNullableArray + MaybeNullableValue<Json>>(
-        array: Arr,
-    ) -> Arr::Out;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn array_to_json<Arr: ArrayOrNullableArray + MaybeNullableValue<Json>>(array: Arr) -> Arr::Out;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Converts any SQL value to json
     ///
     /// # Example
@@ -1606,11 +1594,9 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     fn to_json<E: MaybeNullableValue<Json>>(e: E) -> E::Out;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Converts any SQL value to jsonb
     ///
     /// # Example
@@ -1652,11 +1638,9 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     fn to_jsonb<E: MaybeNullableValue<Jsonb>>(e: E) -> E::Out;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Builds a JSON object out of a text array. The array must have an even number of members,
     /// in which case they are taken as alternating key/value pairs
     ///
@@ -1698,13 +1682,11 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     fn json_object<Arr: TextArrayOrNullableTextArray + MaybeNullableValue<Json>>(
         text_array: Arr,
     ) -> Arr::Out;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// This form of json_object takes keys and values pairwise from two separate arrays.
     /// In all other respects it is identical to the one-argument form.
     ///
@@ -1745,6 +1727,7 @@ define_sql_function! {
     /// # }
     /// ```
     #[sql_name = "json_object"]
+    #[cfg(feature = "postgres_backend")]
     fn json_object_with_keys_and_values<
         Arr1: TextArrayOrNullableTextArray + SingleValue,
         Arr2: TextArrayOrNullableTextArray + CombinedNullableValue<Arr1, Json>,
@@ -1752,10 +1735,7 @@ define_sql_function! {
         keys: Arr1,
         values: Arr2,
     ) -> Arr2::Out;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns the type of the top-level json value as a text-string
     ///
     /// # Example
@@ -1811,11 +1791,9 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     fn json_typeof<E: JsonOrNullableJson + SingleValue + MaybeNullableValue<Text>>(e: E) -> E::Out;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns the type of the top-level jsonb value as a text-string
     ///
     /// # Example
@@ -1871,11 +1849,11 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn jsonb_typeof<E: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Text>>(e: E) -> E::Out;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn jsonb_typeof<E: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Text>>(
+        e: E,
+    ) -> E::Out;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Converts the given json value to pretty-printed, indented text
     ///
     /// # Example
@@ -1948,10 +1926,11 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn jsonb_pretty<E: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Text>>(e: E) -> E::Out;
-}
+    #[cfg(feature = "postgres_backend")]
+    fn jsonb_pretty<E: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Text>>(
+        e: E,
+    ) -> E::Out;
 
-define_sql_function! {
     /// Deletes all object fields that have null values from the given JSON value, recursively.
     ///
     /// # Example
@@ -1994,10 +1973,9 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     fn json_strip_nulls<E: JsonOrNullableJson + SingleValue>(json: E) -> E;
-}
 
-define_sql_function! {
     /// Deletes all object fields that have null values from the given JSON value, recursively.
     ///
     /// # Example
@@ -2041,11 +2019,9 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     fn jsonb_strip_nulls<E: JsonbOrNullableJsonb + SingleValue>(jsonb: E) -> E;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns the number of elements in the top-level JSON array
     ///
     ///
@@ -2083,12 +2059,9 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-
+    #[cfg(feature = "postgres_backend")]
     fn json_array_length<E: JsonOrNullableJson + MaybeNullableValue<Integer>>(json: E) -> E::Out;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns the number of elements in the top-level JSON array
     ///
     ///
@@ -2126,12 +2099,11 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn jsonb_array_length<E: JsonbOrNullableJsonb + MaybeNullableValue<Integer>>(
+        jsonb: E,
+    ) -> E::Out;
 
-    fn jsonb_array_length<E: JsonbOrNullableJsonb + MaybeNullableValue<Integer>>(jsonb: E) -> E::Out;
-}
-
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Builds a JSON object out of a text array. The array must have an even number of members,
     /// in which case they are taken as alternating key/value pairs. This function also has a form that
     /// that takes keys and values as separate text array arguments.
@@ -2181,13 +2153,11 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     fn jsonb_object<Arr: TextArrayOrNullableTextArray + MaybeNullableValue<Jsonb>>(
         text_array: Arr,
     ) -> Arr::Out;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// This form of jsonb_object takes keys and values pairwise from two separate arrays.
     /// In all other respects it is identical to the one-argument form.
     ///
@@ -2228,17 +2198,15 @@ define_sql_function! {
     /// # }
     /// ```
     #[sql_name = "jsonb_object"]
+    #[cfg(feature = "postgres_backend")]
     fn jsonb_object_with_keys_and_values<
         Arr1: TextArrayOrNullableTextArray + SingleValue,
-        Arr2: TextArrayOrNullableTextArray + CombinedNullableValue<Arr1, Jsonb>
+        Arr2: TextArrayOrNullableTextArray + CombinedNullableValue<Arr1, Jsonb>,
     >(
         keys: Arr1,
-        values: Arr2
+        values: Arr2,
     ) -> Arr2::Out;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// This function `row_to_json` takes a Record type as an input and converts it to JSON.
     ///
     /// # Example
@@ -2278,11 +2246,9 @@ define_sql_function! {
     /// # }
     /// ```
     #[sql_name = "row_to_json"]
+    #[cfg(feature = "postgres_backend")]
     fn row_to_json<R: RecordOrNullableRecord + MaybeNullableValue<Json>>(record: R) -> R::Out;
-}
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// This function `json_populate_record` takes a Record base and Json as an input and converts it to top-level
     /// JSON object to a row having the composite type of the base argument.
     ///
@@ -2334,14 +2300,15 @@ define_sql_function! {
     /// # }
     /// ```
     #[sql_name = "json_populate_record"]
+    #[cfg(feature = "postgres_backend")]
     fn json_populate_record<
         B: RecordOrNullableRecord + SingleValue,
-        J: JsonOrNullableJson + CombinedAllNullableValue<Json, B>
-    >(base: B, from_json: J) -> J::Out;
-}
+        J: JsonOrNullableJson + CombinedAllNullableValue<Json, B>,
+    >(
+        base: B,
+        from_json: J,
+    ) -> J::Out;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// This function `jsonb_populate_record` takes a Record base and Jsonb as an input and converts it to top-level
     /// JSON object to a row having the composite type of the base argument.
     ///
@@ -2393,14 +2360,15 @@ define_sql_function! {
     /// # }
     /// ```
     #[sql_name = "jsonb_populate_record"]
+    #[cfg(feature = "postgres_backend")]
     fn jsonb_populate_record<
         B: RecordOrNullableRecord + SingleValue,
-        J: JsonbOrNullableJsonb + CombinedAllNullableValue<Jsonb, B>
-    >(base: B, from_json: J) -> J::Out;
-}
+        J: JsonbOrNullableJsonb + CombinedAllNullableValue<Jsonb, B>,
+    >(
+        base: B,
+        from_json: J,
+    ) -> J::Out;
 
-#[cfg(feature = "postgres_backend")]
-define_sql_function! {
     /// Returns target with the item designated by path replaced by new_value,
     ///     or with new_value added and the item designated by path does not exist.
     ///
@@ -2475,10 +2443,15 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     fn jsonb_set<
         E: JsonbOrNullableJsonb + SingleValue,
-        Arr: TextArrayOrNullableTextArray + CombinedNullableValue<E,Jsonb>
-    >(base: E, path: Arr, new_value: E) -> Arr::Out;
+        Arr: TextArrayOrNullableTextArray + CombinedNullableValue<E, Jsonb>,
+    >(
+        base: E,
+        path: Arr,
+        new_value: E,
+    ) -> Arr::Out;
 }
 
 #[cfg(feature = "postgres_backend")]

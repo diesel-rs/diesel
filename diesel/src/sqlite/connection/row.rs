@@ -343,7 +343,10 @@ mod tests {
     }
 
     #[cfg(feature = "returning_clauses_for_sqlite_3_35")]
-    crate::define_sql_function! {fn sleep(a: diesel::sql_types::Integer) -> diesel::sql_types::Integer}
+    #[crate::declare_sql_function]
+    extern "SQL" {
+        fn sleep(a: diesel::sql_types::Integer) -> diesel::sql_types::Integer;
+    }
 
     #[test]
     #[cfg(feature = "returning_clauses_for_sqlite_3_35")]
