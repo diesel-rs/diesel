@@ -2126,7 +2126,6 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-
     fn jsonb_array_length<E: JsonbOrNullableJsonb + MaybeNullableValue<Integer>>(jsonb: E) -> E::Out;
 }
 
