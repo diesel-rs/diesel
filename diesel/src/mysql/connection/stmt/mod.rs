@@ -21,6 +21,10 @@ pub struct Statement {
     input_binds: Option<PreparedStatementBinds>,
 }
 
+// mysql connection can be shared between threads according to libmysqlclients documentation
+#[allow(unsafe_code)]
+unsafe impl Send for Statement {}
+
 impl Statement {
     pub(crate) fn new(stmt: NonNull<ffi::MYSQL_STMT>) -> Self {
         Statement {
