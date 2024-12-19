@@ -324,7 +324,7 @@ impl AnsiTransactionManager {
 
         conn.instrumentation().on_connection_event(
             super::instrumentation::InstrumentationEvent::BeginTransaction {
-                depth: instrumentation_depth.expect("Transaction depth is too large"),
+                depth: instrumentation_depth.expect("We know that 1 is not zero"),
             },
         );
         conn.batch_execute(sql)?;
