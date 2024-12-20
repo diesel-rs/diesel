@@ -10,6 +10,7 @@ mod integers;
 mod ipnet_address;
 #[cfg(feature = "serde_json")]
 mod json;
+mod json_function_enum;
 mod mac_addr;
 mod mac_addr_8;
 #[doc(hidden)]
@@ -207,6 +208,31 @@ pub mod sql_types {
     pub type Tsmultirange = Multirange<crate::sql_types::Timestamp>;
     #[doc(hidden)]
     pub type Tstzmultirange = Multirange<crate::sql_types::Timestamptz>;
+
+    /// This is a wrapper for [`NullValueTreatment`] to represent null_value_treatment for jsonb_seet_lax:
+    ///     'raise_exception' 'use_json_null' 'delete_key' 'return_target'
+    /// used in functions jsonb_set_lax
+    #[derive(Debug, Clone, Copy, QueryId, SqlType)]
+    #[cfg(feature = "postgres_backend")]
+    #[diesel(postgres_type(name = "text"))]
+    pub struct NullValueTreatmentEnum;
+
+    /// Represent null_value_treatment for jsonb_seet_lax:
+    ///     'raise_exception' 'use_json_null' 'delete_key' 'return_target'
+    /// used in functions jsonb_seet_lax.
+    #[derive(Debug, Clone, Copy, diesel_derives::AsExpression)]
+    #[diesel(sql_type = NullValueTreatmentEnum)]
+    #[allow(clippy::enum_variant_names)]
+    pub enum NullValueTreatment {
+        /// postgres 'raise_exception'
+        RaiseException,
+        /// postgres 'use_json_null'
+        UseJsonNull,
+        /// postgres 'delete_key'
+        DeleteKey,
+        /// postgres 'return_target'
+        ReturnTarget,
+    }
 
     /// This is a wrapper for [`RangeBound`] to represent range bounds: '[]', '(]', '[)', '()',
     /// used in functions int4range, int8range, numrange, tsrange, tstzrange, daterange.
