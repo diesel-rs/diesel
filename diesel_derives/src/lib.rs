@@ -1327,7 +1327,10 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro]
 pub fn define_sql_function(input: TokenStream) -> TokenStream {
-    sql_function::expand(parse_macro_input!(input), false).into()
+    match sql_function::expand(parse_macro_input!(input), false) {
+        Ok(o) => o.into(),
+        Err(e) => e.into_compile_error().into(),
+    }
 }
 
 /// A legacy version of [`define_sql_function!`].
@@ -1360,7 +1363,10 @@ pub fn define_sql_function(input: TokenStream) -> TokenStream {
 #[proc_macro]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
-    sql_function::expand(parse_macro_input!(input), true).into()
+    match sql_function::expand(parse_macro_input!(input), true) {
+        Ok(o) => o.into(),
+        Err(e) => e.into_compile_error().into(),
+    }
 }
 
 /// This is an internal diesel macro that

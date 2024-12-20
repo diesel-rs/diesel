@@ -4,6 +4,7 @@ use super::query_builder::MysqlQueryBuilder;
 use super::MysqlValue;
 use crate::backend::sql_dialect::on_conflict_clause::SupportsOnConflictClause;
 use crate::backend::*;
+use crate::internal::derives::multiconnection::sql_dialect;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::sql_types::TypeMetadata;
 
@@ -89,6 +90,12 @@ impl SqlDialect for Mysql {
 
     type ConcatClause = MysqlConcatClause;
     type AliasSyntax = sql_dialect::alias_syntax::AsAliasSyntax;
+
+    type WindowFrameClauseGroupSupport =
+        sql_dialect::window_frame_clause_group_support::NoGroupWindowFrameUnit;
+
+    type AggregateFunctionExpressions =
+        sql_dialect::aggregate_function_expressions::NoAggregateFunctionExpressions;
 }
 
 impl DieselReserveSpecialization for Mysql {}
