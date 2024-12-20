@@ -148,7 +148,6 @@ mod testing_utils {
 mod tests_pg {
     use crate::connection::CacheSize;
     use crate::dsl::sql;
-    use crate::expression::functions::define_sql_function;
     use crate::insertable::Insertable;
     use crate::pg::Pg;
     use crate::sql_types::{Integer, VarChar};
@@ -157,6 +156,11 @@ mod tests_pg {
     use crate::{Connection, ExpressionMethods, IntoSql, PgConnection, QueryDsl, RunQueryDsl};
 
     use super::testing_utils::{count_cache_calls, RecordCacheEvents};
+
+    #[crate::declare_sql_function]
+    extern "SQL" {
+        fn lower(x: VarChar) -> VarChar;
+    }
 
     table! {
         users {
@@ -208,8 +212,6 @@ mod tests_pg {
         assert_eq!(Ok("hi".to_string()), query2.get_result(connection));
         assert_eq!(2, count_cache_calls(connection));
     }
-
-    define_sql_function!(fn lower(x: VarChar) -> VarChar);
 
     #[test]
     fn queries_with_identical_types_and_binds_but_different_sql_are_cached_separately() {

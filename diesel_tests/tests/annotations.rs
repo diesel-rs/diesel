@@ -286,7 +286,10 @@ fn derive_insertable_with_option_for_not_null_field_with_default() {
     assert_eq!(Some(&User::new(123, "Bob")), bob);
 }
 
-define_sql_function!(fn nextval(a: Text) -> Integer);
+#[declare_sql_function]
+extern "SQL" {
+    fn nextval(a: Text) -> Integer;
+}
 
 #[test]
 #[cfg(feature = "postgres")]

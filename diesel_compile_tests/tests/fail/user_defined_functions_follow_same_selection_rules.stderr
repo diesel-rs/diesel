@@ -1,15 +1,15 @@
 error[E0271]: type mismatch resolving `<foo<Bound<Integer, i32>> as Expression>::SqlType == Text`
-  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:37:38
+  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:40:38
    |
-37 |     let _ = users::table.filter(name.eq(foo(1)));
+40 |     let _ = users::table.filter(name.eq(foo(1)));
    |                                      ^^ expected `Integer`, found `Text`
    |
    = note: required for `foo_utils::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>` to implement `AsExpression<diesel::sql_types::Text>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:41:23
+  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:44:23
    |
-41 |         .load::<User>(&mut conn);
+44 |         .load::<User>(&mut conn);
    |          ----         ^^^^^^^^^ expected `Once`, found `Never`
    |          |
    |          required by a bound introduced by this call
