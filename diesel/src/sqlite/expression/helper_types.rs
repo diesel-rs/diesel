@@ -27,3 +27,13 @@ pub type json_pretty<E> = super::functions::json_pretty<SqlTypeOf<E>, E>;
 #[cfg(feature = "sqlite")]
 pub type json_pretty_with_indentation<J, I> =
     super::functions::json_pretty_with_indentation<SqlTypeOf<J>, J, I>;
+
+/// Return type of [`json_type(json)`](super::functions::json_type())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_type<J> = super::functions::json_type<SqlTypeOf<J>, J>;
+
+/// Return type of [`json_type_with_path(json, path)`](super::functions::json_type_with_path())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_type_with_path<J, P> = super::functions::json_type_with_path<SqlTypeOf<J>, J, P>;
