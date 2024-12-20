@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["json","json_pretty","json_pretty_with_indentation","jsonb"],"type":["json","json_pretty","json_pretty_with_indentation","jsonb"]};
