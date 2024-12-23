@@ -41,9 +41,6 @@ pub mod custom_schema {
 
     diesel::joinable!(b -> a (parent));
 
-    diesel::allow_tables_to_appear_in_same_query!(
-        a,
-        b,
-    );
+    diesel::allow_tables_to_appear_in_same_query!(a, b,);
 }
 

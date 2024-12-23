@@ -17,10 +17,7 @@ diesel::table! {
     }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(
-    users1,
-    users2,
-);
+diesel::allow_tables_to_appear_in_same_query!(users1, users2,);
 // @generated automatically by Diesel CLI.
 
 diesel::table! {

@@ -31,9 +31,5 @@ diesel::table! {
     }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(
-    payment_card,
-    transaction_one,
-    transaction_two,
-);
+diesel::allow_tables_to_appear_in_same_query!(payment_card, transaction_one, transaction_two,);
 
