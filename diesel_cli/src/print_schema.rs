@@ -5,7 +5,8 @@ use crate::infer_schema_internals::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt::{self, Display, Formatter, Write};
-use std::io::Write as IoWrite;
+use std::io::{Read, Write as IoWrite};
+use std::process;
 
 const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 
@@ -291,6 +292,35 @@ pub fn output_schema(
     }
 
     Ok(out)
+
+pub fn format_schema(schema: &str) -> Result<String, crate::errors::Error> {
+    use crate::errors::Error;
+    // Inject schema through rustfmt stdin and get the formatted output
+    let child = process::Command::new("rustfmt")
+        .stdin(process::Stdio::piped())
+        .stdout(process::Stdio::piped())
+        .spawn()
+        .map_err(|err| Error::RustFmtFail(format!("Failed to launch child process ({})", err)))?;
+
+    {
+        let mut stdin = child
+            .stdin
+            .expect("we can always get the stdin from the child process");
+
+        stdin.write_all(schema.as_bytes()).map_err(|err| {
+            Error::RustFmtFail(format!("Failed to send schema to rustfmt ({})", err))
+        })?;
+        // the inner scope makes it so stdin gets dropped here
+    }
+
+    let mut output_schema = String::new();
+    child
+        .stdout
+        .expect("we can always get the stdout from the child process")
+        .read_to_string(&mut output_schema)
+        .map_err(|err| Error::RustFmtFail(format!("Couldn't get rustfmt output ({})", err)))?;
+
+    Ok(output_schema)
 }
 
 struct CustomTypesForTables {

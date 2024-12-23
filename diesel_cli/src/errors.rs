@@ -62,6 +62,8 @@ pub enum Error {
     ClapMatchesError(#[from] clap::parser::MatchesError),
     #[error("No `[print_schema.{0}]` entries in your diesel.toml")]
     NoSchemaKeyFound(String),
+    #[error("Failed To Run rustfmt")]
+    RustFmtFail(String),
 }
 
 fn print_optional_path(path: &Option<PathBuf>) -> String {
