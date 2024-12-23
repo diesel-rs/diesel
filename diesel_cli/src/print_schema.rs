@@ -324,14 +324,20 @@ pub fn format_schema(schema: &str) -> Result<String, crate::errors::Error> {
         // the inner scope makes it so stdin gets dropped here
     }
 
-    let mut output_schema = String::new();
-    child
-        .stdout
-        .expect("we can always get the stdout from the child process")
-        .read_to_string(&mut output_schema)
-        .map_err(|err| Error::RustFmtFail(format!("Couldn't get rustfmt output ({})", err)))?;
+    let output = child
+        .wait_with_output()
+        .map_err(|err| Error::RustFmtFail(format!("Couldn't wait for child ({})", err)))?;
 
-    Ok(output_schema)
+    // in cases rustfmt isn't installed, it will fail with
+    // 'error: 'rustfmt' is not installed for ...'
+    // this catches that error
+    if !output.status.success() {
+        let stderr = String::from_utf8(output.stderr).expect("rustfmt output is valid utf-8");
+        return Err(Error::RustFmtFail(format!("rustfmt error ({})", stderr)));
+    }
+
+    let out = String::from_utf8(output.stdout).expect("rustfmt output is valid utf-8");
+    Ok(out)
 }
 
 struct CustomTypesForTables {
