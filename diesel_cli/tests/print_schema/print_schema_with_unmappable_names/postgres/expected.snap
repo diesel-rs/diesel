@@ -63,7 +63,4 @@ diesel::table! {
 
 diesel::joinable!(user_has_complex_role -> self_ (user));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    self_,
-    user_has_complex_role,
-);
+diesel::allow_tables_to_appear_in_same_query!(self_, user_has_complex_role,);

@@ -3,7 +3,6 @@ source: diesel_cli/tests/print_schema.rs
 description: "Test: print_schema_several_keys_with_compound_key"
 ---
 // @generated automatically by Diesel CLI.
-
 diesel::table! {
     payment_card (id) {
         id -> Integer,
@@ -32,4 +31,3 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(payment_card, transaction_one, transaction_two,);
-

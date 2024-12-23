@@ -31,8 +31,4 @@ diesel::table! {
 
 diesel::joinable!(payment_card -> person (holder_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    payment_card,
-    person,
-    transaction,
-);
+diesel::allow_tables_to_appear_in_same_query!(payment_card, person, transaction,);
