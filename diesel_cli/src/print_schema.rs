@@ -294,7 +294,10 @@ pub fn output_schema(
     match format_schema(&out) {
         Ok(schema) => Ok(schema),
         Err(err) => {
-            eprintln!("Error formatting schema ({})", err);
+            tracing::warn!(
+                "Couldn't format schema. Exporting unformatted schema ({:?})",
+                err
+            );
             Ok(out)
         }
     }
