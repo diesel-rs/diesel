@@ -291,7 +291,14 @@ pub fn output_schema(
         out = diffy::apply(&out, &patch)?;
     }
 
-    Ok(out)
+    match format_schema(&out) {
+        Ok(schema) => Ok(schema),
+        Err(err) => {
+            eprintln!("Error formatting schema ({})", err);
+            Ok(out)
+        }
+    }
+}
 
 pub fn format_schema(schema: &str) -> Result<String, crate::errors::Error> {
     use crate::errors::Error;
