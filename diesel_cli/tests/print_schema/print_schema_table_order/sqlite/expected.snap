@@ -1,6 +1,7 @@
 ---
 source: diesel_cli/tests/print_schema.rs
 description: "Test: print_schema_table_order"
+snapshot_kind: text
 ---
 // @generated automatically by Diesel CLI.
 
@@ -46,5 +47,8 @@ diesel::table! {
     }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(abc, def, ghi,);
-
+diesel::allow_tables_to_appear_in_same_query!(
+    abc,
+    def,
+    ghi,
+);
