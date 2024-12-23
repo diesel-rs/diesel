@@ -1,6 +1,7 @@
 ---
 source: diesel_cli/tests/print_schema.rs
-description: "Test: print_schema_regression_3446_ignore_compound_foreign_keys"
+description: "Test: print_schema_regression_3446_compound_keys"
+snapshot_kind: text
 ---
 // @generated automatically by Diesel CLI.
 
@@ -30,5 +31,8 @@ diesel::table! {
 
 diesel::joinable!(payment_card -> person (holder_id));
 
-diesel::allow_tables_to_appear_in_same_query!(payment_card, person, transaction,);
-
+diesel::allow_tables_to_appear_in_same_query!(
+    payment_card,
+    person,
+    transaction,
+);
