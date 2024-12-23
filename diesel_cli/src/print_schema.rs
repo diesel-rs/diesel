@@ -5,7 +5,7 @@ use crate::infer_schema_internals::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt::{self, Display, Formatter, Write};
-use std::io::{Read, Write as IoWrite};
+use std::io::Write as IoWrite;
 use std::process;
 
 const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
@@ -306,7 +306,7 @@ pub fn output_schema(
 pub fn format_schema(schema: &str) -> Result<String, crate::errors::Error> {
     use crate::errors::Error;
     // Inject schema through rustfmt stdin and get the formatted output
-    let child = process::Command::new("rustfmt")
+    let mut child = process::Command::new("rustfmt")
         .stdin(process::Stdio::piped())
         .stdout(process::Stdio::piped())
         .stderr(process::Stdio::piped())
@@ -316,6 +316,7 @@ pub fn format_schema(schema: &str) -> Result<String, crate::errors::Error> {
     {
         let mut stdin = child
             .stdin
+            .take()
             .expect("we can always get the stdin from the child process");
 
         stdin.write_all(schema.as_bytes()).map_err(|err| {
