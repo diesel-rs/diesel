@@ -306,6 +306,7 @@ pub fn format_schema(schema: &str) -> Result<String, crate::errors::Error> {
     let child = process::Command::new("rustfmt")
         .stdin(process::Stdio::piped())
         .stdout(process::Stdio::piped())
+        .stderr(process::Stdio::piped())
         .spawn()
         .map_err(|err| Error::RustFmtFail(format!("Failed to launch child process ({})", err)))?;
 
