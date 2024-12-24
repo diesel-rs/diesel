@@ -1,6 +1,7 @@
 ---
 source: diesel_cli/tests/print_schema.rs
 description: "Test: print_schema_sqlite_rowid_column"
+snapshot_kind: text
 ---
 // @generated automatically by Diesel CLI.
 
@@ -23,8 +24,4 @@ diesel::table! {
     }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(
-    users1,
-    users2,
-    users3,
-);
+diesel::allow_tables_to_appear_in_same_query!(users1, users2, users3,);

@@ -1,6 +1,7 @@
 ---
 source: diesel_cli/tests/print_schema.rs
 description: "Test: print_schema_with_unmappable_names_and_schema_name"
+snapshot_kind: text
 ---
 // @generated automatically by Diesel CLI.
 
@@ -63,9 +64,5 @@ pub mod custom_schema {
 
     diesel::joinable!(user_has_complex_role -> self_ (user));
 
-    diesel::allow_tables_to_appear_in_same_query!(
-        self_,
-        user_has_complex_role,
-    );
+    diesel::allow_tables_to_appear_in_same_query!(self_, user_has_complex_role,);
 }
-

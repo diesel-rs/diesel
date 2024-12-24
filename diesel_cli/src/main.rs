@@ -276,9 +276,8 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), crate
                     .map_err(|e| crate::errors::Error::IoError(e, Some(parent.to_owned())))?;
             }
 
+            let schema = print_schema::output_schema(&mut connection, config)?;
             if matches.get_flag("LOCKED_SCHEMA") {
-                let schema = print_schema::output_schema(&mut connection, config)?;
-
                 let old_buf = std::fs::read_to_string(path)
                     .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_owned())))?;
 
@@ -294,7 +293,6 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), crate
                     ));
                 }
             } else {
-                let schema = print_schema::output_schema(&mut connection, config)?;
                 std::fs::write(path, schema.as_bytes())
                     .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_owned())))?;
             }

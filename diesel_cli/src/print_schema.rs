@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt::{self, Display, Formatter, Write};
 use std::io::Write as IoWrite;
+use std::process;
 
 const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 
@@ -290,6 +291,53 @@ pub fn output_schema(
         out = diffy::apply(&out, &patch)?;
     }
 
+    match format_schema(&out) {
+        Ok(schema) => Ok(schema),
+        Err(err) => {
+            tracing::warn!(
+                "Couldn't format schema. Exporting unformatted schema ({:?})",
+                err
+            );
+            Ok(out)
+        }
+    }
+}
+
+pub fn format_schema(schema: &str) -> Result<String, crate::errors::Error> {
+    use crate::errors::Error;
+    // Inject schema through rustfmt stdin and get the formatted output
+    let mut child = process::Command::new("rustfmt")
+        .stdin(process::Stdio::piped())
+        .stdout(process::Stdio::piped())
+        .stderr(process::Stdio::piped())
+        .spawn()
+        .map_err(|err| Error::RustFmtFail(format!("Failed to launch child process ({})", err)))?;
+
+    {
+        let mut stdin = child
+            .stdin
+            .take()
+            .expect("we can always get the stdin from the child process");
+
+        stdin.write_all(schema.as_bytes()).map_err(|err| {
+            Error::RustFmtFail(format!("Failed to send schema to rustfmt ({})", err))
+        })?;
+        // the inner scope makes it so stdin gets dropped here
+    }
+
+    let output = child
+        .wait_with_output()
+        .map_err(|err| Error::RustFmtFail(format!("Couldn't wait for child ({})", err)))?;
+
+    // in cases rustfmt isn't installed, it will fail with
+    // 'error: 'rustfmt' is not installed for ...'
+    // this catches that error
+    if !output.status.success() {
+        let stderr = String::from_utf8(output.stderr).expect("rustfmt output is valid utf-8");
+        return Err(Error::RustFmtFail(format!("rustfmt error ({})", stderr)));
+    }
+
+    let out = String::from_utf8(output.stdout).expect("rustfmt output is valid utf-8");
     Ok(out)
 }
 
