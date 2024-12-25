@@ -12,8 +12,7 @@ pub fn parse_belongs_to(name: Ident, input: ParseStream) -> Result<BelongsTo> {
             name.span(),
             format!(
                 "unexpected end of input, expected parentheses\n\
-                 help: The correct format looks like `#[diesel({})]`",
-                BELONGS_TO_NOTE
+                 help: The correct format looks like `#[diesel({BELONGS_TO_NOTE})]`"
             ),
         ));
     }
