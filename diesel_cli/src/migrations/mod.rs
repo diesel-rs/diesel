@@ -197,7 +197,7 @@ fn create_migration_dir<'a>(
     const MAX_MIGRATIONS_PER_SEC: u16 = 0xFFFF;
     fn is_duplicate_version(full_version: &str, migration_folders: &Vec<PathBuf>) -> bool {
         for folder in migration_folders {
-            if folder.to_string_lossy().starts_with(&full_version) {
+            if folder.to_string_lossy().starts_with(full_version) {
                 return true;
             }
         }
