@@ -348,8 +348,12 @@ fn migration_generate_different_versions() {
             assert_ne!(version_i, version_j);
         }
     }
-    // Includes the 00000 migration created on 'setup'
-    assert_eq!(paths.len(), MIGRATIONS_NO + 1);
+    if cfg!(feature = "postgres") {
+        // Includes the 00000 migration created on 'setup'
+        assert_eq!(paths.len(), MIGRATIONS_NO + 1);
+    } else {
+        assert_eq!(paths.len(), MIGRATIONS_NO);
+    }
 }
 
 #[cfg(feature = "sqlite")]
