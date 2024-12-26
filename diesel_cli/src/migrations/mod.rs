@@ -137,10 +137,13 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
                 (String::new(), String::new())
             };
             let version = migration_version(args);
-            let versioned_name = format!("{version}_{migration_name}");
-            let migration_dir = migrations_dir(matches)?.join(versioned_name);
-            fs::create_dir(&migration_dir)
-                .map_err(|e| crate::errors::Error::IoError(e, Some(migration_dir.clone())))?;
+            let base_migrations_dir = migrations_dir(matches)?;
+            let migration_dir = create_migration_dir(
+                base_migrations_dir,
+                migration_name,
+                version,
+                args_contains_version(args),
+            )?;
 
             match args
                 .get_one::<String>("MIGRATION_FORMAT")
@@ -184,6 +187,69 @@ fn migration_folder_lock(dir: PathBuf) -> Result<File, crate::errors::Error> {
         }
     }
 }
+
+fn create_migration_dir<'a>(
+    migrations_dir: PathBuf,
+    migration_name: &str,
+    version: Box<dyn Display + 'a>,
+    explicit_version: bool,
+) -> Result<PathBuf, crate::errors::Error> {
+    const MAX_MIGRATIONS_PER_SEC: u16 = 0xFFFF;
+    fn is_duplicate_version(full_version: &str, migration_folders: &Vec<PathBuf>) -> bool {
+        for folder in migration_folders {
+            if folder.to_string_lossy().starts_with(&full_version) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    fn create(path: &Path) -> Result<(), crate::errors::Error> {
+        fs::create_dir(&path)
+            .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_path_buf())))?;
+        Ok(())
+    }
+
+    let migration_folders: Vec<PathBuf> = migrations_dir
+        .read_dir()
+        .map_err(|err| crate::errors::Error::IoError(err, Some(migrations_dir.clone())))?
+        .filter_map(|e| {
+            if let Ok(e) = e {
+                if e.path().is_dir() {
+                    return Some(e.path().file_name()?.into());
+                }
+            }
+            return None;
+        })
+        .collect();
+
+    // if there's an explicit version try to use it
+    if explicit_version {
+        if is_duplicate_version(&format!("{version}"), &migration_folders) {
+            return Err(crate::errors::Error::DuplicateMigrationVersion);
+        }
+        let versioned_name = format!("{version}_{migration_name}");
+        let migration_dir = migrations_dir.join(versioned_name);
+        create(&migration_dir)?;
+        return Ok(migration_dir);
+    }
+
+    // else add a subversion so the versions stays unique
+    for subversion in 0..MAX_MIGRATIONS_PER_SEC {
+        let full_version = format!("{version}-{subversion:04x}");
+        if is_duplicate_version(&full_version, &migration_folders) {
+            continue;
+        }
+        let versioned_name = format!("{full_version}_{migration_name}");
+        let migration_dir = migrations_dir.join(versioned_name);
+        create(&migration_dir)?;
+        return Ok(migration_dir);
+    }
+    // if we get here it means the user is trying to generate > `MAX_MIGRATION_PER_SEC`
+    // migrations per second
+    Err(crate::errors::Error::MigrationFolderCreationError)
+}
+
 fn generate_sql_migration(
     path: &Path,
     with_down: bool,
@@ -223,6 +289,13 @@ fn generate_sql_migration(
             .map_err(|e| crate::errors::Error::IoError(e, Some(up_path.clone())))?;
     }
     Ok(())
+}
+
+fn args_contains_version(matches: &ArgMatches) -> bool {
+    if let Ok(exists) = matches.try_contains_id("MIGRATION_VERSION") {
+        return exists;
+    }
+    return false;
 }
 
 fn migration_version<'a>(matches: &'a ArgMatches) -> Box<dyn Display + 'a> {

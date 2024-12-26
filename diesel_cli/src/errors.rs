@@ -66,6 +66,10 @@ pub enum Error {
     RustFmtFail(String),
     #[error("Failed To Acquire Migration Folder Lock")]
     FailedToAcquireMigrationFolderLock(String),
+    #[error("Couldn't Create Migration Folder")]
+    MigrationFolderCreationError,
+    #[error("Duplicate Migration Version Already Exists")]
+    DuplicateMigrationVersion,
 }
 
 fn print_optional_path(path: &Option<PathBuf>) -> String {
