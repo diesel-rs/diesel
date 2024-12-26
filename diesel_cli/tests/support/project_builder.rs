@@ -91,7 +91,7 @@ impl Project {
                         return Some(Migration { path: e.path() });
                     }
                 }
-                return None;
+                None
             })
             .collect()
     }

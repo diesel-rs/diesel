@@ -201,7 +201,7 @@ fn create_migration_dir<'a>(
                 return true;
             }
         }
-        return false;
+        false
     }
 
     fn create(
@@ -226,7 +226,7 @@ fn create_migration_dir<'a>(
                     return Some(e.path().file_name()?.into());
                 }
             }
-            return None;
+            None
         })
         .collect();
 
@@ -297,7 +297,7 @@ fn args_contains_version(matches: &ArgMatches) -> bool {
     if let Ok(exists) = matches.try_contains_id("MIGRATION_VERSION") {
         return exists;
     }
-    return false;
+    false
 }
 
 fn migration_version<'a>(matches: &'a ArgMatches) -> Box<dyn Display + 'a> {

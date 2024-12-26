@@ -337,7 +337,7 @@ fn migration_generate_different_versions() {
                     return Some(e);
                 }
             }
-            return None;
+            None
         })
         .collect();
 
