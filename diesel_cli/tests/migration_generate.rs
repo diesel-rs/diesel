@@ -16,8 +16,8 @@ fn migration_generate_creates_a_migration_with_the_proper_name() {
     // check overall output
     let expected_stdout = Regex::new(
         "\
-Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.up.sql
-Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.down.sql\
+Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}-0000_hello.up.sql
+Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}-0000_hello.down.sql\
         ",
     )
     .unwrap();
@@ -25,7 +25,7 @@ Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.down.sql\
     assert!(expected_stdout.is_match(result.stdout()));
 
     // check timestamps are properly formatted
-    let captured_timestamps = Regex::new(r"(?P<stamp>[\d-]*)_hello").unwrap();
+    let captured_timestamps = Regex::new(r"(?P<stamp>[\d-]*)-0000_hello").unwrap();
     let mut stamps_found = 0;
     for caps in captured_timestamps.captures_iter(result.stdout()) {
         let timestamp = NaiveDateTime::parse_from_str(&caps["stamp"], TIMESTAMP_FORMAT);
