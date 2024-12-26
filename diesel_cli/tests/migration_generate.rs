@@ -1,3 +1,4 @@
+use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
 use std::{fs::File, io::Read};
 
@@ -276,6 +277,79 @@ fn migration_generate_from_diff_only_tables() {
 #[test]
 fn migration_generate_from_diff_except_tables() {
     test_generate_migration("diff_except_tables", vec!["-e", "table_b", "table_c"]);
+}
+
+#[test]
+fn migration_generate_with_duplicate_specified_version_fails() {
+    const VERSION_ARG: &str = "--version=12345";
+
+    let p = project("generate_duplicate_specified_versions").build();
+
+    p.command("setup").run();
+
+    let result = p
+        .command("migration")
+        .arg("generate")
+        .arg("hello1")
+        .arg(VERSION_ARG)
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    let result = p
+        .command("migration")
+        .arg("generate")
+        .arg("hello2")
+        .arg(VERSION_ARG)
+        .run();
+
+    assert!(!result.is_success(), "Result was successful {:?}", result);
+}
+
+#[test]
+fn migration_generate_different_versions() {
+    const MIGRATIONS_NO: usize = 26;
+    fn extract_version(entry: &DirEntry) -> String {
+        entry
+            .file_name()
+            .to_string_lossy()
+            .split('_')
+            .next()
+            .expect("To have _ in migration path")
+            .to_string()
+    }
+    let p = project("generate_different_versions").build();
+    p.command("setup").run();
+
+    for i in 1..=MIGRATIONS_NO {
+        p.command("migration")
+            .arg("generate")
+            .arg(format!("mig{}", i))
+            .run();
+    }
+
+    let paths: Vec<DirEntry> = p
+        .directory_entries("migrations")
+        .unwrap()
+        .filter_map(|e| {
+            if let Ok(e) = e {
+                if e.path().is_dir() {
+                    return Some(e);
+                }
+            }
+            return None;
+        })
+        .collect();
+
+    for i in 0..paths.len() {
+        for j in (i + 1)..paths.len() {
+            let version_i = extract_version(&paths[i]);
+            let version_j = extract_version(&paths[j]);
+            assert_ne!(version_i, version_j);
+        }
+    }
+    // Includes the 00000 migration created on 'setup'
+    assert_eq!(paths.len(), MIGRATIONS_NO + 1);
 }
 
 #[cfg(feature = "sqlite")]
