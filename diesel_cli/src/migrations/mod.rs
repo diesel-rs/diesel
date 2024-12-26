@@ -4,13 +4,14 @@ use diesel::backend::Backend;
 use diesel::migration::{Migration, MigrationSource};
 use diesel::Connection;
 use diesel_migrations::{FileBasedMigrations, HarnessWithOutput, MigrationError, MigrationHarness};
+use fd_lock::RwLock;
 use std::any::Any;
 use std::collections::{HashMap, HashSet};
-use std::env;
 use std::error::Error;
 use std::fmt::Display;
-use std::fs::{self};
+use std::fs::{self, File};
 use std::path::{Path, PathBuf};
+use std::{env, io};
 
 use crate::database::InferConnection;
 use crate::{config::Config, regenerate_schema_if_file_specified};
@@ -85,6 +86,14 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
             println!("{result:?}");
         }
         ("generate", args) => {
+            let dir = migrations_dir(matches)?;
+            let mut lock = RwLock::new(migration_folder_lock(dir)?);
+            // This blocks until we can get the lock
+            // Will throw an error if we receive a termination signal
+            let _ = lock.write().map_err(|err| {
+                crate::errors::Error::FailedToAcquireMigrationFolderLock(err.to_string())
+            })?;
+
             let migration_name = args
                 .get_one::<String>("MIGRATION_NAME")
                 .expect("Clap ensure this argument is set");
@@ -157,6 +166,24 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
     Ok(())
 }
 
+/// Opens the .diesel_lock file inside the migrations folder
+/// Creates the file if it does not exist
+/// A lock can be acquired on this file to make sure we don't have multiple instances of diesel
+/// doing migration work
+/// See [run_migration_command]::generate for an example
+fn migration_folder_lock(dir: PathBuf) -> Result<File, crate::errors::Error> {
+    let path = dir.join(".diesel_lock");
+    match File::create_new(&path) {
+        Ok(file) => Ok(file),
+        Err(err) => {
+            if matches!(err.kind(), io::ErrorKind::AlreadyExists) {
+                File::open(&path).map_err(|err| crate::errors::Error::IoError(err, Some(path)))
+            } else {
+                Err(crate::errors::Error::IoError(err, Some(path)))
+            }
+        }
+    }
+}
 fn generate_sql_migration(
     path: &Path,
     with_down: bool,

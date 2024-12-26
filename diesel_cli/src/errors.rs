@@ -64,6 +64,8 @@ pub enum Error {
     NoSchemaKeyFound(String),
     #[error("Failed To Run rustfmt")]
     RustFmtFail(String),
+    #[error("Failed To Acquire Migration Folder Lock")]
+    FailedToAcquireMigrationFolderLock(String),
 }
 
 fn print_optional_path(path: &Option<PathBuf>) -> String {
