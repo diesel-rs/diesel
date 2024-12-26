@@ -204,10 +204,17 @@ fn create_migration_dir<'a>(
         return false;
     }
 
-    fn create(path: &Path) -> Result<(), crate::errors::Error> {
+    fn create(
+        migrations_dir: &Path,
+        version: &str,
+        migration_name: &str,
+    ) -> Result<PathBuf, crate::errors::Error> {
+        let versioned_name = format!("{version}_{migration_name}");
+        let path = migrations_dir.join(versioned_name);
+
         fs::create_dir(&path)
             .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_path_buf())))?;
-        Ok(())
+        Ok(path.to_path_buf())
     }
 
     let migration_folders: Vec<PathBuf> = migrations_dir
@@ -225,13 +232,11 @@ fn create_migration_dir<'a>(
 
     // if there's an explicit version try to use it
     if explicit_version {
-        if is_duplicate_version(&format!("{version}"), &migration_folders) {
+        let version = format!("{version}");
+        if is_duplicate_version(&version, &migration_folders) {
             return Err(crate::errors::Error::DuplicateMigrationVersion);
         }
-        let versioned_name = format!("{version}_{migration_name}");
-        let migration_dir = migrations_dir.join(versioned_name);
-        create(&migration_dir)?;
-        return Ok(migration_dir);
+        return create(&migrations_dir, &version, migration_name);
     }
 
     // else add a subversion so the versions stays unique
@@ -240,10 +245,7 @@ fn create_migration_dir<'a>(
         if is_duplicate_version(&full_version, &migration_folders) {
             continue;
         }
-        let versioned_name = format!("{full_version}_{migration_name}");
-        let migration_dir = migrations_dir.join(versioned_name);
-        create(&migration_dir)?;
-        return Ok(migration_dir);
+        return create(&migrations_dir, &full_version, migration_name);
     }
     // if we get here it means the user is trying to generate > `MAX_MIGRATION_PER_SEC`
     // migrations per second
