@@ -43,8 +43,7 @@ pub fn parse_postgres_type(name: Ident, input: ParseStream) -> Result<PostgresTy
             name.span(),
             format!(
                 "unexpected end of input, expected parentheses\n\
-                 help: The correct format looks like `#[diesel({})]`",
-                POSTGRES_TYPE_NOTE
+                 help: The correct format looks like `#[diesel({POSTGRES_TYPE_NOTE})]`"
             ),
         ));
     }
