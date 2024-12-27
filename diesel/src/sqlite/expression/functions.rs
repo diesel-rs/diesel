@@ -422,3 +422,255 @@ define_sql_function! {
     #[sql_name = "json_pretty"]
     fn json_pretty_with_indentation<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Text>>(j: J, indentation: Nullable<Text>) -> J::Out;
 }
+
+#[cfg(feature = "sqlite")]
+define_sql_function! {
+    /// Returns the "type" of the outermost element of X.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_type;
+    /// #     use diesel::sql_types::{Json, Jsonb, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(json_type::<Json, _>(json!({"a": "b", "c": 1})))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("object".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Json, _>(json!([1,2,3])))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("array".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Json, _>(json!("abc")))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("text".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Json, _>(json!(-123.4)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("real".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Json, _>(json!(42)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("integer".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Json, _>(json!(true)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("true".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Json, _>(json!(false)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("false".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Json, _>(json!(null)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("null".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Nullable<Json>, _>(None::<Value>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    ///
+    ///
+    ///
+    /// let result = diesel::select(json_type::<Jsonb, _>(json!({"a": "b", "c": 1})))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("object".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Jsonb, _>(json!([1,2,3])))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("array".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Jsonb, _>(json!("abc")))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("text".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Jsonb, _>(json!(-123.4)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("real".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Jsonb, _>(json!(42)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("integer".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Jsonb, _>(json!(true)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("true".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Jsonb, _>(json!(false)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("false".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Jsonb, _>(json!(null)))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("null".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type::<Nullable<Jsonb>, _>(None::<Value>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn json_type<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Text>>(j: J) -> J::Out;
+}
+
+#[cfg(feature = "sqlite")]
+define_sql_function! {
+    /// Returns the "type" of the element in X that is selected by path P.
+    /// If the path P in json_type(X,P) selects an element that does not exist in X, then this function returns NULL.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_type_with_path;
+    /// #     use diesel::sql_types::{Json, Jsonb, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(json_type_with_path::<Json, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("object".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Json, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("array".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Json, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a[0]"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("integer".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Json, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a[1]"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("real".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Json, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a[2]"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("true".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Json, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a[3]"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("false".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Json, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a[4]"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("null".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Json, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a[5]"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("text".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Nullable<Json>, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a[6]"))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    ///
+    /// let result = diesel::select(json_type_with_path::<Nullable<Json>, _, _>(None::<Value>, None::<&str>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    ///
+    ///
+    ///
+    ///
+    ///
+    /// let result = diesel::select(json_type_with_path::<Jsonb, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("object".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Jsonb, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("array".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Jsonb, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a[0]"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("integer".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Jsonb, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a[1]"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("real".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Jsonb, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a[2]"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("true".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Jsonb, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a[3]"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("false".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Jsonb, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a[4]"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("null".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Jsonb, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a[5]"))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("text".to_string(), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Nullable<Jsonb>, _, _>(json!({"a":[2,3.5,true,false,null,"x"]}), "$.a[6]"))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    ///
+    /// let result = diesel::select(json_type_with_path::<Nullable<Jsonb>, _, _>(None::<Value>, None::<&str>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert!(result.is_none());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "json_type"]
+    fn json_type_with_path<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Text>>(j: J, path: Nullable<Text>) -> J::Out;
+}
