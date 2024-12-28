@@ -259,11 +259,13 @@ async fn connection() -> Executor<wtx::Error, ExecutorBuffer, TcpStream> {
         .expect("DATABASE_URL must be set in order to run tests");
     let uri = UriRef::new(url.as_str());
     let mut rng = Xorshift64::from(simple_seed());
+    let stream = TcpStream::connect(uri.host()).await.unwrap();
+    stream.set_nodelay(true);
     let mut conn = Executor::connect(
         &Config::from_uri(&uri).unwrap(),
         ExecutorBuffer::with_capacity((512, 8192, 512, 32), 32, &mut rng).unwrap(),
         &mut rng,
-        TcpStream::connect(uri.host()).await.unwrap(),
+        stream,
     )
     .await
     .unwrap();
