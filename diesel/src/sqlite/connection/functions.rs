@@ -1,4 +1,8 @@
+#[cfg(not(all(target_family = "wasm", not(target_os = "wasi"))))]
 extern crate libsqlite3_sys as ffi;
+
+#[cfg(all(target_family = "wasm", not(target_os = "wasi")))]
+use sqlite_wasm_rs::c as ffi;
 
 use super::raw::RawConnection;
 use super::row::PrivateSqliteRow;
