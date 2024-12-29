@@ -24,7 +24,6 @@ include = [
 byteorder = { version = "1.0", optional = true }
 chrono = { version = "0.4.20", optional = true, default-features = false, features = ["clock", "std"] }
 libc = { version = "0.2.0", optional = true }
-libsqlite3-sys = { version = ">=0.17.2, <0.31.0", optional = true, features = ["bundled_bindings"] }
 mysqlclient-sys = { version = ">=0.2.5, <0.5.0",  optional = true }
 mysqlclient-src = { version = "0.1.0", optional = true }
 pq-sys = { version = ">=0.4.0, <0.7.0", optional = true }
@@ -50,6 +49,12 @@ downcast-rs = "1.2.1"
 version = "~2.2.0"
 path = "../diesel_derives"
 
+[target.'cfg(not(all(target_family = "wasm", not(target_os = "wasi"))))'.dependencies]
+libsqlite3-sys = { version = ">=0.17.2, <0.31.0", optional = true, features = ["bundled_bindings"] }
+
+[target.'cfg(all(target_family = "wasm", not(target_os = "wasi")))'.dependencies]
+sqlite-wasm-rs = { version = "0.1.0", optional = true }
+
 [dev-dependencies]
 cfg-if = "1"
 dotenvy = "0.15"
@@ -67,7 +72,7 @@ huge-tables = ["64-column-tables"]
 64-column-tables = ["32-column-tables", "diesel_derives/64-column-tables"]
 128-column-tables = ["64-column-tables", "diesel_derives/128-column-tables"]
 postgres = ["dep:pq-sys", "postgres_backend"]
-sqlite = ["dep:libsqlite3-sys", "diesel_derives/sqlite", "time?/formatting", "time?/parsing"]
+sqlite = ["dep:libsqlite3-sys", "dep:sqlite-wasm-rs", "diesel_derives/sqlite", "time?/formatting", "time?/parsing"]
 mysql = ["dep:mysqlclient-sys", "dep:url", "dep:percent-encoding", "dep:bitflags", "mysql_backend"]
 without-deprecated = ["diesel_derives/without-deprecated"]
 with-deprecated = ["diesel_derives/with-deprecated"]

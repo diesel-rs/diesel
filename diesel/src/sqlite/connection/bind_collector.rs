@@ -3,6 +3,10 @@ use crate::serialize::{IsNull, Output};
 use crate::sql_types::HasSqlType;
 use crate::sqlite::{Sqlite, SqliteType};
 use crate::QueryResult;
+#[cfg(not(all(target_family = "wasm", not(target_os = "wasi"))))]
+use libsqlite3_sys as ffi;
+#[cfg(all(target_family = "wasm", not(target_os = "wasi")))]
+use sqlite_wasm_rs::c as ffi;
 
 #[derive(Debug, Default)]
 pub struct SqliteBindCollector<'a> {
@@ -127,9 +131,8 @@ impl InternalSqliteBindValue<'_> {
     #[allow(unsafe_code)] // ffi function calls
     pub(in crate::sqlite) fn result_of(
         self,
-        ctx: &mut libsqlite3_sys::sqlite3_context,
+        ctx: &mut ffi::sqlite3_context,
     ) -> Result<(), std::num::TryFromIntError> {
-        use libsqlite3_sys as ffi;
         use std::os::raw as libc;
         // This unsafe block assumes the following invariants:
         //
