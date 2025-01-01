@@ -25,6 +25,33 @@ impl<'a, T, DB> DebugQuery<'a, T, DB> {
             _marker: PhantomData,
         }
     }
+
+    pub(crate) fn query(&self) -> Result<String, fmt::Error>
+    where
+        DB: Backend + Default,
+        DB::QueryBuilder: Default,
+        T: QueryFragment<DB>,
+    {
+        let mut query_builder = DB::QueryBuilder::default();
+        let backend = DB::default();
+
+        // This is not using the `?` operator to reduce the code size of this
+        // function, which is getting copies a lot due to monomorphization.
+        if QueryFragment::<DB>::to_sql(self.query, &mut query_builder, &backend).is_err() {
+            return Err(fmt::Error);
+        }
+
+        Ok(query_builder.finish())
+    }
+
+    pub(crate) fn binds(&self) -> DebugBinds<'_, T, DB>
+    where
+        DB: Backend + Default,
+        DB::QueryBuilder: Default,
+        T: QueryFragment<DB>,
+    {
+        DebugBinds::<_, DB>::new(self.query)
+    }
 }
 
 impl<T, DB> Display for DebugQuery<'_, T, DB>
@@ -34,12 +61,15 @@ where
     T: QueryFragment<DB>,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut query_builder = DB::QueryBuilder::default();
-        let backend = DB::default();
-        QueryFragment::<DB>::to_sql(self.query, &mut query_builder, &backend)
-            .map_err(|_| fmt::Error)?;
-        let debug_binds = DebugBinds::<_, DB>::new(self.query);
-        write!(f, "{} -- binds: {:?}", query_builder.finish(), debug_binds)
+        // This is not using the `?` operator to reduce the code size of this
+        // function, which is getting copies a lot due to monomorphization.
+        let query = match self.query() {
+            Ok(query) => query,
+            Err(err) => return Err(err),
+        };
+
+        let debug_binds = self.binds();
+        write!(f, "{} -- binds: {:?}", query, debug_binds)
     }
 }
 
@@ -50,13 +80,16 @@ where
     T: QueryFragment<DB>,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut query_builder = DB::QueryBuilder::default();
-        let backend = DB::default();
-        QueryFragment::<DB>::to_sql(self.query, &mut query_builder, &backend)
-            .map_err(|_| fmt::Error)?;
-        let debug_binds = DebugBinds::<_, DB>::new(self.query);
+        // This is not using the `?` operator to reduce the code size of this
+        // function, which is getting copies a lot due to monomorphization.
+        let query = match self.query() {
+            Ok(query) => query,
+            Err(err) => return Err(err),
+        };
+
+        let debug_binds = self.binds();
         f.debug_struct("Query")
-            .field("sql", &query_builder.finish())
+            .field("sql", &query)
             .field("binds", &debug_binds)
             .finish()
     }
