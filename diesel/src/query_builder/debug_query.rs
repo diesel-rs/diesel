@@ -87,13 +87,21 @@ where
         let backend = DB::default();
         let mut buffer = Vec::new();
         let ast_pass = AstPass::debug_binds(&mut buffer, &backend);
-        self.query.walk_ast(ast_pass).map_err(|_| fmt::Error)?;
 
-        let mut list = f.debug_list();
-        for entry in buffer {
-            list.entry(&entry);
+        // This is not using the `?` operator to reduce the code size of this
+        // function, which is getting copies a lot due to monomorphization.
+        if self.query.walk_ast(ast_pass).is_err() {
+            return Err(fmt::Error);
         }
-        list.finish()?;
-        Ok(())
+
+        format_list(f, &buffer)
     }
+}
+
+fn format_list<'b>(f: &mut fmt::Formatter<'_>, entries: &[Box<dyn Debug + 'b>]) -> fmt::Result {
+    let mut list = f.debug_list();
+    for entry in entries {
+        list.entry(entry);
+    }
+    list.finish()
 }
