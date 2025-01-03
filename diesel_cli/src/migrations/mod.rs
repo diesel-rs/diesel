@@ -244,8 +244,8 @@ fn create_migration_dir<'a>(
         return create(&migrations_dir, &version, migration_name);
     }
 
-    // else add a subversion so the versions stays unique
-    for subversion in 0..MAX_MIGRATIONS_PER_SEC {
+    // else add a subversion so the versions stay unique
+    for subversion in 0..=MAX_MIGRATIONS_PER_SEC {
         let full_version = format!("{version}-{subversion:04x}");
         if is_duplicate_version(&full_version, &migration_folders) {
             continue;
