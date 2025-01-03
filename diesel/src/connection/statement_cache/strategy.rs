@@ -1,14 +1,35 @@
+use crate::backend::Backend;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::hash::Hash;
 
-use crate::{backend::Backend, result::Error};
+use super::{CacheSize, StatementCacheKey};
 
-use super::{CacheSize, MaybeCached, QueryFragmentForCachedStatement, StatementCacheKey};
+/// Indicates the cache key status
+//
+// This is a separate enum and not just `Option<Entry>`
+// as we need to return the cache key for owner ship reasons
+// if we don't have a cache at all
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    allow(missing_debug_implementations)
+)]
+// cannot implement debug easily as StatementCacheKey is not Debug
+pub enum LookupStatementResult<'a, DB, Statement>
+where
+    DB: Backend,
+{
+    /// The cache entry, either already populated or vacant
+    /// in the later case the caller needs to prepare the
+    /// statement and insert it into the cache
+    CacheEntry(Entry<'a, StatementCacheKey<DB>, Statement>),
+    /// This key should not be cached
+    NoCache(StatementCacheKey<DB>),
+}
 
 /// Implement this trait, in order to control statement caching.
 #[allow(unreachable_pub)]
-pub trait StatementCacheStrategy<DB, Statement>
+pub trait StatementCacheStrategy<DB, Statement>: Send + 'static
 where
     DB: Backend,
     StatementCacheKey<DB>: Hash + Eq,
@@ -16,18 +37,11 @@ where
     /// Returns which prepared statement cache size is implemented by this trait
     fn cache_size(&self) -> CacheSize;
 
-    /// Every query (which is safe to cache) will go through this function
-    /// The implementation will decide whether to cache statement or not
-    /// * `prepare_fn` - will be invoked if prepared statement wasn't cached already
-    ///   * first argument is sql query string
-    ///   * second argument specifies whether statement will be cached (true) or not (false).
-    fn get(
+    /// Returns whether or not the corresponding cache key is already cached
+    fn lookup_statement(
         &mut self,
         key: StatementCacheKey<DB>,
-        backend: &DB,
-        source: &dyn QueryFragmentForCachedStatement<DB>,
-        prepare_fn: &mut dyn FnMut(&str, bool) -> Result<Statement, Error>,
-    ) -> Result<MaybeCached<'_, Statement>, Error>;
+    ) -> LookupStatementResult<'_, DB, Statement>;
 }
 
 /// Cache all (safe) statements for as long as connection is alive.
@@ -52,27 +66,17 @@ where
 
 impl<DB, Statement> StatementCacheStrategy<DB, Statement> for WithCacheStrategy<DB, Statement>
 where
-    DB: Backend,
+    DB: Backend + 'static,
     StatementCacheKey<DB>: Hash + Eq,
-    DB::TypeMetadata: Clone,
+    DB::TypeMetadata: Send + Clone,
     DB::QueryBuilder: Default,
+    Statement: Send + 'static,
 {
-    fn get(
+    fn lookup_statement(
         &mut self,
-        key: StatementCacheKey<DB>,
-        backend: &DB,
-        source: &dyn QueryFragmentForCachedStatement<DB>,
-        prepare_fn: &mut dyn FnMut(&str, bool) -> Result<Statement, Error>,
-    ) -> Result<MaybeCached<'_, Statement>, Error> {
-        let entry = self.cache.entry(key);
-        match entry {
-            Entry::Occupied(e) => Ok(MaybeCached::Cached(e.into_mut())),
-            Entry::Vacant(e) => {
-                let sql = e.key().sql(source, backend)?;
-                let st = prepare_fn(&sql, true)?;
-                Ok(MaybeCached::Cached(e.insert(st)))
-            }
-        }
+        entry: StatementCacheKey<DB>,
+    ) -> LookupStatementResult<'_, DB, Statement> {
+        LookupStatementResult::CacheEntry(self.cache.entry(entry))
     }
 
     fn cache_size(&self) -> CacheSize {
@@ -91,16 +95,13 @@ where
     StatementCacheKey<DB>: Hash + Eq,
     DB::TypeMetadata: Clone,
     DB::QueryBuilder: Default,
+    Statement: 'static,
 {
-    fn get(
+    fn lookup_statement(
         &mut self,
-        key: StatementCacheKey<DB>,
-        backend: &DB,
-        source: &dyn QueryFragmentForCachedStatement<DB>,
-        prepare_fn: &mut dyn FnMut(&str, bool) -> Result<Statement, Error>,
-    ) -> Result<MaybeCached<'_, Statement>, Error> {
-        let sql = key.sql(source, backend)?;
-        Ok(MaybeCached::CannotCache(prepare_fn(&sql, false)?))
+        entry: StatementCacheKey<DB>,
+    ) -> LookupStatementResult<'_, DB, Statement> {
+        LookupStatementResult::NoCache(entry)
     }
 
     fn cache_size(&self) -> CacheSize {
