@@ -193,7 +193,7 @@ fn create_migration_dir<'a>(
     version: Box<dyn Display + 'a>,
     explicit_version: bool,
 ) -> Result<PathBuf, crate::errors::Error> {
-    const MAX_MIGRATIONS_PER_SEC: u16 = 0xFFFF;
+    const MAX_MIGRATIONS_PER_SEC: u16 = u16::MAX;
     fn is_duplicate_version(full_version: &str, migration_folders: &Vec<PathBuf>) -> bool {
         for folder in migration_folders {
             if folder.to_string_lossy().starts_with(full_version) {
