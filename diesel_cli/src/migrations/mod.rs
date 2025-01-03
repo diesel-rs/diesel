@@ -92,8 +92,8 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
             // Will throw an error if we receive a termination signal
             let _ = lock.write().map_err(|err| {
                 crate::errors::Error::FailedToAcquireMigrationFolderLock(
-                    err.to_string(),
                     migrations_folder.clone(),
+                    err.to_string(),
                 )
             })?;
 
