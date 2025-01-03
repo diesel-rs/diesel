@@ -64,12 +64,12 @@ pub enum Error {
     NoSchemaKeyFound(String),
     #[error("Failed To Run rustfmt")]
     RustFmtFail(String),
-    #[error("Failed To Acquire Migration Folder Lock")]
-    FailedToAcquireMigrationFolderLock(String),
-    #[error("Couldn't Create Migration Folder")]
-    MigrationFolderCreationError,
-    #[error("Duplicate Migration Version Already Exists")]
-    DuplicateMigrationVersion,
+    #[error("Failed to acquire migration folder lock")]
+    FailedToAcquireMigrationFolderLock(String, PathBuf),
+    #[error("Tried to generate too many migrations with the same version")]
+    TooManyMigrations(PathBuf, String),
+    #[error("Specified migration version already exists")]
+    DuplicateMigrationVersion(PathBuf, String),
 }
 
 fn print_optional_path(path: &Option<PathBuf>) -> String {

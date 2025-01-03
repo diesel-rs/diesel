@@ -91,7 +91,10 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
             // This blocks until we can get the lock
             // Will throw an error if we receive a termination signal
             let _ = lock.write().map_err(|err| {
-                crate::errors::Error::FailedToAcquireMigrationFolderLock(err.to_string())
+                crate::errors::Error::FailedToAcquireMigrationFolderLock(
+                    err.to_string(),
+                    migrations_folder.clone(),
+                )
             })?;
 
             let migration_name = args
@@ -233,7 +236,10 @@ fn create_migration_dir<'a>(
     if explicit_version {
         let version = format!("{version}");
         if is_duplicate_version(&version, &migration_folders) {
-            return Err(crate::errors::Error::DuplicateMigrationVersion);
+            return Err(crate::errors::Error::DuplicateMigrationVersion(
+                migrations_dir,
+                version,
+            ));
         }
         return create(&migrations_dir, &version, migration_name);
     }
@@ -248,7 +254,10 @@ fn create_migration_dir<'a>(
     }
     // if we get here it means the user is trying to generate > `MAX_MIGRATION_PER_SEC`
     // migrations per second
-    Err(crate::errors::Error::MigrationFolderCreationError)
+    Err(crate::errors::Error::TooManyMigrations(
+        migrations_dir,
+        version.to_string(),
+    ))
 }
 
 fn generate_sql_migration(
