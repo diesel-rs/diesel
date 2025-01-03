@@ -57,6 +57,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3.10", features = ["env-filter"] }
 thiserror = "2.0.0"
 similar-asserts = "1.6.0"
+fd-lock = "4.0.2"
 
 [dependencies.diesel]
 version = "~2.2.0"

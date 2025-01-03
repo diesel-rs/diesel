@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::infer_schema_internals::TableName;
 
@@ -18,7 +18,7 @@ pub enum Error {
     ProjectRootNotFound(PathBuf),
     #[error("The --database-url argument must be passed, or the DATABASE_URL environment variable must be set.")]
     DatabaseUrlMissing,
-    #[error("Encountered an IO error: {0} {n}", n=print_optional_path(.1))]
+    #[error("Encountered an IO error: {0} for `{n}`", n=print_optional_path(.1))]
     IoError(#[source] std::io::Error, Option<PathBuf>),
     #[error("Failed to execute a database query: {0}")]
     QueryError(#[from] diesel::result::Error),
@@ -64,10 +64,17 @@ pub enum Error {
     NoSchemaKeyFound(String),
     #[error("Failed To Run rustfmt")]
     RustFmtFail(String),
+    #[error("Failed to acquire migration folder lock: {1} for `{n}`", n=print_path(.0))]
+    FailedToAcquireMigrationFolderLock(PathBuf, String),
+    #[error("Tried to generate too many migrations with the same version `{1}` - Migrations folder is `{n}`", n=print_path(.0))]
+    TooManyMigrations(PathBuf, String),
+    #[error("Specified migration version `{1}` already exists inside `{n}`", n=print_path(.0))]
+    DuplicateMigrationVersion(PathBuf, String),
 }
 
+fn print_path(path: &Path) -> String {
+    format!("{}", path.display())
+}
 fn print_optional_path(path: &Option<PathBuf>) -> String {
-    path.as_ref()
-        .map(|p| format!(" for `{}`", p.display()))
-        .unwrap_or_default()
+    path.as_ref().map(|p| print_path(p)).unwrap_or_default()
 }

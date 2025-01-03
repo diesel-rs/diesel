@@ -1,3 +1,4 @@
+use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
 use std::{fs::File, io::Read};
 
@@ -15,8 +16,8 @@ fn migration_generate_creates_a_migration_with_the_proper_name() {
     // check overall output
     let expected_stdout = Regex::new(
         "\
-Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.up.sql
-Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.down.sql\
+Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}-0000_hello.up.sql
+Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}-0000_hello.down.sql\
         ",
     )
     .unwrap();
@@ -24,7 +25,7 @@ Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.down.sql\
     assert!(expected_stdout.is_match(result.stdout()));
 
     // check timestamps are properly formatted
-    let captured_timestamps = Regex::new(r"(?P<stamp>[\d-]*)_hello").unwrap();
+    let captured_timestamps = Regex::new(r"(?P<stamp>[\d-]*)-0000_hello").unwrap();
     let mut stamps_found = 0;
     for caps in captured_timestamps.captures_iter(result.stdout()) {
         let timestamp = NaiveDateTime::parse_from_str(&caps["stamp"], TIMESTAMP_FORMAT);
@@ -276,6 +277,83 @@ fn migration_generate_from_diff_only_tables() {
 #[test]
 fn migration_generate_from_diff_except_tables() {
     test_generate_migration("diff_except_tables", vec!["-e", "table_b", "table_c"]);
+}
+
+#[test]
+fn migration_generate_with_duplicate_specified_version_fails() {
+    const VERSION_ARG: &str = "--version=12345";
+
+    let p = project("generate_duplicate_specified_versions").build();
+
+    p.command("setup").run();
+
+    let result = p
+        .command("migration")
+        .arg("generate")
+        .arg("hello1")
+        .arg(VERSION_ARG)
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    let result = p
+        .command("migration")
+        .arg("generate")
+        .arg("hello2")
+        .arg(VERSION_ARG)
+        .run();
+
+    assert!(!result.is_success(), "Result was successful {:?}", result);
+}
+
+#[test]
+fn migration_generate_different_versions() {
+    const MIGRATIONS_NO: usize = 26;
+    fn extract_version(entry: &DirEntry) -> String {
+        entry
+            .file_name()
+            .to_string_lossy()
+            .split('_')
+            .next()
+            .expect("To have _ in migration path")
+            .to_string()
+    }
+    let p = project("generate_different_versions").build();
+    p.command("setup").run();
+
+    for i in 1..=MIGRATIONS_NO {
+        p.command("migration")
+            .arg("generate")
+            .arg(format!("mig{}", i))
+            .run();
+    }
+
+    let paths: Vec<DirEntry> = p
+        .directory_entries("migrations")
+        .unwrap()
+        .filter_map(|e| {
+            if let Ok(e) = e {
+                if e.path().is_dir() {
+                    return Some(e);
+                }
+            }
+            None
+        })
+        .collect();
+
+    for i in 0..paths.len() {
+        for j in (i + 1)..paths.len() {
+            let version_i = extract_version(&paths[i]);
+            let version_j = extract_version(&paths[j]);
+            assert_ne!(version_i, version_j);
+        }
+    }
+    if cfg!(feature = "postgres") {
+        // Includes the 00000 migration created on 'setup'
+        assert_eq!(paths.len(), MIGRATIONS_NO + 1);
+    } else {
+        assert_eq!(paths.len(), MIGRATIONS_NO);
+    }
 }
 
 #[cfg(feature = "sqlite")]

@@ -3,8 +3,8 @@ extern crate dotenvy;
 #[cfg(not(feature = "sqlite"))]
 extern crate url;
 
-use std::fs::{self, File};
-use std::io::prelude::*;
+use std::fs::{self, File, ReadDir};
+use std::io::{self, prelude::*};
 use std::path::{Path, PathBuf};
 use tempfile::{Builder, TempDir};
 
@@ -85,8 +85,13 @@ impl Project {
             .join("migrations")
             .read_dir()
             .expect("Error reading directory")
-            .map(|e| Migration {
-                path: e.expect("error reading entry").path(),
+            .filter_map(|e| {
+                if let Ok(e) = e {
+                    if e.path().is_dir() {
+                        return Some(Migration { path: e.path() });
+                    }
+                }
+                None
             })
             .collect()
     }
@@ -130,6 +135,10 @@ impl Project {
 
     pub fn has_file<P: AsRef<Path>>(&self, path: P) -> bool {
         self.directory.path().join(path).exists()
+    }
+
+    pub fn directory_entries<P: AsRef<Path>>(&self, path: P) -> Result<ReadDir, io::Error> {
+        fs::read_dir(self.directory.path().join(path))
     }
 
     pub fn file_contents<P: AsRef<Path>>(&self, path: P) -> String {
