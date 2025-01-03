@@ -8,7 +8,10 @@ use crate::query_builder::{QueryFragment, QueryId};
 use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::sqlite::{Sqlite, SqliteType};
+#[cfg(not(all(target_family = "wasm", not(target_os = "wasi"))))]
 use libsqlite3_sys as ffi;
+#[cfg(all(target_family = "wasm", not(target_os = "wasi")))]
+use sqlite_wasm_rs::c as ffi;
 use std::cell::OnceCell;
 use std::ffi::{CStr, CString};
 use std::io::{stderr, Write};
