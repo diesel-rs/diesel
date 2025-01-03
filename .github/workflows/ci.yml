@@ -66,6 +66,8 @@ jobs:
       - name: Install sqlite (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'sqlite'
         run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Install mysql (Linux)
