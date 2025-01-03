@@ -44,13 +44,13 @@ impl<'a, T, DB> DebugQuery<'a, T, DB> {
         Ok(query_builder.finish())
     }
 
-    pub(crate) fn binds(&self) -> DebugBinds<'_, T, DB>
+    pub(crate) fn binds(&self) -> DebugBinds<'_, DB>
     where
         DB: Backend + Default,
         DB::QueryBuilder: Default,
         T: QueryFragment<DB>,
     {
-        DebugBinds::<_, DB>::new(self.query)
+        DebugBinds::<DB>::new(self.query)
     }
 }
 
@@ -97,36 +97,28 @@ where
 
 /// A struct that implements `fmt::Debug` by walking the given AST and writing
 /// the `fmt::Debug` implementation of each bind parameter.
-pub(crate) struct DebugBinds<'a, T: 'a, DB> {
-    query: &'a T,
-    _marker: PhantomData<DB>,
+pub(crate) struct DebugBinds<'a, DB> {
+    query: &'a dyn QueryFragment<DB>,
 }
 
-impl<'a, T, DB> DebugBinds<'a, T, DB> {
-    fn new(query: &'a T) -> Self {
-        DebugBinds {
-            query,
-            _marker: PhantomData,
-        }
+impl<'a, DB> DebugBinds<'a, DB>
+where
+    DB: Backend,
+{
+    fn new(query: &'a dyn QueryFragment<DB>) -> Self {
+        DebugBinds { query }
     }
 }
 
-impl<T, DB> Debug for DebugBinds<'_, T, DB>
+impl<DB> Debug for DebugBinds<'_, DB>
 where
     DB: Backend + Default,
-    T: QueryFragment<DB>,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let backend = DB::default();
         let mut buffer = Vec::new();
         let ast_pass = AstPass::debug_binds(&mut buffer, &backend);
-
-        // This is not using the `?` operator to reduce the code size of this
-        // function, which is getting copies a lot due to monomorphization.
-        if self.query.walk_ast(ast_pass).is_err() {
-            return Err(fmt::Error);
-        }
-
+        self.query.walk_ast(ast_pass).map_err(|_| fmt::Error)?;
         format_list(f, &buffer)
     }
 }
