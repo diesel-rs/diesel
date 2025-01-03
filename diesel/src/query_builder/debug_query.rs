@@ -25,33 +25,40 @@ impl<'a, T, DB> DebugQuery<'a, T, DB> {
             _marker: PhantomData,
         }
     }
+}
 
-    pub(crate) fn query(&self) -> Result<String, fmt::Error>
-    where
-        DB: Backend + Default,
-        DB::QueryBuilder: Default,
-        T: QueryFragment<DB>,
-    {
-        let mut query_builder = DB::QueryBuilder::default();
-        let backend = DB::default();
+fn serialize_query<DB>(query: &dyn QueryFragment<DB>) -> Result<String, fmt::Error>
+where
+    DB: Backend + Default,
+    DB::QueryBuilder: Default,
+{
+    let mut query_builder = DB::QueryBuilder::default();
+    let backend = DB::default();
+    QueryFragment::<DB>::to_sql(query, &mut query_builder, &backend).map_err(|_| fmt::Error)?;
+    Ok(query_builder.finish())
+}
 
-        // This is not using the `?` operator to reduce the code size of this
-        // function, which is getting copies a lot due to monomorphization.
-        if QueryFragment::<DB>::to_sql(self.query, &mut query_builder, &backend).is_err() {
-            return Err(fmt::Error);
-        }
+fn display<DB>(query: &dyn QueryFragment<DB>, f: &mut fmt::Formatter<'_>) -> fmt::Result
+where
+    DB: Backend + Default,
+    DB::QueryBuilder: Default,
+{
+    let debug_binds = DebugBinds::<DB>::new(query);
+    let query = serialize_query(query)?;
+    write!(f, "{} -- binds: {:?}", query, debug_binds)
+}
 
-        Ok(query_builder.finish())
-    }
-
-    pub(crate) fn binds(&self) -> DebugBinds<'_, DB>
-    where
-        DB: Backend + Default,
-        DB::QueryBuilder: Default,
-        T: QueryFragment<DB>,
-    {
-        DebugBinds::<DB>::new(self.query)
-    }
+fn debug<DB>(query: &dyn QueryFragment<DB>, f: &mut fmt::Formatter<'_>) -> fmt::Result
+where
+    DB: Backend + Default,
+    DB::QueryBuilder: Default,
+{
+    let debug_binds = DebugBinds::<DB>::new(query);
+    let query = serialize_query(query)?;
+    f.debug_struct("Query")
+        .field("sql", &query)
+        .field("binds", &debug_binds)
+        .finish()
 }
 
 impl<T, DB> Display for DebugQuery<'_, T, DB>
@@ -61,15 +68,7 @@ where
     T: QueryFragment<DB>,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // This is not using the `?` operator to reduce the code size of this
-        // function, which is getting copies a lot due to monomorphization.
-        let query = match self.query() {
-            Ok(query) => query,
-            Err(err) => return Err(err),
-        };
-
-        let debug_binds = self.binds();
-        write!(f, "{} -- binds: {:?}", query, debug_binds)
+        display(self.query, f)
     }
 }
 
@@ -80,18 +79,7 @@ where
     T: QueryFragment<DB>,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // This is not using the `?` operator to reduce the code size of this
-        // function, which is getting copies a lot due to monomorphization.
-        let query = match self.query() {
-            Ok(query) => query,
-            Err(err) => return Err(err),
-        };
-
-        let debug_binds = self.binds();
-        f.debug_struct("Query")
-            .field("sql", &query)
-            .field("binds", &debug_binds)
-            .finish()
+        debug(self.query, f)
     }
 }
 
