@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::infer_schema_internals::TableName;
 
@@ -72,7 +72,7 @@ pub enum Error {
     DuplicateMigrationVersion(PathBuf, String),
 }
 
-fn print_path(path: &PathBuf) -> String {
+fn print_path(path: &Path) -> String {
     format!("{}", path.display())
 }
 fn print_optional_path(path: &Option<PathBuf>) -> String {
