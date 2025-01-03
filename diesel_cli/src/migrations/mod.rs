@@ -86,8 +86,8 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
             println!("{result:?}");
         }
         ("generate", args) => {
-            let dir = migrations_dir(matches)?;
-            let mut lock = RwLock::new(migration_folder_lock(dir)?);
+            let migrations_folder = migrations_dir(matches)?;
+            let mut lock = RwLock::new(migration_folder_lock(migrations_folder.clone())?);
             // This blocks until we can get the lock
             // Will throw an error if we receive a termination signal
             let _ = lock.write().map_err(|err| {
@@ -137,9 +137,8 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
                 (String::new(), String::new())
             };
             let version = migration_version(args);
-            let base_migrations_dir = migrations_dir(matches)?;
             let migration_dir = create_migration_dir(
-                base_migrations_dir,
+                migrations_folder,
                 migration_name,
                 version,
                 args_contains_version(args),
