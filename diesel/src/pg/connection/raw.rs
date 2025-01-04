@@ -192,9 +192,15 @@ impl RawConnection {
             None
         } else {
             let ret = Some(PGNotification {
-                process_id: unsafe {(*pgnotify).be_pid},
-                channel: unsafe{CStr::from_ptr((*pgnotify).relname)}.to_str().expect("Channel name should be UTF-8").to_string(),
-                payload: unsafe{CStr::from_ptr((*pgnotify).extra)}.to_str().expect("Could not parse payload to UTF-8").to_string(),
+                process_id: unsafe { (*pgnotify).be_pid },
+                channel: unsafe { CStr::from_ptr((*pgnotify).relname) }
+                    .to_str()
+                    .expect("Channel name should be UTF-8")
+                    .to_string(),
+                payload: unsafe { CStr::from_ptr((*pgnotify).extra) }
+                    .to_str()
+                    .expect("Could not parse payload to UTF-8")
+                    .to_string(),
             });
             unsafe { PQfreemem(pgnotify as *mut std::ffi::c_void) };
             ret

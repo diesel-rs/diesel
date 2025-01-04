@@ -551,7 +551,9 @@ impl PgConnection {
     /// See Postgres documentation for SQL commands Notify and Listen
     /// The returned iterator can yield items even after a None value when new notifications have been received.
     pub fn notifications_iter(&self) -> NotificationsIterator<'_> {
-        NotificationsIterator{ conn: &self.connection_and_transaction_manager.raw_connection }
+        NotificationsIterator {
+            conn: &self.connection_and_transaction_manager.raw_connection,
+        }
     }
 }
 
@@ -563,7 +565,7 @@ pub struct NotificationsIterator<'a> {
 pub use raw::PGNotification;
 
 impl Iterator for NotificationsIterator<'_> {
-    type Item=PGNotification;
+    type Item = PGNotification;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.conn.pqnotifies()
@@ -652,13 +654,20 @@ mod tests {
         use crate::sql_query;
 
         let conn = &mut connection();
-        sql_query("LISTEN test_notifications").execute(conn).unwrap();
-        sql_query("NOTIFY test_notifications, 'first'").execute(conn).unwrap();
-        sql_query("NOTIFY test_notifications, 'second'").execute(conn).unwrap();
-        let mut iter = conn.notifications_iter();
-        let first = iter.next().unwrap();
-        let second = iter.next().unwrap();
-        let third = iter.next();
+        sql_query("LISTEN test_notifications")
+            .execute(conn)
+            .unwrap();
+        sql_query("NOTIFY test_notifications, 'first'")
+            .execute(conn)
+            .unwrap();
+        sql_query("NOTIFY test_notifications, 'second'")
+            .execute(conn)
+            .unwrap();
+
+        let (first, second, third) = {
+            let mut iter = conn.notifications_iter();
+            (iter.next().unwrap(), iter.next().unwrap(), iter.next())
+        };
 
         assert_eq!(first.channel, "test_notifications");
         assert_eq!(second.channel, "test_notifications");
@@ -666,10 +675,10 @@ mod tests {
         assert_eq!(second.payload, "second");
         assert!(third.is_none());
 
-        drop(iter);
-        sql_query("NOTIFY test_notifications").execute(conn).unwrap();
-        let fourth = conn.notifications_iter().next().unwrap();
-        assert_eq!(fourth.payload, "");
+        sql_query("NOTIFY test_notifications")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.notifications_iter().next().unwrap().payload, "");
     }
 
     #[diesel_test_helper::test]
