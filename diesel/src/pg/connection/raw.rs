@@ -183,6 +183,35 @@ impl RawConnection {
             ))
         }
     }
+
+    pub(super) fn pqnotifies(&self) -> Option<PGNotification> {
+        let conn = self.internal_connection;
+        let _ = unsafe { PQconsumeInput(conn.as_ptr()) };
+        let pgnotify = unsafe { PQnotifies(conn.as_ptr()) };
+        if pgnotify.is_null() {
+            None
+        } else {
+            let ret = Some(PGNotification {
+                process_id: unsafe {(*pgnotify).be_pid},
+                channel: unsafe{CStr::from_ptr((*pgnotify).relname)}.to_str().expect("Channel name should be UTF-8").to_string(),
+                payload: unsafe{CStr::from_ptr((*pgnotify).extra)}.to_str().expect("Could not parse payload to UTF-8").to_string(),
+            });
+            unsafe { PQfreemem(pgnotify as *mut std::ffi::c_void) };
+            ret
+        }
+    }
+}
+
+// Using the same field names as tokio-postgres
+/// See Postgres documentation for SQL Commands NOTIFY and LISTEN
+#[derive(Clone, Debug)]
+pub struct PGNotification {
+    /// process ID of notifying server process
+    pub process_id: i32,
+    /// Name of the notification channel
+    pub channel: String,
+    /// optional data that was submitted with the notification, empty string if no data was submitted
+    pub payload: String,
 }
 
 /// Represents the current in-transaction status of the connection

@@ -547,6 +547,27 @@ impl PgConnection {
             .set_notice_processor(noop_notice_processor);
         Ok(())
     }
+
+    /// See Postgres documentation for SQL commands Notify and Listen
+    /// The returned iterator can yield items even after a None value when new notifications have been received.
+    pub fn notifications_iter(&self) -> NotificationsIterator<'_> {
+        NotificationsIterator{ conn: &self.connection_and_transaction_manager.raw_connection }
+    }
+}
+
+#[allow(missing_debug_implementations)]
+pub struct NotificationsIterator<'a> {
+    conn: &'a RawConnection,
+}
+
+pub use raw::PGNotification;
+
+impl Iterator for NotificationsIterator<'_> {
+    type Item=PGNotification;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.conn.pqnotifies()
+    }
 }
 
 extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc::c_char) {}
@@ -624,6 +645,31 @@ mod tests {
 
     fn connection() -> PgConnection {
         crate::test_helpers::pg_connection_no_transaction()
+    }
+
+    #[diesel_test_helper::test]
+    fn notifications_arrive() {
+        use crate::sql_query;
+
+        let conn = &mut connection();
+        sql_query("LISTEN test_notifications").execute(conn).unwrap();
+        sql_query("NOTIFY test_notifications, 'first'").execute(conn).unwrap();
+        sql_query("NOTIFY test_notifications, 'second'").execute(conn).unwrap();
+        let mut iter = conn.notifications_iter();
+        let first = iter.next().unwrap();
+        let second = iter.next().unwrap();
+        let third = iter.next();
+
+        assert_eq!(first.channel, "test_notifications");
+        assert_eq!(second.channel, "test_notifications");
+        assert_eq!(first.payload, "first");
+        assert_eq!(second.payload, "second");
+        assert!(third.is_none());
+
+        drop(iter);
+        sql_query("NOTIFY test_notifications").execute(conn).unwrap();
+        let fourth = conn.notifications_iter().next().unwrap();
+        assert_eq!(fourth.payload, "");
     }
 
     #[diesel_test_helper::test]
