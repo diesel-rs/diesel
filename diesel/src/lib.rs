@@ -778,7 +778,7 @@ pub mod prelude {
     // Initializing the database is a one-time operation during
     // the life of the program.
     #[cfg(feature = "sqlite")]
-    #[cfg(all(target_family = "wasm", not(target_os = "wasi")))]
+    #[cfg(all(target_family = "wasm", target_os = "unknown"))]
     pub use sqlite_wasm_rs::init_sqlite;
 }
 

@@ -3,9 +3,9 @@ use crate::serialize::{IsNull, Output};
 use crate::sql_types::HasSqlType;
 use crate::sqlite::{Sqlite, SqliteType};
 use crate::QueryResult;
-#[cfg(not(all(target_family = "wasm", not(target_os = "wasi"))))]
+#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 use libsqlite3_sys as ffi;
-#[cfg(all(target_family = "wasm", not(target_os = "wasi")))]
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs::c as ffi;
 
 #[derive(Debug, Default)]

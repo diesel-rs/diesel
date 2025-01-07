@@ -1,8 +1,8 @@
 #![allow(unsafe_code)] // ffi calls
-#[cfg(not(all(target_family = "wasm", not(target_os = "wasi"))))]
+#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 extern crate libsqlite3_sys as ffi;
 
-#[cfg(all(target_family = "wasm", not(target_os = "wasi")))]
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs::c as ffi;
 
 use std::ffi::{CString, NulError};
@@ -53,7 +53,7 @@ impl RawConnection {
         // This support is only available when sqlite is loaded from a
         // Worker thread, whether it's loaded in its own dedicated worker
         // or in a worker together with client code.
-        #[cfg(all(target_family = "wasm", not(target_os = "wasi")))]
+        #[cfg(all(target_family = "wasm", target_os = "unknown"))]
         let vfs = CString::new("opfs")?;
 
         let connection_status = unsafe {
@@ -61,9 +61,9 @@ impl RawConnection {
                 database_url.as_ptr(),
                 &mut conn_pointer,
                 flags,
-                #[cfg(not(all(target_family = "wasm", not(target_os = "wasi"))))]
+                #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
                 ptr::null(),
-                #[cfg(all(target_family = "wasm", not(target_os = "wasi")))]
+                #[cfg(all(target_family = "wasm", target_os = "unknown"))]
                 vfs.as_ptr(),
             )
         };
