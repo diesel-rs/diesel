@@ -548,8 +548,12 @@ impl PgConnection {
         Ok(())
     }
 
-    /// See Postgres documentation for SQL commands Notify and Listen
+    /// See Postgres documentation for SQL commands [NOTIFY][] and [LISTEN][]
+    ///
     /// The returned iterator can yield items even after a None value when new notifications have been received.
+    ///
+    /// [NOTIFY]: https://www.postgresql.org/docs/current/sql-notify.html
+    /// [LISTEN]: https://www.postgresql.org/docs/current/sql-listen.html
     pub fn notifications_iter(&self) -> NotificationsIterator<'_> {
         NotificationsIterator {
             conn: &self.connection_and_transaction_manager.raw_connection,
@@ -562,13 +566,13 @@ pub struct NotificationsIterator<'a> {
     conn: &'a RawConnection,
 }
 
-pub use raw::PGNotification;
+pub use raw::PgNotification;
 
 impl Iterator for NotificationsIterator<'_> {
-    type Item = PGNotification;
+    type Item = Result<PgNotification, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.conn.pqnotifies()
+        self.conn.pqnotifies().transpose()
     }
 }
 
@@ -664,21 +668,24 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        let (first, second, third) = {
-            let mut iter = conn.notifications_iter();
-            (iter.next().unwrap(), iter.next().unwrap(), iter.next())
-        };
+        let notifications = conn
+            .notifications_iter()
+            .map(Result::unwrap)
+            .collect::<Vec<_>>();
 
-        assert_eq!(first.channel, "test_notifications");
-        assert_eq!(second.channel, "test_notifications");
-        assert_eq!(first.payload, "first");
-        assert_eq!(second.payload, "second");
-        assert!(third.is_none());
+        assert_eq!(2, notifications.len());
+        assert_eq!(notifications[0].channel, "test_notifications");
+        assert_eq!(notifications[1].channel, "test_notifications");
+        assert_eq!(notifications[0].payload, "first");
+        assert_eq!(notifications[1].payload, "second");
 
         sql_query("NOTIFY test_notifications")
             .execute(conn)
             .unwrap();
-        assert_eq!(conn.notifications_iter().next().unwrap().payload, "");
+        assert_eq!(
+            conn.notifications_iter().next().unwrap().unwrap().payload,
+            ""
+        );
     }
 
     #[diesel_test_helper::test]

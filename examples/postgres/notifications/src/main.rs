@@ -2,6 +2,7 @@ use diesel::prelude::*;
 use diesel::sql_query;
 use dotenvy::dotenv;
 use std::env;
+use std::error::Error;
 
 fn establish_connection() -> PgConnection {
     dotenv().ok();
@@ -11,22 +12,21 @@ fn establish_connection() -> PgConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {database_url}"))
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     let conn = &mut establish_connection();
 
-    sql_query("LISTEN example_channel").execute(conn).unwrap();
-    sql_query("NOTIFY example_channel, 'additional data'")
-        .execute(conn)
-        .unwrap();
+    sql_query("LISTEN example_channel").execute(conn)?;
+    sql_query("NOTIFY example_channel, 'additional data'").execute(conn)?;
 
-    let mut iter = conn.notifications_iter();
-    let notification = iter.next().unwrap();
+    for result in conn.notifications_iter() {
+        let notification = result.unwrap();
+        assert_eq!(notification.channel, "example_channel");
+        assert_eq!(notification.payload, "additional data");
 
-    assert_eq!(notification.channel, "example_channel");
-    assert_eq!(notification.payload, "additional data");
-    println!("This process id: {}", std::process::id());
-    println!(
-        "Notification received from server process with id {}.",
-        notification.process_id
-    );
+        println!(
+            "Notification received from server process with id {}.",
+            notification.process_id
+        );
+    }
+    Ok(())
 }

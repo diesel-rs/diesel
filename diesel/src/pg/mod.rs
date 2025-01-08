@@ -18,7 +18,7 @@ mod value;
 
 pub use self::backend::{Pg, PgTypeMetadata};
 #[cfg(feature = "postgres")]
-pub use self::connection::{PGNotification, PgConnection, PgRowByRowLoadingMode};
+pub use self::connection::{PgConnection, PgNotification, PgRowByRowLoadingMode};
 #[doc(inline)]
 pub use self::metadata_lookup::PgMetadataLookup;
 #[doc(inline)]
