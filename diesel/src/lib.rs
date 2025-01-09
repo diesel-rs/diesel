@@ -773,13 +773,17 @@ pub mod prelude {
     #[cfg(feature = "sqlite")]
     #[doc(inline)]
     pub use crate::sqlite::SqliteConnection;
-    // Before using C-API, you must initialize sqlite.
+
+    // These exported APIs from `sqlite-wasm-rs` are stable:
     //
-    // Initializing the database is a one-time operation during
-    // the life of the program.
+    // `async fn init_sqlite()`: before using C-API, you must initialize sqlite, once.
+    //
+    // `fn sqlite()`: get the sqlite instance
+    //
+    // `SQLiteError`: initializing instance and other possible errors
     #[cfg(feature = "sqlite")]
     #[cfg(all(target_family = "wasm", target_os = "unknown"))]
-    pub use sqlite_wasm_rs::init_sqlite;
+    pub use sqlite_wasm_rs::{init_sqlite, sqlite, SQLiteError};
 }
 
 #[doc(inline)]
