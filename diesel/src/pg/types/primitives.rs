@@ -37,26 +37,6 @@ impl ToSql<sql_types::CChar, Pg> for u8 {
     }
 }
 
-#[td::test]
-fn cchar_to_sql() {
-    use crate::query_builder::bind_collector::ByteWrapper;
-
-    let mut buffer = Vec::new();
-    let mut bytes = Output::test(ByteWrapper(&mut buffer));
-    ToSql::<sql_types::CChar, Pg>::to_sql(&b'A', &mut bytes).unwrap();
-    ToSql::<sql_types::CChar, Pg>::to_sql(&b'\xc4', &mut bytes).unwrap();
-    assert_eq!(buffer, vec![65u8, 196u8]);
-}
-
-#[td::test]
-fn cchar_from_sql() {
-    let result = <u8 as FromSql<sql_types::CChar, Pg>>::from_nullable_sql(None);
-    assert_eq!(
-        result.unwrap_err().to_string(),
-        "Unexpected null for non-null column"
-    );
-}
-
 /// The returned pointer is *only* valid for the lifetime to the argument of
 /// `from_sql`. This impl is intended for uses where you want to write a new
 /// impl in terms of `String`, but don't want to allocate. We have to return a
@@ -125,22 +105,47 @@ impl Queryable<sql_types::Binary, Pg> for *const [u8] {
     }
 }
 
-#[td::test]
-fn bool_to_sql() {
-    use crate::query_builder::bind_collector::ByteWrapper;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    let mut buffer = Vec::new();
-    let mut bytes = Output::test(ByteWrapper(&mut buffer));
-    ToSql::<sql_types::Bool, Pg>::to_sql(&true, &mut bytes).unwrap();
-    ToSql::<sql_types::Bool, Pg>::to_sql(&false, &mut bytes).unwrap();
-    assert_eq!(buffer, vec![1u8, 0u8]);
-}
+    #[td::test]
+    fn cchar_to_sql() {
+        use crate::query_builder::bind_collector::ByteWrapper;
 
-#[td::test]
-fn no_bool_from_sql() {
-    let result = <bool as FromSql<sql_types::Bool, Pg>>::from_nullable_sql(None);
-    assert_eq!(
-        result.unwrap_err().to_string(),
-        "Unexpected null for non-null column"
-    );
+        let mut buffer = Vec::new();
+        let mut bytes = Output::test(ByteWrapper(&mut buffer));
+        ToSql::<sql_types::CChar, Pg>::to_sql(&b'A', &mut bytes).unwrap();
+        ToSql::<sql_types::CChar, Pg>::to_sql(&b'\xc4', &mut bytes).unwrap();
+        assert_eq!(buffer, vec![65u8, 196u8]);
+    }
+
+    #[td::test]
+    fn cchar_from_sql() {
+        let result = <u8 as FromSql<sql_types::CChar, Pg>>::from_nullable_sql(None);
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Unexpected null for non-null column"
+        );
+    }
+
+    #[td::test]
+    fn bool_to_sql() {
+        use crate::query_builder::bind_collector::ByteWrapper;
+
+        let mut buffer = Vec::new();
+        let mut bytes = Output::test(ByteWrapper(&mut buffer));
+        ToSql::<sql_types::Bool, Pg>::to_sql(&true, &mut bytes).unwrap();
+        ToSql::<sql_types::Bool, Pg>::to_sql(&false, &mut bytes).unwrap();
+        assert_eq!(buffer, vec![1u8, 0u8]);
+    }
+
+    #[td::test]
+    fn no_bool_from_sql() {
+        let result = <bool as FromSql<sql_types::Bool, Pg>>::from_nullable_sql(None);
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Unexpected null for non-null column"
+        );
+    }
 }

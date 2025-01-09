@@ -123,6 +123,7 @@ where
     }
 }
 
+#[cfg(test)]
 #[td::test]
 #[cfg(feature = "postgres")]
 fn option_to_sql() {

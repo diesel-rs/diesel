@@ -206,218 +206,223 @@ fn connection_url_error() -> ConnectionError {
     ConnectionError::InvalidConnectionUrl(msg.into())
 }
 
-#[td::test]
-fn urls_with_schemes_other_than_mysql_are_errors() {
-    assert!(ConnectionOptions::parse("postgres://localhost").is_err());
-    assert!(ConnectionOptions::parse("http://localhost").is_err());
-    assert!(ConnectionOptions::parse("file:///tmp/mysql.sock").is_err());
-    assert!(ConnectionOptions::parse("socket:///tmp/mysql.sock").is_err());
-    assert!(ConnectionOptions::parse("mysql://localhost?database=somedb").is_err());
-    assert!(ConnectionOptions::parse("mysql://localhost").is_ok());
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[td::test]
-fn urls_must_have_zero_or_one_path_segments() {
-    assert!(ConnectionOptions::parse("mysql://localhost/foo/bar").is_err());
-    assert!(ConnectionOptions::parse("mysql://localhost/foo").is_ok());
-}
+    #[td::test]
+    fn urls_with_schemes_other_than_mysql_are_errors() {
+        assert!(ConnectionOptions::parse("postgres://localhost").is_err());
+        assert!(ConnectionOptions::parse("http://localhost").is_err());
+        assert!(ConnectionOptions::parse("file:///tmp/mysql.sock").is_err());
+        assert!(ConnectionOptions::parse("socket:///tmp/mysql.sock").is_err());
+        assert!(ConnectionOptions::parse("mysql://localhost?database=somedb").is_err());
+        assert!(ConnectionOptions::parse("mysql://localhost").is_ok());
+    }
 
-#[td::test]
-fn first_path_segment_is_treated_as_database() {
-    let foo_cstr = CString::new("foo").unwrap();
-    let bar_cstr = CString::new("bar").unwrap();
-    assert_eq!(
-        Some(&*foo_cstr),
-        ConnectionOptions::parse("mysql://localhost/foo")
-            .unwrap()
-            .database()
-    );
-    assert_eq!(
-        Some(&*bar_cstr),
-        ConnectionOptions::parse("mysql://localhost/bar")
-            .unwrap()
-            .database()
-    );
-    assert_eq!(
-        None,
-        ConnectionOptions::parse("mysql://localhost")
-            .unwrap()
-            .database()
-    );
-}
+    #[td::test]
+    fn urls_must_have_zero_or_one_path_segments() {
+        assert!(ConnectionOptions::parse("mysql://localhost/foo/bar").is_err());
+        assert!(ConnectionOptions::parse("mysql://localhost/foo").is_ok());
+    }
 
-#[td::test]
-fn userinfo_should_be_percent_decode() {
-    use self::percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
-    const USERINFO_ENCODE_SET: &AsciiSet = &CONTROLS
-        .add(b' ')
-        .add(b'"')
-        .add(b'<')
-        .add(b'>')
-        .add(b'`')
-        .add(b'#')
-        .add(b'?')
-        .add(b'{')
-        .add(b'}')
-        .add(b'/')
-        .add(b':')
-        .add(b';')
-        .add(b'=')
-        .add(b'@')
-        .add(b'[')
-        .add(b'\\')
-        .add(b']')
-        .add(b'^')
-        .add(b'|');
+    #[td::test]
+    fn first_path_segment_is_treated_as_database() {
+        let foo_cstr = CString::new("foo").unwrap();
+        let bar_cstr = CString::new("bar").unwrap();
+        assert_eq!(
+            Some(&*foo_cstr),
+            ConnectionOptions::parse("mysql://localhost/foo")
+                .unwrap()
+                .database()
+        );
+        assert_eq!(
+            Some(&*bar_cstr),
+            ConnectionOptions::parse("mysql://localhost/bar")
+                .unwrap()
+                .database()
+        );
+        assert_eq!(
+            None,
+            ConnectionOptions::parse("mysql://localhost")
+                .unwrap()
+                .database()
+        );
+    }
 
-    let username = "x#gfuL?4Zuj{n73m}eeJt0";
-    let encoded_username = utf8_percent_encode(username, USERINFO_ENCODE_SET);
+    #[td::test]
+    fn userinfo_should_be_percent_decode() {
+        use self::percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
+        const USERINFO_ENCODE_SET: &AsciiSet = &CONTROLS
+            .add(b' ')
+            .add(b'"')
+            .add(b'<')
+            .add(b'>')
+            .add(b'`')
+            .add(b'#')
+            .add(b'?')
+            .add(b'{')
+            .add(b'}')
+            .add(b'/')
+            .add(b':')
+            .add(b';')
+            .add(b'=')
+            .add(b'@')
+            .add(b'[')
+            .add(b'\\')
+            .add(b']')
+            .add(b'^')
+            .add(b'|');
 
-    let password = "x/gfuL?4Zuj{n73m}eeJt1";
-    let encoded_password = utf8_percent_encode(password, USERINFO_ENCODE_SET);
+        let username = "x#gfuL?4Zuj{n73m}eeJt0";
+        let encoded_username = utf8_percent_encode(username, USERINFO_ENCODE_SET);
 
-    let db_url = format!("mysql://{encoded_username}:{encoded_password}@localhost/bar",);
-    let db_url = Url::parse(&db_url).unwrap();
+        let password = "x/gfuL?4Zuj{n73m}eeJt1";
+        let encoded_password = utf8_percent_encode(password, USERINFO_ENCODE_SET);
 
-    let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
-    let username = CString::new(username.as_bytes()).unwrap();
-    let password = CString::new(password.as_bytes()).unwrap();
-    assert_eq!(username, conn_opts.user);
-    assert_eq!(password, conn_opts.password.unwrap());
-}
+        let db_url = format!("mysql://{encoded_username}:{encoded_password}@localhost/bar",);
+        let db_url = Url::parse(&db_url).unwrap();
 
-#[td::test]
-fn ipv6_host_not_wrapped_in_brackets() {
-    let host1 = CString::new("::1").unwrap();
-    let host2 = CString::new("2001:db8:85a3::8a2e:370:7334").unwrap();
+        let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
+        let username = CString::new(username.as_bytes()).unwrap();
+        let password = CString::new(password.as_bytes()).unwrap();
+        assert_eq!(username, conn_opts.user);
+        assert_eq!(password, conn_opts.password.unwrap());
+    }
 
-    assert_eq!(
-        Some(&*host1),
-        ConnectionOptions::parse("mysql://[::1]").unwrap().host()
-    );
-    assert_eq!(
-        Some(&*host2),
-        ConnectionOptions::parse("mysql://[2001:db8:85a3::8a2e:370:7334]")
-            .unwrap()
-            .host()
-    );
-}
+    #[td::test]
+    fn ipv6_host_not_wrapped_in_brackets() {
+        let host1 = CString::new("::1").unwrap();
+        let host2 = CString::new("2001:db8:85a3::8a2e:370:7334").unwrap();
 
-#[td::test]
-fn unix_socket_tests() {
-    let unix_socket = "/var/run/mysqld.sock";
-    let username = "foo";
-    let password = "bar";
-    let db_url = format!("mysql://{username}:{password}@localhost?unix_socket={unix_socket}",);
-    let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
-    let cstring = |s| CString::new(s).unwrap();
-    assert_eq!(None, conn_opts.host);
-    assert_eq!(None, conn_opts.port);
-    assert_eq!(cstring(username), conn_opts.user);
-    assert_eq!(cstring(password), conn_opts.password.unwrap());
-    assert_eq!(
-        CString::new(unix_socket).unwrap(),
-        conn_opts.unix_socket.unwrap()
-    );
-}
+        assert_eq!(
+            Some(&*host1),
+            ConnectionOptions::parse("mysql://[::1]").unwrap().host()
+        );
+        assert_eq!(
+            Some(&*host2),
+            ConnectionOptions::parse("mysql://[2001:db8:85a3::8a2e:370:7334]")
+                .unwrap()
+                .host()
+        );
+    }
 
-#[td::test]
-fn ssl_ca_tests() {
-    let ssl_ca = "/etc/ssl/certs/ca-certificates.crt";
-    let username = "foo";
-    let password = "bar";
-    let db_url = format!("mysql://{username}:{password}@localhost?ssl_ca={ssl_ca}",);
-    let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
-    let cstring = |s| CString::new(s).unwrap();
-    assert_eq!(Some(cstring("localhost")), conn_opts.host);
-    assert_eq!(None, conn_opts.port);
-    assert_eq!(cstring(username), conn_opts.user);
-    assert_eq!(cstring(password), conn_opts.password.unwrap());
-    assert_eq!(CString::new(ssl_ca).unwrap(), conn_opts.ssl_ca.unwrap());
+    #[td::test]
+    fn unix_socket_tests() {
+        let unix_socket = "/var/run/mysqld.sock";
+        let username = "foo";
+        let password = "bar";
+        let db_url = format!("mysql://{username}:{password}@localhost?unix_socket={unix_socket}",);
+        let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
+        let cstring = |s| CString::new(s).unwrap();
+        assert_eq!(None, conn_opts.host);
+        assert_eq!(None, conn_opts.port);
+        assert_eq!(cstring(username), conn_opts.user);
+        assert_eq!(cstring(password), conn_opts.password.unwrap());
+        assert_eq!(
+            CString::new(unix_socket).unwrap(),
+            conn_opts.unix_socket.unwrap()
+        );
+    }
 
-    let url_with_unix_str_and_ssl_ca = format!(
+    #[td::test]
+    fn ssl_ca_tests() {
+        let ssl_ca = "/etc/ssl/certs/ca-certificates.crt";
+        let username = "foo";
+        let password = "bar";
+        let db_url = format!("mysql://{username}:{password}@localhost?ssl_ca={ssl_ca}",);
+        let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
+        let cstring = |s| CString::new(s).unwrap();
+        assert_eq!(Some(cstring("localhost")), conn_opts.host);
+        assert_eq!(None, conn_opts.port);
+        assert_eq!(cstring(username), conn_opts.user);
+        assert_eq!(cstring(password), conn_opts.password.unwrap());
+        assert_eq!(CString::new(ssl_ca).unwrap(), conn_opts.ssl_ca.unwrap());
+
+        let url_with_unix_str_and_ssl_ca = format!(
         "mysql://{username}:{password}@localhost?unix_socket=/var/run/mysqld.sock&ssl_ca={ssl_ca}"
     );
 
-    let conn_opts2 = ConnectionOptions::parse(url_with_unix_str_and_ssl_ca.as_str()).unwrap();
-    assert_eq!(None, conn_opts2.host);
-    assert_eq!(None, conn_opts2.port);
-    assert_eq!(CString::new(ssl_ca).unwrap(), conn_opts2.ssl_ca.unwrap());
-}
+        let conn_opts2 = ConnectionOptions::parse(url_with_unix_str_and_ssl_ca.as_str()).unwrap();
+        assert_eq!(None, conn_opts2.host);
+        assert_eq!(None, conn_opts2.port);
+        assert_eq!(CString::new(ssl_ca).unwrap(), conn_opts2.ssl_ca.unwrap());
+    }
 
-#[td::test]
-fn ssl_cert_tests() {
-    let ssl_cert = "/etc/ssl/certs/client-cert.crt";
-    let username = "foo";
-    let password = "bar";
-    let db_url = format!("mysql://{username}:{password}@localhost?ssl_cert={ssl_cert}");
-    let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
-    let cstring = |s| CString::new(s).unwrap();
-    assert_eq!(Some(cstring("localhost")), conn_opts.host);
-    assert_eq!(None, conn_opts.port);
-    assert_eq!(cstring(username), conn_opts.user);
-    assert_eq!(cstring(password), conn_opts.password.unwrap());
-    assert_eq!(CString::new(ssl_cert).unwrap(), conn_opts.ssl_cert.unwrap());
+    #[td::test]
+    fn ssl_cert_tests() {
+        let ssl_cert = "/etc/ssl/certs/client-cert.crt";
+        let username = "foo";
+        let password = "bar";
+        let db_url = format!("mysql://{username}:{password}@localhost?ssl_cert={ssl_cert}");
+        let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
+        let cstring = |s| CString::new(s).unwrap();
+        assert_eq!(Some(cstring("localhost")), conn_opts.host);
+        assert_eq!(None, conn_opts.port);
+        assert_eq!(cstring(username), conn_opts.user);
+        assert_eq!(cstring(password), conn_opts.password.unwrap());
+        assert_eq!(CString::new(ssl_cert).unwrap(), conn_opts.ssl_cert.unwrap());
 
-    let url_with_unix_str_and_ssl_cert = format!(
+        let url_with_unix_str_and_ssl_cert = format!(
         "mysql://{username}:{password}@localhost?unix_socket=/var/run/mysqld.sock&ssl_cert={ssl_cert}"
     );
 
-    let conn_opts2 = ConnectionOptions::parse(url_with_unix_str_and_ssl_cert.as_str()).unwrap();
-    assert_eq!(None, conn_opts2.host);
-    assert_eq!(None, conn_opts2.port);
-    assert_eq!(
-        CString::new(ssl_cert).unwrap(),
-        conn_opts2.ssl_cert.unwrap()
-    );
-}
+        let conn_opts2 = ConnectionOptions::parse(url_with_unix_str_and_ssl_cert.as_str()).unwrap();
+        assert_eq!(None, conn_opts2.host);
+        assert_eq!(None, conn_opts2.port);
+        assert_eq!(
+            CString::new(ssl_cert).unwrap(),
+            conn_opts2.ssl_cert.unwrap()
+        );
+    }
 
-#[td::test]
-fn ssl_key_tests() {
-    let ssl_key = "/etc/ssl/certs/client-key.crt";
-    let username = "foo";
-    let password = "bar";
-    let db_url = format!("mysql://{username}:{password}@localhost?ssl_key={ssl_key}");
-    let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
-    let cstring = |s| CString::new(s).unwrap();
-    assert_eq!(Some(cstring("localhost")), conn_opts.host);
-    assert_eq!(None, conn_opts.port);
-    assert_eq!(cstring(username), conn_opts.user);
-    assert_eq!(cstring(password), conn_opts.password.unwrap());
-    assert_eq!(CString::new(ssl_key).unwrap(), conn_opts.ssl_key.unwrap());
+    #[td::test]
+    fn ssl_key_tests() {
+        let ssl_key = "/etc/ssl/certs/client-key.crt";
+        let username = "foo";
+        let password = "bar";
+        let db_url = format!("mysql://{username}:{password}@localhost?ssl_key={ssl_key}");
+        let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
+        let cstring = |s| CString::new(s).unwrap();
+        assert_eq!(Some(cstring("localhost")), conn_opts.host);
+        assert_eq!(None, conn_opts.port);
+        assert_eq!(cstring(username), conn_opts.user);
+        assert_eq!(cstring(password), conn_opts.password.unwrap());
+        assert_eq!(CString::new(ssl_key).unwrap(), conn_opts.ssl_key.unwrap());
 
-    let url_with_unix_str_and_ssl_key = format!(
+        let url_with_unix_str_and_ssl_key = format!(
         "mysql://{username}:{password}@localhost?unix_socket=/var/run/mysqld.sock&ssl_key={ssl_key}"
     );
 
-    let conn_opts2 = ConnectionOptions::parse(url_with_unix_str_and_ssl_key.as_str()).unwrap();
-    assert_eq!(None, conn_opts2.host);
-    assert_eq!(None, conn_opts2.port);
-    assert_eq!(CString::new(ssl_key).unwrap(), conn_opts2.ssl_key.unwrap());
-}
+        let conn_opts2 = ConnectionOptions::parse(url_with_unix_str_and_ssl_key.as_str()).unwrap();
+        assert_eq!(None, conn_opts2.host);
+        assert_eq!(None, conn_opts2.port);
+        assert_eq!(CString::new(ssl_key).unwrap(), conn_opts2.ssl_key.unwrap());
+    }
 
-#[td::test]
-fn ssl_mode() {
-    let ssl_mode = |url| ConnectionOptions::parse(url).unwrap().ssl_mode();
-    assert_eq!(ssl_mode("mysql://localhost"), None);
-    assert_eq!(
-        ssl_mode("mysql://localhost?ssl_mode=disabled"),
-        Some(mysql_ssl_mode::SSL_MODE_DISABLED)
-    );
-    assert_eq!(
-        ssl_mode("mysql://localhost?ssl_mode=PREFERRED"),
-        Some(mysql_ssl_mode::SSL_MODE_PREFERRED)
-    );
-    assert_eq!(
-        ssl_mode("mysql://localhost?ssl_mode=required"),
-        Some(mysql_ssl_mode::SSL_MODE_REQUIRED)
-    );
-    assert_eq!(
-        ssl_mode("mysql://localhost?ssl_mode=VERIFY_CA"),
-        Some(mysql_ssl_mode::SSL_MODE_VERIFY_CA)
-    );
-    assert_eq!(
-        ssl_mode("mysql://localhost?ssl_mode=verify_identity"),
-        Some(mysql_ssl_mode::SSL_MODE_VERIFY_IDENTITY)
-    );
+    #[td::test]
+    fn ssl_mode() {
+        let ssl_mode = |url| ConnectionOptions::parse(url).unwrap().ssl_mode();
+        assert_eq!(ssl_mode("mysql://localhost"), None);
+        assert_eq!(
+            ssl_mode("mysql://localhost?ssl_mode=disabled"),
+            Some(mysql_ssl_mode::SSL_MODE_DISABLED)
+        );
+        assert_eq!(
+            ssl_mode("mysql://localhost?ssl_mode=PREFERRED"),
+            Some(mysql_ssl_mode::SSL_MODE_PREFERRED)
+        );
+        assert_eq!(
+            ssl_mode("mysql://localhost?ssl_mode=required"),
+            Some(mysql_ssl_mode::SSL_MODE_REQUIRED)
+        );
+        assert_eq!(
+            ssl_mode("mysql://localhost?ssl_mode=VERIFY_CA"),
+            Some(mysql_ssl_mode::SSL_MODE_VERIFY_CA)
+        );
+        assert_eq!(
+            ssl_mode("mysql://localhost?ssl_mode=verify_identity"),
+            Some(mysql_ssl_mode::SSL_MODE_VERIFY_IDENTITY)
+        );
+    }
 }

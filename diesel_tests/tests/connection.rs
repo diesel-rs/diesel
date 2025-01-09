@@ -85,7 +85,8 @@ fn managing_updated_at_for_table() {
 
 /// wasm does not support `std::env::temp_dir`
 #[td::test]
-#[cfg(not(all(target_family = "wasm", target_os = "unknown", feature = "sqlite")))]
+#[cfg(feature = "sqlite")]
+#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 fn strips_sqlite_url_prefix() {
     let mut path = std::env::temp_dir();
     path.push("diesel_test_sqlite.db");
@@ -104,7 +105,8 @@ fn file_uri_created_in_memory() {
 
 /// wasm does not support `std::env::temp_dir`
 #[td::test]
-#[cfg(not(all(target_family = "wasm", target_os = "unknown", feature = "sqlite")))]
+#[cfg(feature = "sqlite")]
+#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 fn sqlite_uri_prefix_interpreted_as_file() {
     let mut path = std::env::temp_dir();
     path.push("diesel_test_sqlite_readonly.db");

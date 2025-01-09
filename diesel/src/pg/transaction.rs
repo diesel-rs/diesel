@@ -379,6 +379,7 @@ impl QueryFragment<Pg> for Deferrable {
     }
 }
 
+#[cfg(test)]
 #[td::test]
 fn test_transaction_builder_generates_correct_sql() {
     extern crate dotenvy;

@@ -91,7 +91,7 @@ impl TestArgs {
                 let mut command = Command::new("wasm-pack");
                 let out = command
                     .args(["test", "--chrome", "--headless", "--features", "sqlite"])
-                    .current_dir(&metadata.workspace_root.join("diesel"))
+                    .current_dir(metadata.workspace_root.join("diesel"))
                     .stderr(Stdio::inherit())
                     .stdout(Stdio::inherit())
                     .status()
@@ -103,7 +103,7 @@ impl TestArgs {
                 let mut command = Command::new("wasm-pack");
                 let out = command
                     .args(["test", "--chrome", "--headless", "--features", "sqlite"])
-                    .current_dir(&metadata.workspace_root.join("diesel_tests"))
+                    .current_dir(metadata.workspace_root.join("diesel_tests"))
                     .stderr(Stdio::inherit())
                     .stdout(Stdio::inherit())
                     .status()
