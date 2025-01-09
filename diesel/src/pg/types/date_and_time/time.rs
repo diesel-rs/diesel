@@ -160,7 +160,7 @@ mod tests {
         PrimitiveDateTime::new(offset_now.date(), offset_now.time())
     }
 
-    #[test]
+    #[td::test]
     fn unix_epoch_encodes_correctly() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:00:00);
@@ -168,7 +168,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn unix_epoch_encodes_correctly_with_utc_timezone() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:00:00 utc);
@@ -176,7 +176,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn unix_epoch_encodes_correctly_with_timezone() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:00:00 -1:00);
@@ -184,7 +184,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn unix_epoch_decodes_correctly() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:0:0);
@@ -193,7 +193,7 @@ mod tests {
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
-    #[test]
+    #[td::test]
     fn unix_epoch_decodes_correctly_with_timezone() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:00:00 utc);
@@ -202,7 +202,7 @@ mod tests {
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
-    #[test]
+    #[td::test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
         let time = naive_now() + Duration::seconds(60);
@@ -214,7 +214,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn times_with_timezones_round_trip_after_conversion() {
         let connection = &mut connection();
         let time = datetime!(2016-1-2 1:00:00 +1);
@@ -223,7 +223,7 @@ mod tests {
         assert_eq!(Ok(expected), query.get_result(connection));
     }
 
-    #[test]
+    #[td::test]
     fn times_of_day_encode_correctly() {
         let connection = &mut connection();
 
@@ -240,7 +240,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn times_of_day_decode_correctly() {
         let connection = &mut connection();
         let query = select(sql::<Time>("'00:00:00'::time"));
@@ -259,7 +259,7 @@ mod tests {
         assert_eq!(Ok(roughly_half_past_eleven), result);
     }
 
-    #[test]
+    #[td::test]
     fn dates_encode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = date!(2000 - 1 - 1);
@@ -287,7 +287,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn dates_decode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = date!(2000 - 1 - 1);

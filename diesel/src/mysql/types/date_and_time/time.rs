@@ -223,7 +223,7 @@ mod tests {
     use crate::sql_types::{Date, Datetime, Time, Timestamp};
     use crate::test_helpers::connection;
 
-    #[test]
+    #[td::test]
     fn unix_epoch_encodes_correctly() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:0:0);
@@ -233,7 +233,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn unix_epoch_decodes_correctly() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:0:0);
@@ -245,7 +245,7 @@ mod tests {
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
-    #[test]
+    #[td::test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
         let time = to_primitive_datetime(OffsetDateTime::now_utc()) + Duration::days(1);
@@ -257,7 +257,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn times_of_day_encode_correctly() {
         let connection = &mut connection();
 
@@ -274,7 +274,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn times_of_day_decode_correctly() {
         let connection = &mut connection();
         let midnight = time!(0:0:0);
@@ -293,7 +293,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[td::test]
     fn dates_encode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = date!(2000 - 1 - 1);
@@ -305,7 +305,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn dates_decode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = date!(2000 - 1 - 1);

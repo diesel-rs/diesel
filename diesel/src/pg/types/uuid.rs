@@ -28,7 +28,7 @@ impl ToSql<Uuid, Pg> for uuid::Uuid {
     }
 }
 
-#[test]
+#[td::test]
 fn uuid_to_sql() {
     use crate::query_builder::bind_collector::ByteWrapper;
 
@@ -44,7 +44,7 @@ fn uuid_to_sql() {
     assert_eq!(&buffer, test_uuid.as_bytes());
 }
 
-#[test]
+#[td::test]
 fn some_uuid_from_sql() {
     let bytes = [
         0xFF_u8, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
@@ -56,7 +56,7 @@ fn some_uuid_from_sql() {
     assert_eq!(input_uuid, output_uuid);
 }
 
-#[test]
+#[td::test]
 fn bad_uuid_from_sql() {
     let uuid = uuid::Uuid::from_sql(PgValue::for_test(b"boom"));
     assert!(uuid.is_err());
@@ -73,7 +73,7 @@ fn bad_uuid_from_sql() {
     assert!(error_message.ends_with("found 4"));
 }
 
-#[test]
+#[td::test]
 fn no_uuid_from_sql() {
     let uuid = uuid::Uuid::from_nullable_sql(None);
     assert_eq!(

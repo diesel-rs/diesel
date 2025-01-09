@@ -111,7 +111,7 @@ mod tests {
         T::query_id()
     }
 
-    #[test]
+    #[td::test]
     fn queries_with_no_dynamic_elements_have_a_static_id() {
         use self::users::dsl::*;
         assert!(query_id(users).is_some());
@@ -119,14 +119,14 @@ mod tests {
         assert!(query_id(users.filter(name.eq("Sean"))).is_some());
     }
 
-    #[test]
+    #[td::test]
     fn queries_with_different_types_have_different_ids() {
         let id1 = query_id(users::table.select(users::name));
         let id2 = query_id(users::table.select(users::id));
         assert_ne!(id1, id2);
     }
 
-    #[test]
+    #[td::test]
     fn bind_params_use_only_sql_type_for_query_id() {
         use self::users::dsl::*;
         let id1 = query_id(users.filter(name.eq("Sean")));
@@ -135,7 +135,7 @@ mod tests {
         assert_eq!(id1, id2);
     }
 
-    #[test]
+    #[td::test]
     #[cfg(feature = "postgres")]
     fn boxed_queries_do_not_have_static_query_id() {
         use crate::pg::Pg;

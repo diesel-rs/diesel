@@ -1,5 +1,5 @@
 #[cfg(feature = "postgres")]
-#[test]
+#[td::test]
 fn test_array_index() {
     use diesel::dsl::array_append;
     use diesel::sql_types::{Array, Integer};

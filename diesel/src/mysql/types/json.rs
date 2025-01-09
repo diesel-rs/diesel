@@ -19,7 +19,7 @@ impl ToSql<sql_types::Json, Mysql> for serde_json::Value {
     }
 }
 
-#[test]
+#[td::test]
 fn json_to_sql() {
     use crate::query_builder::bind_collector::ByteWrapper;
 
@@ -30,7 +30,7 @@ fn json_to_sql() {
     assert_eq!(buffer, b"true");
 }
 
-#[test]
+#[td::test]
 fn some_json_from_sql() {
     use crate::mysql::MysqlType;
     let input_json = b"true";
@@ -41,7 +41,7 @@ fn some_json_from_sql() {
     assert_eq!(output_json, serde_json::Value::Bool(true));
 }
 
-#[test]
+#[td::test]
 fn bad_json_from_sql() {
     use crate::mysql::MysqlType;
     let uuid: Result<serde_json::Value, _> = FromSql::<sql_types::Json, Mysql>::from_sql(
@@ -50,7 +50,7 @@ fn bad_json_from_sql() {
     assert_eq!(uuid.unwrap_err().to_string(), "Invalid Json");
 }
 
-#[test]
+#[td::test]
 fn no_json_from_sql() {
     let uuid: Result<serde_json::Value, _> =
         FromSql::<sql_types::Json, Mysql>::from_nullable_sql(None);

@@ -1,7 +1,7 @@
 use crate::schema::*;
 use diesel::*;
 
-#[test]
+#[td::test]
 fn having_generates_having_sql() {
     let source = users::table
         .inner_join(posts::table)
@@ -29,7 +29,7 @@ fn having_generates_having_sql() {
     assert!(source.execute(conn).is_ok());
 }
 
-#[test]
+#[td::test]
 fn simple_having_with_group_by() {
     let connection = &mut connection();
     diesel::sql_query("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
@@ -59,7 +59,7 @@ fn simple_having_with_group_by() {
     assert_eq!(expected_data, data);
 }
 
-#[test]
+#[td::test]
 fn boxed_simple_having_with_group_by() {
     let connection = &mut connection();
     diesel::sql_query("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
@@ -90,7 +90,7 @@ fn boxed_simple_having_with_group_by() {
     assert_eq!(expected_data, data);
 }
 
-#[test]
+#[td::test]
 fn multi_condition_having_with_group_by() {
     let connection = &mut connection();
     diesel::sql_query("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess'), (3, 'Nick')")
@@ -120,7 +120,7 @@ fn multi_condition_having_with_group_by() {
     assert_eq!(expected_data, data);
 }
 
-#[test]
+#[td::test]
 fn boxed_multi_condition_having_with_group_by() {
     let connection = &mut connection();
     diesel::sql_query("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess'), (3, 'Nick')")

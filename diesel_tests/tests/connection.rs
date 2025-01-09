@@ -2,12 +2,12 @@ use crate::schema::*;
 use diesel::connection::BoxableConnection;
 use diesel::*;
 
-#[test]
+#[td::test]
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn managing_updated_at_for_table() {
     use crate::schema_dsl::*;
     use chrono::NaiveDateTime;
-    use std::{thread, time::Duration};
+    use std::time::Duration;
 
     table! {
         #[sql_name = "auto_time"]
@@ -65,8 +65,12 @@ fn managing_updated_at_for_table() {
     assert_eq!(Ok(0), result);
 
     if cfg!(feature = "sqlite") {
-        // SQLite only has second precision
-        thread::sleep(Duration::from_millis(1000));
+        // wasm can use thread::sleep when atomic target_feature
+        // is enabled, but that requires nightly
+        #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+        std::thread::sleep(Duration::from_millis(1000));
+        #[cfg(all(target_family = "wasm", target_os = "unknown"))]
+        wasmtimer::tokio::sleep(Duration::from_secs(1)).await;
     }
 
     let query = auto_time.find(2).select(updated_at);
@@ -79,15 +83,16 @@ fn managing_updated_at_for_table() {
     assert!(old_time < new_time);
 }
 
-#[test]
-#[cfg(feature = "sqlite")]
+/// wasm does not support `std::env::temp_dir`
+#[td::test]
+#[cfg(not(all(target_family = "wasm", target_os = "unknown", feature = "sqlite")))]
 fn strips_sqlite_url_prefix() {
     let mut path = std::env::temp_dir();
     path.push("diesel_test_sqlite.db");
     assert!(SqliteConnection::establish(&format!("sqlite://{}", path.display())).is_ok());
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "sqlite")]
 fn file_uri_created_in_memory() {
     use std::path::Path;
@@ -97,8 +102,9 @@ fn file_uri_created_in_memory() {
     assert!(!Path::new(":memory:").exists());
 }
 
-#[test]
-#[cfg(feature = "sqlite")]
+/// wasm does not support `std::env::temp_dir`
+#[td::test]
+#[cfg(not(all(target_family = "wasm", target_os = "unknown", feature = "sqlite")))]
 fn sqlite_uri_prefix_interpreted_as_file() {
     let mut path = std::env::temp_dir();
     path.push("diesel_test_sqlite_readonly.db");
@@ -106,7 +112,7 @@ fn sqlite_uri_prefix_interpreted_as_file() {
     assert!(path.exists());
 }
 
-#[test]
+#[td::test]
 fn boxable_connection_downcast_mut_usable() {
     use crate::schema::users::dsl::*;
 
@@ -118,7 +124,7 @@ fn boxable_connection_downcast_mut_usable() {
     assert_eq!(Ok(String::from("Sean")), sean);
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 fn use_the_same_connection_multiple_times() {
     use crate::*;

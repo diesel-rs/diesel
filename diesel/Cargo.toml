@@ -55,12 +55,18 @@ libsqlite3-sys = { version = ">=0.17.2, <0.31.0", optional = true, features = ["
 [target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
 sqlite-wasm-rs = { version = ">=0.1.2", optional = true }
 
+[target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dev-dependencies]
+# Something is dependent on it, so we use feature to override it.
+getrandom = { version = "0.2", features = ["js"] }
+wasm-bindgen-test = "0.3.49"
+
 [dev-dependencies]
 cfg-if = "1"
 dotenvy = "0.15"
 ipnetwork = ">=0.12.2, <0.21.0"
 quickcheck = "1.0.3"
 tempfile = "3.10.1"
+td = { path = "../diesel_tests/td" }
 
 [features]
 default = ["with-deprecated", "32-column-tables"]

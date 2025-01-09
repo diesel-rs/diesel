@@ -40,7 +40,7 @@ struct ChangeUser {
     name: String,
 }
 
-#[test]
+#[td::test]
 fn insert_serialization_can_be_customized() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();
@@ -60,7 +60,7 @@ fn insert_serialization_can_be_customized() {
     );
 }
 
-#[test]
+#[td::test]
 fn update_serialization_can_be_customized() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();

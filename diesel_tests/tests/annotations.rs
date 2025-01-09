@@ -2,7 +2,7 @@ use crate::schema::*;
 use diesel::sql_types::Text;
 use diesel::*;
 
-#[test]
+#[td::test]
 fn association_where_struct_name_doesnt_match_table_name() {
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
     #[diesel(belongs_to(Post))]
@@ -31,7 +31,7 @@ fn association_where_struct_name_doesnt_match_table_name() {
     assert_eq!(Ok("comment".into()), comment_text);
 }
 
-#[test]
+#[td::test]
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn association_where_parent_and_child_have_underscores() {
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
@@ -195,7 +195,7 @@ mod derive_identifiable_with_lifetime {
     }
 }
 
-#[test]
+#[td::test]
 fn derive_identifiable_with_non_standard_pk() {
     use diesel::associations::*;
 
@@ -225,7 +225,7 @@ fn derive_identifiable_with_non_standard_pk() {
     let _: posts::table = Foo::<'static>::table();
 }
 
-#[test]
+#[td::test]
 fn derive_identifiable_with_composite_pk() {
     use diesel::associations::Identifiable;
 
@@ -256,7 +256,7 @@ fn derive_identifiable_with_composite_pk() {
     assert_eq!((&6, &7), foo2.id());
 }
 
-#[test]
+#[td::test]
 fn derive_insertable_with_option_for_not_null_field_with_default() {
     #[derive(Insertable)]
     #[diesel(table_name = users)]
@@ -288,7 +288,7 @@ fn derive_insertable_with_option_for_not_null_field_with_default() {
 
 define_sql_function!(fn nextval(a: Text) -> Integer);
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 fn derive_insertable_with_field_that_cannot_convert_expression_to_nullable() {
     #[derive(Insertable)]
@@ -311,7 +311,7 @@ fn derive_insertable_with_field_that_cannot_convert_expression_to_nullable() {
     assert!(jim.is_some());
 }
 
-#[test]
+#[td::test]
 fn nested_queryable_derives() {
     #[derive(Queryable, Debug, PartialEq)]
     struct UserAndPost {

@@ -307,7 +307,7 @@ mod tests {
     define_sql_function!(fn time(x: Text) -> Time);
     define_sql_function!(fn date(x: Text) -> Date);
 
-    #[test]
+    #[td::test]
     fn unix_epoch_encodes_correctly() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:0:0);
@@ -315,7 +315,7 @@ mod tests {
         assert_eq!(Ok(true), query.get_result(connection));
     }
 
-    #[test]
+    #[td::test]
     fn unix_epoch_decodes_correctly_in_all_possible_formats() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:0:0);
@@ -370,7 +370,7 @@ mod tests {
         }
     }
 
-    #[test]
+    #[td::test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
         let time = naive_utc(OffsetDateTime::now_utc()) + Duration::seconds(60);
@@ -382,7 +382,7 @@ mod tests {
         assert_eq!(Ok(true), query.get_result(connection));
     }
 
-    #[test]
+    #[td::test]
     fn times_of_day_encode_correctly() {
         let connection = &mut connection();
 
@@ -399,7 +399,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn times_of_day_decode_correctly() {
         let connection = &mut connection();
         let midnight = NaiveTime::from_hms(0, 0, 0).unwrap();
@@ -447,7 +447,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[td::test]
     fn dates_encode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = date!(2000 - 1 - 1);
@@ -467,7 +467,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn dates_decode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = date!(2000 - 1 - 1);
@@ -496,7 +496,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[td::test]
     fn datetimes_decode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = datetime!(2000-1-1 1:1:1);
@@ -528,7 +528,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[td::test]
     fn datetimes_encode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = datetime!(2000-1-1 0:0:0);
@@ -548,7 +548,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn insert_timestamptz_into_table_as_text() {
         crate::table! {
             #[allow(unused_parens)]
@@ -585,7 +585,7 @@ mod tests {
         assert_eq!(result, time);
     }
 
-    #[test]
+    #[td::test]
     fn can_query_timestamptz_column_with_between() {
         crate::table! {
             #[allow(unused_parens)]
@@ -654,7 +654,7 @@ mod tests {
         assert_eq!(result, Ok(3));
     }
 
-    #[test]
+    #[td::test]
     fn unix_epoch_encodes_correctly_with_timezone() {
         let connection = &mut connection();
         // West one hour is negative offset
@@ -663,7 +663,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn unix_epoch_encodes_correctly_with_utc_timezone() {
         let connection = &mut connection();
         let time: OffsetDateTime = datetime!(1970-1-1 0:0:0.001 utc);
@@ -676,7 +676,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[td::test]
     fn unix_epoch_decodes_correctly_with_utc_timezone_in_all_possible_formats() {
         let connection = &mut connection();
         let time: OffsetDateTime = datetime!(1970-1-1 0:0:0 utc);

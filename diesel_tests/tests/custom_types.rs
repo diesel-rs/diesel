@@ -55,7 +55,7 @@ struct HasCustomTypes {
     custom_enum: MyEnum,
 }
 
-#[test]
+#[td::test]
 fn custom_types_round_trip() {
     let data = vec![
         HasCustomTypes {
@@ -134,7 +134,7 @@ struct HasCustomTypesInCustomSchema {
     custom_enum: MyEnumInCustomSchema,
 }
 
-#[test]
+#[td::test]
 fn custom_types_in_custom_schema_round_trip() {
     let data = vec![
         HasCustomTypesInCustomSchema {
@@ -179,7 +179,7 @@ struct PublicTy;
 #[diesel(postgres_type(name = "ty"))]
 struct InferredTy;
 
-#[test]
+#[td::test]
 fn custom_type_schema_inference() {
     use diesel::sql_types::HasSqlType;
 

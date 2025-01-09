@@ -140,7 +140,7 @@ macro_rules! impl_Sql {
 impl_Sql!(Inet, 0);
 impl_Sql!(Cidr, 1);
 
-#[test]
+#[td::test]
 fn v4address_to_sql() {
     macro_rules! test_to_sql {
         ($ty:ty, $net_type:expr) => {
@@ -159,7 +159,7 @@ fn v4address_to_sql() {
     test_to_sql!(Cidr, 1);
 }
 
-#[test]
+#[td::test]
 fn some_v4address_from_sql() {
     macro_rules! test_some_address_from_sql {
         ($ty:tt) => {
@@ -179,7 +179,7 @@ fn some_v4address_from_sql() {
     test_some_address_from_sql!(Inet);
 }
 
-#[test]
+#[td::test]
 fn v6address_to_sql() {
     macro_rules! test_to_sql {
         ($ty:ty, $net_type:expr) => {
@@ -223,7 +223,7 @@ fn v6address_to_sql() {
     test_to_sql!(Cidr, 1);
 }
 
-#[test]
+#[td::test]
 fn some_v6address_from_sql() {
     macro_rules! test_some_address_from_sql {
         ($ty:tt) => {
@@ -243,7 +243,7 @@ fn some_v6address_from_sql() {
     test_some_address_from_sql!(Cidr);
 }
 
-#[test]
+#[td::test]
 fn bad_address_from_sql() {
     macro_rules! bad_address_from_sql {
         ($ty:tt) => {
@@ -260,7 +260,7 @@ fn bad_address_from_sql() {
     bad_address_from_sql!(Cidr);
 }
 
-#[test]
+#[td::test]
 fn no_address_from_sql() {
     macro_rules! test_no_address_from_sql {
         ($ty:ty) => {

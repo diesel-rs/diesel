@@ -178,7 +178,7 @@ mod tests {
     use crate::sql_types::*;
     use crate::test_helpers::*;
 
-    #[test]
+    #[td::test]
     fn record_deserializes_correctly() {
         let conn = &mut pg_connection();
 
@@ -203,7 +203,7 @@ mod tests {
         assert_eq!(Ok((1,)), tup);
     }
 
-    #[test]
+    #[td::test]
     fn record_kinda_sorta_not_really_serializes_correctly() {
         let conn = &mut pg_connection();
 
@@ -230,7 +230,7 @@ mod tests {
         assert_eq!(Ok(true), res);
     }
 
-    #[test]
+    #[td::test]
     fn serializing_named_composite_types() {
         #[derive(SqlType, QueryId, Debug, Clone, Copy)]
         #[diesel(postgres_type(name = "my_type"))]

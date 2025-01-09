@@ -1,7 +1,7 @@
 use super::schema::*;
 use diesel::*;
 
-#[test]
+#[td::test]
 fn limit() {
     use crate::schema::users::dsl::*;
 
@@ -20,7 +20,7 @@ fn limit() {
 }
 
 #[cfg(any(feature = "sqlite", feature = "postgres"))]
-#[test]
+#[td::test]
 fn offset() {
     use crate::schema::users::dsl::*;
 
@@ -35,7 +35,7 @@ fn offset() {
     assert_eq!(expected_data, actual_data);
 }
 
-#[test]
+#[td::test]
 fn limit_offset() {
     use crate::schema::users::dsl::*;
 
@@ -50,7 +50,7 @@ fn limit_offset() {
     assert_eq!(expected_data, actual_data);
 }
 
-#[test]
+#[td::test]
 fn boxed_limit() {
     use crate::schema::users::dsl::*;
 
@@ -77,7 +77,7 @@ fn boxed_limit() {
     assert_eq!(expected_data, actual_data);
 }
 
-#[test]
+#[td::test]
 fn boxed_offset() {
     use crate::schema::users::dsl::*;
 
@@ -108,7 +108,7 @@ fn boxed_offset() {
     }
 }
 
-#[test]
+#[td::test]
 fn boxed_limit_offset() {
     use crate::schema::users::dsl::*;
 

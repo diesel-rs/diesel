@@ -127,7 +127,7 @@ pub struct NewUser {
     pub name: String,
 }
 
-#[test]
+#[td::test]
 fn select_from_only_with_inherited_table() {
     let connection = &mut connection();
     setup_tables(connection);
@@ -149,7 +149,7 @@ fn select_from_only_with_inherited_table() {
     assert_eq!(n_users_in_main_table, 1);
 }
 
-#[test]
+#[td::test]
 fn select_from_only_filtering_and_find() {
     // Test that it's possible to call `.only().filter(..)`
     let connection = &mut connection();
@@ -187,7 +187,7 @@ fn select_from_only_filtering_and_find() {
     );
 }
 
-#[test]
+#[td::test]
 fn inner_join_only() {
     // Test that it's possible to call:
     // - `.only().inner_join(X::table)`

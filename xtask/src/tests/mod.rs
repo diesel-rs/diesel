@@ -21,6 +21,9 @@ pub(crate) struct TestArgs {
     /// while running tests for all backends
     #[clap(long = "keep-going")]
     keep_going: bool,
+    // run wasm tests, currently only supports sqlite
+    #[clap(long = "wasm")]
+    wasm: bool,
     /// additional flags passed to cargo nextest while running
     /// unit/integration tests.
     ///
@@ -83,6 +86,37 @@ impl TestArgs {
             }
         }
         let backend = &self.backend;
+        if self.wasm {
+            if matches!(backend, Backend::Sqlite) {
+                let mut command = Command::new("wasm-pack");
+                let out = command
+                    .args(["test", "--chrome", "--headless", "--features", "sqlite"])
+                    .current_dir(&metadata.workspace_root.join("diesel"))
+                    .stderr(Stdio::inherit())
+                    .stdout(Stdio::inherit())
+                    .status()
+                    .unwrap();
+                if !out.success() {
+                    eprintln!("Failed to run wasm diesel unit tests");
+                    return false;
+                }
+                let mut command = Command::new("wasm-pack");
+                let out = command
+                    .args(["test", "--chrome", "--headless", "--features", "sqlite"])
+                    .current_dir(&metadata.workspace_root.join("diesel_tests"))
+                    .stderr(Stdio::inherit())
+                    .stdout(Stdio::inherit())
+                    .status()
+                    .unwrap();
+                if !out.success() {
+                    eprintln!("Failed to run wasm integration tests");
+                    return false;
+                }
+                return true;
+            } else {
+                return true;
+            }
+        }
         let url = match backend {
             Backend::Postgres => std::env::var("PG_DATABASE_URL"),
             Backend::Sqlite => std::env::var("SQLITE_DATABASE_URL"),

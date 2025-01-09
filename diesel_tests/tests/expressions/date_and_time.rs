@@ -57,7 +57,7 @@ table! {
     }
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 fn now_executes_sql_function_now() {
     use self::has_timestamps::dsl::*;
@@ -83,7 +83,7 @@ fn now_executes_sql_function_now() {
     assert_eq!(Ok(vec![2]), after_today);
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 // FIXME: Replace this with an actual timestamptz expression
 fn now_can_be_used_as_timestamptz() {
@@ -107,7 +107,7 @@ fn now_can_be_used_as_timestamptz() {
     assert_eq!(Ok(vec![1]), before_now);
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 // FIXME: Replace this with an actual timestamptz expression
 fn now_can_be_used_as_nullable_timestamptz() {
@@ -131,7 +131,7 @@ fn now_can_be_used_as_nullable_timestamptz() {
     assert_eq!(Ok(vec![1]), before_now);
 }
 
-#[test]
+#[td::test]
 fn now_can_be_used_as_nullable() {
     use diesel::sql_types::Timestamp;
 
@@ -141,7 +141,7 @@ fn now_can_be_used_as_nullable() {
     assert_eq!(Ok(Some(true)), result);
 }
 
-#[test]
+#[td::test]
 fn today_can_be_used_as_nullable() {
     use diesel::sql_types::Date;
 
@@ -151,7 +151,7 @@ fn today_can_be_used_as_nullable() {
     assert_eq!(Ok(Some(true)), result);
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 fn today_executes_sql_function_current_date() {
     use self::has_date::dsl::*;
@@ -177,7 +177,7 @@ fn today_executes_sql_function_current_date() {
     assert_eq!(Ok(vec![2]), after_today);
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "sqlite")]
 fn today_executes_sql_function_current_date() {
     use self::has_date::dsl::*;
@@ -203,7 +203,7 @@ fn today_executes_sql_function_current_date() {
     assert_eq!(Ok(vec![2]), after_today);
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "mysql")]
 fn today_executes_sql_function_current_date() {
     use self::has_date::dsl::*;
@@ -229,7 +229,7 @@ fn today_executes_sql_function_current_date() {
     assert_eq!(Ok(vec![43]), after_today);
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "mysql")]
 fn now_executes_sql_function_now() {
     use self::has_timestamps::dsl::*;
@@ -255,7 +255,7 @@ fn now_executes_sql_function_now() {
     assert_eq!(Ok(vec![43]), after_today);
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "sqlite")]
 fn now_executes_sql_function_now() {
     use self::has_timestamps::dsl::*;
@@ -280,7 +280,7 @@ fn now_executes_sql_function_now() {
     assert_eq!(Ok(vec![1]), before_today);
     assert_eq!(Ok(vec![2]), after_today);
 }
-#[test]
+#[td::test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn date_uses_sql_function_date() {
     use self::has_timestamps::dsl::*;
@@ -305,7 +305,7 @@ fn date_uses_sql_function_date() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 fn time_is_deserialized_properly() {
     use self::has_time::dsl::*;
@@ -328,7 +328,7 @@ fn time_is_deserialized_properly() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 fn interval_is_deserialized_properly() {
     use diesel::dsl::sql;
@@ -353,7 +353,7 @@ fn interval_is_deserialized_properly() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 fn adding_interval_to_timestamp() {
     use self::has_timestamps::dsl::*;
@@ -378,7 +378,7 @@ fn adding_interval_to_timestamp() {
     assert_eq!(expected_data, actual_data);
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 fn adding_interval_to_timestamptz() {
     use self::has_timestamptzs::dsl::*;
@@ -403,7 +403,7 @@ fn adding_interval_to_timestamptz() {
     assert_eq!(expected_data, actual_data);
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 fn adding_interval_to_nullable_things() {
     use self::nullable_date_and_time::dsl::*;

@@ -145,7 +145,7 @@ mod tests {
     use super::*;
     use crate::query_builder::bind_collector::ByteWrapper;
 
-    #[test]
+    #[td::test]
     fn i16_to_sql() {
         let mut buffer = Vec::new();
         let mut bytes = Output::test(ByteWrapper(&mut buffer));
@@ -155,7 +155,7 @@ mod tests {
         assert_eq!(buffer, vec![0, 1, 0, 0, 255, 255]);
     }
 
-    #[test]
+    #[td::test]
     fn i32_to_sql() {
         let mut buffer = Vec::new();
         let mut bytes = Output::test(ByteWrapper(&mut buffer));
@@ -165,7 +165,7 @@ mod tests {
         assert_eq!(buffer, vec![0, 0, 0, 1, 0, 0, 0, 0, 255, 255, 255, 255]);
     }
 
-    #[test]
+    #[td::test]
     fn i64_to_sql() {
         let mut buffer = Vec::new();
         let mut bytes = Output::test(ByteWrapper(&mut buffer));

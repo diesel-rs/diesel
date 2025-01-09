@@ -5,7 +5,7 @@ use diesel::result::DatabaseErrorKind::{ForeignKeyViolation, NotNullViolation, U
 use diesel::result::Error::DatabaseError;
 use diesel::*;
 
-#[test]
+#[td::test]
 fn unique_constraints_are_detected() {
     let connection = &mut connection();
     insert_into(users::table)
@@ -19,7 +19,7 @@ fn unique_constraints_are_detected() {
     assert_matches!(failure, Err(DatabaseError(UniqueViolation, _)));
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 fn unique_constraints_report_correct_constraint_name() {
     let connection = &mut connection();
@@ -56,7 +56,7 @@ macro_rules! try_no_coerce {
     }};
 }
 
-#[test]
+#[td::test]
 fn cached_prepared_statements_can_be_reused_after_error() {
     let connection = &mut connection_without_transaction();
     let user = User::new(1, "Sean");
@@ -73,7 +73,7 @@ fn cached_prepared_statements_can_be_reused_after_error() {
     connection.test_transaction(|connection| query.execute(connection));
 }
 
-#[test]
+#[td::test]
 fn foreign_key_violation_detected() {
     let connection = &mut connection();
 
@@ -83,7 +83,7 @@ fn foreign_key_violation_detected() {
     assert_matches!(failure, Err(DatabaseError(ForeignKeyViolation, _)));
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 fn foreign_key_violation_correct_constraint_name() {
     let connection = &mut connection();
@@ -104,7 +104,7 @@ fn foreign_key_violation_correct_constraint_name() {
     }
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 // This is a false positive as there is a side effect of this collect (spawning threads)
 #[allow(clippy::needless_collect)]
@@ -185,7 +185,7 @@ fn isolation_errors_are_detected() {
     assert_matches!(results[1], Err(DatabaseError(SerializationFailure, _)));
 }
 
-#[test]
+#[td::test]
 #[cfg(not(feature = "sqlite"))]
 fn read_only_errors_are_detected() {
     use diesel::connection::SimpleConnection;
@@ -199,7 +199,7 @@ fn read_only_errors_are_detected() {
     assert_matches!(result, Err(DatabaseError(ReadOnlyTransaction, _)));
 }
 
-#[test]
+#[td::test]
 fn not_null_constraints_are_detected() {
     let connection = &mut connection();
 
@@ -210,7 +210,7 @@ fn not_null_constraints_are_detected() {
     assert_matches!(failure, Err(DatabaseError(NotNullViolation, _)));
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 fn not_null_constraints_correct_column_name() {
     let connection = &mut connection();
@@ -231,7 +231,7 @@ fn not_null_constraints_correct_column_name() {
     };
 }
 
-#[test]
+#[td::test]
 #[cfg(not(feature = "mysql"))]
 /// MySQL < 8.0.16 doesn't enforce check constraints
 fn check_constraints_are_detected() {
@@ -252,7 +252,7 @@ fn check_constraints_are_detected() {
     assert_matches!(failure, Err(DatabaseError(CheckViolation, _)));
 }
 
-#[test]
+#[td::test]
 #[cfg(feature = "postgres")]
 fn check_constraints_correct_constraint_name() {
     let connection = &mut connection();

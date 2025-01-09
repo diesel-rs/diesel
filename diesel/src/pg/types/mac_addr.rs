@@ -36,7 +36,7 @@ impl ToSql<MacAddr, Pg> for [u8; 6] {
     }
 }
 
-#[test]
+#[td::test]
 fn macaddr_roundtrip() {
     use crate::query_builder::bind_collector::ByteWrapper;
 

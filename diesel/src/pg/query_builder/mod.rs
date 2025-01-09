@@ -57,7 +57,7 @@ impl QueryBuilder<Pg> for PgQueryBuilder {
     }
 }
 
-#[test]
+#[td::test]
 fn check_sql_query_increments_bind_count() {
     use crate::query_builder::{AstPass, AstPassToSqlOptions, QueryFragment};
     use crate::sql_types::*;

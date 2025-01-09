@@ -547,7 +547,7 @@ mod tests {
 
     // this is a regression test for
     // https://github.com/diesel-rs/diesel/issues/3558
-    #[test]
+    #[td::test]
     fn check_out_of_bounds_bind_does_not_panic_on_drop() {
         let mut conn = SqliteConnection::establish(":memory:").unwrap();
 

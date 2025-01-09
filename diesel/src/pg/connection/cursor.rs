@@ -151,7 +151,7 @@ mod tests {
     use crate::connection::DefaultLoadingMode;
     use crate::pg::PgRowByRowLoadingMode;
 
-    #[test]
+    #[td::test]
     fn fun_with_row_iters() {
         crate::table! {
             #[allow(unused_parens)]
@@ -264,7 +264,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[td::test]
     fn loading_modes_return_the_same_result() {
         use crate::prelude::*;
 
@@ -308,7 +308,7 @@ mod tests {
         assert_eq!(users_by_default_mode, vec!["Sean", "Tess"]);
     }
 
-    #[test]
+    #[td::test]
     fn fun_with_row_iters_row_by_row() {
         crate::table! {
             #[allow(unused_parens)]
