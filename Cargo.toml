@@ -39,7 +39,7 @@ edition = "2021"
 
 [workspace.dependencies]
 libsqlite3-sys = "0.30.1"
-pq-sys = "0.6"
+pq-sys = ">=0.6,<0.8"
 openssl-sys = "0.9.100"
 mysqlclient-sys = "0.4"
 
