@@ -16,6 +16,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 * Fixed diesel thinking `a.eq_any(b)` was non-nullable even if `a` and `b` were nullable.
 * Generate `InstrumentationEvent::BeginTransaction` for immediate and exclusive transactions in SQLite
+* Updated `ipnetwork` to allow version 0.21.
 
 
 ## [2.2.6] 2024-12-03
