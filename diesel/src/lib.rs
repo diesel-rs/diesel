@@ -227,6 +227,11 @@
 //! - `32-column-tables`
 
 #![cfg_attr(feature = "unstable", feature(trait_alias))]
+#![cfg_attr(feature = "unstable", feature(strict_provenance_lints))]
+#![cfg_attr(
+    feature = "unstable",
+    warn(fuzzy_provenance_casts, lossy_provenance_casts)
+)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![cfg_attr(feature = "128-column-tables", recursion_limit = "256")]
 // Built-in Lints

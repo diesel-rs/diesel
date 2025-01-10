@@ -2,7 +2,7 @@ error[E0277]: cannot deserialize a value of the database type `diesel::sql_types
   --> tests/fail/eq_any_is_nullable.rs:18:15
    |
 18 |         .load(&mut conn)
-   |          ---- ^^^^^^^^^ the trait `FromSql<diesel::sql_types::Nullable<Bool>, Pg>` is not implemented for `bool`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<diesel::expression::grouped::Grouped<In<columns::name, Many<diesel::sql_types::Nullable<diesel::sql_types::Text>, &str>>>>>: LoadQuery<'_, _, _>`
+   |          ---- ^^^^^^^^^ the trait `FromSql<diesel::sql_types::Nullable<Bool>, Pg>` is not implemented for `bool`
    |          |
    |          required by a bound introduced by this call
    |

@@ -2,7 +2,7 @@ error[E0277]: `ReturningClause<(columns::id, columns::name)>` is no valid SQL fr
   --> tests/fail/insert_statement_does_not_support_returning_methods_on_sqlite.rs:29:29
    |
 29 |         .get_result::<User>(&mut connection);
-   |          ----------         ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<(columns::id, columns::name)>`, which is required by `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>>: LoadQuery<'_, _, User>`
+   |          ----------         ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<(columns::id, columns::name)>`
    |          |
    |          required by a bound introduced by this call
    |
@@ -29,7 +29,7 @@ error[E0277]: `ReturningClause<columns::name>` is no valid SQL fragment for the 
   --> tests/fail/insert_statement_does_not_support_returning_methods_on_sqlite.rs:34:31
    |
 34 |         .get_result::<String>(&mut connection);
-   |          ----------           ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<columns::name>`, which is required by `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, ReturningClause<columns::name>>: LoadQuery<'_, _, std::string::String>`
+   |          ----------           ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<columns::name>`
    |          |
    |          required by a bound introduced by this call
    |

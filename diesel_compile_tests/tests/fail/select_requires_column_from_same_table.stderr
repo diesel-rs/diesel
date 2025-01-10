@@ -2,7 +2,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/select_requires_column_from_same_table.rs:20:41
    |
 20 |     let select_id = users::table.select(posts::id);
-   |                                  ------ ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `users::table: SelectDsl<_>`
+   |                                  ------ ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |                                  |
    |                                  required by a bound introduced by this call
    |

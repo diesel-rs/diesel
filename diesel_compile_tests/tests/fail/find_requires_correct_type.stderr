@@ -2,7 +2,7 @@ error[E0277]: the trait bound `str: diesel::Expression` is not satisfied
   --> tests/fail/find_requires_correct_type.rs:20:28
    |
 20 |     int_primary_key::table.find("1");
-   |                            ^^^^ the trait `diesel::Expression` is not implemented for `str`, which is required by `SelectStatement<FromClause<int_primary_key::table>>: FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<int_primary_key::columns::id, _>>>`
+   |                            ^^^^ the trait `diesel::Expression` is not implemented for `str`
    |
    = help: the following other types implement trait `diesel::Expression`:
              &T
@@ -23,7 +23,7 @@ error[E0277]: the trait bound `str: ValidGrouping<()>` is not satisfied
   --> tests/fail/find_requires_correct_type.rs:20:28
    |
 20 |     int_primary_key::table.find("1");
-   |                            ^^^^ the trait `ValidGrouping<()>` is not implemented for `str`, which is required by `SelectStatement<FromClause<int_primary_key::table>>: FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<int_primary_key::columns::id, _>>>`
+   |                            ^^^^ the trait `ValidGrouping<()>` is not implemented for `str`
    |
    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
              `&T` implements `ValidGrouping<GB>`
@@ -45,7 +45,7 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
   --> tests/fail/find_requires_correct_type.rs:22:36
    |
 22 |     string_primary_key::table.find(1);
-   |                               ---- ^ the trait `diesel::Expression` is not implemented for `{integer}`, which is required by `string_primary_key::table: FindDsl<_>`
+   |                               ---- ^ the trait `diesel::Expression` is not implemented for `{integer}`
    |                               |
    |                               required by a bound introduced by this call
    |
@@ -79,7 +79,7 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
   --> tests/fail/find_requires_correct_type.rs:22:36
    |
 22 |     string_primary_key::table.find(1);
-   |                               ---- ^ the trait `ValidGrouping<()>` is not implemented for `{integer}`, which is required by `string_primary_key::table: FindDsl<_>`
+   |                               ---- ^ the trait `ValidGrouping<()>` is not implemented for `{integer}`
    |                               |
    |                               required by a bound introduced by this call
    |

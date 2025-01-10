@@ -77,11 +77,12 @@ error[E0277]: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::SqliteCon
   --> tests/fail/only_only_on_table.rs:19:28
    |
 19 |     foo::table.only().load(&mut conn).unwrap();
-   |                       ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `Only<foo::table>`, which is required by `Only<foo::table>: LoadQuery<'_, _, _>`
+   |                       ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `Only<foo::table>`
    |                       |
    |                       required by a bound introduced by this call
    |
-   = help: the trait `QueryFragment<Pg>` is implemented for `Only<foo::table>`
+   = help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `Only<foo::table>`
+           but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
    = help: for that trait implementation, expected `Pg`, found `Sqlite`
    = note: required for `FromClause<Only<foo::table>>` to implement `QueryFragment<Sqlite>`
    = note: 2 redundant requirements hidden
@@ -100,11 +101,12 @@ error[E0277]: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::MysqlConn
   --> tests/fail/only_only_on_table.rs:23:28
    |
 23 |     foo::table.only().load(&mut conn).unwrap();
-   |                       ---- ^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `Only<foo::table>`, which is required by `Only<foo::table>: LoadQuery<'_, _, _>`
+   |                       ---- ^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `Only<foo::table>`
    |                       |
    |                       required by a bound introduced by this call
    |
-   = help: the trait `QueryFragment<Pg>` is implemented for `Only<foo::table>`
+   = help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `Only<foo::table>`
+           but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
    = help: for that trait implementation, expected `Pg`, found `Mysql`
    = note: required for `FromClause<Only<foo::table>>` to implement `QueryFragment<Mysql>`
    = note: 2 redundant requirements hidden

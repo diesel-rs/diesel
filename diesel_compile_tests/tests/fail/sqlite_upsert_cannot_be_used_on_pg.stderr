@@ -2,7 +2,7 @@ error[E0277]: `diesel::query_builder::insert_statement::private::Replace` is no 
   --> tests/fail/sqlite_upsert_cannot_be_used_on_pg.rs:21:18
    |
 21 |         .execute(&mut connection);
-   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::insert_statement::private::Replace`, which is required by `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, &i32>>>,), users::table>, diesel::query_builder::insert_statement::private::Replace>: ExecuteDsl<_, _>`
+   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::insert_statement::private::Replace`
    |          |
    |          required by a bound introduced by this call
    |

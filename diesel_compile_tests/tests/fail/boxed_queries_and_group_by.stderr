@@ -2,8 +2,9 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/boxed_queries_and_group_by.rs:55:40
    |
 55 |     users::table.group_by(users::name).into_boxed();
-   |                                        ^^^^^^^^^^ the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>`
+   |                                        ^^^^^^^^^^ unsatisfied trait bound
    |
+   = help: the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>`
    = help: the following other types implement trait `BoxedDsl<'a, DB>`:
              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
              SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>
@@ -14,7 +15,7 @@ error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Outpu
 59 |         .select(users::id)
    |          ^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
    |
-note: expected this to be `diesel::expression::is_contained_in_group_by::No`
+note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
   --> tests/fail/boxed_queries_and_group_by.rs:8:9
    |
 8  |         name -> Text,
@@ -31,8 +32,9 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/boxed_queries_and_group_by.rs:60:10
    |
 60 |         .into_boxed();
-   |          ^^^^^^^^^^ the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>`
+   |          ^^^^^^^^^^ unsatisfied trait bound
    |
+   = help: the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>`
    = help: the following other types implement trait `BoxedDsl<'a, DB>`:
              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
              SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>
@@ -43,7 +45,7 @@ error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Outpu
 66 |         .select(users::id)
    |          ^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
    |
-note: expected this to be `diesel::expression::is_contained_in_group_by::No`
+note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
   --> tests/fail/boxed_queries_and_group_by.rs:8:9
    |
 8  |         name -> Text,
@@ -60,8 +62,9 @@ error[E0277]: the trait bound `BoxedSelectStatement<'_, diesel::sql_types::Text,
   --> tests/fail/boxed_queries_and_group_by.rs:73:10
    |
 73 |         .inner_join(posts::table)
-   |          ^^^^^^^^^^ the trait `Table` is not implemented for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>`, which is required by `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>: JoinWithImplicitOnClause<_, Inner>`
+   |          ^^^^^^^^^^ unsatisfied trait bound
    |
+   = help: the trait `Table` is not implemented for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>`
    = help: the following other types implement trait `Table`:
              Only<S>
              Tablesample<S, TSM>
@@ -115,18 +118,19 @@ error[E0271]: type mismatch resolving `<BoxedSelectStatement<'_, (Integer, Text)
   --> tests/fail/boxed_queries_and_group_by.rs:84:10
    |
 84 |         .group_by(users::id)
-   |          ^^^^^^^^ expected `BoxedSelectStatement<'_, (..., ...), ..., ...>`, found `SelectStatement<FromClause<...>>`
+   |          ^^^^^^^^ expected `SelectStatement<FromClause<...>>`, found `BoxedSelectStatement<'_, (..., ...), ..., ...>`
    |
-   = note: expected struct `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>`
-              found struct `SelectStatement<FromClause<BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>>>`
+   = note: expected struct `SelectStatement<FromClause<BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>>>`
+              found struct `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>`
    = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>` to implement `GroupByDsl<_>`
 
 error[E0277]: the trait bound `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>: Table` is not satisfied
   --> tests/fail/boxed_queries_and_group_by.rs:84:10
    |
 84 |         .group_by(users::id)
-   |          ^^^^^^^^ the trait `Table` is not implemented for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>`, which is required by `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>: GroupByDsl<_>`
+   |          ^^^^^^^^ unsatisfied trait bound
    |
+   = help: the trait `Table` is not implemented for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>`
    = help: the following other types implement trait `Table`:
              Only<S>
              Tablesample<S, TSM>
@@ -140,6 +144,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<BoxedSelectStatement<'
   --> tests/fail/boxed_queries_and_group_by.rs:84:10
    |
 84 |         .group_by(users::id)
-   |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>>>`
+   |          ^^^^^^^^ unsatisfied trait bound
    |
+   = help: the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>>>`
    = help: the trait `GroupByDsl<Expr>` is implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`

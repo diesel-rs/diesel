@@ -98,29 +98,29 @@ jobs:
       - name: Install mysql (MacOS)
         if: matrix.os == 'macos-13' && matrix.backend == 'mysql'
         run: |
-          brew install mysql@9.0
-          /usr/local/opt/mysql@9.0/bin/mysql.server start
+          brew install mysql@8.4
+          /usr/local/opt/mysql@8.4/bin/mysql.server start
           sleep 3
-          /usr/local/opt/mysql@9.0/bin/mysql -e "create database diesel_test; create database diesel_unit_test;  grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
-          echo "MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test" >> $GITHUB_ENV
-          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@localhost/diesel_example" >> $GITHUB_ENV
-          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@localhost/diesel_unit_test" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_LIB_DIR=/usr/local/opt/mysql@9.0/lib" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_VERSION=9.0" >> $GITHUB_ENV
+          /usr/local/opt/mysql@8.4/bin/mysql -e "create database diesel_test; create database diesel_unit_test;  grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
+          echo "MYSQL_DATABASE_URL=mysql://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=/usr/local/opt/mysql@8.4/lib" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=8.4" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS M1)
         if: matrix.os == 'macos-15' && matrix.backend == 'mysql'
         run: |
-          brew install mysql@9.0
-          ls /opt/homebrew/opt/mysql@9.0
-          /opt/homebrew/opt/mysql@9.0/bin/mysql.server start
+          brew install mysql@8.4
+          ls /opt/homebrew/opt/mysql@8.4
+          /opt/homebrew/opt/mysql@8.4/bin/mysql.server start
           sleep 3
-          /opt/homebrew/opt/mysql@9.0/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
-          echo "MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test" >> $GITHUB_ENV
-          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@localhost/diesel_example" >> $GITHUB_ENV
-          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@localhost/diesel_unit_test" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_LIB_DIR=/opt/homebrew/opt/mysql@9.0/lib" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_VERSION=9.0" >> $GITHUB_ENV
+          /opt/homebrew/opt/mysql@8.4/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
+          echo "MYSQL_DATABASE_URL=mysql://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@l127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=/opt/homebrew/opt/mysql@8.4/lib" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=8.4" >> $GITHUB_ENV
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'

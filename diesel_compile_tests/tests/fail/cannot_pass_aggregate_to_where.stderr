@@ -2,7 +2,7 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
   --> tests/fail/cannot_pass_aggregate_to_where.rs:15:24
    |
 15 |     let source = users.filter(count(id).gt(3));
-   |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`, which is required by `SelectStatement<FromClause<users::table>>: FilterDsl<_>`
+   |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
              `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`

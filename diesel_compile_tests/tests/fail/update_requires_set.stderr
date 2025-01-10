@@ -2,7 +2,7 @@ error[E0277]: `diesel::query_builder::update_statement::SetNotCalled` is no vali
   --> tests/fail/update_requires_set.rs:14:18
    |
 14 |         .execute(&mut conn);
-   |          ------- ^^^^^^^^^ the trait `QueryFragment<_>` is not implemented for `diesel::query_builder::update_statement::SetNotCalled`, which is required by `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>: ExecuteDsl<_, _>`
+   |          ------- ^^^^^^^^^ the trait `QueryFragment<_>` is not implemented for `diesel::query_builder::update_statement::SetNotCalled`
    |          |
    |          required by a bound introduced by this call
    |
