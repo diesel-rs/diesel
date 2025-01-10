@@ -12,6 +12,7 @@ use std::{ptr, str};
 use crate::result::*;
 
 use super::result::PgResult;
+use crate::pg::PgNotification;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub(super) struct RawConnection {
@@ -184,7 +185,7 @@ impl RawConnection {
         }
     }
 
-    pub(super) fn pqnotifies(&self) -> Result<Option<PgNotification>, Error> {
+    pub(super) fn pq_notifies(&self) -> Result<Option<PgNotification>, Error> {
         let conn = self.internal_connection;
         let ret = unsafe { PQconsumeInput(conn.as_ptr()) };
         if ret == 0 {
@@ -198,33 +199,62 @@ impl RawConnection {
         if pgnotify.is_null() {
             Ok(None)
         } else {
-            let ret = PgNotification {
-                process_id: unsafe { (*pgnotify).be_pid },
-                channel: unsafe { CStr::from_ptr((*pgnotify).relname) }
-                    .to_str()
-                    .expect("Channel name should be UTF-8")
-                    .to_string(),
-                payload: unsafe { CStr::from_ptr((*pgnotify).extra) }
-                    .to_str()
-                    .expect("Could not parse payload to UTF-8")
-                    .to_string(),
+            // we use a drop guard here to
+            // make sure that we always free
+            // the provided pointer, even if we
+            // somehow return an error below
+            struct Guard<'a> {
+                value: &'a mut pgNotify,
+            }
+
+            impl Drop for Guard<'_> {
+                fn drop(&mut self) {
+                    unsafe {
+                        // SAFETY: We know that this value is not null here
+                        PQfreemem(self.value as *mut pgNotify as *mut std::ffi::c_void)
+                    };
+                }
+            }
+
+            let pgnotify = unsafe {
+                // SAFETY: We checked for null values above
+                Guard {
+                    value: &mut *pgnotify,
+                }
             };
-            unsafe { PQfreemem(pgnotify as *mut std::ffi::c_void) };
+            if pgnotify.value.relname.is_null() {
+                return Err(Error::DeserializationError(
+                    "Received an unexpected null value for `relname` from the notification".into(),
+                ));
+            }
+            if pgnotify.value.extra.is_null() {
+                return Err(Error::DeserializationError(
+                    "Received an unexpected null value for `extra` from the notification".into(),
+                ));
+            }
+
+            let channel = unsafe {
+                // SAFETY: We checked for null values above
+                CStr::from_ptr(pgnotify.value.relname)
+            }
+            .to_str()
+            .map_err(|e| Error::DeserializationError(e.into()))?
+            .to_string();
+            let payload = unsafe {
+                // SAFETY: We checked for null values above
+                CStr::from_ptr(pgnotify.value.extra)
+            }
+            .to_str()
+            .map_err(|e| Error::DeserializationError(e.into()))?
+            .to_string();
+            let ret = PgNotification {
+                process_id: pgnotify.value.be_pid,
+                channel,
+                payload,
+            };
             Ok(Some(ret))
         }
     }
-}
-
-// Using the same field names as tokio-postgres
-/// See Postgres documentation for SQL Commands NOTIFY and LISTEN
-#[derive(Clone, Debug)]
-pub struct PgNotification {
-    /// process ID of notifying server process
-    pub process_id: i32,
-    /// Name of the notification channel
-    pub channel: String,
-    /// optional data that was submitted with the notification, empty string if no data was submitted
-    pub payload: String,
 }
 
 /// Represents the current in-transaction status of the connection

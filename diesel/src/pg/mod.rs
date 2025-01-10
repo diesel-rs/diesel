@@ -16,9 +16,10 @@ pub(crate) mod serialize;
 mod transaction;
 mod value;
 
-pub use self::backend::{Pg, PgTypeMetadata};
+#[doc(inline)]
+pub use self::backend::{Pg, PgNotification, PgTypeMetadata};
 #[cfg(feature = "postgres")]
-pub use self::connection::{PgConnection, PgNotification, PgRowByRowLoadingMode};
+pub use self::connection::{PgConnection, PgRowByRowLoadingMode};
 #[doc(inline)]
 pub use self::metadata_lookup::PgMetadataLookup;
 #[doc(inline)]
