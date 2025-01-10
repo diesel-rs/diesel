@@ -2,16 +2,17 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
   --> tests/fail/having_cant_be_used_without_group_by.rs:26:38
    |
 26 |     users::table.select(users::name).having(users::id.gt(1)).load(&mut conn);
-   |                                      ^^^^^^ the trait `HavingDsl<_>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>>`
+   |                                      ^^^^^^ unsatisfied trait bound
    |
-   = help: the trait `HavingDsl<_>` is implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<_>, _>`
+   = help: the trait `HavingDsl<_>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::NoLockingClause>`
+           but it is implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<_>, _, diesel::query_builder::locking_clause::NoLockingClause>`
    = help: for that trait implementation, expected `diesel::query_builder::group_by_clause::GroupByClause<_>`, found `diesel::query_builder::group_by_clause::NoGroupByClause`
 
 error[E0277]: the trait bound `(): diesel::Expression` is not satisfied
   --> tests/fail/having_cant_be_used_without_group_by.rs:28:31
    |
 28 |     users::table.into_boxed().having(users::id.gt(1)).load(&mut conn);
-   |                               ^^^^^^ the trait `diesel::Expression` is not implemented for `()`, which is required by `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>: HavingDsl<_>`
+   |                               ^^^^^^ the trait `diesel::Expression` is not implemented for `()`
    |
    = help: the following other types implement trait `diesel::Expression`:
              (T0, T1)
@@ -29,7 +30,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/having_cant_be_used_without_group_by.rs:30:58
    |
 30 |     users::table.select(users::name).group_by(users::id).having(posts::id.eq(42)).load(&mut conn);
-   |                                                          ^^^^^^ expected `Never`, found `Once`
+   |                                                          ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/having_cant_be_used_without_group_by.rs:14:9
@@ -45,7 +46,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/having_cant_be_used_without_group_by.rs:32:71
    |
 32 |     users::table.select(users::name).group_by(users::id).into_boxed().having(posts::id.eq(42)).load(&mut conn);
-   |                                                                       ^^^^^^ expected `Never`, found `Once`
+   |                                                                       ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/having_cant_be_used_without_group_by.rs:14:9

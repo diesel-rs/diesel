@@ -2,7 +2,7 @@ error[E0277]: cannot deserialize a value of the database type `diesel::sql_types
   --> tests/fail/select_carries_correct_result_type_info.rs:19:39
    |
 19 |     let ids = select_name.load::<i32>(&mut connection);
-   |                           ----        ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, _>` is not implemented for `i32`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::name>>: LoadQuery<'_, _, i32>`
+   |                           ----        ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, _>` is not implemented for `i32`
    |                           |
    |                           required by a bound introduced by this call
    |
@@ -28,7 +28,7 @@ error[E0277]: cannot deserialize a value of the database type `diesel::sql_types
   --> tests/fail/select_carries_correct_result_type_info.rs:20:42
    |
 20 |     let names = select_id.load::<String>(&mut connection);
-   |                           ----           ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, _>` is not implemented for `*const str`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>: LoadQuery<'_, _, std::string::String>`
+   |                           ----           ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, _>` is not implemented for `*const str`
    |                           |
    |                           required by a bound introduced by this call
    |

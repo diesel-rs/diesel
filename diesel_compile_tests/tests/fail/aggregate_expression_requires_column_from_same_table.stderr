@@ -2,7 +2,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
    |
 21 |     let source = users::table.select(sum(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
+   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
@@ -20,7 +20,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
    |
 21 |     let source = users::table.select(sum(posts::id));
-   |                               ^^^^^^ expected `Never`, found `Once`
+   |                               ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
@@ -37,7 +37,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
    |
 22 |     let source = users::table.select(avg(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
+   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
@@ -55,7 +55,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
    |
 22 |     let source = users::table.select(avg(posts::id));
-   |                               ^^^^^^ expected `Never`, found `Once`
+   |                               ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
@@ -72,7 +72,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:23:31
    |
 23 |     let source = users::table.select(max(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
+   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
@@ -90,7 +90,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:23:31
    |
 23 |     let source = users::table.select(max(posts::id));
-   |                               ^^^^^^ expected `Never`, found `Once`
+   |                               ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
@@ -107,7 +107,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:24:31
    |
 24 |     let source = users::table.select(min(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
+   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
@@ -125,7 +125,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:24:31
    |
 24 |     let source = users::table.select(min(posts::id));
-   |                               ^^^^^^ expected `Never`, found `Once`
+   |                               ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9

@@ -28,7 +28,7 @@ error[E0277]: Cannot select `non_users::columns::noname` from `users::table`
   --> tests/fail/returning_clause_requires_selectable_expression.rs:31:20
    |
 31 |         .returning(non_users::columns::noname);
-   |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`, which is required by `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, ReturningClause<_>>: Query`
+   |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
    |          |
    |          required by a bound introduced by this call
    |
@@ -55,7 +55,7 @@ error[E0277]: Cannot select `non_users::columns::noname` from `users::table`
   --> tests/fail/returning_clause_requires_selectable_expression.rs:35:20
    |
 35 |         .returning(non_users::columns::noname);
-   |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`, which is required by `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<users::columns::name>, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<_>>: Query`
+   |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
    |          |
    |          required by a bound introduced by this call
    |

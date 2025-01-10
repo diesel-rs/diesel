@@ -24,10 +24,11 @@ error[E0277]: `BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesCl
   --> tests/fail/upsert_with_multiple_values_not_supported_on_sqlite.rs:17:18
    |
 17 |         .execute(&mut connection);
-   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite, sqlite::backend::SqliteBatchInsert>` is not implemented for `BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>>, users::table, (), false>`, which is required by `InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>>, users::table, (), false>, diesel::query_builder::upsert::on_conflict_target::NoConflictTarget, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>>: ExecuteDsl<_, _>`
+   |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
    |          |
    |          required by a bound introduced by this call
    |
+   = help: the trait `QueryFragment<Sqlite, sqlite::backend::SqliteBatchInsert>` is not implemented for `BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>>, users::table, (), false>`
    = note: this usually means that the `Sqlite` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:

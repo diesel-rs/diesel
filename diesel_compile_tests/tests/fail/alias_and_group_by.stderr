@@ -4,7 +4,7 @@ error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Outpu
 34 |         .select(user_alias.field(users::id))
    |          ^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
    |
-note: expected this to be `diesel::expression::is_contained_in_group_by::No`
+note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
   --> tests/fail/alias_and_group_by.rs:9:9
    |
 9  |         name -> VarChar,

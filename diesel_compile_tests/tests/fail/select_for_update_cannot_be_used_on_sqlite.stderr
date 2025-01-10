@@ -2,7 +2,7 @@ error[E0277]: `diesel::query_builder::locking_clause::ForUpdate` is no valid SQL
   --> tests/fail/select_for_update_cannot_be_used_on_sqlite.rs:16:15
    |
 16 |         .load(&mut conn)
-   |          ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::ForUpdate`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>: LoadQuery<'_, _, _>`
+   |          ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::ForUpdate`
    |          |
    |          required by a bound introduced by this call
    |
@@ -28,7 +28,7 @@ error[E0277]: `diesel::query_builder::locking_clause::NoModifier` is no valid SQ
   --> tests/fail/select_for_update_cannot_be_used_on_sqlite.rs:16:15
    |
 16 |         .load(&mut conn)
-   |          ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::NoModifier`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>: LoadQuery<'_, _, _>`
+   |          ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::NoModifier`
    |          |
    |          required by a bound introduced by this call
    |

@@ -73,7 +73,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:58:10
    |
 58 |         .set(name.eq(posts::title));
-   |          ^^^ expected `Never`, found `Once`
+   |          ^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:16:9
@@ -89,22 +89,12 @@ error[E0271]: type mismatch resolving `<title as Column>::Table == table`
 65 |         .set(name.eq(excluded(posts::title)));
    |          ^^^ type mismatch resolving `<title as Column>::Table == table`
    |
-note: expected this to be `posts::table`
+note: expected this to be `users::table`
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:16:9
    |
 16 |         title -> VarChar,
    |         ^^^^^
-   = note: `users::table` and `posts::table` have similar names, but are actually distinct types
-note: `users::table` is defined in module `crate::users` of the current crate
-  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:6:1
-   |
-6  | / table! {
-7  | |     users {
-8  | |         id -> Integer,
-9  | |         name -> VarChar,
-10 | |     }
-11 | | }
-   | |_^
+   = note: `posts::table` and `users::table` have similar names, but are actually distinct types
 note: `posts::table` is defined in module `crate::posts` of the current crate
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:13:1
    |
@@ -115,6 +105,16 @@ note: `posts::table` is defined in module `crate::posts` of the current crate
 17 | |     }
 18 | | }
    | |_^
+note: `users::table` is defined in module `crate::users` of the current crate
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:6:1
+   |
+6  | / table! {
+7  | |     users {
+8  | |         id -> Integer,
+9  | |         name -> VarChar,
+10 | |     }
+11 | | }
+   | |_^
    = note: required for `diesel::expression::operators::Eq<users::columns::name, diesel::query_builder::upsert::on_conflict_actions::Excluded<posts::columns::title>>` to implement `AsChangeset`
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -122,6 +122,6 @@ error[E0271]: type mismatch resolving `<Excluded<id> as Expression>::SqlType == 
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:72:19
    |
 72 |         .set(name.eq(excluded(id)));
-   |                   ^^ expected `Integer`, found `Text`
+   |                   ^^ expected `Text`, found `Integer`
    |
    = note: required for `diesel::query_builder::upsert::on_conflict_actions::Excluded<users::columns::id>` to implement `AsExpression<diesel::sql_types::Text>`

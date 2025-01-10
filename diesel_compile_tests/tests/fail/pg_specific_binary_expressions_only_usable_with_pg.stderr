@@ -2,7 +2,7 @@ error[E0277]: Cannot use the `LIKE` operator with expressions of the type `diese
   --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:21:32
    |
 21 |         .get_result::<Vec<u8>>(&mut connection).unwrap();
-   |          ----------            ^^^^^^^^^^^^^^^ the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is not implemented for `Sqlite`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Concat<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::And<diesel::expression::grouped::Grouped<diesel::expression::operators::Like<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::NotLike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>>>>>: LoadQuery<'_, _, Vec<u8>>`
+   |          ----------            ^^^^^^^^^^^^^^^ the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is not implemented for `Sqlite`
    |          |
    |          required by a bound introduced by this call
    |
@@ -30,7 +30,7 @@ error[E0277]: Cannot use the `LIKE` operator with expressions of the type `diese
   --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:29:32
    |
 29 |         .get_result::<Vec<u8>>(&mut connection).unwrap();
-   |          ----------            ^^^^^^^^^^^^^^^ the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is not implemented for `Mysql`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Concat<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::And<diesel::expression::grouped::Grouped<diesel::expression::operators::Like<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::NotLike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>>>>>: LoadQuery<'_, _, Vec<u8>>`
+   |          ----------            ^^^^^^^^^^^^^^^ the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is not implemented for `Mysql`
    |          |
    |          required by a bound introduced by this call
    |

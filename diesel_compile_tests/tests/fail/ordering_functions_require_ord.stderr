@@ -2,7 +2,7 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::expression::func
   --> tests/fail/ordering_functions_require_ord.rs:13:38
    |
 13 |     let source = stuff::table.select(max(stuff::b));
-   |                                      ^^^^^^^^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`, which is required by `diesel::sql_types::Bool: diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
+   |                                      ^^^^^^^^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
    = help: the following other types implement trait `SqlOrd`:
              Array<T>
@@ -25,7 +25,7 @@ error[E0277]: expressions of the type `diesel::sql_types::Bool` cannot be ordere
   --> tests/fail/ordering_functions_require_ord.rs:13:31
    |
 13 |     let source = stuff::table.select(max(stuff::b));
-   |                               ^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`, which is required by `stuff::table: SelectDsl<_>`
+   |                               ^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
    = help: the following other types implement trait `SqlOrd`:
              Array<T>
@@ -45,7 +45,7 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::expression::func
   --> tests/fail/ordering_functions_require_ord.rs:14:38
    |
 14 |     let source = stuff::table.select(min(stuff::b));
-   |                                      ^^^^^^^^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`, which is required by `diesel::sql_types::Bool: diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
+   |                                      ^^^^^^^^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
    = help: the following other types implement trait `SqlOrd`:
              Array<T>
@@ -68,7 +68,7 @@ error[E0277]: expressions of the type `diesel::sql_types::Bool` cannot be ordere
   --> tests/fail/ordering_functions_require_ord.rs:14:31
    |
 14 |     let source = stuff::table.select(min(stuff::b));
-   |                               ^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`, which is required by `stuff::table: SelectDsl<_>`
+   |                               ^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
    = help: the following other types implement trait `SqlOrd`:
              Array<T>
