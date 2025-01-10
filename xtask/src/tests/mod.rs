@@ -115,7 +115,7 @@ impl TestArgs {
                 return true;
             } else {
                 eprintln!(
-                    "Only sqlite backend supports wasm for now, the current backend is {backend}"
+                    "Only the sqlite backend supports wasm for now, the current backend is {backend}"
                 );
                 return true;
             }

@@ -169,16 +169,17 @@ impl Connection for SqliteConnection {
     /// If the database does not exist, this method will try to
     /// create a new database and then establish a connection to it.
     ///
-    /// The following are notes for use under `wasm32-unknown-unknown` target:
+    /// ## WASM support
     ///
-    /// Must initialize sqlite using `diesel::init_sqlite`
-    /// before calling `SqliteConnection::establish`.
+    /// If you plan to use this connection type on the `wasm32-unknown-unknown` target please
+    /// make sure to read the following notes:
     ///
-    /// Under sqlite-wasm, database is stored in memory by default. sqlite-wasm
-    /// provides some persistent VFS. But they all have some limitations,
-    /// see <https://sqlite.org/wasm/doc/trunk/persistence.md>
-    ///
-    /// VFS can be selected through the `database_url`, such as `file:data.db?vfs=opfs`.
+    /// * You must  initialize sqlite using `diesel::init_sqlite` before calling `SqliteConnection::establish`.
+    /// * The database is stored in memory by default. sqlite-wasm
+    ///     provides different persistent VFS (Virtual File Systems), but they all have different limitations.
+    ///     See <https://sqlite.org/wasm/doc/trunk/persistence.md> for details. Make sure to chose
+    ///     an appropriated VFS implementation for your usecase.
+    /// * VFS can be selected through the `database_url` via an URL option, such as `file:data.db?vfs=opfs`.
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut instrumentation = DynInstrumentation::default_instrumentation();
         instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {

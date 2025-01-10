@@ -782,6 +782,7 @@ pub mod prelude {
     // These exported API from `sqlite-wasm-rs` are stable:
     #[cfg(feature = "sqlite")]
     #[cfg(all(target_family = "wasm", target_os = "unknown"))]
+    #[doc(inline)]
     pub use sqlite_wasm_rs::export::init_sqlite;
 }
 
