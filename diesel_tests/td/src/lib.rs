@@ -41,7 +41,7 @@ pub fn sqlite_wasm(_: TokenStream, item: TokenStream) -> TokenStream {
     } = parse_macro_input!(item as ItemFn);
 
     let prepare = quote! {
-        crate::init_sqlite().await.unwrap();
+        crate::wasm_export::init_sqlite().await.unwrap();
     };
 
     sig.asyncness = Some(Async::default());

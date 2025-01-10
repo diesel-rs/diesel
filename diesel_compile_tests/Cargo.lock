@@ -809,9 +809,9 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "sqlite-wasm-rs"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3080f6ef7066796839acf1ca63f8fc487e87722e601226cab8e465e94efe9abc"
+checksum = "7755091a81ef7605acbfb766d5855d5bb67da5f2763b725c526d0e5a127b305d"
 dependencies = [
  "fragile",
  "js-sys",
