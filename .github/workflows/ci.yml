@@ -286,13 +286,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: "rust-src"
+          targets: "wasm32-unknown-unknown"
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@v2
         with:
           key: sqlite_wasm-cargo-${{ hashFiles('**/Cargo.toml') }}
-
-      - name: Install wasm32-unknown-unknown toolchain
-        run: rustup target add wasm32-unknown-unknown
 
       - name: Install wasm-pack
         run: cargo install wasm-pack
