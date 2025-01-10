@@ -29,6 +29,7 @@ in a way that makes the pools suitable for use in parallel tests.
 
 * Use a single space instead of two spaces between `DELETE FROM`.
 * Diesel CLI now ensures that migration versions are always unique. If it fails to generate a unique version, it will return an error. The new version format remains compatible with older Diesel versions.
+* Updated `ipnetwork` to allow version 0.21.
 
 ## [2.2.2] 2024-07-19
 

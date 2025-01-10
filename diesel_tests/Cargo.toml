@@ -18,7 +18,7 @@ quickcheck = "1.0.3"
 uuid = { version = "1.0.0" }
 serde_json = { version=">=0.9, <2.0" }
 ipnet = { version = "2.5.0" }
-ipnetwork = ">=0.12.2, <0.21.0"
+ipnetwork = ">=0.12.2, <0.22.0"
 bigdecimal = ">= 0.0.13, < 0.5.0"
 rand = "0.8.4"
 libsqlite3-sys = { workspace = true, optional = true }
