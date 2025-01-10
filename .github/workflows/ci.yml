@@ -296,7 +296,7 @@ jobs:
         run: cargo install wasm-pack
 
       - name: Test unit and integration tests
-        run: cargo xtask run-tests --wasm
+        run: cargo xtask run-tests --wasm sqlite
 
   sqlite_bundled:
     name: Check sqlite bundled + Sqlite with asan
