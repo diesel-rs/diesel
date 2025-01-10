@@ -15,7 +15,7 @@ pub fn test(_: TokenStream, item: TokenStream) -> TokenStream {
     } = parse_macro_input!(item as ItemFn);
 
     let cfgs = quote! {
-        #[cfg_attr(all(target_family = "wasm", target_os = "unknown", feature = "sqlite"), td::sqlite_wasm)]
+        #[cfg_attr(all(target_family = "wasm", target_os = "unknown", feature = "sqlite"), diesel_test_helper::sqlite_wasm)]
         #[cfg_attr(all(target_family = "wasm", target_os = "unknown"), wasm_bindgen_test::wasm_bindgen_test)]
         #[cfg_attr(not(all(target_family = "wasm", target_os = "unknown")), test)]
     };

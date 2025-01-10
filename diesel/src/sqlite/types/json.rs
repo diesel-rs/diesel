@@ -527,7 +527,7 @@ mod tests {
     use serde_json::{json, Value};
     use sql_types::{Json, Jsonb};
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn json_to_sql() {
         let conn = &mut connection();
         let res = diesel::select(json!(true).into_sql::<Json>().eq(&sql("json('true')")))
@@ -536,28 +536,28 @@ mod tests {
         assert!(res);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_read_jsonb_null() {
         let data = vec![JSONB_NULL];
         let result = read_jsonb_value(&data).unwrap().0;
         assert_eq!(result, Value::Null);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_read_jsonb_true() {
         let data = vec![JSONB_TRUE];
         let result = read_jsonb_value(&data).unwrap().0;
         assert_eq!(result, Value::Bool(true));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_read_jsonb_false() {
         let data = vec![JSONB_FALSE];
         let result = read_jsonb_value(&data).unwrap().0;
         assert_eq!(result, Value::Bool(false));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_read_jsonb_int() {
         // JSONB_INT with payload "1"
         let mut data = Vec::new();
@@ -568,7 +568,7 @@ mod tests {
         assert_eq!(result, json!(1));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_read_jsonb_float() {
         // JSONB_FLOAT with payload "1.5"
         let mut data = Vec::new();
@@ -579,7 +579,7 @@ mod tests {
         assert_eq!(result, json!(1.5));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_read_jsonb_text() {
         // JSONB_TEXT with payload "foo"
         let mut data = Vec::new();
@@ -590,7 +590,7 @@ mod tests {
         assert_eq!(result, json!("foo"));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_read_jsonb_array() {
         // JSONB_ARRAY with two elements: 1 and true
         let mut data = Vec::new();
@@ -607,7 +607,7 @@ mod tests {
         assert_eq!(result, json!([1, true]));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_read_jsonb_object() {
         // JSONB_OBJECT with one key-value pair: "key": 42
         let mut data = Vec::new();
@@ -625,7 +625,7 @@ mod tests {
         assert_eq!(result, json!({"key": 42}));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_read_jsonb_nested_object() {
         let mut data = Vec::new();
 
@@ -659,7 +659,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_write_jsonb_null() {
         let value = serde_json::Value::Null;
         let mut buffer = Vec::new();
@@ -667,7 +667,7 @@ mod tests {
         assert_eq!(buffer, vec![JSONB_NULL]);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_write_jsonb_true() {
         let value = serde_json::Value::Bool(true);
         let mut buffer = Vec::new();
@@ -675,7 +675,7 @@ mod tests {
         assert_eq!(buffer, vec![JSONB_TRUE]);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_write_jsonb_false() {
         let value = serde_json::Value::Bool(false);
         let mut buffer = Vec::new();
@@ -683,7 +683,7 @@ mod tests {
         assert_eq!(buffer, vec![JSONB_FALSE]);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_write_jsonb_int() {
         let value = serde_json::Value::Number(serde_json::Number::from(1));
         let mut buffer = Vec::new();
@@ -696,7 +696,7 @@ mod tests {
         assert_eq!(buffer, expected_buffer);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_write_jsonb_float() {
         let value = serde_json::Value::Number(serde_json::Number::from_f64(1.5).unwrap());
         let mut buffer = Vec::new();
@@ -709,7 +709,7 @@ mod tests {
         assert_eq!(buffer, expected_buffer);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_write_jsonb_text() {
         let mut buffer = Vec::new();
         let input_string = "hello";
@@ -722,7 +722,7 @@ mod tests {
         assert_eq!(buffer, expected_buffer);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_write_jsonb_textj() {
         let mut buffer = Vec::new();
         let input_string = "hello\nworld"; // Contains a newline, requires escaping
@@ -735,7 +735,7 @@ mod tests {
         assert_eq!(buffer, expected_buffer);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_write_jsonb_array() {
         let value = json!([1, true]);
         let mut buffer = Vec::new();
@@ -750,7 +750,7 @@ mod tests {
         assert_eq!(buffer, expected_buffer);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_write_jsonb_object() {
         let value = json!({"key": 42});
         let mut buffer = Vec::new();
@@ -766,7 +766,7 @@ mod tests {
         assert_eq!(buffer, expected,);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_to_sql_bool() {
         let conn = &mut connection();
         let res = diesel::select(json!(true).into_sql::<Jsonb>().eq(&sql("jsonb('true')")))
@@ -775,7 +775,7 @@ mod tests {
         assert!(res);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_to_sql_null() {
         let conn = &mut connection();
         let res = diesel::select(json!(null).into_sql::<Jsonb>().eq(&sql("jsonb('null')")))
@@ -784,7 +784,7 @@ mod tests {
         assert!(res);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_to_sql_integer() {
         let conn = &mut connection();
         let res = diesel::select(json!(42).into_sql::<Jsonb>().eq(&sql("jsonb('42')")))
@@ -793,7 +793,7 @@ mod tests {
         assert!(res);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_to_sql_float() {
         let conn = &mut connection();
         let res = diesel::select(json!(42.23).into_sql::<Jsonb>().eq(&sql("jsonb('42.23')")))
@@ -802,7 +802,7 @@ mod tests {
         assert!(res);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_to_sql_text() {
         let conn = &mut connection();
 
@@ -818,7 +818,7 @@ mod tests {
         assert!(res);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_to_sql_textj() {
         let conn = &mut connection();
 
@@ -834,7 +834,7 @@ mod tests {
         assert!(res);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_to_sql_array() {
         let conn = &mut connection();
         let res = diesel::select(
@@ -847,7 +847,7 @@ mod tests {
         assert!(res);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_to_sql_object() {
         let conn = &mut connection();
         let res = diesel::select(
@@ -860,7 +860,7 @@ mod tests {
         assert!(res);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_to_sql_object_in_object() {
         let conn = &mut connection();
         let json_value = json!({
@@ -879,7 +879,7 @@ mod tests {
         assert!(res);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_to_sql_array_in_object() {
         let conn = &mut connection();
         let json_value = json!({
@@ -896,7 +896,7 @@ mod tests {
         assert!(res);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_to_sql_object_in_array() {
         let conn = &mut connection();
         let json_value = json!([
@@ -915,7 +915,7 @@ mod tests {
         assert!(res);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_from_sql_null() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('null')"))
@@ -924,7 +924,7 @@ mod tests {
         assert_eq!(res, serde_json::json!(null));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_from_sql_true() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('true')"))
@@ -933,7 +933,7 @@ mod tests {
         assert_eq!(res, serde_json::json!(true));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_from_sql_false() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('false')"))
@@ -942,7 +942,7 @@ mod tests {
         assert_eq!(res, serde_json::json!(false));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_from_sql_int() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('42')"))
@@ -951,7 +951,7 @@ mod tests {
         assert_eq!(res, serde_json::json!(42));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_from_sql_float() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('42.23')"))
@@ -960,7 +960,7 @@ mod tests {
         assert_eq!(res, serde_json::json!(42.23));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_from_sql_object() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('{\"key\": \"value\"}')"))
@@ -969,7 +969,7 @@ mod tests {
         assert_eq!(res, serde_json::json!({"key": "value"}));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_from_sql_array() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('[1, 2, 3]')"))
@@ -978,7 +978,7 @@ mod tests {
         assert_eq!(res, serde_json::json!([1, 2, 3]));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_from_sql_nested_objects() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('{\"outer\": {\"inner\": 42}}')"))
@@ -987,7 +987,7 @@ mod tests {
         assert_eq!(res, serde_json::json!({"outer": {"inner": 42}}));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_from_sql_nested_arrays() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('[[1, 2], [3, 4]]')"))
@@ -996,7 +996,7 @@ mod tests {
         assert_eq!(res, serde_json::json!([[1, 2], [3, 4]]));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_from_sql_nested_arrays_in_objects() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('{\"array\": [1, 2, 3]}')"))
@@ -1005,7 +1005,7 @@ mod tests {
         assert_eq!(res, serde_json::json!({"array": [1, 2, 3]}));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_from_sql_nested_objects_in_arrays() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>(
@@ -1019,7 +1019,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_from_sql_text() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('\"hello\"')"))
@@ -1028,7 +1028,7 @@ mod tests {
         assert_eq!(res, serde_json::json!("hello"));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn jsonb_from_sql_textj() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('\"hello\\nworld\"')"))
@@ -1037,7 +1037,7 @@ mod tests {
         assert_eq!(res, serde_json::json!("hello\nworld"));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn bad_json_from_sql() {
         let conn = &mut connection();
         let res = diesel::select(json!(true).into_sql::<Json>().eq(&sql("json('boom')")))
@@ -1045,7 +1045,7 @@ mod tests {
         assert_eq!(res.unwrap_err().to_string(), "malformed JSON");
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn bad_jsonb_from_sql() {
         let conn = &mut connection();
         let res = diesel::select(json!(true).into_sql::<Jsonb>().eq(&sql("jsonb('boom')")))
@@ -1053,7 +1053,7 @@ mod tests {
         assert_eq!(res.unwrap_err().to_string(), "malformed JSON");
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn no_json_from_sql() {
         let uuid: Result<serde_json::Value, _> = FromSql::<Json, Sqlite>::from_nullable_sql(None);
         assert_eq!(
@@ -1062,7 +1062,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn no_jsonb_from_sql() {
         let uuid: Result<serde_json::Value, _> = FromSql::<Jsonb, Sqlite>::from_nullable_sql(None);
         assert_eq!(

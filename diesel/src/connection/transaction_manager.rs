@@ -610,7 +610,7 @@ mod test {
         }
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "postgres")]
     fn transaction_manager_returns_an_error_when_attempting_to_commit_outside_of_a_transaction() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
@@ -629,7 +629,7 @@ mod test {
         assert!(matches!(result, Err(Error::NotInTransaction)))
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "postgres")]
     fn transaction_manager_returns_an_error_when_attempting_to_rollback_outside_of_a_transaction() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
@@ -648,7 +648,7 @@ mod test {
         assert!(matches!(result, Err(Error::NotInTransaction)))
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn transaction_manager_enters_broken_state_when_connection_is_broken() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
@@ -702,7 +702,7 @@ mod test {
         assert!(matches!(result, Err(Error::BrokenTransactionManager)))
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "mysql")]
     fn mysql_transaction_is_rolled_back_upon_syntax_error() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
@@ -737,7 +737,7 @@ mod test {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "sqlite")]
     fn sqlite_transaction_is_rolled_back_upon_syntax_error() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
@@ -772,7 +772,7 @@ mod test {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "mysql")]
     fn nested_mysql_transaction_is_rolled_back_upon_syntax_error() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
@@ -824,7 +824,7 @@ mod test {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "mysql")]
     // This function uses a collect with side effects (spawning threads)
     // so clippy is wrong here
@@ -930,7 +930,7 @@ mod test {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "mysql")]
     // This function uses a collect with side effects (spawning threads)
     // so clippy is wrong here
@@ -1038,7 +1038,7 @@ mod test {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "sqlite")]
     fn sqlite_transaction_is_rolled_back_upon_deferred_constraint_failure() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
@@ -1079,7 +1079,7 @@ mod test {
 
     // regression test for #3470
     // crates.io depends on this behaviour
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "postgres")]
     fn some_libpq_failures_are_recoverable_by_rolling_back_the_savepoint_only() {
         use crate::connection::{AnsiTransactionManager, TransactionManager};
@@ -1128,7 +1128,7 @@ mod test {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "postgres")]
     fn other_libpq_failures_are_not_recoverable_by_rolling_back_the_savepoint_only() {
         use crate::connection::{AnsiTransactionManager, TransactionManager};

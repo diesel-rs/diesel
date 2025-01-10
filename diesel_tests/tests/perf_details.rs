@@ -5,7 +5,7 @@ use diesel::*;
 use std::cmp::max;
 use std::mem;
 
-#[td::test]
+#[diesel_test_helper::test]
 fn complex_queries_with_no_data_have_no_size() {
     assert_eq!(0, mem::size_of_val(&users.as_query()));
     assert_eq!(0, mem::size_of_val(&users.select(id).as_query()));
@@ -15,7 +15,7 @@ fn complex_queries_with_no_data_have_no_size() {
     );
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[allow(clippy::size_of_ref)] // clippy is wrong here these tests fail otherwise
 fn queries_with_data_are_no_bigger_than_their_variable_data() {
     assert_eq!(

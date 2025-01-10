@@ -104,21 +104,21 @@ mod quickcheck_impls {
 mod tests {
     use super::PgMoney;
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn add_money() {
         let c1 = PgMoney(123);
         let c2 = PgMoney(456);
         assert_eq!(PgMoney(579), c1 + c2);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn add_assign_money() {
         let mut c1 = PgMoney(123);
         c1 += PgMoney(456);
         assert_eq!(PgMoney(579), c1);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[should_panic(expected = "overflow adding money amounts")]
     fn add_money_overflow() {
         let c1 = PgMoney(i64::MAX);
@@ -126,28 +126,28 @@ mod tests {
         let _overflow = c1 + c2;
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[should_panic(expected = "overflow adding money amounts")]
     fn add_assign_money_overflow() {
         let mut c1 = PgMoney(i64::MAX);
         c1 += PgMoney(1);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn sub_money() {
         let c1 = PgMoney(123);
         let c2 = PgMoney(456);
         assert_eq!(PgMoney(-333), c1 - c2);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn sub_assign_money() {
         let mut c1 = PgMoney(123);
         c1 -= PgMoney(456);
         assert_eq!(PgMoney(-333), c1);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[should_panic(expected = "underflow subtracting money amounts")]
     fn sub_money_underflow() {
         let c1 = PgMoney(i64::MIN);
@@ -155,7 +155,7 @@ mod tests {
         let _underflow = c1 - c2;
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[should_panic(expected = "underflow subtracting money amounts")]
     fn sub_assign_money_underflow() {
         let mut c1 = PgMoney(i64::MIN);

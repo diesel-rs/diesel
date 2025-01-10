@@ -573,7 +573,7 @@ mod tests {
         SqliteConnection::establish(":memory:").unwrap()
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn database_serializes_and_deserializes_successfully() {
         let expected_users = vec![
             (
@@ -611,7 +611,7 @@ mod tests {
     use crate::sql_types::Text;
     define_sql_function!(fn fun_case(x: Text) -> Text);
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn register_custom_function() {
         let connection = &mut connection();
         fun_case_utils::register_impl(connection, |x: String| {
@@ -636,7 +636,7 @@ mod tests {
 
     define_sql_function!(fn my_add(x: Integer, y: Integer) -> Integer);
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn register_multiarg_function() {
         let connection = &mut connection();
         my_add_utils::register_impl(connection, |x: i32, y: i32| x + y).unwrap();
@@ -647,7 +647,7 @@ mod tests {
 
     define_sql_function!(fn answer() -> Integer);
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn register_noarg_function() {
         let connection = &mut connection();
         answer_utils::register_impl(connection, || 42).unwrap();
@@ -656,7 +656,7 @@ mod tests {
         assert_eq!(Ok(42), answer);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn register_nondeterministic_noarg_function() {
         let connection = &mut connection();
         answer_utils::register_nondeterministic_impl(connection, || 42).unwrap();
@@ -667,7 +667,7 @@ mod tests {
 
     define_sql_function!(fn add_counter(x: Integer) -> Integer);
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn register_nondeterministic_function() {
         let connection = &mut connection();
         let mut y = 0;
@@ -711,7 +711,7 @@ mod tests {
         }
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn register_aggregate_function() {
         use self::my_sum_example::dsl::*;
 
@@ -733,7 +733,7 @@ mod tests {
         assert_eq!(Ok(6), result);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn register_aggregate_function_returns_finalize_default_on_empty_set() {
         use self::my_sum_example::dsl::*;
 
@@ -795,7 +795,7 @@ mod tests {
         }
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn register_aggregate_multiarg_function() {
         use self::range_max_example::dsl::*;
 
@@ -831,7 +831,7 @@ mod tests {
         }
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn register_collation_function() {
         use self::my_collation_example::dsl::*;
 
@@ -897,7 +897,7 @@ mod tests {
     }
 
     // regression test for https://github.com/diesel-rs/diesel/issues/3425
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_correct_seralization_of_owned_strings() {
         use crate::prelude::*;
 
@@ -927,7 +927,7 @@ mod tests {
         assert_eq!(res, Some(String::new()));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn test_correct_seralization_of_owned_bytes() {
         use crate::prelude::*;
 
@@ -957,7 +957,7 @@ mod tests {
         assert_eq!(res, Some(Vec::new()));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn correctly_handle_empty_query() {
         let check_empty_query_error = |r: crate::QueryResult<usize>| {
             assert!(r.is_err());

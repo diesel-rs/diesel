@@ -22,7 +22,7 @@ mod sqlite {
         col13: i64,
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn integers_infer_to_semantically_correct_types() {
         let conn = &mut connection();
         let inferred_ints = InferredInts {
@@ -60,7 +60,7 @@ mod sqlite {
         col4: bool,
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn bool_types_infer_to_bool() {
         let conn = &mut connection();
         let inferred_bools = InferredBools {
@@ -95,7 +95,7 @@ mod sqlite {
         col10: Vec<u8>,
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn strings_infer_to_semantically_correct_types() {
         let conn = &mut connection();
         let inferred_strings = InferredStrings {
@@ -132,7 +132,7 @@ mod sqlite {
         col6: f64,
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn floats_infer_to_semantically_correct_types() {
         let conn = &mut connection();
         let inferred_floats = InferredFloats {
@@ -163,7 +163,7 @@ mod sqlite {
         timestamp: NaiveDateTime,
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn datetime_types_are_correctly_inferred() {
         let conn = &mut connection();
 
@@ -216,7 +216,7 @@ mod postgres {
         datemulti: Vec<(Bound<NaiveDate>, Bound<NaiveDate>)>,
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn ranges_are_correctly_inferred() {
         let conn = &mut connection();
         let numeric = PgNumeric::Positive {
@@ -283,7 +283,7 @@ mod mysql {
         big: Vec<u8>,
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn blobs_are_correctly_inferred() {
         let conn = &mut connection();
         let inferred_blobs = InferredBlobs {
@@ -310,7 +310,7 @@ mod mysql {
     }
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn columns_named_as_reserved_keywords_are_renamed() {
     use crate::schema::*;
     use diesel::*;

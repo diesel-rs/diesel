@@ -9,7 +9,7 @@ use diesel::*;
 
 define_sql_function!(fn my_lower(x: VarChar) -> VarChar);
 
-#[td::test]
+#[diesel_test_helper::test]
 fn test_sql_function() {
     use crate::schema::users::dsl::*;
 
@@ -43,7 +43,7 @@ fn test_sql_function() {
 define_sql_function!(fn setval(x: VarChar, y: BigInt));
 define_sql_function!(fn currval(x: VarChar) -> BigInt);
 
-#[td::test]
+#[diesel_test_helper::test]
 fn sql_function_without_return_type() {
     let connection = &mut connection();
     select(setval("users_id_seq", 54))

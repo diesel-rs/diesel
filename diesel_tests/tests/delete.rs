@@ -1,7 +1,7 @@
 use crate::schema::*;
 use diesel::*;
 
-#[td::test]
+#[diesel_test_helper::test]
 fn delete_records() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -15,7 +15,7 @@ fn delete_records() {
     assert_eq!(Ok(1), num_users);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn delete_single_record() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -28,7 +28,7 @@ fn delete_single_record() {
     assert_eq!(Ok(vec![tess]), users.load(connection));
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(not(any(
     all(feature = "sqlite", not(feature = "returning_clauses_for_sqlite_3_35")),
     feature = "mysql"
@@ -46,7 +46,7 @@ fn return_deleted_records() {
     assert_eq!(Ok(1), num_users);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn delete_or_filter() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection_with_sean_and_tess_in_users_table();

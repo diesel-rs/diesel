@@ -109,7 +109,7 @@ impl Queryable<sql_types::Binary, Pg> for *const [u8] {
 mod tests {
     use super::*;
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn cchar_to_sql() {
         use crate::query_builder::bind_collector::ByteWrapper;
 
@@ -120,7 +120,7 @@ mod tests {
         assert_eq!(buffer, vec![65u8, 196u8]);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn cchar_from_sql() {
         let result = <u8 as FromSql<sql_types::CChar, Pg>>::from_nullable_sql(None);
         assert_eq!(
@@ -129,7 +129,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn bool_to_sql() {
         use crate::query_builder::bind_collector::ByteWrapper;
 
@@ -140,7 +140,7 @@ mod tests {
         assert_eq!(buffer, vec![1u8, 0u8]);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn no_bool_from_sql() {
         let result = <bool as FromSql<sql_types::Bool, Pg>>::from_nullable_sql(None);
         assert_eq!(

@@ -137,7 +137,7 @@
 //! mod tests {
 //!     use super::*;
 //!
-//!     #[td::test]
+//!     #[diesel_test_helper::test]
 //!     fn test_1() {
 //!         let pool = get_testing_pool();
 //!         let mut conn = pool.get().unwrap();
@@ -154,7 +154,7 @@
 //!             .unwrap();
 //!     }
 //!
-//!     #[td::test]
+//!     #[diesel_test_helper::test]
 //!     fn test_2() {
 //!         let pool = get_testing_pool();
 //!         let mut conn = pool.get().unwrap();
@@ -478,7 +478,7 @@ mod tests {
     use crate::r2d2::*;
     use crate::test_helpers::*;
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn establish_basic_connection() {
         let manager = ConnectionManager::<TestConnection>::new(database_url());
         let pool = Arc::new(Pool::builder().max_size(2).build(manager).unwrap());
@@ -508,7 +508,7 @@ mod tests {
         pool.get().unwrap();
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn is_valid() {
         let manager = ConnectionManager::<TestConnection>::new(database_url());
         let pool = Pool::builder()
@@ -520,7 +520,7 @@ mod tests {
         pool.get().unwrap();
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn pooled_connection_impls_connection() {
         use crate::select;
         use crate::sql_types::Text;
@@ -537,7 +537,7 @@ mod tests {
         assert_eq!("foo", query.get_result::<String>(&mut conn).unwrap());
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn check_pool_does_actually_hold_connections() {
         use std::sync::atomic::{AtomicU32, Ordering};
 
@@ -655,7 +655,7 @@ mod tests {
     }
 
     #[cfg(feature = "postgres")]
-    #[td::test]
+    #[diesel_test_helper::test]
     fn verify_that_begin_test_transaction_works_with_pools() {
         use crate::prelude::*;
         use crate::r2d2::*;

@@ -2,7 +2,7 @@ use crate::schema::*;
 use diesel::connection::BoxableConnection;
 use diesel::*;
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn managing_updated_at_for_table() {
     use crate::schema_dsl::*;
@@ -84,7 +84,7 @@ fn managing_updated_at_for_table() {
 }
 
 /// wasm does not support `std::env::temp_dir`
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 fn strips_sqlite_url_prefix() {
@@ -93,7 +93,7 @@ fn strips_sqlite_url_prefix() {
     assert!(SqliteConnection::establish(&format!("sqlite://{}", path.display())).is_ok());
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn file_uri_created_in_memory() {
     use std::path::Path;
@@ -104,7 +104,7 @@ fn file_uri_created_in_memory() {
 }
 
 /// wasm does not support `std::env::temp_dir`
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 fn sqlite_uri_prefix_interpreted_as_file() {
@@ -114,7 +114,7 @@ fn sqlite_uri_prefix_interpreted_as_file() {
     assert!(path.exists());
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn boxable_connection_downcast_mut_usable() {
     use crate::schema::users::dsl::*;
 
@@ -126,7 +126,7 @@ fn boxable_connection_downcast_mut_usable() {
     assert_eq!(Ok(String::from("Sean")), sean);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn use_the_same_connection_multiple_times() {
     use crate::*;

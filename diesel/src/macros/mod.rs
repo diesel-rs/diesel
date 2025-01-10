@@ -515,7 +515,7 @@ mod tests {
         }
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "postgres")]
     fn table_with_custom_schema() {
         use crate::pg::Pg;
@@ -556,7 +556,7 @@ mod tests {
         }
     );
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "postgres")]
     fn table_with_column_renaming_postgres() {
         use crate::pg::Pg;
@@ -567,7 +567,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "mysql")]
     fn table_with_column_renaming_mysql() {
         use crate::mysql::Mysql;
@@ -578,7 +578,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "sqlite")]
     fn table_with_column_renaming_sqlite() {
         use crate::sqlite::Sqlite;
@@ -600,7 +600,7 @@ mod tests {
         }
     );
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "postgres")]
     fn table_renaming_postgres() {
         use crate::pg::Pg;
@@ -611,7 +611,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "mysql")]
     fn table_renaming_mysql() {
         use crate::mysql::Mysql;
@@ -622,7 +622,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "sqlite")]
     fn table_renaming_sqlite() {
         use crate::sqlite::Sqlite;

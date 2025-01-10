@@ -181,7 +181,7 @@ mod bigdecimal {
         use super::*;
         use std::str::FromStr;
 
-        #[td::test]
+        #[diesel_test_helper::test]
         fn bigdecimal_to_pgnumeric_converts_digits_to_base_10000() {
             let decimal = BigDecimal::from_str("1").unwrap();
             let expected = PgNumeric::Positive {
@@ -224,7 +224,7 @@ mod bigdecimal {
             assert_eq!(expected, decimal.into());
         }
 
-        #[td::test]
+        #[diesel_test_helper::test]
         fn bigdecimal_to_pg_numeric_properly_adjusts_scale() {
             let decimal = BigDecimal::from_str("1").unwrap();
             let expected = PgNumeric::Positive {
@@ -275,7 +275,7 @@ mod bigdecimal {
             assert_eq!(expected, decimal.into());
         }
 
-        #[td::test]
+        #[diesel_test_helper::test]
         fn bigdecimal_to_pg_numeric_retains_sign() {
             let decimal = BigDecimal::from_str("123.456").unwrap();
             let expected = PgNumeric::Positive {
@@ -294,7 +294,7 @@ mod bigdecimal {
             assert_eq!(expected, decimal.into());
         }
 
-        #[td::test]
+        #[diesel_test_helper::test]
         fn bigdecimal_with_negative_scale_to_pg_numeric_works() {
             let decimal = BigDecimal::new(50.into(), -2);
             let expected = PgNumeric::Positive {
@@ -313,7 +313,7 @@ mod bigdecimal {
             assert_eq!(expected, decimal.into());
         }
 
-        #[td::test]
+        #[diesel_test_helper::test]
         fn bigdecimal_with_negative_weight_to_pg_numeric_works() {
             let decimal = BigDecimal::from_str("0.1000000000000000").unwrap();
             let expected = PgNumeric::Positive {
@@ -340,7 +340,7 @@ mod bigdecimal {
             assert_eq!(expected, decimal.into());
         }
 
-        #[td::test]
+        #[diesel_test_helper::test]
         fn pg_numeric_to_bigdecimal_works() {
             let expected = BigDecimal::from_str("123.456").unwrap();
             let pg_numeric = PgNumeric::Positive {

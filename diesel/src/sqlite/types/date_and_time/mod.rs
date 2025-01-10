@@ -181,7 +181,7 @@ mod tests {
             .unwrap();
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn time_to_chrono_date() {
         let conn = &mut connection();
         create_tables(conn);
@@ -201,7 +201,7 @@ mod tests {
         assert!(eq_date(original, translated))
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn chrono_to_time_date() {
         let conn = &mut connection();
         create_tables(conn);
@@ -221,7 +221,7 @@ mod tests {
         assert!(eq_date(translated, original))
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn time_to_chrono_time() {
         let conn = &mut connection();
         create_tables(conn);
@@ -241,7 +241,7 @@ mod tests {
         assert!(eq_time(original, translated))
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn chrono_to_time_time() {
         let conn = &mut connection();
         create_tables(conn);
@@ -261,7 +261,7 @@ mod tests {
         assert!(eq_time(translated, original))
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn time_to_chrono_datetime() {
         let conn = &mut connection();
         create_tables(conn);
@@ -284,7 +284,7 @@ mod tests {
         assert!(eq_datetime(original, translated))
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn chrono_to_time_datetime() {
         let conn = &mut connection();
         create_tables(conn);
@@ -310,7 +310,7 @@ mod tests {
         assert!(eq_datetime(translated, original))
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn chrono_to_time_datetime_utc() {
         let conn = &mut connection();
         create_tables(conn);
@@ -333,7 +333,7 @@ mod tests {
         assert!(eq_datetime_utc(translated, original))
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn time_to_chrono_datetime_utc() {
         let conn = &mut connection();
         create_tables(conn);
@@ -356,7 +356,7 @@ mod tests {
         assert!(eq_datetime_utc(original, translated))
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn chrono_to_time_datetime_timezone() {
         let conn = &mut connection();
         create_tables(conn);
@@ -379,7 +379,7 @@ mod tests {
         assert!(eq_datetime_offset(translated, original))
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn time_to_chrono_datetime_offset() {
         let conn = &mut connection();
         create_tables(conn);

@@ -210,7 +210,7 @@ fn connection_url_error() -> ConnectionError {
 mod tests {
     use super::*;
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn urls_with_schemes_other_than_mysql_are_errors() {
         assert!(ConnectionOptions::parse("postgres://localhost").is_err());
         assert!(ConnectionOptions::parse("http://localhost").is_err());
@@ -220,13 +220,13 @@ mod tests {
         assert!(ConnectionOptions::parse("mysql://localhost").is_ok());
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn urls_must_have_zero_or_one_path_segments() {
         assert!(ConnectionOptions::parse("mysql://localhost/foo/bar").is_err());
         assert!(ConnectionOptions::parse("mysql://localhost/foo").is_ok());
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn first_path_segment_is_treated_as_database() {
         let foo_cstr = CString::new("foo").unwrap();
         let bar_cstr = CString::new("bar").unwrap();
@@ -250,7 +250,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn userinfo_should_be_percent_decode() {
         use self::percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
         const USERINFO_ENCODE_SET: &AsciiSet = &CONTROLS
@@ -290,7 +290,7 @@ mod tests {
         assert_eq!(password, conn_opts.password.unwrap());
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn ipv6_host_not_wrapped_in_brackets() {
         let host1 = CString::new("::1").unwrap();
         let host2 = CString::new("2001:db8:85a3::8a2e:370:7334").unwrap();
@@ -307,7 +307,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn unix_socket_tests() {
         let unix_socket = "/var/run/mysqld.sock";
         let username = "foo";
@@ -325,7 +325,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn ssl_ca_tests() {
         let ssl_ca = "/etc/ssl/certs/ca-certificates.crt";
         let username = "foo";
@@ -349,7 +349,7 @@ mod tests {
         assert_eq!(CString::new(ssl_ca).unwrap(), conn_opts2.ssl_ca.unwrap());
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn ssl_cert_tests() {
         let ssl_cert = "/etc/ssl/certs/client-cert.crt";
         let username = "foo";
@@ -376,7 +376,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn ssl_key_tests() {
         let ssl_key = "/etc/ssl/certs/client-key.crt";
         let username = "foo";
@@ -400,7 +400,7 @@ mod tests {
         assert_eq!(CString::new(ssl_key).unwrap(), conn_opts2.ssl_key.unwrap());
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn ssl_mode() {
         let ssl_mode = |url| ConnectionOptions::parse(url).unwrap().ssl_mode();
         assert_eq!(ssl_mode("mysql://localhost"), None);

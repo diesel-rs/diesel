@@ -136,7 +136,7 @@ mod tests {
     use crate::sql_types::{Date, Datetime, Time, Timestamp};
     use crate::test_helpers::connection;
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn unix_epoch_encodes_correctly() {
         let connection = &mut connection();
         let time = NaiveDate::from_ymd_opt(1970, 1, 1)
@@ -149,7 +149,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn unix_epoch_decodes_correctly() {
         let connection = &mut connection();
         let time = NaiveDate::from_ymd_opt(1970, 1, 1)
@@ -164,7 +164,7 @@ mod tests {
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
         let time = Utc::now().naive_utc() + Duration::try_days(1).unwrap();
@@ -176,7 +176,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn times_of_day_encode_correctly() {
         let connection = &mut connection();
 
@@ -193,7 +193,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn times_of_day_decode_correctly() {
         let connection = &mut connection();
         let midnight = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
@@ -212,7 +212,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn dates_encode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
@@ -224,7 +224,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn dates_decode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();

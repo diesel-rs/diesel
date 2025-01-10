@@ -356,14 +356,14 @@ mod tests {
         MysqlConnection::establish(&database_url).unwrap()
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn batch_execute_handles_single_queries_with_results() {
         let connection = &mut connection();
         assert!(connection.batch_execute("SELECT 1").is_ok());
         assert!(connection.batch_execute("SELECT 1").is_ok());
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn batch_execute_handles_multi_queries_with_results() {
         let connection = &mut connection();
         let query = "SELECT 1; SELECT 2; SELECT 3;";
@@ -371,14 +371,14 @@ mod tests {
         assert!(connection.batch_execute(query).is_ok());
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn execute_handles_queries_which_return_results() {
         let connection = &mut connection();
         assert!(crate::sql_query("SELECT 1").execute(connection).is_ok());
         assert!(crate::sql_query("SELECT 1").execute(connection).is_ok());
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn check_client_found_rows_flag() {
         let conn = &mut crate::test_helpers::connection();
         crate::sql_query("DROP TABLE IF EXISTS update_test CASCADE")

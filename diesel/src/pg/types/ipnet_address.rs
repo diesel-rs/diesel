@@ -141,7 +141,7 @@ impl_Sql!(Cidr, 1);
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[td::test]
+    #[diesel_test_helper::test]
     fn v4address_to_sql() {
         macro_rules! test_to_sql {
             ($ty:ty, $net_type:expr) => {
@@ -160,7 +160,7 @@ mod tests {
         test_to_sql!(Cidr, 1);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn some_v4address_from_sql() {
         macro_rules! test_some_address_from_sql {
             ($ty:tt) => {
@@ -181,7 +181,7 @@ mod tests {
         test_some_address_from_sql!(Inet);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn v6address_to_sql() {
         macro_rules! test_to_sql {
             ($ty:ty, $net_type:expr) => {
@@ -225,7 +225,7 @@ mod tests {
         test_to_sql!(Cidr, 1);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn some_v6address_from_sql() {
         macro_rules! test_some_address_from_sql {
             ($ty:tt) => {
@@ -246,7 +246,7 @@ mod tests {
         test_some_address_from_sql!(Cidr);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn bad_address_from_sql() {
         macro_rules! bad_address_from_sql {
             ($ty:tt) => {
@@ -263,7 +263,7 @@ mod tests {
         bad_address_from_sql!(Cidr);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn no_address_from_sql() {
         macro_rules! test_no_address_from_sql {
             ($ty:ty) => {

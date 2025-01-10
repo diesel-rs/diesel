@@ -66,7 +66,7 @@ dotenvy = "0.15"
 ipnetwork = ">=0.12.2, <0.21.0"
 quickcheck = "1.0.3"
 tempfile = "3.10.1"
-td = { path = "../diesel_tests/td" }
+diesel_test_helper = { path = "../diesel_test_helper" }
 
 [features]
 default = ["with-deprecated", "32-column-tables"]

@@ -1,7 +1,7 @@
 use super::schema::*;
 use diesel::*;
 
-#[td::test]
+#[diesel_test_helper::test]
 fn simple_distinct() {
     use crate::schema::users::dsl::*;
 
@@ -18,7 +18,7 @@ fn simple_distinct() {
 }
 
 #[cfg(feature = "postgres")]
-#[td::test]
+#[diesel_test_helper::test]
 fn distinct_on() {
     use crate::schema::users::dsl::*;
 
@@ -59,7 +59,7 @@ fn distinct_on() {
 }
 
 #[cfg(feature = "postgres")]
-#[td::test]
+#[diesel_test_helper::test]
 fn distinct_on_select_by() {
     use crate::schema::users::dsl::*;
 
@@ -83,7 +83,7 @@ fn distinct_on_select_by() {
 }
 
 #[cfg(feature = "postgres")]
-#[td::test]
+#[diesel_test_helper::test]
 fn distinct_on_select_order_by_two_columns() {
     use diesel::sql_types::Integer;
 
@@ -153,7 +153,7 @@ fn distinct_on_select_order_by_two_columns() {
 }
 
 #[cfg(feature = "postgres")]
-#[td::test]
+#[diesel_test_helper::test]
 fn distinct_of_multiple_columns() {
     use crate::schema::posts;
     use crate::schema::users;

@@ -32,7 +32,7 @@ impl ToSql<Uuid, Pg> for uuid::Uuid {
 mod tests {
     use super::*;
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn uuid_to_sql() {
         use crate::query_builder::bind_collector::ByteWrapper;
 
@@ -48,7 +48,7 @@ mod tests {
         assert_eq!(&buffer, test_uuid.as_bytes());
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn some_uuid_from_sql() {
         let bytes = [
             0xFF_u8, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
@@ -60,7 +60,7 @@ mod tests {
         assert_eq!(input_uuid, output_uuid);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn bad_uuid_from_sql() {
         let uuid = uuid::Uuid::from_sql(PgValue::for_test(b"boom"));
         assert!(uuid.is_err());
@@ -77,7 +77,7 @@ mod tests {
         assert!(error_message.ends_with("found 4"));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn no_uuid_from_sql() {
         let uuid = uuid::Uuid::from_nullable_sql(None);
         assert_eq!(

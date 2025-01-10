@@ -171,7 +171,7 @@ mod tests_pg {
         conn
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn prepared_statements_are_cached() {
         let connection = &mut connection();
 
@@ -183,7 +183,7 @@ mod tests_pg {
         assert_eq!(1, count_cache_calls(connection));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn queries_with_identical_sql_but_different_types_are_cached_separately() {
         let connection = &mut connection();
 
@@ -196,7 +196,7 @@ mod tests_pg {
         assert_eq!(2, count_cache_calls(connection));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn queries_with_identical_types_and_sql_but_different_bind_types_are_cached_separately() {
         let connection = &mut connection();
 
@@ -211,7 +211,7 @@ mod tests_pg {
 
     define_sql_function!(fn lower(x: VarChar) -> VarChar);
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn queries_with_identical_types_and_binds_but_different_sql_are_cached_separately() {
         let connection = &mut connection();
 
@@ -225,7 +225,7 @@ mod tests_pg {
         assert_eq!(2, count_cache_calls(connection));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn queries_with_sql_literal_nodes_are_not_cached() {
         let connection = &mut connection();
         let query = crate::select(sql::<Integer>("1"));
@@ -234,7 +234,7 @@ mod tests_pg {
         assert_eq!(0, count_cache_calls(connection));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn inserts_from_select_are_cached() {
         let connection = &mut connection();
         connection.begin_test_transaction().unwrap();
@@ -260,7 +260,7 @@ mod tests_pg {
         assert_eq!(2, count_cache_calls(connection));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn single_inserts_are_cached() {
         let connection = &mut connection();
         connection.begin_test_transaction().unwrap();
@@ -278,7 +278,7 @@ mod tests_pg {
         assert_eq!(1, count_cache_calls(connection));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn dynamic_batch_inserts_are_not_cached() {
         let connection = &mut connection();
         connection.begin_test_transaction().unwrap();
@@ -296,7 +296,7 @@ mod tests_pg {
         assert_eq!(0, count_cache_calls(connection));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn static_batch_inserts_are_cached() {
         let connection = &mut connection();
         connection.begin_test_transaction().unwrap();
@@ -314,7 +314,7 @@ mod tests_pg {
         assert_eq!(1, count_cache_calls(connection));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn queries_containing_in_with_vec_are_cached() {
         let connection = &mut connection();
         let one_as_expr = 1.into_sql::<Integer>();
@@ -324,7 +324,7 @@ mod tests_pg {
         assert_eq!(1, count_cache_calls(connection));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn disabling_the_cache_works() {
         let connection = &mut connection();
         connection.set_prepared_statement_cache_size(CacheSize::Disabled);
@@ -356,7 +356,7 @@ mod tests_sqlite {
         conn
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn prepared_statements_are_cached_when_run() {
         let connection = &mut connection();
         let query = crate::select(1.into_sql::<Integer>());
@@ -367,7 +367,7 @@ mod tests_sqlite {
         assert_eq!(1, count_cache_calls(connection));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn sql_literal_nodes_are_not_cached() {
         let connection = &mut connection();
         let query = crate::select(sql::<Integer>("1"));
@@ -376,7 +376,7 @@ mod tests_sqlite {
         assert_eq!(0, count_cache_calls(connection));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn queries_containing_sql_literal_nodes_are_not_cached() {
         let connection = &mut connection();
         let one_as_expr = 1.into_sql::<Integer>();
@@ -386,7 +386,7 @@ mod tests_sqlite {
         assert_eq!(0, count_cache_calls(connection));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn queries_containing_in_with_vec_are_not_cached() {
         let connection = &mut connection();
         let one_as_expr = 1.into_sql::<Integer>();
@@ -396,7 +396,7 @@ mod tests_sqlite {
         assert_eq!(0, count_cache_calls(connection));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn queries_containing_in_with_subselect_are_cached() {
         let connection = &mut connection();
         let one_as_expr = 1.into_sql::<Integer>();
@@ -406,7 +406,7 @@ mod tests_sqlite {
         assert_eq!(1, count_cache_calls(connection));
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn disabling_the_cache_works() {
         let connection = &mut connection();
         connection.set_prepared_statement_cache_size(CacheSize::Disabled);

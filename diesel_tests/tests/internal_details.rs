@@ -4,7 +4,7 @@ use diesel::dsl::sql;
 use diesel::sql_types::*;
 use diesel::*;
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(not(feature = "mysql"))] // ? IS NULL is invalid syntax for MySQL
 fn bind_params_are_passed_for_null_when_not_inserting() {
     let connection = &mut connection();
@@ -13,7 +13,7 @@ fn bind_params_are_passed_for_null_when_not_inserting() {
     assert_eq!(Ok(1), query.first(connection));
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn query_which_cannot_be_transmitted_gives_proper_error_message() {
     use crate::schema::comments::dsl::*;
@@ -35,7 +35,7 @@ fn query_which_cannot_be_transmitted_gives_proper_error_message() {
     }
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn empty_query_gives_proper_error_instead_of_panicking() {
     use diesel::dsl::sql;
@@ -52,7 +52,7 @@ fn empty_query_gives_proper_error_instead_of_panicking() {
     }
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn ensure_sqlite_does_not_access_dropped_buffers() {
     use diesel::connection::{DefaultLoadingMode, LoadConnection};
     let connection = &mut connection();

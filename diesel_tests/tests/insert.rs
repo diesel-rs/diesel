@@ -1,7 +1,7 @@
 use super::schema::*;
 use diesel::*;
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_records() {
     use crate::schema::users::table as users;
     let connection = &mut connection();
@@ -31,7 +31,7 @@ fn insert_records() {
     assert_eq!(expected_users, actual_users);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_records_as_vec() {
     use crate::schema::users::table as users;
     let connection = &mut connection();
@@ -61,7 +61,7 @@ fn insert_records_as_vec() {
     assert_eq!(expected_users, actual_users);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_records_as_static_array() {
     use crate::schema::users::table as users;
     let connection = &mut connection();
@@ -91,7 +91,7 @@ fn insert_records_as_static_array() {
     assert_eq!(expected_users, actual_users);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_records_as_static_array_ref() {
     use crate::schema::users::table as users;
     let connection = &mut connection();
@@ -121,7 +121,7 @@ fn insert_records_as_static_array_ref() {
     assert_eq!(expected_users, actual_users);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_records_as_boxed_static_array() {
     use crate::schema::users::table as users;
     let connection = &mut connection();
@@ -151,7 +151,7 @@ fn insert_records_as_boxed_static_array() {
     assert_eq!(expected_users, actual_users);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"))]
 fn insert_record_using_returning_clause() {
     use crate::schema::users::table as users;
@@ -171,7 +171,7 @@ fn insert_record_using_returning_clause() {
     assert_eq!(expected_user, inserted_user);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"))]
 fn insert_record_attached_database_using_returning_clause() {
     table! {
@@ -218,7 +218,7 @@ fn insert_record_attached_database_using_returning_clause() {
     assert_eq!(expected_entity, inserted_entity);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn insert_records_using_returning_clause() {
     use crate::schema::users::table as users;
@@ -248,7 +248,7 @@ fn insert_records_using_returning_clause() {
     assert_eq!(expected_users, inserted_users);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"))]
 fn insert_record_with_custom_returning_clause() {
     use crate::schema::users::dsl::*;
@@ -266,7 +266,7 @@ fn insert_record_with_custom_returning_clause() {
     assert_eq!(expected_user, inserted_user);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn insert_records_with_custom_returning_clause() {
     use crate::schema::users::dsl::*;
@@ -290,7 +290,7 @@ fn insert_records_with_custom_returning_clause() {
     assert_eq!(expected_users, inserted_users);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn batch_insert_with_defaults() {
     use crate::schema::users::table as users;
@@ -335,7 +335,7 @@ fn batch_insert_with_defaults() {
     assert_eq!(expected_users, actual_users);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn insert_with_defaults() {
     use crate::schema::users::table as users;
@@ -368,7 +368,7 @@ fn insert_with_defaults() {
     assert_eq!(expected_users, actual_users);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn insert_in_nullable_with_non_null_default() {
     use crate::schema::users::table as users;
@@ -414,7 +414,7 @@ fn insert_in_nullable_with_non_null_default() {
     assert_eq!(expected_users, actual_users);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn insert_returning_count_returns_number_of_rows_inserted() {
     use crate::schema::users::table as users;
@@ -452,7 +452,7 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
     assert_eq!(1, second_count);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(not(any(feature = "mysql", feature = "sqlite")))]
 fn insert_with_generated_column() {
     use crate::schema::user_with_last_names::table as users;
@@ -503,7 +503,7 @@ struct BorrowedUser<'a> {
     name: &'a str,
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_borrowed_content() {
     use crate::schema::users::table as users;
     let connection = &mut connection();
@@ -522,7 +522,7 @@ fn insert_borrowed_content() {
     assert_eq!(expected_users, actual_users);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_empty_slice() {
     let connection = &mut connection();
 
@@ -533,7 +533,7 @@ fn insert_empty_slice() {
     assert_eq!(Ok(0), inserted_records);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn insert_empty_slice_with_returning() {
     let connection = &mut connection();
@@ -549,7 +549,7 @@ fn insert_empty_slice_with_returning() {
     assert_eq!(Ok(vec![]), insert_all);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 fn upsert_empty_slice() {
     let connection = &mut connection();
@@ -562,7 +562,7 @@ fn upsert_empty_slice() {
     assert_eq!(Ok(0), inserted_records);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(any(
     feature = "postgres",
     all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35")
@@ -594,7 +594,7 @@ fn insert_only_default_values_with_returning() {
     assert_eq!(Ok(expected_users), users.load(connection));
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_single_bare_value() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();
@@ -609,7 +609,7 @@ fn insert_single_bare_value() {
     assert_eq!(Ok(expected_names), actual_names);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_single_bare_value_reference() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();
@@ -624,7 +624,7 @@ fn insert_single_bare_value_reference() {
     assert_eq!(Ok(expected_names), actual_names);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_multiple_bare_values() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();
@@ -641,7 +641,7 @@ fn insert_multiple_bare_values() {
     assert_eq!(Ok(expected_names), actual_names);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_single_tuple() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();
@@ -656,7 +656,7 @@ fn insert_single_tuple() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_single_tuple_reference() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();
@@ -671,7 +671,7 @@ fn insert_single_tuple_reference() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_nested_tuples() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();
@@ -686,7 +686,7 @@ fn insert_nested_tuples() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_mixed_tuple_and_insertable_struct() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();
@@ -702,7 +702,7 @@ fn insert_mixed_tuple_and_insertable_struct() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_multiple_tuples() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();
@@ -724,7 +724,7 @@ fn insert_multiple_tuples() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn insert_optional_field_with_null() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();
@@ -746,7 +746,7 @@ fn insert_optional_field_with_null() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(not(feature = "mysql"))]
 fn insert_optional_field_with_default() {
     use crate::schema::users::dsl::*;
@@ -781,7 +781,7 @@ fn insert_optional_field_with_default() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(not(feature = "mysql"))]
 fn insert_all_default_fields() {
     use crate::schema::users::dsl::*;
@@ -816,7 +816,7 @@ fn insert_all_default_fields() {
     assert_eq!(Ok(expected_data), actual_data);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn batch_insert_is_atomic_on_sqlite() {
     use crate::schema::users::dsl::*;
@@ -830,7 +830,7 @@ fn batch_insert_is_atomic_on_sqlite() {
 }
 
 // regression test for https://github.com/diesel-rs/diesel/issues/2898
-#[td::test]
+#[diesel_test_helper::test]
 fn mixed_defaultable_insert() {
     use crate::schema::users;
 
@@ -867,7 +867,7 @@ fn mixed_defaultable_insert() {
 }
 
 // regression test for https://github.com/diesel-rs/diesel/issues/3872
-#[td::test]
+#[diesel_test_helper::test]
 fn upsert_with_composite_primary_key_do_nothing() {
     table! {
         users (id, name) {
@@ -894,7 +894,7 @@ fn upsert_with_composite_primary_key_do_nothing() {
 }
 
 // regression test for https://github.com/diesel-rs/diesel/issues/3872
-#[td::test]
+#[diesel_test_helper::test]
 fn upsert_with_composite_primary_key_do_update() {
     table! {
         users (id, name) {

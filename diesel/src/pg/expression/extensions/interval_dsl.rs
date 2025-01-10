@@ -292,7 +292,7 @@ mod tests {
         };
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn intervals_match_pg_values_i32() {
         test_fn!(i32, test_microseconds, microseconds, i32::MAX);
         test_fn!(i32, test_milliseconds, milliseconds, i32::MAX);
@@ -305,7 +305,7 @@ mod tests {
         test_fn!(i32, test_years, years, i32::MAX / 12);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn intervals_match_pg_values_i64() {
         // postgres does not really support intervals with more than i32::MAX microseconds
         // https://www.postgresql.org/message-id/20140126025049.GL9750@momjian.us
@@ -320,7 +320,7 @@ mod tests {
         test_fn!(i64, test_years, years, (i32::MAX / 12) as i64);
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn intervals_match_pg_values_f64() {
         const MAX_DIFF: i64 = 1_000_000;
         // postgres does not really support intervals with more than i32::MAX microseconds

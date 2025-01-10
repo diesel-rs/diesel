@@ -777,7 +777,7 @@ mod tests {
     }
 
     #[cfg(feature = "extras")]
-    #[td::test]
+    #[diesel_test_helper::test]
     fn check_all_the_types() {
         let conn = &mut crate::test_helpers::connection();
 
@@ -1310,7 +1310,7 @@ mod tests {
         }
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn check_json_bind() {
         table! {
             json_test {
@@ -1474,7 +1474,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn check_enum_bind() {
         let conn = &mut crate::test_helpers::connection();
 
@@ -1664,7 +1664,7 @@ mod tests {
         );
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn check_set_bind() {
         let conn = &mut crate::test_helpers::connection();
 

@@ -1,7 +1,7 @@
 use crate::schema::*;
 use diesel::*;
 
-#[td::test]
+#[diesel_test_helper::test]
 fn one_to_many_returns_query_source_for_association() {
     let (mut connection, sean, tess, _) = conn_with_test_data();
 
@@ -21,7 +21,7 @@ fn one_to_many_returns_query_source_for_association() {
     assert_eq!(tess_posts, found_posts);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn eager_loading_associations_for_multiple_records() {
     let (mut connection, sean, tess, _) = conn_with_test_data();
 
@@ -38,7 +38,7 @@ fn eager_loading_associations_for_multiple_records() {
     assert_eq!(expected_data, users_and_posts);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn eager_loading_associations_for_multiple_ref_records() {
     let (mut connection, sean, tess, _) = conn_with_test_data();
 
@@ -77,7 +77,7 @@ mod eager_loading_with_string_keys {
         user_id: String,
     }
 
-    #[td::test]
+    #[diesel_test_helper::test]
     fn eager_loading_associations_for_multiple_records() {
         let connection = &mut connection();
         drop_table_cascade(connection, "users");
@@ -110,7 +110,7 @@ mod eager_loading_with_string_keys {
     }
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn grouping_associations_maintains_ordering() {
     let (mut connection, sean, tess, _) = conn_with_test_data();
 
@@ -145,7 +145,7 @@ fn grouping_associations_maintains_ordering() {
     assert_eq!(expected_data, users_and_posts);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn associations_can_be_grouped_multiple_levels_deep() {
     // I'm manually defining the data rather than loading from the database here,
     // as it makes the tests *way* more readable if I omit setup here. This is
@@ -192,7 +192,7 @@ fn associations_can_be_grouped_multiple_levels_deep() {
     assert_eq!(expected_data, data);
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn self_referencing_associations() {
     #[derive(Insertable, Queryable, Associations, Identifiable, Debug, Clone, Copy, PartialEq)]
     #[diesel(table_name = trees)]
@@ -277,7 +277,7 @@ fn conn_with_test_data() -> (TestConnection, User, User, User) {
     (connection, sean, tess, jim)
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 // FIXME: Figure out how to handle tests that modify schema
 #[cfg(not(feature = "mysql"))]
 // https://github.com/rust-lang/rust/issues/124396

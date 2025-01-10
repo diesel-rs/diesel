@@ -63,7 +63,7 @@ fn setup_test_case() -> (Arc<Mutex<Vec<Event>>>, TestConnection) {
     (events_to_check, conn)
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_batch_execute() {
     let (events_to_check, mut conn) = setup_test_case();
     conn.batch_execute("select 1").unwrap();
@@ -85,7 +85,7 @@ fn check_events_are_emitted_for_batch_execute() {
     );
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_execute_returning_count() {
     let (events_to_check, mut conn) = setup_test_case();
     conn.execute_returning_count(&users::table.as_query())
@@ -97,7 +97,7 @@ fn check_events_are_emitted_for_execute_returning_count() {
     assert_matches!(events[2], Event::FinishQuery { .. });
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_load() {
     let (events_to_check, mut conn) = setup_test_case();
     LoadConnection::<DefaultLoadingMode>::load(&mut conn, users::table.as_query()).unwrap();
@@ -108,7 +108,7 @@ fn check_events_are_emitted_for_load() {
     assert_matches!(events[2], Event::FinishQuery { .. });
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_execute_returning_count_does_not_contain_cache_for_uncached_queries(
 ) {
     let (events_to_check, mut conn) = setup_test_case();
@@ -120,7 +120,7 @@ fn check_events_are_emitted_for_execute_returning_count_does_not_contain_cache_f
     assert_matches!(events[1], Event::FinishQuery { .. });
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_load_does_not_contain_cache_for_uncached_queries() {
     let (events_to_check, mut conn) = setup_test_case();
     LoadConnection::<DefaultLoadingMode>::load(&mut conn, diesel::sql_query("select 1")).unwrap();
@@ -130,7 +130,7 @@ fn check_events_are_emitted_for_load_does_not_contain_cache_for_uncached_queries
     assert_matches!(events[1], Event::FinishQuery { .. });
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_execute_returning_count_does_contain_error_for_failures() {
     let (events_to_check, mut conn) = setup_test_case();
     let _ = conn.execute_returning_count(&diesel::sql_query("invalid"));
@@ -140,7 +140,7 @@ fn check_events_are_emitted_for_execute_returning_count_does_contain_error_for_f
     assert_matches!(events[1], Event::FinishQuery { error: Some(_), .. });
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_load_does_contain_error_for_failures() {
     let (events_to_check, mut conn) = setup_test_case();
     let _ = LoadConnection::<DefaultLoadingMode>::load(&mut conn, diesel::sql_query("invalid"));
@@ -150,7 +150,7 @@ fn check_events_are_emitted_for_load_does_contain_error_for_failures() {
     assert_matches!(events[1], Event::FinishQuery { error: Some(_), .. });
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_execute_returning_count_repeat_does_not_repeat_cache() {
     let (events_to_check, mut conn) = setup_test_case();
     conn.execute_returning_count(&users::table.as_query())
@@ -166,7 +166,7 @@ fn check_events_are_emitted_for_execute_returning_count_repeat_does_not_repeat_c
     assert_matches!(events[4], Event::FinishQuery { .. });
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_load_repeat_does_not_repeat_cache() {
     let (events_to_check, mut conn) = setup_test_case();
     LoadConnection::<DefaultLoadingMode>::load(&mut conn, users::table.as_query()).unwrap();
@@ -180,7 +180,7 @@ fn check_events_are_emitted_for_load_repeat_does_not_repeat_cache() {
     assert_matches!(events[4], Event::FinishQuery { .. });
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_transaction() {
     let (events_to_check, mut conn) = setup_test_case();
     conn.transaction(|_conn| QueryResult::Ok(())).unwrap();
@@ -194,7 +194,7 @@ fn check_events_transaction() {
     assert_matches!(events[5], Event::FinishQuery { .. });
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_transaction_error() {
     let (events_to_check, mut conn) = setup_test_case();
     let _ = conn
@@ -209,7 +209,7 @@ fn check_events_transaction_error() {
     assert_matches!(events[5], Event::FinishQuery { .. });
 }
 
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_transaction_nested() {
     let (events_to_check, mut conn) = setup_test_case();
     conn.transaction(|conn| conn.transaction(|_conn| QueryResult::Ok(())))
@@ -231,7 +231,7 @@ fn check_events_transaction_nested() {
 }
 
 #[cfg(feature = "postgres")]
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_load_pg_row_by_row() {
     use diesel::pg::PgRowByRowLoadingMode;
 
@@ -245,7 +245,7 @@ fn check_events_are_emitted_for_load_pg_row_by_row() {
 }
 
 #[cfg(feature = "postgres")]
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_load_does_not_contain_cache_for_uncached_queries_pg_row_by_row() {
     use diesel::pg::PgRowByRowLoadingMode;
 
@@ -259,7 +259,7 @@ fn check_events_are_emitted_for_load_does_not_contain_cache_for_uncached_queries
 }
 
 #[cfg(feature = "postgres")]
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_load_does_contain_error_for_failures_pg_row_by_row() {
     use diesel::pg::PgRowByRowLoadingMode;
 
@@ -272,7 +272,7 @@ fn check_events_are_emitted_for_load_does_contain_error_for_failures_pg_row_by_r
 }
 
 #[cfg(feature = "postgres")]
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_copy_to() {
     use diesel::pg::CopyFormat;
     use diesel::ExecuteCopyFromDsl;
@@ -295,7 +295,7 @@ fn check_events_are_emitted_for_copy_to() {
 }
 
 #[cfg(feature = "postgres")]
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_copy_to_with_error() {
     use diesel::pg::CopyFormat;
     use diesel::ExecuteCopyFromDsl;
@@ -316,7 +316,7 @@ fn check_events_are_emitted_for_copy_to_with_error() {
 }
 
 #[cfg(feature = "postgres")]
-#[td::test]
+#[diesel_test_helper::test]
 fn check_events_are_emitted_for_copy_from() {
     use diesel::pg::CopyFormat;
     use std::io::Read;

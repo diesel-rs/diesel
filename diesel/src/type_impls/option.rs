@@ -124,7 +124,7 @@ where
 }
 
 #[cfg(test)]
-#[td::test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn option_to_sql() {
     use crate::pg::Pg;
