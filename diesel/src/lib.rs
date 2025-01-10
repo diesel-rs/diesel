@@ -779,10 +779,10 @@ pub mod prelude {
     #[doc(inline)]
     pub use crate::sqlite::SqliteConnection;
 
-    // These exported APIs from `sqlite-wasm-rs` are stable:
+    // These exported API from `sqlite-wasm-rs` are stable:
     #[cfg(feature = "sqlite")]
     #[cfg(all(target_family = "wasm", target_os = "unknown"))]
-    pub use sqlite_wasm_rs::export as wasm_export;
+    pub use sqlite_wasm_rs::export::init_sqlite;
 }
 
 #[doc(inline)]
