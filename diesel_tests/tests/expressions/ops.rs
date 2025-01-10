@@ -1,7 +1,7 @@
 use crate::schema::*;
 use diesel::*;
 
-#[test]
+#[diesel_test_helper::test]
 fn adding_literal_to_column() {
     use crate::schema::users::dsl::*;
 
@@ -16,7 +16,7 @@ fn adding_literal_to_column() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(not(feature = "sqlite"))] // FIXME: Does SQLite provide a way to detect overflow?
 fn overflow_returns_an_error_but_does_not_panic() {
     use crate::schema::users::dsl::*;
@@ -29,7 +29,7 @@ fn overflow_returns_an_error_but_does_not_panic() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn adding_column_to_column() {
     use crate::schema::users::dsl::*;
 
@@ -40,7 +40,7 @@ fn adding_column_to_column() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn adding_multiple_times() {
     use crate::schema::users::dsl::*;
 
@@ -51,7 +51,7 @@ fn adding_multiple_times() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn subtracting_literal_from_column() {
     use crate::schema::users::dsl::*;
 
@@ -62,7 +62,7 @@ fn subtracting_literal_from_column() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn adding_then_subtracting() {
     use crate::schema::users::dsl::*;
 
@@ -73,7 +73,7 @@ fn adding_then_subtracting() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn multiplying_column() {
     use crate::schema::users::dsl::*;
 
@@ -84,7 +84,7 @@ fn multiplying_column() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn dividing_column() {
     use crate::schema::users::dsl::*;
 
@@ -95,7 +95,7 @@ fn dividing_column() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn test_adding_nullables() {
     use crate::schema::nullable_table::dsl::*;
     let connection = &mut connection_with_nullable_table_data();
@@ -115,7 +115,7 @@ fn test_adding_nullables() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[allow(clippy::eq_op)]
 // As this creates a sql expression clippy is wrong here
 fn test_subtracting_nullables() {
@@ -137,7 +137,7 @@ fn test_subtracting_nullables() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn test_multiplying_nullables() {
     use crate::schema::nullable_table::dsl::*;
     let connection = &mut connection_with_nullable_table_data();
@@ -157,7 +157,7 @@ fn test_multiplying_nullables() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[allow(clippy::eq_op)]
 // As this creates a sql expression clippy is wrong here
 fn test_dividing_nullables() {
@@ -179,7 +179,7 @@ fn test_dividing_nullables() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn mix_and_match_all_numeric_ops() {
     use crate::schema::users::dsl::*;
 
@@ -196,7 +196,7 @@ fn mix_and_match_all_numeric_ops() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn precedence_with_parens_is_maintained() {
     use diesel::sql_types::Integer;
 
@@ -204,7 +204,7 @@ fn precedence_with_parens_is_maintained() {
     assert_eq!(Ok(20), x);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "mysql")]
 fn test_adding_unsigned() {
     use crate::schema::unsigned_table::dsl::*;
@@ -222,7 +222,7 @@ fn test_adding_unsigned() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "mysql")]
 #[allow(clippy::eq_op)]
 // As this creates a sql expression clippy is wrong here
@@ -242,7 +242,7 @@ fn test_subtracting_unsigned() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "mysql")]
 #[allow(clippy::identity_op)]
 // As this creates a sql expression clippy is wrong here
@@ -262,7 +262,7 @@ fn test_multiplying_unsigned() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "mysql")]
 #[allow(clippy::identity_op, clippy::eq_op)]
 // As this creates a sql expression clippy is wrong here
@@ -282,7 +282,7 @@ fn test_dividing_unsigned() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "mysql")]
 fn test_multiple_unsigned() {
     use crate::schema::unsigned_table::dsl::*;

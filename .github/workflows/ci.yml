@@ -21,7 +21,7 @@ concurrency:
 jobs:
   check_and_test:
     name: Check
-    needs: [sqlite_bundled, rustfmt_and_clippy, postgres_bundled, mysql_bundled]
+    needs: [sqlite_bundled, sqlite_wasm, rustfmt_and_clippy, postgres_bundled, mysql_bundled]
     strategy:
       fail-fast: false
       matrix:
@@ -277,6 +277,26 @@ jobs:
           echo "RUSTDOCFLAGS=-D warnings" >> $GITHUB_ENV
       - name: Run clippy + rustfmt
         run: cargo xtask tidy --keep-going
+
+  sqlite_wasm:
+    name: Check sqlite wasm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: "rust-src"
+          targets: "wasm32-unknown-unknown"
+      - name: Cache cargo registry
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: sqlite_wasm-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Install wasm-pack
+        run: cargo install wasm-pack
+
+      - name: Test unit and integration tests
+        run: cargo xtask run-tests --wasm sqlite
 
   sqlite_bundled:
     name: Check sqlite bundled + Sqlite with asan

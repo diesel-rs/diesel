@@ -193,7 +193,7 @@ mod test {
         }
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn test_generated_tablesample_sql() {
         assert_sql!(
             users::table.tablesample_bernoulli(10),

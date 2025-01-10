@@ -36,7 +36,7 @@ impl Query for LiteralSelect<'_> {
     type SqlType = Text;
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn literal_select_using_query_fragment() {
     let connection = &mut connection();
     diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")

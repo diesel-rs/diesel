@@ -229,7 +229,8 @@ impl<'a> Field<'a, Mysql> for MysqlField<'a> {
     }
 }
 
-#[test]
+#[cfg(test)]
+#[diesel_test_helper::test]
 #[allow(clippy::drop_non_drop)] // we want to explicitly extend lifetimes here
 fn fun_with_row_iters() {
     crate::table! {

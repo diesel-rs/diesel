@@ -222,7 +222,7 @@ mod tests {
     use crate::sql_types::{Date, Interval, Time, Timestamp, Timestamptz};
     use crate::test_helpers::connection;
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_encodes_correctly() {
         let connection = &mut connection();
         let time = NaiveDate::from_ymd_opt(1970, 1, 1)
@@ -233,7 +233,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_encodes_correctly_with_utc_timezone() {
         let connection = &mut connection();
         let time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).single().unwrap();
@@ -241,7 +241,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_encodes_correctly_with_timezone() {
         let connection = &mut connection();
         let time = FixedOffset::west_opt(3600)
@@ -253,7 +253,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_decodes_correctly() {
         let connection = &mut connection();
         let time = NaiveDate::from_ymd_opt(1970, 1, 1)
@@ -265,7 +265,7 @@ mod tests {
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_decodes_correctly_with_timezone() {
         let connection = &mut connection();
         let time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).single().unwrap();
@@ -274,7 +274,7 @@ mod tests {
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
         let time = Utc::now().naive_utc() + Duration::try_seconds(60).unwrap();
@@ -286,7 +286,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_with_timezones_round_trip_after_conversion() {
         let connection = &mut connection();
         let time = FixedOffset::east_opt(3600)
@@ -301,7 +301,7 @@ mod tests {
         assert_eq!(Ok(expected), query.get_result(connection));
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_of_day_encode_correctly() {
         let connection = &mut connection();
 
@@ -318,7 +318,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_of_day_decode_correctly() {
         let connection = &mut connection();
         let midnight = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
@@ -337,7 +337,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn dates_encode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
@@ -365,7 +365,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn dates_decode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
@@ -423,7 +423,7 @@ mod tests {
         )
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn duration_encode_correctly() {
         let connection = &mut connection();
         let (duration, literal_strings) = get_test_duration_and_literal_strings();
@@ -433,7 +433,7 @@ mod tests {
         }
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn duration_decode_correctly() {
         let connection = &mut connection();
         let (duration, literal_strings) = get_test_duration_and_literal_strings();

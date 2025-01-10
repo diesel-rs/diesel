@@ -3,7 +3,7 @@ use diesel::pg::{CopyFormat, CopyHeader};
 use diesel::prelude::*;
 use std::io::Read;
 
-#[test]
+#[diesel_test_helper::test]
 fn copy_from_csv() {
     let conn = &mut connection();
 
@@ -27,7 +27,7 @@ fn copy_from_csv() {
     assert_eq!(users, 2);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn copy_from_text() {
     let conn = &mut connection();
 
@@ -66,7 +66,7 @@ fn copy_from_text() {
     assert_eq!(users, 4);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn copy_from_allows_to_return_error() {
     // use a connection without transaction here as otherwise
     // we fail the last query
@@ -90,7 +90,7 @@ fn copy_from_allows_to_return_error() {
     assert_eq!(users, 0);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn copy_from_with_columns() {
     let conn = &mut connection();
 
@@ -113,7 +113,7 @@ fn copy_from_with_columns() {
     assert_eq!(users, 2);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn copy_from_csv_all_options() {
     let conn = &mut connection();
 
@@ -148,7 +148,7 @@ fn copy_from_csv_all_options() {
     assert_eq!(users, 2);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn copy_from_from_insertable_struct() {
     let conn = &mut connection();
 
@@ -190,7 +190,7 @@ fn copy_from_from_insertable_struct() {
     assert_eq!(users[1], ("Tess".to_owned(), Some("green".into())));
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn copy_from_from_insertable_tuple() {
     let conn = &mut connection();
 
@@ -218,7 +218,7 @@ fn copy_from_from_insertable_tuple() {
     assert_eq!(users[1], ("Tess".to_owned(), Some("green".into())));
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn copy_from_from_insertable_vec() {
     let conn = &mut connection();
 
@@ -246,7 +246,7 @@ fn copy_from_from_insertable_vec() {
     assert_eq!(users[1], ("Tess".to_owned(), Some("green".into())));
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn copy_to_csv() {
     let conn = &mut connection_with_sean_and_tess_in_users_table();
 
@@ -260,7 +260,7 @@ fn copy_to_csv() {
     assert_eq!(out, "1,Sean,\n2,Tess,\n");
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn copy_to_text() {
     let conn = &mut connection_with_sean_and_tess_in_users_table();
     {
@@ -279,7 +279,7 @@ fn copy_to_text() {
     assert_eq!(out, "1\tSean\t\\N\n2\tTess\t\\N\n");
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn copy_to_csv_all_options() {
     let conn = &mut connection_with_sean_and_tess_in_users_table();
     let mut out = String::new();
@@ -300,7 +300,7 @@ fn copy_to_csv_all_options() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn copy_to_queryable() {
     let conn = &mut connection_with_sean_and_tess_in_users_table();
 

@@ -1,7 +1,7 @@
 use crate::schema::*;
 use diesel::*;
 
-#[test]
+#[diesel_test_helper::test]
 fn insert_from_table() {
     use crate::schema::posts::dsl::*;
     let conn = &mut connection_with_sean_and_tess_in_users_table();
@@ -22,7 +22,7 @@ fn insert_from_table() {
     assert_eq!(Ok(expected), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn insert_from_table_reference() {
     use crate::schema::posts::dsl::*;
     let conn = &mut connection_with_sean_and_tess_in_users_table();
@@ -43,7 +43,7 @@ fn insert_from_table_reference() {
     assert_eq!(Ok(expected), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn insert_from_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
@@ -65,7 +65,7 @@ fn insert_from_select() {
     assert_eq!(expected, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn insert_from_select_reference() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
@@ -87,7 +87,7 @@ fn insert_from_select_reference() {
     assert_eq!(expected, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn insert_from_boxed() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
@@ -110,7 +110,7 @@ fn insert_from_boxed() {
     assert_eq!(expected, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn insert_from_boxed_reference() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
@@ -132,7 +132,7 @@ fn insert_from_boxed_reference() {
     assert_eq!(expected, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn insert_or_ignore_with_select() {
     use crate::schema::posts::dsl::*;
@@ -159,7 +159,7 @@ fn insert_or_ignore_with_select() {
     assert_eq!(expected, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn insert_or_replace_with_select() {
     use crate::schema::posts::dsl::*;
@@ -186,7 +186,7 @@ fn insert_or_replace_with_select() {
     assert_eq!(expected, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "mysql")]
 // We can't share the test with SQLite because it modifies
 // schema, but we can at least make sure the query is *syntactically* valid.
@@ -207,7 +207,7 @@ fn insert_or_ignore_with_select() {
     assert_eq!(expected, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "mysql")]
 // We can't share the test with SQLite because it modifies
 // schema, but we can at least make sure the query is *syntactically* valid.
@@ -228,7 +228,7 @@ fn insert_or_replace_with_select() {
     assert_eq!(expected, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn on_conflict_do_nothing_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
@@ -286,7 +286,7 @@ fn on_conflict_do_nothing_with_select() {
     assert_eq!(expected, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn on_conflict_do_update_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
@@ -355,7 +355,7 @@ fn on_conflict_do_update_with_select() {
     assert_eq!(expected, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn on_conflict_do_update_with_boxed_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};

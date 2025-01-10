@@ -365,7 +365,7 @@ mod private {
 mod tests {
     fn assert_send<S: Send>(_: S) {}
 
-    #[test]
+    #[diesel_test_helper::test]
     fn check_boxed_sql_query_is_send() {
         let query = crate::sql_query("SELECT 1")
             .into_boxed::<<crate::test_helpers::TestConnection as crate::Connection>::Backend>(

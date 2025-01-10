@@ -3,7 +3,7 @@ use super::schema::*;
 use crate::schema_dsl::*;
 use diesel::*;
 
-#[test]
+#[diesel_test_helper::test]
 fn selecting_basic_data() {
     use crate::schema::users::dsl::*;
 
@@ -20,7 +20,7 @@ fn selecting_basic_data() {
     assert_eq!(expected_data, actual_data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn selecting_a_struct() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();
@@ -37,7 +37,7 @@ fn selecting_a_struct() {
     assert_eq!(expected_users, actual_users);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn with_safe_select() {
     use crate::schema::users::dsl::*;
 
@@ -52,7 +52,7 @@ fn with_safe_select() {
     assert_eq!(vec!["Sean".to_string(), "Tess".to_string()], names);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn with_select_sql() {
     use diesel::dsl::sql;
 
@@ -72,7 +72,7 @@ fn with_select_sql() {
     assert_eq!(Ok(3), select_count.first(connection));
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn selecting_nullable_followed_by_non_null() {
     use crate::schema::users::dsl::*;
 
@@ -88,7 +88,7 @@ fn selecting_nullable_followed_by_non_null() {
     assert_eq!(expected_data, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn selecting_expression_with_bind_param() {
     use crate::schema::users::dsl::*;
 
@@ -111,7 +111,7 @@ table! {
     }
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_and_tables_with_reserved_names() {
     use self::select::dsl::*;
@@ -139,7 +139,7 @@ fn selecting_columns_and_tables_with_reserved_names() {
     assert_eq!(expected_data, actual_data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_with_different_definition_order() {
     let connection = &mut connection();
@@ -164,7 +164,7 @@ fn selecting_columns_with_different_definition_order() {
     assert_eq!(Ok(&expected_user), user_from_select.as_ref());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn selection_using_subselect() {
     use crate::schema::posts::dsl::*;
 
@@ -225,7 +225,7 @@ table! {
 
 // the test is somehow broken on some mariadb versions
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
-#[test]
+#[diesel_test_helper::test]
 fn select_for_update_locks_selected_rows() {
     use self::users_select_for_update::dsl::*;
     use diesel::connection::SimpleConnection;
@@ -301,7 +301,7 @@ fn select_for_update_locks_selected_rows() {
 }
 
 #[cfg(feature = "postgres")]
-#[test]
+#[diesel_test_helper::test]
 fn select_for_update_modifiers() {
     use self::users_select_for_update_modifiers::dsl::*;
 
@@ -375,7 +375,7 @@ fn select_for_update_modifiers() {
 }
 
 #[cfg(feature = "postgres")]
-#[test]
+#[diesel_test_helper::test]
 fn select_for_no_key_update_modifiers() {
     use self::users_fk_for_no_key_update::dsl::*;
     use self::users_select_for_no_key_update::dsl::*;
@@ -490,7 +490,7 @@ fn select_for_no_key_update_modifiers() {
     }
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", connection);
@@ -513,7 +513,7 @@ fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
     assert_eq!(Ok(vec![tess]), users_with_post_using_name_as_title);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn selecting_multiple_aggregate_expressions_without_group_by() {
     use self::users::dsl::*;
     use diesel::dsl::{count_star, max};

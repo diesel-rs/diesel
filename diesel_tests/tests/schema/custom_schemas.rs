@@ -10,7 +10,7 @@ struct NewUser {
     id: i32,
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn custom_schemas_are_loaded_by_infer_schema() {
     let conn = &mut connection();
     insert_into(users::table)

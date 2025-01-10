@@ -20,12 +20,20 @@ serde_json = { version=">=0.9, <2.0" }
 ipnet = { version = "2.5.0" }
 ipnetwork = ">=0.12.2, <0.22.0"
 bigdecimal = ">= 0.0.13, < 0.5.0"
-rand = "0.8.4"
 libsqlite3-sys = { workspace = true, optional = true }
+rand = "0.8.4"
 pq-sys = { workspace = true, optional = true }
 pq-src = { version = "0.3", optional = true }
 mysqlclient-sys = { workspace = true, optional = true }
 mysqlclient-src = { version = "0.1.0", optional = true }
+diesel_test_helper = { path = "../diesel_test_helper" }
+
+[target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
+# Something is dependent on it, so we use feature to override it.
+getrandom = { version = "0.2", features = ["js"] }
+wasm-bindgen-test = "0.3.49"
+# Wasm can use thread::sleep when atomic target_feature is enabled, but that requires nightly
+wasmtimer = "0.4.1"
 
 [features]
 default = []

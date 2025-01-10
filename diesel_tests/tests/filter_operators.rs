@@ -1,7 +1,7 @@
 use crate::schema::*;
 use diesel::*;
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_by_inequality() {
     use crate::schema::users::dsl::*;
 
@@ -27,7 +27,7 @@ fn filter_by_inequality() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_by_gt() {
     use crate::schema::users::dsl::*;
 
@@ -46,7 +46,7 @@ fn filter_by_gt() {
     assert_eq!(vec![jim], users.filter(id.gt(2)).load(connection).unwrap());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_by_ge() {
     use crate::schema::users::dsl::*;
 
@@ -65,7 +65,7 @@ fn filter_by_ge() {
     assert_eq!(vec![jim], users.filter(id.ge(3)).load(connection).unwrap());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_by_lt() {
     use crate::schema::users::dsl::*;
 
@@ -84,7 +84,7 @@ fn filter_by_lt() {
     assert_eq!(vec![sean], users.filter(id.lt(2)).load(connection).unwrap());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_by_le() {
     use crate::schema::users::dsl::*;
 
@@ -103,7 +103,7 @@ fn filter_by_le() {
     assert_eq!(vec![sean], users.filter(id.le(1)).load(connection).unwrap());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_by_between() {
     use crate::schema::users::dsl::*;
 
@@ -130,7 +130,7 @@ fn filter_by_between() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_by_like() {
     use crate::schema::users::dsl::*;
 
@@ -167,7 +167,7 @@ fn filter_by_like() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn filter_by_ilike() {
     use crate::schema::users::dsl::*;
@@ -205,7 +205,7 @@ fn filter_by_ilike() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn filter_by_any() {
     use crate::schema::users::dsl::*;
@@ -235,7 +235,7 @@ fn filter_by_any() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_by_in() {
     use crate::schema::users::dsl::*;
 
@@ -264,7 +264,7 @@ fn filter_by_in() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn filter_by_in_explicit_array() {
     use crate::schema::users::dsl::*;
@@ -323,7 +323,7 @@ fn filter_by_in_explicit_array() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn filter_array_by_in() {
     use crate::schema::posts::dsl::*;
@@ -338,7 +338,7 @@ fn filter_array_by_in() {
     assert_eq!(result, &[] as &[i32]);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn filter_array_by_not_in() {
     use crate::schema::posts::dsl::*;

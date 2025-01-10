@@ -268,6 +268,11 @@
 #![deny(unsafe_code)]
 #![cfg_attr(test, allow(clippy::map_unwrap_or, clippy::unwrap_used))]
 
+// Running wasm tests on dedicated_worker
+#[cfg(test)]
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
+wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_dedicated_worker);
+
 extern crate diesel_derives;
 
 #[macro_use]
@@ -773,6 +778,12 @@ pub mod prelude {
     #[cfg(feature = "sqlite")]
     #[doc(inline)]
     pub use crate::sqlite::SqliteConnection;
+
+    // These exported API from `sqlite-wasm-rs` are stable:
+    #[cfg(feature = "sqlite")]
+    #[cfg(all(target_family = "wasm", target_os = "unknown"))]
+    #[doc(inline)]
+    pub use sqlite_wasm_rs::export::init_sqlite;
 }
 
 #[doc(inline)]

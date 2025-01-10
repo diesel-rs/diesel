@@ -212,7 +212,7 @@ impl<'stmt> Field<'stmt, Sqlite> for SqliteField<'stmt, '_> {
 mod tests {
     use super::*;
 
-    #[test]
+    #[diesel_test_helper::test]
     fn fun_with_row_iters() {
         crate::table! {
             #[allow(unused_parens)]
@@ -345,7 +345,7 @@ mod tests {
     #[cfg(feature = "returning_clauses_for_sqlite_3_35")]
     crate::define_sql_function! {fn sleep(a: diesel::sql_types::Integer) -> diesel::sql_types::Integer}
 
-    #[test]
+    #[diesel_test_helper::test]
     #[cfg(feature = "returning_clauses_for_sqlite_3_35")]
     #[allow(clippy::cast_sign_loss)]
     fn parallel_iter_with_error() {

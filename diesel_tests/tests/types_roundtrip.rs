@@ -68,7 +68,7 @@ macro_rules! test_round_trip {
         test_round_trip!($test_name, $sql_type, $tpe, $map_fn, ne);
     };
     ($test_name:ident, $sql_type:ty, $tpe:ty, $map_fn:ident, $cmp: expr) => {
-        #[test]
+        #[diesel_test_helper::test]
         #[allow(clippy::type_complexity)]
         fn $test_name() {
             use diesel::sql_types::*;

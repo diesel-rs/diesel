@@ -5,6 +5,7 @@ members = [
     "diesel_cli",
     "diesel_derives",
     "diesel_tests",
+    "diesel_test_helper",
     "diesel_migrations",
     "diesel_migrations/migrations_internals",
     "diesel_migrations/migrations_macros",

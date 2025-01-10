@@ -1,7 +1,7 @@
 use crate::schema::*;
 use diesel::*;
 
-#[test]
+#[diesel_test_helper::test]
 fn execute_query_by_raw_sql() {
     let conn = &mut connection();
 
@@ -13,7 +13,7 @@ fn execute_query_by_raw_sql() {
     assert_eq!(Ok(expected_users), users);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn query_by_raw_sql() {
     let conn = &mut connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", conn);
@@ -24,7 +24,7 @@ fn query_by_raw_sql() {
     assert_eq!(Ok(expected), users);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn sql_query_deserializes_by_name_not_index() {
     let conn = &mut connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", conn);
@@ -35,7 +35,7 @@ fn sql_query_deserializes_by_name_not_index() {
     assert_eq!(Ok(expected), users);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn sql_query_can_take_bind_params() {
     use diesel::sql_types::Text;
 
@@ -53,7 +53,7 @@ fn sql_query_can_take_bind_params() {
     assert_eq!(Ok(expected), users);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn sql_query_can_take_bind_params_boxed() {
     use diesel::sql_types::Text;
 

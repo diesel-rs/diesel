@@ -1,4 +1,8 @@
+#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 extern crate libsqlite3_sys as ffi;
+
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
+use sqlite_wasm_rs::export as ffi;
 
 mod bind_collector;
 mod functions;
@@ -164,6 +168,18 @@ impl Connection for SqliteConnection {
     ///
     /// If the database does not exist, this method will try to
     /// create a new database and then establish a connection to it.
+    ///
+    /// ## WASM support
+    ///
+    /// If you plan to use this connection type on the `wasm32-unknown-unknown` target please
+    /// make sure to read the following notes:
+    ///
+    /// * You must  initialize sqlite using `diesel::init_sqlite` before calling `SqliteConnection::establish`.
+    /// * The database is stored in memory by default. sqlite-wasm
+    ///     provides different persistent VFS (Virtual File Systems), but they all have different limitations.
+    ///     See <https://sqlite.org/wasm/doc/trunk/persistence.md> for details. Make sure to chose
+    ///     an appropriated VFS implementation for your usecase.
+    /// * VFS can be selected through the `database_url` via an URL option, such as `file:data.db?vfs=opfs`.
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut instrumentation = DynInstrumentation::default_instrumentation();
         instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
@@ -569,7 +585,7 @@ mod tests {
         SqliteConnection::establish(":memory:").unwrap()
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn database_serializes_and_deserializes_successfully() {
         let expected_users = vec![
             (
@@ -607,7 +623,7 @@ mod tests {
     use crate::sql_types::Text;
     define_sql_function!(fn fun_case(x: Text) -> Text);
 
-    #[test]
+    #[diesel_test_helper::test]
     fn register_custom_function() {
         let connection = &mut connection();
         fun_case_utils::register_impl(connection, |x: String| {
@@ -632,7 +648,7 @@ mod tests {
 
     define_sql_function!(fn my_add(x: Integer, y: Integer) -> Integer);
 
-    #[test]
+    #[diesel_test_helper::test]
     fn register_multiarg_function() {
         let connection = &mut connection();
         my_add_utils::register_impl(connection, |x: i32, y: i32| x + y).unwrap();
@@ -643,7 +659,7 @@ mod tests {
 
     define_sql_function!(fn answer() -> Integer);
 
-    #[test]
+    #[diesel_test_helper::test]
     fn register_noarg_function() {
         let connection = &mut connection();
         answer_utils::register_impl(connection, || 42).unwrap();
@@ -652,7 +668,7 @@ mod tests {
         assert_eq!(Ok(42), answer);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn register_nondeterministic_noarg_function() {
         let connection = &mut connection();
         answer_utils::register_nondeterministic_impl(connection, || 42).unwrap();
@@ -663,7 +679,7 @@ mod tests {
 
     define_sql_function!(fn add_counter(x: Integer) -> Integer);
 
-    #[test]
+    #[diesel_test_helper::test]
     fn register_nondeterministic_function() {
         let connection = &mut connection();
         let mut y = 0;
@@ -707,7 +723,7 @@ mod tests {
         }
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn register_aggregate_function() {
         use self::my_sum_example::dsl::*;
 
@@ -729,7 +745,7 @@ mod tests {
         assert_eq!(Ok(6), result);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn register_aggregate_function_returns_finalize_default_on_empty_set() {
         use self::my_sum_example::dsl::*;
 
@@ -791,7 +807,7 @@ mod tests {
         }
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn register_aggregate_multiarg_function() {
         use self::range_max_example::dsl::*;
 
@@ -827,7 +843,7 @@ mod tests {
         }
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn register_collation_function() {
         use self::my_collation_example::dsl::*;
 
@@ -893,7 +909,7 @@ mod tests {
     }
 
     // regression test for https://github.com/diesel-rs/diesel/issues/3425
-    #[test]
+    #[diesel_test_helper::test]
     fn test_correct_seralization_of_owned_strings() {
         use crate::prelude::*;
 
@@ -923,7 +939,7 @@ mod tests {
         assert_eq!(res, Some(String::new()));
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn test_correct_seralization_of_owned_bytes() {
         use crate::prelude::*;
 
@@ -953,7 +969,7 @@ mod tests {
         assert_eq!(res, Some(Vec::new()));
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn correctly_handle_empty_query() {
         let check_empty_query_error = |r: crate::QueryResult<usize>| {
             assert!(r.is_err());
@@ -968,5 +984,30 @@ mod tests {
         check_empty_query_error(crate::sql_query("   ").execute(connection));
         check_empty_query_error(crate::sql_query("\n\t").execute(connection));
         check_empty_query_error(crate::sql_query("-- SELECT 1;").execute(connection));
+    }
+
+    #[cfg(all(target_family = "wasm", target_os = "unknown"))]
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    async fn test_sqlite_wasm_vfs_default() {
+        crate::init_sqlite().await.unwrap();
+        SqliteConnection::establish("test_sqlite_wasm_vfs_default.db").unwrap();
+    }
+
+    #[cfg(all(target_family = "wasm", target_os = "unknown"))]
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    async fn test_sqlite_wasm_vfs_opfs() {
+        crate::init_sqlite().await.unwrap();
+        SqliteConnection::establish("file:test_sqlite_wasm_vfs_opfs.db?vfs=opfs").unwrap();
+    }
+
+    #[cfg(all(target_family = "wasm", target_os = "unknown"))]
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    async fn test_sqlite_wasm_vfs_opfs_sahpool() {
+        let sqlite = crate::init_sqlite().await.unwrap();
+        let util = sqlite.install_opfs_sahpool(None).await.unwrap();
+        SqliteConnection::establish("file:test_sqlite_wasm_vfs_opfs_sahpool.db?vfs=opfs-sahpool")
+            .unwrap();
+        assert_eq!(1, util.get_file_count());
+        util.remove_vfs().await;
     }
 }

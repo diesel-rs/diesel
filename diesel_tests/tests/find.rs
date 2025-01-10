@@ -1,7 +1,7 @@
 use crate::schema::*;
 use diesel::*;
 
-#[test]
+#[diesel_test_helper::test]
 fn find() {
     use crate::schema::users::table as users;
 
@@ -22,7 +22,7 @@ table! {
     }
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn find_with_non_serial_pk() {
     use self::users_with_name_pk::table as users;
 
@@ -45,7 +45,7 @@ fn find_with_non_serial_pk() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn find_with_composite_pk() {
     use crate::schema::followings::dsl::*;
 
@@ -90,7 +90,7 @@ fn find_with_composite_pk() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn select_then_find() {
     use crate::schema::users::dsl::*;
 
@@ -102,7 +102,7 @@ fn select_then_find() {
     assert_eq!(Ok(String::from("Tess")), tess);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn select_by_then_find() {
     use crate::schema::users::dsl::*;
 

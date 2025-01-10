@@ -626,7 +626,7 @@ mod tests {
         crate::test_helpers::pg_connection_no_transaction()
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn malformed_sql_query() {
         let connection = &mut connection();
         let query =
@@ -646,7 +646,7 @@ mod tests {
         }
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn transaction_manager_returns_an_error_when_attempting_to_commit_outside_of_a_transaction() {
         use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::result::Error;
@@ -663,7 +663,7 @@ mod tests {
         assert!(matches!(result, Err(Error::NotInTransaction)))
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn transaction_manager_returns_an_error_when_attempting_to_rollback_outside_of_a_transaction() {
         use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::result::Error;
@@ -680,7 +680,7 @@ mod tests {
         assert!(matches!(result, Err(Error::NotInTransaction)))
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn postgres_transaction_is_rolled_back_upon_syntax_error() {
         use std::num::NonZeroU32;
 
@@ -724,7 +724,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn nested_postgres_transaction_is_rolled_back_upon_syntax_error() {
         use std::num::NonZeroU32;
 
@@ -784,7 +784,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     // This function uses collect with an side effect (spawning threads)
     // so this is a false positive from clippy
     #[allow(clippy::needless_collect)]
@@ -891,7 +891,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     // This function uses collect with an side effect (spawning threads)
     // so this is a false positive from clippy
     #[allow(clippy::needless_collect)]
@@ -1007,7 +1007,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn postgres_transaction_is_rolled_back_upon_deferred_constraint_failure() {
         use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
@@ -1056,7 +1056,7 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn postgres_transaction_is_rolled_back_upon_deferred_trigger_failure() {
         use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
@@ -1131,7 +1131,7 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn nested_postgres_transaction_is_rolled_back_upon_deferred_trigger_failure() {
         use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
@@ -1213,7 +1213,7 @@ mod tests {
         assert!(result.is_ok(), "Expected success, got {:?}", result);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn nested_postgres_transaction_is_rolled_back_upon_deferred_constraint_failure() {
         use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
