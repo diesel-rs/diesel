@@ -157,3 +157,20 @@ impl sql_dialect::on_conflict_clause::PgLikeOnConflictClause for PgOnConflictCla
 pub struct PgStyleArrayComparison;
 
 impl LikeIsAllowedForType<crate::sql_types::Binary> for Pg {}
+
+// Using the same field names as tokio-postgres
+/// See Postgres documentation for SQL Commands NOTIFY and LISTEN
+#[derive(Clone, Debug)]
+pub struct PgNotification {
+    /// process ID of notifying server process
+    pub process_id: i32,
+    /// Name of the notification channel
+    pub channel: String,
+    /// optional data that was submitted with the notification,
+    ///
+    /// This is set to an empty string if no data was submitted
+    ///
+    /// (Postgres unfortunally does not provide a way to differentiate between
+    /// not set and empty here)
+    pub payload: String,
+}

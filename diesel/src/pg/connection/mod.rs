@@ -18,6 +18,7 @@ use crate::connection::instrumentation::{
 use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
+use crate::pg::backend::PgNotification;
 use crate::pg::metadata_lookup::{GetPgMetadataCache, PgMetadataCache};
 use crate::pg::query_builder::copy::InternalCopyFromQuery;
 use crate::pg::{Pg, TransactionBuilder};
@@ -547,6 +548,51 @@ impl PgConnection {
             .set_notice_processor(noop_notice_processor);
         Ok(())
     }
+
+    /// See Postgres documentation for SQL commands [NOTIFY][] and [LISTEN][]
+    ///
+    /// The returned iterator can yield items even after a None value when new notifications have been received.
+    /// The iterator can be polled again after a `None` value was received as new notifications might have
+    /// been send in the mean time.
+    ///
+    /// [NOTIFY]: https://www.postgresql.org/docs/current/sql-notify.html
+    /// [LISTEN]: https://www.postgresql.org/docs/current/sql-listen.html
+    ///
+    /// ## Example
+    ///
+    /// ```
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// // register the notifications channel we want to receive notifications for
+    /// diesel::sql_query("LISTEN example_channel").execute(connection)?;
+    /// // send some notification
+    /// // this is usually done from a different connection/thread/application
+    /// diesel::sql_query("NOTIFY example_channel, 'additional data'").execute(connection)?;
+    ///
+    /// for result in connection.notifications_iter() {
+    ///     let notification = result.unwrap();
+    ///     assert_eq!(notification.channel, "example_channel");
+    ///     assert_eq!(notification.payload, "additional data");
+    ///
+    ///     println!(
+    ///         "Notification received from server process with id {}.",
+    ///         notification.process_id
+    ///    );
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn notifications_iter(&mut self) -> impl Iterator<Item = QueryResult<PgNotification>> + '_ {
+        let conn = &self.connection_and_transaction_manager.raw_connection;
+        std::iter::from_fn(move || conn.pq_notifies().transpose())
+    }
 }
 
 extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc::c_char) {}
@@ -624,6 +670,47 @@ mod tests {
 
     fn connection() -> PgConnection {
         crate::test_helpers::pg_connection_no_transaction()
+    }
+
+    #[diesel_test_helper::test]
+    fn notifications_arrive() {
+        use crate::sql_query;
+
+        let conn = &mut connection();
+        sql_query("LISTEN test_notifications")
+            .execute(conn)
+            .unwrap();
+        sql_query("NOTIFY test_notifications, 'first'")
+            .execute(conn)
+            .unwrap();
+        sql_query("NOTIFY test_notifications, 'second'")
+            .execute(conn)
+            .unwrap();
+
+        let notifications = conn
+            .notifications_iter()
+            .map(Result::unwrap)
+            .collect::<Vec<_>>();
+
+        assert_eq!(2, notifications.len());
+        assert_eq!(notifications[0].channel, "test_notifications");
+        assert_eq!(notifications[1].channel, "test_notifications");
+        assert_eq!(notifications[0].payload, "first");
+        assert_eq!(notifications[1].payload, "second");
+
+        let next_notification = conn.notifications_iter().next();
+        assert!(
+            next_notification.is_none(),
+            "Got a next notification, while not expecting one: {next_notification:?}"
+        );
+
+        sql_query("NOTIFY test_notifications")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(
+            conn.notifications_iter().next().unwrap().unwrap().payload,
+            ""
+        );
     }
 
     #[diesel_test_helper::test]

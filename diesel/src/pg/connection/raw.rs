@@ -12,6 +12,7 @@ use std::{ptr, str};
 use crate::result::*;
 
 use super::result::PgResult;
+use crate::pg::PgNotification;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub(super) struct RawConnection {
@@ -181,6 +182,77 @@ impl RawConnection {
                 DatabaseErrorKind::Unknown,
                 Box::new(self.last_error_message()),
             ))
+        }
+    }
+
+    pub(super) fn pq_notifies(&self) -> Result<Option<PgNotification>, Error> {
+        let conn = self.internal_connection;
+        let ret = unsafe { PQconsumeInput(conn.as_ptr()) };
+        if ret == 0 {
+            return Err(Error::DatabaseError(
+                DatabaseErrorKind::Unknown,
+                Box::new(self.last_error_message()),
+            ));
+        }
+
+        let pgnotify = unsafe { PQnotifies(conn.as_ptr()) };
+        if pgnotify.is_null() {
+            Ok(None)
+        } else {
+            // we use a drop guard here to
+            // make sure that we always free
+            // the provided pointer, even if we
+            // somehow return an error below
+            struct Guard<'a> {
+                value: &'a mut pgNotify,
+            }
+
+            impl Drop for Guard<'_> {
+                fn drop(&mut self) {
+                    unsafe {
+                        // SAFETY: We know that this value is not null here
+                        PQfreemem(self.value as *mut pgNotify as *mut std::ffi::c_void)
+                    };
+                }
+            }
+
+            let pgnotify = unsafe {
+                // SAFETY: We checked for null values above
+                Guard {
+                    value: &mut *pgnotify,
+                }
+            };
+            if pgnotify.value.relname.is_null() {
+                return Err(Error::DeserializationError(
+                    "Received an unexpected null value for `relname` from the notification".into(),
+                ));
+            }
+            if pgnotify.value.extra.is_null() {
+                return Err(Error::DeserializationError(
+                    "Received an unexpected null value for `extra` from the notification".into(),
+                ));
+            }
+
+            let channel = unsafe {
+                // SAFETY: We checked for null values above
+                CStr::from_ptr(pgnotify.value.relname)
+            }
+            .to_str()
+            .map_err(|e| Error::DeserializationError(e.into()))?
+            .to_string();
+            let payload = unsafe {
+                // SAFETY: We checked for null values above
+                CStr::from_ptr(pgnotify.value.extra)
+            }
+            .to_str()
+            .map_err(|e| Error::DeserializationError(e.into()))?
+            .to_string();
+            let ret = PgNotification {
+                process_id: pgnotify.value.be_pid,
+                channel,
+                payload,
+            };
+            Ok(Some(ret))
         }
     }
 }
