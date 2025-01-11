@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>sqlite-wasm example</title>
+    <title>diesel sqlite-wasm example</title>
 </head>
 
 <body>
@@ -21,48 +21,72 @@
 
     <input id="publish_post_id" type="number" placeholder="Enter PostId" />
     <button id="PublishButton">PublishPost</button>
-    <p></p>
+    <p id="publish_result"></p>
 
-    <input id="delete_post_pattern" type="string" placeholder="Enter PostTitle" />
+    <input id="delete_post_title" type="string" placeholder="Enter PostTitle" />
     <button id="DeleteButton">DeletePost</button>
-    <p></p>
+    <p id="delete_result"></p>
 
     <script type="module">
-        import init, { init_sqlite, create_post, get_post, delete_post, publish_post, show_posts } from "./pkg/sqlite_wasm.js";
-        async function run() {
-            await init();
-            await init_sqlite();
+        function call(payload) {
+            worker.postMessage(payload);
+        }
 
+        async function run() {
             document.getElementById('ShowButton').onclick = () => {
-                const posts = show_posts();
-                document.getElementById('show_result').innerText = JSON.stringify(posts);
+                call({ cmd: "show_posts" })
             };
 
             document.getElementById('CreateButton').onclick = () => {
                 const title = document.getElementById('create_title').value;
                 const body = document.getElementById('create_body').value;
-                const post = create_post(title, body);
-                console.log("create post: ", post);
-                document.getElementById('create_result').innerText = JSON.stringify(post);
+                call({ cmd: "create_post", title: title, body: body })
             };
 
             document.getElementById('GetButton').onclick = () => {
                 const post_id = parseInt(document.getElementById('get_post_id').value);
-                const post = get_post(post_id);
-                console.log("get post: ", post);
-                document.getElementById('get_result').innerText = JSON.stringify(post);
+                call({ cmd: "get_post", post_id: post_id })
             };
 
             document.getElementById('PublishButton').onclick = () => {
                 const post_id = parseInt(document.getElementById('publish_post_id').value);
-                publish_post(post_id);
+                call({ cmd: "publish_post", post_id: post_id })
             };
 
             document.getElementById('DeleteButton').onclick = () => {
-                const pattern = document.getElementById('delete_post_pattern').value;
-                delete_post(pattern);
+                const title = document.getElementById('delete_post_title').value;
+                call({ cmd: "delete_post", title: title })
             };
         }
+        const worker = new Worker('worker.js', { type: 'module' });
+        worker.addEventListener("message", function (event) {
+            const payload = event.data;
+            switch (payload.cmd) {
+                case 'ready':
+                    run();
+                    break;
+                case 'show_posts':
+                    var posts = payload.posts;
+                    document.getElementById('show_result').innerText = JSON.stringify(posts);
+                    break;
+                case 'create_post':
+                    var post = payload.post;
+                    document.getElementById('create_result').innerText = JSON.stringify(post);
+                    break;
+                case 'get_post':
+                    var post = payload.post;
+                    document.getElementById('get_result').innerText = JSON.stringify(post);
+                    break;
+                case 'publish_post':
+                    document.getElementById('publish_result').innerText = 'Publish done.';
+                    break;
+                case 'delete_post':
+                    document.getElementById('delete_result').innerText = 'Delete done.';
+                    break;
+                default:
+                    break;
+            };
+        });
         run();
     </script>
 </body>

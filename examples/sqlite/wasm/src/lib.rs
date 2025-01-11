@@ -5,9 +5,9 @@ use std::sync::Once;
 
 use crate::models::{NewPost, Post};
 use diesel::prelude::*;
+use diesel_migrations::embed_migrations;
 use diesel_migrations::EmbeddedMigrations;
 use diesel_migrations::MigrationHarness;
-use diesel_migrations::embed_migrations;
 use wasm_bindgen::prelude::*;
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
@@ -32,7 +32,7 @@ macro_rules! console_log {
 
 pub fn establish_connection() -> SqliteConnection {
     static MIGRATION_ONCE: Once = Once::new();
-    let mut conn = SqliteConnection::establish("post.db")
+    let mut conn = SqliteConnection::establish("file:post.db?vfs=opfs-sahpool")
         .unwrap_or_else(|_| panic!("Error connecting to post.db"));
     MIGRATION_ONCE.call_once(|| {
         conn.run_pending_migrations(MIGRATIONS).unwrap();
@@ -40,9 +40,11 @@ pub fn establish_connection() -> SqliteConnection {
     conn
 }
 
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
 #[wasm_bindgen]
 pub async fn init_sqlite() {
-    diesel::init_sqlite().await.unwrap();
+    let sqlite = diesel::init_sqlite().await.unwrap();
+    sqlite.install_opfs_sahpool(None).await.unwrap();
 }
 
 #[wasm_bindgen]

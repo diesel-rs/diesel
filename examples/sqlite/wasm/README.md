@@ -1,4 +1,4 @@
-# `rs-diesel-sqlite-wasm`
+# `rs-diesel-sqlite`
 
 Diesel's `Getting Started` guide using SQLite instead of Postgresql
 
