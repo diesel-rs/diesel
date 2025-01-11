@@ -299,7 +299,8 @@ fn prepared_query<'a, T: QueryFragment<Mysql> + QueryId>(
         source,
         &Mysql,
         &[],
-        |sql, _| raw_connection.prepare(sql),
+        &*raw_connection,
+        RawConnection::prepare,
         instrumentation,
     )?;
 

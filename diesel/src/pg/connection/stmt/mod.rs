@@ -6,6 +6,7 @@ use std::os::raw as libc;
 use std::ptr;
 
 use super::result::PgResult;
+use super::statement_cache::PrepareForCache;
 use crate::pg::PgTypeMetadata;
 use crate::result::QueryResult;
 
@@ -59,9 +60,14 @@ impl Statement {
     pub(super) fn prepare(
         raw_connection: &mut RawConnection,
         sql: &str,
-        name: Option<&str>,
+        is_cached: PrepareForCache,
         param_types: &[PgTypeMetadata],
     ) -> QueryResult<Self> {
+        let query_name = match is_cached {
+            PrepareForCache::Yes { counter } => Some(format!("__diesel_stmt_{counter}")),
+            PrepareForCache::No => None,
+        };
+        let name = query_name.as_deref();
         let name = CString::new(name.unwrap_or(""))?;
         let sql = CString::new(sql)?;
         let param_types_vec = param_types

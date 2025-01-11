@@ -5,8 +5,10 @@ use std::os::raw as libc;
 use std::ptr::{self, NonNull};
 use std::sync::Once;
 
+use super::statement_cache::PrepareForCache;
 use super::stmt::Statement;
 use super::url::ConnectionOptions;
+use crate::mysql::MysqlType;
 use crate::result::{ConnectionError, ConnectionResult, QueryResult};
 
 pub(super) struct RawConnection(NonNull<ffi::MYSQL>);
@@ -141,7 +143,12 @@ impl RawConnection {
         result
     }
 
-    pub(super) fn prepare(&self, query: &str) -> QueryResult<Statement> {
+    pub(super) fn prepare(
+        &self,
+        query: &str,
+        _: PrepareForCache,
+        _: &[MysqlType],
+    ) -> QueryResult<Statement> {
         let stmt = unsafe { ffi::mysql_stmt_init(self.0.as_ptr()) };
         // It is documented that the only reason `mysql_stmt_init` will fail
         // is because of OOM.
