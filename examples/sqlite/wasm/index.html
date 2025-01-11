@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>sqlite-wasm example</title>
+</head>
+
+<body>
+    <button id="ShowButton">Show 5 Published Posts</button>
+    <p id="show_result"></p>
+
+    <input id="create_title" type="string" placeholder="Enter title" />
+    <input id="create_body" type="string" placeholder="Enter body">
+    <button id="CreateButton">CreatePost</button>
+    <p id="create_result"></p>
+
+    <input id="get_post_id" type="number" placeholder="Enter PostId" />
+    <button id="GetButton">GetPost</button>
+    <p id="get_result"></p>
+
+    <input id="publish_post_id" type="number" placeholder="Enter PostId" />
+    <button id="PublishButton">PublishPost</button>
+    <p></p>
+
+    <input id="delete_post_pattern" type="string" placeholder="Enter PostTitle" />
+    <button id="DeleteButton">DeletePost</button>
+    <p></p>
+
+    <script type="module">
+        import init, { init_sqlite, create_post, get_post, delete_post, publish_post, show_posts } from "./pkg/sqlite_wasm.js";
+        async function run() {
+            await init();
+            await init_sqlite();
+
+            document.getElementById('ShowButton').onclick = () => {
+                const posts = show_posts();
+                document.getElementById('show_result').innerText = JSON.stringify(posts);
+            };
+
+            document.getElementById('CreateButton').onclick = () => {
+                const title = document.getElementById('create_title').value;
+                const body = document.getElementById('create_body').value;
+                const post = create_post(title, body);
+                console.log("create post: ", post);
+                document.getElementById('create_result').innerText = JSON.stringify(post);
+            };
+
+            document.getElementById('GetButton').onclick = () => {
+                const post_id = parseInt(document.getElementById('get_post_id').value);
+                const post = get_post(post_id);
+                console.log("get post: ", post);
+                document.getElementById('get_result').innerText = JSON.stringify(post);
+            };
+
+            document.getElementById('PublishButton').onclick = () => {
+                const post_id = parseInt(document.getElementById('publish_post_id').value);
+                publish_post(post_id);
+            };
+
+            document.getElementById('DeleteButton').onclick = () => {
+                const pattern = document.getElementById('delete_post_pattern').value;
+                delete_post(pattern);
+            };
+        }
+        run();
+    </script>
+</body>
+
+</html>
