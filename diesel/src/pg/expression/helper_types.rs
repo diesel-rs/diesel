@@ -609,3 +609,9 @@ pub type jsonb_set_create_if_missing<B, J, R, C> =
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_set_lax<B, J, R, C, E> =
     super::functions::jsonb_set_lax<SqlTypeOf<B>, SqlTypeOf<J>, B, J, R, C, E>;
+
+/// Return type of [`jsonb_insert(base, path, new_value, insert_after)`](super::functions::jsonb_insert())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_insert<B, J, R, I> =
+    super::functions::jsonb_insert<SqlTypeOf<B>, SqlTypeOf<J>, B, J, R, I>;

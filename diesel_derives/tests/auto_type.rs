@@ -489,6 +489,12 @@ fn postgres_functions() -> _ {
             pg_extras::boolean,
             null_value_treatment,
         ),
+        jsonb_insert(
+            pg_extras::jsonb,
+            pg_extras::text_array,
+            pg_extras::jsonb,
+            pg_extras::boolean,
+        ),
     )
 }
 
