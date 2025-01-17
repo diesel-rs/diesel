@@ -56,7 +56,8 @@ mod tests {
         ];
         let input_uuid = uuid::Uuid::from_slice(&bytes).unwrap();
         let output_uuid =
-            FromSql::<Uuid, Pg>::from_sql(PgValue::for_test(input_uuid.as_bytes())).unwrap();
+            <uuid::Uuid as FromSql<Uuid, Pg>>::from_sql(PgValue::for_test(input_uuid.as_bytes()))
+                .unwrap();
         assert_eq!(input_uuid, output_uuid);
     }
 
