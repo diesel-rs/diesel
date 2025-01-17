@@ -509,6 +509,10 @@ fn sqlite_functions() -> _ {
         json_pretty(sqlite_extras::jsonb),
         json_pretty_with_indentation(sqlite_extras::json, "  "),
         json_pretty_with_indentation(sqlite_extras::jsonb, "  "),
+        json_type(sqlite_extras::json),
+        json_type(sqlite_extras::jsonb),
+        json_type_with_path(sqlite_extras::json, "$"),
+        json_type_with_path(sqlite_extras::jsonb, "$"),
     )
 }
 
