@@ -146,7 +146,7 @@ fn create_config_file(
     if !path.exists() {
         let source_content = include_str!("default_files/diesel.toml").to_string();
         let migrations_dir_relative =
-            convert_absolute_path_to_relative(&migrations_dir, &find_project_root()?);
+            convert_absolute_path_to_relative(migrations_dir, &find_project_root()?);
         // convert the path to a valid toml string (escaping backslashes on windows)
         let migrations_dir_toml_string = migrations_dir_relative
             .display()

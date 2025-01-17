@@ -310,8 +310,8 @@ fn setup_respects_migrations_dir_from_diesel_toml() {
 }
 
 #[test]
-fn setup_writes_migration_dir_as_relative_path_to_config_file() {
-    let p = project("setup_writes_migration_dir_as_relative_path_to_config_file").build();
+fn setup_writes_migration_dir_as_relative_path() {
+    let p = project("setup_writes_migration_dir_as_relative_path").build();
 
     let result = p.command("setup").run();
 
@@ -322,13 +322,13 @@ fn setup_writes_migration_dir_as_relative_path_to_config_file() {
 }
 
 #[test]
-fn setup_writes_migration_dir_as_arg_as_relative_path_to_config_file() {
-    let p = project("setup_writes_migration_dir_as_relative_path_to_config_file").build();
+fn setup_writes_migration_dir_as_arg_as_relative_path() {
+    let p = project("setup_writes_migration_dir_as_arg_as_relative_path").build();
 
     let migrations_dir_arg = p.directory_path().join("foo").display().to_string();
     let result = p
         .command("setup")
-        .arg(&format!("--migration-dir={}", migrations_dir_arg))
+        .arg(format!("--migration-dir={}", migrations_dir_arg))
         .run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
