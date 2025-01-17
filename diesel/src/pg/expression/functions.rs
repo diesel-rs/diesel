@@ -2669,18 +2669,19 @@ define_sql_function! {
 
 #[cfg(feature = "postgres_backend")]
 define_sql_function! {
-    /// Returns target with new_value inserted.
+    /// Returns target with `new_value` inserted into `base`.
     ///
-    /// If the item designated by the path is an array element, new_value will be inserted before that item if insert_after is false (which is the default),
-    /// or after it if insert_after is true.
+    /// If the item designated by the `path` is an array element, `new_value` will be inserted before that item
     ///
-    /// If the item designated by the path is an object field, new_value will be inserted only if the object does not already contain that key.
+    /// If the item designated by the `path` is an object field, `new_value` will be
+    /// inserted only if the object does not already contain that key.
     ///
-    /// All earlier steps in the path must exist, or the target is returned unchanged.
-    /// As with the path oriented operators, negative integers that appear in the path count from the end of JSON arrays.
-    /// If the last path step is an array index that is out of range,
-    ///     the new value is added at the beginning of the array if the index is negative,
-    ///      or at the end of the array if it is positive.
+    /// * All earlier steps in the path must exist, or the target is returned unchanged.
+    /// * As with the path oriented operators, negative integers that appear in the `path` count
+    ///   from the end of JSON arrays.
+    /// * If the last `path` step is an array index that is out of range,
+    ///   the new value is added at the beginning of the array if the index is negative,
+    ///   or at the end of the array if it is positive.
     ///
     /// # Example
     ///
@@ -2699,7 +2700,70 @@ define_sql_function! {
     /// #     use serde_json::{json,Value};
     /// #     let connection = &mut establish_connection();
     ///
-    /// let result = diesel::select(jsonb_insert::<Jsonb, Array<Text>, _, _, _, _>(
+    /// let result = diesel::select(jsonb_insert::<Jsonb, Array<Text>, _, _, _>(
+    ///         json!({"a":[0,1,2]}),
+    ///         vec!["a","1"],
+    ///         json!("new_value"),
+    ///     )).get_result::<Value>(connection)?;
+    /// let expected: Value = json!({"a":[0,"new_value",1,2]});
+    /// assert_eq!(result, expected);
+    ///
+    /// let result = diesel::select(jsonb_insert::<Nullable<Jsonb>, Array<Text>, _, _, _>(
+    ///         None::<serde_json::Value>,
+    ///         vec!["a","1"],
+    ///         Some(json!("new_value")),
+    ///     )).get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(result, None);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn jsonb_insert<
+        E: JsonbOrNullableJsonb + SingleValue,
+        Arr: TextArrayOrNullableTextArray + CombinedNullableValue<E, Jsonb>,
+    >(
+        base: E,
+        path: Arr,
+        new_value: E,
+    ) -> Arr::Out;
+}
+
+#[cfg(feature = "postgres_backend")]
+define_sql_function! {
+    /// Returns target with `new_value` inserted into `base`.
+    ///
+    /// If the item designated by the `path` is an array element, `new_value` will be inserted before that
+    /// item if `insert_after` is false (which is the default),
+    /// or after it if `insert_after` is true.
+    ///
+    /// If the item designated by the `path` is an object field, `new_value` will be inserted only
+    /// if the object does not already contain that key.
+    ///
+    /// * All earlier steps in the `path` must exist, or the target is returned unchanged.
+    /// * As with the path oriented operators, negative integers that appear in the `path` count
+    ///   from the end of JSON arrays.
+    /// * If the last `path` step is an array index that is out of range,
+    ///   the new value is added at the beginning of the array if the index is negative,
+    ///   or at the end of the array if it is positive.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_insert_with_insert_after;
+    /// #     use diesel::sql_types::{Jsonb, Array, Json, Nullable, Text};
+    /// #     use serde_json::{json,Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_insert_with_insert_after::<Jsonb, Array<Text>, _, _, _, _>(
     ///         json!({"a":[0,1,2]}),
     ///         vec!["a","1"],
     ///         json!("new_value"),
@@ -2708,7 +2772,7 @@ define_sql_function! {
     /// let expected: Value = json!({"a":[0,"new_value",1,2]});
     /// assert_eq!(result, expected);
     ///
-    /// let result = diesel::select(jsonb_insert::<Jsonb, Array<Text>, _, _, _, _>(
+    /// let result = diesel::select(jsonb_insert_with_insert_after::<Jsonb, Array<Text>, _, _, _, _>(
     ///         json!({"a":[0,1,2]}),
     ///         vec!["a","1"],
     ///         json!("new_value"),
@@ -2720,8 +2784,14 @@ define_sql_function! {
     /// #     Ok(())
     /// # }
     /// ```
-    fn jsonb_insert<
+    #[sql_name = "jsonb_insert"]
+    fn jsonb_insert_with_insert_after<
         E: JsonbOrNullableJsonb + SingleValue,
-        Arr: TextArrayOrNullableTextArray + CombinedNullableValue<E,Jsonb>,
-    >(base: E, path: Arr, new_value: E, insert_after: Bool) -> Arr::Out;
+        Arr: TextArrayOrNullableTextArray + CombinedNullableValue<E, Jsonb>,
+    >(
+        base: E,
+        path: Arr,
+        new_value: E,
+        insert_after: Bool,
+    ) -> Arr::Out;
 }
