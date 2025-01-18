@@ -91,6 +91,21 @@ pub(crate) mod dsl {
 
     #[cfg(feature = "mysql_backend")]
     pub use crate::mysql::query_builder::DuplicatedKeys;
+
+    pub use super::functions::aggregate_expressions::AggregateExpressionMethods;
+    pub use super::functions::aggregate_expressions::WindowExpressionMethods;
+
+    pub use super::functions::aggregate_expressions::frame_clause::{
+        FrameBoundDsl, FrameClauseDsl,
+    };
+
+    /// Different frame clause specifications for window functions
+    pub mod frame {
+        pub use super::super::functions::aggregate_expressions::frame_clause::{
+            CurrentRow, ExcludeCurrentRow, ExcludeGroup, ExcludeNoOthers, ExcludeTies, Groups,
+            Range, Rows, UnboundedFollowing, UnboundedPreceding,
+        };
+    }
 }
 
 #[doc(inline)]
