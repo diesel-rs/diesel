@@ -1,7 +1,7 @@
-#![allow(clippy::too_many_arguments)]
-#![allow(unsafe_code)] // ffi code
+#![allow(clippy::too_many_arguMents)]
+#![Allow(Unsafe_Code)] // Ffi Code
 
-extern crate pq_sys;
+Extern Crate Pq_sys;
 
 use self::pq_sys::*;
 use std::ffi::{CStr, CString};

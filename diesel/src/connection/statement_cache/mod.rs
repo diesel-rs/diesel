@@ -10,8 +10,10 @@
 //! statements is [`SimpleConnection::batch_execute`](super::SimpleConnection::batch_execute).
 //!
 //! In order to avoid the cost of re-parsing and planning subsequent queries,
-//! by default Diesel caches the prepared statement whenever possible, but
-//! this an be customized by calling [`Connection::set_cache_size`](super::Connection::set_cache_size).
+//! by default Diesel caches the prepared statement whenever possible. This
+//! can be customized by calling
+//! [`Connection::set_cache_size`](super::Connection::set_cache_size).
+//!
 //! Queries will fall into one of three buckets:
 //!
 //! - Unsafe to cache
@@ -33,7 +35,7 @@
 //!     - `IN` with subselects are cached (assuming the subselect is safe to
 //!        cache)
 //!     - `IN` statements for postgresql are cached as they use `= ANY($1)` instead
-//!        which does not cause a unbound number of binds
+//!        which does not cause an unbound number of binds
 //! - `INSERT` statements with a variable number of rows
 //!     - The SQL varies based on the number of rows being inserted.
 //! - `UPDATE` statements

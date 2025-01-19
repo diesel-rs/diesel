@@ -34,6 +34,8 @@ impl<Inner> SqlQuery<Inner> {
     /// [PostgreSQL PREPARE syntax](https://www.postgresql.org/docs/current/sql-prepare.html),
     /// or [MySQL bind syntax](https://dev.mysql.com/doc/refman/8.0/en/mysql-stmt-bind-param.html).
     ///
+    /// For binding a variable number of values in a loop, use `into_boxed` first.
+    ///
     /// # Safety
     ///
     /// This function should be used with care, as Diesel cannot validate that
@@ -81,7 +83,17 @@ impl<Inner> SqlQuery<Inner> {
     }
 
     /// Internally boxes future calls on `bind` and `sql` so that they don't
-    /// change the type.
+    /// change the type nor the instance. This allows to call `bind` or `sql`
+    /// in a loop, e.g.:
+    ///
+    /// ```
+    /// let mut q = diesel::sql_query("...").into_boxed();
+    /// for thing in things {
+    ///    q = q
+    ///        .bind::<Text, _>(thing.a)
+    ///        .bind::<Nullable<Text>, _>(thing.b);
+    /// }
+    /// ```
     ///
     /// This allows doing things you otherwise couldn't do, e.g. `bind`ing in a
     /// loop.
