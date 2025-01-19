@@ -7,6 +7,15 @@
 </head>
 
 <body>
+    <label for="vfs">choose vfs:</label>
+    <select id="vfs">
+        <option value="0">memory</option>
+        <option value="1">opfs</option>
+        <option value="2">opfs-sahpool</option>
+    </select>
+    <button id="SwitchVFS">Switch VFS</button>
+    <p></p>
+
     <button id="ShowButton">Show 5 Published Posts</button>
     <p id="show_result"></p>
 
@@ -33,6 +42,11 @@
         }
 
         async function run() {
+            document.getElementById('SwitchVFS').onclick = () => {
+                const id = parseInt(document.getElementById('vfs').value);
+                call({ cmd: "switch_vfs", id: id })
+            };
+
             document.getElementById('ShowButton').onclick = () => {
                 call({ cmd: "show_posts" })
             };
@@ -58,6 +72,7 @@
                 call({ cmd: "delete_post", title: title })
             };
         }
+
         const worker = new Worker('worker.js', { type: 'module' });
         worker.addEventListener("message", function (event) {
             const payload = event.data;

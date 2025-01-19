@@ -1,6 +1,7 @@
 pub mod models;
 pub mod schema;
 
+use std::sync::Mutex;
 use std::sync::Once;
 
 use crate::models::{NewPost, Post};
@@ -30,11 +31,19 @@ macro_rules! console_log {
     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 }
 
+static VFS: Mutex<(i32, Once)> = Mutex::new((0, Once::new()));
+
 pub fn establish_connection() -> SqliteConnection {
-    static MIGRATION_ONCE: Once = Once::new();
-    let mut conn = SqliteConnection::establish("file:post.db?vfs=opfs-sahpool")
-        .unwrap_or_else(|_| panic!("Error connecting to post.db"));
-    MIGRATION_ONCE.call_once(|| {
+    let (vfs, once) = &*VFS.lock().unwrap();
+    let url = match vfs {
+        0 => "post.db",
+        1 => "file:post.db?vfs=opfs",
+        2 => "file:post.db?vfs=opfs-sahpool",
+        _ => unreachable!(),
+    };
+    let mut conn =
+        SqliteConnection::establish(url).unwrap_or_else(|_| panic!("Error connecting to post.db"));
+    once.call_once(|| {
         conn.run_pending_migrations(MIGRATIONS).unwrap();
     });
     conn
@@ -45,6 +54,11 @@ pub fn establish_connection() -> SqliteConnection {
 pub async fn init_sqlite() {
     let sqlite = diesel::init_sqlite().await.unwrap();
     sqlite.install_opfs_sahpool(None).await.unwrap();
+}
+
+#[wasm_bindgen]
+pub fn switch_vfs(id: i32) {
+    *VFS.lock().unwrap() = (id, Once::new());
 }
 
 #[wasm_bindgen]

@@ -1,5 +1,6 @@
 import init, {
     init_sqlite,
+    switch_vfs,
     create_post,
     get_post,
     delete_post,
@@ -13,6 +14,9 @@ await init_sqlite();
 async function run_in_worker(event) {
     const payload = event.data;
     switch (payload.cmd) {
+        case 'switch_vfs':
+            switch_vfs(payload.id);
+            break;
         case 'show_posts':
             var posts = show_posts();
             self.postMessage(
