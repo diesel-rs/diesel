@@ -10,7 +10,7 @@ rustup target add wasm32-unknown-unknown
 
 cargo install wasm-pack
 
-wasm-pack build --web
+wasm-pack build --target web
 # Build wasm
 
 python3 -m http.server 8000
