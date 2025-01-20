@@ -74,35 +74,34 @@
         }
 
         const worker = new Worker('worker.js', { type: 'module' });
-        worker.addEventListener("message", function (event) {
-            const payload = event.data;
-            switch (payload.cmd) {
-                case 'ready':
-                    run();
-                    break;
-                case 'show_posts':
-                    var posts = payload.posts;
-                    document.getElementById('show_result').innerText = JSON.stringify(posts);
-                    break;
-                case 'create_post':
-                    var post = payload.post;
-                    document.getElementById('create_result').innerText = JSON.stringify(post);
-                    break;
-                case 'get_post':
-                    var post = payload.post;
-                    document.getElementById('get_result').innerText = JSON.stringify(post);
-                    break;
-                case 'publish_post':
-                    document.getElementById('publish_result').innerText = 'Publish done.';
-                    break;
-                case 'delete_post':
-                    document.getElementById('delete_result').innerText = 'Delete done.';
-                    break;
-                default:
-                    break;
-            };
-        });
-        run();
+        worker.onmessage = function (event) {
+            run();
+            worker.onmessage = function (event) {
+                const payload = event.data;
+                switch (payload.cmd) {
+                    case 'show_posts':
+                        var posts = payload.posts;
+                        document.getElementById('show_result').innerText = JSON.stringify(posts);
+                        break;
+                    case 'create_post':
+                        var post = payload.post;
+                        document.getElementById('create_result').innerText = JSON.stringify(post);
+                        break;
+                    case 'get_post':
+                        var post = payload.post;
+                        document.getElementById('get_result').innerText = JSON.stringify(post);
+                        break;
+                    case 'publish_post':
+                        document.getElementById('publish_result').innerText = 'Publish done.';
+                        break;
+                    case 'delete_post':
+                        document.getElementById('delete_result').innerText = 'Delete done.';
+                        break;
+                    default:
+                        break;
+                };
+            }
+        }
     </script>
 </body>
 
