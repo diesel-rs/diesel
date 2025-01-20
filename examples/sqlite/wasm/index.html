@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>diesel sqlite-wasm example</title>
+</head>
+
+<body>
+    <label for="vfs">choose vfs:</label>
+    <select id="vfs">
+        <option value="0">memory</option>
+        <option value="1">opfs</option>
+        <option value="2">opfs-sahpool</option>
+    </select>
+    <button id="SwitchVFS">Switch VFS</button>
+    <p></p>
+
+    <button id="ShowButton">Show 5 Published Posts</button>
+    <p id="show_result"></p>
+
+    <input id="create_title" type="string" placeholder="Enter title" />
+    <input id="create_body" type="string" placeholder="Enter body">
+    <button id="CreateButton">CreatePost</button>
+    <p id="create_result"></p>
+
+    <input id="get_post_id" type="number" placeholder="Enter PostId" />
+    <button id="GetButton">GetPost</button>
+    <p id="get_result"></p>
+
+    <input id="publish_post_id" type="number" placeholder="Enter PostId" />
+    <button id="PublishButton">PublishPost</button>
+    <p id="publish_result"></p>
+
+    <input id="delete_post_title" type="string" placeholder="Enter PostTitle" />
+    <button id="DeleteButton">DeletePost</button>
+    <p id="delete_result"></p>
+
+    <script type="module">
+        function call(payload) {
+            worker.postMessage(payload);
+        }
+
+        async function run() {
+            document.getElementById('SwitchVFS').onclick = () => {
+                const id = parseInt(document.getElementById('vfs').value);
+                call({ cmd: "switch_vfs", id: id })
+            };
+
+            document.getElementById('ShowButton').onclick = () => {
+                call({ cmd: "show_posts" })
+            };
+
+            document.getElementById('CreateButton').onclick = () => {
+                const title = document.getElementById('create_title').value;
+                const body = document.getElementById('create_body').value;
+                call({ cmd: "create_post", title: title, body: body })
+            };
+
+            document.getElementById('GetButton').onclick = () => {
+                const post_id = parseInt(document.getElementById('get_post_id').value);
+                call({ cmd: "get_post", post_id: post_id })
+            };
+
+            document.getElementById('PublishButton').onclick = () => {
+                const post_id = parseInt(document.getElementById('publish_post_id').value);
+                call({ cmd: "publish_post", post_id: post_id })
+            };
+
+            document.getElementById('DeleteButton').onclick = () => {
+                const title = document.getElementById('delete_post_title').value;
+                call({ cmd: "delete_post", title: title })
+            };
+        }
+
+        const worker = new Worker('worker.js', { type: 'module' });
+        worker.onmessage = function (event) {
+            run();
+            worker.onmessage = function (event) {
+                const payload = event.data;
+                switch (payload.cmd) {
+                    case 'show_posts':
+                        var posts = payload.posts;
+                        document.getElementById('show_result').innerText = JSON.stringify(posts);
+                        break;
+                    case 'create_post':
+                        var post = payload.post;
+                        document.getElementById('create_result').innerText = JSON.stringify(post);
+                        break;
+                    case 'get_post':
+                        var post = payload.post;
+                        document.getElementById('get_result').innerText = JSON.stringify(post);
+                        break;
+                    case 'publish_post':
+                        document.getElementById('publish_result').innerText = 'Publish done.';
+                        break;
+                    case 'delete_post':
+                        document.getElementById('delete_result').innerText = 'Delete done.';
+                        break;
+                    default:
+                        break;
+                };
+            }
+        }
+    </script>
+</body>
+
+</html>
