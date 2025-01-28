@@ -173,6 +173,7 @@ pub enum InstrumentationEvent<'a> {
 // these constructors exist to
 // keep `#[non_exhaustive]` on all the variants
 // and to gate the constructors on the unstable feature
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 impl<'a> InstrumentationEvent<'a> {
     /// Create a new `InstrumentationEvent::StartEstablishConnection` event
     #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]

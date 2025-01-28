@@ -2,7 +2,7 @@ error[E0277]: the trait bound `std::string::String: diesel::Expression` is not s
   --> tests/fail/derive/bad_insertable.rs:10:10
    |
 10 | #[derive(Insertable)]
-   |          ^^^^^^^^^^ the trait `diesel::Expression` is not implemented for `std::string::String`, which is required by `std::string::String: AsExpression<diesel::sql_types::Integer>`
+   |          ^^^^^^^^^^ the trait `diesel::Expression` is not implemented for `std::string::String`
    |
    = help: the following other types implement trait `diesel::Expression`:
              &T
@@ -21,7 +21,7 @@ error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
   --> tests/fail/derive/bad_insertable.rs:10:10
    |
 10 | #[derive(Insertable)]
-   |          ^^^^^^^^^^ the trait `diesel::Expression` is not implemented for `i32`, which is required by `i32: AsExpression<diesel::sql_types::Text>`
+   |          ^^^^^^^^^^ the trait `diesel::Expression` is not implemented for `i32`
    |
    = help: the following other types implement trait `diesel::Expression`:
              &T
@@ -40,7 +40,7 @@ error[E0277]: the trait bound `std::string::String: diesel::Expression` is not s
   --> tests/fail/derive/bad_insertable.rs:10:10
    |
 10 | #[derive(Insertable)]
-   |          ^^^^^^^^^^ the trait `diesel::Expression` is not implemented for `std::string::String`, which is required by `&'insert std::string::String: AsExpression<diesel::sql_types::Integer>`
+   |          ^^^^^^^^^^ the trait `diesel::Expression` is not implemented for `std::string::String`
    |
    = help: the following other types implement trait `diesel::Expression`:
              &T
@@ -60,7 +60,7 @@ error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
   --> tests/fail/derive/bad_insertable.rs:10:10
    |
 10 | #[derive(Insertable)]
-   |          ^^^^^^^^^^ the trait `diesel::Expression` is not implemented for `i32`, which is required by `&'insert i32: AsExpression<diesel::sql_types::Text>`
+   |          ^^^^^^^^^^ the trait `diesel::Expression` is not implemented for `i32`
    |
    = help: the following other types implement trait `diesel::Expression`:
              &T
@@ -80,7 +80,7 @@ error[E0277]: the trait bound `std::string::String: diesel::Expression` is not s
   --> tests/fail/derive/bad_insertable.rs:12:5
    |
 12 |     id: String,
-   |     ^^ the trait `diesel::Expression` is not implemented for `std::string::String`, which is required by `std::string::String: AsExpression<diesel::sql_types::Integer>`
+   |     ^^ the trait `diesel::Expression` is not implemented for `std::string::String`
    |
    = help: the following other types implement trait `diesel::Expression`:
              &T
@@ -98,7 +98,7 @@ error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
   --> tests/fail/derive/bad_insertable.rs:13:5
    |
 13 |     name: i32,
-   |     ^^^^ the trait `diesel::Expression` is not implemented for `i32`, which is required by `i32: AsExpression<diesel::sql_types::Text>`
+   |     ^^^^ the trait `diesel::Expression` is not implemented for `i32`
    |
    = help: the following other types implement trait `diesel::Expression`:
              &T
@@ -116,7 +116,7 @@ error[E0277]: the trait bound `std::string::String: diesel::Expression` is not s
   --> tests/fail/derive/bad_insertable.rs:12:5
    |
 12 |     id: String,
-   |     ^^ the trait `diesel::Expression` is not implemented for `std::string::String`, which is required by `&'insert std::string::String: AsExpression<diesel::sql_types::Integer>`
+   |     ^^ the trait `diesel::Expression` is not implemented for `std::string::String`
    |
    = help: the following other types implement trait `diesel::Expression`:
              &T
@@ -135,7 +135,7 @@ error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
   --> tests/fail/derive/bad_insertable.rs:13:5
    |
 13 |     name: i32,
-   |     ^^^^ the trait `diesel::Expression` is not implemented for `i32`, which is required by `&'insert i32: AsExpression<diesel::sql_types::Text>`
+   |     ^^^^ the trait `diesel::Expression` is not implemented for `i32`
    |
    = help: the following other types implement trait `diesel::Expression`:
              &T

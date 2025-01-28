@@ -2,7 +2,7 @@ error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFr
   --> tests/fail/join_with_explicit_on_requires_valid_boolean_expression.rs:31:26
    |
 31 |     let _ = users::table.inner_join(posts::table.on(users::id.eq(comments::id)));
-   |                          ^^^^^^^^^^ expected `Never`, found `Once`
+   |                          ^^^^^^^^^^ expected `Once`, found `Never`
    |
 note: required for `comments::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, posts::table, Inner>>`
   --> tests/fail/join_with_explicit_on_requires_valid_boolean_expression.rs:19:9
@@ -19,7 +19,7 @@ error[E0277]: `diesel::sql_types::Integer` is neither `diesel::sql_types::Bool` 
   --> tests/fail/join_with_explicit_on_requires_valid_boolean_expression.rs:33:37
    |
 33 |     let _ = users::table.inner_join(posts::table.on(users::id));
-   |                          ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Integer`, which is required by `users::table: JoinWithImplicitOnClause<_, Inner>`
+   |                          ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Integer`
    |                          |
    |                          required by a bound introduced by this call
    |

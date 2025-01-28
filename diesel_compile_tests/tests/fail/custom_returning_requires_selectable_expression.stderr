@@ -2,7 +2,7 @@ error[E0277]: Cannot select `bad::columns::age` from `users::table`
   --> tests/fail/custom_returning_requires_selectable_expression.rs:32:20
    |
 32 |         .returning(bad::age);
-   |          --------- ^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`, which is required by `UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<users::columns::name>, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<_>>: Query`
+   |          --------- ^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
    |          |
    |          required by a bound introduced by this call
    |
@@ -29,7 +29,7 @@ error[E0277]: Cannot select `bad::columns::age` from `users::table`
   --> tests/fail/custom_returning_requires_selectable_expression.rs:39:20
    |
 39 |         .returning((name, bad::age));
-   |          --------- ^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`, which is required by `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, ReturningClause<_>>: Query`
+   |          --------- ^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
    |          |
    |          required by a bound introduced by this call
    |

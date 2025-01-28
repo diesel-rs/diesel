@@ -2,7 +2,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:25:10
    |
 25 |         .filter(posts::title.eq("Hello"));
-   |          ^^^^^^ expected `Never`, found `Once`
+   |          ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
   --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:16:9

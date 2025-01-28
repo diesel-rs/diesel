@@ -2,7 +2,7 @@ error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is 
   --> tests/fail/broken_queryable_by_name.rs:17:5
    |
 17 |     name: i32,
-   |     ^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, Pg>` is not implemented for `i32`, which is required by `i32: FromSqlRow<diesel::sql_types::Text, Pg>`
+   |     ^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, Pg>` is not implemented for `i32`
    |
    = note: double check your type mappings via the documentation of `diesel::sql_types::Text`
    = note: `diesel::sql_query` requires the loading target to column names for loading values.
@@ -19,7 +19,7 @@ error[E0277]: cannot deserialize a value of the database type `diesel::sql_types
   --> tests/fail/broken_queryable_by_name.rs:16:5
    |
 16 |     id: String,
-   |     ^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `*const str`, which is required by `std::string::String: FromSqlRow<diesel::sql_types::Integer, Pg>`
+   |     ^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `*const str`
    |
    = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`
    = help: the following other types implement trait `FromSql<A, DB>`:
@@ -35,7 +35,7 @@ error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is 
   --> tests/fail/broken_queryable_by_name.rs:26:5
    |
 26 |     name: i32,
-   |     ^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, Pg>` is not implemented for `i32`, which is required by `i32: FromSqlRow<diesel::sql_types::Text, Pg>`
+   |     ^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, Pg>` is not implemented for `i32`
    |
    = note: double check your type mappings via the documentation of `diesel::sql_types::Text`
    = note: `diesel::sql_query` requires the loading target to column names for loading values.
@@ -52,7 +52,7 @@ error[E0277]: cannot deserialize a value of the database type `diesel::sql_types
   --> tests/fail/broken_queryable_by_name.rs:24:5
    |
 24 |     id: String,
-   |     ^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `*const str`, which is required by `std::string::String: FromSqlRow<diesel::sql_types::Integer, Pg>`
+   |     ^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `*const str`
    |
    = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`
    = help: the following other types implement trait `FromSql<A, DB>`:
@@ -68,7 +68,7 @@ error[E0277]: the trait bound `Untyped: load_dsl::private::CompatibleType<User, 
   --> tests/fail/broken_queryable_by_name.rs:32:49
    |
 32 |     let s = diesel::sql_query("…").load::<User>(conn);
-   |                                    ----         ^^^^ the trait `load_dsl::private::CompatibleType<User, _>` is not implemented for `Untyped`, which is required by `SqlQuery: LoadQuery<'_, _, User>`
+   |                                    ----         ^^^^ the trait `load_dsl::private::CompatibleType<User, _>` is not implemented for `Untyped`
    |                                    |
    |                                    required by a bound introduced by this call
    |
@@ -91,7 +91,7 @@ error[E0277]: the trait bound `User: FromSqlRow<_, _>` is not satisfied
   --> tests/fail/broken_queryable_by_name.rs:32:49
    |
 32 |     let s = diesel::sql_query("…").load::<User>(conn);
-   |                                    ----         ^^^^ the trait `FromSqlRow<_, _>` is not implemented for `User`, which is required by `SqlQuery: LoadQuery<'_, _, User>`
+   |                                    ----         ^^^^ the trait `FromSqlRow<_, _>` is not implemented for `User`
    |                                    |
    |                                    required by a bound introduced by this call
    |

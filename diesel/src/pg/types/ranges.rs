@@ -34,7 +34,7 @@ impl<ST: 'static, T> AsExpression<Range<ST>> for (Bound<T>, Bound<T>) {
 }
 
 #[cfg(feature = "postgres_backend")]
-impl<'a, ST: 'static, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>) {
+impl<ST: 'static, T> AsExpression<Range<ST>> for &(Bound<T>, Bound<T>) {
     type Expression = SqlBound<Range<ST>, Self>;
 
     fn as_expression(self) -> Self::Expression {
@@ -52,7 +52,7 @@ impl<ST: 'static, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>) 
 }
 
 #[cfg(feature = "postgres_backend")]
-impl<'a, ST: 'static, T> AsExpression<Nullable<Range<ST>>> for &'a (Bound<T>, Bound<T>) {
+impl<ST: 'static, T> AsExpression<Nullable<Range<ST>>> for &(Bound<T>, Bound<T>) {
     type Expression = SqlBound<Nullable<Range<ST>>, Self>;
 
     fn as_expression(self) -> Self::Expression {
