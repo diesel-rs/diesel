@@ -31,6 +31,17 @@ pub trait MigrationHarness<DB: Backend> {
     }
 
     /// Execute all unapplied migrations for a given migration source
+    ///
+    /// # Concurrent Usage
+    /// This method may be called concurrently from multiple processes. However:
+    /// * Only one process will successfully apply each migration
+    /// * Other concurrent processes may receive database lock errors
+    /// * Processes that start after successful migration will find no pending migrations
+    /// * No migrations will be applied more than once
+    ///
+    /// For SQLite databases, concurrent calls may result in "database is locked" errors
+    /// due to SQLite's locking mechanism. Applications should be prepared to handle
+    /// these errors and potentially retry the operation.
     fn run_pending_migrations<S: MigrationSource<DB>>(
         &mut self,
         source: S,
