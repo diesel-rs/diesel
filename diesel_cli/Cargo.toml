@@ -1,6 +1,6 @@
 [package]
 name = "diesel_cli"
-version = "2.2.6"
+version = "2.2.7"
 license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
 readme = "README.md"
@@ -45,7 +45,7 @@ serde = { version = "1.0.193", features = ["derive", "std"] }
 toml = "0.8"
 url = { version = "2.2.2" }
 libsqlite3-sys = { workspace = true, optional = true }
-pq-sys = { version = ">=0.4, <0.7.0", optional = true }
+pq-sys = { version = ">=0.4, <0.8.0", optional = true }
 openssl-sys = { version = "0.9.93", features = ["vendored"], optional = true }
 mysqlclient-sys = { version = "0.4.0", optional = true }
 diffy = "0.4.0"
