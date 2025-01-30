@@ -421,3 +421,51 @@ extern "SQL" {
         indentation: Nullable<Text>,
     ) -> J::Out;
 }
+
+#[cfg(feature = "sqlite")]
+define_sql_function! {
+    /// Returns  `true`  if the argument is well-formed JSON, or returns  `false`  if is not well-formed.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{sql, json_valid};
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Text, Json, Jsonb, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let version = diesel::select(sql::<Text>("sqlite_version();"))
+    ///         .get_result::<String>(connection)?;
+    ///
+    /// // Querying SQLite version should not fail.
+    /// let version_components: Vec<&str> = version.split('.').collect();
+    /// let major: u32 = version_components[0].parse().unwrap();
+    /// let minor: u32 = version_components[1].parse().unwrap();
+    /// let patch: u32 = version_components[2].parse().unwrap();
+    ///
+    /// if major > 3 || (major == 3 && minor >= 46) {
+    ///     /* Valid sqlite version, do nothing */
+    /// } else {
+    ///     println!("SQLite version is too old, skipping the test.");
+    ///     return Ok(());
+    /// }
+    ///
+    /// let result = diesel::select(json_valid::<Json>(json!({"x":35})))
+    ///     .get_result::<bool>(connection)?;
+    ///
+    /// assert_eq!(1, result);
+    ///
+    /// # }
+    /// ```
+    #[sql_name = "json_valid"]
+    fn json_valid<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Bool>>(j: J) -> J::Out;
+}
