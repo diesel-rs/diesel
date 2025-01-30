@@ -20,6 +20,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Updated `libsqlite3-sys` to allow version 0.31.0
 * Updated `pq-sys` to allow version 0.7.0
 * Add support for numeric operators (+-*/) in `#[diesel::auto_type]`
+* Add support for joins to sub-jons to aliases
 
 ## [2.2.6] 2024-12-03
 
