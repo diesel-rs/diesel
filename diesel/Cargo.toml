@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "2.2.6"
+version = "2.2.7"
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"
 readme = "README.md"
@@ -24,17 +24,17 @@ include = [
 byteorder = { version = "1.0", optional = true }
 chrono = { version = "0.4.20", optional = true, default-features = false, features = ["clock", "std"] }
 libc = { version = "0.2.0", optional = true }
-libsqlite3-sys = { version = ">=0.17.2, <0.31.0", optional = true, features = ["bundled_bindings"] }
+libsqlite3-sys = { version = ">=0.17.2, <0.32.0", optional = true, features = ["bundled_bindings"] }
 mysqlclient-sys = { version = ">=0.2.5, <0.5.0",  optional = true }
 mysqlclient-src = { version = "0.1.0", optional = true }
-pq-sys = { version = ">=0.4.0, <0.7.0", optional = true }
+pq-sys = { version = ">=0.4.0, <0.8.0", optional = true }
 pq-src = { version = "0.3", optional = true }
 quickcheck = { version = "1.0.3", optional = true }
 serde_json = { version = ">=0.8.0, <2.0", optional = true }
 url = { version = "2.1.0", optional = true }
 percent-encoding = { version = "2.1.0", optional = true }
 uuid = { version = ">=0.7.0, <2.0.0", optional = true }
-ipnetwork = { version = ">=0.12.2, <0.21.0", optional = true }
+ipnetwork = { version = ">=0.12.2, <0.22.0", optional = true }
 ipnet = { version = "2.5.0", optional = true }
 num-bigint = { version = ">=0.2.0, <0.5.0", optional = true }
 num-traits = { version = "0.2.0", optional = true }
@@ -52,7 +52,7 @@ path = "../diesel_derives"
 [dev-dependencies]
 cfg-if = "1"
 dotenvy = "0.15"
-ipnetwork = ">=0.12.2, <0.21.0"
+ipnetwork = ">=0.12.2, <0.22.0"
 quickcheck = "1.0.3"
 tempfile = "3.10.1"
 

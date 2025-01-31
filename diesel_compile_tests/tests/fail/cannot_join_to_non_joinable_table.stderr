@@ -2,13 +2,13 @@ error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisf
   --> tests/fail/cannot_join_to_non_joinable_table.rs:30:37
    |
 30 |     let _ = users::table.inner_join(posts::table);
-   |                          ---------- ^^^^^^^^^^^^ the trait `JoinTo<posts::table>` is not implemented for `users::table`, which is required by `users::table: JoinWithImplicitOnClause<_, Inner>`
+   |                          ---------- ^^^^^^^^^^^^ the trait `JoinTo<posts::table>` is not implemented for `users::table`
    |                          |
    |                          required by a bound introduced by this call
    |
    = help: the following other types implement trait `JoinTo<T>`:
              `users::table` implements `JoinTo<Alias<S>>`
-             `users::table` implements `JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>`
+             `users::table` implements `JoinTo<BoxedSelectStatement<'_, FromClause<QS>, ST, DB>>`
              `users::table` implements `JoinTo<JoinOn<Join, On>>`
              `users::table` implements `JoinTo<Only<S>>`
              `users::table` implements `JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>`
@@ -28,13 +28,13 @@ error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisf
   --> tests/fail/cannot_join_to_non_joinable_table.rs:31:42
    |
 31 |     let _ = users::table.left_outer_join(posts::table);
-   |                          --------------- ^^^^^^^^^^^^ the trait `JoinTo<posts::table>` is not implemented for `users::table`, which is required by `users::table: JoinWithImplicitOnClause<_, LeftOuter>`
+   |                          --------------- ^^^^^^^^^^^^ the trait `JoinTo<posts::table>` is not implemented for `users::table`
    |                          |
    |                          required by a bound introduced by this call
    |
    = help: the following other types implement trait `JoinTo<T>`:
              `users::table` implements `JoinTo<Alias<S>>`
-             `users::table` implements `JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>`
+             `users::table` implements `JoinTo<BoxedSelectStatement<'_, FromClause<QS>, ST, DB>>`
              `users::table` implements `JoinTo<JoinOn<Join, On>>`
              `users::table` implements `JoinTo<Only<S>>`
              `users::table` implements `JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>`
@@ -54,11 +54,11 @@ error[E0277]: the trait bound `posts::table: JoinTo<users::table>` is not satisf
   --> tests/fail/cannot_join_to_non_joinable_table.rs:36:26
    |
 36 |     let _ = users::table.inner_join(join);
-   |                          ^^^^^^^^^^ the trait `JoinTo<users::table>` is not implemented for `posts::table`, which is required by `users::table: JoinWithImplicitOnClause<_, Inner>`
+   |                          ^^^^^^^^^^ the trait `JoinTo<users::table>` is not implemented for `posts::table`
    |
    = help: the following other types implement trait `JoinTo<T>`:
              `posts::table` implements `JoinTo<Alias<S>>`
-             `posts::table` implements `JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>`
+             `posts::table` implements `JoinTo<BoxedSelectStatement<'_, FromClause<QS>, ST, DB>>`
              `posts::table` implements `JoinTo<JoinOn<Join, On>>`
              `posts::table` implements `JoinTo<Only<S>>`
              `posts::table` implements `JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>`

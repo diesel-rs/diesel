@@ -10,7 +10,7 @@ where
     }
 }
 
-impl<'a, DB> From<NoOrderClause> for Option<Box<dyn QueryFragment<DB> + Send + 'a>>
+impl<DB> From<NoOrderClause> for Option<Box<dyn QueryFragment<DB> + Send + '_>>
 where
     DB: Backend,
 {

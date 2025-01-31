@@ -2,7 +2,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Bool` nor
   --> tests/fail/filter_requires_bool_nonaggregate_expression.rs:15:33
    |
 15 |     let _ = users::table.filter(users::name);
-   |                          ------ ^^^^^^^^^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Text`, which is required by `users::table: FilterDsl<_>`
+   |                          ------ ^^^^^^^^^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Text`
    |                          |
    |                          required by a bound introduced by this call
    |
@@ -26,7 +26,7 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
   --> tests/fail/filter_requires_bool_nonaggregate_expression.rs:16:26
    |
 16 |     let _ = users::table.filter(sum(users::id).eq(1));
-   |                          ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`, which is required by `SelectStatement<FromClause<users::table>>: FilterDsl<_>`
+   |                          ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
              `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`

@@ -2,13 +2,14 @@ error[E0277]: `DistinctOnClause<columns::name>` is no valid SQL fragment for the
   --> tests/fail/distinct_on_clause_only_supported_for_pg.rs:16:41
    |
 16 |     users.distinct_on(name).get_results(&mut sqlite_connection);
-   |                             ----------- ^^^^^^^^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `DistinctOnClause<columns::name>`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>: LoadQuery<'_, _, _>`
+   |                             ----------- ^^^^^^^^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `DistinctOnClause<columns::name>`
    |                             |
    |                             required by a bound introduced by this call
    |
    = note: this usually means that the `Sqlite` database system does not support
            this SQL syntax
-   = help: the trait `QueryFragment<Pg>` is implemented for `DistinctOnClause<columns::name>`
+   = help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `DistinctOnClause<columns::name>`
+           but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
    = help: for that trait implementation, expected `Pg`, found `Sqlite`
    = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>` to implement `QueryFragment<Sqlite, AnsiSqlSelectStatement>`
    = note: 1 redundant requirement hidden
@@ -27,13 +28,14 @@ error[E0277]: `DistinctOnClause<columns::name>` is no valid SQL fragment for the
   --> tests/fail/distinct_on_clause_only_supported_for_pg.rs:20:41
    |
 20 |     users.distinct_on(name).get_results(&mut mysql_connection);
-   |                             ----------- ^^^^^^^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `DistinctOnClause<columns::name>`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>: LoadQuery<'_, _, _>`
+   |                             ----------- ^^^^^^^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `DistinctOnClause<columns::name>`
    |                             |
    |                             required by a bound introduced by this call
    |
    = note: this usually means that the `Mysql` database system does not support
            this SQL syntax
-   = help: the trait `QueryFragment<Pg>` is implemented for `DistinctOnClause<columns::name>`
+   = help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `DistinctOnClause<columns::name>`
+           but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
    = help: for that trait implementation, expected `Pg`, found `Mysql`
    = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>` to implement `QueryFragment<Mysql, AnsiSqlSelectStatement>`
    = note: 1 redundant requirement hidden

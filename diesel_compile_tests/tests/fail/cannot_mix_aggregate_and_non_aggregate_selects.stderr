@@ -2,7 +2,7 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:20:24
    |
 20 |     let source = users.select((id, count_star()));
-   |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
+   |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
@@ -14,7 +14,7 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:22:24
    |
 22 |     let source = users.select(nullable_int_col + max(nullable_int_col));
-   |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
+   |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
@@ -26,7 +26,7 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:24:24
    |
 24 |     let source = users.select(f(nullable_int_col, max(nullable_int_col)));
-   |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
+   |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`

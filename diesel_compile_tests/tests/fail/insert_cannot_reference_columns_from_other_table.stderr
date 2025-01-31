@@ -47,18 +47,9 @@ error[E0271]: type mismatch resolving `<&Grouped<Eq<id, Bound<Integer, i32>>> as
   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:25:10
    |
 25 |         .values(&(posts::id.eq(1), users::id.eq(2)));
-   |          ^^^^^^ expected `posts::table`, found `users::table`
+   |          ^^^^^^ expected `users::table`, found `posts::table`
    |
-   = note: `users::table` and `posts::table` have similar names, but are actually distinct types
-note: `users::table` is defined in module `crate::users` of the current crate
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
-   |
-6  | / table! {
-7  | |     users {
-8  | |         id -> Integer,
-9  | |     }
-10 | | }
-   | |_^
+   = note: `posts::table` and `users::table` have similar names, but are actually distinct types
 note: `posts::table` is defined in module `crate::posts` of the current crate
   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
    |
@@ -67,6 +58,15 @@ note: `posts::table` is defined in module `crate::posts` of the current crate
 14 | |         id -> Integer,
 15 | |     }
 16 | | }
+   | |_^
+note: `users::table` is defined in module `crate::users` of the current crate
+  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
+   |
+6  | / table! {
+7  | |     users {
+8  | |         id -> Integer,
+9  | |     }
+10 | | }
    | |_^
    = note: required for `(&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, &diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)` to implement `diesel::Insertable<users::table>`
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -456,7 +456,7 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
 
 struct ModuleDefinition<'a>(&'a str, TableDefinitions<'a>);
 
-impl<'a> Display for ModuleDefinition<'a> {
+impl Display for ModuleDefinition<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         {
             let mut out = PadAdapter::new(f);
@@ -486,7 +486,7 @@ struct TableDefinitions<'a> {
     custom_types_for_tables: Option<CustomTypesForTables>,
 }
 
-impl<'a> Display for TableDefinitions<'a> {
+impl Display for TableDefinitions<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let mut is_first = true;
         for (table_idx, table) in self.tables.iter().enumerate() {
@@ -553,7 +553,7 @@ fn write_doc_comments(out: &mut impl fmt::Write, doc: &str) -> fmt::Result {
     Ok(())
 }
 
-impl<'a> Display for TableDefinition<'a> {
+impl Display for TableDefinition<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "diesel::table! {{")?;
         {
@@ -656,7 +656,7 @@ struct ColumnDefinitions<'a> {
     custom_type_overrides: Option<&'a [Option<ColumnType>]>,
 }
 
-impl<'a> Display for ColumnDefinitions<'a> {
+impl Display for ColumnDefinitions<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         {
             let mut out = PadAdapter::new(f);
@@ -711,7 +711,7 @@ impl<'a> Display for ColumnDefinitions<'a> {
 
 struct Joinable<'a>(&'a ForeignKeyConstraint);
 
-impl<'a> Display for Joinable<'a> {
+impl Display for Joinable<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let child_table_name = &self.0.child_table.rust_name;
 
@@ -782,7 +782,7 @@ impl<'de> Deserialize<'de> for DocConfig {
         D: serde::Deserializer<'de>,
     {
         struct DocConfigVisitor;
-        impl<'de> serde::de::Visitor<'de> for DocConfigVisitor {
+        impl serde::de::Visitor<'_> for DocConfigVisitor {
             type Value = DocConfig;
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
                 write!(

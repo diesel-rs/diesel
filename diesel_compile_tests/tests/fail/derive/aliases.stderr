@@ -72,7 +72,7 @@ error[E0271]: type mismatch resolving `<Join<JoinOn<Join<table, Alias<posts2>, I
   --> tests/fail/derive/aliases.rs:42:10
    |
 42 |         .inner_join(post_alias)
-   |          ^^^^^^^^^^ expected `MoreThanOnce`, found `Once`
+   |          ^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |
    = note: required for `AliasedField<posts2, posts::columns::id>` to implement `AppearsOnTable<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>, Alias<posts2>, Inner>>`
    = note: 2 redundant requirements hidden
@@ -103,7 +103,7 @@ error[E0277]: Cannot select `users::columns::id` from `Alias<users2>`
   --> tests/fail/derive/aliases.rs:48:23
    |
 48 |     user_alias.select(users::id).load::<i32>(conn).unwrap();
-   |                ------ ^^^^^^^^^ the trait `SelectableExpression<Alias<users2>>` is not implemented for `users::columns::id`, which is required by `Alias<users2>: SelectDsl<_>`
+   |                ------ ^^^^^^^^^ the trait `SelectableExpression<Alias<users2>>` is not implemented for `users::columns::id`
    |                |
    |                required by a bound introduced by this call
    |
@@ -132,7 +132,7 @@ error[E0277]: Cannot select `users::columns::id` from `Alias<users2>`
   --> tests/fail/derive/aliases.rs:48:46
    |
 48 |     user_alias.select(users::id).load::<i32>(conn).unwrap();
-   |                                  ----        ^^^^ the trait `SelectableExpression<Alias<users2>>` is not implemented for `users::columns::id`, which is required by `SelectStatement<FromClause<Alias<users2>>, diesel::query_builder::select_clause::SelectClause<users::columns::id>>: LoadQuery<'_, _, i32>`
+   |                                  ----        ^^^^ the trait `SelectableExpression<Alias<users2>>` is not implemented for `users::columns::id`
    |                                  |
    |                                  required by a bound introduced by this call
    |
@@ -161,11 +161,11 @@ error[E0277]: the trait bound `users::table: JoinTo<pets::table>` is not satisfi
   --> tests/fail/derive/aliases.rs:54:10
    |
 54 |         .inner_join(user_alias)
-   |          ^^^^^^^^^^ the trait `JoinTo<pets::table>` is not implemented for `users::table`, which is required by `pets::table: JoinWithImplicitOnClause<_, Inner>`
+   |          ^^^^^^^^^^ the trait `JoinTo<pets::table>` is not implemented for `users::table`
    |
    = help: the following other types implement trait `JoinTo<T>`:
              `users::table` implements `JoinTo<Alias<S>>`
-             `users::table` implements `JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>`
+             `users::table` implements `JoinTo<BoxedSelectStatement<'_, FromClause<QS>, ST, DB>>`
              `users::table` implements `JoinTo<JoinOn<Join, On>>`
              `users::table` implements `JoinTo<Only<S>>`
              `users::table` implements `JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>`
@@ -183,7 +183,7 @@ error[E0277]: the trait bound `Alias<posts3>: AppearsInFromClause<Alias<posts2>>
 63 | /             post_alias_2.on(post_alias
 64 | |                 .field(posts::author)
 65 | |                 .eq(post_alias_2.field(posts::author))),
-   | |_______________________________________________________^ the trait `AppearsInFromClause<Alias<posts2>>` is not implemented for `Alias<posts3>`, which is required by `Alias<posts2>: JoinWithImplicitOnClause<_, Inner>`
+   | |_______________________________________________________^ the trait `AppearsInFromClause<Alias<posts2>>` is not implemented for `Alias<posts3>`
    |
    = note: double check that `Alias<posts2>` and `Alias<posts3>` appear in the same `allow_tables_to_appear_in_same_query!`
            call if both are tables
@@ -213,7 +213,7 @@ error[E0277]: the trait bound `query_source::joins::Join<Alias<posts2>, Alias<po
   --> tests/fail/derive/aliases.rs:62:10
    |
 62 |         .inner_join(
-   |          ^^^^^^^^^^ the trait `AppearsInFromClause<Alias<posts3>>` is not implemented for `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>`, which is required by `SelectStatement<FromClause<Alias<posts2>>>: InternalJoinDsl<_, Inner, _>`
+   |          ^^^^^^^^^^ the trait `AppearsInFromClause<Alias<posts3>>` is not implemented for `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>`
    |
    = note: double check that `Alias<posts3>` and `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>` appear in the same `allow_tables_to_appear_in_same_query!`
            call if both are tables
@@ -231,7 +231,7 @@ error[E0277]: the trait bound `query_source::joins::Join<Alias<posts2>, Alias<po
   --> tests/fail/derive/aliases.rs:62:10
    |
 62 |         .inner_join(
-   |          ^^^^^^^^^^ the trait `AppearsInFromClause<Alias<posts2>>` is not implemented for `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>`, which is required by `SelectStatement<FromClause<Alias<posts2>>>: InternalJoinDsl<_, Inner, _>`
+   |          ^^^^^^^^^^ the trait `AppearsInFromClause<Alias<posts2>>` is not implemented for `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>`
    |
    = note: double check that `Alias<posts2>` and `query_source::joins::Join<Alias<posts2>, Alias<posts3>, Inner>` appear in the same `allow_tables_to_appear_in_same_query!`
            call if both are tables

@@ -2,7 +2,7 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
   --> tests/fail/custom_returning_requires_nonaggregate.rs:22:78
    |
 22 |     let stmt = update(users.filter(id.eq(1))).set(name.eq("Bill")).returning(count(id));
-   |                                                                    --------- ^^^^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`, which is required by `UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<columns::name>, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<_>>: Query`
+   |                                                                    --------- ^^^^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
    |                                                                    |
    |                                                                    required by a bound introduced by this call
    |
@@ -23,7 +23,7 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
   --> tests/fail/custom_returning_requires_nonaggregate.rs:27:63
    |
 27 |     let stmt = insert_into(users).values(&new_user).returning((name, count(name)));
-   |                                                     --------- ^^^^^^^^^^^^^^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`, which is required by `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, ReturningClause<_>>: Query`
+   |                                                     --------- ^^^^^^^^^^^^^^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
    |                                                     |
    |                                                     required by a bound introduced by this call
    |

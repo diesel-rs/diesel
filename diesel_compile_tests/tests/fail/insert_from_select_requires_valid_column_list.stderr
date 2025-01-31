@@ -67,7 +67,7 @@ error[E0271]: type mismatch resolving `<title as Expression>::SqlType == Integer
 68 |         .into_columns(title);
    |          ^^^^^^^^^^^^ type mismatch resolving `<title as Expression>::SqlType == Integer`
    |
-note: expected this to be `diesel::sql_types::Text`
+note: expected this to be `diesel::sql_types::Integer`
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:17:18
    |
 17 |         title -> Text,
@@ -77,10 +77,11 @@ error[E0277]: the trait bound `(comments::columns::post_id, posts::columns::titl
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:73:23
    |
 73 |         .into_columns((comments::post_id, title));
-   |          ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::query_builder::insert_statement::column_list::ColumnList` is not implemented for `(comments::columns::post_id, posts::columns::title)`
+   |          ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
    |          |
    |          required by a bound introduced by this call
    |
+   = help: the trait `diesel::query_builder::insert_statement::column_list::ColumnList` is not implemented for `(comments::columns::post_id, posts::columns::title)`
    = help: the following other types implement trait `diesel::query_builder::insert_statement::column_list::ColumnList`:
              (T0, T1)
              (T0, T1, T2)
@@ -186,16 +187,16 @@ error[E0271]: type mismatch resolving `<(user_id, body) as Expression>::SqlType 
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:83:10
    |
 83 |         .into_columns((user_id, body));
-   |          ^^^^^^^^^^^^ expected `(Integer, Nullable<Text>)`, found `(Integer, Text)`
+   |          ^^^^^^^^^^^^ expected `(Integer, Text)`, found `(Integer, Nullable<Text>)`
    |
-   = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
-              found tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`
+   = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`
+              found tuple `(diesel::sql_types::Integer, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
 
 error[E0271]: type mismatch resolving `<(title, body) as Expression>::SqlType == (Integer, Text)`
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:88:10
    |
 88 |         .into_columns((title, body));
-   |          ^^^^^^^^^^^^ expected `(Text, Nullable<Text>)`, found `(Integer, Text)`
+   |          ^^^^^^^^^^^^ expected `(Integer, Text)`, found `(Text, Nullable<Text>)`
    |
-   = note: expected tuple `(diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
-              found tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`
+   = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`
+              found tuple `(diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`

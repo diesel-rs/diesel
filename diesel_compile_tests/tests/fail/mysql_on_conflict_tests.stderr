@@ -2,10 +2,11 @@ error[E0277]: `diesel::query_builder::upsert::on_conflict_clause::OnConflictValu
   --> tests/fail/mysql_on_conflict_tests.rs:43:18
    |
 43 |         .execute(&mut connection);
-   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<columns::name>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>`, which is required by `InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<columns::name>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>>: ExecuteDsl<_, _>`
+   |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
    |          |
    |          required by a bound introduced by this call
    |
+   = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<columns::name>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>`
    = note: this usually means that the `Mysql` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
@@ -30,10 +31,11 @@ error[E0277]: `diesel::query_builder::upsert::on_conflict_clause::OnConflictValu
   --> tests/fail/mysql_on_conflict_tests.rs:49:18
    |
 49 |         .execute(&mut connection);
-   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(columns::id, columns::name)>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>`, which is required by `InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(columns::id, columns::name)>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>>: ExecuteDsl<_, _>`
+   |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
    |          |
    |          required by a bound introduced by this call
    |
+   = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(columns::id, columns::name)>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>`
    = note: this usually means that the `Mysql` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
@@ -58,10 +60,11 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target
   --> tests/fail/mysql_on_conflict_tests.rs:53:22
    |
 53 |         .on_conflict((dsl::DuplicatedKeys, name))
-   |          ----------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>` is not implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(DuplicatedKeys, columns::name)>`
+   |          ----------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
    |          |
    |          required by a bound introduced by this call
    |
+   = help: the trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>` is not implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(DuplicatedKeys, columns::name)>`
    = help: the following other types implement trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Table>`:
              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(T,)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<T as Column>::Table>`
              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
@@ -85,10 +88,11 @@ error[E0277]: `diesel::query_builder::upsert::on_conflict_clause::OnConflictValu
   --> tests/fail/mysql_on_conflict_tests.rs:55:18
    |
 55 |         .execute(&mut connection);
-   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(DuplicatedKeys, columns::name)>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>`, which is required by `InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(DuplicatedKeys, columns::name)>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>>: ExecuteDsl<_, _>`
+   |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
    |          |
    |          required by a bound introduced by this call
    |
+   = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(DuplicatedKeys, columns::name)>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>`
    = note: this usually means that the `Mysql` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
@@ -113,10 +117,11 @@ error[E0277]: `diesel::query_builder::upsert::on_conflict_clause::OnConflictValu
   --> tests/fail/mysql_on_conflict_tests.rs:62:18
    |
 62 |         .execute(&mut connection);
-   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<SqlLiteral<_>>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>`, which is required by `InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<SqlLiteral<_>>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>>: ExecuteDsl<_, _>`
+   |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
    |          |
    |          required by a bound introduced by this call
    |
+   = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<SqlLiteral<_>>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>`
    = note: this usually means that the `Mysql` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
@@ -141,10 +146,11 @@ error[E0277]: `diesel::query_builder::upsert::on_conflict_clause::OnConflictValu
   --> tests/fail/mysql_on_conflict_tests.rs:70:18
    |
 70 |         .execute(&mut connection);
-   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>, diesel::query_builder::upsert::on_conflict_actions::DoUpdate<diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<columns::name>, diesel::query_builder::upsert::on_conflict_actions::Excluded<columns::name>>, users::table>>`, which is required by `InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>, diesel::query_builder::upsert::on_conflict_actions::DoUpdate<diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<columns::name>, diesel::query_builder::upsert::on_conflict_actions::Excluded<columns::name>>, users::table>>>: ExecuteDsl<_, _>`
+   |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
    |          |
    |          required by a bound introduced by this call
    |
+   = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>, diesel::query_builder::upsert::on_conflict_actions::DoUpdate<diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<columns::name>, diesel::query_builder::upsert::on_conflict_actions::Excluded<columns::name>>, users::table>>`
    = note: this usually means that the `Mysql` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
@@ -169,13 +175,14 @@ error[E0277]: `diesel::query_builder::upsert::on_conflict_target::ConflictTarget
   --> tests/fail/mysql_on_conflict_tests.rs:79:18
    |
 79 |         .execute(&mut connection);
-   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>`, which is required by `InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>>: ExecuteDsl<_, _>`
+   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>`
    |          |
    |          required by a bound introduced by this call
    |
    = note: this usually means that the `Pg` database system does not support
            this SQL syntax
-   = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>`
+   = help: the trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is not implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>`
+           but trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for it
    = note: required for `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>` to implement `QueryFragment<Pg, pg::backend::PgOnConflictClause>`
    = note: 2 redundant requirements hidden
    = note: required for `InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>>` to implement `QueryFragment<Pg>`
@@ -193,10 +200,11 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target
   --> tests/fail/mysql_on_conflict_tests.rs:83:22
    |
 83 |         .on_conflict((name, dsl::DuplicatedKeys))
-   |          ----------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>` is not implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(columns::name, DuplicatedKeys)>`
+   |          ----------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
    |          |
    |          required by a bound introduced by this call
    |
+   = help: the trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>` is not implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(columns::name, DuplicatedKeys)>`
    = help: the following other types implement trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Table>`:
              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(T,)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<T as Column>::Table>`
              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
@@ -220,10 +228,11 @@ error[E0277]: `diesel::query_builder::upsert::on_conflict_target::ConflictTarget
   --> tests/fail/mysql_on_conflict_tests.rs:85:18
    |
 85 |         .execute(&mut connection);
-   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(columns::name, DuplicatedKeys)>`, which is required by `InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(columns::name, DuplicatedKeys)>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>>: ExecuteDsl<_, _>`
+   |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
    |          |
    |          required by a bound introduced by this call
    |
+   = help: the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(columns::name, DuplicatedKeys)>`
    = note: this usually means that the `Pg` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
@@ -253,10 +262,11 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target
   --> tests/fail/mysql_on_conflict_tests.rs:89:22
    |
 89 |         .on_conflict((dsl::DuplicatedKeys, name))
-   |          ----------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>` is not implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(DuplicatedKeys, columns::name)>`
+   |          ----------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
    |          |
    |          required by a bound introduced by this call
    |
+   = help: the trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>` is not implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(DuplicatedKeys, columns::name)>`
    = help: the following other types implement trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Table>`:
              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(T,)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<T as Column>::Table>`
              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
@@ -280,10 +290,11 @@ error[E0277]: `diesel::query_builder::upsert::on_conflict_target::ConflictTarget
   --> tests/fail/mysql_on_conflict_tests.rs:91:18
    |
 91 |         .execute(&mut connection);
-   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(DuplicatedKeys, columns::name)>`, which is required by `InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::ValuesClause<(ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>), users::table>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(DuplicatedKeys, columns::name)>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>>: ExecuteDsl<_, _>`
+   |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
    |          |
    |          required by a bound introduced by this call
    |
+   = help: the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(DuplicatedKeys, columns::name)>`
    = note: this usually means that the `Pg` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:

@@ -21,13 +21,20 @@ concurrency:
 jobs:
   check_and_test:
     name: Check
-    needs: [sqlite_bundled, rustfmt_and_clippy, postgres_bundled, mysql_bundled, typos]
+    needs:
+      [
+        sqlite_bundled,
+        rustfmt_and_clippy,
+        postgres_bundled,
+        mysql_bundled,
+        typos,
+      ]
     strategy:
       fail-fast: false
       matrix:
         rust: ["stable", "beta", "nightly"]
         backend: ["postgres", "sqlite", "mysql"]
-        os: [ubuntu-latest, macos-13, macos-14, windows-2019]
+        os: [ubuntu-latest, macos-13, macos-15, windows-2025]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
@@ -36,7 +43,7 @@ jobs:
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@v2
         with:
-          key: ${{ runner.os }}-${{ matrix.backend }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+          key: ${{ matrix.os }}-${{ matrix.backend }}-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Set environment variables
         shell: bash
@@ -63,7 +70,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libpq-dev postgresql
-          echo "host    all             all             127.0.0.1/32            md5" > sudo tee -a /etc/postgresql/10/main/pg_hba.conf
           sudo service postgresql restart && sleep 3
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
           sudo service postgresql restart && sleep 3
@@ -73,6 +79,10 @@ jobs:
       - name: Install sqlite (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'sqlite'
         run: |
+          # ubuntu's libsqlite3 version is currently broken
+          # https://bugs.launchpad.net/ubuntu/+source/sqlite3/+bug/2087772
+          # That results in segfaults in our tests :(
+          sudo apt-get remove libsqlite3-dev
           curl -fsS --retry 3 -o sqlite-autoconf-3400100.tar.gz https://www.sqlite.org/2022/sqlite-autoconf-3400100.tar.gz
           tar zxf sqlite-autoconf-3400100.tar.gz
           cd sqlite-autoconf-3400100
@@ -110,15 +120,13 @@ jobs:
         if: runner.os == 'Linux' && matrix.backend == 'mysql'
         run: |
           sudo systemctl start mysql.service
-          sudo apt-get update
-          sudo apt-get -y install libmysqlclient-dev
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
-          echo "MYSQL_DATABASE_URL=mysql://root:root@localhost/diesel_test" >> $GITHUB_ENV
-          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root:root@localhost/diesel_example" >> $GITHUB_ENV
-          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root:root@localhost/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQL_DATABASE_URL=mysql://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root:root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
 
       - name: Install postgres (MacOS)
-        if: matrix.os == 'macos-13' && matrix.backend == 'postgres'
+        if: matrix.os == 'macos-13' || matrix.os == 'macos-15' && matrix.backend == 'postgres'
         run: |
           brew install postgresql@14
           brew services start postgresql@14
@@ -140,38 +148,36 @@ jobs:
       - name: Install sqlite (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'sqlite'
         run: |
-          brew install sqlite
+          # otherwise brew install fails
+          HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 brew install sqlite
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS)
         if: matrix.os == 'macos-13' && matrix.backend == 'mysql'
         run: |
-          brew install mariadb@10.5
-          /usr/local/opt/mariadb@10.5/bin/mysql_install_db
-          /usr/local/opt/mariadb@10.5/bin/mysql.server start
+          brew install mysql@8.4
+          /usr/local/opt/mysql@8.4/bin/mysql.server start
           sleep 3
-          /usr/local/opt/mariadb@10.5/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'runner'@'localhost';" -urunner
-          echo "MYSQL_DATABASE_URL=mysql://runner@localhost/diesel_test" >> $GITHUB_ENV
-          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://runner@localhost/diesel_example" >> $GITHUB_ENV
-          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@localhost/diesel_unit_test" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_LIB_DIR=/usr/local/opt/mariadb@10.5/lib" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_VERSION=10.5" >> $GITHUB_ENV
-
+          /usr/local/opt/mysql@8.4/bin/mysql -e "create database diesel_test; create database diesel_unit_test;  grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
+          echo "MYSQL_DATABASE_URL=mysql://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=/usr/local/opt/mysql@8.4/lib" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=8.4" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS M1)
-        if: matrix.os == 'macos-14' && matrix.backend == 'mysql'
+        if: matrix.os == 'macos-15' && matrix.backend == 'mysql'
         run: |
-          brew install mariadb@10.5
-          ls /opt/homebrew/opt/mariadb@10.5
-          /opt/homebrew/opt/mariadb@10.5/bin/mysql_install_db
-          /opt/homebrew/opt/mariadb@10.5/bin/mysql.server start
+          brew install mysql@8.4
+          ls /opt/homebrew/opt/mysql@8.4
+          /opt/homebrew/opt/mysql@8.4/bin/mysql.server start
           sleep 3
-          /opt/homebrew/opt/mariadb@10.5/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'runner'@'localhost';" -urunner
-          echo "MYSQL_DATABASE_URL=mysql://runner@localhost/diesel_test" >> $GITHUB_ENV
-          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://runner@localhost/diesel_example" >> $GITHUB_ENV
-          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@localhost/diesel_unit_test" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_LIB_DIR=/opt/homebrew/opt/mariadb@10.5/lib" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_VERSION=10.5" >> $GITHUB_ENV
+          /opt/homebrew/opt/mysql@8.4/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
+          echo "MYSQL_DATABASE_URL=mysql://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=/opt/homebrew/opt/mysql@8.4/lib" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=8.4" >> $GITHUB_ENV
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'
@@ -179,7 +185,7 @@ jobs:
         run: |
           choco install sqlite
           cd /D C:\ProgramData\chocolatey\lib\SQLite\tools
-          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           lib /machine:x64 /def:sqlite3.def /out:sqlite3.lib
 
       - name: Set variables for sqlite (Windows)
@@ -194,37 +200,42 @@ jobs:
         if: runner.os == 'Windows' && matrix.backend == 'postgres'
         shell: bash
         run: |
-          choco install postgresql12 --force --params '/Password:root'
-          echo "C:\Program Files\PostgreSQL\12\bin" >> $GITHUB_PATH
-          echo "C:\Program Files\PostgreSQL\12\lib" >> $GITHUB_PATH
-          echo "PQ_LIB_DIR=C:\Program Files\PostgreSQL\12\lib" >> $GITHUB_ENV
+          choco install postgresql14 --force --params '/Password:root'
+          echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
+          echo OPENSSL_SRC_PERL=C:/Strawberry/perl/bin/perl >> $GITHUB_ENV
+          echo "PQ_LIB_DIR=C:\Program Files\PostgreSQL\14\lib" >> $GITHUB_ENV
           echo "PG_DATABASE_URL=postgres://postgres:root@localhost/" >> $GITHUB_ENV
           echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres:root@localhost/diesel_example" >> $GITHUB_ENV
 
       - name: Install mysql (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'mysql'
-        shell: cmd
-        run: |
-          choco install mysql
-          "C:\tools\mysql\current\bin\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on `diesel_%`.* to 'root'@'localhost';" -uroot
-
-      - name: Set variables for mysql (Windows)
-        if: runner.os == 'Windows' && matrix.backend == 'mysql'
         shell: bash
         run: |
-          echo "MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test" >> $GITHUB_ENV
-          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@localhost/diesel_example" >> $GITHUB_ENV
-          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@localhost/diesel_unit_test" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_LIB_DIR=C:\tools\mysql\current\lib" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_VERSION=8.0.31" >> $GITHUB_ENV
-          echo "C:\tools\mysql\current\lib" >> $GITHUB_PATH
-          echo "C:\tools\mysql\current\bin" >> $GITHUB_PATH
-          dir "C:\tools\mysql\current\lib"
+          mkdir "C:\\Program Files\\MySQL\\MySQL Server 8.0\\data\\"
+          "C:\\Program Files\\MySQL\MySQL Server 8.0\\bin\\mysqld" --console --initialize --initialize-insecure
+          "C:\\Program Files\\MySQL\MySQL Server 8.0\\bin\\mysqld" --console &
+          sleep 15
+          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e "create database diesel_test;" -u root
+          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e "create database diesel_unit_test;" -u root
+          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e 'grant all on `diesel_%`.* to 'root'@'localhost';' -uroot
+          # remove doxygen because mysqlclient build otherwise breaks?
+          rm "C:/Strawberry/c/bin/doxygen.exe"
+          echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
+          echo OPENSSL_SRC_PERL=C:/Strawberry/perl/bin/perl >> $GITHUB_ENV
+          echo "MYSQL_DATABASE_URL=mysql://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=C:\Program Files\MySQL\MySQL Server 8.0\lib" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=8.0.40" >> $GITHUB_ENV
+          echo "C:\Program Files\MySQL\MySQL Server 8.0\lib" >> $GITHUB_PATH
+          echo "C:\Program Files\MySQL\MySQL Server 8.0\bin" >> $GITHUB_PATH
+          dir "C:\Program Files\MySQL\MySQL Server 8.0\lib"
 
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
+          components: rustfmt
 
       - name: Rust version check
         shell: bash
@@ -507,9 +518,10 @@ jobs:
           key: mysql_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
       - name: Install Mysql (Linux)
         run: |
-          sudo systemctl start mysql.service
           sudo apt-get update
           sudo apt-get -y install libmysqlclient-dev llvm
+          sudo systemctl start mysql.service
+          sleep 5
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
           echo "MYSQL_DATABASE_URL=mysql://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
           echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV

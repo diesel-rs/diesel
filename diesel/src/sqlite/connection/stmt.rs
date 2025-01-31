@@ -365,7 +365,7 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
     }
 }
 
-impl<'stmt, 'query> Drop for BoundStatement<'stmt, 'query> {
+impl Drop for BoundStatement<'_, '_> {
     fn drop(&mut self) {
         // First reset the statement, otherwise the bind calls
         // below will fails

@@ -70,6 +70,8 @@ pub use self::limit_clause::{LimitClause, NoLimitClause};
 pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::offset_clause::{NoOffsetClause, OffsetClause};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::order_clause::{NoOrderClause, OrderClause};
 
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
@@ -184,7 +186,7 @@ pub trait Query {
     type SqlType;
 }
 
-impl<'a, T: Query> Query for &'a T {
+impl<T: Query> Query for &T {
     type SqlType = T::SqlType;
 }
 
@@ -298,7 +300,7 @@ where
     }
 }
 
-impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T
+impl<T: ?Sized, DB> QueryFragment<DB> for &T
 where
     DB: Backend,
     T: QueryFragment<DB>,

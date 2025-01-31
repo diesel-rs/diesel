@@ -48,7 +48,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/update_requires_column_be_from_same_table.rs:25:33
    |
 25 |     let command = update(users).set(name.eq(posts::title));
-   |                                 ^^^ expected `Never`, found `Once`
+   |                                 ^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
   --> tests/fail/update_requires_column_be_from_same_table.rs:15:9

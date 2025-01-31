@@ -5,6 +5,9 @@ mod insert_from_select;
 pub(crate) use self::batch_insert::BatchInsert;
 pub(crate) use self::column_list::ColumnList;
 pub(crate) use self::insert_from_select::InsertFromSelect;
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
 pub(crate) use self::private::{Insert, InsertOrIgnore, Replace};
 
 use super::returning_clause::*;
@@ -317,10 +320,7 @@ impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
 )]
 pub trait UndecoratedInsertRecord<Table> {}
 
-impl<'a, T, Tab> UndecoratedInsertRecord<Tab> for &'a T where
-    T: ?Sized + UndecoratedInsertRecord<Tab>
-{
-}
+impl<T, Tab> UndecoratedInsertRecord<Tab> for &T where T: ?Sized + UndecoratedInsertRecord<Tab> {}
 
 impl<T, U> UndecoratedInsertRecord<T::Table> for ColumnInsertValue<T, U> where T: Column {}
 
@@ -379,7 +379,7 @@ impl<Tab> Insertable<Tab> for DefaultValues {
     }
 }
 
-impl<'a, Tab> Insertable<Tab> for &'a DefaultValues {
+impl<Tab> Insertable<Tab> for &DefaultValues {
     type Values = DefaultValues;
 
     fn values(self) -> Self::Values {
@@ -490,6 +490,7 @@ mod private {
         }
     }
 
+    /// A marker type for insert or ignore statements
     #[derive(Debug, Copy, Clone, QueryId)]
     pub struct InsertOrIgnore;
 
@@ -515,6 +516,7 @@ mod private {
         }
     }
 
+    /// A marker type for replace statements
     #[derive(Debug, Copy, Clone, QueryId)]
     pub struct Replace;
 

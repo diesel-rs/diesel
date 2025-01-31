@@ -34,7 +34,7 @@ where
 #[doc(hidden)] // used by the table macro
 pub struct Identifier<'a>(pub &'a str);
 
-impl<'a, DB: Backend> QueryFragment<DB> for Identifier<'a> {
+impl<DB: Backend> QueryFragment<DB> for Identifier<'_> {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_identifier(self.0)
     }
@@ -44,7 +44,7 @@ pub trait MiddleFragment<DB: Backend> {
     fn push_sql(&self, pass: AstPass<'_, '_, DB>);
 }
 
-impl<'a, DB: Backend> MiddleFragment<DB> for &'a str {
+impl<DB: Backend> MiddleFragment<DB> for &str {
     fn push_sql(&self, mut pass: AstPass<'_, '_, DB>) {
         pass.push_sql(self);
     }

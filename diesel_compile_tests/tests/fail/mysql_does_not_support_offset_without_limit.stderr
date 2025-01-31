@@ -2,10 +2,11 @@ error[E0277]: `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression:
   --> tests/fail/mysql_does_not_support_offset_without_limit.rs:16:57
    |
 16 |     users::table.offset(42).get_result::<(i32, String)>(&mut connection);
-   |                             ----------                  ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>>: LoadQuery<'_, _, (i32, std::string::String)>`
+   |                             ----------                  ^^^^^^^^^^^^^^^ unsatisfied trait bound
    |                             |
    |                             required by a bound introduced by this call
    |
+   = help: the trait `QueryFragment<Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>`
    = note: this usually means that the `Mysql` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
@@ -34,34 +35,36 @@ error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, OffsetClause<die
   --> tests/fail/mysql_does_not_support_offset_without_limit.rs:18:29
    |
 18 |     users::table.offset(42).into_boxed().get_result::<(i32, String)>(&mut connection);
-   |                             ^^^^^^^^^^ the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>>: BoxedDsl<'_, _>`
+   |                             ^^^^^^^^^^ unsatisfied trait bound
    |
+   = help: the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>`
    = help: the following other types implement trait `IntoBoxedClause<'a, DB>`:
-             `LimitOffsetClause<L, O>` implements `IntoBoxedClause<'a, Pg>`
-             `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'a, Mysql>`
-             `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'a, Sqlite>`
-             `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `IntoBoxedClause<'a, Mysql>`
-             `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `IntoBoxedClause<'a, Sqlite>`
-             `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'a, Mysql>`
-             `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'a, Sqlite>`
-             `LimitOffsetClause<NoLimitClause, OffsetClause<O>>` implements `IntoBoxedClause<'a, Sqlite>`
+             `LimitOffsetClause<L, O>` implements `IntoBoxedClause<'_, Pg>`
+             `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'_, Mysql>`
+             `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'_, Sqlite>`
+             `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `IntoBoxedClause<'_, Mysql>`
+             `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `IntoBoxedClause<'_, Sqlite>`
+             `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'_, Mysql>`
+             `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'_, Sqlite>`
+             `LimitOffsetClause<NoLimitClause, OffsetClause<O>>` implements `IntoBoxedClause<'_, Sqlite>`
    = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>>` to implement `BoxedDsl<'_, Mysql>`
 
 error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>: IntoBoxedClause<'_, Mysql>` is not satisfied
   --> tests/fail/mysql_does_not_support_offset_without_limit.rs:18:29
    |
 18 |     users::table.offset(42).into_boxed().get_result::<(i32, String)>(&mut connection);
-   |                             ^^^^^^^^^^ the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>>: BoxedDsl<'_, _>`
+   |                             ^^^^^^^^^^ unsatisfied trait bound
    |
+   = help: the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>`
    = help: the following other types implement trait `IntoBoxedClause<'a, DB>`:
-             `LimitOffsetClause<L, O>` implements `IntoBoxedClause<'a, Pg>`
-             `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'a, Mysql>`
-             `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'a, Sqlite>`
-             `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `IntoBoxedClause<'a, Mysql>`
-             `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `IntoBoxedClause<'a, Sqlite>`
-             `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'a, Mysql>`
-             `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'a, Sqlite>`
-             `LimitOffsetClause<NoLimitClause, OffsetClause<O>>` implements `IntoBoxedClause<'a, Sqlite>`
+             `LimitOffsetClause<L, O>` implements `IntoBoxedClause<'_, Pg>`
+             `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'_, Mysql>`
+             `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'_, Sqlite>`
+             `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `IntoBoxedClause<'_, Mysql>`
+             `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `IntoBoxedClause<'_, Sqlite>`
+             `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'_, Mysql>`
+             `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'_, Sqlite>`
+             `LimitOffsetClause<NoLimitClause, OffsetClause<O>>` implements `IntoBoxedClause<'_, Sqlite>`
    = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>>` to implement `BoxedDsl<'_, Mysql>`
 note: required by a bound in `diesel::QueryDsl::into_boxed`
   --> $DIESEL/src/query_dsl/mod.rs

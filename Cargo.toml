@@ -35,7 +35,7 @@ rust-version = "1.78.0"
 include = ["src/**/*.rs", "tests/**/*.rs", "LICENSE-*", "README.md"]
 
 [workspace.dependencies]
-libsqlite3-sys = "0.30.1"
+libsqlite3-sys = ">=0.30.1,<0.32.0"
 
 # Config for 'cargo dist'
 [workspace.metadata.dist]

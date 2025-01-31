@@ -369,7 +369,7 @@ pub trait HasTable {
     fn table() -> Self::Table;
 }
 
-impl<'a, T: HasTable> HasTable for &'a T {
+impl<T: HasTable> HasTable for &T {
     type Table = T::Table;
 
     fn table() -> Self::Table {

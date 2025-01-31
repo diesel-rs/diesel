@@ -34,7 +34,7 @@ error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<J
   --> tests/fail/invalid_joins.rs:41:26
    |
 41 |     let _ = users::table.inner_join(posts::table.inner_join(users::table));
-   |                          ^^^^^^^^^^ expected `MoreThanOnce`, found `Once`
+   |                          ^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>>`
   --> tests/fail/invalid_joins.rs:7:9
@@ -83,7 +83,7 @@ error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<J
   --> tests/fail/invalid_joins.rs:44:26
    |
 44 |     let _ = users::table.inner_join(posts::table.inner_join(users::table.on(posts::user_id.eq(users::id))));
-   |                          ^^^^^^^^^^ expected `MoreThanOnce`, found `Once`
+   |                          ^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, Inner>>`
   --> tests/fail/invalid_joins.rs:7:9
@@ -132,7 +132,7 @@ error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<J
   --> tests/fail/invalid_joins.rs:47:26
    |
 47 |     let _ = users::table.inner_join(posts::table.on(users::id.eq(posts::user_id)).inner_join(users::table));
-   |                          ^^^^^^^^^^ expected `MoreThanOnce`, found `Once`
+   |                          ^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>>`
   --> tests/fail/invalid_joins.rs:7:9
@@ -211,7 +211,7 @@ error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<J
   --> tests/fail/invalid_joins.rs:58:26
    |
 58 |     let _ = users::table.left_join(posts::table.left_join(users::table));
-   |                          ^^^^^^^^^ expected `MoreThanOnce`, found `Once`
+   |                          ^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
   --> tests/fail/invalid_joins.rs:7:9
@@ -260,7 +260,7 @@ error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<J
   --> tests/fail/invalid_joins.rs:61:26
    |
 61 |     let _ = users::table.left_join(posts::table.left_join(users::table.on(posts::user_id.eq(users::id))));
-   |                          ^^^^^^^^^ expected `MoreThanOnce`, found `Once`
+   |                          ^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, LeftOuter>>`
   --> tests/fail/invalid_joins.rs:7:9
@@ -309,7 +309,7 @@ error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<J
   --> tests/fail/invalid_joins.rs:64:26
    |
 64 |     let _ = users::table.left_join(posts::table.on(users::id.eq(posts::user_id)).left_join(users::table));
-   |                          ^^^^^^^^^ expected `MoreThanOnce`, found `Once`
+   |                          ^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
   --> tests/fail/invalid_joins.rs:7:9

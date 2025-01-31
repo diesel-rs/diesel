@@ -2,14 +2,15 @@ error[E0277]: `diesel::query_builder::upsert::into_conflict_clause::OnConflictSe
   --> tests/fail/insert_from_select_with_on_conflict_without_where_clause_not_supported_on_sqlite.rs:19:18
    |
 19 |         .execute(&mut connection)
-   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>>`, which is required by `InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>>, columns::id>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<columns::id>, diesel::query_builder::upsert::on_conflict_actions::DoNothing<users::table>>>: ExecuteDsl<_, _>`
+   |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
    |          |
    |          required by a bound introduced by this call
    |
+   = help: the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>>`
    = note: this usually means that the `Sqlite` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<BoxedSelectStatement<'a, ST, QS, Sqlite, GB>>` implements `QueryFragment<Sqlite>`
+             `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<BoxedSelectStatement<'_, ST, QS, Sqlite, GB>>` implements `QueryFragment<Sqlite>`
              `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S>` implements `QueryFragment<Mysql>`
              `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S>` implements `QueryFragment<Pg>`
              `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<SelectStatement<F, S, D, diesel::query_builder::where_clause::WhereClause<W>, O, LOf, G, H, LC>>` implements `QueryFragment<Sqlite>`

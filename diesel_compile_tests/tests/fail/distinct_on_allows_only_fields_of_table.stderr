@@ -2,7 +2,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:26:22
    |
 26 |         .distinct_on(posts::id)
-   |          ----------- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `users::table: DistinctOnDsl<_>`
+   |          ----------- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |          |
    |          required by a bound introduced by this call
    |
@@ -29,7 +29,7 @@ error[E0277]: Cannot select `users::columns::name` from `posts::table`
   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:30:10
    |
 30 |         .distinct_on((posts::name, users::name))
-   |          ^^^^^^^^^^^ the trait `SelectableExpression<posts::table>` is not implemented for `users::columns::name`, which is required by `posts::table: DistinctOnDsl<_>`
+   |          ^^^^^^^^^^^ the trait `SelectableExpression<posts::table>` is not implemented for `users::columns::name`
    |
    = note: `users::columns::name` is no valid selection for `posts::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
@@ -47,7 +47,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:30:10
    |
 30 |         .distinct_on((posts::name, users::name))
-   |          ^^^^^^^^^^^ expected `Never`, found `Once`
+   |          ^^^^^^^^^^^ expected `Once`, found `Never`
    |
 note: required for `users::columns::name` to implement `AppearsOnTable<posts::table>`
   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:8:9

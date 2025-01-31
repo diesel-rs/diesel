@@ -60,7 +60,7 @@ fn select_multiple_from_join() {
     .unwrap();
 
     alias!(users as user_alias: UserAlias);
-    let post_alias = alias!(posts as post_alias);
+    let (post_alias, post_alias_2) = alias!(posts as post_alias, posts as post_alias_2);
 
     // Having two different aliases in one query works
     post_alias
@@ -118,6 +118,17 @@ fn select_multiple_from_join() {
         .inner_join(user_alias)
         .select((user_alias.field(users::name), post_alias.field(posts::id)))
         .load::<(String, i32)>(connection)
+        .unwrap();
+
+    // Joining alias to alias to alias works with implicit on clauses
+    post_alias
+        .inner_join(user_alias.inner_join(post_alias_2))
+        .select((
+            user_alias.field(users::name),
+            post_alias.field(posts::id),
+            post_alias_2.field(posts::id),
+        ))
+        .load::<(String, i32, i32)>(connection)
         .unwrap();
 
     // using multiple aliases for the same table works if they are declared in the same alias call
