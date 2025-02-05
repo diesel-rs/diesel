@@ -115,7 +115,7 @@ impl<Inner> SqlQuery<Inner> {
     /// # {
     ///    q = q
     ///        // postgresql bind syntax
-    ///        .sql(format!("${idx}"))
+    ///        .sql(format!("${}", idx + 1))
     ///        .bind::<Integer, _>(user_id);
     /// # }
     /// # #[cfg(not(feature = "postgres"))]
