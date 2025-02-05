@@ -55,6 +55,7 @@ where
 {
     type SqlType = ST;
 }
+
 impl<E, ST, DB> query_builder::QueryFragment<DB> for Cast<E, ST>
 where
     E: query_builder::QueryFragment<DB>,
@@ -85,6 +86,7 @@ pub trait KnownCastSqlTypeName<DB> {
     /// `Self`
     fn sql_type_name() -> &'static str;
 }
+
 impl<ST, DB> KnownCastSqlTypeName<DB> for sql_types::Nullable<ST>
 where
     ST: KnownCastSqlTypeName<DB>,
@@ -132,6 +134,7 @@ where
     E: FieldAliasMapper<S>,
 {
     type Out = Cast<<E as FieldAliasMapper<S>>::Out, ST>;
+
     fn map(self, alias: &query_source::Alias<S>) -> Self::Out {
         Cast {
             expr: self.expr.map(alias),
@@ -143,6 +146,7 @@ where
 /// Marker trait: this SQL type (`Self`) can be casted to the target SQL type
 /// (`ST`) using `CAST(expr AS target_sql_type)`
 pub trait CastsTo<ST> {}
+
 impl<ST1, ST2> CastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where ST1: CastsTo<ST2>
 {}
 
