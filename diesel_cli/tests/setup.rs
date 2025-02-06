@@ -325,7 +325,13 @@ fn setup_writes_migration_dir_as_relative_path() {
 fn setup_writes_migration_dir_as_arg_as_relative_path() {
     let p = project("setup_writes_migration_dir_as_arg_as_relative_path").build();
 
-    let migrations_dir_arg = p.directory_path().join("foo").display().to_string();
+    let migrations_dir_arg = p
+        .directory_path()
+        .canonicalize()
+        .unwrap()
+        .join("foo")
+        .display()
+        .to_string();
     let result = p
         .command("setup")
         .arg(format!("--migration-dir={}", migrations_dir_arg))
