@@ -34,8 +34,7 @@ Guides on more specific features are coming soon.
 
 ## Getting help
 
-If you run into problems, Diesel has a very active Gitter room.
-You can come ask for help at in our [GitHub Discussions](https://github.com/diesel-rs/diesel/discussions) forum. 
+If you run into problems, you can come ask for help at in our [GitHub Discussions](https://github.com/diesel-rs/diesel/discussions) forum. 
 This is also the right place to propose new features or show your applications.
 
 ## Usage
