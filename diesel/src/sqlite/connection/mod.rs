@@ -174,12 +174,8 @@ impl Connection for SqliteConnection {
     /// If you plan to use this connection type on the `wasm32-unknown-unknown` target please
     /// make sure to read the following notes:
     ///
-    /// * You must  initialize sqlite using `diesel::init_sqlite` before calling `SqliteConnection::establish`.
-    /// * The database is stored in memory by default. sqlite-wasm
-    ///     provides different persistent VFS (Virtual File Systems), but they all have different limitations.
-    ///     See <https://sqlite.org/wasm/doc/trunk/persistence.md> for details. Make sure to chose
-    ///     an appropriated VFS implementation for your usecase.
-    /// * VFS can be selected through the `database_url` via an URL option, such as `file:data.db?vfs=opfs`.
+    /// * The database is stored in memory by default.
+    /// * Persistent VFS (Virtual File Systems) is optional, see <https://github.com/Spxg/sqlite-wasm-rs/blob/master/VFS.md>
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut instrumentation = DynInstrumentation::default_instrumentation();
         instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
@@ -983,26 +979,17 @@ mod tests {
 
     #[cfg(all(target_family = "wasm", target_os = "unknown"))]
     #[wasm_bindgen_test::wasm_bindgen_test]
-    async fn test_sqlite_wasm_vfs_default() {
-        crate::init_sqlite().await.unwrap();
+    fn test_sqlite_wasm_vfs_default() {
         SqliteConnection::establish("test_sqlite_wasm_vfs_default.db").unwrap();
     }
 
     #[cfg(all(target_family = "wasm", target_os = "unknown"))]
     #[wasm_bindgen_test::wasm_bindgen_test]
-    async fn test_sqlite_wasm_vfs_opfs() {
-        crate::init_sqlite().await.unwrap();
-        SqliteConnection::establish("file:test_sqlite_wasm_vfs_opfs.db?vfs=opfs").unwrap();
-    }
-
-    #[cfg(all(target_family = "wasm", target_os = "unknown"))]
-    #[wasm_bindgen_test::wasm_bindgen_test]
     async fn test_sqlite_wasm_vfs_opfs_sahpool() {
-        let sqlite = crate::init_sqlite().await.unwrap();
-        let util = sqlite.install_opfs_sahpool(None).await.unwrap();
-        SqliteConnection::establish("file:test_sqlite_wasm_vfs_opfs_sahpool.db?vfs=opfs-sahpool")
+        let util = sqlite_wasm_rs::export::install_opfs_sahpool(None, true)
+            .await
             .unwrap();
-        assert_eq!(1, util.get_file_count());
-        util.remove_vfs().await;
+        SqliteConnection::establish("test_sqlite_wasm_vfs_opfs_sahpool.db").unwrap();
+        assert!(util.get_file_count() > 0);
     }
 }

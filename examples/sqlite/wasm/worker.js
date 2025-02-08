@@ -1,5 +1,5 @@
 import init, {
-    init_sqlite,
+    install_opfs_sahpool,
     switch_vfs,
     create_post,
     get_post,
@@ -9,7 +9,7 @@ import init, {
 } from "./pkg/sqlite_wasm_example.js";
 
 await init();
-await init_sqlite();
+await install_opfs_sahpool();
 
 async function run_in_worker(event) {
     const payload = event.data;
@@ -65,7 +65,7 @@ async function run_in_worker(event) {
     };
 }
 
-self.onmessage = function (event) {
+self.onmessage = function(event) {
     run_in_worker(event);
 }
 
