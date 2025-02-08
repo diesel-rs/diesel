@@ -4,6 +4,7 @@ use diesel::*;
 
 #[diesel_test_helper::test]
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
+#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 fn managing_updated_at_for_table() {
     use crate::schema_dsl::*;
     use chrono::NaiveDateTime;
@@ -65,12 +66,7 @@ fn managing_updated_at_for_table() {
     assert_eq!(Ok(0), result);
 
     if cfg!(feature = "sqlite") {
-        // wasm can use thread::sleep when atomic target_feature
-        // is enabled, but that requires nightly
-        #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
         std::thread::sleep(Duration::from_millis(1000));
-        #[cfg(all(target_family = "wasm", target_os = "unknown"))]
-        wasmtimer::tokio::sleep(Duration::from_secs(1)).await;
     }
 
     let query = auto_time.find(2).select(updated_at);

@@ -37,8 +37,7 @@ pub fn establish_connection() -> SqliteConnection {
     let (vfs, once) = &*VFS.lock().unwrap();
     let url = match vfs {
         0 => "post.db",
-        1 => "file:post.db?vfs=opfs",
-        2 => "file:post.db?vfs=opfs-sahpool",
+        1 => "file:post.db?vfs=opfs-sahpool",
         _ => unreachable!(),
     };
     let mut conn =
@@ -49,11 +48,11 @@ pub fn establish_connection() -> SqliteConnection {
     conn
 }
 
-#[cfg(all(target_family = "wasm", target_os = "unknown"))]
 #[wasm_bindgen]
-pub async fn init_sqlite() {
-    let sqlite = diesel::init_sqlite().await.unwrap();
-    sqlite.install_opfs_sahpool(None).await.unwrap();
+pub async fn install_opfs_sahpool() {
+    sqlite_wasm_rs::export::install_opfs_sahpool(None, false)
+        .await
+        .unwrap();
 }
 
 #[wasm_bindgen]
