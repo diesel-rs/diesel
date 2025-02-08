@@ -48,6 +48,7 @@ pub fn establish_connection() -> SqliteConnection {
     conn
 }
 
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
 #[wasm_bindgen]
 pub async fn install_opfs_sahpool() {
     sqlite_wasm_rs::export::install_opfs_sahpool(None, false)
