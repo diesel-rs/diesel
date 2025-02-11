@@ -7,7 +7,7 @@ use crate::sqlite::{Sqlite, SqliteValue};
 
 #[cfg(all(feature = "sqlite", feature = "serde_json"))]
 impl FromSql<sql_types::Json, Sqlite> for serde_json::Value {
-    fn from_sql(value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         serde_json::from_str(value.read_text()).map_err(|_| "Invalid Json".into())
     }
 }
@@ -22,7 +22,7 @@ impl ToSql<sql_types::Json, Sqlite> for serde_json::Value {
 
 #[cfg(all(feature = "sqlite", feature = "serde_json"))]
 impl FromSql<sql_types::Jsonb, Sqlite> for serde_json::Value {
-    fn from_sql(value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         use self::jsonb::*;
 
         let bytes = value.read_blob();

@@ -18,7 +18,7 @@ use crate::sql_types::SqlType;
 /// `FromSql`
 #[cfg(feature = "sqlite")]
 impl FromSql<sql_types::VarChar, Sqlite> for *const str {
-    fn from_sql(value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         let text = value.read_text();
         Ok(text as *const _)
     }
@@ -40,7 +40,7 @@ impl Queryable<sql_types::VarChar, Sqlite> for *const str {
 /// `FromSql`
 #[cfg(feature = "sqlite")]
 impl FromSql<sql_types::Binary, Sqlite> for *const [u8] {
-    fn from_sql(bytes: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
+    fn from_sql(mut bytes: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         let bytes = bytes.read_blob();
         Ok(bytes as *const _)
     }
@@ -58,28 +58,28 @@ impl Queryable<sql_types::Binary, Sqlite> for *const [u8] {
 #[cfg(feature = "sqlite")]
 #[allow(clippy::cast_possible_truncation)] // we want to truncate here
 impl FromSql<sql_types::SmallInt, Sqlite> for i16 {
-    fn from_sql(value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         Ok(value.read_integer() as i16)
     }
 }
 
 #[cfg(feature = "sqlite")]
 impl FromSql<sql_types::Integer, Sqlite> for i32 {
-    fn from_sql(value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         Ok(value.read_integer())
     }
 }
 
 #[cfg(feature = "sqlite")]
 impl FromSql<sql_types::Bool, Sqlite> for bool {
-    fn from_sql(value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         Ok(value.read_integer() != 0)
     }
 }
 
 #[cfg(feature = "sqlite")]
 impl FromSql<sql_types::BigInt, Sqlite> for i64 {
-    fn from_sql(value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         Ok(value.read_long())
     }
 }
@@ -87,14 +87,14 @@ impl FromSql<sql_types::BigInt, Sqlite> for i64 {
 #[cfg(feature = "sqlite")]
 #[allow(clippy::cast_possible_truncation)] // we want to truncate here
 impl FromSql<sql_types::Float, Sqlite> for f32 {
-    fn from_sql(value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         Ok(value.read_double() as f32)
     }
 }
 
 #[cfg(feature = "sqlite")]
 impl FromSql<sql_types::Double, Sqlite> for f64 {
-    fn from_sql(value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         Ok(value.read_double())
     }
 }
