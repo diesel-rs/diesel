@@ -17,6 +17,17 @@ pub type json<E> = super::functions::json<SqlTypeOf<E>, E>;
 #[cfg(feature = "sqlite")]
 pub type jsonb<E> = super::functions::jsonb<SqlTypeOf<E>, E>;
 
+/// Return type of [`json_array_length(json)`](super::functions::json_array_length())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_array_length<J> = super::functions::json_array_length<SqlTypeOf<J>, J>;
+
+/// Return type of [`json_array_length(json, path)`](super::functions::json_array_length_with_path())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_array_length_with_path<J, P> =
+    super::functions::json_array_length_with_path<SqlTypeOf<J>, J, P>;
+
 /// Return type of [`json_pretty(json)`](super::functions::json_pretty())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "sqlite")]

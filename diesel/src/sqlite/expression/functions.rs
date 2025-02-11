@@ -104,6 +104,118 @@ extern "SQL" {
     /// ```
     fn jsonb<E: BinaryOrNullableBinary + MaybeNullableValue<Jsonb>>(e: E) -> E::Out;
 
+    /// The json_array_length(X) function returns the number of elements in the JSON array X,
+    /// or 0 if X is some kind of JSON value other than an array.
+    /// Errors are thrown if either X is not well-formed JSON or if P is not a well-formed path.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{sql, json_array_length};
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Json, Text, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let version = diesel::select(sql::<Text>("sqlite_version();"))
+    ///         .get_result::<String>(connection)?;
+    ///
+    /// // Querying SQLite version should not fail.
+    /// let version_components: Vec<&str> = version.split('.').collect();
+    /// let major: u32 = version_components[0].parse().unwrap();
+    /// let minor: u32 = version_components[1].parse().unwrap();
+    /// let patch: u32 = version_components[2].parse().unwrap();
+    ///
+    /// assert_eq!(major, 3);
+    /// assert!(minor >= 46);
+    ///
+    /// let result = diesel::select(json_array_length::<Json, _>(json!([1,2,3,4])))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(4), result);
+    ///
+    /// let result = diesel::select(json_array_length::<Json, _>(json!({"one":[1,2,3]})))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(0), result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "sqlite")]
+    fn json_array_length<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Json>>(j: J) -> J::Out;
+
+    /// The json_array_length(X) function returns the number of elements in the JSON array X,
+    /// or 0 if X is some kind of JSON value other than an array.
+    /// The json_array_length(X,P) locates the array at path P within X and returns the length of that array,
+    /// or 0 if path P locates an element in X that is not a JSON array,
+    /// and NULL if path P does not locate any element of X.
+    /// Errors are thrown if either X is not well-formed JSON or if P is not a well-formed path.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{sql, json_array_length_with_path};
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Json, Text, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let version = diesel::select(sql::<Text>("sqlite_version();"))
+    ///         .get_result::<String>(connection)?;
+    ///
+    /// // Querying SQLite version should not fail.
+    /// let version_components: Vec<&str> = version.split('.').collect();
+    /// let major: u32 = version_components[0].parse().unwrap();
+    /// let minor: u32 = version_components[1].parse().unwrap();
+    /// let patch: u32 = version_components[2].parse().unwrap();
+    ///
+    /// assert_eq!(major, 3);
+    /// assert!(minor >= 46);
+    ///
+    /// let result = diesel::select(json_array_length_with_path::<Json, _, _>(json!([1,2,3,4]), "$"))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(4), result);
+    ///
+    /// let result = diesel::select(json_array_length_with_path::<Json, _, _>(json!([1,2,3,4]), "$[2]"))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(0), result);
+    ///
+    /// let result = diesel::select(json_array_length_with_path::<Json, _, _>(json!({"one":[1,2,3]}), "$.one"))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(3), result);
+    ///
+    /// let result = diesel::select(json_array_length_with_path::<Nullable<Json>, _, _>(json!({"one":[1,2,3]}), "$.two"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    ///
+    /// assert_eq!(None, result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "json_array_length"]
+    #[cfg(feature = "sqlite")]
+    fn json_array_length_with_path<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Json>>(j: J, path: Text) -> J::Out;
+
     /// Converts the given json value to pretty-printed, indented text
     ///
     /// # Example
