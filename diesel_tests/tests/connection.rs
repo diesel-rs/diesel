@@ -2,9 +2,12 @@ use crate::schema::*;
 use diesel::connection::BoxableConnection;
 use diesel::*;
 
+#[cfg_attr(
+    all(target_family = "wasm", target_os = "unknown"),
+    ignore = "can't sleep"
+)]
 #[diesel_test_helper::test]
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
-#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 fn managing_updated_at_for_table() {
     use crate::schema_dsl::*;
     use chrono::NaiveDateTime;
@@ -79,10 +82,12 @@ fn managing_updated_at_for_table() {
     assert!(old_time < new_time);
 }
 
-/// wasm does not support `std::env::temp_dir`
+#[cfg_attr(
+    all(target_family = "wasm", target_os = "unknown"),
+    ignore = "no filesystem on this platform"
+)]
 #[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
-#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 fn strips_sqlite_url_prefix() {
     let mut path = std::env::temp_dir();
     path.push("diesel_test_sqlite.db");
@@ -99,10 +104,12 @@ fn file_uri_created_in_memory() {
     assert!(!Path::new(":memory:").exists());
 }
 
-/// wasm does not support `std::env::temp_dir`
+#[cfg_attr(
+    all(target_family = "wasm", target_os = "unknown"),
+    ignore = "no filesystem on this platform"
+)]
 #[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
-#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 fn sqlite_uri_prefix_interpreted_as_file() {
     let mut path = std::env::temp_dir();
     path.push("diesel_test_sqlite_readonly.db");
