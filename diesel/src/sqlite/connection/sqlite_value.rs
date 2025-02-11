@@ -12,8 +12,9 @@ use super::row::PrivateSqliteRow;
 
 /// Raw sqlite value as received from the database
 ///
-/// Use existing `FromSql` implementations to convert this into
-/// rust values
+/// Use the `read_*` functions to access the actual
+/// value or use existing `FromSql` implementations
+/// to convert this into rust values
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct SqliteValue<'row, 'stmt, 'query> {
     // This field exists to ensure that nobody
@@ -86,7 +87,7 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
         }
     }
 
-    pub(crate) fn parse_string<'value, R>(&'value self, f: impl FnOnce(&'value str) -> R) -> R {
+    pub(crate) fn parse_string<'value, R>(&'value mut self, f: impl FnOnce(&'value str) -> R) -> R {
         let s = unsafe {
             let ptr = ffi::sqlite3_value_text(self.value.as_ptr());
             let len = ffi::sqlite3_value_bytes(self.value.as_ptr());
@@ -102,11 +103,29 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
         f(s)
     }
 
-    pub(crate) fn read_text(&self) -> &str {
+    /// Read the underlying value as string
+    ///
+    /// If the underlying value is not a string sqlite will convert it
+    /// into a string and return that value instead.
+    ///
+    /// Use the [`value_type()`] function to determine the actual
+    /// type of the value.
+    ///
+    /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
+    pub fn read_text(&mut self) -> &str {
         self.parse_string(|s| s)
     }
 
-    pub(crate) fn read_blob(&self) -> &[u8] {
+    /// Read the underlying value as blob
+    ///
+    /// If the underlying value is not a blob sqlite will convert it
+    /// into a blob and return that value instead.
+    ///
+    /// Use the [`value_type()`] function to determine the actual
+    /// type of the value.
+    ///
+    /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
+    pub fn read_blob(&mut self) -> &[u8] {
         unsafe {
             let ptr = ffi::sqlite3_value_blob(self.value.as_ptr());
             let len = ffi::sqlite3_value_bytes(self.value.as_ptr());
@@ -124,15 +143,42 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
         }
     }
 
-    pub(crate) fn read_integer(&self) -> i32 {
+    /// Read the underlying value as 32 bit integer
+    ///
+    /// If the underlying value is not an integer sqlite will convert it
+    /// into an integer and return that value instead.
+    ///
+    /// Use the [`value_type()`] function to determine the actual
+    /// type of the value.
+    ///
+    /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
+    pub fn read_integer(&mut self) -> i32 {
         unsafe { ffi::sqlite3_value_int(self.value.as_ptr()) }
     }
 
-    pub(crate) fn read_long(&self) -> i64 {
+    /// Read the underlying value as 64 bit integer
+    ///
+    /// If the underlying value is not a string sqlite will convert it
+    /// into a string and return that value instead.
+    ///
+    /// Use the [`value_type()`] function to determine the actual
+    /// type of the value.
+    ///
+    /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
+    pub fn read_long(&mut self) -> i64 {
         unsafe { ffi::sqlite3_value_int64(self.value.as_ptr()) }
     }
 
-    pub(crate) fn read_double(&self) -> f64 {
+    /// Read the underlying value as 64 bit float
+    ///
+    /// If the underlying value is not a string sqlite will convert it
+    /// into a string and return that value instead.
+    ///
+    /// Use the [`value_type()`] function to determine the actual
+    /// type of the value.
+    ///
+    /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
+    pub fn read_double(&mut self) -> f64 {
         unsafe { ffi::sqlite3_value_double(self.value.as_ptr()) }
     }
 
@@ -176,5 +222,86 @@ impl OwnedSqliteValue {
                  https://github.com/diesel-rs/diesel.",
         );
         OwnedSqliteValue { value }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::connection::{LoadConnection, SimpleConnection};
+    use crate::row::Field;
+    use crate::row::Row;
+    use crate::sql_types::{Blob, Double, Int4, Text};
+    use crate::*;
+
+    #[expect(clippy::approx_constant)] // we really want to use 3.14
+    #[diesel_test_helper::test]
+    fn can_convert_all_values() {
+        let mut conn = SqliteConnection::establish(":memory:").unwrap();
+
+        conn.batch_execute("CREATE TABLE tests(int INTEGER, text TEXT, blob BLOB, float FLOAT)")
+            .unwrap();
+
+        diesel::sql_query("INSERT INTO tests(int, text, blob, float) VALUES(?, ?, ?, ?)")
+            .bind::<Int4, _>(42)
+            .bind::<Text, _>("foo")
+            .bind::<Blob, _>(b"foo")
+            .bind::<Double, _>(3.14)
+            .execute(&mut conn)
+            .unwrap();
+
+        let mut res = conn
+            .load(diesel::sql_query(
+                "SELECT int, text, blob, float FROM tests",
+            ))
+            .unwrap();
+        let row = res.next().unwrap().unwrap();
+        let int_field = row.get(0).unwrap();
+        let text_field = row.get(1).unwrap();
+        let blob_field = row.get(2).unwrap();
+        let float_field = row.get(3).unwrap();
+
+        let mut int_value = int_field.value().unwrap();
+        assert_eq!(int_value.read_integer(), 42);
+        let mut int_value = int_field.value().unwrap();
+        assert_eq!(int_value.read_long(), 42);
+        let mut int_value = int_field.value().unwrap();
+        assert_eq!(int_value.read_double(), 42.0);
+        let mut int_value = int_field.value().unwrap();
+        assert_eq!(int_value.read_text(), "42");
+        let mut int_value = int_field.value().unwrap();
+        assert_eq!(int_value.read_blob(), b"42");
+
+        let mut text_value = text_field.value().unwrap();
+        assert_eq!(text_value.read_integer(), 0);
+        let mut text_value = text_field.value().unwrap();
+        assert_eq!(text_value.read_long(), 0);
+        let mut text_value = text_field.value().unwrap();
+        assert_eq!(text_value.read_double(), 0.0);
+        let mut text_value = text_field.value().unwrap();
+        assert_eq!(text_value.read_text(), "foo");
+        let mut text_value = text_field.value().unwrap();
+        assert_eq!(text_value.read_blob(), b"foo");
+
+        let mut blob_value = blob_field.value().unwrap();
+        assert_eq!(blob_value.read_integer(), 0);
+        let mut blob_value = blob_field.value().unwrap();
+        assert_eq!(blob_value.read_long(), 0);
+        let mut blob_value = blob_field.value().unwrap();
+        assert_eq!(blob_value.read_double(), 0.0);
+        let mut blob_value = blob_field.value().unwrap();
+        assert_eq!(blob_value.read_text(), "foo");
+        let mut blob_value = blob_field.value().unwrap();
+        assert_eq!(blob_value.read_blob(), b"foo");
+
+        let mut float_value = float_field.value().unwrap();
+        assert_eq!(float_value.read_integer(), 3);
+        let mut float_value = float_field.value().unwrap();
+        assert_eq!(float_value.read_long(), 3);
+        let mut float_value = float_field.value().unwrap();
+        assert_eq!(float_value.read_double(), 3.14);
+        let mut float_value = float_field.value().unwrap();
+        assert_eq!(float_value.read_text(), "3.14");
+        let mut float_value = float_field.value().unwrap();
+        assert_eq!(float_value.read_blob(), b"3.14");
     }
 }
