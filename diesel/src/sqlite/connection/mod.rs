@@ -175,7 +175,8 @@ impl Connection for SqliteConnection {
     /// make sure to read the following notes:
     ///
     /// * The database is stored in memory by default.
-    /// * Persistent VFS (Virtual File Systems) is optional, see <https://github.com/Spxg/sqlite-wasm-rs/blob/master/VFS.md>
+    /// * Persistent VFS (Virtual File Systems) is optional,
+    ///     see <https://github.com/Spxg/sqlite-wasm-rs/blob/master/VFS.md> for details
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut instrumentation = DynInstrumentation::default_instrumentation();
         instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
