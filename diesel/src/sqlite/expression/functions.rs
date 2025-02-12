@@ -122,7 +122,7 @@ extern "SQL" {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::{sql, json_array_length};
     /// #     use serde_json::{json, Value};
-    /// #     use diesel::sql_types::{Json, Text, Nullable};
+    /// #     use diesel::sql_types::{Json, Jsonb, Text, Nullable};
     /// #     let connection = &mut establish_connection();
     ///
     /// let version = diesel::select(sql::<Text>("sqlite_version();"))
@@ -134,10 +134,19 @@ extern "SQL" {
     /// let minor: u32 = version_components[1].parse().unwrap();
     /// let patch: u32 = version_components[2].parse().unwrap();
     ///
-    /// assert_eq!(major, 3);
-    /// assert!(minor >= 46);
+    /// if major > 3 || (major == 3 && minor >= 46) {
+    ///     /* Valid sqlite version, do nothing */
+    /// } else {
+    ///     println!("SQLite version is too old, skipping the test.");
+    ///     return Ok(());
+    /// }
     ///
     /// let result = diesel::select(json_array_length::<Json, _>(json!([1,2,3,4])))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(4), result);
+    ///
+    /// let result = diesel::select(json_array_length::<Jsonb, _>(json!([1,2,3,4])))
     ///     .get_result::<Value>(connection)?;
     ///
     /// assert_eq!(json!(4), result);
@@ -146,6 +155,21 @@ extern "SQL" {
     ///     .get_result::<Value>(connection)?;
     ///
     /// assert_eq!(json!(0), result);
+    ///
+    /// let result = diesel::select(json_array_length::<Jsonb, _>(json!({"one":[1,2,3]})))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(0), result);
+    ///
+    /// let result = diesel::select(json_array_length::<Nullable<Json>, _>(None::<Value>))
+    ///     .get_result::<Option<Value>>(connection)?;
+    ///
+    /// assert_eq!(None, result);
+    ///
+    /// let result = diesel::select(json_array_length::<Nullable<Jsonb>, _>(None::<Value>))
+    ///     .get_result::<Option<Value>>(connection)?;
+    ///
+    /// assert_eq!(None, result);
     ///
     /// #     Ok(())
     /// # }
@@ -186,8 +210,12 @@ extern "SQL" {
     /// let minor: u32 = version_components[1].parse().unwrap();
     /// let patch: u32 = version_components[2].parse().unwrap();
     ///
-    /// assert_eq!(major, 3);
-    /// assert!(minor >= 46);
+    /// if major > 3 || (major == 3 && minor >= 46) {
+    ///     /* Valid sqlite version, do nothing */
+    /// } else {
+    ///     println!("SQLite version is too old, skipping the test.");
+    ///     return Ok(());
+    /// }
     ///
     /// let result = diesel::select(json_array_length_with_path::<Json, _, _>(json!([1,2,3,4]), "$"))
     ///     .get_result::<Value>(connection)?;
