@@ -146,17 +146,7 @@ extern "SQL" {
     ///
     /// assert_eq!(json!(4), result);
     ///
-    /// let result = diesel::select(json_array_length::<Jsonb, _>(json!([1,2,3,4])))
-    ///     .get_result::<Value>(connection)?;
-    ///
-    /// assert_eq!(json!(4), result);
-    ///
     /// let result = diesel::select(json_array_length::<Json, _>(json!({"one":[1,2,3]})))
-    ///     .get_result::<Value>(connection)?;
-    ///
-    /// assert_eq!(json!(0), result);
-    ///
-    /// let result = diesel::select(json_array_length::<Jsonb, _>(json!({"one":[1,2,3]})))
     ///     .get_result::<Value>(connection)?;
     ///
     /// assert_eq!(json!(0), result);
@@ -165,6 +155,16 @@ extern "SQL" {
     ///     .get_result::<Option<Value>>(connection)?;
     ///
     /// assert_eq!(None, result);
+    ///
+    /// let result = diesel::select(json_array_length::<Jsonb, _>(json!([1,2,3,4])))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(4), result);
+    ///
+    /// let result = diesel::select(json_array_length::<Jsonb, _>(json!({"one":[1,2,3]})))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(0), result);
     ///
     /// let result = diesel::select(json_array_length::<Nullable<Jsonb>, _>(None::<Value>))
     ///     .get_result::<Option<Value>>(connection)?;
@@ -198,7 +198,7 @@ extern "SQL" {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::{sql, json_array_length_with_path};
     /// #     use serde_json::{json, Value};
-    /// #     use diesel::sql_types::{Json, Text, Nullable};
+    /// #     use diesel::sql_types::{Json, Jsonb, Text, Nullable};
     /// #     let connection = &mut establish_connection();
     ///
     /// let version = diesel::select(sql::<Text>("sqlite_version();"))
@@ -233,6 +233,26 @@ extern "SQL" {
     /// assert_eq!(json!(3), result);
     ///
     /// let result = diesel::select(json_array_length_with_path::<Nullable<Json>, _, _>(json!({"one":[1,2,3]}), "$.two"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    ///
+    /// assert_eq!(None, result);
+    ///
+    /// let result = diesel::select(json_array_length_with_path::<Jsonb, _, _>(json!([1,2,3,4]), "$"))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(4), result);
+    ///
+    /// let result = diesel::select(json_array_length_with_path::<Jsonb, _, _>(json!([1,2,3,4]), "$[2]"))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(0), result);
+    ///
+    /// let result = diesel::select(json_array_length_with_path::<Jsonb, _, _>(json!({"one":[1,2,3]}), "$.one"))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(3), result);
+    ///
+    /// let result = diesel::select(json_array_length_with_path::<Nullable<Jsonb>, _, _>(json!({"one":[1,2,3]}), "$.two"))
     ///     .get_result::<Option<Value>>(connection)?;
     ///
     /// assert_eq!(None, result);
