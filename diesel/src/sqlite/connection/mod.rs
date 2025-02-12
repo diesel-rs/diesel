@@ -987,10 +987,11 @@ mod tests {
     #[cfg(all(target_family = "wasm", target_os = "unknown"))]
     #[wasm_bindgen_test::wasm_bindgen_test]
     async fn test_sqlite_wasm_vfs_opfs_sahpool() {
-        let util = sqlite_wasm_rs::export::install_opfs_sahpool(None, true)
+        let util = sqlite_wasm_rs::export::install_opfs_sahpool(None, false)
             .await
             .unwrap();
-        SqliteConnection::establish("test_sqlite_wasm_vfs_opfs_sahpool.db").unwrap();
+        SqliteConnection::establish("file:test_sqlite_wasm_vfs_opfs_sahpool.db?vfs=opfs-sahpool")
+            .unwrap();
         assert!(util.get_file_count() > 0);
     }
 }
