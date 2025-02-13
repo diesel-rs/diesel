@@ -25,6 +25,13 @@ struct UserCorrect {
     name: String,
 }
 
+#[derive(Selectable, Queryable)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+struct SelectableWithEmbed {
+    #[diesel(embed)]
+    embed_user: User,
+}
+
 fn main() {
     let mut conn = PgConnection::establish("...").unwrap();
 
