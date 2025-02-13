@@ -1,8 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::spanned::Spanned;
-use syn::DeriveInput;
-use syn::{parse_quote, Result};
+use syn::{parse_quote, DeriveInput, Result};
 
 use crate::field::Field;
 use crate::model::Model;
@@ -48,7 +47,6 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             .fields()
             .iter()
             .zip(&field_columns_ty)
-            .filter(|(f, _)| !f.embed())
             .flat_map(|(f, ty)| {
                 backends.iter().map(move |b| {
                     let span = f.ty.span();
