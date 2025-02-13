@@ -31,10 +31,38 @@ error[E0277]: cannot deserialize a value of the database type `diesel::sql_types
    = note: required for `std::string::String` to implement `FromSqlRow<diesel::sql_types::Integer, Pg>`
    = help: see issue #48214
 
-error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<User, _>: load_dsl::private::CompatibleType<_, _>` is not satisfied
-  --> tests/fail/selectable_with_typemisamatch.rs:33:15
+error[E0277]: the trait bound `(std::string::String, i32): FromStaticSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Pg>` is not satisfied
+  --> tests/fail/selectable_with_typemisamatch.rs:32:17
    |
-33 |         .load(&mut conn)
+32 |     embed_user: User,
+   |                 ^^^^ the trait `FromStaticSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Pg>` is not implemented for `(std::string::String, i32)`
+   |
+   = help: the following other types implement trait `FromStaticSqlRow<ST, DB>`:
+             `(T0,)` implements `FromStaticSqlRow<(ST0,), __DB>`
+             `(T1, T0)` implements `FromStaticSqlRow<(ST1, ST0), __DB>`
+             `(T1, T2, T0)` implements `FromStaticSqlRow<(ST1, ST2, ST0), __DB>`
+             `(T1, T2, T3, T0)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST0), __DB>`
+             `(T1, T2, T3, T4, T0)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST4, ST0), __DB>`
+             `(T1, T2, T3, T4, T5, T0)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST4, ST5, ST0), __DB>`
+             `(T1, T2, T3, T4, T5, T6, T0)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST4, ST5, ST6, ST0), __DB>`
+             `(T1, T2, T3, T4, T5, T6, T7, T0)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST0), __DB>`
+           and $N others
+note: required for `User` to implement `diesel::Queryable<(diesel::sql_types::Integer, diesel::sql_types::Text), Pg>`
+  --> tests/fail/selectable_with_typemisamatch.rs:12:22
+   |
+12 | #[derive(Selectable, Queryable)]
+   |                      ^^^^^^^^^ unsatisfied trait bound introduced in this `derive` macro
+...
+15 | struct User {
+   |        ^^^^
+   = note: required for `User` to implement `FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Pg>`
+   = help: see issue #48214
+   = note: this error originates in the derive macro `Queryable` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<User, _>: load_dsl::private::CompatibleType<_, _>` is not satisfied
+  --> tests/fail/selectable_with_typemisamatch.rs:40:15
+   |
+40 |         .load(&mut conn)
    |          ---- ^^^^^^^^^ the trait `load_dsl::private::CompatibleType<_, _>` is not implemented for `diesel::expression::select_by::SelectBy<User, _>`
    |          |
    |          required by a bound introduced by this call
