@@ -10,7 +10,8 @@ use crate::util::wrap_in_dummy_mod;
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, false)?;
 
-    let (_, ty_generics, original_where_clause) = item.generics.split_for_impl();
+    let (original_impl_generics, ty_generics, original_where_clause) =
+        item.generics.split_for_impl();
 
     let mut generics = item.generics.clone();
     generics
@@ -20,8 +21,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     for embed_field in model.fields().iter().filter(|f| f.embed()) {
         let embed_ty = &embed_field.ty;
         generics
-            .where_clause
-            .get_or_insert_with(|| parse_quote!(where))
+            .make_where_clause()
             .predicates
             .push(parse_quote!(#embed_ty: Selectable<__DB>));
     }
@@ -63,7 +63,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             where_clause.predicates.push(field_check);
         }
         Some(quote::quote! {
-            fn _check_field_compatibility #impl_generics()
+            fn _check_field_compatibility #original_impl_generics()
                 #where_clause
             {}
         })
