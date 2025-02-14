@@ -142,32 +142,32 @@ extern "SQL" {
     /// }
     ///
     /// let result = diesel::select(json_array_length::<Json, _>(json!([1,2,3,4])))
-    ///     .get_result::<Value>(connection)?;
+    ///     .get_result::<i32>(connection)?;
     ///
-    /// assert_eq!(json!(4), result);
+    /// assert_eq!(4, result);
     ///
     /// let result = diesel::select(json_array_length::<Json, _>(json!({"one":[1,2,3]})))
-    ///     .get_result::<Value>(connection)?;
+    ///     .get_result::<i32>(connection)?;
     ///
-    /// assert_eq!(json!(0), result);
+    /// assert_eq!(0, result);
     ///
     /// let result = diesel::select(json_array_length::<Nullable<Json>, _>(None::<Value>))
-    ///     .get_result::<Option<Value>>(connection)?;
+    ///     .get_result::<Option<i32>>(connection)?;
     ///
     /// assert_eq!(None, result);
     ///
     /// let result = diesel::select(json_array_length::<Jsonb, _>(json!([1,2,3,4])))
-    ///     .get_result::<Value>(connection)?;
+    ///     .get_result::<i32>(connection)?;
     ///
-    /// assert_eq!(json!(4), result);
+    /// assert_eq!(4, result);
     ///
     /// let result = diesel::select(json_array_length::<Jsonb, _>(json!({"one":[1,2,3]})))
-    ///     .get_result::<Value>(connection)?;
+    ///     .get_result::<i32>(connection)?;
     ///
-    /// assert_eq!(json!(0), result);
+    /// assert_eq!(0, result);
     ///
     /// let result = diesel::select(json_array_length::<Nullable<Jsonb>, _>(None::<Value>))
-    ///     .get_result::<Option<Value>>(connection)?;
+    ///     .get_result::<Option<i32>>(connection)?;
     ///
     /// assert_eq!(None, result);
     ///
@@ -175,7 +175,11 @@ extern "SQL" {
     /// # }
     /// ```
     #[cfg(feature = "sqlite")]
-    fn json_array_length<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Json>>(j: J) -> J::Out;
+    fn json_array_length<
+        J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Integer>,
+    >(
+        j: J,
+    ) -> J::Out;
 
     /// The json_array_length(X) function returns the number of elements in the JSON array X,
     /// or 0 if X is some kind of JSON value other than an array.
@@ -218,42 +222,42 @@ extern "SQL" {
     /// }
     ///
     /// let result = diesel::select(json_array_length_with_path::<Json, _, _>(json!([1,2,3,4]), "$"))
-    ///     .get_result::<Value>(connection)?;
+    ///     .get_result::<Option<i32>>(connection)?;
     ///
-    /// assert_eq!(json!(4), result);
+    /// assert_eq!(Some(4), result);
     ///
     /// let result = diesel::select(json_array_length_with_path::<Json, _, _>(json!([1,2,3,4]), "$[2]"))
-    ///     .get_result::<Value>(connection)?;
+    ///     .get_result::<Option<i32>>(connection)?;
     ///
-    /// assert_eq!(json!(0), result);
+    /// assert_eq!(Some(0), result);
     ///
     /// let result = diesel::select(json_array_length_with_path::<Json, _, _>(json!({"one":[1,2,3]}), "$.one"))
-    ///     .get_result::<Value>(connection)?;
+    ///     .get_result::<Option<i32>>(connection)?;
     ///
-    /// assert_eq!(json!(3), result);
+    /// assert_eq!(Some(3), result);
     ///
     /// let result = diesel::select(json_array_length_with_path::<Nullable<Json>, _, _>(json!({"one":[1,2,3]}), "$.two"))
-    ///     .get_result::<Option<Value>>(connection)?;
+    ///     .get_result::<Option<i32>>(connection)?;
     ///
     /// assert_eq!(None, result);
     ///
     /// let result = diesel::select(json_array_length_with_path::<Jsonb, _, _>(json!([1,2,3,4]), "$"))
-    ///     .get_result::<Value>(connection)?;
+    ///     .get_result::<Option<i32>>(connection)?;
     ///
-    /// assert_eq!(json!(4), result);
+    /// assert_eq!(Some(4), result);
     ///
     /// let result = diesel::select(json_array_length_with_path::<Jsonb, _, _>(json!([1,2,3,4]), "$[2]"))
-    ///     .get_result::<Value>(connection)?;
+    ///     .get_result::<Option<i32>>(connection)?;
     ///
-    /// assert_eq!(json!(0), result);
+    /// assert_eq!(Some(0), result);
     ///
     /// let result = diesel::select(json_array_length_with_path::<Jsonb, _, _>(json!({"one":[1,2,3]}), "$.one"))
-    ///     .get_result::<Value>(connection)?;
+    ///     .get_result::<Option<i32>>(connection)?;
     ///
-    /// assert_eq!(json!(3), result);
+    /// assert_eq!(Some(3), result);
     ///
     /// let result = diesel::select(json_array_length_with_path::<Nullable<Jsonb>, _, _>(json!({"one":[1,2,3]}), "$.two"))
-    ///     .get_result::<Option<Value>>(connection)?;
+    ///     .get_result::<Option<i32>>(connection)?;
     ///
     /// assert_eq!(None, result);
     ///
@@ -262,7 +266,10 @@ extern "SQL" {
     /// ```
     #[sql_name = "json_array_length"]
     #[cfg(feature = "sqlite")]
-    fn json_array_length_with_path<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Json>>(j: J, path: Text) -> J::Out;
+    fn json_array_length_with_path<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
+        j: J,
+        path: Text,
+    ) -> Nullable<Integer>;
 
     /// Converts the given json value to pretty-printed, indented text
     ///
