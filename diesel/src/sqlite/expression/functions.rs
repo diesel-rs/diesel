@@ -626,11 +626,22 @@ define_sql_function! {
     ///     return Ok(());
     /// }
     ///
-    /// let result = diesel::select(json_valid::<Json>(json!({"x":35})))
+    /// let result = diesel::select(json_valid::<Json, _>(json!({"x":35})))
     ///     .get_result::<bool>(connection)?;
     ///
-    /// assert_eq!(1, result);
+    /// assert_eq!(true, result);
     ///
+    /// let result = diesel::select(json_valid::<Jsonb, _>(json!({"x":35})))
+    ///     .get_result::<bool>(connection)?;
+    ///
+    /// assert_eq!(true, result);
+    ///
+    /// let result = diesel::select(json_valid::<Nullable<Json>, _>(None::<serde_jsone::Value>))
+    ///     .get_result::<Option<bool>>(connection)?;
+    ///
+    /// assert_eq!(None, result);
+    ///
+    /// # Ok(())
     /// # }
     /// ```
     #[sql_name = "json_valid"]
