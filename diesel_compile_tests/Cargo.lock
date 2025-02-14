@@ -677,16 +677,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "prettyplease"
-version = "0.2.29"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6924ced06e1f7dfe3fa48d57b9f74f55d8915f5036121bef647ef4b204895fac"
-dependencies = [
- "proc-macro2",
- "syn",
-]
-
-[[package]]
 name = "proc-macro2"
 version = "1.0.93"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -811,31 +801,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
-name = "sqlite-wasm-macro"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78a45f42b08fbca31e9fa26000eba8d7826f26c20616f44260ff954cb12316c8"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "sqlite-wasm-rs"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e51dad57724f9febb87e81d3bed0d48ae134693087a4f16a38606c429b30e86f"
+checksum = "84473e8335ed2f167c6f8040970d976990fb66aa62292ae58735de6d61ecfb73"
 dependencies = [
  "fragile",
  "js-sys",
  "once_cell",
  "parking_lot",
- "prettyplease",
- "proc-macro2",
- "quote",
- "sqlite-wasm-macro",
- "syn",
  "thiserror",
  "tokio",
  "wasm-bindgen",
