@@ -587,10 +587,7 @@ extern "SQL" {
         j: J,
         indentation: Nullable<Text>,
     ) -> J::Out;
-}
 
-#[cfg(feature = "sqlite")]
-define_sql_function! {
     /// Returns  `true`  if the argument is well-formed JSON, or returns  `false`  if is not well-formed.
     ///
     /// # Example
@@ -645,5 +642,8 @@ define_sql_function! {
     /// # }
     /// ```
     #[sql_name = "json_valid"]
-    fn json_valid<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Bool>>(j: J) -> J::Out;
+    #[cfg(feature = "sqlite")]
+    fn json_valid<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Bool>>(
+        j: J,
+    ) -> J::Out;
 }
