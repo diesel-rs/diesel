@@ -2,6 +2,7 @@
 use crate::expression::functions::declare_sql_function;
 use crate::sql_types::*;
 use crate::sqlite::expression::expression_methods::BinaryOrNullableBinary;
+use crate::sqlite::expression::expression_methods::JsonOrNullableJson;
 use crate::sqlite::expression::expression_methods::JsonOrNullableJsonOrJsonbOrNullableJsonb;
 use crate::sqlite::expression::expression_methods::MaybeNullableValue;
 use crate::sqlite::expression::expression_methods::TextOrNullableText;
@@ -628,12 +629,7 @@ extern "SQL" {
     ///
     /// assert_eq!(true, result);
     ///
-    /// let result = diesel::select(json_valid::<Jsonb, _>(json!({"x":35})))
-    ///     .get_result::<bool>(connection)?;
-    ///
-    /// assert_eq!(true, result);
-    ///
-    /// let result = diesel::select(json_valid::<Nullable<Json>, _>(None::<serde_jsone::Value>))
+    /// let result = diesel::select(json_valid::<Nullable<Json>, _>(None::<serde_json::Value>))
     ///     .get_result::<Option<bool>>(connection)?;
     ///
     /// assert_eq!(None, result);
@@ -643,7 +639,5 @@ extern "SQL" {
     /// ```
     #[sql_name = "json_valid"]
     #[cfg(feature = "sqlite")]
-    fn json_valid<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Bool>>(
-        j: J,
-    ) -> J::Out;
+    fn json_valid<J: JsonOrNullableJson + MaybeNullableValue<Bool>>(j: J) -> J::Out;
 }

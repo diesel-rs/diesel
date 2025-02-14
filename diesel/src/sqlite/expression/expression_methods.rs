@@ -1,8 +1,8 @@
 //! Sqlite specific expression methods.
 
 pub(in crate::sqlite) use self::private::{
-    BinaryOrNullableBinary, JsonOrNullableJsonOrJsonbOrNullableJsonb, MaybeNullableValue,
-    TextOrNullableText,
+    BinaryOrNullableBinary, JsonOrNullableJson, JsonOrNullableJsonOrJsonbOrNullableJsonb,
+    MaybeNullableValue, TextOrNullableText,
 };
 use super::operators::*;
 use crate::dsl;
@@ -117,6 +117,14 @@ pub(in crate::sqlite) mod private {
     impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Json> {}
     impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Jsonb {}
     impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Jsonb> {}
+
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Json` nor `diesel::sql_types::Nullable<Json>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait JsonOrNullableJson {}
+    impl JsonOrNullableJson for Json {}
+    impl JsonOrNullableJson for Nullable<Json> {}
 
     pub trait MaybeNullableValue<T>: SingleValue {
         type Out: SingleValue;
