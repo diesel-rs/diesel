@@ -130,48 +130,48 @@ pub type IntersectionRange<Lhs, Rhs> = Intersection<Lhs, Rhs>;
 #[cfg(feature = "postgres_backend")]
 pub type NullsFirst<T> = super::operators::NullsFirst<T>;
 
-/// The return type of [`expr.is_json()`](super::expression_methods::PgExpressionMethods::is_json)
+/// The return type of [`expr.is_json()`](super::expression_methods::PgTextExpressionMethods::is_json())
 #[cfg(feature = "postgres_backend")]
 pub type IsJson<T> = super::operators::IsJson<T>;
 
-/// The return type of [`expr.is_not_json()`](super::expression_methods::PgExpressionMethods::is_not_json)
+/// The return type of [`expr.is_not_json()`](super::expression_methods::PgTextExpressionMethods::is_not_json())
 #[cfg(feature = "postgres_backend")]
 pub type IsNotJson<T> = super::operators::IsNotJson<T>;
 
-/// The return type of [`expr.is_json_object()`](super::expression_methods::PgExpressionMethods::is_json_object)
+/// The return type of [`expr.is_json_object()`](super::expression_methods::PgTextExpressionMethods::is_json_object())
 #[cfg(feature = "postgres_backend")]
 pub type IsJsonObject<T> = super::operators::IsJsonObject<T>;
 
-/// The return type of [`expr.is_not_json_object()`](super::expression_methods::PgExpressionMethods::is_not_json_object)
+/// The return type of [`expr.is_not_json_object()`](super::expression_methods::PgTextExpressionMethods::is_not_json_object())
 #[cfg(feature = "postgres_backend")]
 pub type IsNotJsonObject<T> = super::operators::IsNotJsonObject<T>;
 
-/// The return type of [`expr.is_json_array()`](super::expression_methods::PgExpressionMethods::is_json_array)
+/// The return type of [`expr.is_json_array()`](super::expression_methods::PgTextExpressionMethods::is_json_array())
 #[cfg(feature = "postgres_backend")]
 pub type IsJsonArray<T> = super::operators::IsJsonArray<T>;
 
-/// The return type of [`expr.is_not_json_array()`](super::expression_methods::PgExpressionMethods::is_not_json_array)
+/// The return type of [`expr.is_not_json_array()`](super::expression_methods::PgTextExpressionMethods::is_not_json_array())
 #[cfg(feature = "postgres_backend")]
 pub type IsNotJsonArray<T> = super::operators::IsNotJsonArray<T>;
 
-/// The return type of [`expr.is_json_scalar()`](super::expression_methods::PgExpressionMethods::is_json_scalar)
+/// The return type of [`expr.is_json_scalar()`](super::expression_methods::PgTextExpressionMethods::is_json_scalar())
 #[cfg(feature = "postgres_backend")]
 pub type IsJsonScalar<T> = super::operators::IsJsonScalar<T>;
 
-/// The return type of [`expr.is_not_json_scalar()`](super::expression_methods::PgExpressionMethods::is_not_json_scalar)
+/// The return type of [`expr.is_not_json_scalar()`](super::expression_methods::PgTextExpressionMethods::is_not_json_scalar())
 #[cfg(feature = "postgres_backend")]
 pub type IsNotJsonScalar<T> = super::operators::IsNotJsonScalar<T>;
 
-/// The return type of [`expr.nulls_last()`](super::expression_methods::PgSortExpressionMethods::nulls_last)
+/// The return type of [`expr.nulls_last()`](super::expression_methods::PgSortExpressionMethods::nulls_last())
 #[cfg(feature = "postgres_backend")]
 pub type NullsLast<T> = super::operators::NullsLast<T>;
 
-/// The return type of [`expr.at_time_zone(tz)`](super::expression_methods::PgTimestampExpressionMethods::at_time_zone)
+/// The return type of [`expr.at_time_zone(tz)`](super::expression_methods::PgTimestampExpressionMethods::at_time_zone())
 #[cfg(feature = "postgres_backend")]
 pub type AtTimeZone<Lhs, Rhs> =
     Grouped<super::date_and_time::AtTimeZone<Lhs, AsExprOf<Rhs, VarChar>>>;
 
-/// The return type of [`lhs.contains(rhs)`](super::expression_methods::PgNetExpressionMethods::contains)
+/// The return type of [`lhs.contains(rhs)`](super::expression_methods::PgNetExpressionMethods::contains())
 /// for network types
 #[cfg(feature = "postgres_backend")]
 pub type ContainsNet<Lhs, Rhs> = Grouped<super::operators::ContainsNet<Lhs, AsExprOf<Rhs, Inet>>>;
@@ -340,7 +340,7 @@ pub type NotLikeBinary<Lhs, Rhs> = crate::dsl::NotLike<Lhs, Rhs>;
 #[deprecated(note = "Use `dsl::Concat` instead")]
 pub type ConcatArray<Lhs, Rhs> = crate::dsl::Concat<Lhs, Rhs>;
 
-/// Return type of [`array_to_string_with_null_string(arr, delim, null_str)`](super::functions::array_to_string_with_null_string)
+/// Return type of [`array_to_string_with_null_string(arr, delim, null_str)`](super::functions::array_to_string_with_null_string())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type array_to_string_with_null_string<A, D, N> =
@@ -351,7 +351,7 @@ pub type array_to_string_with_null_string<A, D, N> =
         N,            // The null string
     >;
 
-/// Return type of [`array_to_string(arr, delim)`](super::functions::array_to_string)
+/// Return type of [`array_to_string(arr, delim)`](super::functions::array_to_string())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type array_to_string<A, D> = super::functions::array_to_string<
@@ -472,18 +472,18 @@ pub type array_lower<A, D> = super::functions::array_lower<SqlTypeOf<A>, A, D>;
 #[cfg(feature = "postgres_backend")]
 pub type array_upper<A, D> = super::functions::array_upper<SqlTypeOf<A>, A, D>;
 
-/// Return type of [`array_position(array,element)`](super::functions::array_position)
+/// Return type of [`array_position(array, element)`](super::functions::array_position())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type array_position<A, E> = super::functions::array_position<SqlTypeOf<A>, SqlTypeOf<E>, A, E>;
 
-/// Return type of [`array_position_with_subscript(array,element,subscript)`](super::functions::array_position_with_subscript)
+/// Return type of [`array_position_with_subscript(array,element, subscript)`](super::functions::array_position_with_subscript())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type array_position_with_subscript<A, E, S> =
     super::functions::array_position_with_subscript<SqlTypeOf<A>, SqlTypeOf<E>, A, E, S>;
 
-/// Return type of [`array_positions(array,element)`](super::functions::array_positions)
+/// Return type of [`array_positions(array, element)`](super::functions::array_positions())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type array_positions<A, E> =
@@ -499,7 +499,7 @@ pub type array_ndims<A> = super::functions::array_ndims<SqlTypeOf<A>, A>;
 #[cfg(feature = "postgres_backend")]
 pub type array_shuffle<A> = super::functions::array_shuffle<SqlTypeOf<A>, A>;
 
-/// Return type of [`array_sample(array,n)`](super::function::array_sample())
+/// Return type of [`array_sample(array,n)`](super::functions::array_sample())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type array_sample<A, N> = super::functions::array_sample<SqlTypeOf<A>, A, N>;

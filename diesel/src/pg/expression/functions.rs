@@ -930,7 +930,7 @@ extern "SQL" {
 
     /// Converts each array element to its text representation and concatenates those elements
     /// separated by the delimiter string. `NULL` entries are omitted in this variant.
-    /// See [array_to_string_with_null_string] for a variant with that argument.
+    /// See [array_to_string_with_null_string](array_to_string_with_null_string()) for a variant with that argument.
     ///
     /// # Example
     ///
@@ -1115,7 +1115,7 @@ extern "SQL" {
 
     /// Returns an array initialized with supplied value and dimensions,
     /// optionally with lower bounds other than 1. This function omits the optional
-    /// lower bound argument. See [array_fill_with_lower_bound] for that.
+    /// lower bound argument. See [array_fill_with_lower_bound](array_fill_with_lower_bound()) for that.
     ///
     /// # Example
     ///
@@ -1229,7 +1229,7 @@ extern "SQL" {
 
     /// Returns the subscript of the first occurrence of the second argument in the array, or NULL if it's not present.
     /// If the third argument is given, the search begins at that subscript. This function omits the third argument.
-    /// See [array_position_with_subscript].
+    /// See [array_position_with_subscript](array_position_with_subscript()).
     ///
     /// The array must be one-dimensional. Comparisons are done using IS NOT DISTINCT FROM semantics,
     /// so it is possible to search for NULL.
@@ -2107,7 +2107,7 @@ extern "SQL" {
     /// Builds a JSON object out of a text array. The array must have an even number of members,
     /// in which case they are taken as alternating key/value pairs. This function also has a form that
     /// that takes keys and values as separate text array arguments.
-    /// See [jsonb_object_with_keys_and_values]
+    /// See [jsonb_object_with_keys_and_values](jsonb_object_with_keys_and_values())
     ///
     /// # Example
     ///

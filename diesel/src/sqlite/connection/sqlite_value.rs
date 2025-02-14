@@ -112,7 +112,7 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
     /// If the underlying value is not a string sqlite will convert it
     /// into a string and return that value instead.
     ///
-    /// Use the [`value_type()`] function to determine the actual
+    /// Use the [`value_type()`](Self::value_type()) function to determine the actual
     /// type of the value.
     ///
     /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
@@ -125,7 +125,7 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
     /// If the underlying value is not a blob sqlite will convert it
     /// into a blob and return that value instead.
     ///
-    /// Use the [`value_type()`] function to determine the actual
+    /// Use the [`value_type()`](Self::value_type()) function to determine the actual
     /// type of the value.
     ///
     /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
@@ -152,7 +152,7 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
     /// If the underlying value is not an integer sqlite will convert it
     /// into an integer and return that value instead.
     ///
-    /// Use the [`value_type()`] function to determine the actual
+    /// Use the [`value_type()`](Self::value_type()) function to determine the actual
     /// type of the value.
     ///
     /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
@@ -165,7 +165,7 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
     /// If the underlying value is not a string sqlite will convert it
     /// into a string and return that value instead.
     ///
-    /// Use the [`value_type()`] function to determine the actual
+    /// Use the [`value_type()`](Self::value_type()) function to determine the actual
     /// type of the value.
     ///
     /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
@@ -178,7 +178,7 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
     /// If the underlying value is not a string sqlite will convert it
     /// into a string and return that value instead.
     ///
-    /// Use the [`value_type()`] function to determine the actual
+    /// Use the [`value_type()`](Self::value_type()) function to determine the actual
     /// type of the value.
     ///
     /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
