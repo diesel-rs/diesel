@@ -94,6 +94,7 @@ macro_rules! no_arg_sql_function {
     };
 }
 
+pub(crate) mod aggregate_expressions;
 pub(crate) mod aggregate_folding;
 pub(crate) mod aggregate_ordering;
 pub(crate) mod date_and_time;
