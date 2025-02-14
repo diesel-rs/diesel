@@ -143,14 +143,14 @@ extern "SQL" {
     /// }
     ///
     /// let result = diesel::select(json_array_length::<Json, _>(json!([1,2,3,4])))
-    ///     .get_result::<i32>(connection)?;
+    ///     .get_result::<Option<i32>>(connection)?;
     ///
-    /// assert_eq!(4, result);
+    /// assert_eq!(Some(4), result);
     ///
     /// let result = diesel::select(json_array_length::<Json, _>(json!({"one":[1,2,3]})))
-    ///     .get_result::<i32>(connection)?;
+    ///     .get_result::<Option<i32>>(connection)?;
     ///
-    /// assert_eq!(0, result);
+    /// assert_eq!(Some(0), result);
     ///
     /// let result = diesel::select(json_array_length::<Nullable<Json>, _>(None::<Value>))
     ///     .get_result::<Option<i32>>(connection)?;
@@ -158,14 +158,14 @@ extern "SQL" {
     /// assert_eq!(None, result);
     ///
     /// let result = diesel::select(json_array_length::<Jsonb, _>(json!([1,2,3,4])))
-    ///     .get_result::<i32>(connection)?;
+    ///     .get_result::<Option<i32>>(connection)?;
     ///
-    /// assert_eq!(4, result);
+    /// assert_eq!(Some(4), result);
     ///
     /// let result = diesel::select(json_array_length::<Jsonb, _>(json!({"one":[1,2,3]})))
-    ///     .get_result::<i32>(connection)?;
+    ///     .get_result::<Option<i32>>(connection)?;
     ///
-    /// assert_eq!(0, result);
+    /// assert_eq!(Some(0), result);
     ///
     /// let result = diesel::select(json_array_length::<Nullable<Jsonb>, _>(None::<Value>))
     ///     .get_result::<Option<i32>>(connection)?;
@@ -176,11 +176,9 @@ extern "SQL" {
     /// # }
     /// ```
     #[cfg(feature = "sqlite")]
-    fn json_array_length<
-        J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Integer>,
-    >(
+    fn json_array_length<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
         j: J,
-    ) -> J::Out;
+    ) -> Nullable<Integer>;
 
     /// The json_array_length(X) function returns the number of elements in the JSON array X,
     /// or 0 if X is some kind of JSON value other than an array.
