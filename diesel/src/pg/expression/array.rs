@@ -58,7 +58,7 @@ where
     elements.into_array_expression()
 }
 
-/// Return type of [`array(tuple_or_subselect)`](super::dsl::array)
+/// Return type of [`array(tuple_or_subselect)`](super::dsl::array())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type array<ST, T> = <T as IntoArrayExpression<ST>>::ArrayExpression;
@@ -72,7 +72,7 @@ pub type array<ST, T> = <T as IntoArrayExpression<ST>>::ArrayExpression;
         (`AsExpressionList` is a deprecated trait alias for `IntoArrayExpression`)"
 )]
 pub trait IntoArrayExpression<ST: SqlType + TypedExpressionType> {
-    /// Type of the expression returned by [AsArrayExpression::as_in_expression]
+    /// Type of the expression returned by [IntoArrayExpression::into_array_expression]
     type ArrayExpression: Expression<SqlType = sql_types::Array<ST>>;
 
     /// Construct the diesel query dsl representation of
