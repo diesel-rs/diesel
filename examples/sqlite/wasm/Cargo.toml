@@ -13,8 +13,8 @@ wasm-bindgen = "0.2.99"
 wasm-bindgen-futures = "0.4.49"
 
 [target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
-sqlite-wasm-rs = { version = ">=0.2.4, <0.3.0" }
-
+# https://github.com/Spxg/sqlite-wasm-rs#why-provide-precompiled-library
+sqlite-wasm-rs = { version = ">=0.3.0, <0.4.0", default-features = false, features = ["precompiled"] }
 
 [lib]
 crate-type = ["cdylib"]
