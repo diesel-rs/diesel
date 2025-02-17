@@ -137,7 +137,7 @@ fn parse_julian(julian_days: f64) -> Result<PrimitiveDateTime, ComponentRange> {
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<Date, Sqlite> for NaiveDate {
-    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value
             .parse_string(|s| Self::parse(s, DATE_FORMAT))
             .map_err(Into::into)
@@ -154,7 +154,7 @@ impl ToSql<Date, Sqlite> for NaiveDate {
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<Time, Sqlite> for NaiveTime {
-    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             for format in TIME_FORMATS {
                 if let Ok(time) = Self::parse(text, format) {
@@ -182,7 +182,7 @@ impl ToSql<Time, Sqlite> for NaiveTime {
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<Timestamp, Sqlite> for PrimitiveDateTime {
-    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             for format in PRIMITIVE_DATETIME_FORMATS {
                 if let Ok(dt) = Self::parse(text, format) {
@@ -216,7 +216,7 @@ impl ToSql<Timestamp, Sqlite> for PrimitiveDateTime {
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
-    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             for format in PRIMITIVE_DATETIME_FORMATS {
                 if let Ok(dt) = Self::parse(text, format) {
@@ -250,7 +250,7 @@ impl ToSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for OffsetDateTime {
-    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         // First try to parse the timezone
         if let Ok(dt) = value.parse_string(|text| {
             for format in DATETIME_FORMATS {

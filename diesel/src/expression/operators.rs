@@ -540,12 +540,12 @@ postfix_operator!(IsNull, " IS NULL");
 postfix_operator!(IsNotNull, " IS NOT NULL");
 postfix_operator!(
     Asc,
-    " ASC ",
+    " ASC",
     crate::expression::expression_types::NotSelectable
 );
 postfix_operator!(
     Desc,
-    " DESC ",
+    " DESC",
     crate::expression::expression_types::NotSelectable
 );
 
