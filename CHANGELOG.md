@@ -18,6 +18,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Adjust a custom compile error message
 * Fix a bug that restricted the number of allowed columns in `COPY FROM` statements to 12
 * Expose some SqliteValue helper functions
+* Use consistent whitespace in `ASC`/`DESC`, `DISTINCT ON`, and `DELETE FROM` clauses
 
 ## [2.2.7] 2025-01-31
 
