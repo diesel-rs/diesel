@@ -79,7 +79,8 @@ where
 #[diagnostic::on_unimplemented(
     note = "In order to use `CAST`, it is necessary that Diesel knows how to express the name \
 		of this type in the given backend.",
-    note = "This can be PRed into Diesel if the type is a standard SQL type."
+    note = "If you run into this error message and believe that this cast should be supported \
+            open a PR that adds that trait implementation here: https://github.com/diesel-rs/diesel/blob/2fafe60a8f4ca3407dca5fe010a6092fa8a1858a/diesel/src/expression/cast.rs#L113."
 )]
 pub trait KnownCastSqlTypeName<DB> {
     /// What to write as `sql_type` in the `CAST(expr AS sql_type)` SQL for
@@ -112,9 +113,18 @@ macro_rules! type_name {
 }
 type_name! {
     diesel::pg::Pg: "postgres_backend" {
+        Bool => "bool",
+        Int2 => "int2",
         Int4 => "int4",
         Int8 => "int8",
+        Float => "float4",
+        Double => "float8",
+        Numeric => "numeric",
         Text => "text",
+        Date => "date",
+        Interval => "interval",
+        Time => "time",
+        Timestamp => "timestamp",
     }
     diesel::mysql::Mysql: "mysql_backend" {
         Int4 => "integer",
