@@ -2,7 +2,7 @@
 
 pub(in crate::sqlite) use self::private::{
     BinaryOrNullableBinary, JsonOrNullableJson, JsonOrNullableJsonOrJsonbOrNullableJsonb,
-    MaybeNullableValue, TextOrNullableText,
+    MaybeNullableValue, TextOrNullableText, TextOrNullableTextOrBinaryOrNullableBinary,
 };
 use super::operators::*;
 use crate::dsl;
@@ -107,6 +107,17 @@ pub(in crate::sqlite) mod private {
 
     impl BinaryOrNullableBinary for Binary {}
     impl BinaryOrNullableBinary for Nullable<Binary> {}
+
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Text`, `diesel::sql_types::Nullable<Text>`, `diesel::sql_types::Binary` nor `diesel::sql_types::Nullable<Binary>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait TextOrNullableTextOrBinaryOrNullableBinary {}
+
+    impl TextOrNullableTextOrBinaryOrNullableBinary for Text {}
+    impl TextOrNullableTextOrBinaryOrNullableBinary for Nullable<Text> {}
+    impl TextOrNullableTextOrBinaryOrNullableBinary for Binary {}
+    impl TextOrNullableTextOrBinaryOrNullableBinary for Nullable<Binary> {}
 
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Json`, `diesel::sql_types::Jsonb`, `diesel::sql_types::Nullable<Json>` nor `diesel::sql_types::Nullable<Jsonb>`",

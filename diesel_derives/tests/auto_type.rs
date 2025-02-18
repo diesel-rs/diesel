@@ -507,6 +507,8 @@ fn sqlite_functions() -> _ {
         jsonb(sqlite_extras::blob),
         json_array_length(sqlite_extras::json),
         json_array_length_with_path(sqlite_extras::json, sqlite_extras::text),
+        json_error_position(sqlite_extras::text),
+        json_error_position(sqlite_extras::blob),
         json_pretty(sqlite_extras::json),
         json_pretty(sqlite_extras::jsonb),
         json_pretty_with_indentation(sqlite_extras::json, "  "),
