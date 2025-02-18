@@ -19,6 +19,7 @@ mod multirange;
 #[cfg(feature = "network-address")]
 mod network_address;
 mod numeric;
+pub(in crate::pg) mod pg_lsn;
 mod primitives;
 mod ranges;
 mod record;
@@ -670,6 +671,25 @@ pub mod sql_types {
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(name = "citext"))]
     pub struct Citext;
+
+    /// The [`pg_lsn`] SQL type. This is a PostgreSQL specific type. Encodes a position in the PostgreSQL *Write Ahead Log* (WAL).
+    ///
+    /// ### [`ToSql`] impls
+    ///
+    /// - [`u64`]
+    ///
+    /// ### [`FromSql`] impls
+    ///
+    /// - [`u64`]
+    ///
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [`u64`]: https://doc.rust-lang.org/nightly/std/primitive.u64.html
+    /// [`pg_lsn`]: https://www.postgresql.org/docs/current/datatype-pg-lsn.html
+    #[cfg(feature = "postgres_backend")]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[diesel(postgres_type(name = "pg_lsn"))]
+    pub struct PgLsn;
 }
 
 mod ops {

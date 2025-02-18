@@ -33,6 +33,7 @@ table! {
         timestamptz_col -> Timestamptz,
         uuid_col -> Uuid,
         json_col -> Json,
+        pg_lsn_col -> PgLsn,
         int4range_col -> Int4range,
         int8range_col -> Int8range,
         daterange_col -> Daterange,

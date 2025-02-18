@@ -37,6 +37,7 @@ CREATE TABLE "all_the_types"(
 	"timestamptz_col" TIMESTAMPTZ NOT NULL,
 	"uuid_col" UUID NOT NULL,
 	"json_col" JSON NOT NULL,
+	"pg_lsn_col" PG_LSN NOT NULL,
 	"int4range_col" INT4RANGE NOT NULL,
 	"int8range_col" INT8RANGE NOT NULL,
 	"daterange_col" DATERANGE NOT NULL,
