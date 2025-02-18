@@ -355,6 +355,11 @@ fn test_normal_functions() -> _ {
     ))
 }
 
+#[auto_type]
+fn test_cast() -> _ {
+    users::id.cast::<sql_types::Text>()
+}
+
 // #[auto_type]
 // fn test_sql_fragment() -> _ {
 //     sql("foo")
