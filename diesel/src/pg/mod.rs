@@ -62,6 +62,8 @@ pub mod data_types {
     #[doc(inline)]
     pub use super::types::money::PgMoney;
     pub use super::types::money::PgMoney as Cents;
+    #[doc(inline)]
+    pub use super::types::pg_lsn::PgLsn;
 }
 
 #[doc(inline)]
