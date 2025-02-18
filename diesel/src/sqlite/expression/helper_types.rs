@@ -28,6 +28,11 @@ pub type json_array_length<J> = super::functions::json_array_length<SqlTypeOf<J>
 pub type json_array_length_with_path<J, P> =
     super::functions::json_array_length_with_path<SqlTypeOf<J>, J, P>;
 
+/// Return type of [`json_error_position(json)`](super::functions::json_error_position())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_error_position<X> = super::functions::json_error_position<SqlTypeOf<X>, X>;
+
 /// Return type of [`json_pretty(json)`](super::functions::json_pretty())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "sqlite")]
