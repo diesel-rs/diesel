@@ -26,6 +26,7 @@ in a way that makes the pools suitable for use in parallel tests.
 * Added `Json` and `Jsonb` support for the SQLite backend.
 * Added a `#[diesel::declare_sql_function]` attribute macro to easily define support for 
   multiple sql functions at once via an `extern "SQL"` block
+* Support `[print_schema] allow_tables_in_same_query = "fk_related_tables"` to generate separate `allow_tables_to_appear_in_same_query!` calls containing only tables that are related through foreign keys. Without this option, or with an explicit value of `"all_tables"`, a single call is generated that contains all tables.
 
 ### Fixed 
 

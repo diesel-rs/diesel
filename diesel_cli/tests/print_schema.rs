@@ -348,6 +348,15 @@ fn print_schema_comments_dont_fallback_on_generated() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_allow_tables_in_same_query() {
+    test_print_schema(
+        "print_schema_allow_tables_in_same_query",
+        vec!["--allow-tables-in-same-query", "fk_related_tables"],
+    )
+}
+
+#[test]
 fn print_schema_reserved_names() {
     test_print_schema("print_schema_reserved_name_mitigation_issue_3404", vec![])
 }

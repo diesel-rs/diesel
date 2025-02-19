@@ -3,10 +3,11 @@ use crate::database::{Backend, InferConnection};
 use crate::infer_schema_internals::*;
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashSet};
 use std::fmt::{self, Display, Formatter, Write};
 use std::io::Write as IoWrite;
 use std::process;
+use std::str;
 
 const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 
@@ -39,6 +40,24 @@ pub enum DocConfig {
 impl Default for DocConfig {
     fn default() -> Self {
         DocConfig::NoDocComments
+    }
+}
+
+/// How to group tables in `allow_tables_to_appear_in_same_query!()`.
+#[derive(Debug, Deserialize, Serialize, Clone, Copy)]
+pub enum AllowTablesInSameQuery {
+    /// Group by foreign key relations
+    #[serde(rename = "fk_related_tables")]
+    FkRelatedTables,
+    /// List all tables in invocation
+    #[serde(rename = "all_tables")]
+    AllTables,
+}
+
+#[allow(clippy::derivable_impls)] // that's not supported on rust 1.65
+impl Default for AllowTablesInSameQuery {
+    fn default() -> Self {
+        AllowTablesInSameQuery::AllTables
     }
 }
 
@@ -238,6 +257,7 @@ pub fn output_schema(
         tables: table_data,
         fk_constraints: foreign_keys,
         with_docs: config.with_docs,
+        allow_tables_in_same_query: config.allow_tables_in_same_query,
         custom_types_for_tables: columns_custom_types.map(|custom_types_sorted| {
             CustomTypesForTables {
                 backend,
@@ -539,6 +559,7 @@ struct TableDefinitions<'a> {
     tables: Vec<TableData>,
     fk_constraints: Vec<ForeignKeyConstraint>,
     with_docs: DocConfig,
+    allow_tables_in_same_query: AllowTablesInSameQuery,
     import_types: Option<&'a [String]>,
     custom_types_for_tables: Option<CustomTypesForTables>,
 }
@@ -575,16 +596,33 @@ impl Display for TableDefinitions<'_> {
             writeln!(f, "{}", Joinable(foreign_key))?;
         }
 
-        if self.tables.len() > 1 {
-            write!(f, "\ndiesel::allow_tables_to_appear_in_same_query!(")?;
+        let table_groups = match self.allow_tables_in_same_query {
+            AllowTablesInSameQuery::FkRelatedTables => {
+                foreign_key_table_groups(&self.tables, &self.fk_constraints)
+            }
+            AllowTablesInSameQuery::AllTables => {
+                vec![self.tables.iter().map(|table| &table.name).collect()]
+            }
+        };
+        is_first = true;
+        for tables in table_groups {
+            if tables.len() < 2 {
+                continue;
+            }
+
+            if is_first {
+                writeln!(f)?;
+                is_first = false;
+            }
+            write!(f, "diesel::allow_tables_to_appear_in_same_query!(")?;
             {
                 let mut out = PadAdapter::new(f);
                 writeln!(out)?;
-                for table in &self.tables {
-                    if table.name.rust_name == table.name.sql_name {
-                        writeln!(out, "{},", table.name.sql_name)?;
+                for table in tables {
+                    if table.rust_name == table.sql_name {
+                        writeln!(out, "{},", table.sql_name)?;
                     } else {
-                        writeln!(out, "{},", table.name.rust_name)?;
+                        writeln!(out, "{},", table.rust_name)?;
                     }
                 }
             }
@@ -593,6 +631,64 @@ impl Display for TableDefinitions<'_> {
 
         Ok(())
     }
+}
+
+/// Calculates groups of tables that are related by foreign key.
+///
+/// Given the graph of all tables and their foreign key relations, this returns the set of connected
+/// components of that graph.
+fn foreign_key_table_groups<'a>(
+    tables: &'a [TableData],
+    fk_constraints: &'a [ForeignKeyConstraint],
+) -> Vec<Vec<&'a TableName>> {
+    let mut visited = BTreeSet::new();
+    let mut components = vec![];
+
+    // Find connected components in table graph. For the intended purpose of this function, we treat
+    // the foreign key relation as being symmetrical, i.e. we are operating on the undirected graph.
+    //
+    // The algorithm is not optimized and suffers from repeated lookups in the foreign key list, but
+    // it should be sufficient for typical table counts from a few dozen up to a few hundred tables.
+    for table in tables {
+        let name = &table.name;
+        if visited.contains(name) {
+            // This table is already part of another connected component.
+            continue;
+        }
+
+        visited.insert(name);
+        let mut component = vec![];
+        let mut pending = vec![name];
+
+        // Start a depth-first search with the current table name, walking the foreign key relations
+        // in both directions.
+        while let Some(name) = pending.pop() {
+            component.push(name);
+
+            let mut visit = |related_name: &'a TableName| {
+                if !visited.contains(related_name) {
+                    visited.insert(related_name);
+                    pending.push(related_name);
+                }
+            };
+
+            // Visit all remaining child tables that have this table as parent.
+            for foreign_key in fk_constraints.iter().filter(|fk| fk.parent_table == *name) {
+                visit(&foreign_key.child_table);
+            }
+
+            // Visit all remaining parent tables that have this table as child.
+            for foreign_key in fk_constraints.iter().filter(|fk| fk.child_table == *name) {
+                visit(&foreign_key.parent_table);
+            }
+        }
+
+        // The component contains all tables that are reachable in either direction from the current
+        // table.
+        components.push(component);
+    }
+
+    components
 }
 
 struct TableDefinition<'a> {
@@ -833,6 +929,7 @@ impl DocConfig {
         "no-doc-comments",
     ];
 }
+
 impl<'de> Deserialize<'de> for DocConfig {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -882,7 +979,8 @@ impl<'de> Deserialize<'de> for DocConfig {
         deserializer.deserialize_any(DocConfigVisitor)
     }
 }
-impl std::str::FromStr for DocConfig {
+
+impl str::FromStr for DocConfig {
     type Err = &'static str;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
@@ -896,6 +994,24 @@ impl std::str::FromStr for DocConfig {
                     `database-comments-fallback-to-auto-generated-doc-comment`, \
                     `only-database-comments`, \
                     `no-doc-comments`")
+            }
+        })
+    }
+}
+
+impl str::FromStr for AllowTablesInSameQuery {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "fk_related_tables" => AllowTablesInSameQuery::FkRelatedTables,
+            "all_tables" => AllowTablesInSameQuery::AllTables,
+            _ => {
+                return Err(
+                    "Unknown variant for `allow_tables_in_same_query` config, expected one of: \
+                    `fk_related_tables`, \
+                    `all_tables`",
+                )
             }
         })
     }
