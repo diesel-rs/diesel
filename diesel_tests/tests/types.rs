@@ -1094,6 +1094,25 @@ fn pg_macaddress8_to_sql_macaddress() {
 
 #[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
+fn pg_lsn_from_sql() {
+    let query = "'08002b01/02030405'::pg_lsn";
+    let expected_value = diesel::pg::data_types::PgLsn(0x08002b0102030405);
+    assert_eq!(
+        expected_value,
+        query_single_value::<PgLsn, diesel::pg::data_types::PgLsn>(query)
+    );
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_lsn_to_sql_lsn() {
+    let expected_value = "'08002b01/02030405'::pg_lsn";
+    let value = diesel::pg::data_types::PgLsn(0x08002b0102030405);
+    assert!(query_to_sql_equality::<PgLsn, diesel::pg::data_types::PgLsn>(expected_value, value));
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
 fn pg_v4address_from_sql() {
     extern crate ipnetwork;
     use std::str::FromStr;
