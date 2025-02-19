@@ -55,7 +55,7 @@ impl ColumnType {
         };
 
         let sql_name = if !ret.is_nullable && !ret.is_array && !ret.is_unsigned {
-            if last.ident.to_string() == "PgLsn" {
+            if last.ident == "PgLsn" {
                 "pg_lsn".to_string()
             } else {
                 last.ident
