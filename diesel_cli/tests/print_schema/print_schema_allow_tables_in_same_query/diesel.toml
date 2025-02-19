@@ -1,0 +1,3 @@
+[print_schema]
+file = "src/schema.rs"
+allow_tables_in_same_query = "fk_related_tables"
