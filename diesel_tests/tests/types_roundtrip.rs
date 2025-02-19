@@ -299,6 +299,8 @@ mod pg_types {
 
     test_round_trip!(char_roundtrips, CChar, u8);
 
+    test_round_trip!(pg_lsn_roundtrips, PgLsn, u64, mk_pg_lsn);
+
     #[allow(clippy::type_complexity)]
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
         let a = data.3;
@@ -471,6 +473,10 @@ mod pg_types {
 
     pub fn mk_datetime(data: (i64, u32)) -> DateTime<Utc> {
         Utc.from_utc_datetime(&mk_pg_naive_datetime(data))
+    }
+
+    pub fn mk_pg_lsn(data: u64) -> PgLsn {
+        PgLsn(data)
     }
 }
 
