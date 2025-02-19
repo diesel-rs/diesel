@@ -1108,10 +1108,7 @@ fn pg_lsn_from_sql() {
 fn pg_lsn_to_sql_lsn() {
     let expected_value = "'08002b01/02030405'::pg_lsn";
     let value = diesel::pg::data_types::PgLsn(0x08002b0102030405);
-    assert!(query_to_sql_equality::<PgLsn, diesel::pg::data_types::PgLsn>(
-        expected_value,
-        value
-    ));
+    assert!(query_to_sql_equality::<PgLsn, diesel::pg::data_types::PgLsn>(expected_value, value));
 }
 
 #[diesel_test_helper::test]

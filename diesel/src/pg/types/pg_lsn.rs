@@ -1,6 +1,6 @@
-use std::error::Error;
 use diesel_derives::AsExpression;
 use diesel_derives::FromSqlRow;
+use std::error::Error;
 
 use super::sql_types;
 use crate::deserialize::{self, FromSql};
