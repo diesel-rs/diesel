@@ -166,6 +166,8 @@ impl Config {
                 let with_docs_with_indices = get_values_with_indices::<bool>(matches, "with-docs")?;
                 let with_docs_config_with_indices =
                     get_values_with_indices::<String>(matches, "with-docs-config")?;
+                let allow_tables_in_same_query_with_indices =
+                    get_values_with_indices::<String>(matches, "allow-tables-in-same-query")?;
                 let patch_file_with_indices =
                     get_values_with_indices::<PathBuf>(matches, "patch-file")?;
                 let column_sorting_with_indices =
@@ -232,6 +234,20 @@ impl Config {
                                 "Invalid documentation config mode: {doc_config}"
                             ))
                         })?;
+                    }
+
+                    if let Some(allow_tables_in_same_query) =
+                        allow_tables_in_same_query_with_indices
+                            .clone()
+                            .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.clone()))
+                    {
+                        print_schema.allow_tables_in_same_query =
+                            allow_tables_in_same_query.parse().map_err(|_| {
+                                crate::errors::Error::UnsupportedFeature(format!(
+                                    "Invalid `allow_tables_in_same_query` config mode: \
+                                    {allow_tables_in_same_query}"
+                                ))
+                            })?;
                     }
 
                     if let Some(sorting) = column_sorting_with_indices
@@ -323,6 +339,18 @@ impl Config {
                         "Invalid documentation config mode: {doc_config}"
                     ))
                 })?;
+            }
+
+            if let Some(allow_tables_in_same_query) =
+                matches.get_one::<String>("allow-tables-in-same-query")
+            {
+                config.allow_tables_in_same_query =
+                    allow_tables_in_same_query.parse().map_err(|_| {
+                        crate::errors::Error::UnsupportedFeature(format!(
+                            "Invalid `allow_tables_in_same_query` config mode: \
+                            {allow_tables_in_same_query}"
+                        ))
+                    })?;
             }
 
             if let Some(sorting) = matches.get_one::<String>("column-sorting") {
@@ -425,6 +453,8 @@ pub struct PrintSchema {
     pub file: Option<PathBuf>,
     #[serde(default)]
     pub with_docs: print_schema::DocConfig,
+    #[serde(default)]
+    pub allow_tables_in_same_query: print_schema::AllowTablesInSameQuery,
     #[serde(default)]
     pub filter: Filtering,
     #[serde(default)]
