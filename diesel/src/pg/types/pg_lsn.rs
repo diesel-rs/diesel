@@ -40,7 +40,7 @@ fn lsn_roundtrip() {
 
     let mut buffer = Vec::new();
     let mut bytes = Output::test(ByteWrapper(&mut buffer));
-    let input_lsn = PgLsn(0x525400fbc61617FF);
+    let input_lsn = PgLsn(0x525400fbc61617ff);
     ToSql::<sql_types::PgLsn, Pg>::to_sql(&input_lsn, &mut bytes).unwrap();
     let output_lsn: PgLsn = FromSql::from_sql(PgValue::for_test(&buffer)).unwrap();
     assert_eq!(input_lsn, output_lsn);
