@@ -22,9 +22,7 @@ error[E0107]: type alias takes 0 generic arguments but 1 generic argument was su
 30 |   #[dsl::auto_type]
    |  __________________-
 31 | | fn users_with_posts_with_id_greater_than(id_greater_than: i32) -> _ {
-32 | |     // This fails because the macro infers the type of
-33 | |     // `user_has_post_with_id_greater_than(id_greater_than)` to be
-34 | |     // `user_has_post_with_id_greater_than<i32>`
+...  |
 35 | |     users::table
 36 | |         .filter(user_has_post_with_id_greater_than(id_greater_than))
    | |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
