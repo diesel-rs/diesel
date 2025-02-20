@@ -51,3 +51,37 @@ note: required by a bound in `get_result`
    |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+
+error[E0277]: the trait bound `{type error}: FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Sqlite>` is not satisfied
+  --> tests/fail/update_statement_does_not_support_returning_methods_on_sqlite.rs:18:21
+   |
+18 |         .get_result(&mut connection);
+   |          ---------- ^^^^^^^^^^^^^^^ the trait `SingleValue` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text)`
+   |          |
+   |          required by a bound introduced by this call
+   |
+   = note: double check your type mappings via the documentation of `(diesel::sql_types::Integer, diesel::sql_types::Text)`
+   = note: `diesel::sql_query` requires the loading target to column names for loading values.
+           You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
+   = help: the following other types implement trait `SingleValue`:
+             Array<ST>
+             BigInt
+             Bool
+             CChar
+             Cidr
+             Citext
+             Datetime
+             Inet
+           and $N others
+   = note: required for `{type error}` to implement `FromStaticSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Sqlite>`
+   = note: required for `{type error}` to implement `FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Sqlite>`
+   = note: required for `(diesel::sql_types::Integer, diesel::sql_types::Text)` to implement `load_dsl::private::CompatibleType<{type error}, Sqlite>`
+   = note: required for `UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<columns::name>, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>` to implement `LoadQuery<'_, diesel::SqliteConnection, {type error}>`
+note: required by a bound in `get_result`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+   |        ---------- required by a bound in this associated function
+   |     where
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`

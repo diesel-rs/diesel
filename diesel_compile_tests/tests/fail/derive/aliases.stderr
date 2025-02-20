@@ -19,8 +19,7 @@ note: `posts::table` is defined in module `crate::posts` of the current crate
 14 | |     posts {
 15 | |         id -> Integer,
 16 | |         author -> Integer,
-17 | |         title -> Text,
-18 | |     }
+...  |
 19 | | }
    | |_^
 note: `users::table` is defined in module `crate::users` of the current crate
@@ -251,8 +250,7 @@ error[E0599]: the method `select` exists for struct `SelectStatement<FromClause<
 62 | |         .inner_join(
 63 | |             post_alias_2.on(post_alias
 64 | |                 .field(posts::author)
-65 | |                 .eq(post_alias_2.field(posts::author))),
-66 | |         )
+...  |
 67 | |         .select((post_alias.field(posts::id), post_alias_2.field(posts::id)))
    | |         -^^^^^^ private field, not a method
    | |_________|
