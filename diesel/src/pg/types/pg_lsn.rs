@@ -1,0 +1,47 @@
+use diesel_derives::AsExpression;
+use diesel_derives::FromSqlRow;
+use std::error::Error;
+
+use super::sql_types;
+use crate::deserialize::{self, FromSql};
+use crate::pg::{Pg, PgValue};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
+
+/// A type encoding a position in the PostgreSQL *Write Ahead Log* (WAL).
+/// In Postgres, it is represented as an unsigned 64 bit integer.
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, AsExpression, FromSqlRow)]
+#[diesel(sql_type = sql_types::PgLsn)]
+pub struct PgLsn(pub u64);
+
+#[cfg(feature = "postgres_backend")]
+impl FromSql<sql_types::PgLsn, Pg> for PgLsn {
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+        let val = value.as_bytes().read_u64::<NetworkEndian>().map_err(|_| {
+            Box::<dyn Error + Send + Sync>::from("invalid lsn format: input isn't 8 bytes.")
+        })?;
+        Ok(PgLsn(val))
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl ToSql<sql_types::PgLsn, Pg> for PgLsn {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        out.write_u64::<NetworkEndian>(self.0)
+            .map(|_| IsNull::No)
+            .map_err(Into::into)
+    }
+}
+
+#[cfg(test)]
+#[diesel_test_helper::test]
+fn lsn_roundtrip() {
+    use crate::query_builder::bind_collector::ByteWrapper;
+
+    let mut buffer = Vec::new();
+    let mut bytes = Output::test(ByteWrapper(&mut buffer));
+    let input_lsn = PgLsn(0x525400fbc61617ff);
+    ToSql::<sql_types::PgLsn, Pg>::to_sql(&input_lsn, &mut bytes).unwrap();
+    let output_lsn: PgLsn = FromSql::from_sql(PgValue::for_test(&buffer)).unwrap();
+    assert_eq!(input_lsn, output_lsn);
+}
