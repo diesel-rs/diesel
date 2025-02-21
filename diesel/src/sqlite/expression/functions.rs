@@ -6,6 +6,7 @@ use crate::sqlite::expression::expression_methods::JsonOrNullableJson;
 use crate::sqlite::expression::expression_methods::JsonOrNullableJsonOrJsonbOrNullableJsonb;
 use crate::sqlite::expression::expression_methods::MaybeNullableValue;
 use crate::sqlite::expression::expression_methods::TextOrNullableText;
+use crate::sqlite::expression::expression_methods::TextOrNullableTextOrBinaryOrNullableBinary;
 
 #[cfg(feature = "sqlite")]
 #[declare_sql_function]
@@ -270,6 +271,111 @@ extern "SQL" {
     fn json_array_length_with_path<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
         j: J,
         path: Text,
+    ) -> Nullable<Integer>;
+
+    /// The json_error_position(X) function returns 0 if the input X is a well-formed JSON or JSON5 string.
+    /// If the input X contains one or more syntax errors, then this function returns the character position of the first syntax error.
+    /// The left-most character is position 1.
+    ///
+    /// If the input X is a BLOB, then this routine returns 0 if X is a well-formed JSONB blob. If the return value is positive,
+    /// then it represents the approximate 1-based position in the BLOB of the first detected error.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{sql, json_error_position};
+    /// #     use diesel::sql_types::{Binary, Text, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let version = diesel::select(sql::<Text>("sqlite_version();"))
+    ///         .get_result::<String>(connection)?;
+    ///
+    /// // Querying SQLite version should not fail.
+    /// let version_components: Vec<&str> = version.split('.').collect();
+    /// let major: u32 = version_components[0].parse().unwrap();
+    /// let minor: u32 = version_components[1].parse().unwrap();
+    /// let patch: u32 = version_components[2].parse().unwrap();
+    ///
+    /// if major > 3 || (major == 3 && minor >= 46) {
+    ///     /* Valid sqlite version, do nothing */
+    /// } else {
+    ///     println!("SQLite version is too old, skipping the test.");
+    ///     return Ok(());
+    /// }
+    ///
+    /// let result = diesel::select(json_error_position::<Text, _>(r#"{"a": "b", "c": 1}"#))
+    ///     .get_result::<Option<i32>>(connection)?;
+    ///
+    /// assert_eq!(Some(0), result);
+    ///
+    /// let result = diesel::select(json_error_position::<Text, _>(r#"{"a": b", "c": 1}"#))
+    ///     .get_result::<Option<i32>>(connection)?;
+    ///
+    /// assert_eq!(Some(7), result);
+    ///
+    /// let json5 = r#"
+    ///     {
+    ///         // A traditional message.
+    ///         message: 'hello world',
+    ///
+    ///         // A number for some reason.
+    ///         n: 42,
+    ///     }
+    /// "#;
+    /// let result = diesel::select(json_error_position::<Text, _>(json5))
+    ///     .get_result::<Option<i32>>(connection)?;
+    ///
+    /// assert_eq!(Some(0), result);
+    ///
+    /// let json5_with_error = r#"
+    ///     {
+    ///         // A traditional message.
+    ///         message: hello world',
+    ///
+    ///         // A number for some reason.
+    ///         n: 42,
+    ///     }
+    /// "#;
+    /// let result = diesel::select(json_error_position::<Text, _>(json5_with_error))
+    ///     .get_result::<Option<i32>>(connection)?;
+    ///
+    /// assert_eq!(Some(59), result);
+    ///
+    /// let result = diesel::select(json_error_position::<Nullable<Text>, _>(None::<&str>))
+    ///     .get_result::<Option<i32>>(connection)?;
+    ///
+    /// assert_eq!(None, result);
+    ///
+    /// let result = diesel::select(json_error_position::<Binary, _>(br#"{"a": "b", "c": 1}"#))
+    ///     .get_result::<Option<i32>>(connection)?;
+    ///
+    /// assert_eq!(Some(0), result);
+    ///
+    /// let result = diesel::select(json_error_position::<Binary, _>(br#"{"a": b", "c": 1}"#))
+    ///     .get_result::<Option<i32>>(connection)?;
+    ///
+    /// assert_eq!(Some(7), result);
+    ///
+    /// let result = diesel::select(json_error_position::<Nullable<Binary>, _>(None::<Vec<u8>>))
+    ///     .get_result::<Option<i32>>(connection)?;
+    ///
+    /// assert_eq!(None, result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "sqlite")]
+    fn json_error_position<X: TextOrNullableTextOrBinaryOrNullableBinary + SingleValue>(
+        x: X,
     ) -> Nullable<Integer>;
 
     /// Converts the given json value to pretty-printed, indented text
