@@ -1,0 +1,25 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A macro for writing quickcheck tests."><title>quickcheck in quickcheck - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-cf3c48c1.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="quickcheck" data-themes="" data-resource-suffix="" data-rustdoc-version="1.86.0-nightly (a730edcd6 2025-01-30)" data-channel="nightly" data-search-js="search-2d513d54.js" data-settings-js="settings-6dad6058.js" ><script src="../static.files/storage-302de22f.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-9b5d7e41.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../quickcheck/index.html">quickcheck</a><span class="version">1.0.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">quickcheck</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate quickcheck</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">quickcheck</a></div><h1>Macro <span class="macro">quickcheck</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/quickcheck/lib.rs.html#43-67">Source</a> </span></div><pre class="rust item-decl"><code>macro_rules! quickcheck {
+    (@as_items $($i:item)*) =&gt; { ... };
+    {
+        $(
+            $(#[$m:meta])*
+            fn $fn_name:ident($($arg_name:ident : $arg_ty:ty),*) -&gt; $ret:ty {
+                $($code:tt)*
+            }
+        )*
+    } =&gt; { ... };
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A macro for writing quickcheck tests.</p>
+<p>This macro takes as input one or more property functions to test, and
+produces a proper <code>#[test]</code> function for each property. If the property
+fails, the behavior is as if <code>quickcheck</code> were called on the property
+(i.e., it panics and fails the test).</p>
+<p>Note that this macro doesn’t support <code>mut</code> or patterns in parameters.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">quickcheck!</span> {
+    <span class="kw">fn </span>prop_reverse_reverse(xs: Vec&lt;usize&gt;) -&gt; bool {
+        <span class="kw">let </span>rev: Vec&lt;<span class="kw">_</span>&gt; = xs.clone().into_iter().rev().collect();
+        <span class="kw">let </span>revrev: Vec&lt;<span class="kw">_</span>&gt; = rev.into_iter().rev().collect();
+        xs == revrev
+    }
+};</code></pre></div>
+</div></details></section></div></main></body></html>

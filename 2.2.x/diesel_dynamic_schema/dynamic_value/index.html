@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="This module provides a container that allows to receive a dynamically specified number of fields from the database."><title>diesel_dynamic_schema::dynamic_value - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-cf3c48c1.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel_dynamic_schema" data-themes="" data-resource-suffix="" data-rustdoc-version="1.86.0-nightly (a730edcd6 2025-01-30)" data-channel="nightly" data-search-js="search-2d513d54.js" data-settings-js="settings-6dad6058.js" ><script src="../../static.files/storage-302de22f.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-9b5d7e41.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel_dynamic_schema/index.html">diesel_<wbr>dynamic_<wbr>schema</a><span class="version">0.2.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module dynamic_<wbr>value</a></h2><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate diesel_<wbr>dynamic_<wbr>schema</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">diesel_dynamic_schema</a></div><h1>Module <span>dynamic_value</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/diesel_dynamic_schema/dynamic_value.rs.html#1-464">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>This module provides a container that allows to receive a dynamically
+specified number of fields from the database.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+    <span class="kw">let </span>users = diesel_dynamic_schema::table(<span class="string">"users"</span>);
+    <span class="kw">let </span>id = users.column::&lt;Untyped, <span class="kw">_</span>&gt;(<span class="string">"id"</span>);
+    <span class="kw">let </span>name = users.column::&lt;Untyped, <span class="kw">_</span>&gt;(<span class="string">"name"</span>);
+
+    <span class="kw">let </span><span class="kw-2">mut </span>select = DynamicSelectClause::new();
+
+    select.add_field(id);
+    select.add_field(name);
+
+    <span class="kw">let </span>actual_data: Vec&lt;DynamicRow&lt;NamedField&lt;MyDynamicValue&gt;&gt;&gt; =
+        users.select(select).load(conn)<span class="question-mark">?</span>;
+
+    <span class="macro">assert_eq!</span>(
+        actual_data[<span class="number">0</span>][<span class="string">"name"</span>],
+        MyDynamicValue::String(<span class="string">"Sean"</span>.into())
+    );
+    <span class="macro">assert_eq!</span>(
+        actual_data[<span class="number">0</span>][<span class="number">1</span>],
+        NamedField {
+            name: <span class="string">"name"</span>.into(),
+            value: MyDynamicValue::String(<span class="string">"Sean"</span>.into())
+        }
+    );
+</code></pre></div>
+<p>It is required to provide your own inner type to hold the actual database value.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(PartialEq, Debug)]
+</span><span class="kw">enum </span>MyDynamicValue {
+   String(String),
+   Integer(i32),
+}
+
+<span class="kw">impl </span>FromSql&lt;Any, diesel::pg::Pg&gt; <span class="kw">for </span>MyDynamicValue {
+   <span class="kw">fn </span>from_sql(value: diesel::pg::PgValue) -&gt; deserialize::Result&lt;<span class="self">Self</span>&gt; {
+       <span class="kw">use </span>diesel::pg::Pg;
+       <span class="kw">use </span>std::num::NonZeroU32;
+
+       <span class="kw">const </span>VARCHAR_OID: NonZeroU32 = <span class="kw">unsafe </span>{ NonZeroU32::new_unchecked(<span class="number">1043</span>) };
+       <span class="kw">const </span>TEXT_OID: NonZeroU32 = <span class="kw">unsafe </span>{ NonZeroU32::new_unchecked(<span class="number">25</span>) };
+       <span class="kw">const </span>INTEGER_OID: NonZeroU32 = <span class="kw">unsafe </span>{ NonZeroU32::new_unchecked(<span class="number">23</span>) };
+
+       <span class="kw">match </span>value.get_oid() {
+           VARCHAR_OID | TEXT_OID =&gt; {
+               &lt;String <span class="kw">as </span>FromSql&lt;diesel::sql_types::Text, Pg&gt;&gt;::from_sql(value)
+                   .map(MyDynamicValue::String)
+           }
+           INTEGER_OID =&gt; &lt;i32 <span class="kw">as </span>FromSql&lt;diesel::sql_types::Integer, Pg&gt;&gt;::from_sql(value)
+               .map(MyDynamicValue::Integer),
+           e =&gt; <span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">"Unknown type: {}"</span>, e).into()),
+       }
+   }
+}</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Any.html" title="struct diesel_dynamic_schema::dynamic_value::Any">Any</a></dt><dd>A marker type used to indicate that
+the provided <code>FromSql</code> impl does handle
+any passed database value, independently
+from the actual value kind</dd><dt><a class="struct" href="struct.DynamicRow.html" title="struct diesel_dynamic_schema::dynamic_value::DynamicRow">Dynamic<wbr>Row</a></dt><dd>A dynamically sized container that allows to receive
+a not at compile time known number of columns from the database</dd><dt><a class="struct" href="struct.NamedField.html" title="struct diesel_dynamic_schema::dynamic_value::NamedField">Named<wbr>Field</a></dt><dd>A helper struct used as field type in <code>DynamicRow</code>
+to also return the name of the field along with the
+value</dd></dl></section></div></main></body></html>

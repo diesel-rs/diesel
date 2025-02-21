@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["NullValueTreatment","RangeBound"],"struct":["Array","CChar","Cidr","Citext","Inet","MacAddr","MacAddr8","Money","Multirange","NullValueTreatmentEnum","Oid","Range","RangeBoundEnum","Record","Timestamptz","Uuid"],"type":["BigSerial","Bytea","Macaddr","Macaddr8","Serial","SmallSerial"]};

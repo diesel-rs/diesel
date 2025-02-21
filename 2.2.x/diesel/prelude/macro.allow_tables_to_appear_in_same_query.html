@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Allow two or more tables which are otherwise unrelated to be used together in a query."><title>allow_tables_to_appear_in_same_query in diesel::prelude - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-cf3c48c1.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.86.0-nightly (a730edcd6 2025-01-30)" data-channel="nightly" data-search-js="search-2d513d54.js" data-settings-js="settings-6dad6058.js" ><script src="../../static.files/storage-302de22f.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-9b5d7e41.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.2.7</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">allow_<wbr>tables_<wbr>to_<wbr>appear_<wbr>in_<wbr>same_<wbr>query</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>prelude</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">diesel</a>::<wbr><a href="index.html">prelude</a></div><h1>Macro <span class="macro">allow_tables_to_appear_in_same_query</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/diesel/macros/mod.rs.html#211-224">Source</a> </span></div><pre class="rust item-decl"><code>macro_rules! allow_tables_to_appear_in_same_query {
+    ($left_mod:ident, $($right_mod:ident),+ $(,)*) =&gt; { ... };
+    ($last_table:ident,) =&gt; { ... };
+    () =&gt; { ... };
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Allow two or more tables which are otherwise unrelated to be used together
+in a query.</p>
+<p>This macro must be invoked any time two tables need to appear in the same
+query either because they are being joined together, or because one appears
+in a subselect. When this macro is invoked with more than 2 tables, every
+combination of those tables will be allowed to appear together.</p>
+<p>If you are using <code>diesel print-schema</code>, an invocation of
+this macro will be generated for you for all tables in your schema.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// This would be required to do `users.inner_join(posts.inner_join(comments))`
+</span><span class="macro">allow_tables_to_appear_in_same_query!</span>(comments, posts, users);
+
+<span class="macro">table!</span> {
+    comments {
+        id -&gt; Integer,
+        post_id -&gt; Integer,
+        body -&gt; VarChar,
+    }
+}
+
+<span class="macro">table!</span> {
+   posts {
+       id -&gt; Integer,
+       user_id -&gt; Integer,
+       title -&gt; VarChar,
+   }
+}
+
+<span class="macro">table!</span> {
+    users {
+       id -&gt; Integer,
+       name -&gt; VarChar,
+    }
+}</code></pre></div>
+<p>When more than two tables are passed, the relevant code is generated for
+every combination of those tables. This code would be equivalent to the
+previous example.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">allow_tables_to_appear_in_same_query!</span>(comments, posts);
+<span class="macro">allow_tables_to_appear_in_same_query!</span>(comments, users);
+<span class="macro">allow_tables_to_appear_in_same_query!</span>(posts, users);</code></pre></div>
+</div></details></section></div></main></body></html>

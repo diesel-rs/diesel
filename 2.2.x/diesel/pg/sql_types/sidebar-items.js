@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["Array","CChar","Cidr","Citext","Inet","Jsonb","MacAddr","Money","Oid","Range","Record","Timestamptz","Uuid"],"type":["BigSerial","Bytea","Macaddr","Serial","SmallSerial"]};
