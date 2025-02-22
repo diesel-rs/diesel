@@ -666,8 +666,7 @@ fn foreign_key_table_groups<'a>(
             component.push(name);
 
             let mut visit = |related_name: &'a TableName| {
-                if !visited.contains(related_name) {
-                    visited.insert(related_name);
+                if visited.insert(related_name) {
                     pending.push(related_name);
                 }
             };
