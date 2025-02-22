@@ -604,26 +604,23 @@ impl Display for TableDefinitions<'_> {
                 vec![self.tables.iter().map(|table| &table.name).collect()]
             }
         };
-        is_first = true;
-        for tables in table_groups {
-            if tables.len() < 2 {
-                continue;
-            }
-
-            if is_first {
+        for (table_group_index, table_group) in table_groups
+            .into_iter()
+            .filter(|table_group| table_group.len() >= 2)
+            .enumerate()
+        {
+            if table_group_index == 0 {
                 writeln!(f)?;
-                is_first = false;
             }
             write!(f, "diesel::allow_tables_to_appear_in_same_query!(")?;
             {
                 let mut out = PadAdapter::new(f);
                 writeln!(out)?;
-                for table in tables {
-                    if table.rust_name == table.sql_name {
-                        writeln!(out, "{},", table.sql_name)?;
-                    } else {
-                        writeln!(out, "{},", table.rust_name)?;
+                for (table_index, table) in table_group.into_iter().enumerate() {
+                    if table_index != 0 {
+                        write!(out, ", ")?;
                     }
+                    write!(out, "{}", table.rust_name)?;
                 }
             }
             writeln!(f, ");")?;
