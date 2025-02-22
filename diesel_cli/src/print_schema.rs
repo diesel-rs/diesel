@@ -682,9 +682,17 @@ fn foreign_key_table_groups<'a>(
         }
 
         // The component contains all tables that are reachable in either direction from the current
-        // table.
+        // table. Sort that list by table name to ensure a stable output that does not depend on the
+        // algorithm's specific implementation.
+        component.sort();
+
         components.push(component);
     }
+
+    // Sort the list of components to ensure a stable output that does not depend on the algorithm's
+    // specific implementation. This sorts the list of components by the name of the first tables in
+    // each component.
+    components.sort();
 
     components
 }
