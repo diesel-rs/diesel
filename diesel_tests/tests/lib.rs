@@ -61,7 +61,3 @@ mod transactions;
 mod types;
 mod types_roundtrip;
 mod update;
-
-/// Re-export it, because the `td::test` macro use `crate::init_sqlite`
-#[cfg(all(target_family = "wasm", target_os = "unknown", feature = "sqlite"))]
-pub use diesel::init_sqlite;

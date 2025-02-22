@@ -32,8 +32,7 @@ diesel_test_helper = { path = "../diesel_test_helper" }
 # Something is dependent on it, so we use feature to override it.
 getrandom = { version = "0.2", features = ["js"] }
 wasm-bindgen-test = "0.3.49"
-# Wasm can use thread::sleep when atomic target_feature is enabled, but that requires nightly
-wasmtimer = "0.4.1"
+sqlite-wasm-rs = { version = ">=0.3.0, <0.4.0", default-features = false, features = ["bundled"] }
 
 [features]
 default = []

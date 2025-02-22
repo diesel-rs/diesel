@@ -47,8 +47,7 @@ note: `posts::table` is defined in module `crate::posts` of the current crate
 15 | |     posts (user_id) {
 16 | |         user_id -> Integer,
 17 | |         title -> Text,
-18 | |         body -> Nullable<Text>,
-19 | |     }
+...  |
 20 | | }
    | |_^
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
@@ -127,8 +126,7 @@ note: `posts::table` is defined in module `crate::posts` of the current crate
 15 | |     posts (user_id) {
 16 | |         user_id -> Integer,
 17 | |         title -> Text,
-18 | |         body -> Nullable<Text>,
-19 | |     }
+...  |
 20 | | }
    | |_^
    = note: required for `(comments::columns::post_id, comments::columns::body)` to implement `diesel::query_builder::insert_statement::column_list::ColumnList`
@@ -168,8 +166,7 @@ note: `posts::table` is defined in module `crate::posts` of the current crate
 15 | |     posts (user_id) {
 16 | |         user_id -> Integer,
 17 | |         title -> Text,
-18 | |         body -> Nullable<Text>,
-19 | |     }
+...  |
 20 | | }
    | |_^
    = note: required for `(comments::columns::post_id, comments::columns::body)` to implement `diesel::query_builder::insert_statement::column_list::ColumnList`

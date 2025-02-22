@@ -318,8 +318,17 @@ jobs:
       - name: Install wasm-pack
         run: cargo install wasm-pack
 
+      - name: Install emscripten toolchains
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+
       - name: Test unit and integration tests
-        run: cargo xtask run-tests --wasm sqlite
+        run: |
+          source ./emsdk/emsdk_env.sh
+          cargo xtask run-tests --wasm sqlite
 
   sqlite_bundled:
     name: Check sqlite bundled + Sqlite with asan
