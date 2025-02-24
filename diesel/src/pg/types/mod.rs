@@ -688,7 +688,7 @@ pub mod sql_types {
     /// [`pg_lsn`]: https://www.postgresql.org/docs/current/datatype-pg-lsn.html
     #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[diesel(postgres_type(name = "pg_lsn"))]
+    #[diesel(postgres_type(oid = 3220, array_oid = 3221))]
     pub struct PgLsn;
 }
 
