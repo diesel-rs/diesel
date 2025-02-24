@@ -1,6 +1,5 @@
 use diesel_derives::AsExpression;
 use diesel_derives::FromSqlRow;
-use std::error::Error;
 
 use super::sql_types;
 use crate::deserialize::{self, FromSql};
@@ -17,11 +16,31 @@ pub struct PgLsn(pub u64);
 #[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::PgLsn, Pg> for PgLsn {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
-        let val = value.as_bytes().read_u64::<NetworkEndian>().map_err(|_| {
-            Box::<dyn Error + Send + Sync>::from("invalid lsn format: input isn't 8 bytes.")
-        })?;
+        let mut bytes = value.as_bytes();
+        if bytes.len() < 8 {
+            return emit_size_error(
+                "Received less than 8 bytes while decoding a pg_lsn. \
+                    Was an Integer expression accidentally marked as pg_lsn?",
+            );
+        }
+
+        if bytes.len() > 8 {
+            return emit_size_error(
+                "Received more than 8 bytes while decoding a pg_lsn. \
+                    Was an expression of a different type expression accidentally marked as pg_lsn?"
+            );
+        }
+        let val = bytes
+            .read_u64::<NetworkEndian>()
+            .map_err(|e| Box::new(e) as Box<_>)?;
         Ok(PgLsn(val))
     }
+}
+
+#[cold]
+#[inline(never)]
+fn emit_size_error<T>(var_name: &str) -> deserialize::Result<T> {
+    deserialize::Result::Err(var_name.into())
 }
 
 #[cfg(feature = "postgres_backend")]
