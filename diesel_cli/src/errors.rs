@@ -7,10 +7,10 @@ use crate::infer_schema_internals::TableName;
 pub enum Error {
     #[error("Initializing `.env` file failed: {0}")]
     DotenvError(#[from] dotenvy::Error),
-    #[error("Could not connect to database via `{url}`: {error}")]
+    #[error("Could not connect to database: {error}")]
     ConnectionError {
         error: diesel::ConnectionError,
-        url: String,
+
     },
     #[error("Invalid argument for table filtering regex: {0}")]
     TableFilterRegexInvalid(#[from] regex::Error),
