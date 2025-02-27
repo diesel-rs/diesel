@@ -10,7 +10,7 @@ pub enum Error {
     #[error("Could not connect to database: {error}")]
     ConnectionError {
         error: diesel::ConnectionError,
-
+        url: String,
     },
     #[error("Invalid argument for table filtering regex: {0}")]
     TableFilterRegexInvalid(#[from] regex::Error),
