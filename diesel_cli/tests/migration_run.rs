@@ -166,7 +166,7 @@ fn error_migrations_when_use_invalid_database_url() {
     assert!(!result.is_success());
     assert!(result
         .stderr()
-        .contains("Could not connect to database via `postgres://localhost/lemmy`:"));
+        .contains("Could not connect to database: connection to server at "localhost" (::1), port 5432 failed: fe_sendauth: no password supplied"));
 }
 
 #[test]
