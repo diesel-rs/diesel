@@ -313,14 +313,14 @@ extern "SQL" {
     /// }
     ///
     /// let result = diesel::select(json_error_position::<Text, _>(r#"{"a": "b", "c": 1}"#))
-    ///     .get_result::<Option<i32>>(connection)?;
+    ///     .get_result::<i32>(connection)?;
     ///
-    /// assert_eq!(Some(0), result);
+    /// assert_eq!(0, result);
     ///
     /// let result = diesel::select(json_error_position::<Text, _>(r#"{"a": b", "c": 1}"#))
-    ///     .get_result::<Option<i32>>(connection)?;
+    ///     .get_result::<i32>(connection)?;
     ///
-    /// assert_eq!(Some(7), result);
+    /// assert_eq!(7, result);
     ///
     /// let json5 = r#"
     ///     {
@@ -332,9 +332,9 @@ extern "SQL" {
     ///     }
     /// "#;
     /// let result = diesel::select(json_error_position::<Text, _>(json5))
-    ///     .get_result::<Option<i32>>(connection)?;
+    ///     .get_result::<i32>(connection)?;
     ///
-    /// assert_eq!(Some(0), result);
+    /// assert_eq!(0, result);
     ///
     /// let json5_with_error = r#"
     ///     {
@@ -346,9 +346,9 @@ extern "SQL" {
     ///     }
     /// "#;
     /// let result = diesel::select(json_error_position::<Text, _>(json5_with_error))
-    ///     .get_result::<Option<i32>>(connection)?;
+    ///     .get_result::<i32>(connection)?;
     ///
-    /// assert_eq!(Some(59), result);
+    /// assert_eq!(59, result);
     ///
     /// let result = diesel::select(json_error_position::<Nullable<Text>, _>(None::<&str>))
     ///     .get_result::<Option<i32>>(connection)?;
@@ -356,14 +356,14 @@ extern "SQL" {
     /// assert_eq!(None, result);
     ///
     /// let result = diesel::select(json_error_position::<Binary, _>(br#"{"a": "b", "c": 1}"#))
-    ///     .get_result::<Option<i32>>(connection)?;
+    ///     .get_result::<i32>(connection)?;
     ///
-    /// assert_eq!(Some(0), result);
+    /// assert_eq!(0, result);
     ///
     /// let result = diesel::select(json_error_position::<Binary, _>(br#"{"a": b", "c": 1}"#))
-    ///     .get_result::<Option<i32>>(connection)?;
+    ///     .get_result::<i32>(connection)?;
     ///
-    /// assert_eq!(Some(7), result);
+    /// assert_eq!(7, result);
     ///
     /// let result = diesel::select(json_error_position::<Nullable<Binary>, _>(None::<Vec<u8>>))
     ///     .get_result::<Option<i32>>(connection)?;
@@ -374,9 +374,11 @@ extern "SQL" {
     /// # }
     /// ```
     #[cfg(feature = "sqlite")]
-    fn json_error_position<X: TextOrNullableTextOrBinaryOrNullableBinary + SingleValue>(
+    fn json_error_position<
+        X: TextOrNullableTextOrBinaryOrNullableBinary + MaybeNullableValue<Integer>,
+    >(
         x: X,
-    ) -> Nullable<Integer>;
+    ) -> X::Out;
 
     /// Converts the given json value to pretty-printed, indented text
     ///
