@@ -58,11 +58,7 @@ impl ColumnType {
             if last.ident == "PgLsn" {
                 "pg_lsn".to_string()
             } else {
-                last.ident
-                    .to_string()
-                    .split("_")
-                    .collect::<Vec<_>>()
-                    .join(" ")
+                last.ident.to_string()
             }
         } else if let syn::PathArguments::AngleBracketed(ref args) = last.arguments {
             let arg = args.args.first().expect("There is at least one argument");
