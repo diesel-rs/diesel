@@ -5,8 +5,6 @@ mod diesel_benches;
 mod mysql_benches;
 #[cfg(all(feature = "postgres", feature = "rust_postgres"))]
 mod postgres_benches;
-#[cfg(feature = "quaint")]
-mod quaint_benches;
 #[cfg(all(feature = "rusqlite", feature = "sqlite"))]
 mod rusqlite_benches;
 #[cfg(feature = "rustorm")]
@@ -100,11 +98,6 @@ fn bench_trivial_query(c: &mut CriterionType) {
         #[cfg(feature = "rustorm")]
         group.bench_with_input(BenchmarkId::new("rustorm", size), size, |b, i| {
             crate::rust_orm_benches::bench_trivial_query(b, *i);
-        });
-
-        #[cfg(feature = "quaint")]
-        group.bench_with_input(BenchmarkId::new("quaint", size), size, |b, i| {
-            crate::quaint_benches::bench_trivial_query(b, *i);
         });
 
         #[cfg(feature = "sqlx-bench")]
@@ -218,11 +211,6 @@ fn bench_medium_complex_query(c: &mut CriterionType) {
             size,
             |b, i| crate::diesel_async_benches::bench_medium_complex_query_queryable_by_name(b, *i),
         );
-
-        #[cfg(feature = "quaint")]
-        group.bench_with_input(BenchmarkId::new("quaint", size), size, |b, i| {
-            crate::quaint_benches::bench_medium_complex_query(b, *i);
-        });
 
         #[cfg(all(feature = "sqlx-bench", not(feature = "sqlite")))]
         group.bench_with_input(
@@ -345,11 +333,6 @@ fn bench_loading_associations_sequentially(c: &mut CriterionType) {
         crate::rust_orm_benches::loading_associations_sequentially(b)
     });
 
-    #[cfg(feature = "quaint")]
-    group.bench_function("quaint", |b| {
-        crate::quaint_benches::loading_associations_sequentially(b)
-    });
-
     #[cfg(all(feature = "mysql", feature = "rust_mysql"))]
     group.bench_function("mysql", |b| {
         crate::mysql_benches::loading_associations_sequentially(b)
@@ -384,11 +367,6 @@ fn bench_insert(c: &mut CriterionType) {
         #[cfg(feature = "sqlx-bench")]
         group.bench_with_input(BenchmarkId::new("sqlx", size), size, |b, i| {
             crate::sqlx_benches::bench_insert(b, *i);
-        });
-
-        #[cfg(feature = "quaint")]
-        group.bench_with_input(BenchmarkId::new("quaint", size), size, |b, i| {
-            crate::quaint_benches::bench_insert(b, *i);
         });
 
         #[cfg(feature = "rustorm")]
