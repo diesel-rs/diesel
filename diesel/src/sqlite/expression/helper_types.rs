@@ -43,3 +43,14 @@ pub type json_pretty_with_indentation<J, I> =
 #[allow(non_camel_case_types)]
 #[cfg(feature = "sqlite")]
 pub type json_valid<E> = super::functions::json_valid<SqlTypeOf<E>, E>;
+
+/// Return type of [`json_type(json)`](super::functions::json_type())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_type<E> = super::functions::json_type<SqlTypeOf<E>, E>;
+
+/// Return type of [`json_type(json, path)`](super::functions::json_type_with_path())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_type_with_path<J, P> =
+    super::functions::json_type_with_path<SqlTypeOf<J>, J, P>;
