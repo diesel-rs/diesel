@@ -748,4 +748,146 @@ extern "SQL" {
     #[sql_name = "json_valid"]
     #[cfg(feature = "sqlite")]
     fn json_valid<J: JsonOrNullableJson + MaybeNullableValue<Bool>>(j: J) -> J::Out;
+
+    /// The json_type(X) function returns the "type" of the outermost element of X.
+    /// The "type" returned by json_type() is one of the following SQL text values:
+    /// 'null', 'true', 'false', 'integer', 'real', 'text', 'array', or 'object'.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{sql, json_type};
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Text, Json, Jsonb, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let version = diesel::select(sql::<Text>("sqlite_version();"))
+    ///         .get_result::<String>(connection)?;
+    ///
+    /// // Querying SQLite version should not fail.
+    /// let version_components: Vec<&str> = version.split('.').collect();
+    /// let major: u32 = version_components[0].parse().unwrap();
+    /// let minor: u32 = version_components[1].parse().unwrap();
+    /// let patch: u32 = version_components[2].parse().unwrap();
+    ///
+    /// if major > 3 || (major == 3 && minor >= 38) {
+    ///     /* Valid sqlite version, do nothing */
+    /// } else {
+    ///     println!("SQLite version is too old, skipping the test.");
+    ///     return Ok(());
+    /// }
+    ///
+    /// let result = diesel::select(json_type::<Json, _>(json!({"a": [2, 3.5, true, false, null, "x"]})))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("object", result);
+    ///
+    /// let result = diesel::select(json_type::<Jsonb, _>(json!({"a": [2, 3.5, true, false, null, "x"]})))
+    ///     .get_result::<String>(connection)?;
+    ///
+    /// assert_eq!("object", result);
+    ///
+    /// let result = diesel::select(json_type::<Nullable<Json>, _>(None::<serde_json::Value>))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(None, result);
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "json_type"]
+    #[cfg(feature = "sqlite")]
+    fn json_type<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Text>>(j: J) -> J::Out;
+
+    /// The json_type(X,P) function returns the "type" of the element in X that is selected by path P.
+    /// If the path P in json_type(X,P) selects an element that does not exist in X, then this function returns NULL.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{sql, json_type_with_path};
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Text, Json, Jsonb, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let version = diesel::select(sql::<Text>("sqlite_version();"))
+    ///         .get_result::<String>(connection)?;
+    ///
+    /// // Querying SQLite version should not fail.
+    /// let version_components: Vec<&str> = version.split('.').collect();
+    /// let major: u32 = version_components[0].parse().unwrap();
+    /// let minor: u32 = version_components[1].parse().unwrap();
+    /// let patch: u32 = version_components[2].parse().unwrap();
+    ///
+    /// if major > 3 || (major == 3 && minor >= 38) {
+    ///     /* Valid sqlite version, do nothing */
+    /// } else {
+    ///     println!("SQLite version is too old, skipping the test.");
+    ///     return Ok(());
+    /// }
+    ///
+    /// let json_value = json!({"a": [2, 3.5, true, false, null, "x"]});
+    ///
+    /// let result = diesel::select(json_type_with_path::<Json, _, _>(json_value.clone(), "$.a"))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(Some("array".to_string()), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Json, _, _>(json_value.clone(), "$.a[0]"))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(Some("integer".to_string()), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Json, _, _>(json_value.clone(), "$.a[1]"))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(Some("real".to_string()), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Json, _, _>(json_value.clone(), "$.a[2]"))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(Some("true".to_string()), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Json, _, _>(json_value.clone(), "$.a[6]"))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(None, result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Jsonb, _, _>(json_value.clone(), "$.a"))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(Some("array".to_string()), result);
+    ///
+    /// let result = diesel::select(json_type_with_path::<Nullable<Json>, _, _>(None::<serde_json::Value>, "$.a"))
+    ///     .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(None, result);
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "json_type"]
+    #[cfg(feature = "sqlite")]
+    fn json_type_with_path<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
+        j: J,
+        path: Text,
+    ) -> Nullable<Text>;
 }
