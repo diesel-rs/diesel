@@ -806,7 +806,9 @@ extern "SQL" {
     /// ```
     #[sql_name = "json_type"]
     #[cfg(feature = "sqlite")]
-    fn json_type<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Text>>(j: J) -> J::Out;
+    fn json_type<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Text>>(
+        j: J,
+    ) -> J::Out;
 
     /// The json_type(X,P) function returns the "type" of the element in X that is selected by path P.
     /// If the path P in json_type(X,P) selects an element that does not exist in X, then this function returns NULL.
