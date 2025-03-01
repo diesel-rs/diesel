@@ -281,8 +281,8 @@ pub fn build_cli() -> Command {
                 .value_parser(PossibleValuesParser::new(print_schema::DocConfig::VARIANTS_STR)),
         )
         .arg(
-            Arg::new("allow-tables-in-same-query")
-                .long("allow-tables-in-same-query")
+            Arg::new("allow-tables-to-appear-in-same-query-config")
+                .long("allow-tables-to-appear-in-same-query-config")
                 .help("Group tables in allow_tables_to_appear_in_same_query!().")
                 .num_args(1)
                 .action(ArgAction::Append)
