@@ -352,7 +352,10 @@ fn print_schema_comments_dont_fallback_on_generated() {
 fn print_schema_fk_related_tables() {
     test_print_schema(
         "print_schema_fk_related_tables",
-        vec!["--allow-tables-in-same-query", "fk_related_tables"],
+        vec![
+            "--allow-tables-to-appear-in-same-query-config",
+            "fk_related_tables",
+        ],
     )
 }
 

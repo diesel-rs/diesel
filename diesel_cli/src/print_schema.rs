@@ -45,7 +45,7 @@ impl Default for DocConfig {
 
 /// How to group tables in `allow_tables_to_appear_in_same_query!()`.
 #[derive(Debug, Deserialize, Serialize, Clone, Copy)]
-pub enum AllowTablesInSameQuery {
+pub enum AllowTablesToAppearInSameQueryConfig {
     /// Group by foreign key relations
     #[serde(rename = "fk_related_tables")]
     FkRelatedTables,
@@ -55,9 +55,9 @@ pub enum AllowTablesInSameQuery {
 }
 
 #[allow(clippy::derivable_impls)] // that's not supported on rust 1.65
-impl Default for AllowTablesInSameQuery {
+impl Default for AllowTablesToAppearInSameQueryConfig {
     fn default() -> Self {
-        AllowTablesInSameQuery::AllTables
+        AllowTablesToAppearInSameQueryConfig::AllTables
     }
 }
 
@@ -256,7 +256,8 @@ pub fn output_schema(
         tables: table_data,
         fk_constraints: foreign_keys,
         with_docs: config.with_docs,
-        allow_tables_in_same_query: config.allow_tables_in_same_query,
+        allow_tables_to_appear_in_same_query_config: config
+            .allow_tables_to_appear_in_same_query_config,
         custom_types_for_tables: columns_custom_types.map(|custom_types_sorted| {
             CustomTypesForTables {
                 backend,
@@ -558,7 +559,7 @@ struct TableDefinitions<'a> {
     tables: Vec<TableData>,
     fk_constraints: Vec<ForeignKeyConstraint>,
     with_docs: DocConfig,
-    allow_tables_in_same_query: AllowTablesInSameQuery,
+    allow_tables_to_appear_in_same_query_config: AllowTablesToAppearInSameQueryConfig,
     import_types: Option<&'a [String]>,
     custom_types_for_tables: Option<CustomTypesForTables>,
 }
@@ -595,11 +596,11 @@ impl Display for TableDefinitions<'_> {
             writeln!(f, "{}", Joinable(foreign_key))?;
         }
 
-        let table_groups = match self.allow_tables_in_same_query {
-            AllowTablesInSameQuery::FkRelatedTables => {
+        let table_groups = match self.allow_tables_to_appear_in_same_query_config {
+            AllowTablesToAppearInSameQueryConfig::FkRelatedTables => {
                 foreign_key_table_groups(&self.tables, &self.fk_constraints)
             }
-            AllowTablesInSameQuery::AllTables => {
+            AllowTablesToAppearInSameQueryConfig::AllTables => {
                 vec![self.tables.iter().map(|table| &table.name).collect()]
             }
         };
@@ -1002,16 +1003,17 @@ impl str::FromStr for DocConfig {
     }
 }
 
-impl str::FromStr for AllowTablesInSameQuery {
+impl str::FromStr for AllowTablesToAppearInSameQueryConfig {
     type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "fk_related_tables" => AllowTablesInSameQuery::FkRelatedTables,
-            "all_tables" => AllowTablesInSameQuery::AllTables,
+            "fk_related_tables" => AllowTablesToAppearInSameQueryConfig::FkRelatedTables,
+            "all_tables" => AllowTablesToAppearInSameQueryConfig::AllTables,
             _ => {
                 return Err(
-                    "Unknown variant for `allow_tables_in_same_query` config, expected one of: \
+                    "Unknown variant for `allow_tables_to_appear_in_same_query!` config \
+                    mode, expected one of: \
                     `fk_related_tables`, \
                     `all_tables`",
                 )

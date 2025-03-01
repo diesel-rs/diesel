@@ -1,6 +1,6 @@
 ---
 source: diesel_cli/tests/print_schema.rs
-assertion_line: 500
+assertion_line: 503
 description: "Test: print_schema_fk_related_tables"
 snapshot_kind: text
 ---
