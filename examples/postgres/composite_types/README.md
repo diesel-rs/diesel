@@ -72,7 +72,7 @@ let results: Vec<Distance> = coordinates
 
 ### Reducing the output to a single value instead of an array
 The default output of a query to the database is a table with results.
-However, frequenty we may only expect a single answer, especially if a function
+However, frequently we may only expect a single answer, especially if a function
 has defined several **OUT**-*put* parameters instead of returning a table, like the
 created SQL function ```shortest_distance()```.
 To avoid the destructering of the vector, when a vector is not needed, we
