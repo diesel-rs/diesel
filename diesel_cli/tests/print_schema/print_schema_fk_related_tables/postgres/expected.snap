@@ -1,7 +1,7 @@
 ---
 source: diesel_cli/tests/print_schema.rs
 assertion_line: 500
-description: "Test: print_schema_allow_tables_in_same_query"
+description: "Test: print_schema_fk_related_tables"
 snapshot_kind: text
 ---
 // @generated automatically by Diesel CLI.
