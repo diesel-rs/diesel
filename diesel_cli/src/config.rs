@@ -570,18 +570,12 @@ impl MigrationsDirectory {
 
 type Regex = RegexWrapper<::regex::Regex>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub enum Filtering {
     OnlyTables(Vec<Regex>),
     ExceptTables(Vec<Regex>),
+    #[default]
     None,
-}
-
-#[allow(clippy::derivable_impls)] // that's not supported on rust 1.65
-impl Default for Filtering {
-    fn default() -> Self {
-        Filtering::None
-    }
 }
 
 impl Filtering {
