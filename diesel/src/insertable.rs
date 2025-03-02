@@ -135,23 +135,17 @@ impl<Col, Expr> ColumnInsertValue<Col, Expr> {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 #[doc(hidden)]
 pub enum DefaultableColumnInsertValue<T> {
     Expression(T),
+    #[default]
     Default,
 }
 
 impl<T> QueryId for DefaultableColumnInsertValue<T> {
     type QueryId = ();
     const HAS_STATIC_QUERY_ID: bool = false;
-}
-
-#[allow(clippy::derivable_impls)] // that's not supported on rust 1.65
-impl<T> Default for DefaultableColumnInsertValue<T> {
-    fn default() -> Self {
-        DefaultableColumnInsertValue::Default
-    }
 }
 
 impl<Col, Expr, DB> InsertValues<DB, Col::Table>
