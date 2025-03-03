@@ -166,6 +166,11 @@ impl Config {
                 let with_docs_with_indices = get_values_with_indices::<bool>(matches, "with-docs")?;
                 let with_docs_config_with_indices =
                     get_values_with_indices::<String>(matches, "with-docs-config")?;
+                let allow_tables_to_appear_in_same_query_config_with_indices =
+                    get_values_with_indices::<String>(
+                        matches,
+                        "allow-tables-to-appear-in-same-query-config",
+                    )?;
                 let patch_file_with_indices =
                     get_values_with_indices::<PathBuf>(matches, "patch-file")?;
                 let column_sorting_with_indices =
@@ -232,6 +237,22 @@ impl Config {
                                 "Invalid documentation config mode: {doc_config}"
                             ))
                         })?;
+                    }
+
+                    if let Some(allow_tables_to_appear_in_same_query_config) =
+                        allow_tables_to_appear_in_same_query_config_with_indices
+                            .as_ref()
+                            .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.as_str()))
+                    {
+                        print_schema.allow_tables_to_appear_in_same_query_config =
+                            allow_tables_to_appear_in_same_query_config
+                                .parse()
+                                .map_err(|_| {
+                                    crate::errors::Error::UnsupportedFeature(format!(
+                                        "Invalid `allow_tables_to_appear_in_same_query!` config \
+                                        mode: {allow_tables_to_appear_in_same_query_config}"
+                                    ))
+                                })?;
                     }
 
                     if let Some(sorting) = column_sorting_with_indices
@@ -323,6 +344,20 @@ impl Config {
                         "Invalid documentation config mode: {doc_config}"
                     ))
                 })?;
+            }
+
+            if let Some(allow_tables_to_appear_in_same_query_config) =
+                matches.get_one::<String>("allow-tables-to-appear-in-same-query-config")
+            {
+                config.allow_tables_to_appear_in_same_query_config =
+                    allow_tables_to_appear_in_same_query_config
+                        .parse()
+                        .map_err(|_| {
+                            crate::errors::Error::UnsupportedFeature(format!(
+                                "Invalid `allow_tables_to_appear_in_same_query!` config \
+                                mode: {allow_tables_to_appear_in_same_query_config}"
+                            ))
+                        })?;
             }
 
             if let Some(sorting) = matches.get_one::<String>("column-sorting") {
@@ -425,6 +460,9 @@ pub struct PrintSchema {
     pub file: Option<PathBuf>,
     #[serde(default)]
     pub with_docs: print_schema::DocConfig,
+    #[serde(default)]
+    pub allow_tables_to_appear_in_same_query_config:
+        print_schema::AllowTablesToAppearInSameQueryConfig,
     #[serde(default)]
     pub filter: Filtering,
     #[serde(default)]
@@ -532,18 +570,12 @@ impl MigrationsDirectory {
 
 type Regex = RegexWrapper<::regex::Regex>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub enum Filtering {
     OnlyTables(Vec<Regex>),
     ExceptTables(Vec<Regex>),
+    #[default]
     None,
-}
-
-#[allow(clippy::derivable_impls)] // that's not supported on rust 1.65
-impl Default for Filtering {
-    fn default() -> Self {
-        Filtering::None
-    }
 }
 
 impl Filtering {
