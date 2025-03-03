@@ -107,6 +107,7 @@ fn pg_diesel_types() -> HashSet<&'static str> {
     types.insert("Timestamptz");
     types.insert("Uuid");
     types.insert("Json");
+    types.insert("PgLsn");
     types.insert("Record");
     types.insert("Interval");
 
