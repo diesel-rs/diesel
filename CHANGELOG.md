@@ -10,12 +10,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
-## [2.2.8] 2025-02-21
+## [2.2.8] 2025-03-03
 
 ### Fixed
 
 * Allow `#[diesel(check_for_backend(_))]` to check fields with `#[diesel(embed)]` annotations
-* Adjust a custom compile error message
+* Improve custom compile error message around `CompatibleType`
 * Fix a bug that restricted the number of allowed columns in `COPY FROM` statements to 12
 * Expose some SqliteValue helper functions
 * Use consistent whitespace in `ASC`/`DESC`, `DISTINCT ON`, and `DELETE FROM` clauses
