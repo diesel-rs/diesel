@@ -1,0 +1,307 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_provider-1.5.0/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="icu_provider" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0-nightly (f4a216d28 2025-03-02)" data-channel="nightly" data-search-js="search-f7327375.js" data-settings-js="settings-d72f25bb.js" ><script src="../../static.files/storage-d8ac8691.js"></script><script defer src="../../static.files/src-script-b8d3f215.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-a7bf3405.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">icu_provider/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// This file is part of ICU4X. For terms of use, please see the file
+<a href=#2 id=2 data-nosnippet>2</a>// called LICENSE at the top level of the ICU4X source tree
+<a href=#3 id=3 data-nosnippet>3</a>// (online at: https://github.com/unicode-org/icu4x/blob/main/LICENSE ).
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a></span><span class="doccomment">//! `icu_provider` is one of the [`ICU4X`] components.
+<a href=#6 id=6 data-nosnippet>6</a>//!
+<a href=#7 id=7 data-nosnippet>7</a>//! Unicode's experience with ICU4X's parent projects, ICU4C and ICU4J, led the team to realize
+<a href=#8 id=8 data-nosnippet>8</a>//! that data management is the most critical aspect of deploying internationalization, and that it requires
+<a href=#9 id=9 data-nosnippet>9</a>//! a high level of customization for the needs of the platform it is embedded in. As a result
+<a href=#10 id=10 data-nosnippet>10</a>//! ICU4X comes with a selection of providers that should allow for ICU4X to naturally fit into
+<a href=#11 id=11 data-nosnippet>11</a>//! different business and technological needs of customers.
+<a href=#12 id=12 data-nosnippet>12</a>//!
+<a href=#13 id=13 data-nosnippet>13</a>//! `icu_provider` defines traits and structs for transmitting data through the ICU4X locale
+<a href=#14 id=14 data-nosnippet>14</a>//! data pipeline. The primary trait is [`DataProvider`]. It is parameterized by a
+<a href=#15 id=15 data-nosnippet>15</a>//! [`KeyedDataMarker`], which contains the data type and a [`DataKey`]. It has one method,
+<a href=#16 id=16 data-nosnippet>16</a>//! [`DataProvider::load`], which transforms a [`DataRequest`]
+<a href=#17 id=17 data-nosnippet>17</a>//! into a [`DataResponse`].
+<a href=#18 id=18 data-nosnippet>18</a>//!
+<a href=#19 id=19 data-nosnippet>19</a>//! - [`DataKey`] is a fixed identifier for the data type, such as `"plurals/cardinal@1"`.
+<a href=#20 id=20 data-nosnippet>20</a>//! - [`DataRequest`] contains additional annotations to choose a specific variant of the key,
+<a href=#21 id=21 data-nosnippet>21</a>//!   such as a locale.
+<a href=#22 id=22 data-nosnippet>22</a>//! - [`DataResponse`] contains the data if the request was successful.
+<a href=#23 id=23 data-nosnippet>23</a>//!
+<a href=#24 id=24 data-nosnippet>24</a>//! In addition, there are three other traits which are widely implemented:
+<a href=#25 id=25 data-nosnippet>25</a>//!
+<a href=#26 id=26 data-nosnippet>26</a>//! - [`AnyProvider`] returns data as `dyn Any` trait objects.
+<a href=#27 id=27 data-nosnippet>27</a>//! - [`BufferProvider`] returns data as `[u8]` buffers.
+<a href=#28 id=28 data-nosnippet>28</a>//! - [`DynamicDataProvider`] returns structured data but is not specific to a key.
+<a href=#29 id=29 data-nosnippet>29</a>//!
+<a href=#30 id=30 data-nosnippet>30</a>//! The most common types required for this crate are included via the prelude:
+<a href=#31 id=31 data-nosnippet>31</a>//!
+<a href=#32 id=32 data-nosnippet>32</a>//! ```
+<a href=#33 id=33 data-nosnippet>33</a>//! use icu_provider::prelude::*;
+<a href=#34 id=34 data-nosnippet>34</a>//! ```
+<a href=#35 id=35 data-nosnippet>35</a>//!
+<a href=#36 id=36 data-nosnippet>36</a>//! ## Types of Data Providers
+<a href=#37 id=37 data-nosnippet>37</a>//!
+<a href=#38 id=38 data-nosnippet>38</a>//! All nontrivial data providers can fit into one of two classes.
+<a href=#39 id=39 data-nosnippet>39</a>//!
+<a href=#40 id=40 data-nosnippet>40</a>//! 1. [`AnyProvider`]: Those whose data originates as structured Rust objects
+<a href=#41 id=41 data-nosnippet>41</a>//! 2. [`BufferProvider`]: Those whose data originates as unstructured `[u8]` buffers
+<a href=#42 id=42 data-nosnippet>42</a>//!
+<a href=#43 id=43 data-nosnippet>43</a>//! **✨ Key Insight:** A given data provider is generally *either* an [`AnyProvider`] *or* a
+<a href=#44 id=44 data-nosnippet>44</a>//! [`BufferProvider`]. Which type depends on the data source, and it is not generally possible
+<a href=#45 id=45 data-nosnippet>45</a>//! to convert one to the other.
+<a href=#46 id=46 data-nosnippet>46</a>//!
+<a href=#47 id=47 data-nosnippet>47</a>//! See also [crate::constructors].
+<a href=#48 id=48 data-nosnippet>48</a>//!
+<a href=#49 id=49 data-nosnippet>49</a>//! ### AnyProvider
+<a href=#50 id=50 data-nosnippet>50</a>//!
+<a href=#51 id=51 data-nosnippet>51</a>//! These providers are able to return structured data cast into `dyn Any` trait objects. Users
+<a href=#52 id=52 data-nosnippet>52</a>//! can call [`as_downcasting()`] to get an object implementing [`DataProvider`] by downcasting
+<a href=#53 id=53 data-nosnippet>53</a>//! the trait objects.
+<a href=#54 id=54 data-nosnippet>54</a>//!
+<a href=#55 id=55 data-nosnippet>55</a>//! Examples of AnyProviders:
+<a href=#56 id=56 data-nosnippet>56</a>//!
+<a href=#57 id=57 data-nosnippet>57</a>//! - [`DatagenProvider`] reads structured data from CLDR source files and returns ICU4X data structs.
+<a href=#58 id=58 data-nosnippet>58</a>//! - [`AnyPayloadProvider`] wraps a specific data struct and returns it.
+<a href=#59 id=59 data-nosnippet>59</a>//! - The `BakedDataProvider` which encodes structured data directly in Rust source
+<a href=#60 id=60 data-nosnippet>60</a>//!
+<a href=#61 id=61 data-nosnippet>61</a>//! ### BufferProvider
+<a href=#62 id=62 data-nosnippet>62</a>//!
+<a href=#63 id=63 data-nosnippet>63</a>//! These providers are able to return unstructured data typically represented as
+<a href=#64 id=64 data-nosnippet>64</a>//! [`serde`]-serialized buffers. Users can call [`as_deserializing()`] to get an object
+<a href=#65 id=65 data-nosnippet>65</a>//! implementing [`DataProvider`] by invoking Serde Deserialize.
+<a href=#66 id=66 data-nosnippet>66</a>//!
+<a href=#67 id=67 data-nosnippet>67</a>//! Examples of BufferProviders:
+<a href=#68 id=68 data-nosnippet>68</a>//!
+<a href=#69 id=69 data-nosnippet>69</a>//! - [`FsDataProvider`] reads individual buffers from the filesystem.
+<a href=#70 id=70 data-nosnippet>70</a>//! - [`BlobDataProvider`] reads buffers from a large in-memory blob.
+<a href=#71 id=71 data-nosnippet>71</a>//!
+<a href=#72 id=72 data-nosnippet>72</a>//! ## Provider Adapters
+<a href=#73 id=73 data-nosnippet>73</a>//!
+<a href=#74 id=74 data-nosnippet>74</a>//! ICU4X offers several built-in modules to combine providers in interesting ways.
+<a href=#75 id=75 data-nosnippet>75</a>//! These can be found in the [`icu_provider_adapters`] crate.
+<a href=#76 id=76 data-nosnippet>76</a>//!
+<a href=#77 id=77 data-nosnippet>77</a>//! ## Testing Provider
+<a href=#78 id=78 data-nosnippet>78</a>//!
+<a href=#79 id=79 data-nosnippet>79</a>//! This crate also contains a concrete provider for demonstration purposes:
+<a href=#80 id=80 data-nosnippet>80</a>//!
+<a href=#81 id=81 data-nosnippet>81</a>//! - [`HelloWorldProvider`] returns "hello world" strings in several languages.
+<a href=#82 id=82 data-nosnippet>82</a>//!
+<a href=#83 id=83 data-nosnippet>83</a>//! ## Types and Lifetimes
+<a href=#84 id=84 data-nosnippet>84</a>//!
+<a href=#85 id=85 data-nosnippet>85</a>//! Types compatible with [`Yokeable`] can be passed through the data provider, so long as they are
+<a href=#86 id=86 data-nosnippet>86</a>//! associated with a marker type implementing [`DataMarker`].
+<a href=#87 id=87 data-nosnippet>87</a>//!
+<a href=#88 id=88 data-nosnippet>88</a>//! Data structs should generally have one lifetime argument: `'data`. This lifetime allows data
+<a href=#89 id=89 data-nosnippet>89</a>//! structs to borrow zero-copy data.
+<a href=#90 id=90 data-nosnippet>90</a>//!
+<a href=#91 id=91 data-nosnippet>91</a>//! ## Data generation API
+<a href=#92 id=92 data-nosnippet>92</a>//!
+<a href=#93 id=93 data-nosnippet>93</a>//! *This functionality is enabled with the "datagen" Cargo feature*
+<a href=#94 id=94 data-nosnippet>94</a>//!
+<a href=#95 id=95 data-nosnippet>95</a>//! The [`datagen`] module contains several APIs for data generation. See [`icu_datagen`] for the reference
+<a href=#96 id=96 data-nosnippet>96</a>//! data generation implementation.
+<a href=#97 id=97 data-nosnippet>97</a>//!
+<a href=#98 id=98 data-nosnippet>98</a>//! [`ICU4X`]: ../icu/index.html
+<a href=#99 id=99 data-nosnippet>99</a>//! [`DataProvider`]: data_provider::DataProvider
+<a href=#100 id=100 data-nosnippet>100</a>//! [`DataKey`]: key::DataKey
+<a href=#101 id=101 data-nosnippet>101</a>//! [`DataLocale`]: request::DataLocale
+<a href=#102 id=102 data-nosnippet>102</a>//! [`IterableDynamicDataProvider`]: datagen::IterableDynamicDataProvider
+<a href=#103 id=103 data-nosnippet>103</a>//! [`IterableDataProvider`]: datagen::IterableDataProvider
+<a href=#104 id=104 data-nosnippet>104</a>//! [`AnyPayloadProvider`]: ../icu_provider_adapters/any_payload/struct.AnyPayloadProvider.html
+<a href=#105 id=105 data-nosnippet>105</a>//! [`HelloWorldProvider`]: hello_world::HelloWorldProvider
+<a href=#106 id=106 data-nosnippet>106</a>//! [`AnyProvider`]: any::AnyProvider
+<a href=#107 id=107 data-nosnippet>107</a>//! [`Yokeable`]: yoke::Yokeable
+<a href=#108 id=108 data-nosnippet>108</a>//! [`impl_dynamic_data_provider!`]: impl_dynamic_data_provider
+<a href=#109 id=109 data-nosnippet>109</a>//! [`icu_provider_adapters`]: ../icu_provider_adapters/index.html
+<a href=#110 id=110 data-nosnippet>110</a>//! [`DatagenProvider`]: ../icu_datagen/struct.DatagenProvider.html
+<a href=#111 id=111 data-nosnippet>111</a>//! [`as_downcasting()`]: AsDowncastingAnyProvider::as_downcasting
+<a href=#112 id=112 data-nosnippet>112</a>//! [`as_deserializing()`]: AsDeserializingBufferProvider::as_deserializing
+<a href=#113 id=113 data-nosnippet>113</a>//! [`CldrJsonDataProvider`]: ../icu_datagen/cldr/struct.CldrJsonDataProvider.html
+<a href=#114 id=114 data-nosnippet>114</a>//! [`FsDataProvider`]: ../icu_provider_fs/struct.FsDataProvider.html
+<a href=#115 id=115 data-nosnippet>115</a>//! [`BlobDataProvider`]: ../icu_provider_blob/struct.BlobDataProvider.html
+<a href=#116 id=116 data-nosnippet>116</a>//! [`icu_datagen`]: ../icu_datagen/index.html
+<a href=#117 id=117 data-nosnippet>117</a>
+<a href=#118 id=118 data-nosnippet>118</a></span><span class="comment">// https://github.com/unicode-org/icu4x/blob/main/documents/process/boilerplate.md#library-annotations
+<a href=#119 id=119 data-nosnippet>119</a></span><span class="attr">#![cfg_attr(not(any(test, feature = <span class="string">"std"</span>)), no_std)]
+<a href=#120 id=120 data-nosnippet>120</a>#![cfg_attr(
+<a href=#121 id=121 data-nosnippet>121</a>    not(test),
+<a href=#122 id=122 data-nosnippet>122</a>    deny(
+<a href=#123 id=123 data-nosnippet>123</a>        clippy::indexing_slicing,
+<a href=#124 id=124 data-nosnippet>124</a>        clippy::unwrap_used,
+<a href=#125 id=125 data-nosnippet>125</a>        clippy::expect_used,
+<a href=#126 id=126 data-nosnippet>126</a>        clippy::panic,
+<a href=#127 id=127 data-nosnippet>127</a>        clippy::exhaustive_structs,
+<a href=#128 id=128 data-nosnippet>128</a>        clippy::exhaustive_enums,
+<a href=#129 id=129 data-nosnippet>129</a>        missing_debug_implementations,
+<a href=#130 id=130 data-nosnippet>130</a>    )
+<a href=#131 id=131 data-nosnippet>131</a>)]
+<a href=#132 id=132 data-nosnippet>132</a>#![warn(missing_docs)]
+<a href=#133 id=133 data-nosnippet>133</a>
+<a href=#134 id=134 data-nosnippet>134</a></span><span class="kw">extern crate </span>alloc;
+<a href=#135 id=135 data-nosnippet>135</a>
+<a href=#136 id=136 data-nosnippet>136</a><span class="kw">mod </span>data_provider;
+<a href=#137 id=137 data-nosnippet>137</a><span class="kw">mod </span>error;
+<a href=#138 id=138 data-nosnippet>138</a><span class="attr">#[doc(hidden)]
+<a href=#139 id=139 data-nosnippet>139</a></span><span class="kw">pub mod </span>fallback;
+<a href=#140 id=140 data-nosnippet>140</a><span class="kw">mod </span>key;
+<a href=#141 id=141 data-nosnippet>141</a><span class="kw">mod </span>request;
+<a href=#142 id=142 data-nosnippet>142</a><span class="kw">mod </span>response;
+<a href=#143 id=143 data-nosnippet>143</a>
+<a href=#144 id=144 data-nosnippet>144</a><span class="kw">pub mod </span>any;
+<a href=#145 id=145 data-nosnippet>145</a><span class="kw">pub mod </span>buf;
+<a href=#146 id=146 data-nosnippet>146</a><span class="kw">pub mod </span>constructors;
+<a href=#147 id=147 data-nosnippet>147</a><span class="attr">#[cfg(feature = <span class="string">"datagen"</span>)]
+<a href=#148 id=148 data-nosnippet>148</a></span><span class="kw">pub mod </span>datagen;
+<a href=#149 id=149 data-nosnippet>149</a><span class="kw">pub mod </span>dynutil;
+<a href=#150 id=150 data-nosnippet>150</a><span class="kw">pub mod </span>hello_world;
+<a href=#151 id=151 data-nosnippet>151</a><span class="kw">pub mod </span>marker;
+<a href=#152 id=152 data-nosnippet>152</a><span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
+<a href=#153 id=153 data-nosnippet>153</a></span><span class="kw">pub mod </span>serde;
+<a href=#154 id=154 data-nosnippet>154</a>
+<a href=#155 id=155 data-nosnippet>155</a><span class="comment">// Types from private modules
+<a href=#156 id=156 data-nosnippet>156</a></span><span class="kw">pub use </span><span class="kw">crate</span>::data_provider::BoundDataProvider;
+<a href=#157 id=157 data-nosnippet>157</a><span class="kw">pub use </span><span class="kw">crate</span>::data_provider::DataProvider;
+<a href=#158 id=158 data-nosnippet>158</a><span class="kw">pub use </span><span class="kw">crate</span>::data_provider::DataProviderWithKey;
+<a href=#159 id=159 data-nosnippet>159</a><span class="kw">pub use </span><span class="kw">crate</span>::data_provider::DynamicDataProvider;
+<a href=#160 id=160 data-nosnippet>160</a><span class="kw">pub use </span><span class="kw">crate</span>::error::DataError;
+<a href=#161 id=161 data-nosnippet>161</a><span class="kw">pub use </span><span class="kw">crate</span>::error::DataErrorKind;
+<a href=#162 id=162 data-nosnippet>162</a><span class="kw">pub use </span><span class="kw">crate</span>::key::DataKey;
+<a href=#163 id=163 data-nosnippet>163</a><span class="kw">pub use </span><span class="kw">crate</span>::key::DataKeyHash;
+<a href=#164 id=164 data-nosnippet>164</a><span class="kw">pub use </span><span class="kw">crate</span>::key::DataKeyMetadata;
+<a href=#165 id=165 data-nosnippet>165</a><span class="kw">pub use </span><span class="kw">crate</span>::key::DataKeyPath;
+<a href=#166 id=166 data-nosnippet>166</a><span class="attr">#[cfg(feature = <span class="string">"experimental"</span>)]
+<a href=#167 id=167 data-nosnippet>167</a></span><span class="kw">pub use </span><span class="kw">crate</span>::request::AuxiliaryKeys;
+<a href=#168 id=168 data-nosnippet>168</a><span class="kw">pub use </span><span class="kw">crate</span>::request::DataLocale;
+<a href=#169 id=169 data-nosnippet>169</a><span class="kw">pub use </span><span class="kw">crate</span>::request::DataRequest;
+<a href=#170 id=170 data-nosnippet>170</a><span class="kw">pub use </span><span class="kw">crate</span>::request::DataRequestMetadata;
+<a href=#171 id=171 data-nosnippet>171</a><span class="kw">pub use </span><span class="kw">crate</span>::response::Cart;
+<a href=#172 id=172 data-nosnippet>172</a><span class="kw">pub use </span><span class="kw">crate</span>::response::DataPayload;
+<a href=#173 id=173 data-nosnippet>173</a><span class="kw">pub use </span><span class="kw">crate</span>::response::DataPayloadOr;
+<a href=#174 id=174 data-nosnippet>174</a><span class="kw">pub use </span><span class="kw">crate</span>::response::DataResponse;
+<a href=#175 id=175 data-nosnippet>175</a><span class="kw">pub use </span><span class="kw">crate</span>::response::DataResponseMetadata;
+<a href=#176 id=176 data-nosnippet>176</a><span class="attr">#[cfg(feature = <span class="string">"macros"</span>)]
+<a href=#177 id=177 data-nosnippet>177</a></span><span class="kw">pub use </span>icu_provider_macros::data_struct;
+<a href=#178 id=178 data-nosnippet>178</a>
+<a href=#179 id=179 data-nosnippet>179</a><span class="comment">// Reexports from public modules
+<a href=#180 id=180 data-nosnippet>180</a></span><span class="kw">pub use </span><span class="kw">crate</span>::any::AnyMarker;
+<a href=#181 id=181 data-nosnippet>181</a><span class="kw">pub use </span><span class="kw">crate</span>::any::AnyPayload;
+<a href=#182 id=182 data-nosnippet>182</a><span class="kw">pub use </span><span class="kw">crate</span>::any::AnyProvider;
+<a href=#183 id=183 data-nosnippet>183</a><span class="kw">pub use </span><span class="kw">crate</span>::any::AnyResponse;
+<a href=#184 id=184 data-nosnippet>184</a><span class="kw">pub use </span><span class="kw">crate</span>::any::AsDowncastingAnyProvider;
+<a href=#185 id=185 data-nosnippet>185</a><span class="kw">pub use </span><span class="kw">crate</span>::any::AsDynamicDataProviderAnyMarkerWrap;
+<a href=#186 id=186 data-nosnippet>186</a><span class="kw">pub use </span><span class="kw">crate</span>::any::MaybeSendSync;
+<a href=#187 id=187 data-nosnippet>187</a><span class="kw">pub use </span><span class="kw">crate</span>::buf::BufferMarker;
+<a href=#188 id=188 data-nosnippet>188</a><span class="kw">pub use </span><span class="kw">crate</span>::buf::BufferProvider;
+<a href=#189 id=189 data-nosnippet>189</a><span class="kw">pub use </span><span class="kw">crate</span>::marker::DataMarker;
+<a href=#190 id=190 data-nosnippet>190</a><span class="kw">pub use </span><span class="kw">crate</span>::marker::KeyedDataMarker;
+<a href=#191 id=191 data-nosnippet>191</a><span class="kw">pub use </span><span class="kw">crate</span>::marker::NeverMarker;
+<a href=#192 id=192 data-nosnippet>192</a><span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
+<a href=#193 id=193 data-nosnippet>193</a></span><span class="kw">pub use </span><span class="kw">crate</span>::serde::AsDeserializingBufferProvider;
+<a href=#194 id=194 data-nosnippet>194</a>
+<a href=#195 id=195 data-nosnippet>195</a><span class="doccomment">/// Core selection of APIs and structures for the ICU4X data provider.
+<a href=#196 id=196 data-nosnippet>196</a></span><span class="kw">pub mod </span>prelude {
+<a href=#197 id=197 data-nosnippet>197</a>    <span class="attr">#[doc(no_inline)]
+<a href=#198 id=198 data-nosnippet>198</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::data_key;
+<a href=#199 id=199 data-nosnippet>199</a>    <span class="attr">#[doc(no_inline)]
+<a href=#200 id=200 data-nosnippet>200</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::AnyMarker;
+<a href=#201 id=201 data-nosnippet>201</a>    <span class="attr">#[doc(no_inline)]
+<a href=#202 id=202 data-nosnippet>202</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::AnyPayload;
+<a href=#203 id=203 data-nosnippet>203</a>    <span class="attr">#[doc(no_inline)]
+<a href=#204 id=204 data-nosnippet>204</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::AnyProvider;
+<a href=#205 id=205 data-nosnippet>205</a>    <span class="attr">#[doc(no_inline)]
+<a href=#206 id=206 data-nosnippet>206</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::AnyResponse;
+<a href=#207 id=207 data-nosnippet>207</a>    <span class="attr">#[doc(no_inline)]
+<a href=#208 id=208 data-nosnippet>208</a>    #[cfg(feature = <span class="string">"serde"</span>)]
+<a href=#209 id=209 data-nosnippet>209</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::AsDeserializingBufferProvider;
+<a href=#210 id=210 data-nosnippet>210</a>    <span class="attr">#[doc(no_inline)]
+<a href=#211 id=211 data-nosnippet>211</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::AsDowncastingAnyProvider;
+<a href=#212 id=212 data-nosnippet>212</a>    <span class="attr">#[doc(no_inline)]
+<a href=#213 id=213 data-nosnippet>213</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::AsDynamicDataProviderAnyMarkerWrap;
+<a href=#214 id=214 data-nosnippet>214</a>    <span class="attr">#[doc(no_inline)]
+<a href=#215 id=215 data-nosnippet>215</a>    #[cfg(feature = <span class="string">"experimental"</span>)]
+<a href=#216 id=216 data-nosnippet>216</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::AuxiliaryKeys;
+<a href=#217 id=217 data-nosnippet>217</a>    <span class="attr">#[doc(no_inline)]
+<a href=#218 id=218 data-nosnippet>218</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::BoundDataProvider;
+<a href=#219 id=219 data-nosnippet>219</a>    <span class="attr">#[doc(no_inline)]
+<a href=#220 id=220 data-nosnippet>220</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::BufferMarker;
+<a href=#221 id=221 data-nosnippet>221</a>    <span class="attr">#[doc(no_inline)]
+<a href=#222 id=222 data-nosnippet>222</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::BufferProvider;
+<a href=#223 id=223 data-nosnippet>223</a>    <span class="attr">#[doc(no_inline)]
+<a href=#224 id=224 data-nosnippet>224</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::DataError;
+<a href=#225 id=225 data-nosnippet>225</a>    <span class="attr">#[doc(no_inline)]
+<a href=#226 id=226 data-nosnippet>226</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::DataErrorKind;
+<a href=#227 id=227 data-nosnippet>227</a>    <span class="attr">#[doc(no_inline)]
+<a href=#228 id=228 data-nosnippet>228</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::DataKey;
+<a href=#229 id=229 data-nosnippet>229</a>    <span class="attr">#[doc(no_inline)]
+<a href=#230 id=230 data-nosnippet>230</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::DataKeyHash;
+<a href=#231 id=231 data-nosnippet>231</a>    <span class="attr">#[doc(no_inline)]
+<a href=#232 id=232 data-nosnippet>232</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::DataLocale;
+<a href=#233 id=233 data-nosnippet>233</a>    <span class="attr">#[doc(no_inline)]
+<a href=#234 id=234 data-nosnippet>234</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::DataMarker;
+<a href=#235 id=235 data-nosnippet>235</a>    <span class="attr">#[doc(no_inline)]
+<a href=#236 id=236 data-nosnippet>236</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::DataPayload;
+<a href=#237 id=237 data-nosnippet>237</a>    <span class="attr">#[doc(no_inline)]
+<a href=#238 id=238 data-nosnippet>238</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::DataProvider;
+<a href=#239 id=239 data-nosnippet>239</a>    <span class="attr">#[doc(no_inline)]
+<a href=#240 id=240 data-nosnippet>240</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::DataRequest;
+<a href=#241 id=241 data-nosnippet>241</a>    <span class="attr">#[doc(no_inline)]
+<a href=#242 id=242 data-nosnippet>242</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::DataRequestMetadata;
+<a href=#243 id=243 data-nosnippet>243</a>    <span class="attr">#[doc(no_inline)]
+<a href=#244 id=244 data-nosnippet>244</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::DataResponse;
+<a href=#245 id=245 data-nosnippet>245</a>    <span class="attr">#[doc(no_inline)]
+<a href=#246 id=246 data-nosnippet>246</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::DataResponseMetadata;
+<a href=#247 id=247 data-nosnippet>247</a>    <span class="attr">#[doc(no_inline)]
+<a href=#248 id=248 data-nosnippet>248</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::DynamicDataProvider;
+<a href=#249 id=249 data-nosnippet>249</a>    <span class="attr">#[doc(no_inline)]
+<a href=#250 id=250 data-nosnippet>250</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::KeyedDataMarker;
+<a href=#251 id=251 data-nosnippet>251</a>
+<a href=#252 id=252 data-nosnippet>252</a>    <span class="attr">#[doc(hidden)]
+<a href=#253 id=253 data-nosnippet>253</a>    </span><span class="kw">pub use </span>yoke;
+<a href=#254 id=254 data-nosnippet>254</a>    <span class="attr">#[doc(hidden)]
+<a href=#255 id=255 data-nosnippet>255</a>    </span><span class="kw">pub use </span>zerofrom;
+<a href=#256 id=256 data-nosnippet>256</a>}
+<a href=#257 id=257 data-nosnippet>257</a>
+<a href=#258 id=258 data-nosnippet>258</a><span class="comment">// Additional crate re-exports for compatibility
+<a href=#259 id=259 data-nosnippet>259</a></span><span class="attr">#[doc(hidden)]
+<a href=#260 id=260 data-nosnippet>260</a></span><span class="kw">pub use </span>fallback::LocaleFallbackPriority <span class="kw">as </span>FallbackPriority;
+<a href=#261 id=261 data-nosnippet>261</a><span class="attr">#[doc(hidden)]
+<a href=#262 id=262 data-nosnippet>262</a></span><span class="kw">pub use </span>fallback::LocaleFallbackSupplement <span class="kw">as </span>FallbackSupplement;
+<a href=#263 id=263 data-nosnippet>263</a><span class="attr">#[doc(hidden)]
+<a href=#264 id=264 data-nosnippet>264</a></span><span class="kw">pub use </span>yoke;
+<a href=#265 id=265 data-nosnippet>265</a><span class="attr">#[doc(hidden)]
+<a href=#266 id=266 data-nosnippet>266</a></span><span class="kw">pub use </span>zerofrom;
+<a href=#267 id=267 data-nosnippet>267</a>
+<a href=#268 id=268 data-nosnippet>268</a><span class="comment">// For macros
+<a href=#269 id=269 data-nosnippet>269</a></span><span class="attr">#[doc(hidden)]
+<a href=#270 id=270 data-nosnippet>270</a></span><span class="kw">pub mod </span>_internal {
+<a href=#271 id=271 data-nosnippet>271</a>    <span class="kw">pub use </span><span class="kw">super</span>::fallback::{LocaleFallbackPriority, LocaleFallbackSupplement};
+<a href=#272 id=272 data-nosnippet>272</a>    <span class="kw">pub use </span>icu_locid <span class="kw">as </span>locid;
+<a href=#273 id=273 data-nosnippet>273</a>
+<a href=#274 id=274 data-nosnippet>274</a>    <span class="attr">#[cfg(feature = <span class="string">"logging"</span>)]
+<a href=#275 id=275 data-nosnippet>275</a>    </span><span class="kw">pub use </span>log;
+<a href=#276 id=276 data-nosnippet>276</a>
+<a href=#277 id=277 data-nosnippet>277</a>    <span class="attr">#[cfg(all(not(feature = <span class="string">"logging"</span>), debug_assertions, feature = <span class="string">"std"</span>))]
+<a href=#278 id=278 data-nosnippet>278</a>    </span><span class="kw">pub mod </span>log {
+<a href=#279 id=279 data-nosnippet>279</a>        <span class="kw">pub use </span>std::eprintln <span class="kw">as </span>error;
+<a href=#280 id=280 data-nosnippet>280</a>        <span class="kw">pub use </span>std::eprintln <span class="kw">as </span>warn;
+<a href=#281 id=281 data-nosnippet>281</a>        <span class="kw">pub use </span>std::eprintln <span class="kw">as </span>info;
+<a href=#282 id=282 data-nosnippet>282</a>        <span class="kw">pub use </span>std::eprintln <span class="kw">as </span>debug;
+<a href=#283 id=283 data-nosnippet>283</a>        <span class="kw">pub use </span>std::eprintln <span class="kw">as </span>trace;
+<a href=#284 id=284 data-nosnippet>284</a>    }
+<a href=#285 id=285 data-nosnippet>285</a>
+<a href=#286 id=286 data-nosnippet>286</a>    <span class="attr">#[cfg(all(
+<a href=#287 id=287 data-nosnippet>287</a>        not(feature = <span class="string">"logging"</span>),
+<a href=#288 id=288 data-nosnippet>288</a>        any(not(debug_assertions), not(feature = <span class="string">"std"</span>))
+<a href=#289 id=289 data-nosnippet>289</a>    ))]
+<a href=#290 id=290 data-nosnippet>290</a>    </span><span class="kw">pub mod </span>log {
+<a href=#291 id=291 data-nosnippet>291</a>        <span class="attr">#[macro_export]
+<a href=#292 id=292 data-nosnippet>292</a>        </span><span class="macro">macro_rules!</span> _internal_noop_log {
+<a href=#293 id=293 data-nosnippet>293</a>            ($(<span class="macro-nonterminal">$t</span>:expr),<span class="kw-2">*</span>) =&gt; {};
+<a href=#294 id=294 data-nosnippet>294</a>        }
+<a href=#295 id=295 data-nosnippet>295</a>        <span class="kw">pub use </span><span class="kw">crate</span>::_internal_noop_log <span class="kw">as </span>error;
+<a href=#296 id=296 data-nosnippet>296</a>        <span class="kw">pub use </span><span class="kw">crate</span>::_internal_noop_log <span class="kw">as </span>warn;
+<a href=#297 id=297 data-nosnippet>297</a>        <span class="kw">pub use </span><span class="kw">crate</span>::_internal_noop_log <span class="kw">as </span>info;
+<a href=#298 id=298 data-nosnippet>298</a>        <span class="kw">pub use </span><span class="kw">crate</span>::_internal_noop_log <span class="kw">as </span>debug;
+<a href=#299 id=299 data-nosnippet>299</a>        <span class="kw">pub use </span><span class="kw">crate</span>::_internal_noop_log <span class="kw">as </span>trace;
+<a href=#300 id=300 data-nosnippet>300</a>    }
+<a href=#301 id=301 data-nosnippet>301</a>}
+<a href=#302 id=302 data-nosnippet>302</a>
+<a href=#303 id=303 data-nosnippet>303</a><span class="attr">#[test]
+<a href=#304 id=304 data-nosnippet>304</a></span><span class="kw">fn </span>test_logging() {
+<a href=#305 id=305 data-nosnippet>305</a>    <span class="comment">// This should compile on all combinations of features
+<a href=#306 id=306 data-nosnippet>306</a>    </span><span class="macro">crate::_internal::log::info!</span>(<span class="string">"Hello World"</span>);
+<a href=#307 id=307 data-nosnippet>307</a>}</code></pre></div></section></main></body></html>
