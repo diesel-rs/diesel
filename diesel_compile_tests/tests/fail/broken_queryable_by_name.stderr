@@ -74,7 +74,7 @@ error[E0277]: the trait bound `Untyped: load_dsl::private::CompatibleType<User, 
    |
    = note: this is a mismatch between what your query returns and what your type expects the query to return
    = note: the fields in your struct need to match the fields returned by your query in count, order and type
-   = note: consider using `#[derive(Selectable)]` or #[derive(QueryableByName)] + `#[diesel(check_for_backend(_))]`
+   = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]`
            on your struct `User` and in your query `.select(User::as_select())` to get a better error message
    = help: the trait `load_dsl::private::CompatibleType<U, DB>` is implemented for `Untyped`
    = note: required for `SqlQuery` to implement `LoadQuery<'_, _, User>`

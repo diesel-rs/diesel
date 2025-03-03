@@ -271,7 +271,7 @@ where
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         out.push_sql("DISTINCT ON (");
         self.0.walk_ast(out.reborrow())?;
-        out.push_sql(")");
+        out.push_sql(") ");
         Ok(())
     }
 }

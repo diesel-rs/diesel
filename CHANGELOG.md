@@ -10,6 +10,16 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.2.8] 2025-03-03
+
+### Fixed
+
+* Allow `#[diesel(check_for_backend(_))]` to check fields with `#[diesel(embed)]` annotations
+* Improve custom compile error message around `CompatibleType`
+* Fix a bug that restricted the number of allowed columns in `COPY FROM` statements to 12
+* Expose some SqliteValue helper functions
+* Use consistent whitespace in `ASC`/`DESC`, `DISTINCT ON`, and `DELETE FROM` clauses
+
 ## [2.2.7] 2025-01-31
 
 ### Fixed
@@ -2179,3 +2189,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.2.5]: https://github.com/diesel-rs/diesel/compare/v2.2.4...v2.2.5
 [2.2.6]: https://github.com/diesel-rs/diesel/compare/v2.2.5...v2.2.6
 [2.2.7]: https://github.com/diesel-rs/diesel/compare/v2.2.6...v2.2.7
+[2.2.8]: https://github.com/diesel-rs/diesel/compare/v2.2.7...v2.2.8
