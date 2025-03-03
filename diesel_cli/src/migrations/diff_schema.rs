@@ -26,11 +26,11 @@ fn compatible_type_list() -> HashMap<&'static str, Vec<&'static str>> {
 
 #[tracing::instrument]
 pub fn generate_sql_based_on_diff_schema(
-    config: PrintSchema,
+    mut config: PrintSchema,
     matches: &ArgMatches,
     schema_file_path: &Path,
 ) -> Result<(String, String), crate::errors::Error> {
-    let mut config = config.set_filter(matches)?;
+    config.set_filter(matches)?;
 
     let project_root = crate::find_project_root()?;
 
