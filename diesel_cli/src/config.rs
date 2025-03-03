@@ -241,8 +241,8 @@ impl Config {
 
                     if let Some(allow_tables_to_appear_in_same_query_config) =
                         allow_tables_to_appear_in_same_query_config_with_indices
-                            .clone()
-                            .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.clone()))
+                            .as_ref()
+                            .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.as_str()))
                     {
                         print_schema.allow_tables_to_appear_in_same_query_config =
                             allow_tables_to_appear_in_same_query_config
