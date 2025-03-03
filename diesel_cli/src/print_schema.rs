@@ -6,8 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashSet};
 use std::fmt::{self, Display, Formatter, Write};
 use std::io::Write as IoWrite;
-use std::process;
-use std::str;
+use std::{process, str};
 
 const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 
@@ -598,11 +597,8 @@ impl Display for TableDefinitions<'_> {
             {
                 let mut out = PadAdapter::new(f);
                 writeln!(out)?;
-                for (table_index, table) in table_group.into_iter().enumerate() {
-                    if table_index != 0 {
-                        write!(out, ", ")?;
-                    }
-                    write!(out, "{}", table.rust_name)?;
+                for table in table_group {
+                    write!(out, "{},", table.rust_name)?;
                 }
             }
             writeln!(f, ");")?;
