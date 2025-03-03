@@ -1,4 +1,4 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use std::borrow::Cow;
 use syn::spanned::Spanned;
@@ -54,7 +54,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             .zip(&field_select_expression_type_builders)
             .flat_map(|(f, ty_builder)| {
                 backends.iter().map(move |b| {
-                    let span = f.ty.span();
+                    let span = Span::mixed_site().located_at(f.ty.span());
                     let field_ty = to_field_ty_bound(f.ty_for_deserialize())?;
                     let ty = ty_builder.type_with_backend(b);
                     Ok(syn::parse_quote_spanned! {span =>
