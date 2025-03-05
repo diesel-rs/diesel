@@ -12,3 +12,4 @@ mod json;
 mod option;
 mod primitives;
 pub(crate) mod tuples;
+mod uuid;

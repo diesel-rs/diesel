@@ -210,6 +210,27 @@ pub type Decimal = Numeric;
 #[diesel(mysql_type(name = "String"))]
 pub struct Text;
 
+#[cfg(feature = "uuid")]
+/// The [`UUID`] SQL type. This type can only be used with `feature = "uuid"`
+///
+/// ### [`ToSql`] impls
+///
+/// - [`uuid::Uuid`][Uuid]
+///
+/// ### [`FromSql`] impls
+///
+/// - [`uuid::Uuid`][Uuid]
+///
+/// [`ToSql`]: crate::serialize::ToSql
+/// [`FromSql`]: crate::deserialize::FromSql
+/// [Uuid]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
+/// [`UUID`]: https://www.postgresql.org/docs/current/datatype-uuid.html
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[diesel(postgres_type(oid = 2950, array_oid = 2951))]
+#[diesel(sqlite_type(name = "Binary"))]
+#[diesel(mysql_type(name = "Blob"))]
+pub struct Uuid;
+
 /// The SQL `VARCHAR` type
 ///
 /// This type is generally interchangeable with `TEXT`, so Diesel has this as an
