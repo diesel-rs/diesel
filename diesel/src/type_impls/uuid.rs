@@ -1,8 +1,7 @@
-use std::io::prelude::*;
+extern crate uuid;
 
 use crate::deserialize::{self, FromSql, FromSqlRow};
 use crate::expression::AsExpression;
-use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::Uuid;
 
@@ -12,24 +11,41 @@ use crate::sql_types::Uuid;
 #[allow(dead_code)]
 struct UuidProxy(uuid::Uuid);
 
-#[cfg(all(feature = "postgres_backend", feature = "uuid"))]
-impl FromSql<Uuid, Pg> for uuid::Uuid {
-    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+#[cfg(feature = "postgres_backend")]
+impl FromSql<Uuid, crate::pg::Pg> for uuid::Uuid {
+    fn from_sql(value: crate::pg::PgValue<'_>) -> deserialize::Result<Self> {
         uuid::Uuid::from_slice(value.as_bytes()).map_err(Into::into)
     }
 }
 
-#[cfg(all(feature = "postgres_backend", feature = "uuid"))]
-impl ToSql<Uuid, Pg> for uuid::Uuid {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+#[cfg(feature = "postgres_backend")]
+impl ToSql<Uuid, crate::pg::Pg> for uuid::Uuid {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, crate::pg::Pg>) -> serialize::Result {
+        use std::io::Write;
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
             .map_err(Into::into)
     }
 }
 
+#[cfg(feature = "sqlite")]
+impl ToSql<Uuid, crate::sqlite::Sqlite> for uuid::Uuid {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, crate::sqlite::Sqlite>) -> serialize::Result {
+        out.set_value(self.as_bytes().as_slice());
+        Ok(IsNull::No)
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl FromSql<Uuid, crate::sqlite::Sqlite> for uuid::Uuid {
+    fn from_sql(mut value: crate::sqlite::SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
+        uuid::Uuid::from_slice(value.read_blob()).map_err(Into::into)
+    }
+}
+
 #[cfg(test)]
-mod tests {
+#[cfg(feature = "postgres_backend")]
+mod postgres_tests {
     use super::*;
 
     #[diesel_test_helper::test]
@@ -44,7 +60,7 @@ mod tests {
 
         let test_uuid = uuid::Uuid::from_slice(&bytes).unwrap();
         let mut bytes = Output::test(ByteWrapper(&mut buffer));
-        ToSql::<Uuid, Pg>::to_sql(&test_uuid, &mut bytes).unwrap();
+        ToSql::<Uuid, crate::pg::Pg>::to_sql(&test_uuid, &mut bytes).unwrap();
         assert_eq!(&buffer, test_uuid.as_bytes());
     }
 
@@ -55,15 +71,16 @@ mod tests {
             0x31, 0x32,
         ];
         let input_uuid = uuid::Uuid::from_slice(&bytes).unwrap();
-        let output_uuid =
-            <uuid::Uuid as FromSql<Uuid, Pg>>::from_sql(PgValue::for_test(input_uuid.as_bytes()))
-                .unwrap();
+        let output_uuid = <uuid::Uuid as FromSql<Uuid, crate::pg::Pg>>::from_sql(
+            crate::pg::PgValue::for_test(input_uuid.as_bytes()),
+        )
+        .unwrap();
         assert_eq!(input_uuid, output_uuid);
     }
 
     #[diesel_test_helper::test]
     fn bad_uuid_from_sql() {
-        let uuid = uuid::Uuid::from_sql(PgValue::for_test(b"boom"));
+        let uuid = uuid::Uuid::from_sql(crate::pg::PgValue::for_test(b"boom"));
         assert!(uuid.is_err());
         // The error message changes slightly between different
         // uuid versions, so we just check on the relevant parts

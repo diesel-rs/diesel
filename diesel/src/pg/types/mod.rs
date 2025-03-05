@@ -23,8 +23,6 @@ pub(in crate::pg) mod pg_lsn;
 mod primitives;
 mod ranges;
 mod record;
-#[cfg(feature = "uuid")]
-mod uuid;
 
 /// PostgreSQL specific SQL types
 ///
@@ -312,25 +310,6 @@ pub mod sql_types {
     /// Alias for [`BigInt`](crate::sql_types::BigInt)
     #[cfg(feature = "postgres_backend")]
     pub type BigSerial = crate::sql_types::BigInt;
-
-    /// The [`UUID`] SQL type. This type can only be used with `feature = "uuid"`
-    ///
-    /// ### [`ToSql`] impls
-    ///
-    /// - [`uuid::Uuid`][Uuid]
-    ///
-    /// ### [`FromSql`] impls
-    ///
-    /// - [`uuid::Uuid`][Uuid]
-    ///
-    /// [`ToSql`]: crate::serialize::ToSql
-    /// [`FromSql`]: crate::deserialize::FromSql
-    /// [Uuid]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
-    /// [`UUID`]: https://www.postgresql.org/docs/current/datatype-uuid.html
-    #[cfg(feature = "postgres_backend")]
-    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[diesel(postgres_type(oid = 2950, array_oid = 2951))]
-    pub struct Uuid;
 
     /// Alias for `Binary`, to ensure `diesel print-schema` works
     pub type Bytea = crate::sql_types::Binary;
