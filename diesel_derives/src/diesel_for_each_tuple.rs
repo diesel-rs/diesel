@@ -7,8 +7,10 @@ pub const MAX_TUPLE_SIZE: i32 = 16;
 pub const MAX_TUPLE_SIZE: i32 = 32;
 #[cfg(all(not(feature = "128-column-tables"), feature = "64-column-tables"))]
 pub const MAX_TUPLE_SIZE: i32 = 64;
-#[cfg(feature = "128-column-tables")]
+#[cfg(all(not(feature = "256-column-tables"), feature = "128-column-tables"))]
 pub const MAX_TUPLE_SIZE: i32 = 128;
+#[cfg(feature = "256-column-tables")]
+pub const MAX_TUPLE_SIZE: i32 = 256;
 
 pub(crate) fn expand(input: ForEachTupleInput) -> TokenStream {
     let call_side = Span::mixed_site();
