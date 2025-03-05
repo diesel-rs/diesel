@@ -7,9 +7,13 @@ const DEFAULT_PRIMARY_KEY_NAME: &str = "id";
 
 pub(crate) fn expand(input: TableDecl) -> TokenStream {
     if input.column_defs.len() > super::diesel_for_each_tuple::MAX_TUPLE_SIZE as usize {
-        let txt = if input.column_defs.len() > 128 {
+        let txt = if input.column_defs.len() > 256 {
             "You reached the end. Diesel does not support tables with \
-             more than 128 columns. Consider using less columns."
+             more than 256 columns. Consider using less columns."
+        } else if input.column_defs.len() > 128 {
+            "Table contains more than 64 columns. Consider enabling the \
+             `256-column-tables` feature to enable diesels support for \
+             tables with more than 64 columns."
         } else if input.column_defs.len() > 64 {
             "Table contains more than 64 columns. Consider enabling the \
              `128-column-tables` feature to enable diesels support for \
