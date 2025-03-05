@@ -192,6 +192,8 @@
 //!   `32-column-tables` feature. Enabling this feature will increase your compile times.
 //! - `128-column-tables`: This feature enables support for tables with up to 128 columns. It implies the
 //!   `64-column-tables` feature. Enabling this feature will increase your compile times significantly.
+//! - `256-column-tables`: This feature enables support for tables with up to 256 columns. It implies the
+//!   `128-column-tables` feature. Enabling this feature will increase your compile times significantly.
 //! - `i-implement-a-third-party-backend-and-opt-into-breaking-changes`: This feature opens up some otherwise
 //!   private API, that can be useful to implement a third party [`Backend`](crate::backend::Backend)
 //!   or write a custom [`Connection`] implementation. **Do not use this feature for
