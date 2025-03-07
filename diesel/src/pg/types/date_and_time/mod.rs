@@ -25,7 +25,7 @@ pub struct PgTimestamp(pub i64);
 
 impl Defaultable for PgTimestamp {
     fn default_value() -> Self {
-      PgTimestamp(0)
+        PgTimestamp(0)
     }
 }
 
@@ -39,7 +39,7 @@ pub struct PgDate(pub i32);
 
 impl Defaultable for PgDate {
     fn default_value() -> Self {
-      PgDate(0)
+        PgDate(0)
     }
 }
 
