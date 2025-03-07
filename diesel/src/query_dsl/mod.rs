@@ -618,6 +618,26 @@ pub trait QueryDsl: Sized {
         self.left_outer_join(rhs)
     }
 
+    // TODO: doc  comment
+    #[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
+    fn full_outer_join<Rhs>(self, rhs: Rhs) -> FullJoin<Self, Rhs>
+    where
+        Self: JoinWithImplicitOnClause<Rhs, joins::FullOuter>,
+    {
+        self.join_with_implicit_on_clause(rhs, joins::FullOuter)
+    }
+
+    #[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
+    /// Alias for [`full_outer_join`].
+    ///
+    /// [`full_outer_join`]: QueryDsl::full_outer_join()
+    fn full_join<Rhs>(self, rhs: Rhs) -> FullJoin<Self, Rhs>
+    where
+        Self: JoinWithImplicitOnClause<Rhs, joins::FullOuter>,
+    {
+        self.full_outer_join(rhs)
+    }
+
     /// Adds to the `WHERE` clause of a query.
     ///
     /// If there is already a `WHERE` clause, the result will be `old AND new`.

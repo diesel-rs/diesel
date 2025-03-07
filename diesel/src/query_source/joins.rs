@@ -160,6 +160,43 @@ where
     }
 }
 
+#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
+impl<Left, Right> QuerySource for Join<Left, Right, FullOuter>
+where
+    Left: QuerySource,
+    Right: QuerySource,
+    Nullable<Left::DefaultSelection>: AppendSelection<Nullable<Right::DefaultSelection>>,
+    <Nullable<Left::DefaultSelection> as AppendSelection<Nullable<Right::DefaultSelection>>>::Output:
+        AppearsOnTable<Self>,
+    Self: Clone,
+{
+    type FromClause = Self;
+    // combining two valid selectable expressions for both tables will always yield a
+    // valid selectable expressions for the whole join, so no need to check that here
+    // again. These checked turned out to be quite expensive in terms of compile time
+    // so we use a wrapper type to just skip the check and forward other more relevant
+    // trait implementations to the inner type
+    //
+    // See https://github.com/diesel-rs/diesel/issues/3223 for details
+    type DefaultSelection = self::private::SkipSelectableExpressionBoundCheckWrapper<
+        <Nullable<Left::DefaultSelection> as AppendSelection<Nullable<Right::DefaultSelection>>>::Output,
+    >;
+
+    fn from_clause(&self) -> Self::FromClause {
+        self.clone()
+    }
+
+    fn default_selection(&self) -> Self::DefaultSelection {
+        self::private::SkipSelectableExpressionBoundCheckWrapper(
+            self.left
+                .source
+                .default_selection()
+                .nullable()
+                .append_selection(self.right.source.default_selection().nullable()),
+        )
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct OnKeyword;
 
@@ -251,6 +288,15 @@ impl<T: Table, Selection> AppendSelection<Selection> for T {
     }
 }
 
+// TODO: not sure if this is the best way, but the existing impls aren't sufficient
+impl<Left: Expression + Clone, Selection> AppendSelection<Selection> for Nullable<Left> {
+    type Output = (Nullable<Left>, Selection);
+
+    fn append_selection(&self, selection: Selection) -> Self::Output {
+        (self.clone(), selection)
+    }
+}
+
 impl<Left, Mid, Selection, Kind> AppendSelection<Selection> for Join<Left, Mid, Kind>
 where
     Left: QuerySource,
@@ -300,6 +346,22 @@ where
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" LEFT OUTER");
+        Ok(())
+    }
+}
+
+#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
+pub struct FullOuter;
+
+#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
+impl<DB> QueryFragment<DB> for FullOuter
+where
+    DB: Backend + DieselReserveSpecialization,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_sql(" FULL OUTER");
         Ok(())
     }
 }
@@ -407,6 +469,7 @@ impl<Qs, On> QueryDsl for OnClauseWrapper<Qs, On> {}
 /// may be deeply nested, we need to recursively change any appearances of
 /// `LeftOuter` to `Inner` in order to perform this check.
 pub trait ToInnerJoin {
+    // TODO: does anything need to be done for full join here?
     type InnerJoin;
 }
 
