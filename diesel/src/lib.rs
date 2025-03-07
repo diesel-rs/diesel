@@ -129,7 +129,7 @@
 //!    executing a query:
 //!    This error message indicates that you're trying to select a field from a table
 //!    that does not appear in your from clause. If your query joins the relevant table via
-//!    [`left_join`](crate::query_dsl::QueryDsl::left_join) you need to call
+//!    [`left_join`](crate::query_dsl::QueryDsl::left_join) or [`full_join`](crate::query_dsl::QueryDsl::full_join) you need to call
 //!    [`.nullable()`](crate::expression_methods::NullableExpressionMethods::nullable)
 //!    on the relevant column in your select clause.
 //!
@@ -467,6 +467,16 @@ pub mod helper_types {
     pub type LeftJoinOn<Source, Rhs, On> =
         <Source as InternalJoinDsl<Rhs, joins::LeftOuter, On>>::Output;
 
+    #[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
+    /// Represents the return type of [`.full_join(rhs)`](crate::prelude::QueryDsl::full_join)
+    pub type FullJoin<Source, Rhs> =
+        <Source as JoinWithImplicitOnClause<Rhs, joins::FullOuter>>::Output;
+
+    #[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
+    /// Represents the return type of [`.full_join(rhs.on(on))`](crate::prelude::QueryDsl::full_join)
+    pub type FullJoinOn<Source, Rhs, On> =
+        <Source as InternalJoinDsl<Rhs, joins::FullOuter, On>>::Output;
+
     /// Represents the return type of [`rhs.on(on)`](crate::query_dsl::JoinOnDsl::on)
     pub type On<Source, On> = joins::OnClauseWrapper<Source, On>;
 
@@ -645,6 +655,11 @@ pub mod helper_types {
     /// ```
     pub type LeftJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
         JoinQuerySource<Left, Right, joins::LeftOuter, On>;
+
+    #[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
+    // TODO: doc comment
+    pub type FullJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
+        JoinQuerySource<Left, Right, joins::FullOuter, On>;
 
     /// Maps `F` to `Alias<S>`
     ///
