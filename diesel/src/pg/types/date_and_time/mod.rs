@@ -1,6 +1,6 @@
 use std::ops::Add;
 
-use crate::deserialize::{self, FromSql, FromSqlRow};
+use crate::deserialize::{self, Defaultable, FromSql, FromSqlRow};
 use crate::expression::AsExpression;
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
@@ -23,6 +23,12 @@ mod time;
 /// the integer's meaning.
 pub struct PgTimestamp(pub i64);
 
+impl Defaultable for PgTimestamp {
+    fn default_value() -> Self {
+      PgTimestamp(0)
+    }
+}
+
 #[cfg(feature = "postgres_backend")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, AsExpression, FromSqlRow)]
 #[diesel(sql_type = Date)]
@@ -31,6 +37,12 @@ pub struct PgTimestamp(pub i64);
 /// integer's meaning.
 pub struct PgDate(pub i32);
 
+impl Defaultable for PgDate {
+    fn default_value() -> Self {
+      PgDate(0)
+    }
+}
+
 /// Time is represented in Postgres as a 64 bit signed integer representing the number of
 /// microseconds since midnight. This struct is a dumb wrapper type, meant only to indicate the
 /// integer's meaning.
@@ -38,6 +50,12 @@ pub struct PgDate(pub i32);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, AsExpression, FromSqlRow)]
 #[diesel(sql_type = Time)]
 pub struct PgTime(pub i64);
+
+impl Defaultable for PgTime {
+    fn default_value() -> Self {
+        PgTime(0)
+    }
+}
 
 /// Intervals in Postgres are separated into 3 parts. A 64 bit integer representing time in
 /// microseconds, a 32 bit integer representing number of days, and a 32 bit integer
