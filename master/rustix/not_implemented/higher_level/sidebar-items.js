@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["closefrom","execv","execvp","execvpe","gethostbyname","getpwent","getpwnam","getpwnam_r","getpwuid","getpwuid_r","isatty","login_tty","openpty","wordexp"]};
