@@ -7,7 +7,7 @@ use crate::infer_schema_internals::TableName;
 pub enum Error {
     #[error("Initializing `.env` file failed: {0}")]
     DotenvError(#[from] dotenvy::Error),
-    #[error("Could not connect to database: {error}")]
+    #[error("Could not connect to database via `{url}`: {error}")]
     ConnectionError {
         error: diesel::ConnectionError,
         url: String,
