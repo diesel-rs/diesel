@@ -928,19 +928,25 @@ extern "SQL" {
     ///     println!("SQLite version is too old, skipping the test.");
     ///     return Ok(());
     /// }
-    /// let test_value = 3.14159
-    /// 
-    /// let result = diesel::select(json_quote::<Integer, _>(test_value)
+    /// let test_value = 42;
+    /// let result = diesel::select(json_quote::<Integer, _>(test_value))
     ///     .get_result::<Option<String>>(connection)?;
     ///
-    /// assert_eq!(Some(test_value), result);
+    /// assert_eq!(Some("42".to_string()), result);
     ///
     /// # Ok(())
     /// # }
     /// ```
     #[sql_name = "json_quote"]
     #[cfg(feature = "sqlite")]
-    fn json_quote<J: MaybeNullableValue<Integer> + MaybeNullableValue<Text>>(
-        j: J,
-    ) -> JsonOrNullableJson; 
+    fn json_quote<J: MaybeNullableValue<Integer> + MaybeNullableValue<Text>>( // Have to add Supoprt for Real/Floates, how? Existing Datatype?
+        j: J
+    ) -> Nullable<Text>;
 }
+ // double test case
+ // let test_value = 3.14159;
+ // let result = diesel::select(json_quote::<Integer, _>(test_value))
+ //     .get_result::<Option<String>>(connection)?;
+ //
+ // assert_eq!(Some("3.14159".to_string()), result);
+ 
