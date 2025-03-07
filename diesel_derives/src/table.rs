@@ -690,6 +690,23 @@ fn expand_column_def(column_def: &ColumnDef) -> TokenStream {
     let sql_name = &column_def.sql_name;
     let sql_type = &column_def.tpe;
 
+    let full_join_impl = if cfg!(any(feature = "postgres", feature = "sqlite")) {
+        Some(quote::quote! {
+          impl<Left, Right> diesel::SelectableExpression<
+                  diesel::internal::table_macro::Join<Left, Right, diesel::internal::table_macro::FullOuter>,
+              > for #column_name where
+              #column_name: diesel::AppearsOnTable<diesel::internal::table_macro::Join<Left, Right, diesel::internal::table_macro::FullOuter>>,
+              Self: diesel::SelectableExpression<Left>,
+              // `Nullable<Self>` can be selected for both left and right
+              Left: diesel::query_source::AppearsInFromClause<super::table, Count=diesel::query_source::Never> + diesel::query_source::QuerySource,
+              Right: diesel::query_source::AppearsInFromClause<super::table, Count=diesel::query_source::Never> + diesel::query_source::QuerySource,
+          {
+          }
+        })
+    } else {
+        None
+    };
+
     let backend_specific_column_impl = if cfg!(feature = "postgres") {
         Some(quote::quote! {
             impl diesel::query_source::AppearsInFromClause<diesel::query_builder::Only<super::table>>
@@ -851,6 +868,7 @@ fn expand_column_def(column_def: &ColumnDef) -> TokenStream {
         #max_length
 
         #ops_impls
+        #full_join_impl
         #backend_specific_column_impl
     }
 }
