@@ -24,7 +24,7 @@ include = [
 byteorder = { version = "1.0", optional = true }
 chrono = { version = "0.4.20", optional = true, default-features = false, features = ["clock", "std"] }
 libc = { version = "0.2.0", optional = true }
-libsqlite3-sys = { version = ">=0.17.2, <0.32.0", optional = true, features = ["bundled_bindings"] }
+libsqlite3-sys = { version = ">=0.17.2, <0.33.0", optional = true, features = ["bundled_bindings"] }
 mysqlclient-sys = { version = ">=0.2.5, <0.5.0",  optional = true }
 mysqlclient-src = { version = "0.1.0", optional = true }
 pq-sys = { version = ">=0.4.0, <0.8.0", optional = true }
@@ -80,6 +80,8 @@ i-implement-a-third-party-backend-and-opt-into-breaking-changes = []
 r2d2 = ["diesel_derives/r2d2", "dep:r2d2"]
 chrono = ["diesel_derives/chrono", "dep:chrono"]
 time = ["diesel_derives/time", "dep:time"]
+uuid = ["dep:uuid"]
+serde_json = ["dep:serde_json"]
 __with_asan_tests = [
     "libsqlite3-sys?/bundled",
     "libsqlite3-sys?/with-asan",

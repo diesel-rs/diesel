@@ -11,6 +11,29 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ## Unreleased
 
 ## [2.2.8] 2025-03-03
+### Added
+
+* Added `limit()` and `offset()` DSL to combination clauses such as `UNION`
+* Fixed `#[derive(Identifiable)]` ignoring attribute `#[diesel(serialize_as)]` on primary keys
+* Added embedded struct support for `AsChangeset` via `#[diesel(embed)]`
+* Added a `#[diesel(skip_update)]` attribute for the `AsChangeset` derive to skip updating a field present in the struct
+* Support for libsqlite3-sys 0.32.0
+* Add support for built-in PostgreSQL range operators and functions
+* Support for postgres multirange type
+* Added `diesel::r2d2::TestCustomizer`, which allows users to customize their `diesel::r2d2::Pool`s
+in a way that makes the pools suitable for use in parallel tests.
+* Added support for built-in PostgreSQL range operators and functions
+* Added support for various built-in PostgreSQL array functions
+* Added `Json` and `Jsonb` support for the SQLite backend.
+* Added a `#[diesel::declare_sql_function]` attribute macro to easily define support for 
+  multiple sql functions at once via an `extern "SQL"` block
+* Support `[print_schema] allow_tables_to_appear_in_same_query_config = "fk_related_tables"` to generate separate `allow_tables_to_appear_in_same_query!` calls containing only tables that are related through foreign keys. (Default: `"all_tables"`.) It is not possible to build queries using two tables that don't appear in the same `allow_tables_to_appear_in_same_query!` call, but that macro generates O(n²) rust code, so this option may be useful to reduce compilation time. ([#4333](https://github.com/diesel-rs/diesel/issues/4333))
+
+### Fixed 
+
+* Fixed diesel thinking `a.eq_any(b)` was non-nullable even if `a` and `b` were nullable.
+* Generate `InstrumentationEvent::BeginTransaction` for immediate and exclusive transactions in SQLite
+* Added `wasm32-unknown-unknown` target support for sqlite backend.
 
 ### Fixed
 
