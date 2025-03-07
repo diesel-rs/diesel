@@ -15,7 +15,7 @@ mod sea_orm_benches;
 mod sqlx_benches;
 #[cfg(all(feature = "postgres", feature = "tokio_postgres"))]
 mod tokio_postgres_benches;
-#[cfg(feature = "wtx")]
+#[cfg(all(feature = "wtx", not(feature = "sqlite")))]
 mod wtx;
 
 use criterion::{BenchmarkId, Criterion};
@@ -170,7 +170,7 @@ fn bench_trivial_query(c: &mut CriterionType) {
             crate::sea_orm_benches::bench_trivial_query(b, *i);
         });
 
-        #[cfg(all(feature = "postgres", feature = "wtx"))]
+        #[cfg(all(feature = "wtx", not(feature = "sqlite")))]
         group.bench_with_input(BenchmarkId::new("wtx", size), size, |b, i| {
             crate::wtx::bench_trivial_query(b, *i);
         });
@@ -286,7 +286,7 @@ fn bench_medium_complex_query(c: &mut CriterionType) {
             crate::sea_orm_benches::bench_medium_complex_query(b, *i);
         });
 
-        #[cfg(all(feature = "postgres", feature = "wtx"))]
+        #[cfg(all(feature = "wtx", not(feature = "sqlite")))]
         group.bench_with_input(BenchmarkId::new("wtx", size), size, |b, i| {
             crate::wtx::bench_medium_complex_query(b, *i);
         });
@@ -343,7 +343,7 @@ fn bench_loading_associations_sequentially(c: &mut CriterionType) {
         crate::sea_orm_benches::loading_associations_sequentially(b);
     });
 
-    #[cfg(feature = "wtx")]
+    #[cfg(all(feature = "wtx", not(feature = "sqlite")))]
     group.bench_function("wtx", |b| {
         crate::wtx::bench_loading_associations_sequentially(b);
     });
@@ -399,7 +399,7 @@ fn bench_insert(c: &mut CriterionType) {
             crate::sea_orm_benches::bench_insert(b, *i);
         });
 
-        #[cfg(all(feature = "postgres", feature = "wtx"))]
+        #[cfg(all(feature = "wtx", not(feature = "sqlite")))]
         group.bench_with_input(BenchmarkId::new("wtx", size), size, |b, i| {
             crate::wtx::bench_insert(b, *i);
         });
