@@ -58,3 +58,13 @@ pub type json_type<E> = super::functions::json_type<SqlTypeOf<E>, E>;
 #[allow(non_camel_case_types)]
 #[cfg(feature = "sqlite")]
 pub type json_type_with_path<J, P> = super::functions::json_type_with_path<SqlTypeOf<J>, J, P>;
+
+/// Return type of [`json_extract(json, path)`](super::functions::json_extract())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_extract<J, P> = super::functions::json_extract<J, P, J, P>;
+
+/// Return type of [`jsonb_extract(json, path)`](super::functions::jsonb_extract())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type jsonb_extract<J, P> = super::functions::jsonb_extract<J, P, J, P>;
