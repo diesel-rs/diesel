@@ -910,7 +910,7 @@ extern "SQL" {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::{sql, json_quote};
     /// #     use serde_json::{json, Value};
-    /// #     use diesel::sql_types::{Text, Integer, Nullable};
+    /// #     use diesel::sql_types::{Text, Json, Integer, Nullable};
     /// #     let connection = &mut establish_connection();
     ///
     /// let version = diesel::select(sql::<Text>("sqlite_version();"))
@@ -928,25 +928,41 @@ extern "SQL" {
     ///     println!("SQLite version is too old, skipping the test.");
     ///     return Ok(());
     /// }
-    /// let test_value = 42;
-    /// let result = diesel::select(json_quote::<Integer, _>(test_value))
+    /// let result = diesel::select(json_quote::<Integer, _>(42))
     ///     .get_result::<Option<String>>(connection)?;
-    ///
     /// assert_eq!(Some("42".to_string()), result);
+    ///
+    /// let result = diesel::select(json_quote::<Text, _>("verdant"))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert_eq!(Some("\"verdant\"".to_string()), result);
+    ///
+    /// let result = diesel::select(json_quote::<Text, _>("[1]"))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert_eq!(Some("\"[1]\"".to_string()), result);
+    ///
+    /// let result = diesel::select(json_quote::<Nullable<Text>, _>(None::<&str>))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert_eq!(Some("null".to_string()), result);
+    ///
+    // COMENT----------------------------------------
+    // BELOW NONE WORKING TESTS, JSON and FLOAT TYPES
+    // DATATYPE FOR FLOAT NEEDED & JSON IS TREATED AS TEXT
+    // let result = diesel::select(json_quote::<Json, _>(json!([1])))
+    //     .get_result::<Option<String>>(connection)?;
+    // assert_eq!(Some("[1]".to_string()), result);
+    // 
+    // let result = diesel::select(json_quote::<Integer, _>(3.14159))
+    //     .get_result::<Option<String>>(connection)?;
+    //
+    // assert_eq!(Some("3.14159".to_string()), result);
+    // COMENT----------------------------------------
     ///
     /// # Ok(())
     /// # }
     /// ```
     #[sql_name = "json_quote"]
     #[cfg(feature = "sqlite")]
-    fn json_quote<J: MaybeNullableValue<Integer> + MaybeNullableValue<Text>>( // Have to add Supoprt for Real/Floates, how? Existing Datatype?
+    fn json_quote<J: MaybeNullableValue<Json> + MaybeNullableValue<Integer> + MaybeNullableValue<Text>>(  // Have to add Supoprt for Real/Floates, how? Existing Datatype?
         j: J
     ) -> Nullable<Text>;
 }
- // double test case
- // let test_value = 3.14159;
- // let result = diesel::select(json_quote::<Integer, _>(test_value))
- //     .get_result::<Option<String>>(connection)?;
- //
- // assert_eq!(Some("3.14159".to_string()), result);
- 
