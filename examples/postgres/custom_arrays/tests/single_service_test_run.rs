@@ -14,7 +14,7 @@ fn postgres_connection() -> PgConnection {
         .or_else(|_| env::var("DATABASE_URL"))
         .expect("PG_DATABASE_URL must be set");
     let mut conn = PgConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
+        .unwrap_or_else(|e| panic!("Failed to connect, error: {}", e));
     conn.begin_test_transaction()
         .expect("Failed to begin test transaction");
     conn
