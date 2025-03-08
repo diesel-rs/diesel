@@ -892,4 +892,77 @@ extern "SQL" {
         j: J,
         path: Text,
     ) -> Nullable<Text>;
+
+    /// The json_quote(X) function converts the SQL value X (a number or a string) into its corresponding JSON 
+    /// representation. If X is a JSON value returned by another JSON function, then this function is a no-op. 
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{sql, json_quote};
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Text, Json, Integer, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let version = diesel::select(sql::<Text>("sqlite_version();"))
+    ///         .get_result::<String>(connection)?;
+    ///
+    /// // Querying SQLite version should not fail.
+    /// let version_components: Vec<&str> = version.split('.').collect();
+    /// let major: u32 = version_components[0].parse().unwrap();
+    /// let minor: u32 = version_components[1].parse().unwrap();
+    /// let patch: u32 = version_components[2].parse().unwrap();
+    ///
+    /// if major > 3 || (major == 3 && minor >= 38) {
+    ///     /* Valid sqlite version, do nothing */
+    /// } else {
+    ///     println!("SQLite version is too old, skipping the test.");
+    ///     return Ok(());
+    /// }
+    /// let result = diesel::select(json_quote::<Integer, _>(42))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert_eq!(Some("42".to_string()), result);
+    ///
+    /// let result = diesel::select(json_quote::<Text, _>("verdant"))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert_eq!(Some("\"verdant\"".to_string()), result);
+    ///
+    /// let result = diesel::select(json_quote::<Text, _>("[1]"))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert_eq!(Some("\"[1]\"".to_string()), result);
+    ///
+    /// let result = diesel::select(json_quote::<Nullable<Text>, _>(None::<&str>))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert_eq!(Some("null".to_string()), result);
+    ///
+    // COMENT----------------------------------------
+    // BELOW NONE WORKING TESTS, JSON and FLOAT TYPES
+    // DATATYPE FOR FLOAT NEEDED & JSON IS TREATED AS TEXT
+    // let result = diesel::select(json_quote::<Json, _>(json!([1])))
+    //     .get_result::<Option<String>>(connection)?;
+    // assert_eq!(Some("[1]".to_string()), result);
+    // 
+    // let result = diesel::select(json_quote::<Integer, _>(3.14159))
+    //     .get_result::<Option<String>>(connection)?;
+    //
+    // assert_eq!(Some("3.14159".to_string()), result);
+    // COMENT----------------------------------------
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "json_quote"]
+    #[cfg(feature = "sqlite")]
+    fn json_quote<J: MaybeNullableValue<Json> + MaybeNullableValue<Integer> + MaybeNullableValue<Text>>(  // Have to add Supoprt for Real/Floates, how? Existing Datatype?
+        j: J
+    ) -> Nullable<Text>;
 }
