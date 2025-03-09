@@ -19,10 +19,7 @@ pub use crate::query_source::aliasing::{
     AliasAppearsInFromClause, FieldAliasMapperAssociatedTypesDisjointnessTrick,
 };
 #[doc(hidden)]
-#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
-pub use crate::query_source::joins::FullOuter;
-#[doc(hidden)]
-pub use crate::query_source::joins::{Inner, Join, JoinOn, LeftOuter};
+pub use crate::query_source::joins::{FullOuter, Inner, Join, JoinOn, LeftOuter};
 #[doc(hidden)]
 pub use crate::query_source::private::Pick;
 

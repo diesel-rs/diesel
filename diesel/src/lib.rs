@@ -467,12 +467,10 @@ pub mod helper_types {
     pub type LeftJoinOn<Source, Rhs, On> =
         <Source as InternalJoinDsl<Rhs, joins::LeftOuter, On>>::Output;
 
-    #[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
     /// Represents the return type of [`.full_join(rhs)`](crate::prelude::QueryDsl::full_join)
     pub type FullJoin<Source, Rhs> =
         <Source as JoinWithImplicitOnClause<Rhs, joins::FullOuter>>::Output;
 
-    #[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
     /// Represents the return type of [`.full_join(rhs.on(on))`](crate::prelude::QueryDsl::full_join)
     pub type FullJoinOn<Source, Rhs, On> =
         <Source as InternalJoinDsl<Rhs, joins::FullOuter, On>>::Output;
@@ -656,7 +654,6 @@ pub mod helper_types {
     pub type LeftJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
         JoinQuerySource<Left, Right, joins::LeftOuter, On>;
 
-    #[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
     // TODO: doc comment
     pub type FullJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
         JoinQuerySource<Left, Right, joins::FullOuter, On>;

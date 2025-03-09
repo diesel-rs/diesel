@@ -67,6 +67,8 @@ impl SqlDialect for Sqlite {
     type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
     type ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison;
     type AliasSyntax = sql_dialect::alias_syntax::AsAliasSyntax;
+
+    type FullJoinSupport = sql_dialect::full_join_support::PostgresLikeFullJoinSupport;
 }
 
 impl DieselReserveSpecialization for Sqlite {}

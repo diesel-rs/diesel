@@ -1,6 +1,8 @@
 use super::{AppearsInFromClause, Plus};
+use crate::backend::sql_dialect;
 use crate::backend::Backend;
 use crate::backend::DieselReserveSpecialization;
+use crate::backend::SqlDialect;
 use crate::expression::grouped::Grouped;
 use crate::expression::nullable::Nullable;
 use crate::prelude::*;
@@ -160,7 +162,6 @@ where
     }
 }
 
-#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
 impl<Left, Right> QuerySource for Join<Left, Right, FullOuter>
 where
     Left: QuerySource,
@@ -288,7 +289,6 @@ impl<T: Table, Selection> AppendSelection<Selection> for T {
     }
 }
 
-// TODO: not sure if this is the best way, but the existing impls aren't sufficient
 impl<Left: Expression + Clone, Selection> AppendSelection<Selection> for Nullable<Left> {
     type Output = (Nullable<Left>, Selection);
 
@@ -350,15 +350,15 @@ where
     }
 }
 
-#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct FullOuter;
 
-#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
 impl<DB> QueryFragment<DB> for FullOuter
 where
-    DB: Backend + DieselReserveSpecialization,
+    DB: Backend
+        + SqlDialect<FullJoinSupport = sql_dialect::full_join_support::PostgresLikeFullJoinSupport>
+        + DieselReserveSpecialization,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" FULL OUTER");
@@ -469,7 +469,6 @@ impl<Qs, On> QueryDsl for OnClauseWrapper<Qs, On> {}
 /// may be deeply nested, we need to recursively change any appearances of
 /// `LeftOuter` to `Inner` in order to perform this check.
 pub trait ToInnerJoin {
-    // TODO: does anything need to be done for full join here?
     type InnerJoin;
 }
 

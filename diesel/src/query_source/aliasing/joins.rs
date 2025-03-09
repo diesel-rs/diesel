@@ -6,10 +6,9 @@ use super::{Alias, AliasSource, AliasedField};
 use crate::expression::{AppearsOnTable, SelectableExpression};
 use crate::query_builder::AsQuery;
 use crate::query_dsl::InternalJoinDsl;
-#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
-use crate::query_source::joins::FullOuter;
 use crate::query_source::joins::{
-    AppendSelection, Inner, Join, JoinOn, JoinTo, LeftOuter, OnClauseWrapper, ToInnerJoin,
+    AppendSelection, FullOuter, Inner, Join, JoinOn, JoinTo, LeftOuter, OnClauseWrapper,
+    ToInnerJoin,
 };
 use crate::query_source::{
     AppearsInFromClause, FromClause, Never, Pick, QuerySource, SelectStatement, Table,
@@ -101,14 +100,12 @@ where
 {
 }
 
-#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
 impl<Left, Right, S, C> SelectableExpression<Join<Left, Right, FullOuter>> for AliasedField<S, C>
 where
     Self: AppearsOnTable<Join<Left, Right, FullOuter>>,
     Self: SelectableExpression<Left>,
     Left: AppearsInFromClause<Alias<S>, Count = Never> + QuerySource,
     Right: AppearsInFromClause<Alias<S>, Count = Never> + QuerySource,
-    // TODO: unsure what specifics are needed here
 {
 }
 

@@ -619,7 +619,6 @@ pub trait QueryDsl: Sized {
     }
 
     // TODO: doc  comment
-    #[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
     fn full_outer_join<Rhs>(self, rhs: Rhs) -> FullJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::FullOuter>,
@@ -627,7 +626,6 @@ pub trait QueryDsl: Sized {
         self.join_with_implicit_on_clause(rhs, joins::FullOuter)
     }
 
-    #[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
     /// Alias for [`full_outer_join`].
     ///
     /// [`full_outer_join`]: QueryDsl::full_outer_join()
