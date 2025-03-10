@@ -618,7 +618,83 @@ pub trait QueryDsl: Sized {
         self.left_outer_join(rhs)
     }
 
-    // TODO: doc  comment
+    /// Join two tables using a SQL `FULL OUTER JOIN`.
+    /// 
+    /// This is only supported on PostgreSQL and SQLite.
+    ///
+    /// Behaves similarly to [`inner_join`] and [`left_join`], but will produce a full join
+    /// instead. See [`inner_join`] for usage examples.
+    ///
+    /// [`inner_join`]: QueryDsl::inner_join()
+    /// [`left_join`]: QueryDsl::left_join()
+    ///
+    /// Columns in both the left and right hand tables will become `Nullable` which means
+    /// you must call `nullable()` on the corresponding fields in the select
+    /// clause:
+    ///
+    /// ### Selecting after a full join
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::{users, posts};
+    /// #
+    /// # #[derive(Queryable, PartialEq, Eq, Debug)]
+    /// # struct User {
+    /// #     id: i32,
+    /// #     name: String,
+    /// # }
+    /// #
+    /// # impl User {
+    /// #     fn new(id: i32, name: &str) -> Self {
+    /// #         User {
+    /// #             id,
+    /// #             name: name.into(),
+    /// #         }
+    /// #     }
+    /// # }
+    /// #
+    /// # #[derive(Queryable, PartialEq, Eq, Debug)]
+    /// # struct Post {
+    /// #     id: i32,
+    /// #     user_id: i32,
+    /// #     title: String,
+    /// # }
+    /// #
+    /// # impl Post {
+    /// #     fn new(id: i32, user_id: i32, title: &str) -> Self {
+    /// #         Post {
+    /// #             id,
+    /// #             user_id,
+    /// #             title: title.into(),
+    /// #         }
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::sql_query("DELETE FROM posts").execute(connection)?;
+    /// #     diesel::insert_into(posts::table)
+    /// #         .values((posts::user_id.eq(1), posts::title.eq("Sean's Post")))
+    /// #         .execute(connection)?;
+    /// #     let post_id = posts::table.select(posts::id)
+    /// #         .first::<i32>(connection)?;
+    /// let join = users::table.full_join(posts::table);
+    ///
+    /// // As full joins may have NULL values on both sides, `.nullable` is required on all columnes.
+    /// let names_and_titles = join.select((users::name.nullable(), posts::title.nullable()))
+    ///     .load::<(Option<String>, Option<String>)>(connection)?;
+    /// let expected_data = vec![
+    ///     (Some(String::from("Sean")), Some(String::from("Sean's Post"))),
+    ///     (Some(String::from("Tess")), None),
+    /// ];
+    /// assert_eq!(expected_data, names_and_titles);
+    /// #     Ok(())
+    /// # }
+    /// ```
     fn full_outer_join<Rhs>(self, rhs: Rhs) -> FullJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::FullOuter>,
