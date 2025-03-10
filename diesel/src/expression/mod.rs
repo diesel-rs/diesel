@@ -322,8 +322,8 @@ where
 /// expressions will implement this if each of their parts implement it.
 ///
 /// Notably, columns will not implement this trait for the right side of a left
-/// join. To select a column or expression using a column from the right side of
-/// a left join, you must call `.nullable()` on it.
+/// join, or either side of a full join. To select a column or expression using
+/// a column from the nullable side of such a join, you must call `.nullable()` on it.
 #[diagnostic::on_unimplemented(
     message = "Cannot select `{Self}` from `{QS}`",
     note = "`{Self}` is no valid selection for `{QS}`"

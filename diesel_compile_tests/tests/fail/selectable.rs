@@ -39,24 +39,6 @@ struct UserWithOptionalPost {
 }
 
 #[derive(Selectable, Queryable)]
-#[diesel(table_name = users)]
-struct OptionalUserWithEmbeddedPost {
-    id: Option<i32>,
-    name: Option<String>,
-    #[diesel(embed)]
-    post: Post,
-}
-
-#[derive(Selectable, Queryable)]
-#[diesel(table_name = users)]
-struct OptionalUserWithOptionalPost {
-    id: Option<i32>,
-    name: Option<String>,
-    #[diesel(embed)]
-    post: Option<Post>,
-}
-
-#[derive(Selectable, Queryable)]
 #[diesel(table_name = posts)]
 struct Post {
     id: i32,
@@ -146,7 +128,7 @@ fn main() {
     // full joins require both optional
     let _ = users::table
         .full_join(posts::table)
-        .select(OptionalUserWithOptionalPost::as_select())
+        .select((users::id.nullable(), posts::id.nullable()))
         .load(&mut conn)
         .unwrap();
 
@@ -190,22 +172,22 @@ fn main() {
 
     // full joins force nullable on both
     let _ = users::table
-        .left_join(posts::table)
-        .select(UserWithEmbeddedPost::as_select())
+        .full_join(posts::table)
+        .select((users::id, posts::id))
         .load(&mut conn)
         .unwrap();
 
     // full joins force nullable on left
     let _ = users::table
-        .left_join(posts::table)
-        .select(OptionalUserWithEmbeddedPost::as_select())
+        .full_join(posts::table)
+        .select((users::id, posts::id.nullable()))
         .load(&mut conn)
         .unwrap();
 
     // full joins force nullable on right
     let _ = users::table
-        .left_join(posts::table)
-        .select(UserWithOptionalPost::as_select())
+        .full_join(posts::table)
+        .select((users::id.nullable(), posts::id))
         .load(&mut conn)
         .unwrap();
 
