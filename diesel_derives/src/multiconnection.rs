@@ -1651,6 +1651,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
             type ConcatClause = MultiConcatClauseSyntax;
             type SelectStatementSyntax = MultiSelectStatementSyntax;
             type AliasSyntax = MultiAliasSyntax;
+            type FullJoinSupport = diesel::internal::derives::multiconnection::sql_dialect::full_join_support::NoFullJoinSupport;
         }
 
         impl diesel::internal::derives::multiconnection::TrustedBackend for MultiBackend {}

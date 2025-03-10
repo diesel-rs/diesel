@@ -202,15 +202,6 @@ fn full_outer_join() {
         (None, Some(orphaned_post)),
     ];
 
-    fn checkt<Left>(left: Left)
-    where
-        Left: QuerySource,
-        Left::DefaultSelection: diesel::expression::nullable::IntoNullable,
-    {
-    }
-
-    checkt(filtered_users::table);
-
     let source = filtered_users::table
         .full_outer_join(posts::table.on(posts::user_id.eq(filtered_users::id)))
         .order_by((filtered_users::id.asc(), posts::id.asc()));
