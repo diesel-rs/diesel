@@ -2,7 +2,8 @@
 
 pub(in crate::sqlite) use self::private::{
     BinaryOrNullableBinary, JsonOrNullableJson, JsonOrNullableJsonOrJsonbOrNullableJsonb,
-    MaybeNullableValue, TextOrNullableText, TextOrNullableTextOrBinaryOrNullableBinary, SupportedSqlTypes
+    MaybeNullableValue, SupportedSqlTypes, TextOrNullableText,
+    TextOrNullableTextOrBinaryOrNullableBinary,
 };
 use super::operators::*;
 use crate::dsl;
@@ -88,7 +89,9 @@ pub trait SqliteExpressionMethods: Expression + Sized {
 impl<T: Expression> SqliteExpressionMethods for T {}
 
 pub(in crate::sqlite) mod private {
-    use crate::sql_types::{Binary, Json, Jsonb, MaybeNullableType, Nullable, SingleValue, Text, Float, Double, Integer};
+    use crate::sql_types::{
+        Binary, Double, Float, Integer, Json, Jsonb, MaybeNullableType, Nullable, SingleValue, Text,
+    };
 
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Text` nor `diesel::sql_types::Nullable<Text>`",
@@ -138,8 +141,8 @@ pub(in crate::sqlite) mod private {
     impl JsonOrNullableJson for Nullable<Json> {}
 
     #[diagnostic::on_unimplemented(
-    message = "`{Self}` is not a supported SQL type.",
-    note = "Expected one of `Json`, `Nullable<Json>`, `Text`, `Nullable<Text>`, `Binary`, `Nullable<Binary>`, `Integer`, `Nullable<Integer>`, `Float`, `Nullable<Float>`, `Double`, or `Nullable<Double>`."
+        message = "`{Self}` is not a supported SQL type.",
+        note = "Expected one of `Json`, `Nullable<Json>`, `Text`, `Nullable<Text>`, `Binary`, `Nullable<Binary>`, `Integer`, `Nullable<Integer>`, `Float`, `Nullable<Float>`, `Double`, or `Nullable<Double>`."
     )]
     pub trait SupportedSqlTypes {}
     impl SupportedSqlTypes for Json {}
@@ -154,9 +157,6 @@ pub(in crate::sqlite) mod private {
     impl SupportedSqlTypes for Nullable<Float> {}
     impl SupportedSqlTypes for Double {}
     impl SupportedSqlTypes for Nullable<Double> {}
-
-
-
 
     pub trait MaybeNullableValue<T>: SingleValue {
         type Out: SingleValue;

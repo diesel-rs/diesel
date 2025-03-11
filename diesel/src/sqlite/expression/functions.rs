@@ -5,9 +5,9 @@ use crate::sqlite::expression::expression_methods::BinaryOrNullableBinary;
 use crate::sqlite::expression::expression_methods::JsonOrNullableJson;
 use crate::sqlite::expression::expression_methods::JsonOrNullableJsonOrJsonbOrNullableJsonb;
 use crate::sqlite::expression::expression_methods::MaybeNullableValue;
+use crate::sqlite::expression::expression_methods::SupportedSqlTypes;
 use crate::sqlite::expression::expression_methods::TextOrNullableText;
 use crate::sqlite::expression::expression_methods::TextOrNullableTextOrBinaryOrNullableBinary;
-use crate::sqlite::expression::expression_methods::SupportedSqlTypes;
 
 #[cfg(feature = "sqlite")]
 #[declare_sql_function]
@@ -894,8 +894,8 @@ extern "SQL" {
         path: Text,
     ) -> Nullable<Text>;
 
-    /// The json_quote(X) function converts the SQL value X (a number or a string) into its corresponding JSON 
-    /// representation. If X is a JSON value returned by another JSON function, then this function is a no-op. 
+    /// The json_quote(X) function converts the SQL value X (a number or a string) into its corresponding JSON
+    /// representation. If X is a JSON value returned by another JSON function, then this function is a no-op.
     ///
     /// # Example
     ///
@@ -952,14 +952,12 @@ extern "SQL" {
     /// let result = diesel::select(json_quote::<Json, _>(json!([1])))
     ///     .get_result::<Value>(connection)?;
     // assert_eq!(json!([1]), result);
-    /// 
+    ///
     ///
     /// # Ok(())
     /// # }
     /// ```
     #[sql_name = "json_quote"]
     #[cfg(feature = "sqlite")]
-    fn json_quote<J: SupportedSqlTypes + SingleValue>( 
-        j: J
-    ) ->  Json;
+    fn json_quote<J: SupportedSqlTypes + SingleValue>(j: J) -> Json;
 }
