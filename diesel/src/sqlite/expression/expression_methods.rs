@@ -2,7 +2,7 @@
 
 pub(in crate::sqlite) use self::private::{
     BinaryOrNullableBinary, JsonOrNullableJson, JsonOrNullableJsonOrJsonbOrNullableJsonb,
-    MaybeNullableValue, TextOrNullableText, TextOrNullableTextOrBinaryOrNullableBinary,
+    MaybeNullableValue, TextOrNullableText, TextOrNullableTextOrBinaryOrNullableBinary, SupportedSqlTypes
 };
 use super::operators::*;
 use crate::dsl;
@@ -88,7 +88,7 @@ pub trait SqliteExpressionMethods: Expression + Sized {
 impl<T: Expression> SqliteExpressionMethods for T {}
 
 pub(in crate::sqlite) mod private {
-    use crate::sql_types::{Binary, Json, Jsonb, MaybeNullableType, Nullable, SingleValue, Text};
+    use crate::sql_types::{Binary, Json, Jsonb, MaybeNullableType, Nullable, SingleValue, Text, Float, Double, Integer};
 
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Text` nor `diesel::sql_types::Nullable<Text>`",
@@ -136,6 +136,27 @@ pub(in crate::sqlite) mod private {
     pub trait JsonOrNullableJson {}
     impl JsonOrNullableJson for Json {}
     impl JsonOrNullableJson for Nullable<Json> {}
+
+    #[diagnostic::on_unimplemented(
+    message = "`{Self}` is not a supported SQL type.",
+    note = "Expected one of `Json`, `Nullable<Json>`, `Text`, `Nullable<Text>`, `Binary`, `Nullable<Binary>`, `Integer`, `Nullable<Integer>`, `Float`, `Nullable<Float>`, `Double`, or `Nullable<Double>`."
+    )]
+    pub trait SupportedSqlTypes {}
+    impl SupportedSqlTypes for Json {}
+    impl SupportedSqlTypes for Nullable<Json> {}
+    impl SupportedSqlTypes for Text {}
+    impl SupportedSqlTypes for Nullable<Text> {}
+    impl SupportedSqlTypes for Binary {}
+    impl SupportedSqlTypes for Nullable<Binary> {}
+    impl SupportedSqlTypes for Integer {}
+    impl SupportedSqlTypes for Nullable<Integer> {}
+    impl SupportedSqlTypes for Float {}
+    impl SupportedSqlTypes for Nullable<Float> {}
+    impl SupportedSqlTypes for Double {}
+    impl SupportedSqlTypes for Nullable<Double> {}
+
+
+
 
     pub trait MaybeNullableValue<T>: SingleValue {
         type Out: SingleValue;
