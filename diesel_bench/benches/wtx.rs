@@ -4,13 +4,13 @@ use std::{collections::HashMap, fmt::Write};
 use tokio::{net::TcpStream, runtime::Runtime};
 use wtx::{
     database::{Executor, Record},
-    misc::{Either, Wrapper, UriRef},
+    misc::{Either, UriRef, Wrapper},
 };
 
-#[cfg(feature = "postgres")]
-use wtx::database::client::postgres::{Config, PostgresExecutor as LocalExecutor, ExecutorBuffer};
 #[cfg(feature = "mysql")]
-use wtx::database::client::mysql::{Config, MysqlExecutor as LocalExecutor, ExecutorBuffer};
+use wtx::database::client::mysql::{Config, ExecutorBuffer, MysqlExecutor as LocalExecutor};
+#[cfg(feature = "postgres")]
+use wtx::database::client::postgres::{Config, ExecutorBuffer, PostgresExecutor as LocalExecutor};
 
 pub struct Comment {
     pub id: i32,
@@ -110,6 +110,7 @@ pub fn bench_loading_associations_sequentially(b: &mut Bencher) {
             )
             .await
             .unwrap();
+            assert_eq!(posts.len(), LEN * 10);
 
             let mut comments_query =
                 String::from("SELECT id, post_id, text FROM comments WHERE post_id IN(");
@@ -136,6 +137,7 @@ pub fn bench_loading_associations_sequentially(b: &mut Bencher) {
             )
             .await
             .unwrap();
+            assert_eq!(comments.len(), LEN * 10 * 10);
 
             let mut posts = posts
                 .into_iter()
@@ -159,10 +161,10 @@ pub fn bench_loading_associations_sequentially(b: &mut Bencher) {
                     .push(post_with_comments);
             }
 
-            let _ = users
+            users
                 .into_iter()
                 .map(|(_, users_with_post_and_comment)| users_with_post_and_comment)
-                .collect::<Vec<(User, Vec<(Post, Vec<Comment>)>)>>();
+                .collect::<Vec<(User, Vec<(Post, Vec<Comment>)>)>>()
         });
     })
 }
@@ -302,7 +304,9 @@ async fn connection() -> LocalExecutor<wtx::Error, ExecutorBuffer, TcpStream> {
     conn
 }
 
-async fn insert_posts<const N: usize>(conn: &mut LocalExecutor<wtx::Error, ExecutorBuffer, TcpStream>) {
+async fn insert_posts<const N: usize>(
+    conn: &mut LocalExecutor<wtx::Error, ExecutorBuffer, TcpStream>,
+) {
     let mut users_ids: Vec<i32> = Vec::with_capacity(N);
     conn.fetch_many_with_stmt("SELECT id FROM users", (), |record| {
         users_ids.push(record.decode(0).unwrap());
@@ -310,6 +314,7 @@ async fn insert_posts<const N: usize>(conn: &mut LocalExecutor<wtx::Error, Execu
     })
     .await
     .unwrap();
+    assert_eq!(users_ids.len(), N);
 
     let params = users_ids
         .into_iter()
@@ -343,12 +348,57 @@ async fn insert_posts<const N: usize>(conn: &mut LocalExecutor<wtx::Error, Execu
         },
     );
 
-    conn.execute_with_stmt(
-        insert_stmt.as_str(),
-        Wrapper(params.into_iter().flatten()),
-    )
+    conn.execute_with_stmt(insert_stmt.as_str(), Wrapper(params.into_iter().flatten()))
+        .await
+        .unwrap();
+
+    let mut post_ids: Vec<i32> = Vec::with_capacity(N * 10);
+    conn.fetch_many_with_stmt("SELECT id FROM posts", (), |record| {
+        post_ids.push(record.decode(0).unwrap());
+        Ok(())
+    })
     .await
     .unwrap();
+    assert_eq!(post_ids.len(), N * 10);
+
+    let params = post_ids
+        .into_iter()
+        .flat_map(|post_id| {
+            (0..10).map(move |idx| {
+                [
+                    Either::Left(format!("Comment {idx} for post {post_id}")),
+                    Either::Right(post_id),
+                ]
+            })
+        })
+        .collect::<Vec<_>>();
+
+    let mut insert_stmt = String::from("INSERT INTO comments(text, post_id) VALUES ");
+    concat(
+        0..params.len(),
+        &mut insert_stmt,
+        |local_insert_stmt, _idx| {
+            #[cfg(feature = "postgres")]
+            local_insert_stmt
+                .write_fmt(format_args!("(${}, ${})", 2 * _idx + 1, 2 * _idx + 2,))
+                .unwrap();
+            #[cfg(feature = "mysql")]
+            local_insert_stmt.push_str("(?, ?)");
+        },
+    );
+
+    conn.execute_with_stmt(insert_stmt.as_str(), Wrapper(params.into_iter().flatten()))
+        .await
+        .unwrap();
+
+    let mut count: Vec<i64> = Vec::with_capacity(N * 10);
+    conn.fetch_many_with_stmt("SELECT count(id) FROM comments", (), |record| {
+        count.push(record.decode(0).unwrap());
+        Ok(())
+    })
+    .await
+    .unwrap();
+    assert_eq!(count[0] as usize, N * 10 * 10);
 }
 
 async fn insert_users<const N: usize>(
