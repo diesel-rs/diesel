@@ -352,7 +352,7 @@ use std::hash::Hash;
 
 use crate::query_source::Table;
 
-pub use self::belongs_to::{BelongsTo, GroupedBy};
+pub use self::belongs_to::{BelongsTo, GroupedBy, TryGroupedByError};
 
 #[doc(inline)]
 pub use diesel_derives::Associations;
