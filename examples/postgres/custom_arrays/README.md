@@ -992,7 +992,7 @@ fn postgres_connection() -> PgConnection {
     .expect("PG_DATABASE_URL must be set");
     
     PgConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+        .unwrap_or_else(|e| panic!("Failed to connect, error: {}", e))
 }
 ```
 

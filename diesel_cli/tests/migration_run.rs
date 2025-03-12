@@ -164,9 +164,7 @@ fn error_migrations_when_use_invalid_database_url() {
         .run();
 
     assert!(!result.is_success());
-    assert!(result
-        .stderr()
-        .contains("Could not connect to database via `postgres://localhost/lemmy`:"));
+    assert!(result.stderr().contains("Could not connect to database"));
 }
 
 #[test]
