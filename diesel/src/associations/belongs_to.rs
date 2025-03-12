@@ -241,6 +241,36 @@ where
         }
         result
     }
+
+    fn try_grouped_by(
+        self,
+        parents: &'a [Parent],
+    ) -> Result<Vec<Vec<Child>>, TryGroupedByError<Child>> {
+        use std::{collections::HashMap, iter};
+
+        let mut grouped: Vec<_> = iter::repeat_with(Vec::new).take(parents.len()).collect();
+        let mut ungrouped: Vec<_> = Vec::new();
+
+        let id_indices: HashMap<_, _> = parents
+            .iter()
+            .enumerate()
+            .map(|(i, u)| (u.id(), i))
+            .collect();
+
+        for child in self {
+            child
+                .foreign_key()
+                .and_then(|i| id_indices.get(i))
+                .map_or(&mut ungrouped, |i| &mut grouped[*i])
+                .push(child);
+        }
+
+        if ungrouped.is_empty() {
+            Ok(grouped)
+        } else {
+            Err(TryGroupedByError { grouped, ungrouped })
+        }
+    }
 }
 
 impl<'a, Parent, Child> BelongingToDsl<&'a Parent> for Child
