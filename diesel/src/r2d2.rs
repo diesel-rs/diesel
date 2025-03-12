@@ -447,6 +447,11 @@ where
         pass.push_sql("SELECT 1");
         Ok(())
     }
+
+    // Explicitly mark this query as safe to cache, ensuring it gets a name
+    fn is_safe_to_cache_prepared(&self, _backend: &DB) -> QueryResult<bool> {
+        Ok(true)
+    }
 }
 
 impl Query for CheckConnectionQuery {
