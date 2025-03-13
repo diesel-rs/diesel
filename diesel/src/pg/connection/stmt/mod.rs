@@ -9,6 +9,7 @@ use super::result::PgResult;
 use super::statement_cache::PrepareForCache;
 use crate::pg::PgTypeMetadata;
 use crate::result::QueryResult;
+use crate::IntoSql;
 
 use super::raw::RawConnection;
 
@@ -41,7 +42,20 @@ impl Statement {
             .len()
             .try_into()
             .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
+        
         unsafe {
+            // Always use send_query_params for unnamed statements
+            if self.name.to_bytes().is_empty() {
+                raw_connection.send_query_params(
+                    self.into_sql().as_ptr(),
+                    param_count,
+                    params_pointer.as_ptr(),
+                    param_lengths.as_ptr(),
+                    self.param_formats.as_ptr(),
+                    1,
+                )
+            }
+            // For named statements, use send_query_prepared
             raw_connection.send_query_prepared(
                 self.name.as_ptr(),
                 param_count,
@@ -49,8 +63,9 @@ impl Statement {
                 param_lengths.as_ptr(),
                 self.param_formats.as_ptr(),
                 1,
-            )
+            );
         }?;
+        
         if row_by_row {
             raw_connection.enable_row_by_row_mode()?;
         }
