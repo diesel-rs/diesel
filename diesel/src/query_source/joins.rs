@@ -3,8 +3,11 @@ use crate::backend::sql_dialect;
 use crate::backend::Backend;
 use crate::backend::DieselReserveSpecialization;
 use crate::backend::SqlDialect;
+use crate::dsl::SqlTypeOf;
 use crate::expression::grouped::Grouped;
+use crate::expression::nullable::IntoNullableExpression;
 use crate::expression::nullable::Nullable;
+use crate::expression::nullable::NullableExpressionOf;
 use crate::prelude::*;
 use crate::query_builder::*;
 use crate::query_dsl::InternalJoinDsl;
@@ -166,9 +169,16 @@ impl<Left, Right> QuerySource for Join<Left, Right, FullOuter>
 where
     Left: QuerySource,
     Right: QuerySource,
-    Nullable<Left::DefaultSelection>: AppendSelection<Nullable<Right::DefaultSelection>>,
-    <Nullable<Left::DefaultSelection> as AppendSelection<Nullable<Right::DefaultSelection>>>::Output:
-        AppearsOnTable<Self>,
+    SqlTypeOf<Left::DefaultSelection>: IntoNullableExpression<Left::DefaultSelection>, // Ok
+    (
+        AppendExpression,
+        NullableExpressionOf<Left::DefaultSelection>,
+    ): AppendSelection<Nullable<Right::DefaultSelection>>,
+    <(
+        AppendExpression,
+        NullableExpressionOf<Left::DefaultSelection>,
+    ) as AppendSelection<Nullable<Right::DefaultSelection>>>::Output: AppearsOnTable<Self>,
+
     Self: Clone,
 {
     type FromClause = Self;
@@ -180,7 +190,10 @@ where
     //
     // See https://github.com/diesel-rs/diesel/issues/3223 for details
     type DefaultSelection = self::private::SkipSelectableExpressionBoundCheckWrapper<
-        <Nullable<Left::DefaultSelection> as AppendSelection<Nullable<Right::DefaultSelection>>>::Output,
+        <(
+            AppendExpression,
+            NullableExpressionOf<Left::DefaultSelection>,
+        ) as AppendSelection<Nullable<Right::DefaultSelection>>>::Output,
     >;
 
     fn from_clause(&self) -> Self::FromClause {
@@ -189,10 +202,12 @@ where
 
     fn default_selection(&self) -> Self::DefaultSelection {
         self::private::SkipSelectableExpressionBoundCheckWrapper(
-            self.left
-                .source
-                .default_selection()
-                .nullable()
+            (
+                AppendExpression,
+                <SqlTypeOf<Left::DefaultSelection> as IntoNullableExpression<
+                    Left::DefaultSelection,
+                >>::into_nullable_expression(self.left.source.default_selection()),
+            )
                 .append_selection(self.right.source.default_selection().nullable()),
         )
     }
@@ -289,11 +304,19 @@ impl<T: Table, Selection> AppendSelection<Selection> for T {
     }
 }
 
-impl<Left: Expression + Clone, Selection> AppendSelection<Selection> for Nullable<Left> {
-    type Output = (Nullable<Left>, Selection);
+#[doc(hidden)]
+/// Marker to manually an expression
+pub struct AppendExpression;
+
+impl<Left, Selection> AppendSelection<Selection> for (AppendExpression, Left)
+where
+    Left: Expression + Clone + TupleAppend<Selection>,
+{
+    type Output = <Left as TupleAppend<Selection>>::Output;
 
     fn append_selection(&self, selection: Selection) -> Self::Output {
-        (self.clone(), selection)
+        let (_, left) = self;
+        left.clone().tuple_append(selection)
     }
 }
 
