@@ -220,6 +220,14 @@ table! {
 }
 
 table! {
+    filtered_users (id) {
+        id -> Integer,
+        name -> Varchar,
+        hair_color -> Nullable<Varchar>,
+    }
+}
+
+table! {
     users_with_name_pk (name) {
         name -> Nullable<Text>,
     }
@@ -273,6 +281,7 @@ allow_tables_to_appear_in_same_query!(
     special_posts,
     trees,
     users,
+    filtered_users,
     users_with_name_pk,
     with_keywords,
 );
