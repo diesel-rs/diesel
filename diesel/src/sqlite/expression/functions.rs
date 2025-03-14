@@ -1,5 +1,5 @@
 //! SQLite specific functions
-use crate::expression::functions::declare_sql_function;
+use crate::expression::{functions::declare_sql_function, AsExpression};
 use crate::sql_types::*;
 use crate::sqlite::expression::expression_methods::BinaryOrNullableBinary;
 use crate::sqlite::expression::expression_methods::JsonOrNullableJson;
@@ -891,5 +891,199 @@ extern "SQL" {
     fn json_type_with_path<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
         j: J,
         path: Text,
+    ) -> Nullable<Text>;
+
+    /// The json_extract(X,P1,P2,...) extracts and returns one or more values from the well-formed JSON at X.
+    ///
+    /// If only a single path P1 is provided, then the SQL datatype of the result is NULL for a JSON null,
+    /// INTEGER or REAL for a JSON numeric value, an INTEGER zero for a JSON false value, an INTEGER one for a JSON true value,
+    /// the dequoted text for a JSON string value, and a text representation for JSON object and array values.
+    ///
+    /// If there are multiple path arguments (P1, P2, and so forth) then this routine returns SQLite text
+    /// which is a well-formed JSON array holding the various values.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{sql, json_extract};
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Text, Json, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let version = diesel::select(sql::<Text>("sqlite_version();"))
+    ///         .get_result::<String>(connection)?;
+    ///
+    /// // Querying SQLite version should not fail.
+    /// let version_components: Vec<&str> = version.split('.').collect();
+    /// let major: u32 = version_components[0].parse().unwrap();
+    /// let minor: u32 = version_components[1].parse().unwrap();
+    /// let patch: u32 = version_components[2].parse().unwrap();
+    ///
+    /// if major > 3 || (major == 3 && minor >= 38) {
+    ///     /* Valid sqlite version, do nothing */
+    /// } else {
+    ///     println!("SQLite version is too old, skipping the test.");
+    ///     return Ok(());
+    /// }
+    ///
+    /// let json_obj = json!({"a": 2, "c": [4, 5, {"f": 7}]});
+    ///
+    /// // Extract the entire JSON object
+    /// let result = diesel::select(json_extract::<Json, _>(json_obj.clone(), "$"))
+    ///     .get_result::<Value>(connection)?;
+    /// assert_eq!(result, json!({"a": 2, "c": [4, 5, {"f": 7}]}));
+    ///
+    /// // Extract a nested array
+    /// let result = diesel::select(json_extract::<Json, _>(json_obj.clone(), "$.c"))
+    ///     .get_result::<Value>(connection)?;
+    /// assert_eq!(result, json!([4, 5, {"f": 7}]));
+    ///
+    /// // Extract a nested object
+    /// let result = diesel::select(json_extract::<Json, _>(json_obj.clone(), "$.c[2]"))
+    ///     .get_result::<Value>(connection)?;
+    /// assert_eq!(result, json!({"f": 7}));
+    ///
+    /// // Extract a numeric value
+    /// let result = diesel::select(json_extract::<Json, _>(json_obj.clone(), "$.c[2].f"))
+    ///     .get_result::<i64>(connection)?;
+    /// assert_eq!(result, 7);
+    ///
+    /// // Extract a non-existent path (returns NULL)
+    /// let result = diesel::select(json_extract::<Json, _>(json_obj.clone(), "$.x"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(result, None);
+    ///
+    /// // Extract a string value
+    /// let json_with_string = json!({"a": "xyz"});
+    /// let result = diesel::select(json_extract::<Json, _>(json_with_string, "$.a"))
+    ///     .get_result::<String>(connection)?;
+    /// assert_eq!(result, "xyz");
+    ///
+    /// // Extract a null value
+    /// let json_with_null = json!({"a": null});
+    /// let result = diesel::select(json_extract::<Json, _>(json_with_null, "$.a"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(result, None);
+    ///
+    /// // Test with NULL JSON input
+    /// let result = diesel::select(json_extract::<Nullable<Json>, _>(None::<Value>, "$.a"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(result, None);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "sqlite")]
+    fn json_extract<
+        J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue,
+        P: AsExpression<Text> + SingleValue,
+    >(
+        j: J,
+        path: P,
+    ) -> Nullable<Text>;
+
+    /// The jsonb_extract() function works the same as the json_extract() function, except in cases
+    /// where json_extract() would normally return a text JSON array object, this routine returns
+    /// the array or object in the JSONB format.
+    ///
+    /// For the common case where a text, numeric, null, or boolean JSON element is returned,
+    /// this routine works exactly the same as json_extract().
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{sql, jsonb_extract};
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Text, Jsonb, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let version = diesel::select(sql::<Text>("sqlite_version();"))
+    ///         .get_result::<String>(connection)?;
+    ///
+    /// // Querying SQLite version should not fail.
+    /// let version_components: Vec<&str> = version.split('.').collect();
+    /// let major: u32 = version_components[0].parse().unwrap();
+    /// let minor: u32 = version_components[1].parse().unwrap();
+    /// let patch: u32 = version_components[2].parse().unwrap();
+    ///
+    /// if major > 3 || (major == 3 && minor >= 45) {
+    ///     /* Valid sqlite version, do nothing */
+    /// } else {
+    ///     println!("SQLite version is too old, skipping the test.");
+    ///     return Ok(());
+    /// }
+    ///
+    /// let json_obj = json!({"a": 2, "c": [4, 5, {"f": 7}]});
+    ///
+    /// // Extract the entire JSON object
+    /// let result = diesel::select(jsonb_extract::<Jsonb, _>(json_obj.clone(), "$"))
+    ///     .get_result::<Value>(connection)?;
+    /// assert_eq!(result, json!({"a": 2, "c": [4, 5, {"f": 7}]}));
+    ///
+    /// // Extract a nested array
+    /// let result = diesel::select(jsonb_extract::<Jsonb, _>(json_obj.clone(), "$.c"))
+    ///     .get_result::<Value>(connection)?;
+    /// assert_eq!(result, json!([4, 5, {"f": 7}]));
+    ///
+    /// // Extract a nested object
+    /// let result = diesel::select(jsonb_extract::<Jsonb, _>(json_obj.clone(), "$.c[2]"))
+    ///     .get_result::<Value>(connection)?;
+    /// assert_eq!(result, json!({"f": 7}));
+    ///
+    /// // Extract a numeric value
+    /// let result = diesel::select(jsonb_extract::<Jsonb, _>(json_obj.clone(), "$.c[2].f"))
+    ///     .get_result::<i64>(connection)?;
+    /// assert_eq!(result, 7);
+    ///
+    /// // Extract a non-existent path (returns NULL)
+    /// let result = diesel::select(jsonb_extract::<Jsonb, _>(json_obj.clone(), "$.x"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(result, None);
+    ///
+    /// // Extract a string value
+    /// let json_with_string = json!({"a": "xyz"});
+    /// let result = diesel::select(jsonb_extract::<Jsonb, _>(json_with_string, "$.a"))
+    ///     .get_result::<String>(connection)?;
+    /// assert_eq!(result, "xyz");
+    ///
+    /// // Extract a null value
+    /// let json_with_null = json!({"a": null});
+    /// let result = diesel::select(jsonb_extract::<Jsonb, _>(json_with_null, "$.a"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(result, None);
+    ///
+    /// // Test with NULL JSON input
+    /// let result = diesel::select(jsonb_extract::<Nullable<Jsonb>, _>(None::<Value>, "$.a"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(result, None);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "sqlite")]
+    fn jsonb_extract<
+        J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue,
+        P: AsExpression<Text> + SingleValue,
+    >(
+        j: J,
+        path: P,
     ) -> Nullable<Text>;
 }

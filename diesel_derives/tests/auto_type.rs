@@ -516,6 +516,8 @@ fn sqlite_functions() -> _ {
         json_valid(sqlite_extras::json),
         json_type(sqlite_extras::json),
         json_type_with_path(sqlite_extras::json, sqlite_extras::text),
+        json_extract(sqlite_extras::json, sqlite_extras::text),
+        jsonb_extract(sqlite_extras::jsonb, sqlite_extras::text),
     )
 }
 
