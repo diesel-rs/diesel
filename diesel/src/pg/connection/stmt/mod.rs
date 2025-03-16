@@ -12,8 +12,18 @@ use crate::result::QueryResult;
 
 use super::raw::RawConnection;
 
+enum StatementKind {
+    Unnamed {
+        sql: Option<CString>,
+        param_types: Option<Vec<u32>>,
+    },
+    Named {
+        name: CString,
+    },
+}
+
 pub(crate) struct Statement {
-    name: CString,
+    kind: StatementKind,
     param_formats: Vec<libc::c_int>,
 }
 
@@ -41,16 +51,50 @@ impl Statement {
             .len()
             .try_into()
             .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
-        unsafe {
-            raw_connection.send_query_prepared(
-                self.name.as_ptr(),
-                param_count,
-                params_pointer.as_ptr(),
-                param_lengths.as_ptr(),
-                self.param_formats.as_ptr(),
-                1,
-            )
-        }?;
+
+        let name = match &self.kind {
+            StatementKind::Named { name } => Some(name),
+            _ => None,
+        };
+
+        if let Some(name) = name {
+            unsafe {
+                // execute the previously prepared statement
+                // in autocommit mode, this will be a new transaction
+                raw_connection.send_query_prepared(
+                    name.as_ptr(),
+                    param_count,
+                    params_pointer.as_ptr(),
+                    param_lengths.as_ptr(),
+                    self.param_formats.as_ptr(),
+                    1,
+                )
+            }?;
+        } else {
+            // execute the unnamed prepared statement using send_query_params
+            // which internally calls PQsendQueryParams, making sure the
+            // prepare and execute happens in a single transaction. This
+            // makes sure these are handled by PgBouncer.
+            // See https://github.com/diesel-rs/diesel/pull/4539
+            if let StatementKind::Unnamed {
+                sql: Some(ref sql),
+                param_types,
+            } = &self.kind
+            {
+                unsafe {
+                    raw_connection.send_query_params(
+                        sql.as_ptr(),
+                        param_count,
+                        param_types_to_ptr(param_types.as_ref()),
+                        params_pointer.as_ptr(),
+                        param_lengths.as_ptr(),
+                        self.param_formats.as_ptr(),
+                        1,
+                    )
+                }?;
+            }
+        }
+
         if row_by_row {
             raw_connection.enable_row_by_row_mode()?;
         }
@@ -68,22 +112,40 @@ impl Statement {
             PrepareForCache::No => None,
         };
         let name = query_name.as_deref();
-        let name = CString::new(name.unwrap_or(""))?;
-        let sql = CString::new(sql)?;
+        let name_cstr = CString::new(name.unwrap_or(""))?;
+        let sql_cstr = CString::new(sql)?;
         let param_types_vec = param_types
             .iter()
             .map(|x| x.oid())
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
 
+        // For unnamed statements, we'll return a Statement object without
+        // actually preparing it. This allows us to use send_query_params
+        // later in the execute call. This is needed to better interface
+        // with PgBouncer which cannot handle unnamed prepared statements
+        // when those are prepared and executed in separate transactions.
+        // See https://github.com/diesel-rs/diesel/pull/4539
+        if query_name.is_none() {
+            return Ok(Statement {
+                kind: StatementKind::Unnamed {
+                    sql: Some(sql_cstr),
+                    param_types: Some(param_types_vec),
+                },
+                param_formats: vec![1; param_types.len()],
+            });
+        }
+
+        // For named/cached statements, prepare as usual using a prepare phase and then
+        // an execute phase
         let internal_result = unsafe {
             let param_count: libc::c_int = param_types
                 .len()
                 .try_into()
                 .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
             raw_connection.prepare(
-                name.as_ptr(),
-                sql.as_ptr(),
+                name_cstr.as_ptr(),
+                sql_cstr.as_ptr(),
                 param_count,
                 param_types_to_ptr(Some(&param_types_vec)),
             )
@@ -91,7 +153,7 @@ impl Statement {
         PgResult::new(internal_result?, raw_connection)?;
 
         Ok(Statement {
-            name,
+            kind: StatementKind::Named { name: name_cstr },
             param_formats: vec![1; param_types.len()],
         })
     }
