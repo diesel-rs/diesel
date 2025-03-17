@@ -207,6 +207,7 @@ pub trait GroupedBy<'a, Parent>: IntoIterator + Sized {
 /// to use these resulting groups, as well as any records
 /// that could not be grouped.
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+#[non_exhaustive]
 pub struct TryGroupedByError<Child> {
     /// The collection of records which were successfully indexed
     /// against a parent record.
