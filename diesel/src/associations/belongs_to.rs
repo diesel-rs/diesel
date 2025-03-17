@@ -156,7 +156,7 @@ pub trait GroupedBy<'a, Parent>: IntoIterator + Sized {
     /// posts.push(
     ///     Post { id: 9, user_id: 42, title: "A post returned from another query".into() }
     /// );
-    /// let TryGroupedByError { grouped, ungrouped } = posts.try_grouped_by(&users).unwrap_err();
+    /// let TryGroupedByError { grouped, ungrouped, .. } = posts.try_grouped_by(&users).unwrap_err();
     ///
     /// let grouped_data = users.into_iter().zip(grouped).collect::<Vec<_>>();
     ///
