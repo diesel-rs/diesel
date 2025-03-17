@@ -5,7 +5,6 @@ use crate::sqlite::expression::expression_methods::BinaryOrNullableBinary;
 use crate::sqlite::expression::expression_methods::JsonOrNullableJson;
 use crate::sqlite::expression::expression_methods::JsonOrNullableJsonOrJsonbOrNullableJsonb;
 use crate::sqlite::expression::expression_methods::MaybeNullableValue;
-use crate::sqlite::expression::expression_methods::SupportedSqlTypes;
 use crate::sqlite::expression::expression_methods::TextOrNullableText;
 use crate::sqlite::expression::expression_methods::TextOrNullableTextOrBinaryOrNullableBinary;
 
@@ -959,5 +958,5 @@ extern "SQL" {
     /// ```
     #[sql_name = "json_quote"]
     #[cfg(feature = "sqlite")]
-    fn json_quote<J: SupportedSqlTypes + SingleValue>(j: J) -> Json;
+    fn json_quote<J: SqlType + SingleValue>(j: J) -> Json;
 }
