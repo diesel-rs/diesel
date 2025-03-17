@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::marker::PhantomData;
+use std::rc::Rc;
 
 use byteorder::NetworkEndian;
 use byteorder::WriteBytesExt;
@@ -87,7 +88,7 @@ impl CopyFromOptions {
 pub struct CopyFrom<S, F> {
     options: CopyFromOptions,
     copy_callback: F,
-    p: PhantomData<S>,
+    target: S,
 }
 
 pub(crate) struct InternalCopyFromQuery<S, T> {
@@ -163,7 +164,7 @@ where
         &'b self,
         pass: crate::query_builder::AstPass<'_, 'b, Pg>,
     ) -> crate::QueryResult<()> {
-        S::walk_target(pass)
+        self.target.walk_target(pass)
     }
 }
 
@@ -269,12 +270,16 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
 diesel_derives::__diesel_for_each_tuple!(impl_copy_from_insertable_helper_for_values_clause);
 
 #[derive(Debug)]
-pub struct InsertableWrapper<I>(Option<I>);
+pub struct InsertableWrapper<I, T> {
+    table: Rc<T>,
+    insertable: Option<I>,
+}
 
-impl<I, T, V, QId, const STATIC_QUERY_ID: bool> CopyFromExpression<T> for InsertableWrapper<I>
+impl<I, T, V, QId, const STATIC_QUERY_ID: bool> CopyFromExpression<T> for InsertableWrapper<I, T>
 where
     I: Insertable<T, Values = BatchInsert<Vec<V>, T, QId, STATIC_QUERY_ID>>,
     V: CopyFromInsertableHelper,
+    T: CopyTarget,
 {
     type Error = crate::result::Error;
 
@@ -298,7 +303,7 @@ where
         // this skips reallocating
         let mut buffer = Vec::<u8>::new();
         let values = self
-            .0
+            .insertable
             .take()
             .expect("We only call this callback once")
             .values();
@@ -354,7 +359,7 @@ where
         &'b self,
         pass: crate::query_builder::AstPass<'_, 'b, Pg>,
     ) -> crate::QueryResult<()> {
-        <V as CopyFromInsertableHelper>::Target::walk_target(pass)
+        self.table.walk_target(pass)
     }
 }
 
@@ -372,7 +377,7 @@ where
 #[must_use = "`COPY FROM` statements are only executed when calling `.execute()`."]
 #[cfg(feature = "postgres_backend")]
 pub struct CopyFromQuery<T, Action> {
-    table: T,
+    table: Rc<T>,
     action: Action,
 }
 
@@ -386,7 +391,7 @@ where
     /// `action` expects a callback which accepts a [`std::io::Write`] argument. The necessary format
     /// accepted by this writer sink depends on the options provided via the `with_*` methods
     #[allow(clippy::wrong_self_convention)] // the sql struct is named that way
-    pub fn from_raw_data<F, C, E>(self, _target: C, action: F) -> CopyFromQuery<T, CopyFrom<C, F>>
+    pub fn from_raw_data<F, C, E>(self, target: C, action: F) -> CopyFromQuery<T, CopyFrom<C, F>>
     where
         C: CopyTarget<Table = T>,
         F: Fn(&mut dyn std::io::Write) -> Result<(), E>,
@@ -394,7 +399,7 @@ where
         CopyFromQuery {
             table: self.table,
             action: CopyFrom {
-                p: PhantomData,
+                target,
                 options: Default::default(),
                 copy_callback: action,
             },
@@ -411,13 +416,16 @@ where
     /// This uses the binary format. It internally configures the correct
     /// set of settings and does not allow to set other options
     #[allow(clippy::wrong_self_convention)] // the sql struct is named that way
-    pub fn from_insertable<I>(self, insertable: I) -> CopyFromQuery<T, InsertableWrapper<I>>
+    pub fn from_insertable<I>(self, insertable: I) -> CopyFromQuery<T, InsertableWrapper<I, T>>
     where
-        InsertableWrapper<I>: CopyFromExpression<T>,
+        InsertableWrapper<I, T>: CopyFromExpression<T>,
     {
         CopyFromQuery {
-            table: self.table,
-            action: InsertableWrapper(Some(insertable)),
+            table: self.table.clone(),
+            action: InsertableWrapper {
+                table: self.table,
+                insertable: Some(insertable),
+            },
         }
     }
 }
@@ -650,7 +658,7 @@ where
     T: Table,
 {
     CopyFromQuery {
-        table,
+        table: Rc::new(table),
         action: NotSet,
     }
 }

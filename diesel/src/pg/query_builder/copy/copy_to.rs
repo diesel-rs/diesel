@@ -1,5 +1,4 @@
 use std::io::BufRead;
-use std::marker::PhantomData;
 
 use super::CommonOptions;
 use super::CopyFormat;
@@ -57,7 +56,7 @@ impl QueryFragment<Pg> for CopyToOptions {
 #[derive(Debug)]
 pub struct CopyToCommand<S> {
     options: CopyToOptions,
-    p: PhantomData<S>,
+    target: S,
 }
 
 impl<S> QueryId for CopyToCommand<S>
@@ -79,7 +78,7 @@ where
     ) -> crate::QueryResult<()> {
         pass.unsafe_to_cache_prepared();
         pass.push_sql("COPY ");
-        S::walk_target(pass.reborrow())?;
+        self.target.walk_target(pass.reborrow())?;
         pass.push_sql(" TO STDOUT");
         self.options.walk_ast(pass.reborrow())?;
         Ok(())
@@ -301,7 +300,7 @@ where
         let io_result_mapper = |e| crate::result::Error::DeserializationError(Box::new(e));
 
         let command = CopyToCommand {
-            p: PhantomData::<U::SelectExpression>,
+            target: self.target,
             options: CopyToOptions {
                 header: None,
                 common: CommonOptions {
@@ -410,7 +409,7 @@ where
     {
         let q = O::setup_options(self);
         let command = CopyToCommand {
-            p: PhantomData::<T>,
+            target: q.target,
             options: q.options,
         };
         ExecuteCopyToConnection::execute(conn, command)
