@@ -219,6 +219,15 @@ pub struct TryGroupedByError<Child> {
 
 type Id<T> = <T as Identifiable>::Id;
 
+impl<Child> TryGroupedByError<Child> {
+    /// Creates a `TryGroupedByError`.
+    ///
+    /// This is generally used by methods like [`GroupedBy::try_grouped_by`].
+    pub fn new(grouped: Vec<Vec<Child>>, ungrouped: Vec<Child>) -> Self {
+        Self { grouped, ungrouped }
+    }
+}
+
 impl<'a, Parent: 'a, Child, Iter> GroupedBy<'a, Parent> for Iter
 where
     Iter: IntoIterator<Item = Child>,
@@ -269,7 +278,7 @@ where
         if ungrouped.is_empty() {
             Ok(grouped)
         } else {
-            Err(TryGroupedByError { grouped, ungrouped })
+            Err(TryGroupedByError::new(grouped, ungrouped))
         }
     }
 }
