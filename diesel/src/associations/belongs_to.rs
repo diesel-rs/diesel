@@ -256,7 +256,8 @@ where
         self,
         parents: &'a [Parent],
     ) -> Result<Vec<Vec<Child>>, TryGroupedByError<Child>> {
-        use std::{collections::HashMap, iter};
+        use std::collections::HashMap;
+        use std::iter;
 
         let mut grouped: Vec<_> = iter::repeat_with(Vec::new).take(parents.len()).collect();
         let mut ungrouped: Vec<_> = Vec::new();
