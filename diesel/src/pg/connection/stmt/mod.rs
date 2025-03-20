@@ -78,7 +78,6 @@ impl Statement {
                 )
             }?,
         };
-
         if row_by_row {
             raw_connection.enable_row_by_row_mode()?;
         }
@@ -91,52 +90,53 @@ impl Statement {
         name: Option<&str>,
         param_types: &[PgTypeMetadata],
     ) -> QueryResult<Self> {
-        let sql_cstr = CString::new(sql)?;
+        let sql = CString::new(sql)?;
         let param_types_vec = param_types
             .iter()
             .map(|x| x.oid())
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
 
-        match is_cached {
-            PrepareForCache::Yes { counter } => {
-                // For named/cached statements, prepare as usual using a prepare phase and then
-                // an execute phase
-                let name_cstr = CString::new(format!("__diesel_stmt_{counter}"))?;
-                let internal_result = unsafe {
-                    let param_count: libc::c_int = param_types
-                        .len()
-                        .try_into()
-                        .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
-                    raw_connection.prepare(
-                        name_cstr.as_ptr(),
-                        sql_cstr.as_ptr(),
-                        param_count,
-                        param_types_vec.as_ptr(),
-                    )
-                };
-                PgResult::new(internal_result?, raw_connection)?;
+        if let Some(name) = name {
+            let name = CString::new(name)?;
+            let param_count: libc::c_int = param_types
+                .len()
+                .try_into()
+                .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
+            let internal_result = unsafe {
+                raw_connection.prepare(
+                    name.as_ptr(),
+                    sql.as_ptr(),
+                    param_count,
+                    param_types_to_ptr(Some(&param_types_vec)),
+                )
+            };
+            PgResult::new(internal_result?, raw_connection)?;
 
-                Ok(Statement {
-                    kind: StatementKind::Named { name: name_cstr },
-                    param_formats: vec![1; param_types.len()],
-                })
-            }
-            PrepareForCache::No => {
-                // For unnamed statements, we'll return a Statement object without
-                // actually preparing it. This allows us to use send_query_params
-                // later in the execute call. This is needed to better interface
-                // with PgBouncer which cannot handle unnamed prepared statements
-                // when those are prepared and executed in separate transactions.
-                // See https://github.com/diesel-rs/diesel/pull/4539
-                Ok(Statement {
-                    kind: StatementKind::Unnamed {
-                        sql: sql_cstr,
-                        param_types: param_types_vec,
-                    },
-                    param_formats: vec![1; param_types.len()],
-                })
-            }
+            Ok(Statement {
+                kind: StatementKind::Named { name },
+                param_formats: vec![1; param_types.len()],
+            })
+        } else {
+            // For unnamed statements, we'll return a Statement object without
+            // actually preparing it. This allows us to use send_query_params
+            // later in the execute call. This is needed to better interface
+            // with PgBouncer which cannot handle unnamed prepared statements
+            // when those are prepared and executed in separate transactions.
+            // See https://github.com/diesel-rs/diesel/pull/4539
+            Ok(Statement {
+                kind: StatementKind::Unnamed {
+                    sql,
+                    param_types: param_types_vec,
+                },
+                param_formats: vec![1; param_types.len()],
+            })
         }
     }
+}
+
+fn param_types_to_ptr(param_types: Option<&Vec<u32>>) -> *const pq_sys::Oid {
+    param_types
+        .map(|types| types.as_ptr())
+        .unwrap_or(ptr::null())
 }

@@ -10,31 +10,15 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.2.9] 2025-03-31
+### Fixed
+
+* Fix an issue where `diesel migration generate --diff-schema` incorrectly uses the primary key of table B as the referenced column rather than the primary key of table A when B has a foreign key pointing to table A.
+* Bump maximal supported libsqlite3-sys version to 0.32.0 and add explicit feature entries for the `uuid` and `serde_json` feature.
+* Fixed an issue where diesel generated unnamed prepared statements would fail with an `unanmed prepared statement not found` error with pgbouncer.
+* Fix an issue with converting `ipnet::Ipnet` values with an subnet to SQL values
+
 ## [2.2.8] 2025-03-03
-### Added
-
-* Added `limit()` and `offset()` DSL to combination clauses such as `UNION`
-* Fixed `#[derive(Identifiable)]` ignoring attribute `#[diesel(serialize_as)]` on primary keys
-* Added embedded struct support for `AsChangeset` via `#[diesel(embed)]`
-* Added a `#[diesel(skip_update)]` attribute for the `AsChangeset` derive to skip updating a field present in the struct
-* Support for libsqlite3-sys 0.32.0
-* Add support for built-in PostgreSQL range operators and functions
-* Support for postgres multirange type
-* Added `diesel::r2d2::TestCustomizer`, which allows users to customize their `diesel::r2d2::Pool`s
-in a way that makes the pools suitable for use in parallel tests.
-* Added support for built-in PostgreSQL range operators and functions
-* Added support for various built-in PostgreSQL array functions
-* Added `Json` and `Jsonb` support for the SQLite backend.
-* Added a `#[diesel::declare_sql_function]` attribute macro to easily define support for 
-  multiple sql functions at once via an `extern "SQL"` block
-* Support `[print_schema] allow_tables_to_appear_in_same_query_config = "fk_related_tables"` to generate separate `allow_tables_to_appear_in_same_query!` calls containing only tables that are related through foreign keys. (Default: `"all_tables"`.) It is not possible to build queries using two tables that don't appear in the same `allow_tables_to_appear_in_same_query!` call, but that macro generates O(n²) rust code, so this option may be useful to reduce compilation time. ([#4333](https://github.com/diesel-rs/diesel/issues/4333))
-
-### Fixed 
-
-* Fixed diesel thinking `a.eq_any(b)` was non-nullable even if `a` and `b` were nullable.
-* Generate `InstrumentationEvent::BeginTransaction` for immediate and exclusive transactions in SQLite
-* Added `wasm32-unknown-unknown` target support for sqlite backend.
-
 ### Fixed
 
 * Allow `#[diesel(check_for_backend(_))]` to check fields with `#[diesel(embed)]` annotations
@@ -2213,3 +2197,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.2.6]: https://github.com/diesel-rs/diesel/compare/v2.2.5...v2.2.6
 [2.2.7]: https://github.com/diesel-rs/diesel/compare/v2.2.6...v2.2.7
 [2.2.8]: https://github.com/diesel-rs/diesel/compare/v2.2.7...v2.2.8
+[2.2.9]: https://github.com/diesel-rs/diesel/compare/v2.2.8...v2.2.9
