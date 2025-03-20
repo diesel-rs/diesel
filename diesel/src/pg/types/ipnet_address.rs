@@ -108,7 +108,11 @@ macro_rules! impl_Sql {
                         let af = PGSQL_AF_INET;
                         let prefix = net.prefix_len();
                         let len: u8 = 4;
-                        let addr = net.network().octets();
+                        let addr = if (net_type == 0) {
+                            net.addr().octets()
+                        } else {
+                            net.network().octets()
+                        };
                         data[0] = af;
                         data[1] = prefix;
                         data[2] = net_type;
@@ -121,7 +125,11 @@ macro_rules! impl_Sql {
                         let af = PGSQL_AF_INET6;
                         let prefix = net.prefix_len();
                         let len: u8 = 16;
-                        let addr = net.network().octets();
+                        let addr = if (net_type == 0) {
+                            net.addr().octets()
+                        } else {
+                            net.network().octets()
+                        };
                         data[0] = af;
                         data[1] = prefix;
                         data[2] = net_type;
@@ -158,6 +166,28 @@ mod tests {
 
         test_to_sql!(Inet, 0);
         test_to_sql!(Cidr, 1);
+    }
+
+    #[diesel_test_helper::test]
+    fn v4_masked_address_to_sql() {
+        macro_rules! test_to_sql {
+            ($ty:ty, $net_type:expr, $last_byte:expr) => {
+                let mut buffer = Vec::new();
+                {
+                    let mut bytes = Output::test(ByteWrapper(&mut buffer));
+                    let test_address =
+                        IpNet::V4(Ipv4Net::new(Ipv4Addr::new(192, 168, 0, 1), 24).unwrap());
+                    ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
+                }
+                assert_eq!(
+                    buffer,
+                    vec![PGSQL_AF_INET, 24, $net_type, 4, 192, 168, 0, $last_byte]
+                );
+            };
+        }
+
+        test_to_sql!(Inet, 0, 1);
+        test_to_sql!(Cidr, 1, 0);
     }
 
     #[diesel_test_helper::test]
@@ -223,6 +253,50 @@ mod tests {
 
         test_to_sql!(Inet, 0);
         test_to_sql!(Cidr, 1);
+    }
+
+    #[diesel_test_helper::test]
+    fn v6_masked_address_from_sql() {
+        macro_rules! test_to_sql {
+            ($ty:ty, $net_type:expr, $last_byte:expr) => {
+                let mut buffer = Vec::new();
+                {
+                    let mut bytes = Output::test(ByteWrapper(&mut buffer));
+                    let test_address = IpNet::V6(
+                        Ipv6Net::new(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 1), 64).unwrap(),
+                    );
+                    ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
+                }
+                assert_eq!(
+                    buffer,
+                    vec![
+                        PGSQL_AF_INET6,
+                        64,
+                        $net_type,
+                        16,
+                        0,
+                        0xfd,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        $last_byte,
+                    ]
+                );
+            };
+        }
+
+        test_to_sql!(Inet, 0, 1);
+        test_to_sql!(Cidr, 1, 0);
     }
 
     #[diesel_test_helper::test]
