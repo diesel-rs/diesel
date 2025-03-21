@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="The json_type(X) function returns the “type” of the outermost element of X. The “type” returned by json_type() is one of the following SQL text values: ‘null’, ‘true’, ‘false’, ‘integer’, ‘real’, ‘text’, ‘array’, or ‘object’."><title>json_type in diesel::sqlite::expression::functions - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0-nightly (78948ac25 2025-03-20)" data-channel="nightly" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../../../static.files/storage-d8ac8691.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../../diesel/index.html">diesel</a><span class="version">2.2.4</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">json_<wbr>type</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>sqlite::<wbr>expression::<wbr>functions</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../../index.html">diesel</a>::<wbr><a href="../../index.html">sqlite</a>::<wbr><a href="../index.html">expression</a>::<wbr><a href="index.html">functions</a></div><h1>Function <span class="fn">json_type</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../../src/diesel/sqlite/expression/functions.rs.html#12">Source</a> </span></div><pre class="rust item-decl"><code>pub fn json_type&lt;J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue&lt;<a class="struct" href="../../../sql_types/struct.Text.html" title="struct diesel::sql_types::Text">Text</a>&gt;, j&gt;(
+    j: j,
+) -&gt; <a class="type" href="type.json_type.html" title="type diesel::sqlite::expression::functions::json_type">json_type</a>&lt;J, j&gt;<div class="where">where
+    j: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;J&gt;,</div></code></pre><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>sqlite</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>The json_type(X) function returns the “type” of the outermost element of X.
+The “type” returned by json_type() is one of the following SQL text values:
+‘null’, ‘true’, ‘false’, ‘integer’, ‘real’, ‘text’, ‘array’, or ‘object’.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>version = diesel::select(sql::&lt;Text&gt;(<span class="string">"sqlite_version();"</span>))
+        .get_result::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="comment">// Querying SQLite version should not fail.
+</span><span class="kw">let </span>version_components: Vec&lt;<span class="kw-2">&amp;</span>str&gt; = version.split(<span class="string">'.'</span>).collect();
+<span class="kw">let </span>major: u32 = version_components[<span class="number">0</span>].parse().unwrap();
+<span class="kw">let </span>minor: u32 = version_components[<span class="number">1</span>].parse().unwrap();
+<span class="kw">let </span>patch: u32 = version_components[<span class="number">2</span>].parse().unwrap();
+
+<span class="kw">if </span>major &gt; <span class="number">3 </span>|| (major == <span class="number">3 </span>&amp;&amp; minor &gt;= <span class="number">38</span>) {
+    <span class="comment">/* Valid sqlite version, do nothing */
+</span>} <span class="kw">else </span>{
+    <span class="macro">println!</span>(<span class="string">"SQLite version is too old, skipping the test."</span>);
+    <span class="kw">return </span><span class="prelude-val">Ok</span>(());
+}
+
+<span class="kw">let </span>result = diesel::select(json_type::&lt;Json, <span class="kw">_</span>&gt;(<span class="macro">json!</span>({<span class="string">"a"</span>: [<span class="number">2</span>, <span class="number">3.5</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>, null, <span class="string">"x"</span>]})))
+    .get_result::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="string">"object"</span>, result);
+
+<span class="kw">let </span>result = diesel::select(json_type::&lt;Jsonb, <span class="kw">_</span>&gt;(<span class="macro">json!</span>({<span class="string">"a"</span>: [<span class="number">2</span>, <span class="number">3.5</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>, null, <span class="string">"x"</span>]})))
+    .get_result::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="string">"object"</span>, result);
+
+<span class="kw">let </span>result = diesel::select(json_type::&lt;Nullable&lt;Json&gt;, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>::&lt;serde_json::Value&gt;))
+    .get_result::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">None</span>, result);
+</code></pre></div>
+</div></details></section></div></main></body></html>
