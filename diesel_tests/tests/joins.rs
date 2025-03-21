@@ -205,7 +205,10 @@ fn full_outer_join() {
     let source = filtered_users::table
         .full_outer_join(posts::table.on(posts::user_id.eq(filtered_users::id)))
         .order_by((filtered_users::id.asc(), posts::id.asc()));
-    let actual_data: Vec<_> = source.load(connection).unwrap();
+
+    let actual_data = source
+        .load::<(Option<User>, Option<Post>)>(connection)
+        .unwrap();
 
     assert_eq!(expected_data, actual_data);
 }

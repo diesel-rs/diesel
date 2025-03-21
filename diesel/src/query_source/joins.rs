@@ -167,18 +167,11 @@ where
 
 impl<Left, Right> QuerySource for Join<Left, Right, FullOuter>
 where
-    Left: QuerySource,
+    Left: QuerySource + Clone,
     Right: QuerySource,
-    SqlTypeOf<Left::DefaultSelection>: IntoNullableExpression<Left::DefaultSelection>, // Ok
-    (
-        AppendExpression,
-        NullableExpressionOf<Left::DefaultSelection>,
-    ): AppendSelection<Nullable<Right::DefaultSelection>>,
-    <(
-        AppendExpression,
-        NullableExpressionOf<Left::DefaultSelection>,
-    ) as AppendSelection<Nullable<Right::DefaultSelection>>>::Output: AppearsOnTable<Self>,
-
+    Nullable<Left>: AppendSelection<Nullable<Right::DefaultSelection>>,
+    <Nullable<Left> as AppendSelection<Nullable<Right::DefaultSelection>>>::Output:
+        AppearsOnTable<Self>,
     Self: Clone,
 {
     type FromClause = Self;
@@ -190,10 +183,7 @@ where
     //
     // See https://github.com/diesel-rs/diesel/issues/3223 for details
     type DefaultSelection = self::private::SkipSelectableExpressionBoundCheckWrapper<
-        <(
-            AppendExpression,
-            NullableExpressionOf<Left::DefaultSelection>,
-        ) as AppendSelection<Nullable<Right::DefaultSelection>>>::Output,
+        <Nullable<Left> as AppendSelection<Nullable<Right::DefaultSelection>>>::Output,
     >;
 
     fn from_clause(&self) -> Self::FromClause {
@@ -202,12 +192,7 @@ where
 
     fn default_selection(&self) -> Self::DefaultSelection {
         self::private::SkipSelectableExpressionBoundCheckWrapper(
-            (
-                AppendExpression,
-                <SqlTypeOf<Left::DefaultSelection> as IntoNullableExpression<
-                    Left::DefaultSelection,
-                >>::into_nullable_expression(self.left.source.default_selection()),
-            )
+            Nullable(self.left.source.clone())
                 .append_selection(self.right.source.default_selection().nullable()),
         )
     }
@@ -342,6 +327,44 @@ where
 
     fn append_selection(&self, selection: Selection) -> Self::Output {
         self.join.append_selection(selection)
+    }
+}
+
+impl<T, Selection> AppendSelection<Selection> for Nullable<T>
+where
+    T: Table,
+{
+    type Output = (Nullable<T::AllColumns>, Selection);
+
+    fn append_selection(&self, selection: Selection) -> Self::Output {
+        (Nullable(T::all_columns()), selection)
+    }
+}
+
+impl<Left, Mid, Selection, Kind> AppendSelection<Selection> for Nullable<Join<Left, Mid, Kind>>
+where
+    Left: QuerySource,
+    Mid: QuerySource,
+    Join<Left, Mid, Kind>: QuerySource,
+    <Join<Left, Mid, Kind> as QuerySource>::DefaultSelection: TupleAppend<Selection>,
+{
+    type Output = <<Join<Left, Mid, Kind> as QuerySource>::DefaultSelection as TupleAppend<
+        Selection,
+    >>::Output;
+
+    fn append_selection(&self, selection: Selection) -> Self::Output {
+        self.0.default_selection().tuple_append(selection)
+    }
+}
+
+impl<Join, On, Selection> AppendSelection<Selection> for Nullable<JoinOn<Join, On>>
+where
+    Join: AppendSelection<Selection>,
+{
+    type Output = Join::Output;
+
+    fn append_selection(&self, selection: Selection) -> Self::Output {
+        self.0.join.append_selection(selection)
     }
 }
 

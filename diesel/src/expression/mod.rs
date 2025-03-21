@@ -44,7 +44,7 @@ pub(crate) mod subselect;
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::operators::Concat;
 
-pub use nullable::{IntoNullableExpression,NullableExpressionOf};
+//pub use nullable::{IntoNullableExpression, NullableExpressionOf};
 
 // we allow unreachable_pub here
 // as rustc otherwise shows false positives
