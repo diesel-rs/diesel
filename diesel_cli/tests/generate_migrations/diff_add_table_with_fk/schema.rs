@@ -1,17 +1,17 @@
 diesel::table! {
-    users {
-        id -> Integer,
+    users(user_id) {
+        user_id -> Integer,
         name -> Text,
     }
 }
 
 diesel::table! {
-    posts {
-        id -> Integer,
+    posts(post_id) {
+        post_id -> Integer,
         title -> Text,
         body -> Nullable<Text>,
-        user_id -> Integer,
+        foreign_key_user_id -> Integer,
     }
 }
 
-diesel::joinable!(posts -> users (user_id));
+diesel::joinable!(posts -> users (foreign_key_user_id));
