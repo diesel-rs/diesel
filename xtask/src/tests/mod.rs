@@ -92,6 +92,7 @@ impl TestArgs {
                 let out = command
                     .args(["test", "--chrome", "--headless", "--features", "sqlite"])
                     .current_dir(metadata.workspace_root.join("diesel"))
+                    .env("RUSTFLAGS", "--cfg getrandom_backend=\"wasm_js\"")
                     .stderr(Stdio::inherit())
                     .stdout(Stdio::inherit())
                     .status()
@@ -104,6 +105,7 @@ impl TestArgs {
                 let out = command
                     .args(["test", "--chrome", "--headless", "--features", "sqlite"])
                     .current_dir(metadata.workspace_root.join("diesel_tests"))
+                    .env("RUSTFLAGS", "--cfg getrandom_backend=\"wasm_js\"")
                     .stderr(Stdio::inherit())
                     .stdout(Stdio::inherit())
                     .status()
