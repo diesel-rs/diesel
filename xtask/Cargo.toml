@@ -8,6 +8,6 @@ edition.workspace = true
 
 [dependencies]
 clap = { version = "4.0", default-features = false, features = ["std", "help", "usage", "error-context", "suggestions", "derive"] }
-cargo_metadata = "0.18"
+cargo_metadata = "0.19"
 dotenvy = "0.15"
 tempfile = "3"
