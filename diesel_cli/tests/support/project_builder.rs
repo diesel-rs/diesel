@@ -191,6 +191,10 @@ impl Project {
     pub fn skip_drop_db(&mut self) {
         self.skip_drop_db = true;
     }
+
+    pub fn directory_path(&self) -> &Path {
+        self.directory.path()
+    }
 }
 
 #[cfg(not(feature = "sqlite"))]
