@@ -932,3 +932,40 @@ fn upsert_with_composite_primary_key_do_update() {
     assert_eq!(users[0], "Jane");
     assert_eq!(users[1], "Tess");
 }
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
+fn batch_upsert_non_default_values() {
+    use crate::schema::users;
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+
+    diesel::insert_into(users::table)
+        .values([
+            (
+                users::id.eq(1),
+                users::name.eq("Sean"),
+                users::hair_color.eq("black"),
+            ),
+            (
+                users::id.eq(2),
+                users::name.eq("Tess"),
+                users::hair_color.eq("blue"),
+            ),
+        ])
+        .on_conflict(users::id)
+        .do_update()
+        .set(users::hair_color.eq(diesel::upsert::excluded(users::hair_color)))
+        .execute(conn)
+        .unwrap();
+
+    let users = users::table
+        .select((users::id, users::hair_color))
+        .order_by(users::id)
+        .load::<(i32, Option<String>)>(conn)
+        .unwrap();
+    let expected = vec![
+        (1, Some(String::from("black"))),
+        (2, Some(String::from("blue"))),
+    ];
+    assert_eq!(users, expected);
+}

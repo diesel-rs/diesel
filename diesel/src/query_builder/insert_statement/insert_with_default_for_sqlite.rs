@@ -2,6 +2,7 @@ use super::{BatchInsert, InsertStatement};
 use crate::insertable::InsertValues;
 use crate::insertable::{CanInsertInSingleQuery, ColumnInsertValue, DefaultableColumnInsertValue};
 use crate::prelude::*;
+use crate::query_builder::upsert::on_conflict_clause::OnConflictValues;
 use crate::query_builder::{AstPass, QueryId, ValuesClause};
 use crate::query_builder::{DebugQuery, QueryFragment};
 use crate::query_dsl::methods::ExecuteDsl;
@@ -225,6 +226,28 @@ where
     }
 }
 
+impl<V, T, QId, C, Op, O, Target, ConflictOpt, const STATIC_QUERY_ID: bool> ExecuteDsl<C, Sqlite>
+    for InsertStatement<
+        T,
+        OnConflictValues<
+            BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>,
+            Target,
+            ConflictOpt,
+        >,
+        Op,
+    >
+where
+    T: QuerySource,
+    C: Connection<Backend = Sqlite>,
+    V: ContainsDefaultableValue<Out = O>,
+    O: Default,
+    (O, Self): ExecuteDsl<C, Sqlite>,
+{
+    fn execute(query: Self, conn: &mut C) -> QueryResult<usize> {
+        <(O, Self) as ExecuteDsl<C, Sqlite>>::execute((O::default(), query), conn)
+    }
+}
+
 impl<V, T, QId, C, Op, const STATIC_QUERY_ID: bool> ExecuteDsl<C, Sqlite>
     for (
         Yes,
@@ -336,6 +359,40 @@ where
             records: SqliteBatchInsertWrapper(query.records),
             operator: query.operator,
             target: query.target,
+            returning: query.returning,
+            into_clause: query.into_clause,
+        };
+        query.execute(conn)
+    }
+}
+
+impl<V, T, QId, C, Op, Target, ConflictOpt, const STATIC_QUERY_ID: bool> ExecuteDsl<C, Sqlite>
+    for (
+        No,
+        InsertStatement<
+            T,
+            OnConflictValues<BatchInsert<V, T, QId, STATIC_QUERY_ID>, Target, ConflictOpt>,
+            Op,
+        >,
+    )
+where
+    C: Connection<Backend = Sqlite>,
+    T: Table + QueryId + 'static,
+    T::FromClause: QueryFragment<Sqlite>,
+    Op: QueryFragment<Sqlite> + QueryId,
+    OnConflictValues<SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Target, ConflictOpt>:
+        QueryFragment<Sqlite> + CanInsertInSingleQuery<Sqlite> + QueryId,
+{
+    fn execute((No, query): Self, conn: &mut C) -> QueryResult<usize> {
+        let query = InsertStatement {
+            operator: query.operator,
+            target: query.target,
+            records: OnConflictValues {
+                values: SqliteBatchInsertWrapper(query.records.values),
+                target: query.records.target,
+                action: query.records.action,
+                where_clause: query.records.where_clause,
+            },
             returning: query.returning,
             into_clause: query.into_clause,
         };
