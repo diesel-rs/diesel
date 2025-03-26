@@ -129,7 +129,7 @@
 //!    executing a query:
 //!    This error message indicates that you're trying to select a field from a table
 //!    that does not appear in your from clause. If your query joins the relevant table via
-//!    [`left_join`](crate::query_dsl::QueryDsl::left_join) you need to call
+//!    [`left_join`](crate::query_dsl::QueryDsl::left_join) or [`full_join`](crate::query_dsl::QueryDsl::full_join) you need to call
 //!    [`.nullable()`](crate::expression_methods::NullableExpressionMethods::nullable)
 //!    on the relevant column in your select clause.
 //!
@@ -467,6 +467,14 @@ pub mod helper_types {
     pub type LeftJoinOn<Source, Rhs, On> =
         <Source as InternalJoinDsl<Rhs, joins::LeftOuter, On>>::Output;
 
+    /// Represents the return type of [`.full_join(rhs)`](crate::prelude::QueryDsl::full_join)
+    pub type FullJoin<Source, Rhs> =
+        <Source as JoinWithImplicitOnClause<Rhs, joins::FullOuter>>::Output;
+
+    /// Represents the return type of [`.full_join(rhs.on(on))`](crate::prelude::QueryDsl::full_join)
+    pub type FullJoinOn<Source, Rhs, On> =
+        <Source as InternalJoinDsl<Rhs, joins::FullOuter, On>>::Output;
+
     /// Represents the return type of [`rhs.on(on)`](crate::query_dsl::JoinOnDsl::on)
     pub type On<Source, On> = joins::OnClauseWrapper<Source, On>;
 
@@ -645,6 +653,53 @@ pub mod helper_types {
     /// ```
     pub type LeftJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
         JoinQuerySource<Left, Right, joins::LeftOuter, On>;
+
+    /// A query source representing the full outer join between two tables.
+    ///
+    /// The third generic type (`On`) controls how the tables are
+    /// joined.
+    ///
+    /// By default, the implicit join established by [`joinable!`][]
+    /// will be used, allowing you to omit the exact join
+    /// condition. For example, for the full join between three
+    /// tables that implement [`JoinTo`][], you only need to specify
+    /// the tables: `FullJoinQuerySource<FullJoinQuerySource<table1,
+    /// table2>, table3>`.
+    ///
+    /// [`JoinTo`]: crate::query_source::JoinTo
+    ///
+    /// If you use an explicit `ON` clause, you will need to specify
+    /// the `On` generic type.
+    ///
+    /// ```rust
+    /// # include!("doctest_setup.rs");
+    /// use diesel::{dsl, helper_types::LeftJoinQuerySource};
+    /// # use diesel::{backend::Backend, serialize::ToSql, sql_types};
+    /// use schema::*;
+    ///
+    /// # fn main() -> QueryResult<()> {
+    /// #     let conn = &mut establish_connection();
+    /// #
+    /// // If you have an explicit join like this...
+    /// let join_constraint = comments::columns::post_id.eq(posts::columns::id);
+    /// #     let query =
+    /// posts::table.full_join(comments::table.on(join_constraint));
+    /// #
+    /// #     // Dummy usage just to ensure the example compiles.
+    /// #     let filter = posts::columns::id.eq(1);
+    /// #     let filter: &FilterExpression<_> = &filter;
+    /// #     query.filter(filter).select(posts::columns::id.nullable()).get_result::<Option<i32>>(conn)?;
+    /// #
+    /// #     Ok(())
+    /// # }
+    ///
+    /// // ... you can use `FullJoinQuerySource` like this.
+    /// type JoinConstraint = dsl::Eq<comments::columns::post_id, posts::columns::id>;
+    /// type MyFullJoinQuerySource = FullJoinQuerySource<posts::table, comments::table, JoinConstraint>;
+    /// # type FilterExpression<DB> = dyn BoxableExpression<MyFullJoinQuerySource, DB, SqlType = sql_types::Bool>;
+    /// ```
+    pub type FullJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
+        JoinQuerySource<Left, Right, joins::FullOuter, On>;
 
     /// Maps `F` to `Alias<S>`
     ///

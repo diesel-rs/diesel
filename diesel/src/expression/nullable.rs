@@ -3,6 +3,7 @@ use crate::expression::*;
 use crate::query_builder::*;
 use crate::query_source::joins::ToInnerJoin;
 use crate::result::QueryResult;
+use crate::sql_types::is_nullable;
 use crate::sql_types::{DieselNumericOps, IntoNullable};
 
 #[doc(hidden)] // This is used by the `table!` macro internally
@@ -56,3 +57,57 @@ where
 }
 
 impl<T> SelectableExpression<NoFromClause> for Nullable<T> where Self: AppearsOnTable<NoFromClause> {}
+
+pub(crate) type NullableExpressionOf<E> =
+    <<E as Expression>::SqlType as IntoNullableExpression<E>>::NullableExpression;
+
+/// Convert expressions into their nullable form, without double wrapping them in `Nullable<...>`.
+pub trait IntoNullableExpression<E> {
+    /// The nullable expression of this type.
+    ///
+    /// For all expressions except `Nullable`, this will be `Nullable<Self>`.
+    type NullableExpression;
+
+    /// Convert this expression into its nullable representation.
+    ///
+    /// For `Nullable<T>`, this remain as `Nullable<T>`, otherwise the expression will be wrapped and be `Nullable<Self>`.
+    fn into_nullable_expression(e: E) -> Self::NullableExpression;
+}
+
+impl<ST, E> IntoNullableExpression<E> for ST
+where
+    ST: SingleValue,
+    E: Expression<SqlType = ST>,
+    ST: SqlType,
+    (ST::IsNull, ST): IntoNullableExpression<E>,
+{
+    type NullableExpression = <(ST::IsNull, ST) as IntoNullableExpression<E>>::NullableExpression;
+
+    fn into_nullable_expression(e: E) -> Self::NullableExpression {
+        <(ST::IsNull, ST) as IntoNullableExpression<E>>::into_nullable_expression(e)
+    }
+}
+
+impl<ST, E> IntoNullableExpression<E> for (is_nullable::NotNull, ST)
+where
+    E: Expression<SqlType = ST>,
+    ST: SqlType<IsNull = is_nullable::NotNull>,
+{
+    type NullableExpression = Nullable<E>;
+
+    fn into_nullable_expression(e: E) -> Self::NullableExpression {
+        Nullable(e)
+    }
+}
+
+impl<ST, E> IntoNullableExpression<E> for (is_nullable::IsNullable, ST)
+where
+    E: Expression<SqlType = ST>,
+    ST: SqlType<IsNull = is_nullable::IsNullable>,
+{
+    type NullableExpression = E;
+
+    fn into_nullable_expression(e: E) -> Self::NullableExpression {
+        e
+    }
+}

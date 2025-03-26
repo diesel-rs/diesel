@@ -1,12 +1,18 @@
 use super::{AppearsInFromClause, Plus};
+use crate::backend::sql_dialect;
 use crate::backend::Backend;
 use crate::backend::DieselReserveSpecialization;
+use crate::backend::SqlDialect;
+use crate::dsl::SqlTypeOf;
 use crate::expression::grouped::Grouped;
+use crate::expression::nullable::IntoNullableExpression;
 use crate::expression::nullable::Nullable;
+use crate::expression::nullable::NullableExpressionOf;
 use crate::prelude::*;
 use crate::query_builder::*;
 use crate::query_dsl::InternalJoinDsl;
 use crate::sql_types::BoolOrNullableBool;
+use crate::sql_types::SqlType;
 use crate::util::TupleAppend;
 
 /// A query source representing the join between two tables
@@ -160,6 +166,68 @@ where
     }
 }
 
+impl<ST, E> IntoNullableExpression<self::private::SkipSelectableExpressionBoundCheckWrapper<E>>
+    for ST
+where
+    E: Expression<SqlType = ST>,
+    ST: SqlType + IntoNullableExpression<E>,
+{
+    type NullableExpression = self::private::SkipSelectableExpressionBoundCheckWrapper<
+        <ST as IntoNullableExpression<E>>::NullableExpression,
+    >;
+
+    fn into_nullable_expression(
+        wrapper: self::private::SkipSelectableExpressionBoundCheckWrapper<E>,
+    ) -> Self::NullableExpression {
+        self::private::SkipSelectableExpressionBoundCheckWrapper(<ST as IntoNullableExpression<
+            E,
+        >>::into_nullable_expression(
+            wrapper.0
+        ))
+    }
+}
+
+impl<Left, Right> QuerySource for Join<Left, Right, FullOuter>
+where
+    Left: QuerySource,
+    Right: QuerySource,
+
+    SqlTypeOf<Left::DefaultSelection>: IntoNullableExpression<Left::DefaultSelection>,
+    <SqlTypeOf<Left::DefaultSelection> as IntoNullableExpression<Left::DefaultSelection>>::NullableExpression:
+        AppendSelection<Nullable<Right::DefaultSelection>>,
+
+    // Nullable<Left::DefaultSelection>: AppendSelection<Nullable<Right::DefaultSelection>>,
+    <<SqlTypeOf<Left::DefaultSelection> as IntoNullableExpression<Left::DefaultSelection>>::NullableExpression as AppendSelection<
+        Nullable<Right::DefaultSelection>,
+    >>::Output: AppearsOnTable<Self>,
+    Self: Clone,
+{
+    type FromClause = Self;
+    // combining two valid selectable expressions for both tables will always yield a
+    // valid selectable expressions for the whole join, so no need to check that here
+    // again. These checked turned out to be quite expensive in terms of compile time
+    // so we use a wrapper type to just skip the check and forward other more relevant
+    // trait implementations to the inner type
+    //
+    // See https://github.com/diesel-rs/diesel/issues/3223 for details
+    type DefaultSelection = self::private::SkipSelectableExpressionBoundCheckWrapper<
+        <<SqlTypeOf<Left::DefaultSelection> as IntoNullableExpression<Left::DefaultSelection>>::NullableExpression as AppendSelection<Nullable<Right::DefaultSelection>>>::Output,
+    >;
+
+    fn from_clause(&self) -> Self::FromClause {
+        self.clone()
+    }
+
+    fn default_selection(&self) -> Self::DefaultSelection {
+        self::private::SkipSelectableExpressionBoundCheckWrapper(
+            <SqlTypeOf<Left::DefaultSelection> as IntoNullableExpression<Left::DefaultSelection>>::into_nullable_expression(
+                self.left.source.default_selection(),
+            )
+            .append_selection(self.right.source.default_selection().nullable()),
+        )
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct OnKeyword;
 
@@ -276,6 +344,44 @@ where
     }
 }
 
+impl<T, Selection> AppendSelection<Selection> for Nullable<T>
+where
+    T: Table,
+{
+    type Output = (Nullable<T::AllColumns>, Selection);
+
+    fn append_selection(&self, selection: Selection) -> Self::Output {
+        (Nullable(T::all_columns()), selection)
+    }
+}
+
+impl<Left, Mid, Selection, Kind> AppendSelection<Selection> for Nullable<Join<Left, Mid, Kind>>
+where
+    Left: QuerySource,
+    Mid: QuerySource,
+    Join<Left, Mid, Kind>: QuerySource,
+    <Join<Left, Mid, Kind> as QuerySource>::DefaultSelection: TupleAppend<Selection>,
+{
+    type Output = <<Join<Left, Mid, Kind> as QuerySource>::DefaultSelection as TupleAppend<
+        Selection,
+    >>::Output;
+
+    fn append_selection(&self, selection: Selection) -> Self::Output {
+        self.0.default_selection().tuple_append(selection)
+    }
+}
+
+impl<Join, On, Selection> AppendSelection<Selection> for Nullable<JoinOn<Join, On>>
+where
+    Join: AppendSelection<Selection>,
+{
+    type Output = Join::Output;
+
+    fn append_selection(&self, selection: Selection) -> Self::Output {
+        self.0.join.append_selection(selection)
+    }
+}
+
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Inner;
@@ -300,6 +406,22 @@ where
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" LEFT OUTER");
+        Ok(())
+    }
+}
+
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
+pub struct FullOuter;
+
+impl<DB> QueryFragment<DB> for FullOuter
+where
+    DB: Backend
+        + SqlDialect<FullJoinSupport = sql_dialect::full_join_support::PostgresLikeFullJoinSupport>
+        + DieselReserveSpecialization,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_sql(" FULL OUTER");
         Ok(())
     }
 }

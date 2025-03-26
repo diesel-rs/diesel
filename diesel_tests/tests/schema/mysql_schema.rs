@@ -167,6 +167,14 @@ table! {
 }
 
 table! {
+    filtered_users (id) {
+        id -> Integer,
+        name -> Varchar,
+        hair_color -> Nullable<Varchar>,
+    }
+}
+
+table! {
     users (id) {
         id -> Integer,
         name -> Text,
@@ -225,6 +233,7 @@ allow_tables_to_appear_in_same_query!(
     trees,
     unsigned_table,
     users,
+    filtered_users,
     users_with_name_pk,
     with_keywords,
 );

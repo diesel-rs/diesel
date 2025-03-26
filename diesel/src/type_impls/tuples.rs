@@ -3,6 +3,7 @@ use crate::backend::Backend;
 use crate::deserialize::{
     self, FromSqlRow, FromStaticSqlRow, Queryable, SqlTypeOrSelectable, StaticallySizedRow,
 };
+use crate::expression::nullable::IntoNullableExpression;
 use crate::expression::{
     is_contained_in_group_by, AppearsOnTable, Expression, IsContainedInGroupBy, MixedAggregates,
     QueryMetadata, Selectable, SelectableExpression, TypedExpressionType, ValidGrouping,
@@ -58,6 +59,22 @@ macro_rules! tuple_impls {
                 where Self: SqlType,
             {
                 type Nullable = Nullable<($($T,)*)>;
+            }
+
+            impl<$($T,)* $($ST: IntoNullableExpression<$T>,)*> IntoNullableExpression<($($T,)*)> for ($($ST,)*)
+            where
+                ($($T,)*): Expression<SqlType = ($($ST,)*)>,
+                ($($ST,)*): SqlType
+            {
+                type NullableExpression = (
+                    $(<$ST as IntoNullableExpression<$T>>::NullableExpression,)*
+                );
+
+                fn into_nullable_expression(expr: ($($T,)*)) -> Self::NullableExpression {
+                    (
+                        $(<$ST as IntoNullableExpression<$T>>::into_nullable_expression(expr.$idx),)*
+                    )
+                }
             }
 
             impl<$($T,)+ __DB> Selectable<__DB> for ($($T,)+)
