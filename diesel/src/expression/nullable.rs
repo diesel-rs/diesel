@@ -76,6 +76,7 @@ pub trait IntoNullableExpression<E> {
 
 impl<ST, E> IntoNullableExpression<E> for ST
 where
+    ST: SingleValue,
     E: Expression<SqlType = ST>,
     ST: SqlType,
     (ST::IsNull, ST): IntoNullableExpression<E>,
