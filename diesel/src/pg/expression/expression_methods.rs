@@ -466,12 +466,12 @@ pub trait PgSortExpressionMethods: Sized {
     ///
     /// let asc_default_nulls = nullable_numbers.select(nullable_number)
     ///     .order(nullable_number.asc())
-    ///     .load(connection)?;
+    ///     .load::<Option<i32>>(connection)?;
     /// assert_eq!(vec![Some(1), Some(2), None], asc_default_nulls);
     ///
     /// let asc_nulls_first = nullable_numbers.select(nullable_number)
     ///     .order(nullable_number.asc().nulls_first())
-    ///     .load(connection)?;
+    ///     .load::<Option<i32>>(connection)?;
     /// assert_eq!(vec![None, Some(1), Some(2)], asc_nulls_first);
     /// #     Ok(())
     /// # }
@@ -514,12 +514,12 @@ pub trait PgSortExpressionMethods: Sized {
     ///
     /// let desc_default_nulls = nullable_numbers.select(nullable_number)
     ///     .order(nullable_number.desc())
-    ///     .load(connection)?;
+    ///     .load::<Option<i32>>(connection)?;
     /// assert_eq!(vec![None, Some(2), Some(1)], desc_default_nulls);
     ///
     /// let desc_nulls_last = nullable_numbers.select(nullable_number)
     ///     .order(nullable_number.desc().nulls_last())
-    ///     .load(connection)?;
+    ///     .load::<Option<i32>>(connection)?;
     /// assert_eq!(vec![Some(2), Some(1), None], desc_nulls_last);
     /// #     Ok(())
     /// # }

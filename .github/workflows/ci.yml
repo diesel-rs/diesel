@@ -60,12 +60,6 @@ jobs:
 
       - name: Set environment variables
         shell: bash
-        if: matrix.rust == 'nightly' && matrix.backend == 'mysql' && runner.os == 'Windows'
-        run: |
-          echo "RUSTFLAGS=${RUSTFLAGS} -C link-arg=-l:Advapi32.lib"
-
-      - name: Set environment variables
-        shell: bash
         if: matrix.rust != 'nightly'
         run: |
           echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
@@ -526,7 +520,7 @@ jobs:
       - name: Install Mysql (Linux)
         run: |
           sudo apt-get update
-          sudo apt-get -y install libmysqlclient-dev llvm
+          sudo apt-get -y install libmysqlclient-dev llvm libtirpc-dev
           sudo systemctl start mysql.service
           sleep 5
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
