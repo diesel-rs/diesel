@@ -60,6 +60,12 @@ jobs:
 
       - name: Set environment variables
         shell: bash
+        if: matrix.rust == 'nightly' && matrix.backend == 'mysql' && runner.os == 'Windows'
+        run: |
+          echo "RUSTFLAGS=${RUSTFLAGS} -C link-arg=-l:Advapi32.lib"
+
+      - name: Set environment variables
+        shell: bash
         if: matrix.rust != 'nightly'
         run: |
           echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
