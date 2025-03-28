@@ -262,8 +262,9 @@ fn copy_to_csv() {
 
 #[test]
 fn copy_to_text() {
-    let conn = &mut connection_with_sean_and_tess_in_users_table();
+    // Test with explicit Text format
     {
+        let conn = &mut connection_with_sean_and_tess_in_users_table();
         let mut out = String::new();
         let mut copy = diesel::copy_to(users::table)
             .with_format(CopyFormat::Text)
@@ -272,11 +273,16 @@ fn copy_to_text() {
         copy.read_to_string(&mut out).unwrap();
         assert_eq!(out, "1\tSean\t\\N\n2\tTess\t\\N\n");
     }
-    let mut out = String::new();
-    // default is text
-    let mut copy = diesel::copy_to(users::table).load_raw(conn).unwrap();
-    copy.read_to_string(&mut out).unwrap();
-    assert_eq!(out, "1\tSean\t\\N\n2\tTess\t\\N\n");
+
+    // Test with default format (which is Text)
+    // Use a fresh connection to avoid "another command is already in progress" error
+    {
+        let conn = &mut connection_with_sean_and_tess_in_users_table();
+        let mut out = String::new();
+        let mut copy = diesel::copy_to(users::table).load_raw(conn).unwrap();
+        copy.read_to_string(&mut out).unwrap();
+        assert_eq!(out, "1\tSean\t\\N\n2\tTess\t\\N\n");
+    }
 }
 
 #[test]

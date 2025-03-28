@@ -191,7 +191,7 @@ pub fn generate_sql_based_on_diff_schema(
             .unwrap_or_default()
             .into_iter()
             .filter_map(|j| {
-                let referenced_table = table_pk_key_list.get(&t.table_name.to_string())?;
+                let referenced_table = table_pk_key_list.get(&j.parent_table.to_string())?;
                 match referenced_table {
                     None => Some((j, "id".into())),
                     Some(pks) if pks.len() == 1 => Some((j, pks.first()?.to_string())),
