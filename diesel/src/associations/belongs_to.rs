@@ -44,6 +44,18 @@ pub trait BelongsTo<Parent> {
 /// In the following relationship, User has many Posts,
 /// so User is the parent and Posts are children.
 ///
+/// # Unrelated Rows
+///
+/// When using [`GroupedBy::grouped_by`], if the child rows were not queried
+/// using the provided parent rows, it is not guaranteed a parent row
+/// will be found for a given child row.
+/// This is possible, if the foreign key in the relationship is nullable,
+/// or if a child row's parent was not present in the provided slice,
+/// in which case, unrelated child rows will be discarded.
+///
+/// If discarding these rows is undesirable, it may be preferable to use
+/// [`GroupedBy::try_grouped_by`].
+///
 /// # Example
 ///
 /// ```rust
