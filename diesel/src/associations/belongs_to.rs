@@ -237,19 +237,26 @@ where
 {
     fn grouped_by(self, parents: &'a [Parent]) -> Vec<Vec<Child>> {
         use std::collections::HashMap;
+        use std::iter;
+
+        let mut grouped: Vec<_> = iter::repeat_with(Vec::new).take(parents.len()).collect();
 
         let id_indices: HashMap<_, _> = parents
             .iter()
             .enumerate()
             .map(|(i, u)| (u.id(), i))
             .collect();
-        let mut result = parents.iter().map(|_| Vec::new()).collect::<Vec<_>>();
-        for child in self {
-            if let Some(index) = child.foreign_key().map(|i| id_indices[i]) {
-                result[index].push(child);
-            }
-        }
-        result
+
+        self.into_iter()
+            .filter_map(|child| {
+                let fk = child.foreign_key()?;
+                let i = id_indices.get(fk)?;
+
+                Some((i, child))
+            })
+            .for_each(|(i, child)| grouped[*i].push(child));
+
+        grouped
     }
 
     fn try_grouped_by(
