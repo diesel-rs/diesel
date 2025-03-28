@@ -44,6 +44,18 @@ pub trait BelongsTo<Parent> {
 /// In the following relationship, User has many Posts,
 /// so User is the parent and Posts are children.
 ///
+/// # Unrelated Rows
+///
+/// When using [`GroupedBy::grouped_by`], if the child rows were not queried
+/// using the provided parent rows, it is not guaranteed a parent row
+/// will be found for a given child row.
+/// This is possible, if the foreign key in the relationship is nullable,
+/// or if a child row's parent was not present in the provided slice,
+/// in which case, unrelated child rows will be discarded.
+///
+/// If discarding these rows is undesirable, it may be preferable to use
+/// [`GroupedBy::try_grouped_by`].
+///
 /// # Example
 ///
 /// ```rust
@@ -237,19 +249,26 @@ where
 {
     fn grouped_by(self, parents: &'a [Parent]) -> Vec<Vec<Child>> {
         use std::collections::HashMap;
+        use std::iter;
+
+        let mut grouped: Vec<_> = iter::repeat_with(Vec::new).take(parents.len()).collect();
 
         let id_indices: HashMap<_, _> = parents
             .iter()
             .enumerate()
             .map(|(i, u)| (u.id(), i))
             .collect();
-        let mut result = parents.iter().map(|_| Vec::new()).collect::<Vec<_>>();
-        for child in self {
-            if let Some(index) = child.foreign_key().map(|i| id_indices[i]) {
-                result[index].push(child);
-            }
-        }
-        result
+
+        self.into_iter()
+            .filter_map(|child| {
+                let fk = child.foreign_key()?;
+                let i = id_indices.get(fk)?;
+
+                Some((i, child))
+            })
+            .for_each(|(i, child)| grouped[*i].push(child));
+
+        grouped
     }
 
     fn try_grouped_by(
