@@ -68,3 +68,8 @@ pub type json_quote<J> = super::functions::json_quote<SqlTypeOf<J>, J>;
 #[allow(non_camel_case_types)]
 #[cfg(feature = "sqlite")]
 pub type json_patch<J, P> = super::functions::json_patch<SqlTypeOf<J>, J, P>;
+
+/// Return type of [`jsonb_patch(json, json)`](super::functions::jsonb_patch())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type jsonb_patch<J, P> = super::functions::jsonb_patch<SqlTypeOf<J>, J, P>;
