@@ -999,6 +999,25 @@ extern "SQL" {
     ///
     /// assert_eq!(json!({"a":1, "b":2, "c":3, "d":4}), result);
     ///
+    /// let result = diesel::select(json_patch::<Json, _, _>(json!({"a":[1,2],"b":2}), json!({"a":9})))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!({"a":9,"b":2}), result);
+    ///
+    /// let result = diesel::select(json_patch::<Json, _, _>(json!({"a":[1,2],"b":2}), json!({"a":null})))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!({"b":2}), result);
+    ///
+    /// let result = diesel::select(json_patch::<Json, _, _>(json!({"a":1,"b":2}), json!({"a":9,"b":null,"c":8})))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!({"a":9,"c":8}), result);
+    ///
+    /// let result = diesel::select(json_patch::<Json, _, _>(json!({"a":{"x":1,"y":2},"b":3}), json!({"a":{"y":9},"c":8})))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!({"a":{"x":1,"y":9},"b":3,"c":8}), result);
     ///
     /// # Ok(())
     /// # }
