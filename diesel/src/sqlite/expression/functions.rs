@@ -959,4 +959,51 @@ extern "SQL" {
     #[sql_name = "json_quote"]
     #[cfg(feature = "sqlite")]
     fn json_quote<J: SqlType + SingleValue>(j: J) -> Json;
+
+    /// The json_patch(T,P) SQL function runs the RFC-7396 MergePatch algorithm to apply patch P against input T. The patched copy of T is returned.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{sql, json_patch};
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Text, Json, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let version = diesel::select(sql::<Text>("sqlite_version();"))
+    ///         .get_result::<String>(connection)?;
+    ///
+    /// // Querying SQLite version should not fail.
+    /// let version_components: Vec<&str> = version.split('.').collect();
+    /// let major: u32 = version_components[0].parse().unwrap();
+    /// let minor: u32 = version_components[1].parse().unwrap();
+    /// let patch: u32 = version_components[2].parse().unwrap();
+    ///
+    /// if major > 3 || (major == 3 && minor >= 38) {
+    ///     /* Valid sqlite version, do nothing */
+    /// } else {
+    ///     println!("SQLite version is too old, skipping the test.");
+    ///     return Ok(());
+    /// }
+    /// let result = diesel::select(json_patch::<Json, _, _>(json!({"a":1,"b":2}), json!({"c":3,"d":4})))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!({"a":1, "b":2, "c":3, "d":4}), result);
+    ///
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "json_patch"]
+    #[cfg(feature = "sqlite")]
+    fn json_patch<J: JsonOrNullableJson + SingleValue>(j: J, patch: J) -> Json;
 }

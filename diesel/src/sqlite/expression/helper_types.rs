@@ -63,3 +63,8 @@ pub type json_type_with_path<J, P> = super::functions::json_type_with_path<SqlTy
 #[allow(non_camel_case_types)]
 #[cfg(feature = "sqlite")]
 pub type json_quote<J> = super::functions::json_quote<SqlTypeOf<J>, J>;
+
+/// Return type of [`json_patch(json, json)`](super::functions::json_patch())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_patch<J, P> = super::functions::json_patch<SqlTypeOf<J>, J, P>;
