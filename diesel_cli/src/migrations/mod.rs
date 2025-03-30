@@ -27,19 +27,16 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
         ("run", _) => {
             let mut conn = InferConnection::from_matches(matches)?;
             let dir = migrations_dir(matches)?;
-            let dir = FileBasedMigrations::from_path(dir.clone()).map_err(|err| match err {
-                MigrationError::IoError(err) => crate::errors::Error::IoError(err, Some(dir)),
-                err => crate::errors::Error::MigrationError(Box::new(err)),
-            })?;
+            let dir = FileBasedMigrations::from_path(dir.clone())
+                .map_err(|e| crate::errors::Error::from_migration_error(e, Some(dir)))?;
             run_migrations_with_output(&mut conn, dir)?;
             regenerate_schema_if_file_specified(matches)?;
         }
         ("revert", args) => {
             let mut conn = InferConnection::from_matches(matches)?;
             let dir = migrations_dir(matches)?;
-            let dir = FileBasedMigrations::from_path(dir.clone()).map_err(|err| match err {
-                MigrationError::IoError(err) => crate::errors::Error::IoError(err, Some(dir)),
-                err => crate::errors::Error::MigrationError(Box::new(err)),
+            let dir = FileBasedMigrations::from_path(dir.clone()).map_err(|e| {
+                crate::errors::Error::from_migration_error(e, Some(dir.clone()))
             })?;
             if args.get_flag("REVERT_ALL") {
                 revert_all_migrations_with_output(&mut conn, dir)?;
@@ -68,29 +65,25 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
         ("redo", args) => {
             let mut conn = InferConnection::from_matches(matches)?;
             let dir = migrations_dir(matches)?;
-            let dir = FileBasedMigrations::from_path(dir.clone()).map_err(|err| match err {
-                MigrationError::IoError(err) => crate::errors::Error::IoError(err, Some(dir)),
-                err => crate::errors::Error::MigrationError(Box::new(err)),
-            })?;
+            let dir = FileBasedMigrations::from_path(dir.clone())
+                .map_err(|e| crate::errors::Error::from_migration_error(e, Some(dir)))?;
             redo_migrations(&mut conn, dir, args)?;
             regenerate_schema_if_file_specified(matches)?;
         }
+
         ("list", _) => {
             let mut conn = InferConnection::from_matches(matches)?;
             let dir = migrations_dir(matches)?;
-            let dir = FileBasedMigrations::from_path(dir.clone()).map_err(|err| match err {
-                MigrationError::IoError(err) => crate::errors::Error::IoError(err, Some(dir)),
-                err => crate::errors::Error::MigrationError(Box::new(err)),
-            })?;
+            let dir = FileBasedMigrations::from_path(dir.clone())
+                .map_err(|e| crate::errors::Error::from_migration_error(e, Some(dir)))?;
             list_migrations(&mut conn, dir)?;
         }
+
         ("pending", _) => {
             let mut conn = InferConnection::from_matches(matches)?;
             let dir = migrations_dir(matches)?;
-            let dir = FileBasedMigrations::from_path(dir.clone()).map_err(|err| match err {
-                MigrationError::IoError(err) => crate::errors::Error::IoError(err, Some(dir)),
-                err => crate::errors::Error::MigrationError(Box::new(err)),
-            })?;
+            let dir = FileBasedMigrations::from_path(dir.clone())
+                .map_err(|e| crate::errors::Error::from_migration_error(e, Some(dir)))?;
             let result = MigrationHarness::has_pending_migration(&mut conn, dir)
                 .map_err(crate::errors::Error::MigrationError)?;
             println!("{result:?}");
@@ -431,7 +424,7 @@ pub fn migrations_dir(matches: &ArgMatches) -> Result<PathBuf, crate::errors::Er
         Some(dir) => dir,
         None => FileBasedMigrations::find_migrations_directory()
             .map(|p| p.path().to_path_buf())
-            .map_err(|e| crate::errors::Error::MigrationError(Box::new(e))),
+            .map_err(|e| crate::errors::Error::from_migration_error::<PathBuf>(e, None)),
     }
 }
 
