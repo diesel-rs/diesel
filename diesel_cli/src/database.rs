@@ -278,7 +278,7 @@ fn create_schema_table_and_run_migrations_if_needed(
 ) -> Result<(), crate::errors::Error> {
     if !schema_table_exists(database_url)? {
         let migrations = FileBasedMigrations::from_path(migrations_dir)
-            .map_err(|e| crate::errors::Error::MigrationError(Box::new(e)))?;
+            .map_err(|e| crate::errors::Error::from_migration_error(e, Some(migrations_dir)))?;
         let mut conn = InferConnection::from_url(database_url.to_owned())?;
         super::run_migrations_with_output(&mut conn, migrations)
             .map_err(crate::errors::Error::MigrationError)?;
