@@ -125,6 +125,13 @@ fn main() {
         .load(&mut conn)
         .unwrap();
 
+    // full joins require both optional
+    let _ = users::table
+        .full_join(posts::table)
+        .select((users::id.nullable(), posts::id.nullable()))
+        .load(&mut conn)
+        .unwrap();
+
     // allow manual impls with complex expressions
     // (and group by)
     let _ = users::table
@@ -160,6 +167,27 @@ fn main() {
     let _ = users::table
         .left_join(posts::table)
         .select(UserWithEmbeddedPost::as_select())
+        .load(&mut conn)
+        .unwrap();
+
+    // full joins force nullable on both
+    let _ = users::table
+        .full_join(posts::table)
+        .select((users::id, posts::id))
+        .load(&mut conn)
+        .unwrap();
+
+    // full joins force nullable on left
+    let _ = users::table
+        .full_join(posts::table)
+        .select((users::id, posts::id.nullable()))
+        .load(&mut conn)
+        .unwrap();
+
+    // full joins force nullable on right
+    let _ = users::table
+        .full_join(posts::table)
+        .select((users::id.nullable(), posts::id))
         .load(&mut conn)
         .unwrap();
 

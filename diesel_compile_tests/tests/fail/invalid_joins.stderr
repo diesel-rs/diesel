@@ -351,3 +351,150 @@ note: required by a bound in `left_join`
    |     where
    |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::left_join`
+
+error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
+  --> tests/fail/invalid_joins.rs:75:34
+   |
+75 |   let _ = users::table.full_join(posts::table.full_join(users::table));
+   |                        --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
+   |                        |
+   |                        required by a bound introduced by this call
+   |
+note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>>`
+  --> tests/fail/invalid_joins.rs:7:9
+   |
+7  |         id -> Integer,
+   |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 3 redundant requirements hidden
+   = note: required for `(NullableExpression<(users::columns::id, users::columns::name)>, NullableExpression<query_source::joins::private::SkipSelectableExpressionBoundCheckWrapper<(NullableExpression<(posts::columns::id, posts::columns::title, posts::columns::user_id)>, NullableExpression<(users::columns::id, users::columns::name)>)>>)` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>>`
+   = note: required for `query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>` to implement `QuerySource`
+   = note: 1 redundant requirement hidden
+   = note: required for `JoinOn<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>` to implement `QuerySource`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>`
+   = note: 1 redundant requirement hidden
+   = note: required for `users::table` to implement `InternalJoinDsl<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>`
+   = note: required for `users::table` to implement `JoinWithImplicitOnClause<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>`
+note: required by a bound in `full_join`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |     fn full_join<Rhs>(self, rhs: Rhs) -> FullJoin<Self, Rhs>
+   |        --------- required by a bound in this associated function
+   |     where
+   |         Self: JoinWithImplicitOnClause<Rhs, joins::FullOuter>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::full_join`
+
+error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, FullOuter>, Grouped<Eq<..., ...>>>>>, ...> as AppearsInFromClause<...>>::Count == Once`
+  --> tests/fail/invalid_joins.rs:75:24
+   |
+75 |   let _ = users::table.full_join(posts::table.full_join(users::table));
+   |                        ^^^^^^^^^ expected `Once`, found `MoreThanOnce`
+   |
+note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>>`
+  --> tests/fail/invalid_joins.rs:7:9
+   |
+7  |         id -> Integer,
+   |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 3 redundant requirements hidden
+   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>>`
+   = note: required for `JoinOn<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>` to implement `QuerySource`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>`
+
+error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
+  --> tests/fail/invalid_joins.rs:78:34
+   |
+78 |   let _ = users::table.full_join(posts::table.full_join(users::table.on(posts::user_id.eq(users::id))));
+   |                        --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
+   |                        |
+   |                        required by a bound introduced by this call
+   |
+note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, FullOuter>>`
+  --> tests/fail/invalid_joins.rs:7:9
+   |
+7  |         id -> Integer,
+   |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 3 redundant requirements hidden
+   = note: required for `(NullableExpression<(users::columns::id, users::columns::name)>, NullableExpression<query_source::joins::private::SkipSelectableExpressionBoundCheckWrapper<(NullableExpression<(posts::columns::id, posts::columns::title, posts::columns::user_id)>, NullableExpression<(users::columns::id, users::columns::name)>)>>)` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, FullOuter>>`
+   = note: required for `query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, FullOuter>` to implement `QuerySource`
+   = note: 1 redundant requirement hidden
+   = note: required for `JoinOn<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>` to implement `QuerySource`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, FullOuter, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>`
+   = note: 1 redundant requirement hidden
+   = note: required for `users::table` to implement `InternalJoinDsl<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, FullOuter, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>`
+   = note: required for `users::table` to implement `JoinWithImplicitOnClause<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, FullOuter>`
+note: required by a bound in `full_join`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |     fn full_join<Rhs>(self, rhs: Rhs) -> FullJoin<Self, Rhs>
+   |        --------- required by a bound in this associated function
+   |     where
+   |         Self: JoinWithImplicitOnClause<Rhs, joins::FullOuter>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::full_join`
+
+error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, FullOuter>, Grouped<Eq<..., ...>>>>>, ...> as AppearsInFromClause<...>>::Count == Once`
+  --> tests/fail/invalid_joins.rs:78:24
+   |
+78 |   let _ = users::table.full_join(posts::table.full_join(users::table.on(posts::user_id.eq(users::id))));
+   |                        ^^^^^^^^^ expected `Once`, found `MoreThanOnce`
+   |
+note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, FullOuter>>`
+  --> tests/fail/invalid_joins.rs:7:9
+   |
+7  |         id -> Integer,
+   |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 3 redundant requirements hidden
+   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, FullOuter>>`
+   = note: required for `JoinOn<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>` to implement `QuerySource`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, FullOuter, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>`
+
+error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
+  --> tests/fail/invalid_joins.rs:81:34
+   |
+81 |   let _ = users::table.full_join(posts::table.on(users::id.eq(posts::user_id)).full_join(users::table));
+   |                        --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
+   |                        |
+   |                        required by a bound introduced by this call
+   |
+note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>>`
+  --> tests/fail/invalid_joins.rs:7:9
+   |
+7  |         id -> Integer,
+   |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 3 redundant requirements hidden
+   = note: required for `(NullableExpression<(users::columns::id, users::columns::name)>, NullableExpression<query_source::joins::private::SkipSelectableExpressionBoundCheckWrapper<(NullableExpression<(posts::columns::id, posts::columns::title, posts::columns::user_id)>, NullableExpression<(users::columns::id, users::columns::name)>)>>)` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>>`
+   = note: required for `query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>` to implement `QuerySource`
+   = note: 1 redundant requirement hidden
+   = note: required for `JoinOn<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, posts::columns::user_id>>>` to implement `QuerySource`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, posts::columns::user_id>>>`
+   = note: 1 redundant requirement hidden
+   = note: required for `users::table` to implement `InternalJoinDsl<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, posts::columns::user_id>>>`
+   = note: required for `users::table` to implement `JoinWithImplicitOnClause<query_source::joins::OnClauseWrapper<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, posts::columns::user_id>>>, FullOuter>`
+note: required by a bound in `full_join`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |     fn full_join<Rhs>(self, rhs: Rhs) -> FullJoin<Self, Rhs>
+   |        --------- required by a bound in this associated function
+   |     where
+   |         Self: JoinWithImplicitOnClause<Rhs, joins::FullOuter>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::full_join`
+
+error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, FullOuter>, Grouped<Eq<..., ...>>>>>, ...> as AppearsInFromClause<...>>::Count == Once`
+  --> tests/fail/invalid_joins.rs:81:24
+   |
+81 |   let _ = users::table.full_join(posts::table.on(users::id.eq(posts::user_id)).full_join(users::table));
+   |                        ^^^^^^^^^ expected `Once`, found `MoreThanOnce`
+   |
+note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>>`
+  --> tests/fail/invalid_joins.rs:7:9
+   |
+7  |         id -> Integer,
+   |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 2 redundant requirements hidden
+   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, posts::columns::user_id>>` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>>`
+   = note: required for `JoinOn<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, posts::columns::user_id>>>` to implement `QuerySource`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, FullOuter, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, posts::columns::user_id>>>`

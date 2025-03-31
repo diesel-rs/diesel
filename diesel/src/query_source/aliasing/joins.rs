@@ -7,7 +7,8 @@ use crate::expression::{AppearsOnTable, SelectableExpression};
 use crate::query_builder::AsQuery;
 use crate::query_dsl::InternalJoinDsl;
 use crate::query_source::joins::{
-    AppendSelection, Inner, Join, JoinOn, JoinTo, LeftOuter, OnClauseWrapper, ToInnerJoin,
+    AppendSelection, FullOuter, Inner, Join, JoinOn, JoinTo, LeftOuter, OnClauseWrapper,
+    ToInnerJoin,
 };
 use crate::query_source::{
     AppearsInFromClause, FromClause, Never, Pick, QuerySource, SelectStatement, Table,
@@ -95,6 +96,15 @@ where
     Self: AppearsOnTable<Join<Left, Right, LeftOuter>>,
     Self: SelectableExpression<Left>,
     Left: QuerySource,
+    Right: AppearsInFromClause<Alias<S>, Count = Never> + QuerySource,
+{
+}
+
+impl<Left, Right, S, C> SelectableExpression<Join<Left, Right, FullOuter>> for AliasedField<S, C>
+where
+    Self: AppearsOnTable<Join<Left, Right, FullOuter>>,
+    Self: SelectableExpression<Left>,
+    Left: AppearsInFromClause<Alias<S>, Count = Never> + QuerySource,
     Right: AppearsInFromClause<Alias<S>, Count = Never> + QuerySource,
 {
 }

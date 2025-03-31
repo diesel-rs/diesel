@@ -89,6 +89,8 @@ impl SqlDialect for Mysql {
 
     type ConcatClause = MysqlConcatClause;
     type AliasSyntax = sql_dialect::alias_syntax::AsAliasSyntax;
+
+    type FullJoinSupport = sql_dialect::full_join_support::NoFullJoinSupport;
 }
 
 impl DieselReserveSpecialization for Mysql {}

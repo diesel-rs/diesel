@@ -1,0 +1,53 @@
+error[E0277]: the trait bound `(Nullable<(diesel::sql_types::Integer,)>, Nullable<(diesel::sql_types::Integer,)>): load_dsl::private::CompatibleType<(Option<i32>, Option<i32>), _>` is not satisfied
+  --> tests/fail/mysql_does_not_support_full_join.rs:23:51
+   |
+23 |         .get_result::<(Option<i32>, Option<i32>)>(&mut connection);
+   |          ----------                               ^^^^^^^^^^^^^^^ unsatisfied trait bound
+   |          |
+   |          required by a bound introduced by this call
+   |
+   = help: the trait `load_dsl::private::CompatibleType<(Option<i32>, Option<i32>), _>` is not implemented for `(Nullable<(diesel::sql_types::Integer,)>, Nullable<(diesel::sql_types::Integer,)>)`
+   = note: this is a mismatch between what your query returns and what your type expects the query to return
+   = note: the fields in your struct need to match the fields returned by your query in count, order and type
+   = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]`
+           on your struct `(Option<i32>, Option<i32>)` and in your query `.select((Option<i32>, Option<i32>)::as_select())` to get a better error message
+   = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
+             (ST0, ST1)
+             (ST0, ST1, ST2)
+             (ST0, ST1, ST2, ST3)
+             (ST0, ST1, ST2, ST3, ST4)
+             (ST0, ST1, ST2, ST3, ST4, ST5)
+             (ST0, ST1, ST2, ST3, ST4, ST5, ST6)
+             (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)
+             (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)
+           and $N others
+   = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, posts::columns::id>>>>>` to implement `LoadQuery<'_, _, (Option<i32>, Option<i32>)>`
+note: required by a bound in `get_result`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+   |        ---------- required by a bound in this associated function
+   |     where
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+
+error[E0271]: type mismatch resolving `<Mysql as SqlDialect>::FullJoinSupport == PostgresLikeFullJoinSupport`
+  --> tests/fail/mysql_does_not_support_full_join.rs:23:51
+   |
+23 |         .get_result::<(Option<i32>, Option<i32>)>(&mut connection);
+   |          ----------                               ^^^^^^^^^^^^^^^ expected `PostgresLikeFullJoinSupport`, found `NoFullJoinSupport`
+   |          |
+   |          required by a bound introduced by this call
+   |
+   = note: required for `FullOuter` to implement `QueryFragment<Mysql>`
+   = note: 6 redundant requirements hidden
+   = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, posts::columns::id>>>>>` to implement `QueryFragment<Mysql>`
+   = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, posts::columns::id>>>>>` to implement `LoadQuery<'_, diesel::MysqlConnection, (Option<i32>, Option<i32>)>`
+note: required by a bound in `get_result`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+   |        ---------- required by a bound in this associated function
+   |     where
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`

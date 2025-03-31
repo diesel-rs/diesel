@@ -26,9 +26,9 @@ error[E0433]: failed to resolve: use of undeclared crate or module `post`
    |                       help: a struct with a similar name exists: `Post`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
-   --> tests/fail/selectable.rs:162:10
+   --> tests/fail/selectable.rs:169:10
     |
-162 |         .select(UserWithEmbeddedPost::as_select())
+169 |         .select(UserWithEmbeddedPost::as_select())
     |          ^^^^^^ expected `Never`, found `Once`
     |
 note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
@@ -46,9 +46,9 @@ note: required for `posts::columns::id` to implement `SelectableExpression<query
     = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-   --> tests/fail/selectable.rs:162:10
+   --> tests/fail/selectable.rs:169:10
     |
-162 |         .select(UserWithEmbeddedPost::as_select())
+169 |         .select(UserWithEmbeddedPost::as_select())
     |          ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
     |
     = note: `posts::columns::id` is no valid selection for `users::table`
@@ -58,6 +58,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::id` implements `SelectableExpression<posts::table>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
@@ -70,9 +71,9 @@ note: required for `posts::columns::id` to implement `SelectableExpression<query
     = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-   --> tests/fail/selectable.rs:162:10
+   --> tests/fail/selectable.rs:169:10
     |
-162 |         .select(UserWithEmbeddedPost::as_select())
+169 |         .select(UserWithEmbeddedPost::as_select())
     |          ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
     |
     = note: `posts::columns::title` is no valid selection for `users::table`
@@ -82,6 +83,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::title` implements `SelectableExpression<posts::table>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
@@ -94,9 +96,9 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
-   --> tests/fail/selectable.rs:163:15
+   --> tests/fail/selectable.rs:170:15
     |
-163 |         .load(&mut conn)
+170 |         .load(&mut conn)
     |          ---- ^^^^^^^^^ expected `Never`, found `Once`
     |          |
     |          required by a bound introduced by this call
@@ -126,9 +128,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-   --> tests/fail/selectable.rs:163:15
+   --> tests/fail/selectable.rs:170:15
     |
-163 |         .load(&mut conn)
+170 |         .load(&mut conn)
     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
     |          |
     |          required by a bound introduced by this call
@@ -140,6 +142,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::id` implements `SelectableExpression<posts::table>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
@@ -162,9 +165,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-   --> tests/fail/selectable.rs:163:15
+   --> tests/fail/selectable.rs:170:15
     |
-163 |         .load(&mut conn)
+170 |         .load(&mut conn)
     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
     |          |
     |          required by a bound introduced by this call
@@ -176,6 +179,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::title` implements `SelectableExpression<posts::table>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
@@ -197,10 +201,434 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |         Self: LoadQuery<'query, Conn, U>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::id>` is not satisfied
-   --> tests/fail/selectable.rs:170:10
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+   --> tests/fail/selectable.rs:176:10
     |
-170 |         .select(UserWithEmbeddedPost::as_select())
+176 |         .select((users::id, posts::id))
+    |          ^^^^^^ expected `Never`, found `Once`
+    |
+note: required for `users::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, FullOuter>>`
+   --> tests/fail/selectable.rs:5:1
+    |
+5   | / table! {
+6   | |     users {
+7   | |         id -> Integer,
+    | |         ^^
+8   | |         name -> Text,
+9   | |     }
+10  | | }
+    | |_^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 2 redundant requirements hidden
+    = note: required for `(users::columns::id, posts::columns::id)` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` to implement `SelectDsl<(users::columns::id, posts::columns::id)>`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+   --> tests/fail/selectable.rs:176:10
+    |
+176 |         .select((users::id, posts::id))
+    |          ^^^^^^ expected `Never`, found `Once`
+    |
+note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, FullOuter>>`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+    | |         ^^
+15  | |         title -> Text,
+...   |
+18  | | }
+    | |_^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 2 redundant requirements hidden
+    = note: required for `(users::columns::id, posts::columns::id)` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` to implement `SelectDsl<(users::columns::id, posts::columns::id)>`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: Cannot select `posts::columns::id` from `users::table`
+   --> tests/fail/selectable.rs:176:10
+    |
+176 |         .select((users::id, posts::id))
+    |          ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+    |
+    = note: `posts::columns::id` is no valid selection for `users::table`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+              `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+              `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+              `posts::columns::id` implements `SelectableExpression<posts::table>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, FullOuter>>`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+    | |         ^^
+15  | |         title -> Text,
+...   |
+18  | | }
+    | |_^
+    = note: 2 redundant requirements hidden
+    = note: required for `(users::columns::id, posts::columns::id)` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` to implement `SelectDsl<(users::columns::id, posts::columns::id)>`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+   --> tests/fail/selectable.rs:177:15
+    |
+177 |         .load(&mut conn)
+    |          ---- ^^^^^^^^^ expected `Never`, found `Once`
+    |          |
+    |          required by a bound introduced by this call
+    |
+note: required for `users::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, FullOuter>>`
+   --> tests/fail/selectable.rs:5:1
+    |
+5   | / table! {
+6   | |     users {
+7   | |         id -> Integer,
+    | |         ^^
+8   | |         name -> Text,
+9   | |     }
+10  | | }
+    | |_^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 2 redundant requirements hidden
+    = note: required for `(users::columns::id, posts::columns::id)` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `diesel::query_builder::select_clause::SelectClause<(users::columns::id, posts::columns::id)>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(users::columns::id, posts::columns::id)>>` to implement `Query`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(users::columns::id, posts::columns::id)>>` to implement `LoadQuery<'_, _, _>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    |        ---- required by a bound in this associated function
+    |     where
+    |         Self: LoadQuery<'query, Conn, U>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+   --> tests/fail/selectable.rs:177:15
+    |
+177 |         .load(&mut conn)
+    |          ---- ^^^^^^^^^ expected `Never`, found `Once`
+    |          |
+    |          required by a bound introduced by this call
+    |
+note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, FullOuter>>`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+    | |         ^^
+15  | |         title -> Text,
+...   |
+18  | | }
+    | |_^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 2 redundant requirements hidden
+    = note: required for `(users::columns::id, posts::columns::id)` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `diesel::query_builder::select_clause::SelectClause<(users::columns::id, posts::columns::id)>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(users::columns::id, posts::columns::id)>>` to implement `Query`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(users::columns::id, posts::columns::id)>>` to implement `LoadQuery<'_, _, _>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    |        ---- required by a bound in this associated function
+    |     where
+    |         Self: LoadQuery<'query, Conn, U>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: Cannot select `posts::columns::id` from `users::table`
+   --> tests/fail/selectable.rs:177:15
+    |
+177 |         .load(&mut conn)
+    |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = note: `posts::columns::id` is no valid selection for `users::table`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+              `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+              `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+              `posts::columns::id` implements `SelectableExpression<posts::table>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, FullOuter>>`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+    | |         ^^
+15  | |         title -> Text,
+...   |
+18  | | }
+    | |_^
+    = note: 2 redundant requirements hidden
+    = note: required for `(users::columns::id, posts::columns::id)` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `diesel::query_builder::select_clause::SelectClause<(users::columns::id, posts::columns::id)>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(users::columns::id, posts::columns::id)>>` to implement `Query`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(users::columns::id, posts::columns::id)>>` to implement `LoadQuery<'_, _, _>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    |        ---- required by a bound in this associated function
+    |     where
+    |         Self: LoadQuery<'query, Conn, U>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+   --> tests/fail/selectable.rs:183:10
+    |
+183 |         .select((users::id, posts::id.nullable()))
+    |          ^^^^^^ expected `Never`, found `Once`
+    |
+note: required for `users::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, FullOuter>>`
+   --> tests/fail/selectable.rs:5:1
+    |
+5   | / table! {
+6   | |     users {
+7   | |         id -> Integer,
+    | |         ^^
+8   | |         name -> Text,
+9   | |     }
+10  | | }
+    | |_^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 2 redundant requirements hidden
+    = note: required for `(users::columns::id, NullableExpression<posts::columns::id>)` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` to implement `SelectDsl<(users::columns::id, NullableExpression<posts::columns::id>)>`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+   --> tests/fail/selectable.rs:184:15
+    |
+184 |         .load(&mut conn)
+    |          ---- ^^^^^^^^^ expected `Never`, found `Once`
+    |          |
+    |          required by a bound introduced by this call
+    |
+note: required for `users::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, FullOuter>>`
+   --> tests/fail/selectable.rs:5:1
+    |
+5   | / table! {
+6   | |     users {
+7   | |         id -> Integer,
+    | |         ^^
+8   | |         name -> Text,
+9   | |     }
+10  | | }
+    | |_^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 2 redundant requirements hidden
+    = note: required for `(users::columns::id, NullableExpression<posts::columns::id>)` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `diesel::query_builder::select_clause::SelectClause<(users::columns::id, NullableExpression<posts::columns::id>)>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(users::columns::id, NullableExpression<posts::columns::id>)>>` to implement `Query`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(users::columns::id, NullableExpression<posts::columns::id>)>>` to implement `LoadQuery<'_, _, _>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    |        ---- required by a bound in this associated function
+    |     where
+    |         Self: LoadQuery<'query, Conn, U>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+   --> tests/fail/selectable.rs:190:10
+    |
+190 |         .select((users::id.nullable(), posts::id))
+    |          ^^^^^^ expected `Never`, found `Once`
+    |
+note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, FullOuter>>`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+    | |         ^^
+15  | |         title -> Text,
+...   |
+18  | | }
+    | |_^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 2 redundant requirements hidden
+    = note: required for `(NullableExpression<users::columns::id>, posts::columns::id)` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` to implement `SelectDsl<(NullableExpression<users::columns::id>, posts::columns::id)>`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: Cannot select `posts::columns::id` from `users::table`
+   --> tests/fail/selectable.rs:190:10
+    |
+190 |         .select((users::id.nullable(), posts::id))
+    |          ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+    |
+    = note: `posts::columns::id` is no valid selection for `users::table`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+              `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+              `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+              `posts::columns::id` implements `SelectableExpression<posts::table>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, FullOuter>>`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+    | |         ^^
+15  | |         title -> Text,
+...   |
+18  | | }
+    | |_^
+    = note: 2 redundant requirements hidden
+    = note: required for `(NullableExpression<users::columns::id>, posts::columns::id)` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` to implement `SelectDsl<(NullableExpression<users::columns::id>, posts::columns::id)>`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+   --> tests/fail/selectable.rs:191:15
+    |
+191 |         .load(&mut conn)
+    |          ---- ^^^^^^^^^ expected `Never`, found `Once`
+    |          |
+    |          required by a bound introduced by this call
+    |
+note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, FullOuter>>`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+    | |         ^^
+15  | |         title -> Text,
+...   |
+18  | | }
+    | |_^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 2 redundant requirements hidden
+    = note: required for `(NullableExpression<users::columns::id>, posts::columns::id)` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `diesel::query_builder::select_clause::SelectClause<(NullableExpression<users::columns::id>, posts::columns::id)>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(NullableExpression<users::columns::id>, posts::columns::id)>>` to implement `Query`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(NullableExpression<users::columns::id>, posts::columns::id)>>` to implement `LoadQuery<'_, _, _>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    |        ---- required by a bound in this associated function
+    |     where
+    |         Self: LoadQuery<'query, Conn, U>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: Cannot select `posts::columns::id` from `users::table`
+   --> tests/fail/selectable.rs:191:15
+    |
+191 |         .load(&mut conn)
+    |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = note: `posts::columns::id` is no valid selection for `users::table`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+              `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+              `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+              `posts::columns::id` implements `SelectableExpression<posts::table>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, FullOuter>>`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+    | |         ^^
+15  | |         title -> Text,
+...   |
+18  | | }
+    | |_^
+    = note: 2 redundant requirements hidden
+    = note: required for `(NullableExpression<users::columns::id>, posts::columns::id)` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `diesel::query_builder::select_clause::SelectClause<(NullableExpression<users::columns::id>, posts::columns::id)>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(NullableExpression<users::columns::id>, posts::columns::id)>>` to implement `Query`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(NullableExpression<users::columns::id>, posts::columns::id)>>` to implement `LoadQuery<'_, _, _>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    |        ---- required by a bound in this associated function
+    |     where
+    |         Self: LoadQuery<'query, Conn, U>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::id>` is not satisfied
+   --> tests/fail/selectable.rs:198:10
+    |
+198 |         .select(UserWithEmbeddedPost::as_select())
     |          ^^^^^^ the trait `IsContainedInGroupBy<users::columns::id>` is not implemented for `posts::columns::id`
     |
     = help: the following other types implement trait `IsContainedInGroupBy<T>`:
@@ -217,9 +645,9 @@ note: required for `users::columns::id` to implement `ValidGrouping<posts::colum
     = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
 
 error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::name>` is not satisfied
-   --> tests/fail/selectable.rs:170:10
+   --> tests/fail/selectable.rs:198:10
     |
-170 |         .select(UserWithEmbeddedPost::as_select())
+198 |         .select(UserWithEmbeddedPost::as_select())
     |          ^^^^^^ the trait `IsContainedInGroupBy<users::columns::name>` is not implemented for `posts::columns::id`
     |
     = help: the following other types implement trait `IsContainedInGroupBy<T>`:
@@ -236,9 +664,9 @@ note: required for `users::columns::name` to implement `ValidGrouping<posts::col
     = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
 
 error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
-   --> tests/fail/selectable.rs:177:10
+   --> tests/fail/selectable.rs:205:10
     |
-177 |         .select(UserWithPostCount::as_select())
+205 |         .select(UserWithPostCount::as_select())
     |          ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
     |
     = help: the following other types implement trait `MixedAggregates<Other>`:
@@ -250,9 +678,9 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
     = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-   --> tests/fail/selectable.rs:185:20
+   --> tests/fail/selectable.rs:213:20
     |
-185 |         .returning(UserWithEmbeddedPost::as_select())
+213 |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
     |          |
     |          required by a bound introduced by this call
@@ -264,6 +692,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::id` implements `SelectableExpression<posts::table>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
@@ -280,9 +709,9 @@ note: required by a bound in `InsertStatement::<T, U, Op>::returning`
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-   --> tests/fail/selectable.rs:185:20
+   --> tests/fail/selectable.rs:213:20
     |
-185 |         .returning(UserWithEmbeddedPost::as_select())
+213 |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
     |          |
     |          required by a bound introduced by this call
@@ -294,6 +723,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::title` implements `SelectableExpression<posts::table>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
@@ -310,9 +740,9 @@ note: required by a bound in `InsertStatement::<T, U, Op>::returning`
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-   --> tests/fail/selectable.rs:185:20
+   --> tests/fail/selectable.rs:213:20
     |
-185 |         .returning(UserWithEmbeddedPost::as_select())
+213 |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
     |          |
     |          required by a bound introduced by this call
@@ -339,9 +769,9 @@ note: required by a bound in `InsertStatement::<T, U, Op>::returning`
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-   --> tests/fail/selectable.rs:186:15
+   --> tests/fail/selectable.rs:214:15
     |
-186 |         .load(&mut conn)
+214 |         .load(&mut conn)
     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
     |          |
     |          required by a bound introduced by this call
@@ -353,6 +783,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::id` implements `SelectableExpression<posts::table>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
@@ -370,9 +801,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-   --> tests/fail/selectable.rs:186:15
+   --> tests/fail/selectable.rs:214:15
     |
-186 |         .load(&mut conn)
+214 |         .load(&mut conn)
     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
     |          |
     |          required by a bound introduced by this call
@@ -384,6 +815,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::title` implements `SelectableExpression<posts::table>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
@@ -401,9 +833,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-   --> tests/fail/selectable.rs:186:15
+   --> tests/fail/selectable.rs:214:15
     |
-186 |         .load(&mut conn)
+214 |         .load(&mut conn)
     |          ---- ^^^^^^^^^ expected `Once`, found `Never`
     |          |
     |          required by a bound introduced by this call
@@ -431,9 +863,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-   --> tests/fail/selectable.rs:193:20
+   --> tests/fail/selectable.rs:221:20
     |
-193 |         .returning(UserWithEmbeddedPost::as_select())
+221 |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
     |          |
     |          required by a bound introduced by this call
@@ -445,6 +877,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::id` implements `SelectableExpression<posts::table>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
@@ -461,9 +894,9 @@ note: required by a bound in `UpdateStatement::<T, U, V>::returning`
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-   --> tests/fail/selectable.rs:193:20
+   --> tests/fail/selectable.rs:221:20
     |
-193 |         .returning(UserWithEmbeddedPost::as_select())
+221 |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
     |          |
     |          required by a bound introduced by this call
@@ -475,6 +908,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::title` implements `SelectableExpression<posts::table>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
@@ -491,9 +925,9 @@ note: required by a bound in `UpdateStatement::<T, U, V>::returning`
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-   --> tests/fail/selectable.rs:193:20
+   --> tests/fail/selectable.rs:221:20
     |
-193 |         .returning(UserWithEmbeddedPost::as_select())
+221 |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
     |          |
     |          required by a bound introduced by this call
@@ -520,9 +954,9 @@ note: required by a bound in `UpdateStatement::<T, U, V>::returning`
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-   --> tests/fail/selectable.rs:194:15
+   --> tests/fail/selectable.rs:222:15
     |
-194 |         .load(&mut conn)
+222 |         .load(&mut conn)
     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
     |          |
     |          required by a bound introduced by this call
@@ -534,6 +968,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::id` implements `SelectableExpression<posts::table>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
@@ -551,9 +986,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-   --> tests/fail/selectable.rs:194:15
+   --> tests/fail/selectable.rs:222:15
     |
-194 |         .load(&mut conn)
+222 |         .load(&mut conn)
     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
     |          |
     |          required by a bound introduced by this call
@@ -565,6 +1000,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::title` implements `SelectableExpression<posts::table>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
@@ -582,9 +1018,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-   --> tests/fail/selectable.rs:194:15
+   --> tests/fail/selectable.rs:222:15
     |
-194 |         .load(&mut conn)
+222 |         .load(&mut conn)
     |          ---- ^^^^^^^^^ expected `Once`, found `Never`
     |          |
     |          required by a bound introduced by this call
@@ -612,9 +1048,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-   --> tests/fail/selectable.rs:200:20
+   --> tests/fail/selectable.rs:228:20
     |
-200 |         .returning(UserWithEmbeddedPost::as_select())
+228 |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
     |          |
     |          required by a bound introduced by this call
@@ -626,6 +1062,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::id` implements `SelectableExpression<posts::table>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
@@ -641,9 +1078,9 @@ note: required by a bound in `DeleteStatement::<T, U>::returning`
     |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-   --> tests/fail/selectable.rs:200:20
+   --> tests/fail/selectable.rs:228:20
     |
-200 |         .returning(UserWithEmbeddedPost::as_select())
+228 |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
     |          |
     |          required by a bound introduced by this call
@@ -655,6 +1092,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::title` implements `SelectableExpression<posts::table>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
@@ -670,9 +1108,9 @@ note: required by a bound in `DeleteStatement::<T, U>::returning`
     |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-   --> tests/fail/selectable.rs:200:20
+   --> tests/fail/selectable.rs:228:20
     |
-200 |         .returning(UserWithEmbeddedPost::as_select())
+228 |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
     |          |
     |          required by a bound introduced by this call
@@ -698,9 +1136,9 @@ note: required by a bound in `DeleteStatement::<T, U>::returning`
     |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-   --> tests/fail/selectable.rs:201:15
+   --> tests/fail/selectable.rs:229:15
     |
-201 |         .load(&mut conn)
+229 |         .load(&mut conn)
     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
     |          |
     |          required by a bound introduced by this call
@@ -712,6 +1150,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::id` implements `SelectableExpression<posts::table>`
+              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
@@ -729,9 +1168,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
-   --> tests/fail/selectable.rs:201:15
+   --> tests/fail/selectable.rs:229:15
     |
-201 |         .load(&mut conn)
+229 |         .load(&mut conn)
     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
     |          |
     |          required by a bound introduced by this call
@@ -743,6 +1182,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::title` implements `SelectableExpression<posts::table>`
+              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, FullOuter>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
               `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
@@ -760,9 +1200,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-   --> tests/fail/selectable.rs:201:15
+   --> tests/fail/selectable.rs:229:15
     |
-201 |         .load(&mut conn)
+229 |         .load(&mut conn)
     |          ---- ^^^^^^^^^ expected `Once`, found `Never`
     |          |
     |          required by a bound introduced by this call
@@ -790,12 +1230,12 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0599]: the function or associated item `as_select` exists for struct `UserWithoutSelectable`, but its trait bounds were not satisfied
-   --> tests/fail/selectable.rs:206:40
+   --> tests/fail/selectable.rs:234:40
     |
 80  | struct UserWithoutSelectable {
     | ---------------------------- function or associated item `as_select` not found for this struct because it doesn't satisfy `UserWithoutSelectable: diesel::Selectable<_>` or `UserWithoutSelectable: diesel::SelectableHelper<_>`
 ...
-206 |         .select(UserWithoutSelectable::as_select())
+234 |         .select(UserWithoutSelectable::as_select())
     |                                        ^^^^^^^^^ function or associated item cannot be called on `UserWithoutSelectable` due to unsatisfied trait bounds
     |
     = note: the following trait bounds were not satisfied:
@@ -815,9 +1255,9 @@ note: the trait `diesel::Selectable` must be implemented
             candidate #1: `diesel::SelectableHelper`
 
 error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>: SingleValue` is not satisfied
-   --> tests/fail/selectable.rs:213:32
+   --> tests/fail/selectable.rs:241:32
     |
-213 |         .load::<(i32, String)>(&mut conn)
+241 |         .load::<(i32, String)>(&mut conn)
     |          ----                  ^^^^^^^^^ the trait `SingleValue` is not implemented for `diesel::expression::select_by::SelectBy<Post, _>`
     |          |
     |          required by a bound introduced by this call
@@ -844,9 +1284,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `(i32, std::string::String): diesel::Queryable<diesel::expression::select_by::SelectBy<Post, _>, _>` is not satisfied
-   --> tests/fail/selectable.rs:213:32
+   --> tests/fail/selectable.rs:241:32
     |
-213 |         .load::<(i32, String)>(&mut conn)
+241 |         .load::<(i32, String)>(&mut conn)
     |          ----                  ^^^^^^^^^ the trait `diesel::Queryable<diesel::expression::select_by::SelectBy<Post, _>, _>` is not implemented for `(i32, std::string::String)`
     |          |
     |          required by a bound introduced by this call
@@ -874,9 +1314,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>: SingleValue` is not satisfied
-   --> tests/fail/selectable.rs:218:32
+   --> tests/fail/selectable.rs:246:32
     |
-218 |         .load::<(i32, String)>(&mut conn)
+246 |         .load::<(i32, String)>(&mut conn)
     |          ----                  ^^^^^^^^^ the trait `SingleValue` is not implemented for `diesel::expression::select_by::SelectBy<Post, _>`
     |          |
     |          required by a bound introduced by this call
@@ -903,9 +1343,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `(i32, std::string::String): diesel::Queryable<diesel::expression::select_by::SelectBy<Post, _>, _>` is not satisfied
-   --> tests/fail/selectable.rs:218:32
+   --> tests/fail/selectable.rs:246:32
     |
-218 |         .load::<(i32, String)>(&mut conn)
+246 |         .load::<(i32, String)>(&mut conn)
     |          ----                  ^^^^^^^^^ the trait `diesel::Queryable<diesel::expression::select_by::SelectBy<Post, _>, _>` is not implemented for `(i32, std::string::String)`
     |          |
     |          required by a bound introduced by this call
@@ -933,9 +1373,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `(diesel::expression::select_by::SelectBy<Post, _>, diesel::sql_types::Text): load_dsl::private::CompatibleType<((i32, std::string::String), std::string::String), _>` is not satisfied
-   --> tests/fail/selectable.rs:222:42
+   --> tests/fail/selectable.rs:250:42
     |
-222 |         .load::<((i32, String), String)>(&mut conn)
+250 |         .load::<((i32, String), String)>(&mut conn)
     |          ----                            ^^^^^^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
@@ -966,9 +1406,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>: SingleValue` is not satisfied
-   --> tests/fail/selectable.rs:227:37
+   --> tests/fail/selectable.rs:255:37
     |
-227 |         .load::<(i32, String, i32)>(&mut conn)
+255 |         .load::<(i32, String, i32)>(&mut conn)
     |          ----                       ^^^^^^^^^ the trait `SingleValue` is not implemented for `diesel::expression::select_by::SelectBy<Post, _>`
     |          |
     |          required by a bound introduced by this call
@@ -995,9 +1435,9 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `(i32, std::string::String, i32): diesel::Queryable<diesel::expression::select_by::SelectBy<Post, _>, _>` is not satisfied
-   --> tests/fail/selectable.rs:227:37
+   --> tests/fail/selectable.rs:255:37
     |
-227 |         .load::<(i32, String, i32)>(&mut conn)
+255 |         .load::<(i32, String, i32)>(&mut conn)
     |          ----                       ^^^^^^^^^ the trait `diesel::Queryable<diesel::expression::select_by::SelectBy<Post, _>, _>` is not implemented for `(i32, std::string::String, i32)`
     |          |
     |          required by a bound introduced by this call
@@ -1025,14 +1465,147 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
-   --> tests/fail/selectable.rs:236:15
+   --> tests/fail/selectable.rs:264:15
     |
-236 |         .load(&mut conn)
+264 |         .load(&mut conn)
     |          ---- ^^^^^^^^^ expected `Pg`, found `Sqlite`
     |          |
     |          required by a bound introduced by this call
     |
     = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>` to implement `LoadQuery<'_, diesel::SqliteConnection, UserWithPostCount>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    |        ---- required by a bound in this associated function
+    |     where
+    |         Self: LoadQuery<'query, Conn, U>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+
+error[E0277]: the trait bound `(Nullable<diesel::sql_types::Integer>, Nullable<diesel::sql_types::Integer>): SingleValue` is not satisfied
+   --> tests/fail/selectable.rs:132:15
+    |
+132 |         .load(&mut conn)
+    |          ---- ^^^^^^^^^ the trait `SingleValue` is not implemented for `(Nullable<diesel::sql_types::Integer>, Nullable<diesel::sql_types::Integer>)`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = help: the following other types implement trait `SingleValue`:
+              Array<ST>
+              BigInt
+              Bool
+              CChar
+              Cidr
+              Citext
+              Datetime
+              Inet
+            and $N others
+    = note: required for `{type error}` to implement `FromStaticSqlRow<(Nullable<diesel::sql_types::Integer>, Nullable<diesel::sql_types::Integer>), Pg>`
+    = note: required for `{type error}` to implement `FromSqlRow<(Nullable<diesel::sql_types::Integer>, Nullable<diesel::sql_types::Integer>), Pg>`
+    = note: required for `(Nullable<diesel::sql_types::Integer>, Nullable<diesel::sql_types::Integer>)` to implement `load_dsl::private::CompatibleType<{type error}, Pg>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(NullableExpression<users::columns::id>, NullableExpression<posts::columns::id>)>>` to implement `LoadQuery<'_, diesel::PgConnection, {type error}>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    |        ---- required by a bound in this associated function
+    |     where
+    |         Self: LoadQuery<'query, Conn, U>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+
+error[E0277]: the trait bound `{type error}: FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Integer), Pg>` is not satisfied
+   --> tests/fail/selectable.rs:177:15
+    |
+177 |         .load(&mut conn)
+    |          ---- ^^^^^^^^^ the trait `SingleValue` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Integer)`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = note: double check your type mappings via the documentation of `(diesel::sql_types::Integer, diesel::sql_types::Integer)`
+    = note: `diesel::sql_query` requires the loading target to column names for loading values.
+            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
+    = help: the following other types implement trait `SingleValue`:
+              Array<ST>
+              BigInt
+              Bool
+              CChar
+              Cidr
+              Citext
+              Datetime
+              Inet
+            and $N others
+    = note: required for `{type error}` to implement `FromStaticSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Integer), Pg>`
+    = note: required for `{type error}` to implement `FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Integer), Pg>`
+    = note: required for `(diesel::sql_types::Integer, diesel::sql_types::Integer)` to implement `load_dsl::private::CompatibleType<{type error}, Pg>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(users::columns::id, posts::columns::id)>>` to implement `LoadQuery<'_, diesel::PgConnection, {type error}>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    |        ---- required by a bound in this associated function
+    |     where
+    |         Self: LoadQuery<'query, Conn, U>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+
+error[E0277]: the trait bound `{type error}: FromSqlRow<(diesel::sql_types::Integer, Nullable<diesel::sql_types::Integer>), Pg>` is not satisfied
+   --> tests/fail/selectable.rs:184:15
+    |
+184 |         .load(&mut conn)
+    |          ---- ^^^^^^^^^ the trait `SingleValue` is not implemented for `(diesel::sql_types::Integer, Nullable<diesel::sql_types::Integer>)`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = note: double check your type mappings via the documentation of `(diesel::sql_types::Integer, Nullable<diesel::sql_types::Integer>)`
+    = note: `diesel::sql_query` requires the loading target to column names for loading values.
+            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
+    = help: the following other types implement trait `SingleValue`:
+              Array<ST>
+              BigInt
+              Bool
+              CChar
+              Cidr
+              Citext
+              Datetime
+              Inet
+            and $N others
+    = note: required for `{type error}` to implement `FromStaticSqlRow<(diesel::sql_types::Integer, Nullable<diesel::sql_types::Integer>), Pg>`
+    = note: required for `{type error}` to implement `FromSqlRow<(diesel::sql_types::Integer, Nullable<diesel::sql_types::Integer>), Pg>`
+    = note: required for `(diesel::sql_types::Integer, Nullable<diesel::sql_types::Integer>)` to implement `load_dsl::private::CompatibleType<{type error}, Pg>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(users::columns::id, NullableExpression<posts::columns::id>)>>` to implement `LoadQuery<'_, diesel::PgConnection, {type error}>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    |        ---- required by a bound in this associated function
+    |     where
+    |         Self: LoadQuery<'query, Conn, U>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+
+error[E0277]: the trait bound `{type error}: FromSqlRow<(Nullable<diesel::sql_types::Integer>, diesel::sql_types::Integer), Pg>` is not satisfied
+   --> tests/fail/selectable.rs:191:15
+    |
+191 |         .load(&mut conn)
+    |          ---- ^^^^^^^^^ the trait `SingleValue` is not implemented for `(Nullable<diesel::sql_types::Integer>, diesel::sql_types::Integer)`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = note: double check your type mappings via the documentation of `(Nullable<diesel::sql_types::Integer>, diesel::sql_types::Integer)`
+    = note: `diesel::sql_query` requires the loading target to column names for loading values.
+            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
+    = help: the following other types implement trait `SingleValue`:
+              Array<ST>
+              BigInt
+              Bool
+              CChar
+              Cidr
+              Citext
+              Datetime
+              Inet
+            and $N others
+    = note: required for `{type error}` to implement `FromStaticSqlRow<(Nullable<diesel::sql_types::Integer>, diesel::sql_types::Integer), Pg>`
+    = note: required for `{type error}` to implement `FromSqlRow<(Nullable<diesel::sql_types::Integer>, diesel::sql_types::Integer), Pg>`
+    = note: required for `(Nullable<diesel::sql_types::Integer>, diesel::sql_types::Integer)` to implement `load_dsl::private::CompatibleType<{type error}, Pg>`
+    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, FullOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<(NullableExpression<users::columns::id>, posts::columns::id)>>` to implement `LoadQuery<'_, diesel::PgConnection, {type error}>`
 note: required by a bound in `diesel::RunQueryDsl::load`
    --> $DIESEL/src/query_dsl/mod.rs
     |

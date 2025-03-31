@@ -158,6 +158,350 @@ fn left_outer_joins() {
 }
 
 #[diesel_test_helper::test]
+fn full_outer_join() {
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    diesel::sql_query(
+        "INSERT INTO users (id, name) VALUES
+        (3, 'James')
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    // exclude James in the query to get a null entry without breaking FKs
+    diesel::sql_query(
+        "CREATE OR REPLACE TEMPORARY VIEW filtered_users AS
+        SELECT * FROM users
+        WHERE id <> 3
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    diesel::sql_query(
+        "INSERT INTO posts (id, user_id, title) VALUES
+        (1, 1, 'Hello'),
+        (2, 1, 'World'),
+        (3, 3, 'Again')
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    let sean = User::new(1, "Sean");
+    let tess = User::new(2, "Tess");
+    let seans_post = Post::new(1, 1, "Hello", None);
+    let seans_second_post = Post::new(2, 1, "World", None);
+    let orphaned_post = Post::new(3, 3, "Again", None);
+
+    let expected_data = vec![
+        (Some(sean.clone()), Some(seans_post)),
+        (Some(sean), Some(seans_second_post)),
+        (Some(tess), None),
+        (None, Some(orphaned_post)),
+    ];
+
+    let source = filtered_users::table
+        .full_outer_join(posts::table.on(posts::user_id.eq(filtered_users::id)))
+        .order_by((filtered_users::id.asc(), posts::id.asc()));
+
+    let actual_data = source
+        .load::<(Option<User>, Option<Post>)>(connection)
+        .unwrap();
+
+    assert_eq!(expected_data, actual_data);
+}
+
+#[diesel_test_helper::test]
+fn inner_join_then_full_outer_join() {
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    diesel::sql_query(
+        "INSERT INTO users (id, name) VALUES
+        (3, 'James')
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    // exclude James in the query to get a null entry without breaking FKs
+    diesel::sql_query(
+        "CREATE OR REPLACE TEMPORARY VIEW filtered_users AS
+        SELECT * FROM users
+        WHERE id <> 3
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    diesel::sql_query(
+        "INSERT INTO posts (id, user_id, title) VALUES
+        (1, 1, 'Hello'),
+        (2, 3, 'World'),
+        (3, 3, 'Again')
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    diesel::sql_query(
+        "INSERT INTO comments (id, post_id, text) VALUES
+        (1, 1, 'Comment 1'),
+        (2, 3, 'Comment 2'),
+        (3, 3, 'Comment 3')
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    let sean = User::new(1, "Sean");
+    let tess = User::new(2, "Tess");
+    let seans_post = Post::new(1, 1, "Hello", None);
+    let orphaned_post_3 = Post::new(3, 3, "Again", None);
+
+    let comment_1 = Comment::new(1, 1, "Comment 1");
+    let comment_2 = Comment::new(2, 3, "Comment 2");
+    let comment_3 = Comment::new(3, 3, "Comment 3");
+
+    let expected_data = vec![
+        (Some(sean), Some(seans_post), Some(comment_1)),
+        (Some(tess), None, None),
+        (None, Some(orphaned_post_3.clone()), Some(comment_2.clone())),
+        (None, Some(orphaned_post_3.clone()), Some(comment_2)),
+        (None, Some(orphaned_post_3), Some(comment_3)),
+    ];
+
+    fn check<F, Rhs>(f: F, rhs: Rhs)
+    where
+        F: QuerySource,
+        Rhs: QuerySource,
+
+        diesel::query_source::joins::Join<F, Rhs, diesel::query_source::joins::FullOuter>:
+            QuerySource,
+    {
+    }
+
+    let left =
+        filtered_users::table.inner_join(posts::table.on(posts::user_id.eq(filtered_users::id)));
+
+    let right = comments::table.on(posts::id.eq(comments::post_id));
+
+    check(left, right);
+
+    let source = filtered_users::table
+        .inner_join(posts::table.on(posts::user_id.eq(filtered_users::id)))
+        .full_outer_join(comments::table.on(posts::id.eq(comments::post_id)))
+        .order_by((
+            filtered_users::id.asc(),
+            posts::id.asc(),
+            comments::id.asc(),
+        ));
+    let actual_data: Vec<(Option<User>, Option<Post>, Option<Comment>)> =
+        source.load(connection).unwrap();
+
+    assert_eq!(expected_data, actual_data);
+}
+
+#[diesel_test_helper::test]
+fn multiple_full_outer_joins() {
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    diesel::sql_query(
+        "INSERT INTO users (id, name) VALUES
+        (3, 'James')
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    // exclude James in the query to get a null entry without breaking FKs
+    diesel::sql_query(
+        "CREATE OR REPLACE TEMPORARY VIEW filtered_users AS
+        SELECT * FROM users
+        WHERE id <> 3
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    diesel::sql_query(
+        "INSERT INTO posts (id, user_id, title) VALUES
+        (1, 1, 'Hello'),
+        (2, 3, 'World'),
+        (3, 3, 'Again')
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    diesel::sql_query(
+        "INSERT INTO comments (id, post_id, text) VALUES
+        (1, 1, 'Comment 1'),
+        (2, 3, 'Comment 2'),
+        (3, 3, 'Comment 3')
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    diesel::sql_query(
+        "INSERT INTO likes (comment_id, user_id) VALUES
+        (2, 2),
+        (2, 3)
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    let sean = User::new(1, "Sean");
+    let tess = User::new(2, "Tess");
+    let seans_post = Post::new(1, 1, "Hello", None);
+    let orphaned_post_3 = Post::new(3, 3, "Again", None);
+
+    let comment_1 = Comment::new(1, 1, "Comment 1");
+    let comment_2 = Comment::new(2, 3, "Comment 2");
+    let comment_3 = Comment::new(3, 3, "Comment 3");
+
+    let like_1 = Like {
+        comment_id: 2,
+        user_id: 2,
+    };
+    let like_2 = Like {
+        comment_id: 2,
+        user_id: 3,
+    };
+
+    let expected_data = vec![
+        (Some(sean), Some(seans_post), Some(comment_1), None),
+        (Some(tess), None, None, None),
+        (
+            None,
+            Some(orphaned_post_3.clone()),
+            Some(comment_2.clone()),
+            Some(like_1),
+        ),
+        (
+            None,
+            Some(orphaned_post_3.clone()),
+            Some(comment_2),
+            Some(like_2),
+        ),
+        (None, Some(orphaned_post_3), Some(comment_3), None),
+    ];
+    let source = filtered_users::table
+        .full_outer_join(posts::table.on(posts::user_id.eq(filtered_users::id)))
+        .full_outer_join(comments::table.on(posts::id.eq(comments::post_id)))
+        .full_outer_join(likes::table.on(comments::id.eq(likes::comment_id)))
+        .order_by((
+            filtered_users::id.asc(),
+            posts::id.asc(),
+            comments::id.asc(),
+            likes::user_id.asc(),
+        ));
+    let actual_data: Vec<_> = source.load(connection).unwrap();
+
+    assert_eq!(expected_data, actual_data);
+}
+
+#[diesel_test_helper::test]
+fn full_inner_and_left_joins() {
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    diesel::sql_query(
+        "INSERT INTO users (id, name) VALUES
+        (3, 'James')
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    // exclude James in the query to get a null entry without breaking FKs
+    diesel::sql_query(
+        "CREATE OR REPLACE TEMPORARY VIEW filtered_users AS
+        SELECT * FROM users
+        WHERE id <> 3
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    diesel::sql_query(
+        "INSERT INTO posts (id, user_id, title) VALUES
+        (1, 1, 'Hello'),
+        (2, 3, 'World'),
+        (3, 3, 'Again')
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    diesel::sql_query(
+        "INSERT INTO comments (id, post_id, text) VALUES
+        (1, 1, 'Comment 1'),
+        (2, 3, 'Comment 2'),
+        (3, 3, 'Comment 3')
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    diesel::sql_query(
+        "INSERT INTO likes (comment_id, user_id) VALUES
+        (2, 2),
+        (2, 3)
+    ",
+    )
+    .execute(connection)
+    .unwrap();
+
+    let sean = User::new(1, "Sean");
+    let seans_post = Post::new(1, 1, "Hello", None);
+    let orphaned_post_3 = Post::new(3, 3, "Again", None);
+
+    let comment_1 = Comment::new(1, 1, "Comment 1");
+    let comment_2 = Comment::new(2, 3, "Comment 2");
+    let comment_3 = Comment::new(3, 3, "Comment 3");
+
+    let like_1 = Like {
+        comment_id: 2,
+        user_id: 2,
+    };
+    let like_2 = Like {
+        comment_id: 2,
+        user_id: 3,
+    };
+
+    // all posts and users, but only with a post with a comment. but any likes
+    // this means only post 1 & 3, but only 3 has likes
+
+    let expected_data = vec![
+        (Some(sean), Some(seans_post), comment_1, None),
+        (
+            None,
+            Some(orphaned_post_3.clone()),
+            comment_2.clone(),
+            Some(like_1),
+        ),
+        (None, Some(orphaned_post_3.clone()), comment_2, Some(like_2)),
+        (None, Some(orphaned_post_3), comment_3, None),
+    ];
+    let source = filtered_users::table
+        .inner_join(comments::table.on(posts::id.eq(comments::post_id)))
+        .full_outer_join(posts::table.on(posts::user_id.eq(filtered_users::id)))
+        .left_join(likes::table.on(comments::id.eq(likes::comment_id)))
+        .order_by((
+            filtered_users::id.asc(),
+            posts::id.asc(),
+            comments::id.asc(),
+            likes::user_id.asc(),
+        ));
+    let actual_data: Vec<_> = source.load(connection).unwrap();
+
+    assert_eq!(expected_data, actual_data);
+}
+
+#[diesel_test_helper::test]
 fn columns_on_right_side_of_left_outer_joins_are_nullable() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
