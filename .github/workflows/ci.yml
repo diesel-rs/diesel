@@ -92,6 +92,8 @@ jobs:
       - name: Install mysql (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'mysql'
         run: |
+          sudo apt-get update
+          sudo apt-get install -y libtirpc-dev
           sudo systemctl start mysql.service
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
           echo "MYSQL_DATABASE_URL=mysql://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
@@ -288,7 +290,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev libtirpc-dev
 
       - uses: taiki-e/install-action@v2
         with:
@@ -422,7 +424,7 @@ jobs:
       - name: Install Mysql (Linux)
         run: |
           sudo apt-get update
-          sudo apt-get -y install libmysqlclient-dev llvm
+          sudo apt-get -y install libmysqlclient-dev llvm libtirpc-dev
           sudo systemctl start mysql.service
           sleep 5
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
