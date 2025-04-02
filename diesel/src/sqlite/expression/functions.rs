@@ -959,4 +959,78 @@ extern "SQL" {
     #[sql_name = "json_quote"]
     #[cfg(feature = "sqlite")]
     fn json_quote<J: SqlType + SingleValue>(j: J) -> Json;
+
+    /// The `json_group_array(X)` function is an aggregate SQL function that returns a JSON array comprised of
+    /// all X values in the aggregation.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use schema::animals::dsl::*;
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// let result = animals.select(json_group_array(species)).get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(result, json!(["dog", "spider"]));
+    ///
+    /// let result = animals.select(json_group_array(legs)).get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(result, json!([4, 8]));
+    ///
+    /// let result = animals.select(json_group_array(name)).get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(result, json!(["Jack", null]));
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "sqlite")]
+    #[aggregate]
+    fn json_group_array<E: SqlType + SingleValue>(elements: E) -> Json;
+
+    /// The `jsonb_group_array(X)` function is an aggregate SQL function that returns a JSONB array comprised of
+    /// all X values in the aggregation.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use schema::animals::dsl::*;
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// let result = animals.select(json_group_array(species)).get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(result, json!(["dog", "spider"]));
+    ///
+    /// let result = animals.select(json_group_array(legs)).get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(result, json!([4, 8]));
+    ///
+    /// let result = animals.select(json_group_array(name)).get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(result, json!(["Jack", null]));
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "sqlite")]
+    #[aggregate]
+    fn jsonb_group_array<E: SqlType + SingleValue>(elements: E) -> Jsonb;
 }

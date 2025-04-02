@@ -520,6 +520,17 @@ fn sqlite_functions() -> _ {
     )
 }
 
+#[cfg(feature = "sqlite")]
+#[auto_type]
+fn sqlite_aggregate_functions() -> _ {
+    (
+        json_group_array(users::name),
+        json_group_array(users::id),
+        jsonb_group_array(users::name),
+        jsonb_group_array(users::id),
+    )
+}
+
 #[auto_type]
 fn with_lifetime<'a>(name: &'a str) -> _ {
     users::table.filter(users::name.eq(name))
