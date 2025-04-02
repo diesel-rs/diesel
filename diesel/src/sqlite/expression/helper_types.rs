@@ -63,3 +63,13 @@ pub type json_type_with_path<J, P> = super::functions::json_type_with_path<SqlTy
 #[allow(non_camel_case_types)]
 #[cfg(feature = "sqlite")]
 pub type json_quote<J> = super::functions::json_quote<SqlTypeOf<J>, J>;
+
+/// Return type of [`json_group_array(value)`](super::functions::json_group_array())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_group_array<E> = super::functions::json_group_array<SqlTypeOf<E>, E>;
+
+/// Return type of [`jsonb_group_array(value)`](super::functions::jsonb_group_array())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type jsonb_group_array<E> = super::functions::jsonb_group_array<SqlTypeOf<E>, E>;
