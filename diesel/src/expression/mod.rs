@@ -1015,7 +1015,7 @@ pub trait BoxableExpression<QS, DB, GB = (), IsAggregate = is_aggregate::No>
 where
     DB: Backend,
     Self: Expression,
-    Self: SelectableExpression<QS>,
+    Self: AppearsOnTable<QS>,
     Self: QueryFragment<DB>,
     Self: Send,
 {
@@ -1025,7 +1025,7 @@ impl<QS, T, DB, GB, IsAggregate> BoxableExpression<QS, DB, GB, IsAggregate> for 
 where
     DB: Backend,
     T: Expression,
-    T: SelectableExpression<QS>,
+    T: AppearsOnTable<QS>,
     T: ValidGrouping<GB>,
     T: QueryFragment<DB>,
     T: Send,
