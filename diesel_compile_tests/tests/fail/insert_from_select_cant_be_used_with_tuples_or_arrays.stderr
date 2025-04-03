@@ -20,7 +20,7 @@ error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == V
   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:37:10
    |
 37 |         .values((users, users));
-   |          ^^^^^^ expected `ValuesClause<_, table>`, found `InsertFromSelect<SelectStatement<...>, ...>`
+   |          ^^^^^^ expected `ValuesClause<_, table>`, found `InsertFromSelect<..., ...>`
    |
    = note: expected struct `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
               found struct `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<FromClause<users::table>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>`
@@ -30,7 +30,7 @@ error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == V
   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:37:17
    |
 37 |         .values((users, users));
-   |          ------ ^^^^^^^^^^^^^^ expected `ValuesClause<_, table>`, found `InsertFromSelect<SelectStatement<...>, ...>`
+   |          ------ ^^^^^^^^^^^^^^ expected `ValuesClause<_, table>`, found `InsertFromSelect<..., ...>`
    |          |
    |          required by a bound introduced by this call
    |

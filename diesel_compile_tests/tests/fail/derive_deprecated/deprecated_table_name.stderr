@@ -23,8 +23,10 @@ error: expected identifier
 32 | #[table_name = "1"]
    |                ^^^
 
-error[E0433]: failed to resolve: use of undeclared crate or module `users`
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `users`
  --> tests/fail/derive_deprecated/deprecated_table_name.rs:5:16
   |
 5 | #[table_name = "users"]
-  |                ^^^^^^^ use of undeclared crate or module `users`
+  |                ^^^^^^^ use of unresolved module or unlinked crate `users`
+  |
+  = help: if you wanted to use a crate named `users`, use `cargo add users` to add it to your `Cargo.toml`

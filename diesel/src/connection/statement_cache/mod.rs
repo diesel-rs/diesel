@@ -33,9 +33,9 @@
 //! - queries containing `IN` with bind parameters
 //!     - This requires 1 bind parameter per value, and is therefore unbounded
 //!     - `IN` with subselects are cached (assuming the subselect is safe to
-//!        cache)
+//!       cache)
 //!     - `IN` statements for postgresql are cached as they use `= ANY($1)` instead
-//!        which does not cause an unbound number of binds
+//!       which does not cause an unbound number of binds
 //! - `INSERT` statements with a variable number of rows
 //!     - The SQL varies based on the number of rows being inserted.
 //! - `UPDATE` statements

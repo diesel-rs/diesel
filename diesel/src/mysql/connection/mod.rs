@@ -23,8 +23,8 @@ use crate::RunQueryDsl;
 /// `mysql://[user[:password]@]host/database_name[?unix_socket=socket-path&ssl_mode=SSL_MODE*&ssl_ca=/etc/ssl/certs/ca-certificates.crt&ssl_cert=/etc/ssl/certs/client-cert.crt&ssl_key=/etc/ssl/certs/client-key.crt]`
 ///
 ///* `host` can be an IP address or a hostname. If it is set to `localhost`, a connection
-///   will be attempted through the socket at `/tmp/mysql.sock`. If you want to connect to
-///   a local server via TCP (e.g. docker containers), use `0.0.0.0` or `127.0.0.1` instead.
+///  will be attempted through the socket at `/tmp/mysql.sock`. If you want to connect to
+///  a local server via TCP (e.g. docker containers), use `0.0.0.0` or `127.0.0.1` instead.
 /// * `unix_socket` expects the path to the unix socket
 /// * `ssl_ca` accepts a path to the system's certificate roots
 /// * `ssl_cert` accepts a path to the client's certificate file

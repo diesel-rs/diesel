@@ -23,8 +23,10 @@ error: expected identifier
 30 | #[diesel(table_name = "not a path")]
    |                       ^^^^^^^^^^^^
 
-error[E0433]: failed to resolve: use of undeclared crate or module `does`
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `does`
   --> tests/fail/derive/bad_table_name.rs:36:23
    |
 36 | #[diesel(table_name = does::not::exist)]
-   |                       ^^^^ use of undeclared crate or module `does`
+   |                       ^^^^ use of unresolved module or unlinked crate `does`
+   |
+   = help: if you wanted to use a crate named `does`, use `cargo add does` to add it to your `Cargo.toml`

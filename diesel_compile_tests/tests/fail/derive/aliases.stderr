@@ -67,7 +67,7 @@ note: required by a bound in `inner_join`
    |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
 
-error[E0271]: type mismatch resolving `<Join<JoinOn<Join<table, Alias<posts2>, Inner>, Grouped<Eq<Nullable<AliasedField<..., ...>>, ...>>>, ..., ...> as AppearsInFromClause<...>>::Count == Once`
+error[E0271]: type mismatch resolving `<Join<JoinOn<Join<table, Alias<posts2>, Inner>, Grouped<Eq<Nullable<AliasedField<posts2, author>>, Nullable<id>>>>, Alias<posts2>, Inner> as AppearsInFromClause<Alias<posts2>>>::Count == Once`
   --> tests/fail/derive/aliases.rs:42:10
    |
 42 |         .inner_join(post_alias)
