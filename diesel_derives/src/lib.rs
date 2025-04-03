@@ -88,32 +88,32 @@ mod valid_grouping;
 /// ## Optional container attributes
 ///
 /// * `#[diesel(treat_none_as_null = true)]`, specifies that
-///    the derive should treat `None` values as `NULL`. By default
-///    `Option::<T>::None` is just skipped. To insert a `NULL` using default
-///    behavior use `Option::<Option<T>>::Some(None)`
+///   the derive should treat `None` values as `NULL`. By default
+///   `Option::<T>::None` is just skipped. To insert a `NULL` using default
+///   behavior use `Option::<Option<T>>::Some(None)`
 /// * `#[diesel(table_name = path::to::table)]`, specifies a path to the table for which the
-///    current type is a changeset. The path is relative to the current module.
-///    If this attribute is not used, the type name converted to
-///    `snake_case` with an added `s` is used as table name.
+///   current type is a changeset. The path is relative to the current module.
+///   If this attribute is not used, the type name converted to
+///   `snake_case` with an added `s` is used as table name.
 /// * `#[diesel(primary_key(id1, id2))]` to specify the struct field that
-///    that corresponds to the primary key. If not used, `id` will be
-///    assumed as primary key field
+///   that corresponds to the primary key. If not used, `id` will be
+///   assumed as primary key field
 ///
 /// ## Optional field attributes
 ///
 /// * `#[diesel(column_name = some_column_name)]`, overrides the column name
-///    of the current field to `some_column_name`. By default, the field
-///    name is used as column name.
+///   of the current field to `some_column_name`. By default, the field
+///   name is used as column name.
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
-///    to a single database field, but is a struct that implements `AsChangeset`.
+///   to a single database field, but is a struct that implements `AsChangeset`.
 /// * `#[diesel(serialize_as = SomeType)]`, instead of serializing the actual
-///    field type, Diesel will convert the field into `SomeType` using `.into` and
-///    serialize that instead. By default, this derive will serialize directly using
-///    the actual field type.
+///   field type, Diesel will convert the field into `SomeType` using `.into` and
+///   serialize that instead. By default, this derive will serialize directly using
+///   the actual field type.
 /// * `#[diesel(treat_none_as_null = true/false)]`, overrides the container-level
 ///   `treat_none_as_null` attribute for the current field.
 /// * `#[diesel(skip_update)]`, skips updating this field. Useful for working with
-///    generated columns.
+///   generated columns.
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(
@@ -153,13 +153,13 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
 /// ## Required container attributes
 ///
 /// * `#[diesel(sql_type = SqlType)]`, to specify the sql type of the
-///    generated implementations. If the attribute exists multiple times
-///    impls for each sql type is generated.
+///   generated implementations. If the attribute exists multiple times
+///   impls for each sql type is generated.
 ///
 /// ## Optional container attributes
 ///
 /// * `#[diesel(not_sized)]`, to skip generating impls that require
-///    that the type is `Sized`
+///   that the type is `Sized`
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(AsExpression, attributes(diesel, sql_type))
@@ -188,26 +188,26 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
 /// # Required container attributes
 ///
 /// * `#[diesel(belongs_to(User))]`, to specify a child-to-parent relationship
-///    between the current type and the specified parent type (`User`).
-///    If this attribute is given multiple times, multiple relationships
-///    are generated. `#[diesel(belongs_to(User, foreign_key = mykey))]` variant
-///    allows us to specify the name of the foreign key. If the foreign key
-///    is not specified explicitly, the remote lower case type name with
-///    appended `_id` is used as a foreign key name. (`user_id` in this example
-///    case)
+///   between the current type and the specified parent type (`User`).
+///   If this attribute is given multiple times, multiple relationships
+///   are generated. `#[diesel(belongs_to(User, foreign_key = mykey))]` variant
+///   allows us to specify the name of the foreign key. If the foreign key
+///   is not specified explicitly, the remote lower case type name with
+///   appended `_id` is used as a foreign key name. (`user_id` in this example
+///   case)
 ///
 /// # Optional container attributes
 ///
 /// * `#[diesel(table_name = path::to::table)]` specifies a path to the table this
-///    type belongs to. The path is relative to the current module.
-///    If this attribute is not used, the type name converted to
-///    `snake_case` with an added `s` is used as table name.
+///   type belongs to. The path is relative to the current module.
+///   If this attribute is not used, the type name converted to
+///   `snake_case` with an added `s` is used as table name.
 ///
 /// # Optional field attributes
 ///
 /// * `#[diesel(column_name = some_column_name)]`, overrides the column the current
-///    field maps to `some_column_name`. By default, the field name is used
-///    as a column name.
+///   field maps to `some_column_name`. By default, the field name is used
+///   as a column name.
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(Associations, attributes(diesel, belongs_to, column_name, table_name))
@@ -265,18 +265,18 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 /// ## Optional container attributes
 ///
 /// * `#[diesel(table_name = path::to::table)]` specifies a path to the table this
-///    type belongs to. The path is relative to the current module.
-///    If this attribute is not used, the type name converted to
-///    `snake_case` with an added `s` is used as table name
+///   type belongs to. The path is relative to the current module.
+///   If this attribute is not used, the type name converted to
+///   `snake_case` with an added `s` is used as table name
 /// * `#[diesel(primary_key(id1, id2))]` to specify the struct field that
-///    that corresponds to the primary key. If not used, `id` will be
-///    assumed as primary key field
+///   that corresponds to the primary key. If not used, `id` will be
+///   assumed as primary key field
 ///
 /// # Optional field attributes
 ///
 /// * `#[diesel(column_name = some_column_name)]`, overrides the column the current
-///    field maps to `some_column_name`. By default, the field name is used
-///    as a column name.
+///   field maps to `some_column_name`. By default, the field name is used
+///   as a column name.
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(Identifiable, attributes(diesel, table_name, column_name, primary_key))
@@ -325,29 +325,29 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// ## Optional container attributes
 ///
 /// * `#[diesel(table_name = path::to::table)]`, specifies a path to the table this type
-///    is insertable into. The path is relative to the current module.
-///    If this attribute is not used, the type name converted to
-///    `snake_case` with an added `s` is used as table name
+///   is insertable into. The path is relative to the current module.
+///   If this attribute is not used, the type name converted to
+///   `snake_case` with an added `s` is used as table name
 /// * `#[diesel(treat_none_as_default_value = false)]`, specifies that `None` values
-///    should be converted to `NULL` values on the SQL side instead of being treated as `DEFAULT`
-///    value primitive. *Note*: This option may control if your query is stored in the
-///    prepared statement cache or not*
+///   should be converted to `NULL` values on the SQL side instead of being treated as `DEFAULT`
+///   value primitive. *Note*: This option may control if your query is stored in the
+///   prepared statement cache or not*
 ///
 /// ## Optional field attributes
 ///
 /// * `#[diesel(column_name = some_column_name)]`, overrides the column the current
-///    field maps to `some_column_name`. By default, the field name is used
-///    as column name
+///   field maps to `some_column_name`. By default, the field name is used
+///   as column name
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
-///    to a single database field, but is a struct that implements `Insertable`
+///   to a single database field, but is a struct that implements `Insertable`
 /// * `#[diesel(serialize_as = SomeType)]`, instead of serializing the actual
-///    field type, Diesel will convert the field into `SomeType` using `.into` and
-///    serialize that instead. By default, this derive will serialize directly using
-///    the actual field type.
+///   field type, Diesel will convert the field into `SomeType` using `.into` and
+///   serialize that instead. By default, this derive will serialize directly using
+///   the actual field type.
 /// * `#[diesel(treat_none_as_default_value = true/false)]`, overrides the container-level
 ///   `treat_none_as_default_value` attribute for the current field.
 /// * `#[diesel(skip_insertion)]`, skips insertion of this field. Useful for working with
-///    generated columns.
+///   generated columns.
 ///
 /// # Examples
 ///
@@ -496,10 +496,10 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// ## Optional field attributes
 ///
 /// * `#[diesel(deserialize_as = Type)]`, instead of deserializing directly
-///    into the field type, the implementation will deserialize into `Type`.
-///    Then `Type` is converted via
-///    [`.try_into`](https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html#tymethod.try_into)
-///    into the field type. By default, this derive will deserialize directly into the field type
+///   into the field type, the implementation will deserialize into `Type`.
+///   Then `Type` is converted via
+///   [`.try_into`](https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html#tymethod.try_into)
+///   into the field type. By default, this derive will deserialize directly into the field type
 ///
 /// # Examples
 ///
@@ -676,33 +676,33 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// ## Optional container attributes
 ///
 /// * `#[diesel(table_name = path::to::table)]`, to specify that this type contains
-///    columns for the specified table. The path is relative to the current module.
-///    If no field attributes are specified the derive will use the sql type of
-///    the corresponding column.
+///   columns for the specified table. The path is relative to the current module.
+///   If no field attributes are specified the derive will use the sql type of
+///   the corresponding column.
 /// * `#[diesel(check_for_backend(diesel::pg::Pg, diesel::mysql::Mysql))]`, instructs
-///    the derive to generate additional code to identify potential type mismatches.
-///    It accepts a list of backend types to check the types against. Using this option
-///    will result in much better error messages in cases where some types in your `QueryableByName`
-///    struct don't match. You need to specify the concrete database backend
-///    this specific struct is indented to be used with, as otherwise rustc can't correctly
-///    identify the required deserialization implementation.
+///   the derive to generate additional code to identify potential type mismatches.
+///   It accepts a list of backend types to check the types against. Using this option
+///   will result in much better error messages in cases where some types in your `QueryableByName`
+///   struct don't match. You need to specify the concrete database backend
+///   this specific struct is indented to be used with, as otherwise rustc can't correctly
+///   identify the required deserialization implementation.
 ///
 /// ## Optional field attributes
 ///
 /// * `#[diesel(column_name = some_column)]`, overrides the column name for
-///    a given field. If not set, the name of the field is used as a column
-///    name. This attribute is required on tuple structs, if
-///    `#[diesel(table_name = some_table)]` is used, otherwise it's optional.
+///   a given field. If not set, the name of the field is used as a column
+///   name. This attribute is required on tuple structs, if
+///   `#[diesel(table_name = some_table)]` is used, otherwise it's optional.
 /// * `#[diesel(sql_type = SomeType)]`, assumes `SomeType` as sql type of the
-///    corresponding field. These attributes have precedence over all other
-///    variants to specify the sql type.
+///   corresponding field. These attributes have precedence over all other
+///   variants to specify the sql type.
 /// * `#[diesel(deserialize_as = Type)]`, instead of deserializing directly
-///    into the field type, the implementation will deserialize into `Type`.
-///    Then `Type` is converted via `.into()` into the field type. By default,
-///    this derive will deserialize directly into the field type
+///   into the field type, the implementation will deserialize into `Type`.
+///   Then `Type` is converted via `.into()` into the field type. By default,
+///   this derive will deserialize directly into the field type
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
-///    a single database column, but it is a type that implements
-///    `QueryableByName` on its own
+///   a single database column, but it is a type that implements
+///   `QueryableByName` on its own
 ///
 /// # Examples
 ///
@@ -872,28 +872,28 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 /// ## Type attributes
 ///
 /// * `#[diesel(table_name = path::to::table)]`, specifies a path to the table for which the
-///    current type is selectable. The path is relative to the current module.
-///    If this attribute is not used, the type name converted to
-///    `snake_case` with an added `s` is used as table name.
+///   current type is selectable. The path is relative to the current module.
+///   If this attribute is not used, the type name converted to
+///   `snake_case` with an added `s` is used as table name.
 ///
 /// ## Optional Type attributes
 ///
 /// * `#[diesel(check_for_backend(diesel::pg::Pg, diesel::mysql::Mysql))]`, instructs
-///    the derive to generate additional code to identify potential type mismatches.
-///    It accepts a list of backend types to check the types against. Using this option
-///    will result in much better error messages in cases where some types in your `Queryable`
-///    struct don't match. You need to specify the concrete database backend
-///    this specific struct is indented to be used with, as otherwise rustc can't correctly
-///    identify the required deserialization implementation.
+///   the derive to generate additional code to identify potential type mismatches.
+///   It accepts a list of backend types to check the types against. Using this option
+///   will result in much better error messages in cases where some types in your `Queryable`
+///   struct don't match. You need to specify the concrete database backend
+///   this specific struct is indented to be used with, as otherwise rustc can't correctly
+///   identify the required deserialization implementation.
 ///
 /// ## Field attributes
 ///
 /// * `#[diesel(column_name = some_column)]`, overrides the column name for
-///    a given field. If not set, the name of the field is used as column
-///    name.
+///   a given field. If not set, the name of the field is used as column
+///   name.
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
-///    a single database column, but is a type that implements
-///    `Selectable` on its own
+///   a single database column, but is a type that implements
+///   `Selectable` on its own
 /// * `#[diesel(select_expression = some_custom_select_expression)]`, overrides
 ///   the entire select expression for the given field. It may be used to select with
 ///   custom tuples, or specify `select_expression = my_table::some_field.is_not_null()`,
@@ -938,18 +938,18 @@ pub fn derive_selectable(input: TokenStream) -> TokenStream {
 /// ## Type attributes
 ///
 /// * `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` specifies support for
-///    a postgresql type with the name `TypeName` in the schema `public`. Prefer this variant
-///    for types with no stable OID (== everything but the builtin types). It is possible to leaf
-///    of the `schema` part. In that case, Diesel defaults to the default postgres search path.
+///   a postgresql type with the name `TypeName` in the schema `public`. Prefer this variant
+///   for types with no stable OID (== everything but the builtin types). It is possible to leaf
+///   of the `schema` part. In that case, Diesel defaults to the default postgres search path.
 /// * `#[diesel(postgres_type(oid = 42, array_oid = 142))]`, specifies support for a
-///    postgresql type with the given `oid` and `array_oid`. This variant
-///    should only be used with types that have a stable OID.
+///   postgresql type with the given `oid` and `array_oid`. This variant
+///   should only be used with types that have a stable OID.
 /// * `#[diesel(sqlite_type(name = "TypeName"))]`, specifies support for a sqlite type
-///    with the given name. `TypeName` needs to be one of the possible values
-///    in `SqliteType`
+///   with the given name. `TypeName` needs to be one of the possible values
+///   in `SqliteType`
 /// * `#[diesel(mysql_type(name = "TypeName"))]`, specifies support for a mysql type
-///    with the given name. `TypeName` needs to be one of the possible values
-///    in `MysqlType`
+///   with the given name. `TypeName` needs to be one of the possible values
+///   in `MysqlType`
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(SqlType, attributes(diesel, postgres, sqlite_type, mysql_type))
@@ -1002,7 +1002,7 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// ## Optional container attributes
 ///
 /// * `#[diesel(aggregate)]` for cases where the type represents an aggregating
-///    SQL expression
+///   SQL expression
 #[proc_macro_derive(ValidGrouping, attributes(diesel))]
 pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
     valid_grouping::derive(parse_macro_input!(input))
@@ -1575,7 +1575,7 @@ pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
 /// macro:
 /// - `#[auto_type(no_type_alias)]` to disable the generation of the type alias.
 /// - `#[auto_type(dsl_path = "path::to::dsl")]` to change the path where the
-///     macro will look for type aliases for methods. This is required if you mix your own
+///   macro will look for type aliases for methods. This is required if you mix your own
 ///   custom query dsl extensions with diesel types. In that case, you may use this argument to
 ///   reference a module defined like so:
 ///   ```ignore

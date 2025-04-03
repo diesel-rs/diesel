@@ -442,7 +442,7 @@ fn get_database_and_url(database_url: &str) -> Result<(String, url::Url), crate:
     let database = base
         .path_segments()
         .expect("The database url has at least one path segment")
-        .last()
+        .next_back()
         .expect("The database url has at least one path segment")
         .to_owned();
     Ok((database, base))

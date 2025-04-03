@@ -30,7 +30,7 @@ note: required by a bound in `inner_join`
    |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
 
-error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, Inner>, Grouped<Eq<..., ...>>>>>, ...> as AppearsInFromClause<...>>::Count == Once`
+error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, Inner>, Grouped<Eq<Nullable<user_id>, Nullable<id>>>>>>, Inner> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/invalid_joins.rs:41:26
    |
 41 |     let _ = users::table.inner_join(posts::table.inner_join(users::table));
@@ -79,7 +79,7 @@ note: required by a bound in `inner_join`
    |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
 
-error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, Inner>, Grouped<Eq<..., ...>>>>>, ...> as AppearsInFromClause<...>>::Count == Once`
+error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, Inner>, Grouped<Eq<user_id, id>>>>>, Inner> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/invalid_joins.rs:44:26
    |
 44 |     let _ = users::table.inner_join(posts::table.inner_join(users::table.on(posts::user_id.eq(users::id))));
@@ -128,7 +128,7 @@ note: required by a bound in `inner_join`
    |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
 
-error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, Inner>, Grouped<Eq<..., ...>>>>>, ...> as AppearsInFromClause<...>>::Count == Once`
+error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, Inner>, Grouped<Eq<Nullable<user_id>, Nullable<id>>>>>>, Inner> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/invalid_joins.rs:47:26
    |
 47 |     let _ = users::table.inner_join(posts::table.on(users::id.eq(posts::user_id)).inner_join(users::table));
@@ -207,7 +207,7 @@ note: required by a bound in `left_join`
    |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::left_join`
 
-error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<..., ...>>>>>, ...> as AppearsInFromClause<...>>::Count == Once`
+error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, Nullable<id>>>>>>, LeftOuter> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/invalid_joins.rs:58:26
    |
 58 |     let _ = users::table.left_join(posts::table.left_join(users::table));
@@ -256,7 +256,7 @@ note: required by a bound in `left_join`
    |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::left_join`
 
-error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<..., ...>>>>>, ...> as AppearsInFromClause<...>>::Count == Once`
+error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<user_id, id>>>>>, LeftOuter> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/invalid_joins.rs:61:26
    |
 61 |     let _ = users::table.left_join(posts::table.left_join(users::table.on(posts::user_id.eq(users::id))));
@@ -305,7 +305,7 @@ note: required by a bound in `left_join`
    |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::left_join`
 
-error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<..., ...>>>>>, ...> as AppearsInFromClause<...>>::Count == Once`
+error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, Nullable<id>>>>>>, LeftOuter> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/invalid_joins.rs:64:26
    |
 64 |     let _ = users::table.left_join(posts::table.on(users::id.eq(posts::user_id)).left_join(users::table));

@@ -109,7 +109,7 @@ error[E0308]: mismatched types
    |                 ------------------------- expected due to this value
 ...
 79 |     a = users::table.group_by(users::id).into_boxed();
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `BoxedSelectStatement<'_, (..., ...), ..., ...>`, found `BoxedSelectStatement<'_, (..., ...), ..., ..., ...>`
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `BoxedSelectStatement<'_, ..., ..., _>`, found `BoxedSelectStatement<'_, ..., ..., _, ...>`
    |
    = note: expected struct `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _, ()>`
               found struct `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _, users::columns::id>`
@@ -118,7 +118,7 @@ error[E0271]: type mismatch resolving `<BoxedSelectStatement<'_, (Integer, Text)
   --> tests/fail/boxed_queries_and_group_by.rs:84:10
    |
 84 |         .group_by(users::id)
-   |          ^^^^^^^^ expected `SelectStatement<FromClause<...>>`, found `BoxedSelectStatement<'_, (..., ...), ..., ...>`
+   |          ^^^^^^^^ expected `SelectStatement<FromClause<...>>`, found `BoxedSelectStatement<'_, ..., ..., _>`
    |
    = note: expected struct `SelectStatement<FromClause<BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>>>`
               found struct `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>`
