@@ -346,7 +346,7 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
               found struct `Nullable<diesel::sql_types::Text>`
    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
 
-error[E0271]: type mismatch resolving `<SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>> as AppearsInFromClause<...>>::Count == Never`
+error[E0271]: type mismatch resolving `<SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, Nullable<id>>>>>> as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:89:18
    |
 89 |     let _ = join.select(posts::title);
@@ -390,7 +390,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>` to implement `SelectDsl<posts::columns::title>`
 
-error[E0271]: type mismatch resolving `<SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>> as AppearsInFromClause<...>>::Count == Never`
+error[E0271]: type mismatch resolving `<SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, Nullable<id>>>>>> as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:95:18
    |
 95 |     let _ = join.select(lower(posts::title));

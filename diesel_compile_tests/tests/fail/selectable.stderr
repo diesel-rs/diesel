@@ -16,14 +16,16 @@ error[E0425]: cannot find value `titel` in module `posts`
 53 |     titel: String,
    |     ^^^^^ help: a unit struct with a similar name exists: `title`
 
-error[E0433]: failed to resolve: use of undeclared crate or module `post`
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `post`
   --> tests/fail/selectable.rs:58:23
    |
 58 | #[diesel(table_name = post)]
    |                       ^^^^
    |                       |
-   |                       use of undeclared crate or module `post`
+   |                       use of unresolved module or unlinked crate `post`
    |                       help: a struct with a similar name exists: `Post`
+   |
+   = help: if you wanted to use a crate named `post`, use `cargo add post` to add it to your `Cargo.toml`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
    --> tests/fail/selectable.rs:162:10

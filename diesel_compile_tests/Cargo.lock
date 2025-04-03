@@ -130,7 +130,7 @@ dependencies = [
 
 [[package]]
 name = "diesel"
-version = "2.2.7"
+version = "2.2.9"
 dependencies = [
  "bigdecimal",
  "bitflags",
@@ -164,7 +164,7 @@ dependencies = [
 
 [[package]]
 name = "diesel_derives"
-version = "2.2.3"
+version = "2.2.4"
 dependencies = [
  "diesel_table_macro_syntax",
  "dsl_auto_type",
@@ -182,7 +182,7 @@ dependencies = [
 
 [[package]]
 name = "dsl_auto_type"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "darling",
  "either",
