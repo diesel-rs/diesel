@@ -1,0 +1,187 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `diesel/src/expression/helper_types.rs`."><title>helper_types.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-de575e9a.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.88.0-nightly (00095b3da 2025-04-03)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-d72f25bb.js" ><script src="../../../static.files/storage-4e99c027.js"></script><script defer src="../../../static.files/src-script-63605ae7.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">diesel/expression/</div>helper_types.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! The types in this module are all shorthand for `PredicateType&lt;Lhs,
+<a href=#2 id=2 data-nosnippet>2</a>//! AsExpr&lt;Rhs, Lhs&gt;&gt;`. Since we often need to return concrete types, instead of
+<a href=#3 id=3 data-nosnippet>3</a>//! a boxed trait object, these can be useful for writing concise return types.
+<a href=#4 id=4 data-nosnippet>4</a></span><span class="kw">use </span><span class="kw">super</span>::array_comparison::{AsInExpression, In, NotIn};
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><span class="kw">super</span>::grouped::Grouped;
+<a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span><span class="kw">super</span>::select_by::SelectBy;
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">use super</span>::{AsExpression, Expression};
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span><span class="kw">crate</span>::expression;
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span><span class="kw">crate</span>::expression_methods::PreferredBoolSqlType;
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span><span class="kw">crate</span>::sql_types;
+<a href=#11 id=11 data-nosnippet>11</a>
+<a href=#12 id=12 data-nosnippet>12</a><span class="doccomment">/// The SQL type of an expression
+<a href=#13 id=13 data-nosnippet>13</a></span><span class="kw">pub type </span>SqlTypeOf&lt;Expr&gt; = &lt;Expr <span class="kw">as </span>Expression&gt;::SqlType;
+<a href=#14 id=14 data-nosnippet>14</a>
+<a href=#15 id=15 data-nosnippet>15</a><span class="doccomment">/// The type of `Item` when converted to an expression with the same type as `TargetExpr`
+<a href=#16 id=16 data-nosnippet>16</a></span><span class="kw">pub type </span>AsExpr&lt;Item, TargetExpr&gt; = AsExprOf&lt;Item, SqlTypeOf&lt;TargetExpr&gt;&gt;;
+<a href=#17 id=17 data-nosnippet>17</a>
+<a href=#18 id=18 data-nosnippet>18</a><span class="doccomment">/// The type of `Item` when converted to an expression of `Type`
+<a href=#19 id=19 data-nosnippet>19</a></span><span class="kw">pub type </span>AsExprOf&lt;Item, Type&gt; = &lt;Item <span class="kw">as </span>AsExpression&lt;Type&gt;&gt;::Expression;
+<a href=#20 id=20 data-nosnippet>20</a>
+<a href=#21 id=21 data-nosnippet>21</a><span class="doccomment">/// The return type of
+<a href=#22 id=22 data-nosnippet>22</a>/// [`lhs.eq(rhs)`](crate::expression_methods::ExpressionMethods::eq())
+<a href=#23 id=23 data-nosnippet>23</a></span><span class="kw">pub type </span>Eq&lt;Lhs, Rhs&gt; = Grouped&lt;<span class="kw">super</span>::operators::Eq&lt;Lhs, AsExpr&lt;Rhs, Lhs&gt;&gt;&gt;;
+<a href=#24 id=24 data-nosnippet>24</a>
+<a href=#25 id=25 data-nosnippet>25</a><span class="doccomment">/// The return type of
+<a href=#26 id=26 data-nosnippet>26</a>/// [`lhs.ne(rhs)`](crate::expression_methods::ExpressionMethods::ne())
+<a href=#27 id=27 data-nosnippet>27</a></span><span class="kw">pub type </span>NotEq&lt;Lhs, Rhs&gt; = Grouped&lt;<span class="kw">super</span>::operators::NotEq&lt;Lhs, AsExpr&lt;Rhs, Lhs&gt;&gt;&gt;;
+<a href=#28 id=28 data-nosnippet>28</a>
+<a href=#29 id=29 data-nosnippet>29</a><span class="attr">#[doc(hidden)] </span><span class="comment">// required for `#[auto_type]`
+<a href=#30 id=30 data-nosnippet>30</a></span><span class="kw">pub type </span>Ne&lt;Lhs, Rhs&gt; = NotEq&lt;Lhs, Rhs&gt;;
+<a href=#31 id=31 data-nosnippet>31</a>
+<a href=#32 id=32 data-nosnippet>32</a><span class="doccomment">/// The return type of
+<a href=#33 id=33 data-nosnippet>33</a>/// [`lhs.eq_any(rhs)`](crate::expression_methods::ExpressionMethods::eq_any())
+<a href=#34 id=34 data-nosnippet>34</a></span><span class="kw">pub type </span>EqAny&lt;Lhs, Rhs&gt; = Grouped&lt;In&lt;Lhs, &lt;Rhs <span class="kw">as </span>AsInExpression&lt;SqlTypeOf&lt;Lhs&gt;&gt;&gt;::InExpression&gt;&gt;;
+<a href=#35 id=35 data-nosnippet>35</a>
+<a href=#36 id=36 data-nosnippet>36</a><span class="doccomment">/// The return type of
+<a href=#37 id=37 data-nosnippet>37</a>/// [`lhs.ne_all(rhs)`](crate::expression_methods::ExpressionMethods::ne_all())
+<a href=#38 id=38 data-nosnippet>38</a></span><span class="kw">pub type </span>NeAny&lt;Lhs, Rhs&gt; =
+<a href=#39 id=39 data-nosnippet>39</a>    Grouped&lt;NotIn&lt;Lhs, &lt;Rhs <span class="kw">as </span>AsInExpression&lt;SqlTypeOf&lt;Lhs&gt;&gt;&gt;::InExpression&gt;&gt;;
+<a href=#40 id=40 data-nosnippet>40</a>
+<a href=#41 id=41 data-nosnippet>41</a><span class="attr">#[doc(hidden)] </span><span class="comment">// required for `#[auto_type]`
+<a href=#42 id=42 data-nosnippet>42</a></span><span class="kw">pub type </span>NeAll&lt;Lhs, Rhs&gt; = NeAny&lt;Lhs, Rhs&gt;;
+<a href=#43 id=43 data-nosnippet>43</a>
+<a href=#44 id=44 data-nosnippet>44</a><span class="doccomment">/// The return type of
+<a href=#45 id=45 data-nosnippet>45</a>/// [`expr.is_null()`](crate::expression_methods::ExpressionMethods::is_null())
+<a href=#46 id=46 data-nosnippet>46</a></span><span class="kw">pub type </span>IsNull&lt;Expr&gt; = Grouped&lt;<span class="kw">super</span>::operators::IsNull&lt;Expr&gt;&gt;;
+<a href=#47 id=47 data-nosnippet>47</a>
+<a href=#48 id=48 data-nosnippet>48</a><span class="doccomment">/// The return type of
+<a href=#49 id=49 data-nosnippet>49</a>/// [`expr.is_not_null()`](crate::expression_methods::ExpressionMethods::is_not_null())
+<a href=#50 id=50 data-nosnippet>50</a></span><span class="kw">pub type </span>IsNotNull&lt;Expr&gt; = Grouped&lt;<span class="kw">super</span>::operators::IsNotNull&lt;Expr&gt;&gt;;
+<a href=#51 id=51 data-nosnippet>51</a>
+<a href=#52 id=52 data-nosnippet>52</a><span class="doccomment">/// The return type of
+<a href=#53 id=53 data-nosnippet>53</a>/// [`lhs.gt(rhs)`](crate::expression_methods::ExpressionMethods::gt())
+<a href=#54 id=54 data-nosnippet>54</a></span><span class="kw">pub type </span>Gt&lt;Lhs, Rhs&gt; = Grouped&lt;<span class="kw">super</span>::operators::Gt&lt;Lhs, AsExpr&lt;Rhs, Lhs&gt;&gt;&gt;;
+<a href=#55 id=55 data-nosnippet>55</a>
+<a href=#56 id=56 data-nosnippet>56</a><span class="doccomment">/// The return type of
+<a href=#57 id=57 data-nosnippet>57</a>/// [`lhs.ge(rhs)`](crate::expression_methods::ExpressionMethods::ge())
+<a href=#58 id=58 data-nosnippet>58</a></span><span class="kw">pub type </span>GtEq&lt;Lhs, Rhs&gt; = Grouped&lt;<span class="kw">super</span>::operators::GtEq&lt;Lhs, AsExpr&lt;Rhs, Lhs&gt;&gt;&gt;;
+<a href=#59 id=59 data-nosnippet>59</a>
+<a href=#60 id=60 data-nosnippet>60</a><span class="attr">#[doc(hidden)] </span><span class="comment">// required for `#[auto_type]`
+<a href=#61 id=61 data-nosnippet>61</a></span><span class="kw">pub type </span>Ge&lt;Lhs, Rhs&gt; = GtEq&lt;Lhs, Rhs&gt;;
+<a href=#62 id=62 data-nosnippet>62</a>
+<a href=#63 id=63 data-nosnippet>63</a><span class="doccomment">/// The return type of
+<a href=#64 id=64 data-nosnippet>64</a>/// [`lhs.lt(rhs)`](crate::expression_methods::ExpressionMethods::lt())
+<a href=#65 id=65 data-nosnippet>65</a></span><span class="kw">pub type </span>Lt&lt;Lhs, Rhs&gt; = Grouped&lt;<span class="kw">super</span>::operators::Lt&lt;Lhs, AsExpr&lt;Rhs, Lhs&gt;&gt;&gt;;
+<a href=#66 id=66 data-nosnippet>66</a>
+<a href=#67 id=67 data-nosnippet>67</a><span class="doccomment">/// The return type of
+<a href=#68 id=68 data-nosnippet>68</a>/// [`lhs.le(rhs)`](crate::expression_methods::ExpressionMethods::le())
+<a href=#69 id=69 data-nosnippet>69</a></span><span class="kw">pub type </span>LtEq&lt;Lhs, Rhs&gt; = Grouped&lt;<span class="kw">super</span>::operators::LtEq&lt;Lhs, AsExpr&lt;Rhs, Lhs&gt;&gt;&gt;;
+<a href=#70 id=70 data-nosnippet>70</a>
+<a href=#71 id=71 data-nosnippet>71</a><span class="attr">#[doc(hidden)] </span><span class="comment">// required for `#[auto_type]`
+<a href=#72 id=72 data-nosnippet>72</a></span><span class="kw">pub type </span>Le&lt;Lhs, Rhs&gt; = LtEq&lt;Lhs, Rhs&gt;;
+<a href=#73 id=73 data-nosnippet>73</a>
+<a href=#74 id=74 data-nosnippet>74</a><span class="doccomment">/// The return type of
+<a href=#75 id=75 data-nosnippet>75</a>/// [`lhs.between(lower, upper)`](crate::expression_methods::ExpressionMethods::between())
+<a href=#76 id=76 data-nosnippet>76</a></span><span class="kw">pub type </span>Between&lt;Lhs, Lower, Upper&gt; = Grouped&lt;
+<a href=#77 id=77 data-nosnippet>77</a>    <span class="kw">super</span>::operators::Between&lt;Lhs, <span class="kw">super</span>::operators::And&lt;AsExpr&lt;Lower, Lhs&gt;, AsExpr&lt;Upper, Lhs&gt;&gt;&gt;,
+<a href=#78 id=78 data-nosnippet>78</a>&gt;;
+<a href=#79 id=79 data-nosnippet>79</a>
+<a href=#80 id=80 data-nosnippet>80</a><span class="doccomment">/// The return type of
+<a href=#81 id=81 data-nosnippet>81</a>/// [`lhs.not_between(lower, upper)`](crate::expression_methods::ExpressionMethods::not_between())
+<a href=#82 id=82 data-nosnippet>82</a></span><span class="kw">pub type </span>NotBetween&lt;Lhs, Lower, Upper&gt; = Grouped&lt;
+<a href=#83 id=83 data-nosnippet>83</a>    <span class="kw">super</span>::operators::NotBetween&lt;
+<a href=#84 id=84 data-nosnippet>84</a>        Lhs,
+<a href=#85 id=85 data-nosnippet>85</a>        <span class="kw">super</span>::operators::And&lt;AsExpr&lt;Lower, Lhs&gt;, AsExpr&lt;Upper, Lhs&gt;&gt;,
+<a href=#86 id=86 data-nosnippet>86</a>    &gt;,
+<a href=#87 id=87 data-nosnippet>87</a>&gt;;
+<a href=#88 id=88 data-nosnippet>88</a>
+<a href=#89 id=89 data-nosnippet>89</a><span class="doccomment">/// The return type of
+<a href=#90 id=90 data-nosnippet>90</a>/// [`lhs.concat(rhs)`](crate::expression_methods::TextExpressionMethods::concat())
+<a href=#91 id=91 data-nosnippet>91</a></span><span class="kw">pub type </span>Concat&lt;Lhs, Rhs&gt; = Grouped&lt;<span class="kw">super</span>::operators::Concat&lt;Lhs, AsExpr&lt;Rhs, Lhs&gt;&gt;&gt;;
+<a href=#92 id=92 data-nosnippet>92</a>
+<a href=#93 id=93 data-nosnippet>93</a><span class="doccomment">/// The return type of
+<a href=#94 id=94 data-nosnippet>94</a>/// [`expr.desc()`](crate::expression_methods::ExpressionMethods::desc())
+<a href=#95 id=95 data-nosnippet>95</a></span><span class="kw">pub type </span>Desc&lt;Expr&gt; = <span class="kw">super</span>::operators::Desc&lt;Expr&gt;;
+<a href=#96 id=96 data-nosnippet>96</a>
+<a href=#97 id=97 data-nosnippet>97</a><span class="doccomment">/// The return type of
+<a href=#98 id=98 data-nosnippet>98</a>/// [`expr.asc()`](crate::expression_methods::ExpressionMethods::asc())
+<a href=#99 id=99 data-nosnippet>99</a></span><span class="kw">pub type </span>Asc&lt;Expr&gt; = <span class="kw">super</span>::operators::Asc&lt;Expr&gt;;
+<a href=#100 id=100 data-nosnippet>100</a>
+<a href=#101 id=101 data-nosnippet>101</a><span class="doccomment">/// The return type of
+<a href=#102 id=102 data-nosnippet>102</a>/// [`expr.nullable()`](crate::expression_methods::NullableExpressionMethods::nullable())
+<a href=#103 id=103 data-nosnippet>103</a></span><span class="kw">pub type </span>Nullable&lt;Expr&gt; = <span class="kw">super</span>::nullable::Nullable&lt;Expr&gt;;
+<a href=#104 id=104 data-nosnippet>104</a>
+<a href=#105 id=105 data-nosnippet>105</a><span class="doccomment">/// The return type of
+<a href=#106 id=106 data-nosnippet>106</a>/// [`expr.assume_not_null()`](crate::expression_methods::NullableExpressionMethods::assume_not_null())
+<a href=#107 id=107 data-nosnippet>107</a></span><span class="kw">pub type </span>AssumeNotNull&lt;Expr&gt; = <span class="kw">super</span>::assume_not_null::AssumeNotNull&lt;Expr&gt;;
+<a href=#108 id=108 data-nosnippet>108</a>
+<a href=#109 id=109 data-nosnippet>109</a><span class="doccomment">/// The return type of
+<a href=#110 id=110 data-nosnippet>110</a>/// [`lhs.and(rhs)`](crate::expression_methods::BoolExpressionMethods::and())
+<a href=#111 id=111 data-nosnippet>111</a></span><span class="kw">pub type </span>And&lt;Lhs, Rhs, ST = &lt;Rhs <span class="kw">as </span>PreferredBoolSqlType&gt;::PreferredSqlType&gt; =
+<a href=#112 id=112 data-nosnippet>112</a>    Grouped&lt;<span class="kw">super</span>::operators::And&lt;Lhs, AsExprOf&lt;Rhs, ST&gt;&gt;&gt;;
+<a href=#113 id=113 data-nosnippet>113</a>
+<a href=#114 id=114 data-nosnippet>114</a><span class="doccomment">/// The return type of
+<a href=#115 id=115 data-nosnippet>115</a>/// [`lhs.or(rhs)`](crate::expression_methods::BoolExpressionMethods::or())
+<a href=#116 id=116 data-nosnippet>116</a></span><span class="kw">pub type </span>Or&lt;Lhs, Rhs, ST = &lt;Rhs <span class="kw">as </span>PreferredBoolSqlType&gt;::PreferredSqlType&gt; =
+<a href=#117 id=117 data-nosnippet>117</a>    Grouped&lt;<span class="kw">super</span>::operators::Or&lt;Lhs, AsExprOf&lt;Rhs, ST&gt;&gt;&gt;;
+<a href=#118 id=118 data-nosnippet>118</a>
+<a href=#119 id=119 data-nosnippet>119</a><span class="doccomment">/// The return type of
+<a href=#120 id=120 data-nosnippet>120</a>/// [`lhs.escape('x')`](crate::expression_methods::EscapeExpressionMethods::escape())
+<a href=#121 id=121 data-nosnippet>121</a></span><span class="kw">pub type </span>Escape&lt;Lhs&gt; = Grouped&lt;
+<a href=#122 id=122 data-nosnippet>122</a>    <span class="kw">super</span>::operators::Escape&lt;
+<a href=#123 id=123 data-nosnippet>123</a>        &lt;Lhs <span class="kw">as </span><span class="kw">crate</span>::expression_methods::EscapeExpressionMethods&gt;::TextExpression,
+<a href=#124 id=124 data-nosnippet>124</a>        AsExprOf&lt;String, sql_types::VarChar&gt;,
+<a href=#125 id=125 data-nosnippet>125</a>    &gt;,
+<a href=#126 id=126 data-nosnippet>126</a>&gt;;
+<a href=#127 id=127 data-nosnippet>127</a>
+<a href=#128 id=128 data-nosnippet>128</a><span class="doccomment">/// The return type of
+<a href=#129 id=129 data-nosnippet>129</a>/// [`lhs.like(rhs)`](crate::expression_methods::TextExpressionMethods::like())
+<a href=#130 id=130 data-nosnippet>130</a></span><span class="kw">pub type </span>Like&lt;Lhs, Rhs&gt; = Grouped&lt;<span class="kw">super</span>::operators::Like&lt;Lhs, AsExprOf&lt;Rhs, SqlTypeOf&lt;Lhs&gt;&gt;&gt;&gt;;
+<a href=#131 id=131 data-nosnippet>131</a>
+<a href=#132 id=132 data-nosnippet>132</a><span class="doccomment">/// The return type of
+<a href=#133 id=133 data-nosnippet>133</a>/// [`lhs.not_like(rhs)`](crate::expression_methods::TextExpressionMethods::not_like())
+<a href=#134 id=134 data-nosnippet>134</a></span><span class="kw">pub type </span>NotLike&lt;Lhs, Rhs&gt; = Grouped&lt;<span class="kw">super</span>::operators::NotLike&lt;Lhs, AsExprOf&lt;Rhs, SqlTypeOf&lt;Lhs&gt;&gt;&gt;&gt;;
+<a href=#135 id=135 data-nosnippet>135</a>
+<a href=#136 id=136 data-nosnippet>136</a><span class="doccomment">/// The return type of [`case_when()`](expression::case_when::case_when)
+<a href=#137 id=137 data-nosnippet>137</a></span><span class="attr">#[allow(non_camel_case_types)] </span><span class="comment">// required for `#[auto_type]`
+<a href=#138 id=138 data-nosnippet>138</a></span><span class="kw">pub type </span>case_when&lt;C, T, ST = &lt;T <span class="kw">as </span>Expression&gt;::SqlType&gt; = expression::case_when::CaseWhen&lt;
+<a href=#139 id=139 data-nosnippet>139</a>    expression::case_when::CaseWhenConditionsLeaf&lt;Grouped&lt;C&gt;, Grouped&lt;AsExprOf&lt;T, ST&gt;&gt;&gt;,
+<a href=#140 id=140 data-nosnippet>140</a>    expression::case_when::NoElseExpression,
+<a href=#141 id=141 data-nosnippet>141</a>&gt;;
+<a href=#142 id=142 data-nosnippet>142</a><span class="doccomment">/// The return type of [`case_when(...).when(...)`](expression::CaseWhen::when)
+<a href=#143 id=143 data-nosnippet>143</a></span><span class="kw">pub type </span>When&lt;W, C, T&gt; = expression::case_when::CaseWhen&lt;
+<a href=#144 id=144 data-nosnippet>144</a>    expression::case_when::CaseWhenConditionsIntermediateNode&lt;
+<a href=#145 id=145 data-nosnippet>145</a>        Grouped&lt;C&gt;,
+<a href=#146 id=146 data-nosnippet>146</a>        Grouped&lt;AsExprOf&lt;T, &lt;W <span class="kw">as </span>expression::case_when::CaseWhenTypesExtractor&gt;::OutputExpressionSpecifiedSqlType&gt;&gt;,
+<a href=#147 id=147 data-nosnippet>147</a>        &lt;W <span class="kw">as </span>expression::case_when::CaseWhenTypesExtractor&gt;::Whens,
+<a href=#148 id=148 data-nosnippet>148</a>    &gt;,
+<a href=#149 id=149 data-nosnippet>149</a>    &lt;W <span class="kw">as </span>expression::case_when::CaseWhenTypesExtractor&gt;::Else,
+<a href=#150 id=150 data-nosnippet>150</a>&gt;;
+<a href=#151 id=151 data-nosnippet>151</a><span class="doccomment">/// The return type of [`case_when(...).otherwise(...)`](expression::case_when::CaseWhen::otherwise)
+<a href=#152 id=152 data-nosnippet>152</a></span><span class="kw">pub type </span>Otherwise&lt;W, E&gt; = expression::case_when::CaseWhen&lt;
+<a href=#153 id=153 data-nosnippet>153</a>    &lt;W <span class="kw">as </span>expression::case_when::CaseWhenTypesExtractor&gt;::Whens,
+<a href=#154 id=154 data-nosnippet>154</a>    expression::case_when::ElseExpression&lt;Grouped&lt;AsExprOf&lt;E, &lt;W <span class="kw">as </span>expression::case_when::CaseWhenTypesExtractor&gt;::OutputExpressionSpecifiedSqlType&gt;&gt;&gt;,
+<a href=#155 id=155 data-nosnippet>155</a>&gt;;
+<a href=#156 id=156 data-nosnippet>156</a>
+<a href=#157 id=157 data-nosnippet>157</a><span class="doccomment">/// Represents the return type of [`.as_select()`](crate::prelude::SelectableHelper::as_select)
+<a href=#158 id=158 data-nosnippet>158</a></span><span class="kw">pub type </span>AsSelect&lt;Source, DB&gt; = SelectBy&lt;Source, DB&gt;;
+<a href=#159 id=159 data-nosnippet>159</a>
+<a href=#160 id=160 data-nosnippet>160</a><span class="doccomment">/// Represents the return type of [`.into_sql()`](crate::expression::IntoSql::into_sql)
+<a href=#161 id=161 data-nosnippet>161</a></span><span class="kw">pub type </span>IntoSql&lt;Item, SqlType&gt; = AsExprOf&lt;Item, SqlType&gt;;
+<a href=#162 id=162 data-nosnippet>162</a>
+<a href=#163 id=163 data-nosnippet>163</a><span class="doccomment">/// The return type of [`alias.field(field)`](crate::query_source::Alias::field)
+<a href=#164 id=164 data-nosnippet>164</a></span><span class="kw">pub type </span>Field&lt;Alias, Field&gt; = Fields&lt;Alias, Field&gt;;
+<a href=#165 id=165 data-nosnippet>165</a>
+<a href=#166 id=166 data-nosnippet>166</a><span class="doccomment">/// The return type of [`alias.fields(fields)`](crate::query_source::Alias::fields)
+<a href=#167 id=167 data-nosnippet>167</a></span><span class="kw">pub type </span>Fields&lt;Alias, Fields&gt; = &lt;Fields <span class="kw">as </span><span class="kw">crate</span>::query_source::aliasing::FieldAliasMapper&lt;
+<a href=#168 id=168 data-nosnippet>168</a>    &lt;Alias <span class="kw">as </span><span class="kw">crate</span>::query_source::aliasing::GetAliasSourceFromAlias&gt;::Source,
+<a href=#169 id=169 data-nosnippet>169</a>&gt;&gt;::Out;
+<a href=#170 id=170 data-nosnippet>170</a>
+<a href=#171 id=171 data-nosnippet>171</a><span class="comment">// we allow unreachable_pub here
+<a href=#172 id=172 data-nosnippet>172</a>// as rustc otherwise shows false positives
+<a href=#173 id=173 data-nosnippet>173</a>// for every item in this module. We reexport
+<a href=#174 id=174 data-nosnippet>174</a>// everything from `crate::helper_types::`
+<a href=#175 id=175 data-nosnippet>175</a></span><span class="attr">#[doc(inline)]
+<a href=#176 id=176 data-nosnippet>176</a>#[allow(unreachable_pub)]
+<a href=#177 id=177 data-nosnippet>177</a></span><span class="kw">pub use </span><span class="kw">super</span>::functions::helper_types::<span class="kw-2">*</span>;
+<a href=#178 id=178 data-nosnippet>178</a>
+<a href=#179 id=179 data-nosnippet>179</a><span class="attr">#[doc(inline)]
+<a href=#180 id=180 data-nosnippet>180</a>#[cfg(feature = <span class="string">"postgres_backend"</span>)]
+<a href=#181 id=181 data-nosnippet>181</a>#[allow(unreachable_pub)]
+<a href=#182 id=182 data-nosnippet>182</a></span><span class="kw">pub use </span><span class="kw">crate</span>::pg::expression::helper_types::<span class="kw-2">*</span>;
+<a href=#183 id=183 data-nosnippet>183</a>
+<a href=#184 id=184 data-nosnippet>184</a><span class="attr">#[doc(inline)]
+<a href=#185 id=185 data-nosnippet>185</a>#[cfg(feature = <span class="string">"sqlite"</span>)]
+<a href=#186 id=186 data-nosnippet>186</a>#[allow(unreachable_pub)]
+<a href=#187 id=187 data-nosnippet>187</a></span><span class="kw">pub use </span><span class="kw">crate</span>::sqlite::expression::helper_types::<span class="kw-2">*</span>;</code></pre></div></section></main></body></html>

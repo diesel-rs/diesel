@@ -1,0 +1,775 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `diesel/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-de575e9a.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.88.0-nightly (00095b3da 2025-04-03)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-d72f25bb.js" ><script src="../../static.files/storage-4e99c027.js"></script><script defer src="../../static.files/src-script-63605ae7.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">diesel/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! # Diesel
+<a href=#2 id=2 data-nosnippet>2</a>//!
+<a href=#3 id=3 data-nosnippet>3</a>//! Diesel is an ORM and query builder designed to reduce the boilerplate for database interactions.
+<a href=#4 id=4 data-nosnippet>4</a>//! If this is your first time reading this documentation,
+<a href=#5 id=5 data-nosnippet>5</a>//! we recommend you start with the [getting started guide].
+<a href=#6 id=6 data-nosnippet>6</a>//! We also have [many other long form guides].
+<a href=#7 id=7 data-nosnippet>7</a>//!
+<a href=#8 id=8 data-nosnippet>8</a>//! [getting started guide]: https://diesel.rs/guides/getting-started/
+<a href=#9 id=9 data-nosnippet>9</a>//! [many other long form guides]: https://diesel.rs/guides
+<a href=#10 id=10 data-nosnippet>10</a>//!
+<a href=#11 id=11 data-nosnippet>11</a>//! # Where to find things
+<a href=#12 id=12 data-nosnippet>12</a>//!
+<a href=#13 id=13 data-nosnippet>13</a>//! ## Declaring your schema
+<a href=#14 id=14 data-nosnippet>14</a>//!
+<a href=#15 id=15 data-nosnippet>15</a>//! For Diesel to validate your queries at compile time
+<a href=#16 id=16 data-nosnippet>16</a>//! it requires you to specify your schema in your code,
+<a href=#17 id=17 data-nosnippet>17</a>//! which you can do with [the `table!` macro][`table!`].
+<a href=#18 id=18 data-nosnippet>18</a>//! `diesel print-schema` can be used
+<a href=#19 id=19 data-nosnippet>19</a>//! to automatically generate these macro calls
+<a href=#20 id=20 data-nosnippet>20</a>//! (by connecting to your database and querying its schema).
+<a href=#21 id=21 data-nosnippet>21</a>//!
+<a href=#22 id=22 data-nosnippet>22</a>//!
+<a href=#23 id=23 data-nosnippet>23</a>//! ## Getting started
+<a href=#24 id=24 data-nosnippet>24</a>//!
+<a href=#25 id=25 data-nosnippet>25</a>//! Queries usually start from either a table, or a function like [`update`].
+<a href=#26 id=26 data-nosnippet>26</a>//! Those functions can be found [here](#functions).
+<a href=#27 id=27 data-nosnippet>27</a>//!
+<a href=#28 id=28 data-nosnippet>28</a>//! Diesel provides a [`prelude` module](prelude),
+<a href=#29 id=29 data-nosnippet>29</a>//! which exports most of the typically used traits and types.
+<a href=#30 id=30 data-nosnippet>30</a>//! We are conservative about what goes in this module,
+<a href=#31 id=31 data-nosnippet>31</a>//! and avoid anything which has a generic name.
+<a href=#32 id=32 data-nosnippet>32</a>//! Files which use Diesel are expected to have `use diesel::prelude::*;`.
+<a href=#33 id=33 data-nosnippet>33</a>//!
+<a href=#34 id=34 data-nosnippet>34</a>//! [`update`]: update()
+<a href=#35 id=35 data-nosnippet>35</a>//!
+<a href=#36 id=36 data-nosnippet>36</a>//! ## Constructing a query
+<a href=#37 id=37 data-nosnippet>37</a>//!
+<a href=#38 id=38 data-nosnippet>38</a>//! The tools the query builder gives you can be put into these three categories:
+<a href=#39 id=39 data-nosnippet>39</a>//!
+<a href=#40 id=40 data-nosnippet>40</a>//! - "Query builder methods" are things that map to portions of a whole query
+<a href=#41 id=41 data-nosnippet>41</a>//!   (such as `ORDER` and `WHERE`). These methods usually have the same name
+<a href=#42 id=42 data-nosnippet>42</a>//!   as the SQL they map to, except for `WHERE` which is called `filter` in Diesel
+<a href=#43 id=43 data-nosnippet>43</a>//!   (To not conflict with the Rust keyword).
+<a href=#44 id=44 data-nosnippet>44</a>//!   These methods live in [the `query_dsl` module](query_dsl).
+<a href=#45 id=45 data-nosnippet>45</a>//! - "Expression methods" are things you would call on columns
+<a href=#46 id=46 data-nosnippet>46</a>//!   or other individual values.
+<a href=#47 id=47 data-nosnippet>47</a>//!   These methods live in [the `expression_methods` module](expression_methods)
+<a href=#48 id=48 data-nosnippet>48</a>//!   You can often find these by thinking "what would this be called"
+<a href=#49 id=49 data-nosnippet>49</a>//!   if it were a method
+<a href=#50 id=50 data-nosnippet>50</a>//!   and typing that into the search bar
+<a href=#51 id=51 data-nosnippet>51</a>//!   (e.g. `LIKE` is called `like` in Diesel).
+<a href=#52 id=52 data-nosnippet>52</a>//!   Most operators are named based on the Rust function which maps to that
+<a href=#53 id=53 data-nosnippet>53</a>//!   operator in [`std::ops`][]
+<a href=#54 id=54 data-nosnippet>54</a>//!   (For example `==` is called `.eq`, and `!=` is called `.ne`).
+<a href=#55 id=55 data-nosnippet>55</a>//! - "Bare functions" are normal SQL functions
+<a href=#56 id=56 data-nosnippet>56</a>//!   such as `sum`.
+<a href=#57 id=57 data-nosnippet>57</a>//!   They live in [the `dsl` module](dsl).
+<a href=#58 id=58 data-nosnippet>58</a>//!   Diesel only supports a very small number of these functions.
+<a href=#59 id=59 data-nosnippet>59</a>//!   You can declare additional functions you want to use
+<a href=#60 id=60 data-nosnippet>60</a>//!   with [the `define_sql_function!` macro][`define_sql_function!`].
+<a href=#61 id=61 data-nosnippet>61</a>//!
+<a href=#62 id=62 data-nosnippet>62</a>//! [`std::ops`]: //doc.rust-lang.org/stable/std/ops/index.html
+<a href=#63 id=63 data-nosnippet>63</a>//!
+<a href=#64 id=64 data-nosnippet>64</a>//! ## Serializing and Deserializing
+<a href=#65 id=65 data-nosnippet>65</a>//!
+<a href=#66 id=66 data-nosnippet>66</a>//! Types which represent the result of a SQL query implement
+<a href=#67 id=67 data-nosnippet>67</a>//! a trait called [`Queryable`].
+<a href=#68 id=68 data-nosnippet>68</a>//!
+<a href=#69 id=69 data-nosnippet>69</a>//! Diesel maps "Rust types" (e.g. `i32`) to and from "SQL types"
+<a href=#70 id=70 data-nosnippet>70</a>//! (e.g. [`diesel::sql_types::Integer`]).
+<a href=#71 id=71 data-nosnippet>71</a>//! You can find all the types supported by Diesel in [the `sql_types` module](sql_types).
+<a href=#72 id=72 data-nosnippet>72</a>//! These types are only used to represent a SQL type.
+<a href=#73 id=73 data-nosnippet>73</a>//! You should never put them on your `Queryable` structs.
+<a href=#74 id=74 data-nosnippet>74</a>//!
+<a href=#75 id=75 data-nosnippet>75</a>//! To find all the Rust types which can be used with a given SQL type,
+<a href=#76 id=76 data-nosnippet>76</a>//! see the documentation for that SQL type.
+<a href=#77 id=77 data-nosnippet>77</a>//!
+<a href=#78 id=78 data-nosnippet>78</a>//! To find all the SQL types which can be used with a Rust type,
+<a href=#79 id=79 data-nosnippet>79</a>//! go to the docs for either [`ToSql`] or [`FromSql`],
+<a href=#80 id=80 data-nosnippet>80</a>//! go to the "Implementors" section,
+<a href=#81 id=81 data-nosnippet>81</a>//! and find the Rust type you want to use.
+<a href=#82 id=82 data-nosnippet>82</a>//!
+<a href=#83 id=83 data-nosnippet>83</a>//! [`Queryable`]: deserialize::Queryable
+<a href=#84 id=84 data-nosnippet>84</a>//! [`diesel::sql_types::Integer`]: sql_types::Integer
+<a href=#85 id=85 data-nosnippet>85</a>//! [`ToSql`]: serialize::ToSql
+<a href=#86 id=86 data-nosnippet>86</a>//! [`FromSql`]: deserialize::FromSql
+<a href=#87 id=87 data-nosnippet>87</a>//!
+<a href=#88 id=88 data-nosnippet>88</a>//! ## How to read diesels compile time error messages
+<a href=#89 id=89 data-nosnippet>89</a>//!
+<a href=#90 id=90 data-nosnippet>90</a>//! Diesel is known for generating large complicated looking errors. Usually
+<a href=#91 id=91 data-nosnippet>91</a>//! most of these error messages can be broken down easily. The following
+<a href=#92 id=92 data-nosnippet>92</a>//! section tries to give an overview of common error messages and how to read them.
+<a href=#93 id=93 data-nosnippet>93</a>//! As a general note it's always useful to read the complete error message as emitted
+<a href=#94 id=94 data-nosnippet>94</a>//! by rustc, including the `required because of …` part of the message.
+<a href=#95 id=95 data-nosnippet>95</a>//! Your IDE might hide important parts!
+<a href=#96 id=96 data-nosnippet>96</a>//!
+<a href=#97 id=97 data-nosnippet>97</a>//! The following error messages are common:
+<a href=#98 id=98 data-nosnippet>98</a>//!
+<a href=#99 id=99 data-nosnippet>99</a>//! * `the trait bound (diesel::sql_types::Integer, …, diesel::sql_types::Text): load_dsl::private::CompatibleType&lt;YourModel, Pg&gt; is not satisfied`
+<a href=#100 id=100 data-nosnippet>100</a>//!   while trying to execute a query:
+<a href=#101 id=101 data-nosnippet>101</a>//!   This error indicates a mismatch between what your query returns and what your model struct
+<a href=#102 id=102 data-nosnippet>102</a>//!   expects the query to return. The fields need to match in terms of field order, field type
+<a href=#103 id=103 data-nosnippet>103</a>//!   and field count. If you are sure that everything matches, double check the enabled diesel
+<a href=#104 id=104 data-nosnippet>104</a>//!   features (for support for types from other crates) and double check (via `cargo tree`)
+<a href=#105 id=105 data-nosnippet>105</a>//!   that there is only one version of such a shared crate in your dependency tree.
+<a href=#106 id=106 data-nosnippet>106</a>//!   Consider using [`#[derive(Selectable)]`](derive@crate::prelude::Selectable) +
+<a href=#107 id=107 data-nosnippet>107</a>//!   `#[diesel(check_for_backend(diesel::pg::Pg))]`
+<a href=#108 id=108 data-nosnippet>108</a>//!   to improve the generated error message.
+<a href=#109 id=109 data-nosnippet>109</a>//! * `the trait bound i32: diesel::Expression is not satisfied` in the context of `Insertable`
+<a href=#110 id=110 data-nosnippet>110</a>//!   model structs:
+<a href=#111 id=111 data-nosnippet>111</a>//!   This error indicates a type mismatch between the field you are trying to insert into the database
+<a href=#112 id=112 data-nosnippet>112</a>//!   and the actual database type. These error messages contain a line
+<a href=#113 id=113 data-nosnippet>113</a>//!   like ` = note: required for i32 to implement AsExpression&lt;diesel::sql_types::Text&gt;`
+<a href=#114 id=114 data-nosnippet>114</a>//!   that show both the provided rust side type (`i32` in that case) and the expected
+<a href=#115 id=115 data-nosnippet>115</a>//!   database side type (`Text` in that case).
+<a href=#116 id=116 data-nosnippet>116</a>//! * `the trait bound i32: AppearsOnTable&lt;users::table&gt; is not satisfied` in the context of `AsChangeset`
+<a href=#117 id=117 data-nosnippet>117</a>//!   model structs:
+<a href=#118 id=118 data-nosnippet>118</a>//!   This error indicates a type mismatch between the field you are trying to update and the actual
+<a href=#119 id=119 data-nosnippet>119</a>//!   database type. Double check your type mapping.
+<a href=#120 id=120 data-nosnippet>120</a>//! * `the trait bound SomeLargeType: QueryFragment&lt;Sqlite, SomeMarkerType&gt; is not satisfied` while
+<a href=#121 id=121 data-nosnippet>121</a>//!   trying to execute a query.
+<a href=#122 id=122 data-nosnippet>122</a>//!   This error message indicates that a given query is not supported by your backend. This usually
+<a href=#123 id=123 data-nosnippet>123</a>//!   means that you are trying to use SQL features from one SQL dialect on a different database
+<a href=#124 id=124 data-nosnippet>124</a>//!   system. Double check your query that everything required is supported by the selected
+<a href=#125 id=125 data-nosnippet>125</a>//!   backend. If that's the case double check that the relevant feature flags are enabled
+<a href=#126 id=126 data-nosnippet>126</a>//!   (for example, `returning_clauses_for_sqlite_3_35` for enabling support for returning clauses in newer
+<a href=#127 id=127 data-nosnippet>127</a>//!   sqlite versions)
+<a href=#128 id=128 data-nosnippet>128</a>//! * `the trait bound posts::title: SelectableExpression&lt;users::table&gt; is not satisfied` while
+<a href=#129 id=129 data-nosnippet>129</a>//!   executing a query:
+<a href=#130 id=130 data-nosnippet>130</a>//!   This error message indicates that you're trying to select a field from a table
+<a href=#131 id=131 data-nosnippet>131</a>//!   that does not appear in your from clause. If your query joins the relevant table via
+<a href=#132 id=132 data-nosnippet>132</a>//!   [`left_join`](crate::query_dsl::QueryDsl::left_join) you need to call
+<a href=#133 id=133 data-nosnippet>133</a>//!   [`.nullable()`](crate::expression_methods::NullableExpressionMethods::nullable)
+<a href=#134 id=134 data-nosnippet>134</a>//!   on the relevant column in your select clause.
+<a href=#135 id=135 data-nosnippet>135</a>//!
+<a href=#136 id=136 data-nosnippet>136</a>//!
+<a href=#137 id=137 data-nosnippet>137</a>//! ## Getting help
+<a href=#138 id=138 data-nosnippet>138</a>//!
+<a href=#139 id=139 data-nosnippet>139</a>//! If you run into problems, Diesel has an active community.
+<a href=#140 id=140 data-nosnippet>140</a>//! Open a new [discussion] thread at diesel github repository
+<a href=#141 id=141 data-nosnippet>141</a>//! and we will try to help you
+<a href=#142 id=142 data-nosnippet>142</a>//!
+<a href=#143 id=143 data-nosnippet>143</a>//! [discussion]: https://github.com/diesel-rs/diesel/discussions/categories/q-a
+<a href=#144 id=144 data-nosnippet>144</a>//!
+<a href=#145 id=145 data-nosnippet>145</a>//! # Crate feature flags
+<a href=#146 id=146 data-nosnippet>146</a>//!
+<a href=#147 id=147 data-nosnippet>147</a>//! The following feature flags are considered to be part of diesels public
+<a href=#148 id=148 data-nosnippet>148</a>//! API. Any feature flag that is not listed here is **not** considered to
+<a href=#149 id=149 data-nosnippet>149</a>//! be part of the public API and can disappear at any point in time:
+<a href=#150 id=150 data-nosnippet>150</a>
+<a href=#151 id=151 data-nosnippet>151</a>//!
+<a href=#152 id=152 data-nosnippet>152</a>//! - `sqlite`: This feature enables the diesel sqlite backend. Enabling this feature requires per default
+<a href=#153 id=153 data-nosnippet>153</a>//!   a compatible copy of `libsqlite3` for your target architecture. Alternatively, you can add `libsqlite3-sys`
+<a href=#154 id=154 data-nosnippet>154</a>//!   with the `bundled` feature as a dependency to your crate so SQLite will be bundled:
+<a href=#155 id=155 data-nosnippet>155</a>//!   ```toml
+<a href=#156 id=156 data-nosnippet>156</a>//!   [dependencies]
+<a href=#157 id=157 data-nosnippet>157</a>//!   libsqlite3-sys = { version = "0.29", features = ["bundled"] }
+<a href=#158 id=158 data-nosnippet>158</a>//!   ```
+<a href=#159 id=159 data-nosnippet>159</a>//! - `postgres`: This feature enables the diesel postgres backend. Enabling this feature requires a compatible
+<a href=#160 id=160 data-nosnippet>160</a>//!   copy of `libpq` for your target architecture. This features implies `postgres_backend`
+<a href=#161 id=161 data-nosnippet>161</a>//! - `mysql`: This feature enables the idesel mysql backend. Enabling this feature requires a compatible copy
+<a href=#162 id=162 data-nosnippet>162</a>//!   of `libmysqlclient` for your target architecture. This feature implies `mysql_backend`
+<a href=#163 id=163 data-nosnippet>163</a>//! - `postgres_backend`: This feature enables those parts of diesels postgres backend, that are not dependent
+<a href=#164 id=164 data-nosnippet>164</a>//!   on `libpq`. Diesel does not provide any connection implementation with only this feature enabled.
+<a href=#165 id=165 data-nosnippet>165</a>//!   This feature can be used to implement a custom implementation of diesels `Connection` trait for the
+<a href=#166 id=166 data-nosnippet>166</a>//!   postgres backend outside of diesel itself, while reusing the existing query dsl extensions for the
+<a href=#167 id=167 data-nosnippet>167</a>//!   postgres backend
+<a href=#168 id=168 data-nosnippet>168</a>//! - `mysql_backend`: This feature enables those parts of diesels mysql backend, that are not dependent
+<a href=#169 id=169 data-nosnippet>169</a>//!   on `libmysqlclient`. Diesel does not provide any connection implementation with only this feature enabled.
+<a href=#170 id=170 data-nosnippet>170</a>//!   This feature can be used to implement a custom implementation of diesels `Connection` trait for the
+<a href=#171 id=171 data-nosnippet>171</a>//!   mysql backend outside of diesel itself, while reusing the existing query dsl extensions for the
+<a href=#172 id=172 data-nosnippet>172</a>//!   mysql backend
+<a href=#173 id=173 data-nosnippet>173</a>//! - `returning_clauses_for_sqlite_3_35`: This feature enables support for `RETURNING` clauses in the sqlite backend.
+<a href=#174 id=174 data-nosnippet>174</a>//!   Enabling this feature requires sqlite 3.35.0 or newer.
+<a href=#175 id=175 data-nosnippet>175</a>//! - `32-column-tables`: This feature enables support for tables with up to 32 columns.
+<a href=#176 id=176 data-nosnippet>176</a>//!   This feature is enabled by default. Consider disabling this feature if you write a library crate
+<a href=#177 id=177 data-nosnippet>177</a>//!   providing general extensions for diesel or if you do not need to support tables with more than 16 columns
+<a href=#178 id=178 data-nosnippet>178</a>//!   and you want to minimize your compile times.
+<a href=#179 id=179 data-nosnippet>179</a>//! - `64-column-tables`: This feature enables support for tables with up to 64 columns. It implies the
+<a href=#180 id=180 data-nosnippet>180</a>//!   `32-column-tables` feature. Enabling this feature will increase your compile times.
+<a href=#181 id=181 data-nosnippet>181</a>//! - `128-column-tables`: This feature enables support for tables with up to 128 columns. It implies the
+<a href=#182 id=182 data-nosnippet>182</a>//!   `64-column-tables` feature. Enabling this feature will increase your compile times significantly.
+<a href=#183 id=183 data-nosnippet>183</a>//! - `i-implement-a-third-party-backend-and-opt-into-breaking-changes`: This feature opens up some otherwise
+<a href=#184 id=184 data-nosnippet>184</a>//!   private API, that can be useful to implement a third party [`Backend`](crate::backend::Backend)
+<a href=#185 id=185 data-nosnippet>185</a>//!   or write a custom [`Connection`] implementation. **Do not use this feature for
+<a href=#186 id=186 data-nosnippet>186</a>//!   any other usecase**. By enabling this feature you explicitly opt out diesel stability guarantees. We explicitly
+<a href=#187 id=187 data-nosnippet>187</a>//!   reserve us the right to break API's exported under this feature flag in any upcoming minor version release.
+<a href=#188 id=188 data-nosnippet>188</a>//!   If you publish a crate depending on this feature flag consider to restrict the supported diesel version to the
+<a href=#189 id=189 data-nosnippet>189</a>//!   currently released minor version.
+<a href=#190 id=190 data-nosnippet>190</a>//! - `serde_json`: This feature flag enables support for (de)serializing json values from the database using
+<a href=#191 id=191 data-nosnippet>191</a>//!   types provided by `serde_json`.
+<a href=#192 id=192 data-nosnippet>192</a>//! - `chrono`: This feature flags enables support for (de)serializing date/time values from the database using
+<a href=#193 id=193 data-nosnippet>193</a>//!   types provided by `chrono`
+<a href=#194 id=194 data-nosnippet>194</a>//! - `uuid`: This feature flag enables support for (de)serializing uuid values from the database using types
+<a href=#195 id=195 data-nosnippet>195</a>//!   provided by `uuid`
+<a href=#196 id=196 data-nosnippet>196</a>//! - `network-address`: This feature flag enables support for (de)serializing
+<a href=#197 id=197 data-nosnippet>197</a>//!   IP values from the database using types provided by `ipnetwork`.
+<a href=#198 id=198 data-nosnippet>198</a>//! - `ipnet-address`: This feature flag enables support for (de)serializing IP
+<a href=#199 id=199 data-nosnippet>199</a>//!   values from the database using types provided by `ipnet`.
+<a href=#200 id=200 data-nosnippet>200</a>//! - `numeric`: This feature flag enables support for (de)serializing numeric values from the database using types
+<a href=#201 id=201 data-nosnippet>201</a>//!   provided by `bigdecimal`
+<a href=#202 id=202 data-nosnippet>202</a>//! - `r2d2`: This feature flag enables support for the `r2d2` connection pool implementation.
+<a href=#203 id=203 data-nosnippet>203</a>//! - `extras`: This feature enables the feature flagged support for any third party crate. This implies the
+<a href=#204 id=204 data-nosnippet>204</a>//!   following feature flags: `serde_json`, `chrono`, `uuid`, `network-address`, `numeric`, `r2d2`
+<a href=#205 id=205 data-nosnippet>205</a>//! - `with-deprecated`: This feature enables items marked as `#[deprecated]`. It is enabled by default.
+<a href=#206 id=206 data-nosnippet>206</a>//!   disabling this feature explicitly opts out diesels stability guarantee.
+<a href=#207 id=207 data-nosnippet>207</a>//! - `without-deprecated`: This feature disables any item marked as `#[deprecated]`. Enabling this feature
+<a href=#208 id=208 data-nosnippet>208</a>//!   explicitly opts out the stability guarantee given by diesel. This feature overrides the `with-deprecated`.
+<a href=#209 id=209 data-nosnippet>209</a>//!   Note that this may also remove items that are not shown as `#[deprecated]` in our documentation, due to
+<a href=#210 id=210 data-nosnippet>210</a>//!   various bugs in rustdoc. It can be used to check if you depend on any such hidden `#[deprecated]` item.
+<a href=#211 id=211 data-nosnippet>211</a>//!
+<a href=#212 id=212 data-nosnippet>212</a>//! By default the following features are enabled:
+<a href=#213 id=213 data-nosnippet>213</a>//!
+<a href=#214 id=214 data-nosnippet>214</a>//! - `with-deprecated`
+<a href=#215 id=215 data-nosnippet>215</a>//! - `32-column-tables`
+<a href=#216 id=216 data-nosnippet>216</a>
+<a href=#217 id=217 data-nosnippet>217</a></span><span class="attr">#![cfg_attr(feature = <span class="string">"unstable"</span>, feature(trait_alias))]
+<a href=#218 id=218 data-nosnippet>218</a>#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+<a href=#219 id=219 data-nosnippet>219</a>#![cfg_attr(feature = <span class="string">"128-column-tables"</span>, recursion_limit = <span class="string">"256"</span>)]
+<a href=#220 id=220 data-nosnippet>220</a></span><span class="comment">// Built-in Lints
+<a href=#221 id=221 data-nosnippet>221</a></span><span class="attr">#![warn(
+<a href=#222 id=222 data-nosnippet>222</a>    unreachable_pub,
+<a href=#223 id=223 data-nosnippet>223</a>    missing_debug_implementations,
+<a href=#224 id=224 data-nosnippet>224</a>    missing_copy_implementations,
+<a href=#225 id=225 data-nosnippet>225</a>    elided_lifetimes_in_paths,
+<a href=#226 id=226 data-nosnippet>226</a>    missing_docs
+<a href=#227 id=227 data-nosnippet>227</a>)]
+<a href=#228 id=228 data-nosnippet>228</a></span><span class="comment">// Clippy lints
+<a href=#229 id=229 data-nosnippet>229</a></span><span class="attr">#![allow(
+<a href=#230 id=230 data-nosnippet>230</a>    clippy::match_same_arms,
+<a href=#231 id=231 data-nosnippet>231</a>    clippy::needless_doctest_main,
+<a href=#232 id=232 data-nosnippet>232</a>    clippy::map_unwrap_or,
+<a href=#233 id=233 data-nosnippet>233</a>    clippy::redundant_field_names,
+<a href=#234 id=234 data-nosnippet>234</a>    clippy::type_complexity
+<a href=#235 id=235 data-nosnippet>235</a>)]
+<a href=#236 id=236 data-nosnippet>236</a>#![warn(
+<a href=#237 id=237 data-nosnippet>237</a>    clippy::unwrap_used,
+<a href=#238 id=238 data-nosnippet>238</a>    clippy::print_stdout,
+<a href=#239 id=239 data-nosnippet>239</a>    clippy::mut_mut,
+<a href=#240 id=240 data-nosnippet>240</a>    clippy::non_ascii_literal,
+<a href=#241 id=241 data-nosnippet>241</a>    clippy::similar_names,
+<a href=#242 id=242 data-nosnippet>242</a>    clippy::unicode_not_nfc,
+<a href=#243 id=243 data-nosnippet>243</a>    clippy::enum_glob_use,
+<a href=#244 id=244 data-nosnippet>244</a>    clippy::if_not_else,
+<a href=#245 id=245 data-nosnippet>245</a>    clippy::items_after_statements,
+<a href=#246 id=246 data-nosnippet>246</a>    clippy::used_underscore_binding,
+<a href=#247 id=247 data-nosnippet>247</a>    clippy::cast_possible_wrap,
+<a href=#248 id=248 data-nosnippet>248</a>    clippy::cast_possible_truncation,
+<a href=#249 id=249 data-nosnippet>249</a>    clippy::cast_sign_loss
+<a href=#250 id=250 data-nosnippet>250</a>)]
+<a href=#251 id=251 data-nosnippet>251</a>#![deny(unsafe_code)]
+<a href=#252 id=252 data-nosnippet>252</a>#![cfg_attr(test, allow(clippy::map_unwrap_or, clippy::unwrap_used))]
+<a href=#253 id=253 data-nosnippet>253</a>
+<a href=#254 id=254 data-nosnippet>254</a></span><span class="kw">extern crate </span>diesel_derives;
+<a href=#255 id=255 data-nosnippet>255</a>
+<a href=#256 id=256 data-nosnippet>256</a><span class="attr">#[macro_use]
+<a href=#257 id=257 data-nosnippet>257</a>#[doc(hidden)]
+<a href=#258 id=258 data-nosnippet>258</a></span><span class="kw">pub mod </span>macros;
+<a href=#259 id=259 data-nosnippet>259</a><span class="attr">#[doc(hidden)]
+<a href=#260 id=260 data-nosnippet>260</a></span><span class="kw">pub mod </span>internal;
+<a href=#261 id=261 data-nosnippet>261</a>
+<a href=#262 id=262 data-nosnippet>262</a><span class="attr">#[cfg(test)]
+<a href=#263 id=263 data-nosnippet>263</a>#[macro_use]
+<a href=#264 id=264 data-nosnippet>264</a></span><span class="kw">extern crate </span>cfg_if;
+<a href=#265 id=265 data-nosnippet>265</a>
+<a href=#266 id=266 data-nosnippet>266</a><span class="attr">#[cfg(test)]
+<a href=#267 id=267 data-nosnippet>267</a></span><span class="kw">pub mod </span>test_helpers;
+<a href=#268 id=268 data-nosnippet>268</a>
+<a href=#269 id=269 data-nosnippet>269</a><span class="kw">pub mod </span>associations;
+<a href=#270 id=270 data-nosnippet>270</a><span class="kw">pub mod </span>backend;
+<a href=#271 id=271 data-nosnippet>271</a><span class="kw">pub mod </span>connection;
+<a href=#272 id=272 data-nosnippet>272</a><span class="kw">pub mod </span>data_types;
+<a href=#273 id=273 data-nosnippet>273</a><span class="kw">pub mod </span>deserialize;
+<a href=#274 id=274 data-nosnippet>274</a><span class="attr">#[macro_use]
+<a href=#275 id=275 data-nosnippet>275</a></span><span class="kw">pub mod </span>expression;
+<a href=#276 id=276 data-nosnippet>276</a><span class="kw">pub mod </span>expression_methods;
+<a href=#277 id=277 data-nosnippet>277</a><span class="attr">#[doc(hidden)]
+<a href=#278 id=278 data-nosnippet>278</a></span><span class="kw">pub mod </span>insertable;
+<a href=#279 id=279 data-nosnippet>279</a><span class="kw">pub mod </span>query_builder;
+<a href=#280 id=280 data-nosnippet>280</a><span class="kw">pub mod </span>query_dsl;
+<a href=#281 id=281 data-nosnippet>281</a><span class="kw">pub mod </span>query_source;
+<a href=#282 id=282 data-nosnippet>282</a><span class="attr">#[cfg(feature = <span class="string">"r2d2"</span>)]
+<a href=#283 id=283 data-nosnippet>283</a></span><span class="kw">pub mod </span>r2d2;
+<a href=#284 id=284 data-nosnippet>284</a><span class="kw">pub mod </span>result;
+<a href=#285 id=285 data-nosnippet>285</a><span class="kw">pub mod </span>serialize;
+<a href=#286 id=286 data-nosnippet>286</a><span class="kw">pub mod </span>upsert;
+<a href=#287 id=287 data-nosnippet>287</a><span class="attr">#[macro_use]
+<a href=#288 id=288 data-nosnippet>288</a></span><span class="kw">pub mod </span>sql_types;
+<a href=#289 id=289 data-nosnippet>289</a><span class="kw">pub mod </span>migration;
+<a href=#290 id=290 data-nosnippet>290</a><span class="kw">pub mod </span>row;
+<a href=#291 id=291 data-nosnippet>291</a>
+<a href=#292 id=292 data-nosnippet>292</a><span class="attr">#[cfg(feature = <span class="string">"mysql_backend"</span>)]
+<a href=#293 id=293 data-nosnippet>293</a></span><span class="kw">pub mod </span>mysql;
+<a href=#294 id=294 data-nosnippet>294</a><span class="attr">#[cfg(feature = <span class="string">"postgres_backend"</span>)]
+<a href=#295 id=295 data-nosnippet>295</a></span><span class="kw">pub mod </span>pg;
+<a href=#296 id=296 data-nosnippet>296</a><span class="attr">#[cfg(feature = <span class="string">"sqlite"</span>)]
+<a href=#297 id=297 data-nosnippet>297</a></span><span class="kw">pub mod </span>sqlite;
+<a href=#298 id=298 data-nosnippet>298</a>
+<a href=#299 id=299 data-nosnippet>299</a><span class="kw">mod </span>type_impls;
+<a href=#300 id=300 data-nosnippet>300</a><span class="kw">mod </span>util;
+<a href=#301 id=301 data-nosnippet>301</a>
+<a href=#302 id=302 data-nosnippet>302</a><span class="attr">#[doc(hidden)]
+<a href=#303 id=303 data-nosnippet>303</a>#[cfg(all(feature = <span class="string">"with-deprecated"</span>, not(feature = <span class="string">"without-deprecated"</span>)))]
+<a href=#304 id=304 data-nosnippet>304</a>#[deprecated(since = <span class="string">"2.0.0"</span>, note = <span class="string">"Use explicit macro imports instead"</span>)]
+<a href=#305 id=305 data-nosnippet>305</a></span><span class="kw">pub use </span>diesel_derives::{
+<a href=#306 id=306 data-nosnippet>306</a>    AsChangeset, AsExpression, Associations, DieselNumericOps, FromSqlRow, Identifiable,
+<a href=#307 id=307 data-nosnippet>307</a>    Insertable, QueryId, Queryable, QueryableByName, SqlType,
+<a href=#308 id=308 data-nosnippet>308</a>};
+<a href=#309 id=309 data-nosnippet>309</a>
+<a href=#310 id=310 data-nosnippet>310</a><span class="kw">pub use </span>diesel_derives::MultiConnection;
+<a href=#311 id=311 data-nosnippet>311</a>
+<a href=#312 id=312 data-nosnippet>312</a><span class="attr">#[allow(unknown_lints, ambiguous_glob_reexports)]
+<a href=#313 id=313 data-nosnippet>313</a></span><span class="kw">pub mod </span>dsl {
+<a href=#314 id=314 data-nosnippet>314</a>    <span class="doccomment">//! Includes various helper types and bare functions which are named too
+<a href=#315 id=315 data-nosnippet>315</a>    //! generically to be included in prelude, but are often used when using Diesel.
+<a href=#316 id=316 data-nosnippet>316</a>
+<a href=#317 id=317 data-nosnippet>317</a>    </span><span class="attr">#[doc(inline)]
+<a href=#318 id=318 data-nosnippet>318</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::helper_types::<span class="kw-2">*</span>;
+<a href=#319 id=319 data-nosnippet>319</a>
+<a href=#320 id=320 data-nosnippet>320</a>    <span class="attr">#[doc(inline)]
+<a href=#321 id=321 data-nosnippet>321</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::expression::dsl::<span class="kw-2">*</span>;
+<a href=#322 id=322 data-nosnippet>322</a>
+<a href=#323 id=323 data-nosnippet>323</a>    <span class="attr">#[doc(inline)]
+<a href=#324 id=324 data-nosnippet>324</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::query_builder::functions::{
+<a href=#325 id=325 data-nosnippet>325</a>        delete, insert_into, insert_or_ignore_into, replace_into, select, sql_query, update,
+<a href=#326 id=326 data-nosnippet>326</a>    };
+<a href=#327 id=327 data-nosnippet>327</a>
+<a href=#328 id=328 data-nosnippet>328</a>    <span class="attr">#[doc(inline)]
+<a href=#329 id=329 data-nosnippet>329</a>    #[cfg(feature = <span class="string">"postgres_backend"</span>)]
+<a href=#330 id=330 data-nosnippet>330</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::query_builder::functions::{copy_from, copy_to};
+<a href=#331 id=331 data-nosnippet>331</a>
+<a href=#332 id=332 data-nosnippet>332</a>    <span class="attr">#[doc(inline)]
+<a href=#333 id=333 data-nosnippet>333</a>    </span><span class="kw">pub use </span>diesel_derives::auto_type;
+<a href=#334 id=334 data-nosnippet>334</a>
+<a href=#335 id=335 data-nosnippet>335</a>    <span class="attr">#[cfg(feature = <span class="string">"postgres_backend"</span>)]
+<a href=#336 id=336 data-nosnippet>336</a>    #[doc(inline)]
+<a href=#337 id=337 data-nosnippet>337</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::pg::expression::extensions::OnlyDsl;
+<a href=#338 id=338 data-nosnippet>338</a>
+<a href=#339 id=339 data-nosnippet>339</a>    <span class="attr">#[cfg(feature = <span class="string">"postgres_backend"</span>)]
+<a href=#340 id=340 data-nosnippet>340</a>    #[doc(inline)]
+<a href=#341 id=341 data-nosnippet>341</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::pg::expression::extensions::TablesampleDsl;
+<a href=#342 id=342 data-nosnippet>342</a>}
+<a href=#343 id=343 data-nosnippet>343</a>
+<a href=#344 id=344 data-nosnippet>344</a><span class="kw">pub mod </span>helper_types {
+<a href=#345 id=345 data-nosnippet>345</a>    <span class="doccomment">//! Provide helper types for concisely writing the return type of functions.
+<a href=#346 id=346 data-nosnippet>346</a>    //! As with iterators, it is unfortunately difficult to return a partially
+<a href=#347 id=347 data-nosnippet>347</a>    //! constructed query without exposing the exact implementation of the
+<a href=#348 id=348 data-nosnippet>348</a>    //! function. Without higher kinded types, these various DSLs can't be
+<a href=#349 id=349 data-nosnippet>349</a>    //! combined into a single trait for boxing purposes.
+<a href=#350 id=350 data-nosnippet>350</a>    //!
+<a href=#351 id=351 data-nosnippet>351</a>    //! All types here are in the form `&lt;FirstType as
+<a href=#352 id=352 data-nosnippet>352</a>    //! DslName&lt;OtherTypes&gt;&gt;::Output`. So the return type of
+<a href=#353 id=353 data-nosnippet>353</a>    //! `users.filter(first_name.eq("John")).order(last_name.asc()).limit(10)` would
+<a href=#354 id=354 data-nosnippet>354</a>    //! be `Limit&lt;Order&lt;FindBy&lt;users, first_name, &amp;str&gt;, Asc&lt;last_name&gt;&gt;&gt;`
+<a href=#355 id=355 data-nosnippet>355</a>    </span><span class="kw">use </span><span class="kw">super</span>::query_builder::combination_clause::{<span class="self">self</span>, CombinationClause};
+<a href=#356 id=356 data-nosnippet>356</a>    <span class="kw">use </span><span class="kw">super</span>::query_builder::{locking_clause <span class="kw">as </span>lock, AsQuery};
+<a href=#357 id=357 data-nosnippet>357</a>    <span class="kw">use </span><span class="kw">super</span>::query_dsl::methods::<span class="kw-2">*</span>;
+<a href=#358 id=358 data-nosnippet>358</a>    <span class="kw">use </span><span class="kw">super</span>::query_dsl::<span class="kw-2">*</span>;
+<a href=#359 id=359 data-nosnippet>359</a>    <span class="kw">use </span><span class="kw">super</span>::query_source::{aliasing, joins};
+<a href=#360 id=360 data-nosnippet>360</a>    <span class="kw">use </span><span class="kw">crate</span>::dsl::CountStar;
+<a href=#361 id=361 data-nosnippet>361</a>    <span class="kw">use </span><span class="kw">crate</span>::query_builder::select_clause::SelectClause;
+<a href=#362 id=362 data-nosnippet>362</a>
+<a href=#363 id=363 data-nosnippet>363</a>    <span class="attr">#[doc(inline)]
+<a href=#364 id=364 data-nosnippet>364</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::expression::helper_types::<span class="kw-2">*</span>;
+<a href=#365 id=365 data-nosnippet>365</a>
+<a href=#366 id=366 data-nosnippet>366</a>    <span class="doccomment">/// Represents the return type of [`.select(selection)`](crate::prelude::QueryDsl::select)
+<a href=#367 id=367 data-nosnippet>367</a>    </span><span class="kw">pub type </span>Select&lt;Source, Selection&gt; = &lt;Source <span class="kw">as </span>SelectDsl&lt;Selection&gt;&gt;::Output;
+<a href=#368 id=368 data-nosnippet>368</a>
+<a href=#369 id=369 data-nosnippet>369</a>    <span class="doccomment">/// Represents the return type of [`diesel::select(selection)`](crate::select)
+<a href=#370 id=370 data-nosnippet>370</a>    </span><span class="attr">#[allow(non_camel_case_types)] </span><span class="comment">// required for `#[auto_type]`
+<a href=#371 id=371 data-nosnippet>371</a>    </span><span class="kw">pub type </span>select&lt;Selection&gt; = <span class="kw">crate</span>::query_builder::SelectStatement&lt;
+<a href=#372 id=372 data-nosnippet>372</a>        <span class="kw">crate</span>::query_builder::NoFromClause,
+<a href=#373 id=373 data-nosnippet>373</a>        SelectClause&lt;Selection&gt;,
+<a href=#374 id=374 data-nosnippet>374</a>    &gt;;
+<a href=#375 id=375 data-nosnippet>375</a>
+<a href=#376 id=376 data-nosnippet>376</a>    <span class="attr">#[doc(hidden)]
+<a href=#377 id=377 data-nosnippet>377</a>    #[deprecated(note = <span class="string">"Use `select` instead"</span>)]
+<a href=#378 id=378 data-nosnippet>378</a>    </span><span class="kw">pub type </span>BareSelect&lt;Selection&gt; = <span class="kw">crate</span>::query_builder::SelectStatement&lt;
+<a href=#379 id=379 data-nosnippet>379</a>        <span class="kw">crate</span>::query_builder::NoFromClause,
+<a href=#380 id=380 data-nosnippet>380</a>        SelectClause&lt;Selection&gt;,
+<a href=#381 id=381 data-nosnippet>381</a>    &gt;;
+<a href=#382 id=382 data-nosnippet>382</a>
+<a href=#383 id=383 data-nosnippet>383</a>    <span class="doccomment">/// Represents the return type of [`.filter(predicate)`](crate::prelude::QueryDsl::filter)
+<a href=#384 id=384 data-nosnippet>384</a>    </span><span class="kw">pub type </span>Filter&lt;Source, Predicate&gt; = &lt;Source <span class="kw">as </span>FilterDsl&lt;Predicate&gt;&gt;::Output;
+<a href=#385 id=385 data-nosnippet>385</a>
+<a href=#386 id=386 data-nosnippet>386</a>    <span class="doccomment">/// Represents the return type of [`.filter(lhs.eq(rhs))`](crate::prelude::QueryDsl::filter)
+<a href=#387 id=387 data-nosnippet>387</a>    </span><span class="kw">pub type </span>FindBy&lt;Source, Column, Value&gt; = Filter&lt;Source, Eq&lt;Column, Value&gt;&gt;;
+<a href=#388 id=388 data-nosnippet>388</a>
+<a href=#389 id=389 data-nosnippet>389</a>    <span class="doccomment">/// Represents the return type of [`.for_update()`](crate::prelude::QueryDsl::for_update)
+<a href=#390 id=390 data-nosnippet>390</a>    </span><span class="kw">pub type </span>ForUpdate&lt;Source&gt; = &lt;Source <span class="kw">as </span>LockingDsl&lt;lock::ForUpdate&gt;&gt;::Output;
+<a href=#391 id=391 data-nosnippet>391</a>
+<a href=#392 id=392 data-nosnippet>392</a>    <span class="doccomment">/// Represents the return type of [`.for_no_key_update()`](crate::prelude::QueryDsl::for_no_key_update)
+<a href=#393 id=393 data-nosnippet>393</a>    </span><span class="kw">pub type </span>ForNoKeyUpdate&lt;Source&gt; = &lt;Source <span class="kw">as </span>LockingDsl&lt;lock::ForNoKeyUpdate&gt;&gt;::Output;
+<a href=#394 id=394 data-nosnippet>394</a>
+<a href=#395 id=395 data-nosnippet>395</a>    <span class="doccomment">/// Represents the return type of [`.for_share()`](crate::prelude::QueryDsl::for_share)
+<a href=#396 id=396 data-nosnippet>396</a>    </span><span class="kw">pub type </span>ForShare&lt;Source&gt; = &lt;Source <span class="kw">as </span>LockingDsl&lt;lock::ForShare&gt;&gt;::Output;
+<a href=#397 id=397 data-nosnippet>397</a>
+<a href=#398 id=398 data-nosnippet>398</a>    <span class="doccomment">/// Represents the return type of [`.for_key_share()`](crate::prelude::QueryDsl::for_key_share)
+<a href=#399 id=399 data-nosnippet>399</a>    </span><span class="kw">pub type </span>ForKeyShare&lt;Source&gt; = &lt;Source <span class="kw">as </span>LockingDsl&lt;lock::ForKeyShare&gt;&gt;::Output;
+<a href=#400 id=400 data-nosnippet>400</a>
+<a href=#401 id=401 data-nosnippet>401</a>    <span class="doccomment">/// Represents the return type of [`.skip_locked()`](crate::prelude::QueryDsl::skip_locked)
+<a href=#402 id=402 data-nosnippet>402</a>    </span><span class="kw">pub type </span>SkipLocked&lt;Source&gt; = &lt;Source <span class="kw">as </span>ModifyLockDsl&lt;lock::SkipLocked&gt;&gt;::Output;
+<a href=#403 id=403 data-nosnippet>403</a>
+<a href=#404 id=404 data-nosnippet>404</a>    <span class="doccomment">/// Represents the return type of [`.no_wait()`](crate::prelude::QueryDsl::no_wait)
+<a href=#405 id=405 data-nosnippet>405</a>    </span><span class="kw">pub type </span>NoWait&lt;Source&gt; = &lt;Source <span class="kw">as </span>ModifyLockDsl&lt;lock::NoWait&gt;&gt;::Output;
+<a href=#406 id=406 data-nosnippet>406</a>
+<a href=#407 id=407 data-nosnippet>407</a>    <span class="doccomment">/// Represents the return type of [`.find(pk)`](crate::prelude::QueryDsl::find)
+<a href=#408 id=408 data-nosnippet>408</a>    </span><span class="kw">pub type </span>Find&lt;Source, PK&gt; = &lt;Source <span class="kw">as </span>FindDsl&lt;PK&gt;&gt;::Output;
+<a href=#409 id=409 data-nosnippet>409</a>
+<a href=#410 id=410 data-nosnippet>410</a>    <span class="doccomment">/// Represents the return type of [`.or_filter(predicate)`](crate::prelude::QueryDsl::or_filter)
+<a href=#411 id=411 data-nosnippet>411</a>    </span><span class="kw">pub type </span>OrFilter&lt;Source, Predicate&gt; = &lt;Source <span class="kw">as </span>OrFilterDsl&lt;Predicate&gt;&gt;::Output;
+<a href=#412 id=412 data-nosnippet>412</a>
+<a href=#413 id=413 data-nosnippet>413</a>    <span class="doccomment">/// Represents the return type of [`.order(ordering)`](crate::prelude::QueryDsl::order)
+<a href=#414 id=414 data-nosnippet>414</a>    </span><span class="kw">pub type </span>Order&lt;Source, Ordering&gt; = &lt;Source <span class="kw">as </span>OrderDsl&lt;Ordering&gt;&gt;::Output;
+<a href=#415 id=415 data-nosnippet>415</a>
+<a href=#416 id=416 data-nosnippet>416</a>    <span class="doccomment">/// Represents the return type of [`.order_by(ordering)`](crate::prelude::QueryDsl::order_by)
+<a href=#417 id=417 data-nosnippet>417</a>    ///
+<a href=#418 id=418 data-nosnippet>418</a>    /// Type alias of [Order]
+<a href=#419 id=419 data-nosnippet>419</a>    </span><span class="kw">pub type </span>OrderBy&lt;Source, Ordering&gt; = Order&lt;Source, Ordering&gt;;
+<a href=#420 id=420 data-nosnippet>420</a>
+<a href=#421 id=421 data-nosnippet>421</a>    <span class="doccomment">/// Represents the return type of [`.then_order_by(ordering)`](crate::prelude::QueryDsl::then_order_by)
+<a href=#422 id=422 data-nosnippet>422</a>    </span><span class="kw">pub type </span>ThenOrderBy&lt;Source, Ordering&gt; = &lt;Source <span class="kw">as </span>ThenOrderDsl&lt;Ordering&gt;&gt;::Output;
+<a href=#423 id=423 data-nosnippet>423</a>
+<a href=#424 id=424 data-nosnippet>424</a>    <span class="doccomment">/// Represents the return type of [`.limit()`](crate::prelude::QueryDsl::limit)
+<a href=#425 id=425 data-nosnippet>425</a>    </span><span class="kw">pub type </span>Limit&lt;Source, DummyArgForAutoType = i64&gt; =
+<a href=#426 id=426 data-nosnippet>426</a>        &lt;Source <span class="kw">as </span>LimitDsl&lt;DummyArgForAutoType&gt;&gt;::Output;
+<a href=#427 id=427 data-nosnippet>427</a>
+<a href=#428 id=428 data-nosnippet>428</a>    <span class="doccomment">/// Represents the return type of [`.offset()`](crate::prelude::QueryDsl::offset)
+<a href=#429 id=429 data-nosnippet>429</a>    </span><span class="kw">pub type </span>Offset&lt;Source, DummyArgForAutoType = i64&gt; =
+<a href=#430 id=430 data-nosnippet>430</a>        &lt;Source <span class="kw">as </span>OffsetDsl&lt;DummyArgForAutoType&gt;&gt;::Output;
+<a href=#431 id=431 data-nosnippet>431</a>
+<a href=#432 id=432 data-nosnippet>432</a>    <span class="doccomment">/// Represents the return type of [`.inner_join(rhs)`](crate::prelude::QueryDsl::inner_join)
+<a href=#433 id=433 data-nosnippet>433</a>    </span><span class="kw">pub type </span>InnerJoin&lt;Source, Rhs&gt; =
+<a href=#434 id=434 data-nosnippet>434</a>        &lt;Source <span class="kw">as </span>JoinWithImplicitOnClause&lt;Rhs, joins::Inner&gt;&gt;::Output;
+<a href=#435 id=435 data-nosnippet>435</a>
+<a href=#436 id=436 data-nosnippet>436</a>    <span class="doccomment">/// Represents the return type of [`.inner_join(rhs.on(on))`](crate::prelude::QueryDsl::inner_join)
+<a href=#437 id=437 data-nosnippet>437</a>    </span><span class="kw">pub type </span>InnerJoinOn&lt;Source, Rhs, On&gt; =
+<a href=#438 id=438 data-nosnippet>438</a>        &lt;Source <span class="kw">as </span>InternalJoinDsl&lt;Rhs, joins::Inner, On&gt;&gt;::Output;
+<a href=#439 id=439 data-nosnippet>439</a>
+<a href=#440 id=440 data-nosnippet>440</a>    <span class="doccomment">/// Represents the return type of [`.left_join(rhs)`](crate::prelude::QueryDsl::left_join)
+<a href=#441 id=441 data-nosnippet>441</a>    </span><span class="kw">pub type </span>LeftJoin&lt;Source, Rhs&gt; =
+<a href=#442 id=442 data-nosnippet>442</a>        &lt;Source <span class="kw">as </span>JoinWithImplicitOnClause&lt;Rhs, joins::LeftOuter&gt;&gt;::Output;
+<a href=#443 id=443 data-nosnippet>443</a>
+<a href=#444 id=444 data-nosnippet>444</a>    <span class="doccomment">/// Represents the return type of [`.left_join(rhs.on(on))`](crate::prelude::QueryDsl::left_join)
+<a href=#445 id=445 data-nosnippet>445</a>    </span><span class="kw">pub type </span>LeftJoinOn&lt;Source, Rhs, On&gt; =
+<a href=#446 id=446 data-nosnippet>446</a>        &lt;Source <span class="kw">as </span>InternalJoinDsl&lt;Rhs, joins::LeftOuter, On&gt;&gt;::Output;
+<a href=#447 id=447 data-nosnippet>447</a>
+<a href=#448 id=448 data-nosnippet>448</a>    <span class="doccomment">/// Represents the return type of [`rhs.on(on)`](crate::query_dsl::JoinOnDsl::on)
+<a href=#449 id=449 data-nosnippet>449</a>    </span><span class="kw">pub type </span>On&lt;Source, On&gt; = joins::OnClauseWrapper&lt;Source, On&gt;;
+<a href=#450 id=450 data-nosnippet>450</a>
+<a href=#451 id=451 data-nosnippet>451</a>    <span class="kw">use </span><span class="kw">super</span>::associations::HasTable;
+<a href=#452 id=452 data-nosnippet>452</a>    <span class="kw">use </span><span class="kw">super</span>::query_builder::{AsChangeset, IntoUpdateTarget, UpdateStatement};
+<a href=#453 id=453 data-nosnippet>453</a>
+<a href=#454 id=454 data-nosnippet>454</a>    <span class="doccomment">/// Represents the return type of [`update(lhs).set(rhs)`](crate::query_builder::UpdateStatement::set)
+<a href=#455 id=455 data-nosnippet>455</a>    </span><span class="kw">pub type </span>Update&lt;Target, Changes&gt; = UpdateStatement&lt;
+<a href=#456 id=456 data-nosnippet>456</a>        &lt;Target <span class="kw">as </span>HasTable&gt;::Table,
+<a href=#457 id=457 data-nosnippet>457</a>        &lt;Target <span class="kw">as </span>IntoUpdateTarget&gt;::WhereClause,
+<a href=#458 id=458 data-nosnippet>458</a>        &lt;Changes <span class="kw">as </span>AsChangeset&gt;::Changeset,
+<a href=#459 id=459 data-nosnippet>459</a>    &gt;;
+<a href=#460 id=460 data-nosnippet>460</a>
+<a href=#461 id=461 data-nosnippet>461</a>    <span class="doccomment">/// Represents the return type of [`.into_boxed::&lt;'a, DB&gt;()`](crate::prelude::QueryDsl::into_boxed)
+<a href=#462 id=462 data-nosnippet>462</a>    </span><span class="kw">pub type </span>IntoBoxed&lt;<span class="lifetime">'a</span>, Source, DB&gt; = &lt;Source <span class="kw">as </span>BoxedDsl&lt;<span class="lifetime">'a</span>, DB&gt;&gt;::Output;
+<a href=#463 id=463 data-nosnippet>463</a>
+<a href=#464 id=464 data-nosnippet>464</a>    <span class="doccomment">/// Represents the return type of [`.distinct()`](crate::prelude::QueryDsl::distinct)
+<a href=#465 id=465 data-nosnippet>465</a>    </span><span class="kw">pub type </span>Distinct&lt;Source&gt; = &lt;Source <span class="kw">as </span>DistinctDsl&gt;::Output;
+<a href=#466 id=466 data-nosnippet>466</a>
+<a href=#467 id=467 data-nosnippet>467</a>    <span class="doccomment">/// Represents the return type of [`.distinct_on(expr)`](crate::prelude::QueryDsl::distinct_on)
+<a href=#468 id=468 data-nosnippet>468</a>    </span><span class="attr">#[cfg(feature = <span class="string">"postgres_backend"</span>)]
+<a href=#469 id=469 data-nosnippet>469</a>    </span><span class="kw">pub type </span>DistinctOn&lt;Source, Expr&gt; = &lt;Source <span class="kw">as </span>DistinctOnDsl&lt;Expr&gt;&gt;::Output;
+<a href=#470 id=470 data-nosnippet>470</a>
+<a href=#471 id=471 data-nosnippet>471</a>    <span class="doccomment">/// Represents the return type of [`.single_value()`](SingleValueDsl::single_value)
+<a href=#472 id=472 data-nosnippet>472</a>    </span><span class="kw">pub type </span>SingleValue&lt;Source&gt; = &lt;Source <span class="kw">as </span>SingleValueDsl&gt;::Output;
+<a href=#473 id=473 data-nosnippet>473</a>
+<a href=#474 id=474 data-nosnippet>474</a>    <span class="doccomment">/// Represents the return type of [`.nullable()`](SelectNullableDsl::nullable)
+<a href=#475 id=475 data-nosnippet>475</a>    </span><span class="kw">pub type </span>NullableSelect&lt;Source&gt; = &lt;Source <span class="kw">as </span>SelectNullableDsl&gt;::Output;
+<a href=#476 id=476 data-nosnippet>476</a>
+<a href=#477 id=477 data-nosnippet>477</a>    <span class="doccomment">/// Represents the return type of [`.group_by(expr)`](crate::prelude::QueryDsl::group_by)
+<a href=#478 id=478 data-nosnippet>478</a>    </span><span class="kw">pub type </span>GroupBy&lt;Source, Expr&gt; = &lt;Source <span class="kw">as </span>GroupByDsl&lt;Expr&gt;&gt;::Output;
+<a href=#479 id=479 data-nosnippet>479</a>
+<a href=#480 id=480 data-nosnippet>480</a>    <span class="doccomment">/// Represents the return type of [`.having(predicate)`](crate::prelude::QueryDsl::having)
+<a href=#481 id=481 data-nosnippet>481</a>    </span><span class="kw">pub type </span>Having&lt;Source, Predicate&gt; = &lt;Source <span class="kw">as </span>HavingDsl&lt;Predicate&gt;&gt;::Output;
+<a href=#482 id=482 data-nosnippet>482</a>
+<a href=#483 id=483 data-nosnippet>483</a>    <span class="doccomment">/// Represents the return type of [`.union(rhs)`](crate::prelude::CombineDsl::union)
+<a href=#484 id=484 data-nosnippet>484</a>    </span><span class="kw">pub type </span>Union&lt;Source, Rhs&gt; = CombinationClause&lt;
+<a href=#485 id=485 data-nosnippet>485</a>        combination_clause::Union,
+<a href=#486 id=486 data-nosnippet>486</a>        combination_clause::Distinct,
+<a href=#487 id=487 data-nosnippet>487</a>        &lt;Source <span class="kw">as </span>CombineDsl&gt;::Query,
+<a href=#488 id=488 data-nosnippet>488</a>        &lt;Rhs <span class="kw">as </span>AsQuery&gt;::Query,
+<a href=#489 id=489 data-nosnippet>489</a>    &gt;;
+<a href=#490 id=490 data-nosnippet>490</a>
+<a href=#491 id=491 data-nosnippet>491</a>    <span class="doccomment">/// Represents the return type of [`.union_all(rhs)`](crate::prelude::CombineDsl::union_all)
+<a href=#492 id=492 data-nosnippet>492</a>    </span><span class="kw">pub type </span>UnionAll&lt;Source, Rhs&gt; = CombinationClause&lt;
+<a href=#493 id=493 data-nosnippet>493</a>        combination_clause::Union,
+<a href=#494 id=494 data-nosnippet>494</a>        combination_clause::All,
+<a href=#495 id=495 data-nosnippet>495</a>        &lt;Source <span class="kw">as </span>CombineDsl&gt;::Query,
+<a href=#496 id=496 data-nosnippet>496</a>        &lt;Rhs <span class="kw">as </span>AsQuery&gt;::Query,
+<a href=#497 id=497 data-nosnippet>497</a>    &gt;;
+<a href=#498 id=498 data-nosnippet>498</a>
+<a href=#499 id=499 data-nosnippet>499</a>    <span class="doccomment">/// Represents the return type of [`.intersect(rhs)`](crate::prelude::CombineDsl::intersect)
+<a href=#500 id=500 data-nosnippet>500</a>    </span><span class="kw">pub type </span>Intersect&lt;Source, Rhs&gt; = CombinationClause&lt;
+<a href=#501 id=501 data-nosnippet>501</a>        combination_clause::Intersect,
+<a href=#502 id=502 data-nosnippet>502</a>        combination_clause::Distinct,
+<a href=#503 id=503 data-nosnippet>503</a>        &lt;Source <span class="kw">as </span>CombineDsl&gt;::Query,
+<a href=#504 id=504 data-nosnippet>504</a>        &lt;Rhs <span class="kw">as </span>AsQuery&gt;::Query,
+<a href=#505 id=505 data-nosnippet>505</a>    &gt;;
+<a href=#506 id=506 data-nosnippet>506</a>
+<a href=#507 id=507 data-nosnippet>507</a>    <span class="doccomment">/// Represents the return type of [`.intersect_all(rhs)`](crate::prelude::CombineDsl::intersect_all)
+<a href=#508 id=508 data-nosnippet>508</a>    </span><span class="kw">pub type </span>IntersectAll&lt;Source, Rhs&gt; = CombinationClause&lt;
+<a href=#509 id=509 data-nosnippet>509</a>        combination_clause::Intersect,
+<a href=#510 id=510 data-nosnippet>510</a>        combination_clause::All,
+<a href=#511 id=511 data-nosnippet>511</a>        &lt;Source <span class="kw">as </span>CombineDsl&gt;::Query,
+<a href=#512 id=512 data-nosnippet>512</a>        &lt;Rhs <span class="kw">as </span>AsQuery&gt;::Query,
+<a href=#513 id=513 data-nosnippet>513</a>    &gt;;
+<a href=#514 id=514 data-nosnippet>514</a>
+<a href=#515 id=515 data-nosnippet>515</a>    <span class="doccomment">/// Represents the return type of [`.except(rhs)`](crate::prelude::CombineDsl::except)
+<a href=#516 id=516 data-nosnippet>516</a>    </span><span class="kw">pub type </span>Except&lt;Source, Rhs&gt; = CombinationClause&lt;
+<a href=#517 id=517 data-nosnippet>517</a>        combination_clause::Except,
+<a href=#518 id=518 data-nosnippet>518</a>        combination_clause::Distinct,
+<a href=#519 id=519 data-nosnippet>519</a>        &lt;Source <span class="kw">as </span>CombineDsl&gt;::Query,
+<a href=#520 id=520 data-nosnippet>520</a>        &lt;Rhs <span class="kw">as </span>AsQuery&gt;::Query,
+<a href=#521 id=521 data-nosnippet>521</a>    &gt;;
+<a href=#522 id=522 data-nosnippet>522</a>
+<a href=#523 id=523 data-nosnippet>523</a>    <span class="doccomment">/// Represents the return type of [`.except_all(rhs)`](crate::prelude::CombineDsl::except_all)
+<a href=#524 id=524 data-nosnippet>524</a>    </span><span class="kw">pub type </span>ExceptAll&lt;Source, Rhs&gt; = CombinationClause&lt;
+<a href=#525 id=525 data-nosnippet>525</a>        combination_clause::Except,
+<a href=#526 id=526 data-nosnippet>526</a>        combination_clause::All,
+<a href=#527 id=527 data-nosnippet>527</a>        &lt;Source <span class="kw">as </span>CombineDsl&gt;::Query,
+<a href=#528 id=528 data-nosnippet>528</a>        &lt;Rhs <span class="kw">as </span>AsQuery&gt;::Query,
+<a href=#529 id=529 data-nosnippet>529</a>    &gt;;
+<a href=#530 id=530 data-nosnippet>530</a>
+<a href=#531 id=531 data-nosnippet>531</a>    <span class="kw">type </span>JoinQuerySource&lt;Left, Right, Kind, On&gt; = joins::JoinOn&lt;joins::Join&lt;Left, Right, Kind&gt;, On&gt;;
+<a href=#532 id=532 data-nosnippet>532</a>
+<a href=#533 id=533 data-nosnippet>533</a>    <span class="doccomment">/// A query source representing the inner join between two tables.
+<a href=#534 id=534 data-nosnippet>534</a>    ///
+<a href=#535 id=535 data-nosnippet>535</a>    /// The third generic type (`On`) controls how the tables are
+<a href=#536 id=536 data-nosnippet>536</a>    /// joined.
+<a href=#537 id=537 data-nosnippet>537</a>    ///
+<a href=#538 id=538 data-nosnippet>538</a>    /// By default, the implicit join established by [`joinable!`][]
+<a href=#539 id=539 data-nosnippet>539</a>    /// will be used, allowing you to omit the exact join
+<a href=#540 id=540 data-nosnippet>540</a>    /// condition. For example, for the inner join between three
+<a href=#541 id=541 data-nosnippet>541</a>    /// tables that implement [`JoinTo`][], you only need to specify
+<a href=#542 id=542 data-nosnippet>542</a>    /// the tables: `InnerJoinQuerySource&lt;InnerJoinQuerySource&lt;table1,
+<a href=#543 id=543 data-nosnippet>543</a>    /// table2&gt;, table3&gt;`.
+<a href=#544 id=544 data-nosnippet>544</a>    ///
+<a href=#545 id=545 data-nosnippet>545</a>    /// [`JoinTo`]: crate::query_source::JoinTo
+<a href=#546 id=546 data-nosnippet>546</a>    ///
+<a href=#547 id=547 data-nosnippet>547</a>    /// If you use an explicit `ON` clause, you will need to specify
+<a href=#548 id=548 data-nosnippet>548</a>    /// the `On` generic type.
+<a href=#549 id=549 data-nosnippet>549</a>    ///
+<a href=#550 id=550 data-nosnippet>550</a>    /// ```rust
+<a href=#551 id=551 data-nosnippet>551</a>    /// # include!("doctest_setup.rs");
+<a href=#552 id=552 data-nosnippet>552</a>    /// use diesel::{dsl, helper_types::InnerJoinQuerySource};
+<a href=#553 id=553 data-nosnippet>553</a>    /// # use diesel::{backend::Backend, serialize::ToSql, sql_types};
+<a href=#554 id=554 data-nosnippet>554</a>    /// use schema::*;
+<a href=#555 id=555 data-nosnippet>555</a>    ///
+<a href=#556 id=556 data-nosnippet>556</a>    /// # fn main() -&gt; QueryResult&lt;()&gt; {
+<a href=#557 id=557 data-nosnippet>557</a>    /// #     let conn = &amp;mut establish_connection();
+<a href=#558 id=558 data-nosnippet>558</a>    /// #
+<a href=#559 id=559 data-nosnippet>559</a>    /// // If you have an explicit join like this...
+<a href=#560 id=560 data-nosnippet>560</a>    /// let join_constraint = comments::columns::post_id.eq(posts::columns::id);
+<a href=#561 id=561 data-nosnippet>561</a>    /// #     let query =
+<a href=#562 id=562 data-nosnippet>562</a>    /// posts::table.inner_join(comments::table.on(join_constraint));
+<a href=#563 id=563 data-nosnippet>563</a>    /// #
+<a href=#564 id=564 data-nosnippet>564</a>    /// #     // Dummy usage just to ensure the example compiles.
+<a href=#565 id=565 data-nosnippet>565</a>    /// #     let filter = posts::columns::id.eq(1);
+<a href=#566 id=566 data-nosnippet>566</a>    /// #     let filter: &amp;FilterExpression&lt;_&gt; = &amp;filter;
+<a href=#567 id=567 data-nosnippet>567</a>    /// #     query.filter(filter).select(posts::columns::id).get_result::&lt;i32&gt;(conn)?;
+<a href=#568 id=568 data-nosnippet>568</a>    /// #
+<a href=#569 id=569 data-nosnippet>569</a>    /// #     Ok(())
+<a href=#570 id=570 data-nosnippet>570</a>    /// # }
+<a href=#571 id=571 data-nosnippet>571</a>    ///
+<a href=#572 id=572 data-nosnippet>572</a>    /// // ... you can use `InnerJoinQuerySource` like this.
+<a href=#573 id=573 data-nosnippet>573</a>    /// type JoinConstraint = dsl::Eq&lt;comments::columns::post_id, posts::columns::id&gt;;
+<a href=#574 id=574 data-nosnippet>574</a>    /// type MyInnerJoinQuerySource = InnerJoinQuerySource&lt;posts::table, comments::table, JoinConstraint&gt;;
+<a href=#575 id=575 data-nosnippet>575</a>    /// # type FilterExpression&lt;DB&gt; = dyn BoxableExpression&lt;MyInnerJoinQuerySource, DB, SqlType = sql_types::Bool&gt;;
+<a href=#576 id=576 data-nosnippet>576</a>    /// ```
+<a href=#577 id=577 data-nosnippet>577</a>    </span><span class="kw">pub type </span>InnerJoinQuerySource&lt;Left, Right, On = &lt;Left <span class="kw">as </span>joins::JoinTo&lt;Right&gt;&gt;::OnClause&gt; =
+<a href=#578 id=578 data-nosnippet>578</a>        JoinQuerySource&lt;Left, Right, joins::Inner, On&gt;;
+<a href=#579 id=579 data-nosnippet>579</a>
+<a href=#580 id=580 data-nosnippet>580</a>    <span class="doccomment">/// A query source representing the left outer join between two tables.
+<a href=#581 id=581 data-nosnippet>581</a>    ///
+<a href=#582 id=582 data-nosnippet>582</a>    /// The third generic type (`On`) controls how the tables are
+<a href=#583 id=583 data-nosnippet>583</a>    /// joined.
+<a href=#584 id=584 data-nosnippet>584</a>    ///
+<a href=#585 id=585 data-nosnippet>585</a>    /// By default, the implicit join established by [`joinable!`][]
+<a href=#586 id=586 data-nosnippet>586</a>    /// will be used, allowing you to omit the exact join
+<a href=#587 id=587 data-nosnippet>587</a>    /// condition. For example, for the left join between three
+<a href=#588 id=588 data-nosnippet>588</a>    /// tables that implement [`JoinTo`][], you only need to specify
+<a href=#589 id=589 data-nosnippet>589</a>    /// the tables: `LeftJoinQuerySource&lt;LeftJoinQuerySource&lt;table1,
+<a href=#590 id=590 data-nosnippet>590</a>    /// table2&gt;, table3&gt;`.
+<a href=#591 id=591 data-nosnippet>591</a>    ///
+<a href=#592 id=592 data-nosnippet>592</a>    /// [`JoinTo`]: crate::query_source::JoinTo
+<a href=#593 id=593 data-nosnippet>593</a>    ///
+<a href=#594 id=594 data-nosnippet>594</a>    /// If you use an explicit `ON` clause, you will need to specify
+<a href=#595 id=595 data-nosnippet>595</a>    /// the `On` generic type.
+<a href=#596 id=596 data-nosnippet>596</a>    ///
+<a href=#597 id=597 data-nosnippet>597</a>    /// ```rust
+<a href=#598 id=598 data-nosnippet>598</a>    /// # include!("doctest_setup.rs");
+<a href=#599 id=599 data-nosnippet>599</a>    /// use diesel::{dsl, helper_types::LeftJoinQuerySource};
+<a href=#600 id=600 data-nosnippet>600</a>    /// # use diesel::{backend::Backend, serialize::ToSql, sql_types};
+<a href=#601 id=601 data-nosnippet>601</a>    /// use schema::*;
+<a href=#602 id=602 data-nosnippet>602</a>    ///
+<a href=#603 id=603 data-nosnippet>603</a>    /// # fn main() -&gt; QueryResult&lt;()&gt; {
+<a href=#604 id=604 data-nosnippet>604</a>    /// #     let conn = &amp;mut establish_connection();
+<a href=#605 id=605 data-nosnippet>605</a>    /// #
+<a href=#606 id=606 data-nosnippet>606</a>    /// // If you have an explicit join like this...
+<a href=#607 id=607 data-nosnippet>607</a>    /// let join_constraint = comments::columns::post_id.eq(posts::columns::id);
+<a href=#608 id=608 data-nosnippet>608</a>    /// #     let query =
+<a href=#609 id=609 data-nosnippet>609</a>    /// posts::table.left_join(comments::table.on(join_constraint));
+<a href=#610 id=610 data-nosnippet>610</a>    /// #
+<a href=#611 id=611 data-nosnippet>611</a>    /// #     // Dummy usage just to ensure the example compiles.
+<a href=#612 id=612 data-nosnippet>612</a>    /// #     let filter = posts::columns::id.eq(1);
+<a href=#613 id=613 data-nosnippet>613</a>    /// #     let filter: &amp;FilterExpression&lt;_&gt; = &amp;filter;
+<a href=#614 id=614 data-nosnippet>614</a>    /// #     query.filter(filter).select(posts::columns::id).get_result::&lt;i32&gt;(conn)?;
+<a href=#615 id=615 data-nosnippet>615</a>    /// #
+<a href=#616 id=616 data-nosnippet>616</a>    /// #     Ok(())
+<a href=#617 id=617 data-nosnippet>617</a>    /// # }
+<a href=#618 id=618 data-nosnippet>618</a>    ///
+<a href=#619 id=619 data-nosnippet>619</a>    /// // ... you can use `LeftJoinQuerySource` like this.
+<a href=#620 id=620 data-nosnippet>620</a>    /// type JoinConstraint = dsl::Eq&lt;comments::columns::post_id, posts::columns::id&gt;;
+<a href=#621 id=621 data-nosnippet>621</a>    /// type MyLeftJoinQuerySource = LeftJoinQuerySource&lt;posts::table, comments::table, JoinConstraint&gt;;
+<a href=#622 id=622 data-nosnippet>622</a>    /// # type FilterExpression&lt;DB&gt; = dyn BoxableExpression&lt;MyLeftJoinQuerySource, DB, SqlType = sql_types::Bool&gt;;
+<a href=#623 id=623 data-nosnippet>623</a>    /// ```
+<a href=#624 id=624 data-nosnippet>624</a>    </span><span class="kw">pub type </span>LeftJoinQuerySource&lt;Left, Right, On = &lt;Left <span class="kw">as </span>joins::JoinTo&lt;Right&gt;&gt;::OnClause&gt; =
+<a href=#625 id=625 data-nosnippet>625</a>        JoinQuerySource&lt;Left, Right, joins::LeftOuter, On&gt;;
+<a href=#626 id=626 data-nosnippet>626</a>
+<a href=#627 id=627 data-nosnippet>627</a>    <span class="doccomment">/// Maps `F` to `Alias&lt;S&gt;`
+<a href=#628 id=628 data-nosnippet>628</a>    ///
+<a href=#629 id=629 data-nosnippet>629</a>    /// Any column `F` that belongs to `S::Table` will be transformed into
+<a href=#630 id=630 data-nosnippet>630</a>    /// [`AliasedField&lt;S, Self&gt;`](crate::query_source::AliasedField)
+<a href=#631 id=631 data-nosnippet>631</a>    ///
+<a href=#632 id=632 data-nosnippet>632</a>    /// Any column `F` that does not belong to `S::Table` will be left untouched.
+<a href=#633 id=633 data-nosnippet>633</a>    ///
+<a href=#634 id=634 data-nosnippet>634</a>    /// This also works with tuples and some expressions.
+<a href=#635 id=635 data-nosnippet>635</a>    </span><span class="kw">pub type </span>AliasedFields&lt;S, F&gt; = &lt;F <span class="kw">as </span>aliasing::FieldAliasMapper&lt;S&gt;&gt;::Out;
+<a href=#636 id=636 data-nosnippet>636</a>
+<a href=#637 id=637 data-nosnippet>637</a>    <span class="attr">#[doc(hidden)]
+<a href=#638 id=638 data-nosnippet>638</a>    #[cfg(all(feature = <span class="string">"with-deprecated"</span>, not(feature = <span class="string">"without-deprecated"</span>)))]
+<a href=#639 id=639 data-nosnippet>639</a>    #[deprecated(note = <span class="string">"Use `LoadQuery::RowIter` directly"</span>)]
+<a href=#640 id=640 data-nosnippet>640</a>    </span><span class="kw">pub type </span>LoadIter&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>, Q, Conn, U, B = <span class="kw">crate</span>::connection::DefaultLoadingMode&gt; =
+<a href=#641 id=641 data-nosnippet>641</a>        &lt;Q <span class="kw">as </span>load_dsl::LoadQuery&lt;<span class="lifetime">'query</span>, Conn, U, B&gt;&gt;::RowIter&lt;<span class="lifetime">'conn</span>&gt;;
+<a href=#642 id=642 data-nosnippet>642</a>
+<a href=#643 id=643 data-nosnippet>643</a>    <span class="doccomment">/// Represents the return type of [`diesel::delete`]
+<a href=#644 id=644 data-nosnippet>644</a>    </span><span class="attr">#[allow(non_camel_case_types)] </span><span class="comment">// required for `#[auto_type]`
+<a href=#645 id=645 data-nosnippet>645</a>    </span><span class="kw">pub type </span>delete&lt;T&gt; = <span class="kw">crate</span>::query_builder::DeleteStatement&lt;
+<a href=#646 id=646 data-nosnippet>646</a>        &lt;T <span class="kw">as </span>HasTable&gt;::Table,
+<a href=#647 id=647 data-nosnippet>647</a>        &lt;T <span class="kw">as </span>IntoUpdateTarget&gt;::WhereClause,
+<a href=#648 id=648 data-nosnippet>648</a>    &gt;;
+<a href=#649 id=649 data-nosnippet>649</a>
+<a href=#650 id=650 data-nosnippet>650</a>    <span class="doccomment">/// Represents the return type of [`diesel::insert_into`]
+<a href=#651 id=651 data-nosnippet>651</a>    </span><span class="attr">#[allow(non_camel_case_types)] </span><span class="comment">// required for `#[auto_type]`
+<a href=#652 id=652 data-nosnippet>652</a>    </span><span class="kw">pub type </span>insert_into&lt;T&gt; = <span class="kw">crate</span>::query_builder::IncompleteInsertStatement&lt;T&gt;;
+<a href=#653 id=653 data-nosnippet>653</a>
+<a href=#654 id=654 data-nosnippet>654</a>    <span class="doccomment">/// Represents the return type of [`diesel::update`]
+<a href=#655 id=655 data-nosnippet>655</a>    </span><span class="attr">#[allow(non_camel_case_types)] </span><span class="comment">// required for `#[auto_type]`
+<a href=#656 id=656 data-nosnippet>656</a>    </span><span class="kw">pub type </span>update&lt;T&gt; =
+<a href=#657 id=657 data-nosnippet>657</a>        UpdateStatement&lt;&lt;T <span class="kw">as </span>HasTable&gt;::Table, &lt;T <span class="kw">as </span>IntoUpdateTarget&gt;::WhereClause&gt;;
+<a href=#658 id=658 data-nosnippet>658</a>
+<a href=#659 id=659 data-nosnippet>659</a>    <span class="doccomment">/// Represents the return type of [`diesel::insert_or_ignore_into`]
+<a href=#660 id=660 data-nosnippet>660</a>    </span><span class="attr">#[allow(non_camel_case_types)] </span><span class="comment">// required for `#[auto_type]`
+<a href=#661 id=661 data-nosnippet>661</a>    </span><span class="kw">pub type </span>insert_or_ignore_into&lt;T&gt; = <span class="kw">crate</span>::query_builder::IncompleteInsertOrIgnoreStatement&lt;T&gt;;
+<a href=#662 id=662 data-nosnippet>662</a>
+<a href=#663 id=663 data-nosnippet>663</a>    <span class="doccomment">/// Represents the return type of [`diesel::replace_into`]
+<a href=#664 id=664 data-nosnippet>664</a>    </span><span class="attr">#[allow(non_camel_case_types)] </span><span class="comment">// required for `#[auto_type]`
+<a href=#665 id=665 data-nosnippet>665</a>    </span><span class="kw">pub type </span>replace_into&lt;T&gt; = <span class="kw">crate</span>::query_builder::IncompleteReplaceStatement&lt;T&gt;;
+<a href=#666 id=666 data-nosnippet>666</a>
+<a href=#667 id=667 data-nosnippet>667</a>    <span class="doccomment">/// Represents the return type of
+<a href=#668 id=668 data-nosnippet>668</a>    /// [`IncompleteInsertStatement::values()`](crate::query_builder::IncompleteInsertStatement::values)
+<a href=#669 id=669 data-nosnippet>669</a>    </span><span class="kw">pub type </span>Values&lt;I, U&gt; = <span class="kw">crate</span>::query_builder::InsertStatement&lt;
+<a href=#670 id=670 data-nosnippet>670</a>        &lt;I <span class="kw">as </span><span class="kw">crate</span>::query_builder::insert_statement::InsertAutoTypeHelper&gt;::Table,
+<a href=#671 id=671 data-nosnippet>671</a>        &lt;U <span class="kw">as </span><span class="kw">crate</span>::Insertable&lt;
+<a href=#672 id=672 data-nosnippet>672</a>            &lt;I <span class="kw">as </span><span class="kw">crate</span>::query_builder::insert_statement::InsertAutoTypeHelper&gt;::Table,
+<a href=#673 id=673 data-nosnippet>673</a>        &gt;&gt;::Values,
+<a href=#674 id=674 data-nosnippet>674</a>        &lt;I <span class="kw">as </span><span class="kw">crate</span>::query_builder::insert_statement::InsertAutoTypeHelper&gt;::Op,
+<a href=#675 id=675 data-nosnippet>675</a>    &gt;;
+<a href=#676 id=676 data-nosnippet>676</a>
+<a href=#677 id=677 data-nosnippet>677</a>    <span class="doccomment">/// Represents the return type of
+<a href=#678 id=678 data-nosnippet>678</a>    /// [`UpdateStatement::set()`](crate::query_builder::UpdateStatement::set)
+<a href=#679 id=679 data-nosnippet>679</a>    </span><span class="kw">pub type </span>Set&lt;U, V&gt; = <span class="kw">crate</span>::query_builder::UpdateStatement&lt;
+<a href=#680 id=680 data-nosnippet>680</a>        &lt;U <span class="kw">as </span><span class="kw">crate</span>::query_builder::update_statement::UpdateAutoTypeHelper&gt;::Table,
+<a href=#681 id=681 data-nosnippet>681</a>        &lt;U <span class="kw">as </span><span class="kw">crate</span>::query_builder::update_statement::UpdateAutoTypeHelper&gt;::Where,
+<a href=#682 id=682 data-nosnippet>682</a>        &lt;V <span class="kw">as </span><span class="kw">crate</span>::AsChangeset&gt;::Changeset,
+<a href=#683 id=683 data-nosnippet>683</a>    &gt;;
+<a href=#684 id=684 data-nosnippet>684</a>
+<a href=#685 id=685 data-nosnippet>685</a>    <span class="doccomment">/// Represents the return type of
+<a href=#686 id=686 data-nosnippet>686</a>    /// [`InsertStatement::returning`](crate::query_builder::InsertStatement::returning),
+<a href=#687 id=687 data-nosnippet>687</a>    /// [`UpdateStatement::returning`] and
+<a href=#688 id=688 data-nosnippet>688</a>    /// [`DeleteStatement::returning`](crate::query_builder::DeleteStatement::returning)
+<a href=#689 id=689 data-nosnippet>689</a>    </span><span class="kw">pub type </span>Returning&lt;Q, S&gt; =
+<a href=#690 id=690 data-nosnippet>690</a>        &lt;Q <span class="kw">as </span><span class="kw">crate</span>::query_builder::returning_clause::ReturningClauseHelper&lt;S&gt;&gt;::WithReturning;
+<a href=#691 id=691 data-nosnippet>691</a>
+<a href=#692 id=692 data-nosnippet>692</a>    <span class="attr">#[doc(hidden)] </span><span class="comment">// used for `QueryDsl::count`
+<a href=#693 id=693 data-nosnippet>693</a>    </span><span class="kw">pub type </span>Count&lt;Q&gt; = Select&lt;Q, CountStar&gt;;
+<a href=#694 id=694 data-nosnippet>694</a>}
+<a href=#695 id=695 data-nosnippet>695</a>
+<a href=#696 id=696 data-nosnippet>696</a><span class="kw">pub mod </span>prelude {
+<a href=#697 id=697 data-nosnippet>697</a>    <span class="doccomment">//! Re-exports important traits and types. Meant to be glob imported when using Diesel.
+<a href=#698 id=698 data-nosnippet>698</a>
+<a href=#699 id=699 data-nosnippet>699</a>    </span><span class="attr">#[doc(inline)]
+<a href=#700 id=700 data-nosnippet>700</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::associations::{Associations, GroupedBy, Identifiable};
+<a href=#701 id=701 data-nosnippet>701</a>    <span class="attr">#[doc(inline)]
+<a href=#702 id=702 data-nosnippet>702</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::connection::Connection;
+<a href=#703 id=703 data-nosnippet>703</a>    <span class="attr">#[doc(inline)]
+<a href=#704 id=704 data-nosnippet>704</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::deserialize::{Queryable, QueryableByName};
+<a href=#705 id=705 data-nosnippet>705</a>    <span class="attr">#[doc(inline)]
+<a href=#706 id=706 data-nosnippet>706</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::expression::{
+<a href=#707 id=707 data-nosnippet>707</a>        AppearsOnTable, BoxableExpression, Expression, IntoSql, Selectable, SelectableExpression,
+<a href=#708 id=708 data-nosnippet>708</a>    };
+<a href=#709 id=709 data-nosnippet>709</a>    <span class="comment">// If [`IntoSql`](crate::expression::helper_types::IntoSql) the type gets imported at the
+<a href=#710 id=710 data-nosnippet>710</a>    // same time as IntoSql the trait (this one) gets imported via the prelude, then
+<a href=#711 id=711 data-nosnippet>711</a>    // methods of the trait won't be resolved because the type may take priority over the trait.
+<a href=#712 id=712 data-nosnippet>712</a>    // That issue can be avoided by also importing it anonymously:
+<a href=#713 id=713 data-nosnippet>713</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::expression::IntoSql <span class="kw">as _</span>;
+<a href=#714 id=714 data-nosnippet>714</a>
+<a href=#715 id=715 data-nosnippet>715</a>    <span class="attr">#[doc(inline)]
+<a href=#716 id=716 data-nosnippet>716</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::expression::functions::define_sql_function;
+<a href=#717 id=717 data-nosnippet>717</a>    <span class="attr">#[cfg(all(feature = <span class="string">"with-deprecated"</span>, not(feature = <span class="string">"without-deprecated"</span>)))]
+<a href=#718 id=718 data-nosnippet>718</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::expression::functions::sql_function;
+<a href=#719 id=719 data-nosnippet>719</a>
+<a href=#720 id=720 data-nosnippet>720</a>    <span class="attr">#[doc(inline)]
+<a href=#721 id=721 data-nosnippet>721</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::expression::SelectableHelper;
+<a href=#722 id=722 data-nosnippet>722</a>    <span class="attr">#[doc(inline)]
+<a href=#723 id=723 data-nosnippet>723</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::expression_methods::<span class="kw-2">*</span>;
+<a href=#724 id=724 data-nosnippet>724</a>    <span class="attr">#[doc(inline)]
+<a href=#725 id=725 data-nosnippet>725</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::insertable::Insertable;
+<a href=#726 id=726 data-nosnippet>726</a>    <span class="attr">#[doc(inline)]
+<a href=#727 id=727 data-nosnippet>727</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::macros::prelude::<span class="kw-2">*</span>;
+<a href=#728 id=728 data-nosnippet>728</a>    <span class="attr">#[doc(inline)]
+<a href=#729 id=729 data-nosnippet>729</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::query_builder::AsChangeset;
+<a href=#730 id=730 data-nosnippet>730</a>    <span class="attr">#[doc(inline)]
+<a href=#731 id=731 data-nosnippet>731</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::query_builder::DecoratableTarget;
+<a href=#732 id=732 data-nosnippet>732</a>    <span class="attr">#[doc(inline)]
+<a href=#733 id=733 data-nosnippet>733</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::query_dsl::{
+<a href=#734 id=734 data-nosnippet>734</a>        BelongingToDsl, CombineDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl,
+<a href=#735 id=735 data-nosnippet>735</a>    };
+<a href=#736 id=736 data-nosnippet>736</a>    <span class="kw">pub use </span><span class="kw">crate</span>::query_source::SizeRestrictedColumn <span class="kw">as _</span>;
+<a href=#737 id=737 data-nosnippet>737</a>    <span class="attr">#[doc(inline)]
+<a href=#738 id=738 data-nosnippet>738</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::query_source::{Column, JoinTo, QuerySource, Table};
+<a href=#739 id=739 data-nosnippet>739</a>    <span class="attr">#[doc(inline)]
+<a href=#740 id=740 data-nosnippet>740</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::result::{
+<a href=#741 id=741 data-nosnippet>741</a>        ConnectionError, ConnectionResult, OptionalEmptyChangesetExtension, OptionalExtension,
+<a href=#742 id=742 data-nosnippet>742</a>        QueryResult,
+<a href=#743 id=743 data-nosnippet>743</a>    };
+<a href=#744 id=744 data-nosnippet>744</a>    <span class="attr">#[doc(inline)]
+<a href=#745 id=745 data-nosnippet>745</a>    </span><span class="kw">pub use </span>diesel_derives::table_proc <span class="kw">as </span>table;
+<a href=#746 id=746 data-nosnippet>746</a>
+<a href=#747 id=747 data-nosnippet>747</a>    <span class="attr">#[cfg(feature = <span class="string">"mysql"</span>)]
+<a href=#748 id=748 data-nosnippet>748</a>    #[doc(inline)]
+<a href=#749 id=749 data-nosnippet>749</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::mysql::MysqlConnection;
+<a href=#750 id=750 data-nosnippet>750</a>    <span class="attr">#[doc(inline)]
+<a href=#751 id=751 data-nosnippet>751</a>    #[cfg(feature = <span class="string">"postgres_backend"</span>)]
+<a href=#752 id=752 data-nosnippet>752</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::pg::query_builder::copy::ExecuteCopyFromDsl;
+<a href=#753 id=753 data-nosnippet>753</a>    <span class="attr">#[cfg(feature = <span class="string">"postgres"</span>)]
+<a href=#754 id=754 data-nosnippet>754</a>    #[doc(inline)]
+<a href=#755 id=755 data-nosnippet>755</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::pg::PgConnection;
+<a href=#756 id=756 data-nosnippet>756</a>    <span class="attr">#[cfg(feature = <span class="string">"sqlite"</span>)]
+<a href=#757 id=757 data-nosnippet>757</a>    #[doc(inline)]
+<a href=#758 id=758 data-nosnippet>758</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::sqlite::SqliteConnection;
+<a href=#759 id=759 data-nosnippet>759</a>}
+<a href=#760 id=760 data-nosnippet>760</a>
+<a href=#761 id=761 data-nosnippet>761</a><span class="attr">#[doc(inline)]
+<a href=#762 id=762 data-nosnippet>762</a></span><span class="kw">pub use </span><span class="kw">crate</span>::macros::table;
+<a href=#763 id=763 data-nosnippet>763</a><span class="kw">pub use </span><span class="kw">crate</span>::prelude::<span class="kw-2">*</span>;
+<a href=#764 id=764 data-nosnippet>764</a><span class="attr">#[doc(inline)]
+<a href=#765 id=765 data-nosnippet>765</a></span><span class="kw">pub use </span><span class="kw">crate</span>::query_builder::debug_query;
+<a href=#766 id=766 data-nosnippet>766</a><span class="attr">#[doc(inline)]
+<a href=#767 id=767 data-nosnippet>767</a>#[cfg(feature = <span class="string">"postgres"</span>)]
+<a href=#768 id=768 data-nosnippet>768</a></span><span class="kw">pub use </span><span class="kw">crate</span>::query_builder::functions::{copy_from, copy_to};
+<a href=#769 id=769 data-nosnippet>769</a><span class="attr">#[doc(inline)]
+<a href=#770 id=770 data-nosnippet>770</a></span><span class="kw">pub use </span><span class="kw">crate</span>::query_builder::functions::{
+<a href=#771 id=771 data-nosnippet>771</a>    delete, insert_into, insert_or_ignore_into, replace_into, select, sql_query, update,
+<a href=#772 id=772 data-nosnippet>772</a>};
+<a href=#773 id=773 data-nosnippet>773</a><span class="kw">pub use </span><span class="kw">crate</span>::result::Error::NotFound;
+<a href=#774 id=774 data-nosnippet>774</a>
+<a href=#775 id=775 data-nosnippet>775</a><span class="kw">extern crate </span><span class="self">self </span><span class="kw">as </span>diesel;</code></pre></div></section></main></body></html>

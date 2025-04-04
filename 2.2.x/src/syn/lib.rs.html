@@ -1,0 +1,1011 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/syn-2.0.100/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-de575e9a.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="syn" data-themes="" data-resource-suffix="" data-rustdoc-version="1.88.0-nightly (00095b3da 2025-04-03)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-d72f25bb.js" ><script src="../../static.files/storage-4e99c027.js"></script><script defer src="../../static.files/src-script-63605ae7.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">syn/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! [![github]](https://github.com/dtolnay/syn)&amp;ensp;[![crates-io]](https://crates.io/crates/syn)&amp;ensp;[![docs-rs]](crate)
+<a href=#2 id=2 data-nosnippet>2</a>//!
+<a href=#3 id=3 data-nosnippet>3</a>//! [github]: https://img.shields.io/badge/github-8da0cb?style=for-the-badge&amp;labelColor=555555&amp;logo=github
+<a href=#4 id=4 data-nosnippet>4</a>//! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&amp;labelColor=555555&amp;logo=rust
+<a href=#5 id=5 data-nosnippet>5</a>//! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?style=for-the-badge&amp;labelColor=555555&amp;logo=docs.rs
+<a href=#6 id=6 data-nosnippet>6</a>//!
+<a href=#7 id=7 data-nosnippet>7</a>//! &lt;br&gt;
+<a href=#8 id=8 data-nosnippet>8</a>//!
+<a href=#9 id=9 data-nosnippet>9</a>//! Syn is a parsing library for parsing a stream of Rust tokens into a syntax
+<a href=#10 id=10 data-nosnippet>10</a>//! tree of Rust source code.
+<a href=#11 id=11 data-nosnippet>11</a>//!
+<a href=#12 id=12 data-nosnippet>12</a>//! Currently this library is geared toward use in Rust procedural macros, but
+<a href=#13 id=13 data-nosnippet>13</a>//! contains some APIs that may be useful more generally.
+<a href=#14 id=14 data-nosnippet>14</a>//!
+<a href=#15 id=15 data-nosnippet>15</a>//! - **Data structures** — Syn provides a complete syntax tree that can
+<a href=#16 id=16 data-nosnippet>16</a>//!   represent any valid Rust source code. The syntax tree is rooted at
+<a href=#17 id=17 data-nosnippet>17</a>//!   [`syn::File`] which represents a full source file, but there are other
+<a href=#18 id=18 data-nosnippet>18</a>//!   entry points that may be useful to procedural macros including
+<a href=#19 id=19 data-nosnippet>19</a>//!   [`syn::Item`], [`syn::Expr`] and [`syn::Type`].
+<a href=#20 id=20 data-nosnippet>20</a>//!
+<a href=#21 id=21 data-nosnippet>21</a>//! - **Derives** — Of particular interest to derive macros is
+<a href=#22 id=22 data-nosnippet>22</a>//!   [`syn::DeriveInput`] which is any of the three legal input items to a
+<a href=#23 id=23 data-nosnippet>23</a>//!   derive macro. An example below shows using this type in a library that can
+<a href=#24 id=24 data-nosnippet>24</a>//!   derive implementations of a user-defined trait.
+<a href=#25 id=25 data-nosnippet>25</a>//!
+<a href=#26 id=26 data-nosnippet>26</a>//! - **Parsing** — Parsing in Syn is built around [parser functions] with the
+<a href=#27 id=27 data-nosnippet>27</a>//!   signature `fn(ParseStream) -&gt; Result&lt;T&gt;`. Every syntax tree node defined
+<a href=#28 id=28 data-nosnippet>28</a>//!   by Syn is individually parsable and may be used as a building block for
+<a href=#29 id=29 data-nosnippet>29</a>//!   custom syntaxes, or you may dream up your own brand new syntax without
+<a href=#30 id=30 data-nosnippet>30</a>//!   involving any of our syntax tree types.
+<a href=#31 id=31 data-nosnippet>31</a>//!
+<a href=#32 id=32 data-nosnippet>32</a>//! - **Location information** — Every token parsed by Syn is associated with a
+<a href=#33 id=33 data-nosnippet>33</a>//!   `Span` that tracks line and column information back to the source of that
+<a href=#34 id=34 data-nosnippet>34</a>//!   token. These spans allow a procedural macro to display detailed error
+<a href=#35 id=35 data-nosnippet>35</a>//!   messages pointing to all the right places in the user's code. There is an
+<a href=#36 id=36 data-nosnippet>36</a>//!   example of this below.
+<a href=#37 id=37 data-nosnippet>37</a>//!
+<a href=#38 id=38 data-nosnippet>38</a>//! - **Feature flags** — Functionality is aggressively feature gated so your
+<a href=#39 id=39 data-nosnippet>39</a>//!   procedural macros enable only what they need, and do not pay in compile
+<a href=#40 id=40 data-nosnippet>40</a>//!   time for all the rest.
+<a href=#41 id=41 data-nosnippet>41</a>//!
+<a href=#42 id=42 data-nosnippet>42</a>//! [`syn::File`]: File
+<a href=#43 id=43 data-nosnippet>43</a>//! [`syn::Item`]: Item
+<a href=#44 id=44 data-nosnippet>44</a>//! [`syn::Expr`]: Expr
+<a href=#45 id=45 data-nosnippet>45</a>//! [`syn::Type`]: Type
+<a href=#46 id=46 data-nosnippet>46</a>//! [`syn::DeriveInput`]: DeriveInput
+<a href=#47 id=47 data-nosnippet>47</a>//! [parser functions]: mod@parse
+<a href=#48 id=48 data-nosnippet>48</a>//!
+<a href=#49 id=49 data-nosnippet>49</a>//! &lt;br&gt;
+<a href=#50 id=50 data-nosnippet>50</a>//!
+<a href=#51 id=51 data-nosnippet>51</a>//! # Example of a derive macro
+<a href=#52 id=52 data-nosnippet>52</a>//!
+<a href=#53 id=53 data-nosnippet>53</a>//! The canonical derive macro using Syn looks like this. We write an ordinary
+<a href=#54 id=54 data-nosnippet>54</a>//! Rust function tagged with a `proc_macro_derive` attribute and the name of
+<a href=#55 id=55 data-nosnippet>55</a>//! the trait we are deriving. Any time that derive appears in the user's code,
+<a href=#56 id=56 data-nosnippet>56</a>//! the Rust compiler passes their data structure as tokens into our macro. We
+<a href=#57 id=57 data-nosnippet>57</a>//! get to execute arbitrary Rust code to figure out what to do with those
+<a href=#58 id=58 data-nosnippet>58</a>//! tokens, then hand some tokens back to the compiler to compile into the
+<a href=#59 id=59 data-nosnippet>59</a>//! user's crate.
+<a href=#60 id=60 data-nosnippet>60</a>//!
+<a href=#61 id=61 data-nosnippet>61</a>//! [`TokenStream`]: proc_macro::TokenStream
+<a href=#62 id=62 data-nosnippet>62</a>//!
+<a href=#63 id=63 data-nosnippet>63</a>//! ```toml
+<a href=#64 id=64 data-nosnippet>64</a>//! [dependencies]
+<a href=#65 id=65 data-nosnippet>65</a>//! syn = "2.0"
+<a href=#66 id=66 data-nosnippet>66</a>//! quote = "1.0"
+<a href=#67 id=67 data-nosnippet>67</a>//!
+<a href=#68 id=68 data-nosnippet>68</a>//! [lib]
+<a href=#69 id=69 data-nosnippet>69</a>//! proc-macro = true
+<a href=#70 id=70 data-nosnippet>70</a>//! ```
+<a href=#71 id=71 data-nosnippet>71</a>//!
+<a href=#72 id=72 data-nosnippet>72</a>//! ```
+<a href=#73 id=73 data-nosnippet>73</a>//! # extern crate proc_macro;
+<a href=#74 id=74 data-nosnippet>74</a>//! #
+<a href=#75 id=75 data-nosnippet>75</a>//! use proc_macro::TokenStream;
+<a href=#76 id=76 data-nosnippet>76</a>//! use quote::quote;
+<a href=#77 id=77 data-nosnippet>77</a>//! use syn::{parse_macro_input, DeriveInput};
+<a href=#78 id=78 data-nosnippet>78</a>//!
+<a href=#79 id=79 data-nosnippet>79</a>//! # const IGNORE_TOKENS: &amp;str = stringify! {
+<a href=#80 id=80 data-nosnippet>80</a>//! #[proc_macro_derive(MyMacro)]
+<a href=#81 id=81 data-nosnippet>81</a>//! # };
+<a href=#82 id=82 data-nosnippet>82</a>//! pub fn my_macro(input: TokenStream) -&gt; TokenStream {
+<a href=#83 id=83 data-nosnippet>83</a>//!     // Parse the input tokens into a syntax tree
+<a href=#84 id=84 data-nosnippet>84</a>//!     let input = parse_macro_input!(input as DeriveInput);
+<a href=#85 id=85 data-nosnippet>85</a>//!
+<a href=#86 id=86 data-nosnippet>86</a>//!     // Build the output, possibly using quasi-quotation
+<a href=#87 id=87 data-nosnippet>87</a>//!     let expanded = quote! {
+<a href=#88 id=88 data-nosnippet>88</a>//!         // ...
+<a href=#89 id=89 data-nosnippet>89</a>//!     };
+<a href=#90 id=90 data-nosnippet>90</a>//!
+<a href=#91 id=91 data-nosnippet>91</a>//!     // Hand the output tokens back to the compiler
+<a href=#92 id=92 data-nosnippet>92</a>//!     TokenStream::from(expanded)
+<a href=#93 id=93 data-nosnippet>93</a>//! }
+<a href=#94 id=94 data-nosnippet>94</a>//! ```
+<a href=#95 id=95 data-nosnippet>95</a>//!
+<a href=#96 id=96 data-nosnippet>96</a>//! The [`heapsize`] example directory shows a complete working implementation
+<a href=#97 id=97 data-nosnippet>97</a>//! of a derive macro. The example derives a `HeapSize` trait which computes an
+<a href=#98 id=98 data-nosnippet>98</a>//! estimate of the amount of heap memory owned by a value.
+<a href=#99 id=99 data-nosnippet>99</a>//!
+<a href=#100 id=100 data-nosnippet>100</a>//! [`heapsize`]: https://github.com/dtolnay/syn/tree/master/examples/heapsize
+<a href=#101 id=101 data-nosnippet>101</a>//!
+<a href=#102 id=102 data-nosnippet>102</a>//! ```
+<a href=#103 id=103 data-nosnippet>103</a>//! pub trait HeapSize {
+<a href=#104 id=104 data-nosnippet>104</a>//!     /// Total number of bytes of heap memory owned by `self`.
+<a href=#105 id=105 data-nosnippet>105</a>//!     fn heap_size_of_children(&amp;self) -&gt; usize;
+<a href=#106 id=106 data-nosnippet>106</a>//! }
+<a href=#107 id=107 data-nosnippet>107</a>//! ```
+<a href=#108 id=108 data-nosnippet>108</a>//!
+<a href=#109 id=109 data-nosnippet>109</a>//! The derive macro allows users to write `#[derive(HeapSize)]` on data
+<a href=#110 id=110 data-nosnippet>110</a>//! structures in their program.
+<a href=#111 id=111 data-nosnippet>111</a>//!
+<a href=#112 id=112 data-nosnippet>112</a>//! ```
+<a href=#113 id=113 data-nosnippet>113</a>//! # const IGNORE_TOKENS: &amp;str = stringify! {
+<a href=#114 id=114 data-nosnippet>114</a>//! #[derive(HeapSize)]
+<a href=#115 id=115 data-nosnippet>115</a>//! # };
+<a href=#116 id=116 data-nosnippet>116</a>//! struct Demo&lt;'a, T: ?Sized&gt; {
+<a href=#117 id=117 data-nosnippet>117</a>//!     a: Box&lt;T&gt;,
+<a href=#118 id=118 data-nosnippet>118</a>//!     b: u8,
+<a href=#119 id=119 data-nosnippet>119</a>//!     c: &amp;'a str,
+<a href=#120 id=120 data-nosnippet>120</a>//!     d: String,
+<a href=#121 id=121 data-nosnippet>121</a>//! }
+<a href=#122 id=122 data-nosnippet>122</a>//! ```
+<a href=#123 id=123 data-nosnippet>123</a>//!
+<a href=#124 id=124 data-nosnippet>124</a>//! &lt;p&gt;&lt;br&gt;&lt;/p&gt;
+<a href=#125 id=125 data-nosnippet>125</a>//!
+<a href=#126 id=126 data-nosnippet>126</a>//! # Spans and error reporting
+<a href=#127 id=127 data-nosnippet>127</a>//!
+<a href=#128 id=128 data-nosnippet>128</a>//! The token-based procedural macro API provides great control over where the
+<a href=#129 id=129 data-nosnippet>129</a>//! compiler's error messages are displayed in user code. Consider the error the
+<a href=#130 id=130 data-nosnippet>130</a>//! user sees if one of their field types does not implement `HeapSize`.
+<a href=#131 id=131 data-nosnippet>131</a>//!
+<a href=#132 id=132 data-nosnippet>132</a>//! ```
+<a href=#133 id=133 data-nosnippet>133</a>//! # const IGNORE_TOKENS: &amp;str = stringify! {
+<a href=#134 id=134 data-nosnippet>134</a>//! #[derive(HeapSize)]
+<a href=#135 id=135 data-nosnippet>135</a>//! # };
+<a href=#136 id=136 data-nosnippet>136</a>//! struct Broken {
+<a href=#137 id=137 data-nosnippet>137</a>//!     ok: String,
+<a href=#138 id=138 data-nosnippet>138</a>//!     bad: std::thread::Thread,
+<a href=#139 id=139 data-nosnippet>139</a>//! }
+<a href=#140 id=140 data-nosnippet>140</a>//! ```
+<a href=#141 id=141 data-nosnippet>141</a>//!
+<a href=#142 id=142 data-nosnippet>142</a>//! By tracking span information all the way through the expansion of a
+<a href=#143 id=143 data-nosnippet>143</a>//! procedural macro as shown in the `heapsize` example, token-based macros in
+<a href=#144 id=144 data-nosnippet>144</a>//! Syn are able to trigger errors that directly pinpoint the source of the
+<a href=#145 id=145 data-nosnippet>145</a>//! problem.
+<a href=#146 id=146 data-nosnippet>146</a>//!
+<a href=#147 id=147 data-nosnippet>147</a>//! ```text
+<a href=#148 id=148 data-nosnippet>148</a>//! error[E0277]: the trait bound `std::thread::Thread: HeapSize` is not satisfied
+<a href=#149 id=149 data-nosnippet>149</a>//!  --&gt; src/main.rs:7:5
+<a href=#150 id=150 data-nosnippet>150</a>//!   |
+<a href=#151 id=151 data-nosnippet>151</a>//! 7 |     bad: std::thread::Thread,
+<a href=#152 id=152 data-nosnippet>152</a>//!   |     ^^^^^^^^^^^^^^^^^^^^^^^^ the trait `HeapSize` is not implemented for `Thread`
+<a href=#153 id=153 data-nosnippet>153</a>//! ```
+<a href=#154 id=154 data-nosnippet>154</a>//!
+<a href=#155 id=155 data-nosnippet>155</a>//! &lt;br&gt;
+<a href=#156 id=156 data-nosnippet>156</a>//!
+<a href=#157 id=157 data-nosnippet>157</a>//! # Parsing a custom syntax
+<a href=#158 id=158 data-nosnippet>158</a>//!
+<a href=#159 id=159 data-nosnippet>159</a>//! The [`lazy-static`] example directory shows the implementation of a
+<a href=#160 id=160 data-nosnippet>160</a>//! `functionlike!(...)` procedural macro in which the input tokens are parsed
+<a href=#161 id=161 data-nosnippet>161</a>//! using Syn's parsing API.
+<a href=#162 id=162 data-nosnippet>162</a>//!
+<a href=#163 id=163 data-nosnippet>163</a>//! [`lazy-static`]: https://github.com/dtolnay/syn/tree/master/examples/lazy-static
+<a href=#164 id=164 data-nosnippet>164</a>//!
+<a href=#165 id=165 data-nosnippet>165</a>//! The example reimplements the popular `lazy_static` crate from crates.io as a
+<a href=#166 id=166 data-nosnippet>166</a>//! procedural macro.
+<a href=#167 id=167 data-nosnippet>167</a>//!
+<a href=#168 id=168 data-nosnippet>168</a>//! ```
+<a href=#169 id=169 data-nosnippet>169</a>//! # macro_rules! lazy_static {
+<a href=#170 id=170 data-nosnippet>170</a>//! #     ($($tt:tt)*) =&gt; {}
+<a href=#171 id=171 data-nosnippet>171</a>//! # }
+<a href=#172 id=172 data-nosnippet>172</a>//! #
+<a href=#173 id=173 data-nosnippet>173</a>//! lazy_static! {
+<a href=#174 id=174 data-nosnippet>174</a>//!     static ref USERNAME: Regex = Regex::new("^[a-z0-9_-]{3,16}$").unwrap();
+<a href=#175 id=175 data-nosnippet>175</a>//! }
+<a href=#176 id=176 data-nosnippet>176</a>//! ```
+<a href=#177 id=177 data-nosnippet>177</a>//!
+<a href=#178 id=178 data-nosnippet>178</a>//! The implementation shows how to trigger custom warnings and error messages
+<a href=#179 id=179 data-nosnippet>179</a>//! on the macro input.
+<a href=#180 id=180 data-nosnippet>180</a>//!
+<a href=#181 id=181 data-nosnippet>181</a>//! ```text
+<a href=#182 id=182 data-nosnippet>182</a>//! warning: come on, pick a more creative name
+<a href=#183 id=183 data-nosnippet>183</a>//!   --&gt; src/main.rs:10:16
+<a href=#184 id=184 data-nosnippet>184</a>//!    |
+<a href=#185 id=185 data-nosnippet>185</a>//! 10 |     static ref FOO: String = "lazy_static".to_owned();
+<a href=#186 id=186 data-nosnippet>186</a>//!    |                ^^^
+<a href=#187 id=187 data-nosnippet>187</a>//! ```
+<a href=#188 id=188 data-nosnippet>188</a>//!
+<a href=#189 id=189 data-nosnippet>189</a>//! &lt;br&gt;
+<a href=#190 id=190 data-nosnippet>190</a>//!
+<a href=#191 id=191 data-nosnippet>191</a>//! # Testing
+<a href=#192 id=192 data-nosnippet>192</a>//!
+<a href=#193 id=193 data-nosnippet>193</a>//! When testing macros, we often care not just that the macro can be used
+<a href=#194 id=194 data-nosnippet>194</a>//! successfully but also that when the macro is provided with invalid input it
+<a href=#195 id=195 data-nosnippet>195</a>//! produces maximally helpful error messages. Consider using the [`trybuild`]
+<a href=#196 id=196 data-nosnippet>196</a>//! crate to write tests for errors that are emitted by your macro or errors
+<a href=#197 id=197 data-nosnippet>197</a>//! detected by the Rust compiler in the expanded code following misuse of the
+<a href=#198 id=198 data-nosnippet>198</a>//! macro. Such tests help avoid regressions from later refactors that
+<a href=#199 id=199 data-nosnippet>199</a>//! mistakenly make an error no longer trigger or be less helpful than it used
+<a href=#200 id=200 data-nosnippet>200</a>//! to be.
+<a href=#201 id=201 data-nosnippet>201</a>//!
+<a href=#202 id=202 data-nosnippet>202</a>//! [`trybuild`]: https://github.com/dtolnay/trybuild
+<a href=#203 id=203 data-nosnippet>203</a>//!
+<a href=#204 id=204 data-nosnippet>204</a>//! &lt;br&gt;
+<a href=#205 id=205 data-nosnippet>205</a>//!
+<a href=#206 id=206 data-nosnippet>206</a>//! # Debugging
+<a href=#207 id=207 data-nosnippet>207</a>//!
+<a href=#208 id=208 data-nosnippet>208</a>//! When developing a procedural macro it can be helpful to look at what the
+<a href=#209 id=209 data-nosnippet>209</a>//! generated code looks like. Use `cargo rustc -- -Zunstable-options
+<a href=#210 id=210 data-nosnippet>210</a>//! --pretty=expanded` or the [`cargo expand`] subcommand.
+<a href=#211 id=211 data-nosnippet>211</a>//!
+<a href=#212 id=212 data-nosnippet>212</a>//! [`cargo expand`]: https://github.com/dtolnay/cargo-expand
+<a href=#213 id=213 data-nosnippet>213</a>//!
+<a href=#214 id=214 data-nosnippet>214</a>//! To show the expanded code for some crate that uses your procedural macro,
+<a href=#215 id=215 data-nosnippet>215</a>//! run `cargo expand` from that crate. To show the expanded code for one of
+<a href=#216 id=216 data-nosnippet>216</a>//! your own test cases, run `cargo expand --test the_test_case` where the last
+<a href=#217 id=217 data-nosnippet>217</a>//! argument is the name of the test file without the `.rs` extension.
+<a href=#218 id=218 data-nosnippet>218</a>//!
+<a href=#219 id=219 data-nosnippet>219</a>//! This write-up by Brandon W Maister discusses debugging in more detail:
+<a href=#220 id=220 data-nosnippet>220</a>//! [Debugging Rust's new Custom Derive system][debugging].
+<a href=#221 id=221 data-nosnippet>221</a>//!
+<a href=#222 id=222 data-nosnippet>222</a>//! [debugging]: https://quodlibetor.github.io/posts/debugging-rusts-new-custom-derive-system/
+<a href=#223 id=223 data-nosnippet>223</a>//!
+<a href=#224 id=224 data-nosnippet>224</a>//! &lt;br&gt;
+<a href=#225 id=225 data-nosnippet>225</a>//!
+<a href=#226 id=226 data-nosnippet>226</a>//! # Optional features
+<a href=#227 id=227 data-nosnippet>227</a>//!
+<a href=#228 id=228 data-nosnippet>228</a>//! Syn puts a lot of functionality behind optional features in order to
+<a href=#229 id=229 data-nosnippet>229</a>//! optimize compile time for the most common use cases. The following features
+<a href=#230 id=230 data-nosnippet>230</a>//! are available.
+<a href=#231 id=231 data-nosnippet>231</a>//!
+<a href=#232 id=232 data-nosnippet>232</a>//! - **`derive`** *(enabled by default)* — Data structures for representing the
+<a href=#233 id=233 data-nosnippet>233</a>//!   possible input to a derive macro, including structs and enums and types.
+<a href=#234 id=234 data-nosnippet>234</a>//! - **`full`** — Data structures for representing the syntax tree of all valid
+<a href=#235 id=235 data-nosnippet>235</a>//!   Rust source code, including items and expressions.
+<a href=#236 id=236 data-nosnippet>236</a>//! - **`parsing`** *(enabled by default)* — Ability to parse input tokens into
+<a href=#237 id=237 data-nosnippet>237</a>//!   a syntax tree node of a chosen type.
+<a href=#238 id=238 data-nosnippet>238</a>//! - **`printing`** *(enabled by default)* — Ability to print a syntax tree
+<a href=#239 id=239 data-nosnippet>239</a>//!   node as tokens of Rust source code.
+<a href=#240 id=240 data-nosnippet>240</a>//! - **`visit`** — Trait for traversing a syntax tree.
+<a href=#241 id=241 data-nosnippet>241</a>//! - **`visit-mut`** — Trait for traversing and mutating in place a syntax
+<a href=#242 id=242 data-nosnippet>242</a>//!   tree.
+<a href=#243 id=243 data-nosnippet>243</a>//! - **`fold`** — Trait for transforming an owned syntax tree.
+<a href=#244 id=244 data-nosnippet>244</a>//! - **`clone-impls`** *(enabled by default)* — Clone impls for all syntax tree
+<a href=#245 id=245 data-nosnippet>245</a>//!   types.
+<a href=#246 id=246 data-nosnippet>246</a>//! - **`extra-traits`** — Debug, Eq, PartialEq, Hash impls for all syntax tree
+<a href=#247 id=247 data-nosnippet>247</a>//!   types.
+<a href=#248 id=248 data-nosnippet>248</a>//! - **`proc-macro`** *(enabled by default)* — Runtime dependency on the
+<a href=#249 id=249 data-nosnippet>249</a>//!   dynamic library libproc_macro from rustc toolchain.
+<a href=#250 id=250 data-nosnippet>250</a>
+<a href=#251 id=251 data-nosnippet>251</a></span><span class="comment">// Syn types in rustdoc of other crates get linked to here.
+<a href=#252 id=252 data-nosnippet>252</a></span><span class="attr">#![doc(html_root_url = <span class="string">"https://docs.rs/syn/2.0.100"</span>)]
+<a href=#253 id=253 data-nosnippet>253</a>#![cfg_attr(docsrs, feature(doc_cfg))]
+<a href=#254 id=254 data-nosnippet>254</a>#![deny(unsafe_op_in_unsafe_fn)]
+<a href=#255 id=255 data-nosnippet>255</a>#![allow(non_camel_case_types)]
+<a href=#256 id=256 data-nosnippet>256</a>#![cfg_attr(not(check_cfg), allow(unexpected_cfgs))]
+<a href=#257 id=257 data-nosnippet>257</a>#![allow(
+<a href=#258 id=258 data-nosnippet>258</a>    clippy::bool_to_int_with_if,
+<a href=#259 id=259 data-nosnippet>259</a>    clippy::cast_lossless,
+<a href=#260 id=260 data-nosnippet>260</a>    clippy::cast_possible_truncation,
+<a href=#261 id=261 data-nosnippet>261</a>    clippy::cast_possible_wrap,
+<a href=#262 id=262 data-nosnippet>262</a>    clippy::cast_ptr_alignment,
+<a href=#263 id=263 data-nosnippet>263</a>    clippy::default_trait_access,
+<a href=#264 id=264 data-nosnippet>264</a>    clippy::derivable_impls,
+<a href=#265 id=265 data-nosnippet>265</a>    clippy::diverging_sub_expression,
+<a href=#266 id=266 data-nosnippet>266</a>    clippy::doc_markdown,
+<a href=#267 id=267 data-nosnippet>267</a>    clippy::elidable_lifetime_names,
+<a href=#268 id=268 data-nosnippet>268</a>    clippy::enum_glob_use,
+<a href=#269 id=269 data-nosnippet>269</a>    clippy::expl_impl_clone_on_copy,
+<a href=#270 id=270 data-nosnippet>270</a>    clippy::explicit_auto_deref,
+<a href=#271 id=271 data-nosnippet>271</a>    clippy::fn_params_excessive_bools,
+<a href=#272 id=272 data-nosnippet>272</a>    clippy::if_not_else,
+<a href=#273 id=273 data-nosnippet>273</a>    clippy::inherent_to_string,
+<a href=#274 id=274 data-nosnippet>274</a>    clippy::into_iter_without_iter,
+<a href=#275 id=275 data-nosnippet>275</a>    clippy::items_after_statements,
+<a href=#276 id=276 data-nosnippet>276</a>    clippy::large_enum_variant,
+<a href=#277 id=277 data-nosnippet>277</a>    clippy::let_underscore_untyped, <span class="comment">// https://github.com/rust-lang/rust-clippy/issues/10410
+<a href=#278 id=278 data-nosnippet>278</a>    </span>clippy::manual_assert,
+<a href=#279 id=279 data-nosnippet>279</a>    clippy::manual_let_else,
+<a href=#280 id=280 data-nosnippet>280</a>    clippy::manual_map,
+<a href=#281 id=281 data-nosnippet>281</a>    clippy::match_like_matches_macro,
+<a href=#282 id=282 data-nosnippet>282</a>    clippy::match_on_vec_items,
+<a href=#283 id=283 data-nosnippet>283</a>    clippy::match_same_arms,
+<a href=#284 id=284 data-nosnippet>284</a>    clippy::match_wildcard_for_single_variants, <span class="comment">// clippy bug: https://github.com/rust-lang/rust-clippy/issues/6984
+<a href=#285 id=285 data-nosnippet>285</a>    </span>clippy::missing_errors_doc,
+<a href=#286 id=286 data-nosnippet>286</a>    clippy::missing_panics_doc,
+<a href=#287 id=287 data-nosnippet>287</a>    clippy::module_name_repetitions,
+<a href=#288 id=288 data-nosnippet>288</a>    clippy::must_use_candidate,
+<a href=#289 id=289 data-nosnippet>289</a>    clippy::needless_doctest_main,
+<a href=#290 id=290 data-nosnippet>290</a>    clippy::needless_lifetimes,
+<a href=#291 id=291 data-nosnippet>291</a>    clippy::needless_pass_by_value,
+<a href=#292 id=292 data-nosnippet>292</a>    clippy::needless_update,
+<a href=#293 id=293 data-nosnippet>293</a>    clippy::never_loop,
+<a href=#294 id=294 data-nosnippet>294</a>    clippy::range_plus_one,
+<a href=#295 id=295 data-nosnippet>295</a>    clippy::redundant_else,
+<a href=#296 id=296 data-nosnippet>296</a>    clippy::ref_option,
+<a href=#297 id=297 data-nosnippet>297</a>    clippy::return_self_not_must_use,
+<a href=#298 id=298 data-nosnippet>298</a>    clippy::similar_names,
+<a href=#299 id=299 data-nosnippet>299</a>    clippy::single_match_else,
+<a href=#300 id=300 data-nosnippet>300</a>    clippy::struct_excessive_bools,
+<a href=#301 id=301 data-nosnippet>301</a>    clippy::too_many_arguments,
+<a href=#302 id=302 data-nosnippet>302</a>    clippy::too_many_lines,
+<a href=#303 id=303 data-nosnippet>303</a>    clippy::trivially_copy_pass_by_ref,
+<a href=#304 id=304 data-nosnippet>304</a>    clippy::unconditional_recursion, <span class="comment">// https://github.com/rust-lang/rust-clippy/issues/12133
+<a href=#305 id=305 data-nosnippet>305</a>    </span>clippy::uninhabited_references,
+<a href=#306 id=306 data-nosnippet>306</a>    clippy::uninlined_format_args,
+<a href=#307 id=307 data-nosnippet>307</a>    clippy::unnecessary_box_returns,
+<a href=#308 id=308 data-nosnippet>308</a>    clippy::unnecessary_unwrap,
+<a href=#309 id=309 data-nosnippet>309</a>    clippy::used_underscore_binding,
+<a href=#310 id=310 data-nosnippet>310</a>    clippy::wildcard_imports,
+<a href=#311 id=311 data-nosnippet>311</a>)]
+<a href=#312 id=312 data-nosnippet>312</a>
+<a href=#313 id=313 data-nosnippet>313</a></span><span class="kw">extern crate </span><span class="self">self </span><span class="kw">as </span>syn;
+<a href=#314 id=314 data-nosnippet>314</a>
+<a href=#315 id=315 data-nosnippet>315</a><span class="attr">#[cfg(feature = <span class="string">"proc-macro"</span>)]
+<a href=#316 id=316 data-nosnippet>316</a></span><span class="kw">extern crate </span>proc_macro;
+<a href=#317 id=317 data-nosnippet>317</a>
+<a href=#318 id=318 data-nosnippet>318</a><span class="attr">#[macro_use]
+<a href=#319 id=319 data-nosnippet>319</a></span><span class="kw">mod </span>macros;
+<a href=#320 id=320 data-nosnippet>320</a>
+<a href=#321 id=321 data-nosnippet>321</a><span class="attr">#[cfg(feature = <span class="string">"parsing"</span>)]
+<a href=#322 id=322 data-nosnippet>322</a>#[macro_use]
+<a href=#323 id=323 data-nosnippet>323</a></span><span class="kw">mod </span>group;
+<a href=#324 id=324 data-nosnippet>324</a>
+<a href=#325 id=325 data-nosnippet>325</a><span class="attr">#[macro_use]
+<a href=#326 id=326 data-nosnippet>326</a></span><span class="kw">pub mod </span>token;
+<a href=#327 id=327 data-nosnippet>327</a>
+<a href=#328 id=328 data-nosnippet>328</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#329 id=329 data-nosnippet>329</a></span><span class="kw">mod </span>attr;
+<a href=#330 id=330 data-nosnippet>330</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#331 id=331 data-nosnippet>331</a>#[cfg_attr(docsrs, doc(cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))))]
+<a href=#332 id=332 data-nosnippet>332</a></span><span class="kw">pub use </span><span class="kw">crate</span>::attr::{AttrStyle, Attribute, Meta, MetaList, MetaNameValue};
+<a href=#333 id=333 data-nosnippet>333</a>
+<a href=#334 id=334 data-nosnippet>334</a><span class="kw">mod </span>bigint;
+<a href=#335 id=335 data-nosnippet>335</a>
+<a href=#336 id=336 data-nosnippet>336</a><span class="attr">#[cfg(feature = <span class="string">"parsing"</span>)]
+<a href=#337 id=337 data-nosnippet>337</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"parsing"</span>)))]
+<a href=#338 id=338 data-nosnippet>338</a></span><span class="kw">pub mod </span>buffer;
+<a href=#339 id=339 data-nosnippet>339</a>
+<a href=#340 id=340 data-nosnippet>340</a><span class="attr">#[cfg(any(
+<a href=#341 id=341 data-nosnippet>341</a>    all(feature = <span class="string">"parsing"</span>, feature = <span class="string">"full"</span>),
+<a href=#342 id=342 data-nosnippet>342</a>    all(feature = <span class="string">"printing"</span>, any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>)),
+<a href=#343 id=343 data-nosnippet>343</a>))]
+<a href=#344 id=344 data-nosnippet>344</a></span><span class="kw">mod </span>classify;
+<a href=#345 id=345 data-nosnippet>345</a>
+<a href=#346 id=346 data-nosnippet>346</a><span class="kw">mod </span>custom_keyword;
+<a href=#347 id=347 data-nosnippet>347</a>
+<a href=#348 id=348 data-nosnippet>348</a><span class="kw">mod </span>custom_punctuation;
+<a href=#349 id=349 data-nosnippet>349</a>
+<a href=#350 id=350 data-nosnippet>350</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#351 id=351 data-nosnippet>351</a></span><span class="kw">mod </span>data;
+<a href=#352 id=352 data-nosnippet>352</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#353 id=353 data-nosnippet>353</a>#[cfg_attr(docsrs, doc(cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))))]
+<a href=#354 id=354 data-nosnippet>354</a></span><span class="kw">pub use </span><span class="kw">crate</span>::data::{Field, Fields, FieldsNamed, FieldsUnnamed, Variant};
+<a href=#355 id=355 data-nosnippet>355</a>
+<a href=#356 id=356 data-nosnippet>356</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#357 id=357 data-nosnippet>357</a></span><span class="kw">mod </span>derive;
+<a href=#358 id=358 data-nosnippet>358</a><span class="attr">#[cfg(feature = <span class="string">"derive"</span>)]
+<a href=#359 id=359 data-nosnippet>359</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"derive"</span>)))]
+<a href=#360 id=360 data-nosnippet>360</a></span><span class="kw">pub use </span><span class="kw">crate</span>::derive::{Data, DataEnum, DataStruct, DataUnion, DeriveInput};
+<a href=#361 id=361 data-nosnippet>361</a>
+<a href=#362 id=362 data-nosnippet>362</a><span class="kw">mod </span>drops;
+<a href=#363 id=363 data-nosnippet>363</a>
+<a href=#364 id=364 data-nosnippet>364</a><span class="kw">mod </span>error;
+<a href=#365 id=365 data-nosnippet>365</a><span class="kw">pub use </span><span class="kw">crate</span>::error::{Error, <span class="prelude-ty">Result</span>};
+<a href=#366 id=366 data-nosnippet>366</a>
+<a href=#367 id=367 data-nosnippet>367</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#368 id=368 data-nosnippet>368</a></span><span class="kw">mod </span>expr;
+<a href=#369 id=369 data-nosnippet>369</a><span class="attr">#[cfg(feature = <span class="string">"full"</span>)]
+<a href=#370 id=370 data-nosnippet>370</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"full"</span>)))]
+<a href=#371 id=371 data-nosnippet>371</a></span><span class="kw">pub use </span><span class="kw">crate</span>::expr::{Arm, Label, PointerMutability, RangeLimits};
+<a href=#372 id=372 data-nosnippet>372</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#373 id=373 data-nosnippet>373</a>#[cfg_attr(docsrs, doc(cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))))]
+<a href=#374 id=374 data-nosnippet>374</a></span><span class="kw">pub use </span><span class="kw">crate</span>::expr::{
+<a href=#375 id=375 data-nosnippet>375</a>    Expr, ExprBinary, ExprCall, ExprCast, ExprField, ExprIndex, ExprLit, ExprMacro, ExprMethodCall,
+<a href=#376 id=376 data-nosnippet>376</a>    ExprParen, ExprPath, ExprReference, ExprStruct, ExprUnary, FieldValue, Index, Member,
+<a href=#377 id=377 data-nosnippet>377</a>};
+<a href=#378 id=378 data-nosnippet>378</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#379 id=379 data-nosnippet>379</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"full"</span>)))]
+<a href=#380 id=380 data-nosnippet>380</a></span><span class="kw">pub use </span><span class="kw">crate</span>::expr::{
+<a href=#381 id=381 data-nosnippet>381</a>    ExprArray, ExprAssign, ExprAsync, ExprAwait, ExprBlock, ExprBreak, ExprClosure, ExprConst,
+<a href=#382 id=382 data-nosnippet>382</a>    ExprContinue, ExprForLoop, ExprGroup, ExprIf, ExprInfer, ExprLet, ExprLoop, ExprMatch,
+<a href=#383 id=383 data-nosnippet>383</a>    ExprRange, ExprRawAddr, ExprRepeat, ExprReturn, ExprTry, ExprTryBlock, ExprTuple, ExprUnsafe,
+<a href=#384 id=384 data-nosnippet>384</a>    ExprWhile, ExprYield,
+<a href=#385 id=385 data-nosnippet>385</a>};
+<a href=#386 id=386 data-nosnippet>386</a>
+<a href=#387 id=387 data-nosnippet>387</a><span class="attr">#[cfg(feature = <span class="string">"parsing"</span>)]
+<a href=#388 id=388 data-nosnippet>388</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"parsing"</span>)))]
+<a href=#389 id=389 data-nosnippet>389</a></span><span class="kw">pub mod </span>ext;
+<a href=#390 id=390 data-nosnippet>390</a>
+<a href=#391 id=391 data-nosnippet>391</a><span class="attr">#[cfg(feature = <span class="string">"full"</span>)]
+<a href=#392 id=392 data-nosnippet>392</a></span><span class="kw">mod </span>file;
+<a href=#393 id=393 data-nosnippet>393</a><span class="attr">#[cfg(feature = <span class="string">"full"</span>)]
+<a href=#394 id=394 data-nosnippet>394</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"full"</span>)))]
+<a href=#395 id=395 data-nosnippet>395</a></span><span class="kw">pub use </span><span class="kw">crate</span>::file::File;
+<a href=#396 id=396 data-nosnippet>396</a>
+<a href=#397 id=397 data-nosnippet>397</a><span class="attr">#[cfg(all(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>), feature = <span class="string">"printing"</span>))]
+<a href=#398 id=398 data-nosnippet>398</a></span><span class="kw">mod </span>fixup;
+<a href=#399 id=399 data-nosnippet>399</a>
+<a href=#400 id=400 data-nosnippet>400</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#401 id=401 data-nosnippet>401</a></span><span class="kw">mod </span>generics;
+<a href=#402 id=402 data-nosnippet>402</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#403 id=403 data-nosnippet>403</a>#[cfg_attr(docsrs, doc(cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))))]
+<a href=#404 id=404 data-nosnippet>404</a></span><span class="kw">pub use </span><span class="kw">crate</span>::generics::{
+<a href=#405 id=405 data-nosnippet>405</a>    BoundLifetimes, ConstParam, GenericParam, Generics, LifetimeParam, PredicateLifetime,
+<a href=#406 id=406 data-nosnippet>406</a>    PredicateType, TraitBound, TraitBoundModifier, TypeParam, TypeParamBound, WhereClause,
+<a href=#407 id=407 data-nosnippet>407</a>    WherePredicate,
+<a href=#408 id=408 data-nosnippet>408</a>};
+<a href=#409 id=409 data-nosnippet>409</a><span class="attr">#[cfg(feature = <span class="string">"full"</span>)]
+<a href=#410 id=410 data-nosnippet>410</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"full"</span>)))]
+<a href=#411 id=411 data-nosnippet>411</a></span><span class="kw">pub use </span><span class="kw">crate</span>::generics::{CapturedParam, PreciseCapture};
+<a href=#412 id=412 data-nosnippet>412</a><span class="attr">#[cfg(all(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>), feature = <span class="string">"printing"</span>))]
+<a href=#413 id=413 data-nosnippet>413</a>#[cfg_attr(
+<a href=#414 id=414 data-nosnippet>414</a>    docsrs,
+<a href=#415 id=415 data-nosnippet>415</a>    doc(cfg(all(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>), feature = <span class="string">"printing"</span>)))
+<a href=#416 id=416 data-nosnippet>416</a>)]
+<a href=#417 id=417 data-nosnippet>417</a></span><span class="kw">pub use </span><span class="kw">crate</span>::generics::{ImplGenerics, Turbofish, TypeGenerics};
+<a href=#418 id=418 data-nosnippet>418</a>
+<a href=#419 id=419 data-nosnippet>419</a><span class="kw">mod </span>ident;
+<a href=#420 id=420 data-nosnippet>420</a><span class="attr">#[doc(inline)]
+<a href=#421 id=421 data-nosnippet>421</a></span><span class="kw">pub use </span><span class="kw">crate</span>::ident::Ident;
+<a href=#422 id=422 data-nosnippet>422</a>
+<a href=#423 id=423 data-nosnippet>423</a><span class="attr">#[cfg(feature = <span class="string">"full"</span>)]
+<a href=#424 id=424 data-nosnippet>424</a></span><span class="kw">mod </span>item;
+<a href=#425 id=425 data-nosnippet>425</a><span class="attr">#[cfg(feature = <span class="string">"full"</span>)]
+<a href=#426 id=426 data-nosnippet>426</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"full"</span>)))]
+<a href=#427 id=427 data-nosnippet>427</a></span><span class="kw">pub use </span><span class="kw">crate</span>::item::{
+<a href=#428 id=428 data-nosnippet>428</a>    FnArg, ForeignItem, ForeignItemFn, ForeignItemMacro, ForeignItemStatic, ForeignItemType,
+<a href=#429 id=429 data-nosnippet>429</a>    ImplItem, ImplItemConst, ImplItemFn, ImplItemMacro, ImplItemType, ImplRestriction, Item,
+<a href=#430 id=430 data-nosnippet>430</a>    ItemConst, ItemEnum, ItemExternCrate, ItemFn, ItemForeignMod, ItemImpl, ItemMacro, ItemMod,
+<a href=#431 id=431 data-nosnippet>431</a>    ItemStatic, ItemStruct, ItemTrait, ItemTraitAlias, ItemType, ItemUnion, ItemUse, Receiver,
+<a href=#432 id=432 data-nosnippet>432</a>    Signature, StaticMutability, TraitItem, TraitItemConst, TraitItemFn, TraitItemMacro,
+<a href=#433 id=433 data-nosnippet>433</a>    TraitItemType, UseGlob, UseGroup, UseName, UsePath, UseRename, UseTree, Variadic,
+<a href=#434 id=434 data-nosnippet>434</a>};
+<a href=#435 id=435 data-nosnippet>435</a>
+<a href=#436 id=436 data-nosnippet>436</a><span class="kw">mod </span>lifetime;
+<a href=#437 id=437 data-nosnippet>437</a><span class="attr">#[doc(inline)]
+<a href=#438 id=438 data-nosnippet>438</a></span><span class="kw">pub use </span><span class="kw">crate</span>::lifetime::Lifetime;
+<a href=#439 id=439 data-nosnippet>439</a>
+<a href=#440 id=440 data-nosnippet>440</a><span class="kw">mod </span>lit;
+<a href=#441 id=441 data-nosnippet>441</a><span class="attr">#[doc(hidden)] </span><span class="comment">// https://github.com/dtolnay/syn/issues/1566
+<a href=#442 id=442 data-nosnippet>442</a></span><span class="kw">pub use </span><span class="kw">crate</span>::lit::StrStyle;
+<a href=#443 id=443 data-nosnippet>443</a><span class="attr">#[doc(inline)]
+<a href=#444 id=444 data-nosnippet>444</a></span><span class="kw">pub use </span><span class="kw">crate</span>::lit::{
+<a href=#445 id=445 data-nosnippet>445</a>    Lit, LitBool, LitByte, LitByteStr, LitCStr, LitChar, LitFloat, LitInt, LitStr,
+<a href=#446 id=446 data-nosnippet>446</a>};
+<a href=#447 id=447 data-nosnippet>447</a>
+<a href=#448 id=448 data-nosnippet>448</a><span class="attr">#[cfg(feature = <span class="string">"parsing"</span>)]
+<a href=#449 id=449 data-nosnippet>449</a></span><span class="kw">mod </span>lookahead;
+<a href=#450 id=450 data-nosnippet>450</a>
+<a href=#451 id=451 data-nosnippet>451</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#452 id=452 data-nosnippet>452</a></span><span class="kw">mod </span>mac;
+<a href=#453 id=453 data-nosnippet>453</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#454 id=454 data-nosnippet>454</a>#[cfg_attr(docsrs, doc(cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))))]
+<a href=#455 id=455 data-nosnippet>455</a></span><span class="kw">pub use </span><span class="kw">crate</span>::mac::{Macro, MacroDelimiter};
+<a href=#456 id=456 data-nosnippet>456</a>
+<a href=#457 id=457 data-nosnippet>457</a><span class="attr">#[cfg(all(feature = <span class="string">"parsing"</span>, any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>)))]
+<a href=#458 id=458 data-nosnippet>458</a>#[cfg_attr(
+<a href=#459 id=459 data-nosnippet>459</a>    docsrs,
+<a href=#460 id=460 data-nosnippet>460</a>    doc(cfg(all(feature = <span class="string">"parsing"</span>, any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))))
+<a href=#461 id=461 data-nosnippet>461</a>)]
+<a href=#462 id=462 data-nosnippet>462</a></span><span class="kw">pub mod </span>meta;
+<a href=#463 id=463 data-nosnippet>463</a>
+<a href=#464 id=464 data-nosnippet>464</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#465 id=465 data-nosnippet>465</a></span><span class="kw">mod </span>op;
+<a href=#466 id=466 data-nosnippet>466</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#467 id=467 data-nosnippet>467</a>#[cfg_attr(docsrs, doc(cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))))]
+<a href=#468 id=468 data-nosnippet>468</a></span><span class="kw">pub use </span><span class="kw">crate</span>::op::{BinOp, UnOp};
+<a href=#469 id=469 data-nosnippet>469</a>
+<a href=#470 id=470 data-nosnippet>470</a><span class="attr">#[cfg(feature = <span class="string">"parsing"</span>)]
+<a href=#471 id=471 data-nosnippet>471</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"parsing"</span>)))]
+<a href=#472 id=472 data-nosnippet>472</a></span><span class="kw">pub mod </span>parse;
+<a href=#473 id=473 data-nosnippet>473</a>
+<a href=#474 id=474 data-nosnippet>474</a><span class="attr">#[cfg(all(feature = <span class="string">"parsing"</span>, feature = <span class="string">"proc-macro"</span>))]
+<a href=#475 id=475 data-nosnippet>475</a></span><span class="kw">mod </span>parse_macro_input;
+<a href=#476 id=476 data-nosnippet>476</a>
+<a href=#477 id=477 data-nosnippet>477</a><span class="attr">#[cfg(all(feature = <span class="string">"parsing"</span>, feature = <span class="string">"printing"</span>))]
+<a href=#478 id=478 data-nosnippet>478</a></span><span class="kw">mod </span>parse_quote;
+<a href=#479 id=479 data-nosnippet>479</a>
+<a href=#480 id=480 data-nosnippet>480</a><span class="attr">#[cfg(feature = <span class="string">"full"</span>)]
+<a href=#481 id=481 data-nosnippet>481</a></span><span class="kw">mod </span>pat;
+<a href=#482 id=482 data-nosnippet>482</a><span class="attr">#[cfg(feature = <span class="string">"full"</span>)]
+<a href=#483 id=483 data-nosnippet>483</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"full"</span>)))]
+<a href=#484 id=484 data-nosnippet>484</a></span><span class="kw">pub use </span><span class="kw">crate</span>::pat::{
+<a href=#485 id=485 data-nosnippet>485</a>    FieldPat, Pat, PatConst, PatIdent, PatLit, PatMacro, PatOr, PatParen, PatPath, PatRange,
+<a href=#486 id=486 data-nosnippet>486</a>    PatReference, PatRest, PatSlice, PatStruct, PatTuple, PatTupleStruct, PatType, PatWild,
+<a href=#487 id=487 data-nosnippet>487</a>};
+<a href=#488 id=488 data-nosnippet>488</a>
+<a href=#489 id=489 data-nosnippet>489</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#490 id=490 data-nosnippet>490</a></span><span class="kw">mod </span>path;
+<a href=#491 id=491 data-nosnippet>491</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#492 id=492 data-nosnippet>492</a>#[cfg_attr(docsrs, doc(cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))))]
+<a href=#493 id=493 data-nosnippet>493</a></span><span class="kw">pub use </span><span class="kw">crate</span>::path::{
+<a href=#494 id=494 data-nosnippet>494</a>    AngleBracketedGenericArguments, AssocConst, AssocType, Constraint, GenericArgument,
+<a href=#495 id=495 data-nosnippet>495</a>    ParenthesizedGenericArguments, Path, PathArguments, PathSegment, QSelf,
+<a href=#496 id=496 data-nosnippet>496</a>};
+<a href=#497 id=497 data-nosnippet>497</a>
+<a href=#498 id=498 data-nosnippet>498</a><span class="attr">#[cfg(all(
+<a href=#499 id=499 data-nosnippet>499</a>    any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>),
+<a href=#500 id=500 data-nosnippet>500</a>    any(feature = <span class="string">"parsing"</span>, feature = <span class="string">"printing"</span>)
+<a href=#501 id=501 data-nosnippet>501</a>))]
+<a href=#502 id=502 data-nosnippet>502</a></span><span class="kw">mod </span>precedence;
+<a href=#503 id=503 data-nosnippet>503</a>
+<a href=#504 id=504 data-nosnippet>504</a><span class="attr">#[cfg(all(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>), feature = <span class="string">"printing"</span>))]
+<a href=#505 id=505 data-nosnippet>505</a></span><span class="kw">mod </span>print;
+<a href=#506 id=506 data-nosnippet>506</a>
+<a href=#507 id=507 data-nosnippet>507</a><span class="kw">pub mod </span>punctuated;
+<a href=#508 id=508 data-nosnippet>508</a>
+<a href=#509 id=509 data-nosnippet>509</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#510 id=510 data-nosnippet>510</a></span><span class="kw">mod </span>restriction;
+<a href=#511 id=511 data-nosnippet>511</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#512 id=512 data-nosnippet>512</a>#[cfg_attr(docsrs, doc(cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))))]
+<a href=#513 id=513 data-nosnippet>513</a></span><span class="kw">pub use </span><span class="kw">crate</span>::restriction::{FieldMutability, VisRestricted, Visibility};
+<a href=#514 id=514 data-nosnippet>514</a>
+<a href=#515 id=515 data-nosnippet>515</a><span class="kw">mod </span>sealed;
+<a href=#516 id=516 data-nosnippet>516</a>
+<a href=#517 id=517 data-nosnippet>517</a><span class="attr">#[cfg(all(feature = <span class="string">"parsing"</span>, feature = <span class="string">"derive"</span>, not(feature = <span class="string">"full"</span>)))]
+<a href=#518 id=518 data-nosnippet>518</a></span><span class="kw">mod </span>scan_expr;
+<a href=#519 id=519 data-nosnippet>519</a>
+<a href=#520 id=520 data-nosnippet>520</a><span class="kw">mod </span>span;
+<a href=#521 id=521 data-nosnippet>521</a>
+<a href=#522 id=522 data-nosnippet>522</a><span class="attr">#[cfg(all(feature = <span class="string">"parsing"</span>, feature = <span class="string">"printing"</span>))]
+<a href=#523 id=523 data-nosnippet>523</a>#[cfg_attr(docsrs, doc(cfg(all(feature = <span class="string">"parsing"</span>, feature = <span class="string">"printing"</span>))))]
+<a href=#524 id=524 data-nosnippet>524</a></span><span class="kw">pub mod </span>spanned;
+<a href=#525 id=525 data-nosnippet>525</a>
+<a href=#526 id=526 data-nosnippet>526</a><span class="attr">#[cfg(feature = <span class="string">"full"</span>)]
+<a href=#527 id=527 data-nosnippet>527</a></span><span class="kw">mod </span>stmt;
+<a href=#528 id=528 data-nosnippet>528</a><span class="attr">#[cfg(feature = <span class="string">"full"</span>)]
+<a href=#529 id=529 data-nosnippet>529</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"full"</span>)))]
+<a href=#530 id=530 data-nosnippet>530</a></span><span class="kw">pub use </span><span class="kw">crate</span>::stmt::{Block, Local, LocalInit, Stmt, StmtMacro};
+<a href=#531 id=531 data-nosnippet>531</a>
+<a href=#532 id=532 data-nosnippet>532</a><span class="kw">mod </span>thread;
+<a href=#533 id=533 data-nosnippet>533</a>
+<a href=#534 id=534 data-nosnippet>534</a><span class="attr">#[cfg(all(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>), feature = <span class="string">"extra-traits"</span>))]
+<a href=#535 id=535 data-nosnippet>535</a></span><span class="kw">mod </span>tt;
+<a href=#536 id=536 data-nosnippet>536</a>
+<a href=#537 id=537 data-nosnippet>537</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#538 id=538 data-nosnippet>538</a></span><span class="kw">mod </span>ty;
+<a href=#539 id=539 data-nosnippet>539</a><span class="attr">#[cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))]
+<a href=#540 id=540 data-nosnippet>540</a>#[cfg_attr(docsrs, doc(cfg(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>))))]
+<a href=#541 id=541 data-nosnippet>541</a></span><span class="kw">pub use </span><span class="kw">crate</span>::ty::{
+<a href=#542 id=542 data-nosnippet>542</a>    Abi, BareFnArg, BareVariadic, ReturnType, Type, TypeArray, TypeBareFn, TypeGroup,
+<a href=#543 id=543 data-nosnippet>543</a>    TypeImplTrait, TypeInfer, TypeMacro, TypeNever, TypeParen, TypePath, TypePtr, TypeReference,
+<a href=#544 id=544 data-nosnippet>544</a>    TypeSlice, TypeTraitObject, TypeTuple,
+<a href=#545 id=545 data-nosnippet>545</a>};
+<a href=#546 id=546 data-nosnippet>546</a>
+<a href=#547 id=547 data-nosnippet>547</a><span class="attr">#[cfg(all(any(feature = <span class="string">"full"</span>, feature = <span class="string">"derive"</span>), feature = <span class="string">"parsing"</span>))]
+<a href=#548 id=548 data-nosnippet>548</a></span><span class="kw">mod </span>verbatim;
+<a href=#549 id=549 data-nosnippet>549</a>
+<a href=#550 id=550 data-nosnippet>550</a><span class="attr">#[cfg(all(feature = <span class="string">"parsing"</span>, feature = <span class="string">"full"</span>))]
+<a href=#551 id=551 data-nosnippet>551</a></span><span class="kw">mod </span>whitespace;
+<a href=#552 id=552 data-nosnippet>552</a>
+<a href=#553 id=553 data-nosnippet>553</a><span class="attr">#[rustfmt::skip] </span><span class="comment">// https://github.com/rust-lang/rustfmt/issues/6176
+<a href=#554 id=554 data-nosnippet>554</a></span><span class="kw">mod </span>gen {
+<a href=#555 id=555 data-nosnippet>555</a>    <span class="doccomment">/// Syntax tree traversal to transform the nodes of an owned syntax tree.
+<a href=#556 id=556 data-nosnippet>556</a>    ///
+<a href=#557 id=557 data-nosnippet>557</a>    /// Each method of the [`Fold`] trait is a hook that can be overridden to
+<a href=#558 id=558 data-nosnippet>558</a>    /// customize the behavior when transforming the corresponding type of node.
+<a href=#559 id=559 data-nosnippet>559</a>    /// By default, every method recursively visits the substructure of the
+<a href=#560 id=560 data-nosnippet>560</a>    /// input by invoking the right visitor method of each of its fields.
+<a href=#561 id=561 data-nosnippet>561</a>    ///
+<a href=#562 id=562 data-nosnippet>562</a>    /// [`Fold`]: fold::Fold
+<a href=#563 id=563 data-nosnippet>563</a>    ///
+<a href=#564 id=564 data-nosnippet>564</a>    /// ```
+<a href=#565 id=565 data-nosnippet>565</a>    /// # use syn::{Attribute, BinOp, Expr, ExprBinary};
+<a href=#566 id=566 data-nosnippet>566</a>    /// #
+<a href=#567 id=567 data-nosnippet>567</a>    /// pub trait Fold {
+<a href=#568 id=568 data-nosnippet>568</a>    ///     /* ... */
+<a href=#569 id=569 data-nosnippet>569</a>    ///
+<a href=#570 id=570 data-nosnippet>570</a>    ///     fn fold_expr_binary(&amp;mut self, node: ExprBinary) -&gt; ExprBinary {
+<a href=#571 id=571 data-nosnippet>571</a>    ///         fold_expr_binary(self, node)
+<a href=#572 id=572 data-nosnippet>572</a>    ///     }
+<a href=#573 id=573 data-nosnippet>573</a>    ///
+<a href=#574 id=574 data-nosnippet>574</a>    ///     /* ... */
+<a href=#575 id=575 data-nosnippet>575</a>    ///     # fn fold_attribute(&amp;mut self, node: Attribute) -&gt; Attribute;
+<a href=#576 id=576 data-nosnippet>576</a>    ///     # fn fold_expr(&amp;mut self, node: Expr) -&gt; Expr;
+<a href=#577 id=577 data-nosnippet>577</a>    ///     # fn fold_bin_op(&amp;mut self, node: BinOp) -&gt; BinOp;
+<a href=#578 id=578 data-nosnippet>578</a>    /// }
+<a href=#579 id=579 data-nosnippet>579</a>    ///
+<a href=#580 id=580 data-nosnippet>580</a>    /// pub fn fold_expr_binary&lt;V&gt;(v: &amp;mut V, node: ExprBinary) -&gt; ExprBinary
+<a href=#581 id=581 data-nosnippet>581</a>    /// where
+<a href=#582 id=582 data-nosnippet>582</a>    ///     V: Fold + ?Sized,
+<a href=#583 id=583 data-nosnippet>583</a>    /// {
+<a href=#584 id=584 data-nosnippet>584</a>    ///     ExprBinary {
+<a href=#585 id=585 data-nosnippet>585</a>    ///         attrs: node
+<a href=#586 id=586 data-nosnippet>586</a>    ///             .attrs
+<a href=#587 id=587 data-nosnippet>587</a>    ///             .into_iter()
+<a href=#588 id=588 data-nosnippet>588</a>    ///             .map(|attr| v.fold_attribute(attr))
+<a href=#589 id=589 data-nosnippet>589</a>    ///             .collect(),
+<a href=#590 id=590 data-nosnippet>590</a>    ///         left: Box::new(v.fold_expr(*node.left)),
+<a href=#591 id=591 data-nosnippet>591</a>    ///         op: v.fold_bin_op(node.op),
+<a href=#592 id=592 data-nosnippet>592</a>    ///         right: Box::new(v.fold_expr(*node.right)),
+<a href=#593 id=593 data-nosnippet>593</a>    ///     }
+<a href=#594 id=594 data-nosnippet>594</a>    /// }
+<a href=#595 id=595 data-nosnippet>595</a>    ///
+<a href=#596 id=596 data-nosnippet>596</a>    /// /* ... */
+<a href=#597 id=597 data-nosnippet>597</a>    /// ```
+<a href=#598 id=598 data-nosnippet>598</a>    ///
+<a href=#599 id=599 data-nosnippet>599</a>    /// &lt;br&gt;
+<a href=#600 id=600 data-nosnippet>600</a>    ///
+<a href=#601 id=601 data-nosnippet>601</a>    /// # Example
+<a href=#602 id=602 data-nosnippet>602</a>    ///
+<a href=#603 id=603 data-nosnippet>603</a>    /// This fold inserts parentheses to fully parenthesizes any expression.
+<a href=#604 id=604 data-nosnippet>604</a>    ///
+<a href=#605 id=605 data-nosnippet>605</a>    /// ```
+<a href=#606 id=606 data-nosnippet>606</a>    /// // [dependencies]
+<a href=#607 id=607 data-nosnippet>607</a>    /// // quote = "1.0"
+<a href=#608 id=608 data-nosnippet>608</a>    /// // syn = { version = "2.0", features = ["fold", "full"] }
+<a href=#609 id=609 data-nosnippet>609</a>    ///
+<a href=#610 id=610 data-nosnippet>610</a>    /// use quote::quote;
+<a href=#611 id=611 data-nosnippet>611</a>    /// use syn::fold::{fold_expr, Fold};
+<a href=#612 id=612 data-nosnippet>612</a>    /// use syn::{token, Expr, ExprParen};
+<a href=#613 id=613 data-nosnippet>613</a>    ///
+<a href=#614 id=614 data-nosnippet>614</a>    /// struct ParenthesizeEveryExpr;
+<a href=#615 id=615 data-nosnippet>615</a>    ///
+<a href=#616 id=616 data-nosnippet>616</a>    /// impl Fold for ParenthesizeEveryExpr {
+<a href=#617 id=617 data-nosnippet>617</a>    ///     fn fold_expr(&amp;mut self, expr: Expr) -&gt; Expr {
+<a href=#618 id=618 data-nosnippet>618</a>    ///         Expr::Paren(ExprParen {
+<a href=#619 id=619 data-nosnippet>619</a>    ///             attrs: Vec::new(),
+<a href=#620 id=620 data-nosnippet>620</a>    ///             expr: Box::new(fold_expr(self, expr)),
+<a href=#621 id=621 data-nosnippet>621</a>    ///             paren_token: token::Paren::default(),
+<a href=#622 id=622 data-nosnippet>622</a>    ///         })
+<a href=#623 id=623 data-nosnippet>623</a>    ///     }
+<a href=#624 id=624 data-nosnippet>624</a>    /// }
+<a href=#625 id=625 data-nosnippet>625</a>    ///
+<a href=#626 id=626 data-nosnippet>626</a>    /// fn main() {
+<a href=#627 id=627 data-nosnippet>627</a>    ///     let code = quote! { a() + b(1) * c.d };
+<a href=#628 id=628 data-nosnippet>628</a>    ///     let expr: Expr = syn::parse2(code).unwrap();
+<a href=#629 id=629 data-nosnippet>629</a>    ///     let parenthesized = ParenthesizeEveryExpr.fold_expr(expr);
+<a href=#630 id=630 data-nosnippet>630</a>    ///     println!("{}", quote!(#parenthesized));
+<a href=#631 id=631 data-nosnippet>631</a>    ///
+<a href=#632 id=632 data-nosnippet>632</a>    ///     // Output: (((a)()) + (((b)((1))) * ((c).d)))
+<a href=#633 id=633 data-nosnippet>633</a>    /// }
+<a href=#634 id=634 data-nosnippet>634</a>    /// ```
+<a href=#635 id=635 data-nosnippet>635</a>    </span><span class="attr">#[cfg(feature = <span class="string">"fold"</span>)]
+<a href=#636 id=636 data-nosnippet>636</a>    #[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"fold"</span>)))]
+<a href=#637 id=637 data-nosnippet>637</a>    #[rustfmt::skip]
+<a href=#638 id=638 data-nosnippet>638</a>    </span><span class="kw">pub mod </span>fold;
+<a href=#639 id=639 data-nosnippet>639</a>
+<a href=#640 id=640 data-nosnippet>640</a>    <span class="doccomment">/// Syntax tree traversal to walk a shared borrow of a syntax tree.
+<a href=#641 id=641 data-nosnippet>641</a>    ///
+<a href=#642 id=642 data-nosnippet>642</a>    /// Each method of the [`Visit`] trait is a hook that can be overridden to
+<a href=#643 id=643 data-nosnippet>643</a>    /// customize the behavior when visiting the corresponding type of node. By
+<a href=#644 id=644 data-nosnippet>644</a>    /// default, every method recursively visits the substructure of the input
+<a href=#645 id=645 data-nosnippet>645</a>    /// by invoking the right visitor method of each of its fields.
+<a href=#646 id=646 data-nosnippet>646</a>    ///
+<a href=#647 id=647 data-nosnippet>647</a>    /// [`Visit`]: visit::Visit
+<a href=#648 id=648 data-nosnippet>648</a>    ///
+<a href=#649 id=649 data-nosnippet>649</a>    /// ```
+<a href=#650 id=650 data-nosnippet>650</a>    /// # use syn::{Attribute, BinOp, Expr, ExprBinary};
+<a href=#651 id=651 data-nosnippet>651</a>    /// #
+<a href=#652 id=652 data-nosnippet>652</a>    /// pub trait Visit&lt;'ast&gt; {
+<a href=#653 id=653 data-nosnippet>653</a>    ///     /* ... */
+<a href=#654 id=654 data-nosnippet>654</a>    ///
+<a href=#655 id=655 data-nosnippet>655</a>    ///     fn visit_expr_binary(&amp;mut self, node: &amp;'ast ExprBinary) {
+<a href=#656 id=656 data-nosnippet>656</a>    ///         visit_expr_binary(self, node);
+<a href=#657 id=657 data-nosnippet>657</a>    ///     }
+<a href=#658 id=658 data-nosnippet>658</a>    ///
+<a href=#659 id=659 data-nosnippet>659</a>    ///     /* ... */
+<a href=#660 id=660 data-nosnippet>660</a>    ///     # fn visit_attribute(&amp;mut self, node: &amp;'ast Attribute);
+<a href=#661 id=661 data-nosnippet>661</a>    ///     # fn visit_expr(&amp;mut self, node: &amp;'ast Expr);
+<a href=#662 id=662 data-nosnippet>662</a>    ///     # fn visit_bin_op(&amp;mut self, node: &amp;'ast BinOp);
+<a href=#663 id=663 data-nosnippet>663</a>    /// }
+<a href=#664 id=664 data-nosnippet>664</a>    ///
+<a href=#665 id=665 data-nosnippet>665</a>    /// pub fn visit_expr_binary&lt;'ast, V&gt;(v: &amp;mut V, node: &amp;'ast ExprBinary)
+<a href=#666 id=666 data-nosnippet>666</a>    /// where
+<a href=#667 id=667 data-nosnippet>667</a>    ///     V: Visit&lt;'ast&gt; + ?Sized,
+<a href=#668 id=668 data-nosnippet>668</a>    /// {
+<a href=#669 id=669 data-nosnippet>669</a>    ///     for attr in &amp;node.attrs {
+<a href=#670 id=670 data-nosnippet>670</a>    ///         v.visit_attribute(attr);
+<a href=#671 id=671 data-nosnippet>671</a>    ///     }
+<a href=#672 id=672 data-nosnippet>672</a>    ///     v.visit_expr(&amp;*node.left);
+<a href=#673 id=673 data-nosnippet>673</a>    ///     v.visit_bin_op(&amp;node.op);
+<a href=#674 id=674 data-nosnippet>674</a>    ///     v.visit_expr(&amp;*node.right);
+<a href=#675 id=675 data-nosnippet>675</a>    /// }
+<a href=#676 id=676 data-nosnippet>676</a>    ///
+<a href=#677 id=677 data-nosnippet>677</a>    /// /* ... */
+<a href=#678 id=678 data-nosnippet>678</a>    /// ```
+<a href=#679 id=679 data-nosnippet>679</a>    ///
+<a href=#680 id=680 data-nosnippet>680</a>    /// &lt;br&gt;
+<a href=#681 id=681 data-nosnippet>681</a>    ///
+<a href=#682 id=682 data-nosnippet>682</a>    /// # Example
+<a href=#683 id=683 data-nosnippet>683</a>    ///
+<a href=#684 id=684 data-nosnippet>684</a>    /// This visitor will print the name of every freestanding function in the
+<a href=#685 id=685 data-nosnippet>685</a>    /// syntax tree, including nested functions.
+<a href=#686 id=686 data-nosnippet>686</a>    ///
+<a href=#687 id=687 data-nosnippet>687</a>    /// ```
+<a href=#688 id=688 data-nosnippet>688</a>    /// // [dependencies]
+<a href=#689 id=689 data-nosnippet>689</a>    /// // quote = "1.0"
+<a href=#690 id=690 data-nosnippet>690</a>    /// // syn = { version = "2.0", features = ["full", "visit"] }
+<a href=#691 id=691 data-nosnippet>691</a>    ///
+<a href=#692 id=692 data-nosnippet>692</a>    /// use quote::quote;
+<a href=#693 id=693 data-nosnippet>693</a>    /// use syn::visit::{self, Visit};
+<a href=#694 id=694 data-nosnippet>694</a>    /// use syn::{File, ItemFn};
+<a href=#695 id=695 data-nosnippet>695</a>    ///
+<a href=#696 id=696 data-nosnippet>696</a>    /// struct FnVisitor;
+<a href=#697 id=697 data-nosnippet>697</a>    ///
+<a href=#698 id=698 data-nosnippet>698</a>    /// impl&lt;'ast&gt; Visit&lt;'ast&gt; for FnVisitor {
+<a href=#699 id=699 data-nosnippet>699</a>    ///     fn visit_item_fn(&amp;mut self, node: &amp;'ast ItemFn) {
+<a href=#700 id=700 data-nosnippet>700</a>    ///         println!("Function with name={}", node.sig.ident);
+<a href=#701 id=701 data-nosnippet>701</a>    ///
+<a href=#702 id=702 data-nosnippet>702</a>    ///         // Delegate to the default impl to visit any nested functions.
+<a href=#703 id=703 data-nosnippet>703</a>    ///         visit::visit_item_fn(self, node);
+<a href=#704 id=704 data-nosnippet>704</a>    ///     }
+<a href=#705 id=705 data-nosnippet>705</a>    /// }
+<a href=#706 id=706 data-nosnippet>706</a>    ///
+<a href=#707 id=707 data-nosnippet>707</a>    /// fn main() {
+<a href=#708 id=708 data-nosnippet>708</a>    ///     let code = quote! {
+<a href=#709 id=709 data-nosnippet>709</a>    ///         pub fn f() {
+<a href=#710 id=710 data-nosnippet>710</a>    ///             fn g() {}
+<a href=#711 id=711 data-nosnippet>711</a>    ///         }
+<a href=#712 id=712 data-nosnippet>712</a>    ///     };
+<a href=#713 id=713 data-nosnippet>713</a>    ///
+<a href=#714 id=714 data-nosnippet>714</a>    ///     let syntax_tree: File = syn::parse2(code).unwrap();
+<a href=#715 id=715 data-nosnippet>715</a>    ///     FnVisitor.visit_file(&amp;syntax_tree);
+<a href=#716 id=716 data-nosnippet>716</a>    /// }
+<a href=#717 id=717 data-nosnippet>717</a>    /// ```
+<a href=#718 id=718 data-nosnippet>718</a>    ///
+<a href=#719 id=719 data-nosnippet>719</a>    /// The `'ast` lifetime on the input references means that the syntax tree
+<a href=#720 id=720 data-nosnippet>720</a>    /// outlives the complete recursive visit call, so the visitor is allowed to
+<a href=#721 id=721 data-nosnippet>721</a>    /// hold on to references into the syntax tree.
+<a href=#722 id=722 data-nosnippet>722</a>    ///
+<a href=#723 id=723 data-nosnippet>723</a>    /// ```
+<a href=#724 id=724 data-nosnippet>724</a>    /// use quote::quote;
+<a href=#725 id=725 data-nosnippet>725</a>    /// use syn::visit::{self, Visit};
+<a href=#726 id=726 data-nosnippet>726</a>    /// use syn::{File, ItemFn};
+<a href=#727 id=727 data-nosnippet>727</a>    ///
+<a href=#728 id=728 data-nosnippet>728</a>    /// struct FnVisitor&lt;'ast&gt; {
+<a href=#729 id=729 data-nosnippet>729</a>    ///     functions: Vec&lt;&amp;'ast ItemFn&gt;,
+<a href=#730 id=730 data-nosnippet>730</a>    /// }
+<a href=#731 id=731 data-nosnippet>731</a>    ///
+<a href=#732 id=732 data-nosnippet>732</a>    /// impl&lt;'ast&gt; Visit&lt;'ast&gt; for FnVisitor&lt;'ast&gt; {
+<a href=#733 id=733 data-nosnippet>733</a>    ///     fn visit_item_fn(&amp;mut self, node: &amp;'ast ItemFn) {
+<a href=#734 id=734 data-nosnippet>734</a>    ///         self.functions.push(node);
+<a href=#735 id=735 data-nosnippet>735</a>    ///         visit::visit_item_fn(self, node);
+<a href=#736 id=736 data-nosnippet>736</a>    ///     }
+<a href=#737 id=737 data-nosnippet>737</a>    /// }
+<a href=#738 id=738 data-nosnippet>738</a>    ///
+<a href=#739 id=739 data-nosnippet>739</a>    /// fn main() {
+<a href=#740 id=740 data-nosnippet>740</a>    ///     let code = quote! {
+<a href=#741 id=741 data-nosnippet>741</a>    ///         pub fn f() {
+<a href=#742 id=742 data-nosnippet>742</a>    ///             fn g() {}
+<a href=#743 id=743 data-nosnippet>743</a>    ///         }
+<a href=#744 id=744 data-nosnippet>744</a>    ///     };
+<a href=#745 id=745 data-nosnippet>745</a>    ///
+<a href=#746 id=746 data-nosnippet>746</a>    ///     let syntax_tree: File = syn::parse2(code).unwrap();
+<a href=#747 id=747 data-nosnippet>747</a>    ///     let mut visitor = FnVisitor { functions: Vec::new() };
+<a href=#748 id=748 data-nosnippet>748</a>    ///     visitor.visit_file(&amp;syntax_tree);
+<a href=#749 id=749 data-nosnippet>749</a>    ///     for f in visitor.functions {
+<a href=#750 id=750 data-nosnippet>750</a>    ///         println!("Function with name={}", f.sig.ident);
+<a href=#751 id=751 data-nosnippet>751</a>    ///     }
+<a href=#752 id=752 data-nosnippet>752</a>    /// }
+<a href=#753 id=753 data-nosnippet>753</a>    /// ```
+<a href=#754 id=754 data-nosnippet>754</a>    </span><span class="attr">#[cfg(feature = <span class="string">"visit"</span>)]
+<a href=#755 id=755 data-nosnippet>755</a>    #[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"visit"</span>)))]
+<a href=#756 id=756 data-nosnippet>756</a>    #[rustfmt::skip]
+<a href=#757 id=757 data-nosnippet>757</a>    </span><span class="kw">pub mod </span>visit;
+<a href=#758 id=758 data-nosnippet>758</a>
+<a href=#759 id=759 data-nosnippet>759</a>    <span class="doccomment">/// Syntax tree traversal to mutate an exclusive borrow of a syntax tree in
+<a href=#760 id=760 data-nosnippet>760</a>    /// place.
+<a href=#761 id=761 data-nosnippet>761</a>    ///
+<a href=#762 id=762 data-nosnippet>762</a>    /// Each method of the [`VisitMut`] trait is a hook that can be overridden
+<a href=#763 id=763 data-nosnippet>763</a>    /// to customize the behavior when mutating the corresponding type of node.
+<a href=#764 id=764 data-nosnippet>764</a>    /// By default, every method recursively visits the substructure of the
+<a href=#765 id=765 data-nosnippet>765</a>    /// input by invoking the right visitor method of each of its fields.
+<a href=#766 id=766 data-nosnippet>766</a>    ///
+<a href=#767 id=767 data-nosnippet>767</a>    /// [`VisitMut`]: visit_mut::VisitMut
+<a href=#768 id=768 data-nosnippet>768</a>    ///
+<a href=#769 id=769 data-nosnippet>769</a>    /// ```
+<a href=#770 id=770 data-nosnippet>770</a>    /// # use syn::{Attribute, BinOp, Expr, ExprBinary};
+<a href=#771 id=771 data-nosnippet>771</a>    /// #
+<a href=#772 id=772 data-nosnippet>772</a>    /// pub trait VisitMut {
+<a href=#773 id=773 data-nosnippet>773</a>    ///     /* ... */
+<a href=#774 id=774 data-nosnippet>774</a>    ///
+<a href=#775 id=775 data-nosnippet>775</a>    ///     fn visit_expr_binary_mut(&amp;mut self, node: &amp;mut ExprBinary) {
+<a href=#776 id=776 data-nosnippet>776</a>    ///         visit_expr_binary_mut(self, node);
+<a href=#777 id=777 data-nosnippet>777</a>    ///     }
+<a href=#778 id=778 data-nosnippet>778</a>    ///
+<a href=#779 id=779 data-nosnippet>779</a>    ///     /* ... */
+<a href=#780 id=780 data-nosnippet>780</a>    ///     # fn visit_attribute_mut(&amp;mut self, node: &amp;mut Attribute);
+<a href=#781 id=781 data-nosnippet>781</a>    ///     # fn visit_expr_mut(&amp;mut self, node: &amp;mut Expr);
+<a href=#782 id=782 data-nosnippet>782</a>    ///     # fn visit_bin_op_mut(&amp;mut self, node: &amp;mut BinOp);
+<a href=#783 id=783 data-nosnippet>783</a>    /// }
+<a href=#784 id=784 data-nosnippet>784</a>    ///
+<a href=#785 id=785 data-nosnippet>785</a>    /// pub fn visit_expr_binary_mut&lt;V&gt;(v: &amp;mut V, node: &amp;mut ExprBinary)
+<a href=#786 id=786 data-nosnippet>786</a>    /// where
+<a href=#787 id=787 data-nosnippet>787</a>    ///     V: VisitMut + ?Sized,
+<a href=#788 id=788 data-nosnippet>788</a>    /// {
+<a href=#789 id=789 data-nosnippet>789</a>    ///     for attr in &amp;mut node.attrs {
+<a href=#790 id=790 data-nosnippet>790</a>    ///         v.visit_attribute_mut(attr);
+<a href=#791 id=791 data-nosnippet>791</a>    ///     }
+<a href=#792 id=792 data-nosnippet>792</a>    ///     v.visit_expr_mut(&amp;mut *node.left);
+<a href=#793 id=793 data-nosnippet>793</a>    ///     v.visit_bin_op_mut(&amp;mut node.op);
+<a href=#794 id=794 data-nosnippet>794</a>    ///     v.visit_expr_mut(&amp;mut *node.right);
+<a href=#795 id=795 data-nosnippet>795</a>    /// }
+<a href=#796 id=796 data-nosnippet>796</a>    ///
+<a href=#797 id=797 data-nosnippet>797</a>    /// /* ... */
+<a href=#798 id=798 data-nosnippet>798</a>    /// ```
+<a href=#799 id=799 data-nosnippet>799</a>    ///
+<a href=#800 id=800 data-nosnippet>800</a>    /// &lt;br&gt;
+<a href=#801 id=801 data-nosnippet>801</a>    ///
+<a href=#802 id=802 data-nosnippet>802</a>    /// # Example
+<a href=#803 id=803 data-nosnippet>803</a>    ///
+<a href=#804 id=804 data-nosnippet>804</a>    /// This mut visitor replace occurrences of u256 suffixed integer literals
+<a href=#805 id=805 data-nosnippet>805</a>    /// like `999u256` with a macro invocation `bigint::u256!(999)`.
+<a href=#806 id=806 data-nosnippet>806</a>    ///
+<a href=#807 id=807 data-nosnippet>807</a>    /// ```
+<a href=#808 id=808 data-nosnippet>808</a>    /// // [dependencies]
+<a href=#809 id=809 data-nosnippet>809</a>    /// // quote = "1.0"
+<a href=#810 id=810 data-nosnippet>810</a>    /// // syn = { version = "2.0", features = ["full", "visit-mut"] }
+<a href=#811 id=811 data-nosnippet>811</a>    ///
+<a href=#812 id=812 data-nosnippet>812</a>    /// use quote::quote;
+<a href=#813 id=813 data-nosnippet>813</a>    /// use syn::visit_mut::{self, VisitMut};
+<a href=#814 id=814 data-nosnippet>814</a>    /// use syn::{parse_quote, Expr, File, Lit, LitInt};
+<a href=#815 id=815 data-nosnippet>815</a>    ///
+<a href=#816 id=816 data-nosnippet>816</a>    /// struct BigintReplace;
+<a href=#817 id=817 data-nosnippet>817</a>    ///
+<a href=#818 id=818 data-nosnippet>818</a>    /// impl VisitMut for BigintReplace {
+<a href=#819 id=819 data-nosnippet>819</a>    ///     fn visit_expr_mut(&amp;mut self, node: &amp;mut Expr) {
+<a href=#820 id=820 data-nosnippet>820</a>    ///         if let Expr::Lit(expr) = &amp;node {
+<a href=#821 id=821 data-nosnippet>821</a>    ///             if let Lit::Int(int) = &amp;expr.lit {
+<a href=#822 id=822 data-nosnippet>822</a>    ///                 if int.suffix() == "u256" {
+<a href=#823 id=823 data-nosnippet>823</a>    ///                     let digits = int.base10_digits();
+<a href=#824 id=824 data-nosnippet>824</a>    ///                     let unsuffixed: LitInt = syn::parse_str(digits).unwrap();
+<a href=#825 id=825 data-nosnippet>825</a>    ///                     *node = parse_quote!(bigint::u256!(#unsuffixed));
+<a href=#826 id=826 data-nosnippet>826</a>    ///                     return;
+<a href=#827 id=827 data-nosnippet>827</a>    ///                 }
+<a href=#828 id=828 data-nosnippet>828</a>    ///             }
+<a href=#829 id=829 data-nosnippet>829</a>    ///         }
+<a href=#830 id=830 data-nosnippet>830</a>    ///
+<a href=#831 id=831 data-nosnippet>831</a>    ///         // Delegate to the default impl to visit nested expressions.
+<a href=#832 id=832 data-nosnippet>832</a>    ///         visit_mut::visit_expr_mut(self, node);
+<a href=#833 id=833 data-nosnippet>833</a>    ///     }
+<a href=#834 id=834 data-nosnippet>834</a>    /// }
+<a href=#835 id=835 data-nosnippet>835</a>    ///
+<a href=#836 id=836 data-nosnippet>836</a>    /// fn main() {
+<a href=#837 id=837 data-nosnippet>837</a>    ///     let code = quote! {
+<a href=#838 id=838 data-nosnippet>838</a>    ///         fn main() {
+<a href=#839 id=839 data-nosnippet>839</a>    ///             let _ = 999u256;
+<a href=#840 id=840 data-nosnippet>840</a>    ///         }
+<a href=#841 id=841 data-nosnippet>841</a>    ///     };
+<a href=#842 id=842 data-nosnippet>842</a>    ///
+<a href=#843 id=843 data-nosnippet>843</a>    ///     let mut syntax_tree: File = syn::parse2(code).unwrap();
+<a href=#844 id=844 data-nosnippet>844</a>    ///     BigintReplace.visit_file_mut(&amp;mut syntax_tree);
+<a href=#845 id=845 data-nosnippet>845</a>    ///     println!("{}", quote!(#syntax_tree));
+<a href=#846 id=846 data-nosnippet>846</a>    /// }
+<a href=#847 id=847 data-nosnippet>847</a>    /// ```
+<a href=#848 id=848 data-nosnippet>848</a>    </span><span class="attr">#[cfg(feature = <span class="string">"visit-mut"</span>)]
+<a href=#849 id=849 data-nosnippet>849</a>    #[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"visit-mut"</span>)))]
+<a href=#850 id=850 data-nosnippet>850</a>    #[rustfmt::skip]
+<a href=#851 id=851 data-nosnippet>851</a>    </span><span class="kw">pub mod </span>visit_mut;
+<a href=#852 id=852 data-nosnippet>852</a>
+<a href=#853 id=853 data-nosnippet>853</a>    <span class="attr">#[cfg(feature = <span class="string">"clone-impls"</span>)]
+<a href=#854 id=854 data-nosnippet>854</a>    #[rustfmt::skip]
+<a href=#855 id=855 data-nosnippet>855</a>    </span><span class="kw">mod </span>clone;
+<a href=#856 id=856 data-nosnippet>856</a>
+<a href=#857 id=857 data-nosnippet>857</a>    <span class="attr">#[cfg(feature = <span class="string">"extra-traits"</span>)]
+<a href=#858 id=858 data-nosnippet>858</a>    #[rustfmt::skip]
+<a href=#859 id=859 data-nosnippet>859</a>    </span><span class="kw">mod </span>debug;
+<a href=#860 id=860 data-nosnippet>860</a>
+<a href=#861 id=861 data-nosnippet>861</a>    <span class="attr">#[cfg(feature = <span class="string">"extra-traits"</span>)]
+<a href=#862 id=862 data-nosnippet>862</a>    #[rustfmt::skip]
+<a href=#863 id=863 data-nosnippet>863</a>    </span><span class="kw">mod </span>eq;
+<a href=#864 id=864 data-nosnippet>864</a>
+<a href=#865 id=865 data-nosnippet>865</a>    <span class="attr">#[cfg(feature = <span class="string">"extra-traits"</span>)]
+<a href=#866 id=866 data-nosnippet>866</a>    #[rustfmt::skip]
+<a href=#867 id=867 data-nosnippet>867</a>    </span><span class="kw">mod </span>hash;
+<a href=#868 id=868 data-nosnippet>868</a>}
+<a href=#869 id=869 data-nosnippet>869</a>
+<a href=#870 id=870 data-nosnippet>870</a><span class="attr">#[cfg(feature = <span class="string">"fold"</span>)]
+<a href=#871 id=871 data-nosnippet>871</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"fold"</span>)))]
+<a href=#872 id=872 data-nosnippet>872</a></span><span class="kw">pub use </span><span class="kw">crate</span>::gen::fold;
+<a href=#873 id=873 data-nosnippet>873</a>
+<a href=#874 id=874 data-nosnippet>874</a><span class="attr">#[cfg(feature = <span class="string">"visit"</span>)]
+<a href=#875 id=875 data-nosnippet>875</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"visit"</span>)))]
+<a href=#876 id=876 data-nosnippet>876</a></span><span class="kw">pub use </span><span class="kw">crate</span>::gen::visit;
+<a href=#877 id=877 data-nosnippet>877</a>
+<a href=#878 id=878 data-nosnippet>878</a><span class="attr">#[cfg(feature = <span class="string">"visit-mut"</span>)]
+<a href=#879 id=879 data-nosnippet>879</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"visit-mut"</span>)))]
+<a href=#880 id=880 data-nosnippet>880</a></span><span class="kw">pub use </span><span class="kw">crate</span>::gen::visit_mut;
+<a href=#881 id=881 data-nosnippet>881</a>
+<a href=#882 id=882 data-nosnippet>882</a><span class="comment">// Not public API.
+<a href=#883 id=883 data-nosnippet>883</a></span><span class="attr">#[doc(hidden)]
+<a href=#884 id=884 data-nosnippet>884</a>#[path = <span class="string">"export.rs"</span>]
+<a href=#885 id=885 data-nosnippet>885</a></span><span class="kw">pub mod </span>__private;
+<a href=#886 id=886 data-nosnippet>886</a>
+<a href=#887 id=887 data-nosnippet>887</a><span class="doccomment">/// Parse tokens of source code into the chosen syntax tree node.
+<a href=#888 id=888 data-nosnippet>888</a>///
+<a href=#889 id=889 data-nosnippet>889</a>/// This is preferred over parsing a string because tokens are able to preserve
+<a href=#890 id=890 data-nosnippet>890</a>/// information about where in the user's code they were originally written (the
+<a href=#891 id=891 data-nosnippet>891</a>/// "span" of the token), possibly allowing the compiler to produce better error
+<a href=#892 id=892 data-nosnippet>892</a>/// messages.
+<a href=#893 id=893 data-nosnippet>893</a>///
+<a href=#894 id=894 data-nosnippet>894</a>/// This function parses a `proc_macro::TokenStream` which is the type used for
+<a href=#895 id=895 data-nosnippet>895</a>/// interop with the compiler in a procedural macro. To parse a
+<a href=#896 id=896 data-nosnippet>896</a>/// `proc_macro2::TokenStream`, use [`syn::parse2`] instead.
+<a href=#897 id=897 data-nosnippet>897</a>///
+<a href=#898 id=898 data-nosnippet>898</a>/// [`syn::parse2`]: parse2
+<a href=#899 id=899 data-nosnippet>899</a>///
+<a href=#900 id=900 data-nosnippet>900</a>/// This function enforces that the input is fully parsed. If there are any
+<a href=#901 id=901 data-nosnippet>901</a>/// unparsed tokens at the end of the stream, an error is returned.
+<a href=#902 id=902 data-nosnippet>902</a></span><span class="attr">#[cfg(all(feature = <span class="string">"parsing"</span>, feature = <span class="string">"proc-macro"</span>))]
+<a href=#903 id=903 data-nosnippet>903</a>#[cfg_attr(docsrs, doc(cfg(all(feature = <span class="string">"parsing"</span>, feature = <span class="string">"proc-macro"</span>))))]
+<a href=#904 id=904 data-nosnippet>904</a></span><span class="kw">pub fn </span>parse&lt;T: parse::Parse&gt;(tokens: proc_macro::TokenStream) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt; {
+<a href=#905 id=905 data-nosnippet>905</a>    parse::Parser::parse(T::parse, tokens)
+<a href=#906 id=906 data-nosnippet>906</a>}
+<a href=#907 id=907 data-nosnippet>907</a>
+<a href=#908 id=908 data-nosnippet>908</a><span class="doccomment">/// Parse a proc-macro2 token stream into the chosen syntax tree node.
+<a href=#909 id=909 data-nosnippet>909</a>///
+<a href=#910 id=910 data-nosnippet>910</a>/// This function parses a `proc_macro2::TokenStream` which is commonly useful
+<a href=#911 id=911 data-nosnippet>911</a>/// when the input comes from a node of the Syn syntax tree, for example the
+<a href=#912 id=912 data-nosnippet>912</a>/// body tokens of a [`Macro`] node. When in a procedural macro parsing the
+<a href=#913 id=913 data-nosnippet>913</a>/// `proc_macro::TokenStream` provided by the compiler, use [`syn::parse`]
+<a href=#914 id=914 data-nosnippet>914</a>/// instead.
+<a href=#915 id=915 data-nosnippet>915</a>///
+<a href=#916 id=916 data-nosnippet>916</a>/// [`syn::parse`]: parse()
+<a href=#917 id=917 data-nosnippet>917</a>///
+<a href=#918 id=918 data-nosnippet>918</a>/// This function enforces that the input is fully parsed. If there are any
+<a href=#919 id=919 data-nosnippet>919</a>/// unparsed tokens at the end of the stream, an error is returned.
+<a href=#920 id=920 data-nosnippet>920</a></span><span class="attr">#[cfg(feature = <span class="string">"parsing"</span>)]
+<a href=#921 id=921 data-nosnippet>921</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"parsing"</span>)))]
+<a href=#922 id=922 data-nosnippet>922</a></span><span class="kw">pub fn </span>parse2&lt;T: parse::Parse&gt;(tokens: proc_macro2::TokenStream) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt; {
+<a href=#923 id=923 data-nosnippet>923</a>    parse::Parser::parse2(T::parse, tokens)
+<a href=#924 id=924 data-nosnippet>924</a>}
+<a href=#925 id=925 data-nosnippet>925</a>
+<a href=#926 id=926 data-nosnippet>926</a><span class="doccomment">/// Parse a string of Rust code into the chosen syntax tree node.
+<a href=#927 id=927 data-nosnippet>927</a>///
+<a href=#928 id=928 data-nosnippet>928</a>/// This function enforces that the input is fully parsed. If there are any
+<a href=#929 id=929 data-nosnippet>929</a>/// unparsed tokens at the end of the stream, an error is returned.
+<a href=#930 id=930 data-nosnippet>930</a>///
+<a href=#931 id=931 data-nosnippet>931</a>/// # Hygiene
+<a href=#932 id=932 data-nosnippet>932</a>///
+<a href=#933 id=933 data-nosnippet>933</a>/// Every span in the resulting syntax tree will be set to resolve at the macro
+<a href=#934 id=934 data-nosnippet>934</a>/// call site.
+<a href=#935 id=935 data-nosnippet>935</a>///
+<a href=#936 id=936 data-nosnippet>936</a>/// # Examples
+<a href=#937 id=937 data-nosnippet>937</a>///
+<a href=#938 id=938 data-nosnippet>938</a>/// ```
+<a href=#939 id=939 data-nosnippet>939</a>/// use syn::{Expr, Result};
+<a href=#940 id=940 data-nosnippet>940</a>///
+<a href=#941 id=941 data-nosnippet>941</a>/// fn run() -&gt; Result&lt;()&gt; {
+<a href=#942 id=942 data-nosnippet>942</a>///     let code = "assert_eq!(u8::max_value(), 255)";
+<a href=#943 id=943 data-nosnippet>943</a>///     let expr = syn::parse_str::&lt;Expr&gt;(code)?;
+<a href=#944 id=944 data-nosnippet>944</a>///     println!("{:#?}", expr);
+<a href=#945 id=945 data-nosnippet>945</a>///     Ok(())
+<a href=#946 id=946 data-nosnippet>946</a>/// }
+<a href=#947 id=947 data-nosnippet>947</a>/// #
+<a href=#948 id=948 data-nosnippet>948</a>/// # run().unwrap();
+<a href=#949 id=949 data-nosnippet>949</a>/// ```
+<a href=#950 id=950 data-nosnippet>950</a></span><span class="attr">#[cfg(feature = <span class="string">"parsing"</span>)]
+<a href=#951 id=951 data-nosnippet>951</a>#[cfg_attr(docsrs, doc(cfg(feature = <span class="string">"parsing"</span>)))]
+<a href=#952 id=952 data-nosnippet>952</a></span><span class="kw">pub fn </span>parse_str&lt;T: parse::Parse&gt;(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt; {
+<a href=#953 id=953 data-nosnippet>953</a>    parse::Parser::parse_str(T::parse, s)
+<a href=#954 id=954 data-nosnippet>954</a>}
+<a href=#955 id=955 data-nosnippet>955</a>
+<a href=#956 id=956 data-nosnippet>956</a><span class="doccomment">/// Parse the content of a file of Rust code.
+<a href=#957 id=957 data-nosnippet>957</a>///
+<a href=#958 id=958 data-nosnippet>958</a>/// This is different from `syn::parse_str::&lt;File&gt;(content)` in two ways:
+<a href=#959 id=959 data-nosnippet>959</a>///
+<a href=#960 id=960 data-nosnippet>960</a>/// - It discards a leading byte order mark `\u{FEFF}` if the file has one.
+<a href=#961 id=961 data-nosnippet>961</a>/// - It preserves the shebang line of the file, such as `#!/usr/bin/env rustx`.
+<a href=#962 id=962 data-nosnippet>962</a>///
+<a href=#963 id=963 data-nosnippet>963</a>/// If present, either of these would be an error using `from_str`.
+<a href=#964 id=964 data-nosnippet>964</a>///
+<a href=#965 id=965 data-nosnippet>965</a>/// # Examples
+<a href=#966 id=966 data-nosnippet>966</a>///
+<a href=#967 id=967 data-nosnippet>967</a>/// ```no_run
+<a href=#968 id=968 data-nosnippet>968</a>/// use std::error::Error;
+<a href=#969 id=969 data-nosnippet>969</a>/// use std::fs;
+<a href=#970 id=970 data-nosnippet>970</a>/// use std::io::Read;
+<a href=#971 id=971 data-nosnippet>971</a>///
+<a href=#972 id=972 data-nosnippet>972</a>/// fn run() -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+<a href=#973 id=973 data-nosnippet>973</a>///     let content = fs::read_to_string("path/to/code.rs")?;
+<a href=#974 id=974 data-nosnippet>974</a>///     let ast = syn::parse_file(&amp;content)?;
+<a href=#975 id=975 data-nosnippet>975</a>///     if let Some(shebang) = ast.shebang {
+<a href=#976 id=976 data-nosnippet>976</a>///         println!("{}", shebang);
+<a href=#977 id=977 data-nosnippet>977</a>///     }
+<a href=#978 id=978 data-nosnippet>978</a>///     println!("{} items", ast.items.len());
+<a href=#979 id=979 data-nosnippet>979</a>///
+<a href=#980 id=980 data-nosnippet>980</a>///     Ok(())
+<a href=#981 id=981 data-nosnippet>981</a>/// }
+<a href=#982 id=982 data-nosnippet>982</a>/// #
+<a href=#983 id=983 data-nosnippet>983</a>/// # run().unwrap();
+<a href=#984 id=984 data-nosnippet>984</a>/// ```
+<a href=#985 id=985 data-nosnippet>985</a></span><span class="attr">#[cfg(all(feature = <span class="string">"parsing"</span>, feature = <span class="string">"full"</span>))]
+<a href=#986 id=986 data-nosnippet>986</a>#[cfg_attr(docsrs, doc(cfg(all(feature = <span class="string">"parsing"</span>, feature = <span class="string">"full"</span>))))]
+<a href=#987 id=987 data-nosnippet>987</a></span><span class="kw">pub fn </span>parse_file(<span class="kw-2">mut </span>content: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;File&gt; {
+<a href=#988 id=988 data-nosnippet>988</a>    <span class="comment">// Strip the BOM if it is present
+<a href=#989 id=989 data-nosnippet>989</a>    </span><span class="kw">const </span>BOM: <span class="kw-2">&amp;</span>str = <span class="string">"\u{feff}"</span>;
+<a href=#990 id=990 data-nosnippet>990</a>    <span class="kw">if </span>content.starts_with(BOM) {
+<a href=#991 id=991 data-nosnippet>991</a>        content = <span class="kw-2">&amp;</span>content[BOM.len()..];
+<a href=#992 id=992 data-nosnippet>992</a>    }
+<a href=#993 id=993 data-nosnippet>993</a>
+<a href=#994 id=994 data-nosnippet>994</a>    <span class="kw">let </span><span class="kw-2">mut </span>shebang = <span class="prelude-val">None</span>;
+<a href=#995 id=995 data-nosnippet>995</a>    <span class="kw">if </span>content.starts_with(<span class="string">"#!"</span>) {
+<a href=#996 id=996 data-nosnippet>996</a>        <span class="kw">let </span>rest = whitespace::skip(<span class="kw-2">&amp;</span>content[<span class="number">2</span>..]);
+<a href=#997 id=997 data-nosnippet>997</a>        <span class="kw">if </span>!rest.starts_with(<span class="string">'['</span>) {
+<a href=#998 id=998 data-nosnippet>998</a>            <span class="kw">if let </span><span class="prelude-val">Some</span>(idx) = content.find(<span class="string">'\n'</span>) {
+<a href=#999 id=999 data-nosnippet>999</a>                shebang = <span class="prelude-val">Some</span>(content[..idx].to_string());
+<a href=#1000 id=1000 data-nosnippet>1000</a>                content = <span class="kw-2">&amp;</span>content[idx..];
+<a href=#1001 id=1001 data-nosnippet>1001</a>            } <span class="kw">else </span>{
+<a href=#1002 id=1002 data-nosnippet>1002</a>                shebang = <span class="prelude-val">Some</span>(content.to_string());
+<a href=#1003 id=1003 data-nosnippet>1003</a>                content = <span class="string">""</span>;
+<a href=#1004 id=1004 data-nosnippet>1004</a>            }
+<a href=#1005 id=1005 data-nosnippet>1005</a>        }
+<a href=#1006 id=1006 data-nosnippet>1006</a>    }
+<a href=#1007 id=1007 data-nosnippet>1007</a>
+<a href=#1008 id=1008 data-nosnippet>1008</a>    <span class="kw">let </span><span class="kw-2">mut </span>file: File = parse_str(content)<span class="question-mark">?</span>;
+<a href=#1009 id=1009 data-nosnippet>1009</a>    file.shebang = shebang;
+<a href=#1010 id=1010 data-nosnippet>1010</a>    <span class="prelude-val">Ok</span>(file)
+<a href=#1011 id=1011 data-nosnippet>1011</a>}</code></pre></div></section></main></body></html>

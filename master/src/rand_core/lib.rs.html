@@ -1,0 +1,531 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.6.4/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-de575e9a.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="rand_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.88.0-nightly (00095b3da 2025-04-03)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-d72f25bb.js" ><script src="../../static.files/storage-4e99c027.js"></script><script defer src="../../static.files/src-script-63605ae7.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="icon" href="https://www.rust-lang.org/favicon.ico"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">rand_core/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// Copyright 2018 Developers of the Rand project.
+<a href=#2 id=2 data-nosnippet>2</a>// Copyright 2017-2018 The Rust Project Developers.
+<a href=#3 id=3 data-nosnippet>3</a>//
+<a href=#4 id=4 data-nosnippet>4</a>// Licensed under the Apache License, Version 2.0 &lt;LICENSE-APACHE or
+<a href=#5 id=5 data-nosnippet>5</a>// https://www.apache.org/licenses/LICENSE-2.0&gt; or the MIT license
+<a href=#6 id=6 data-nosnippet>6</a>// &lt;LICENSE-MIT or https://opensource.org/licenses/MIT&gt;, at your
+<a href=#7 id=7 data-nosnippet>7</a>// option. This file may not be copied, modified, or distributed
+<a href=#8 id=8 data-nosnippet>8</a>// except according to those terms.
+<a href=#9 id=9 data-nosnippet>9</a>
+<a href=#10 id=10 data-nosnippet>10</a></span><span class="doccomment">//! Random number generation traits
+<a href=#11 id=11 data-nosnippet>11</a>//!
+<a href=#12 id=12 data-nosnippet>12</a>//! This crate is mainly of interest to crates publishing implementations of
+<a href=#13 id=13 data-nosnippet>13</a>//! [`RngCore`]. Other users are encouraged to use the [`rand`] crate instead
+<a href=#14 id=14 data-nosnippet>14</a>//! which re-exports the main traits and error types.
+<a href=#15 id=15 data-nosnippet>15</a>//!
+<a href=#16 id=16 data-nosnippet>16</a>//! [`RngCore`] is the core trait implemented by algorithmic pseudo-random number
+<a href=#17 id=17 data-nosnippet>17</a>//! generators and external random-number sources.
+<a href=#18 id=18 data-nosnippet>18</a>//!
+<a href=#19 id=19 data-nosnippet>19</a>//! [`SeedableRng`] is an extension trait for construction from fixed seeds and
+<a href=#20 id=20 data-nosnippet>20</a>//! other random number generators.
+<a href=#21 id=21 data-nosnippet>21</a>//!
+<a href=#22 id=22 data-nosnippet>22</a>//! [`Error`] is provided for error-handling. It is safe to use in `no_std`
+<a href=#23 id=23 data-nosnippet>23</a>//! environments.
+<a href=#24 id=24 data-nosnippet>24</a>//!
+<a href=#25 id=25 data-nosnippet>25</a>//! The [`impls`] and [`le`] sub-modules include a few small functions to assist
+<a href=#26 id=26 data-nosnippet>26</a>//! implementation of [`RngCore`].
+<a href=#27 id=27 data-nosnippet>27</a>//!
+<a href=#28 id=28 data-nosnippet>28</a>//! [`rand`]: https://docs.rs/rand
+<a href=#29 id=29 data-nosnippet>29</a>
+<a href=#30 id=30 data-nosnippet>30</a></span><span class="attr">#![doc(
+<a href=#31 id=31 data-nosnippet>31</a>    html_logo_url = <span class="string">"https://www.rust-lang.org/logos/rust-logo-128x128-blk.png"</span>,
+<a href=#32 id=32 data-nosnippet>32</a>    html_favicon_url = <span class="string">"https://www.rust-lang.org/favicon.ico"</span>,
+<a href=#33 id=33 data-nosnippet>33</a>    html_root_url = <span class="string">"https://rust-random.github.io/rand/"
+<a href=#34 id=34 data-nosnippet>34</a></span>)]
+<a href=#35 id=35 data-nosnippet>35</a>#![deny(missing_docs)]
+<a href=#36 id=36 data-nosnippet>36</a>#![deny(missing_debug_implementations)]
+<a href=#37 id=37 data-nosnippet>37</a>#![doc(test(attr(allow(unused_variables), deny(warnings))))]
+<a href=#38 id=38 data-nosnippet>38</a>#![cfg_attr(doc_cfg, feature(doc_cfg))]
+<a href=#39 id=39 data-nosnippet>39</a>#![no_std]
+<a href=#40 id=40 data-nosnippet>40</a>
+<a href=#41 id=41 data-nosnippet>41</a></span><span class="kw">use </span>core::convert::AsMut;
+<a href=#42 id=42 data-nosnippet>42</a><span class="kw">use </span>core::default::Default;
+<a href=#43 id=43 data-nosnippet>43</a>
+<a href=#44 id=44 data-nosnippet>44</a><span class="attr">#[cfg(feature = <span class="string">"std"</span>)] </span><span class="kw">extern crate </span>std;
+<a href=#45 id=45 data-nosnippet>45</a><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)] </span><span class="kw">extern crate </span>alloc;
+<a href=#46 id=46 data-nosnippet>46</a><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)] </span><span class="kw">use </span>alloc::boxed::Box;
+<a href=#47 id=47 data-nosnippet>47</a>
+<a href=#48 id=48 data-nosnippet>48</a><span class="kw">pub use </span>error::Error;
+<a href=#49 id=49 data-nosnippet>49</a><span class="attr">#[cfg(feature = <span class="string">"getrandom"</span>)] </span><span class="kw">pub use </span>os::OsRng;
+<a href=#50 id=50 data-nosnippet>50</a>
+<a href=#51 id=51 data-nosnippet>51</a>
+<a href=#52 id=52 data-nosnippet>52</a><span class="kw">pub mod </span>block;
+<a href=#53 id=53 data-nosnippet>53</a><span class="kw">mod </span>error;
+<a href=#54 id=54 data-nosnippet>54</a><span class="kw">pub mod </span>impls;
+<a href=#55 id=55 data-nosnippet>55</a><span class="kw">pub mod </span>le;
+<a href=#56 id=56 data-nosnippet>56</a><span class="attr">#[cfg(feature = <span class="string">"getrandom"</span>)] </span><span class="kw">mod </span>os;
+<a href=#57 id=57 data-nosnippet>57</a>
+<a href=#58 id=58 data-nosnippet>58</a>
+<a href=#59 id=59 data-nosnippet>59</a><span class="doccomment">/// The core of a random number generator.
+<a href=#60 id=60 data-nosnippet>60</a>///
+<a href=#61 id=61 data-nosnippet>61</a>/// This trait encapsulates the low-level functionality common to all
+<a href=#62 id=62 data-nosnippet>62</a>/// generators, and is the "back end", to be implemented by generators.
+<a href=#63 id=63 data-nosnippet>63</a>/// End users should normally use the `Rng` trait from the [`rand`] crate,
+<a href=#64 id=64 data-nosnippet>64</a>/// which is automatically implemented for every type implementing `RngCore`.
+<a href=#65 id=65 data-nosnippet>65</a>///
+<a href=#66 id=66 data-nosnippet>66</a>/// Three different methods for generating random data are provided since the
+<a href=#67 id=67 data-nosnippet>67</a>/// optimal implementation of each is dependent on the type of generator. There
+<a href=#68 id=68 data-nosnippet>68</a>/// is no required relationship between the output of each; e.g. many
+<a href=#69 id=69 data-nosnippet>69</a>/// implementations of [`fill_bytes`] consume a whole number of `u32` or `u64`
+<a href=#70 id=70 data-nosnippet>70</a>/// values and drop any remaining unused bytes. The same can happen with the
+<a href=#71 id=71 data-nosnippet>71</a>/// [`next_u32`] and [`next_u64`] methods, implementations may discard some
+<a href=#72 id=72 data-nosnippet>72</a>/// random bits for efficiency.
+<a href=#73 id=73 data-nosnippet>73</a>///
+<a href=#74 id=74 data-nosnippet>74</a>/// The [`try_fill_bytes`] method is a variant of [`fill_bytes`] allowing error
+<a href=#75 id=75 data-nosnippet>75</a>/// handling; it is not deemed sufficiently useful to add equivalents for
+<a href=#76 id=76 data-nosnippet>76</a>/// [`next_u32`] or [`next_u64`] since the latter methods are almost always used
+<a href=#77 id=77 data-nosnippet>77</a>/// with algorithmic generators (PRNGs), which are normally infallible.
+<a href=#78 id=78 data-nosnippet>78</a>///
+<a href=#79 id=79 data-nosnippet>79</a>/// Implementers should produce bits uniformly. Pathological RNGs (e.g. always
+<a href=#80 id=80 data-nosnippet>80</a>/// returning the same value, or never setting certain bits) can break rejection
+<a href=#81 id=81 data-nosnippet>81</a>/// sampling used by random distributions, and also break other RNGs when
+<a href=#82 id=82 data-nosnippet>82</a>/// seeding them via [`SeedableRng::from_rng`].
+<a href=#83 id=83 data-nosnippet>83</a>///
+<a href=#84 id=84 data-nosnippet>84</a>/// Algorithmic generators implementing [`SeedableRng`] should normally have
+<a href=#85 id=85 data-nosnippet>85</a>/// *portable, reproducible* output, i.e. fix Endianness when converting values
+<a href=#86 id=86 data-nosnippet>86</a>/// to avoid platform differences, and avoid making any changes which affect
+<a href=#87 id=87 data-nosnippet>87</a>/// output (except by communicating that the release has breaking changes).
+<a href=#88 id=88 data-nosnippet>88</a>///
+<a href=#89 id=89 data-nosnippet>89</a>/// Typically an RNG will implement only one of the methods available
+<a href=#90 id=90 data-nosnippet>90</a>/// in this trait directly, then use the helper functions from the
+<a href=#91 id=91 data-nosnippet>91</a>/// [`impls`] module to implement the other methods.
+<a href=#92 id=92 data-nosnippet>92</a>///
+<a href=#93 id=93 data-nosnippet>93</a>/// It is recommended that implementations also implement:
+<a href=#94 id=94 data-nosnippet>94</a>///
+<a href=#95 id=95 data-nosnippet>95</a>/// - `Debug` with a custom implementation which *does not* print any internal
+<a href=#96 id=96 data-nosnippet>96</a>///   state (at least, [`CryptoRng`]s should not risk leaking state through
+<a href=#97 id=97 data-nosnippet>97</a>///   `Debug`).
+<a href=#98 id=98 data-nosnippet>98</a>/// - `Serialize` and `Deserialize` (from Serde), preferably making Serde
+<a href=#99 id=99 data-nosnippet>99</a>///   support optional at the crate level in PRNG libs.
+<a href=#100 id=100 data-nosnippet>100</a>/// - `Clone`, if possible.
+<a href=#101 id=101 data-nosnippet>101</a>/// - *never* implement `Copy` (accidental copies may cause repeated values).
+<a href=#102 id=102 data-nosnippet>102</a>/// - *do not* implement `Default` for pseudorandom generators, but instead
+<a href=#103 id=103 data-nosnippet>103</a>///   implement [`SeedableRng`], to guide users towards proper seeding.
+<a href=#104 id=104 data-nosnippet>104</a>///   External / hardware RNGs can choose to implement `Default`.
+<a href=#105 id=105 data-nosnippet>105</a>/// - `Eq` and `PartialEq` could be implemented, but are probably not useful.
+<a href=#106 id=106 data-nosnippet>106</a>///
+<a href=#107 id=107 data-nosnippet>107</a>/// # Example
+<a href=#108 id=108 data-nosnippet>108</a>///
+<a href=#109 id=109 data-nosnippet>109</a>/// A simple example, obviously not generating very *random* output:
+<a href=#110 id=110 data-nosnippet>110</a>///
+<a href=#111 id=111 data-nosnippet>111</a>/// ```
+<a href=#112 id=112 data-nosnippet>112</a>/// #![allow(dead_code)]
+<a href=#113 id=113 data-nosnippet>113</a>/// use rand_core::{RngCore, Error, impls};
+<a href=#114 id=114 data-nosnippet>114</a>///
+<a href=#115 id=115 data-nosnippet>115</a>/// struct CountingRng(u64);
+<a href=#116 id=116 data-nosnippet>116</a>///
+<a href=#117 id=117 data-nosnippet>117</a>/// impl RngCore for CountingRng {
+<a href=#118 id=118 data-nosnippet>118</a>///     fn next_u32(&amp;mut self) -&gt; u32 {
+<a href=#119 id=119 data-nosnippet>119</a>///         self.next_u64() as u32
+<a href=#120 id=120 data-nosnippet>120</a>///     }
+<a href=#121 id=121 data-nosnippet>121</a>///
+<a href=#122 id=122 data-nosnippet>122</a>///     fn next_u64(&amp;mut self) -&gt; u64 {
+<a href=#123 id=123 data-nosnippet>123</a>///         self.0 += 1;
+<a href=#124 id=124 data-nosnippet>124</a>///         self.0
+<a href=#125 id=125 data-nosnippet>125</a>///     }
+<a href=#126 id=126 data-nosnippet>126</a>///
+<a href=#127 id=127 data-nosnippet>127</a>///     fn fill_bytes(&amp;mut self, dest: &amp;mut [u8]) {
+<a href=#128 id=128 data-nosnippet>128</a>///         impls::fill_bytes_via_next(self, dest)
+<a href=#129 id=129 data-nosnippet>129</a>///     }
+<a href=#130 id=130 data-nosnippet>130</a>///
+<a href=#131 id=131 data-nosnippet>131</a>///     fn try_fill_bytes(&amp;mut self, dest: &amp;mut [u8]) -&gt; Result&lt;(), Error&gt; {
+<a href=#132 id=132 data-nosnippet>132</a>///         Ok(self.fill_bytes(dest))
+<a href=#133 id=133 data-nosnippet>133</a>///     }
+<a href=#134 id=134 data-nosnippet>134</a>/// }
+<a href=#135 id=135 data-nosnippet>135</a>/// ```
+<a href=#136 id=136 data-nosnippet>136</a>///
+<a href=#137 id=137 data-nosnippet>137</a>/// [`rand`]: https://docs.rs/rand
+<a href=#138 id=138 data-nosnippet>138</a>/// [`try_fill_bytes`]: RngCore::try_fill_bytes
+<a href=#139 id=139 data-nosnippet>139</a>/// [`fill_bytes`]: RngCore::fill_bytes
+<a href=#140 id=140 data-nosnippet>140</a>/// [`next_u32`]: RngCore::next_u32
+<a href=#141 id=141 data-nosnippet>141</a>/// [`next_u64`]: RngCore::next_u64
+<a href=#142 id=142 data-nosnippet>142</a></span><span class="kw">pub trait </span>RngCore {
+<a href=#143 id=143 data-nosnippet>143</a>    <span class="doccomment">/// Return the next random `u32`.
+<a href=#144 id=144 data-nosnippet>144</a>    ///
+<a href=#145 id=145 data-nosnippet>145</a>    /// RNGs must implement at least one method from this trait directly. In
+<a href=#146 id=146 data-nosnippet>146</a>    /// the case this method is not implemented directly, it can be implemented
+<a href=#147 id=147 data-nosnippet>147</a>    /// using `self.next_u64() as u32` or via [`impls::next_u32_via_fill`].
+<a href=#148 id=148 data-nosnippet>148</a>    </span><span class="kw">fn </span>next_u32(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; u32;
+<a href=#149 id=149 data-nosnippet>149</a>
+<a href=#150 id=150 data-nosnippet>150</a>    <span class="doccomment">/// Return the next random `u64`.
+<a href=#151 id=151 data-nosnippet>151</a>    ///
+<a href=#152 id=152 data-nosnippet>152</a>    /// RNGs must implement at least one method from this trait directly. In
+<a href=#153 id=153 data-nosnippet>153</a>    /// the case this method is not implemented directly, it can be implemented
+<a href=#154 id=154 data-nosnippet>154</a>    /// via [`impls::next_u64_via_u32`] or via [`impls::next_u64_via_fill`].
+<a href=#155 id=155 data-nosnippet>155</a>    </span><span class="kw">fn </span>next_u64(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; u64;
+<a href=#156 id=156 data-nosnippet>156</a>
+<a href=#157 id=157 data-nosnippet>157</a>    <span class="doccomment">/// Fill `dest` with random data.
+<a href=#158 id=158 data-nosnippet>158</a>    ///
+<a href=#159 id=159 data-nosnippet>159</a>    /// RNGs must implement at least one method from this trait directly. In
+<a href=#160 id=160 data-nosnippet>160</a>    /// the case this method is not implemented directly, it can be implemented
+<a href=#161 id=161 data-nosnippet>161</a>    /// via [`impls::fill_bytes_via_next`] or
+<a href=#162 id=162 data-nosnippet>162</a>    /// via [`RngCore::try_fill_bytes`]; if this generator can
+<a href=#163 id=163 data-nosnippet>163</a>    /// fail the implementation must choose how best to handle errors here
+<a href=#164 id=164 data-nosnippet>164</a>    /// (e.g. panic with a descriptive message or log a warning and retry a few
+<a href=#165 id=165 data-nosnippet>165</a>    /// times).
+<a href=#166 id=166 data-nosnippet>166</a>    ///
+<a href=#167 id=167 data-nosnippet>167</a>    /// This method should guarantee that `dest` is entirely filled
+<a href=#168 id=168 data-nosnippet>168</a>    /// with new data, and may panic if this is impossible
+<a href=#169 id=169 data-nosnippet>169</a>    /// (e.g. reading past the end of a file that is being used as the
+<a href=#170 id=170 data-nosnippet>170</a>    /// source of randomness).
+<a href=#171 id=171 data-nosnippet>171</a>    </span><span class="kw">fn </span>fill_bytes(<span class="kw-2">&amp;mut </span><span class="self">self</span>, dest: <span class="kw-2">&amp;mut </span>[u8]);
+<a href=#172 id=172 data-nosnippet>172</a>
+<a href=#173 id=173 data-nosnippet>173</a>    <span class="doccomment">/// Fill `dest` entirely with random data.
+<a href=#174 id=174 data-nosnippet>174</a>    ///
+<a href=#175 id=175 data-nosnippet>175</a>    /// This is the only method which allows an RNG to report errors while
+<a href=#176 id=176 data-nosnippet>176</a>    /// generating random data thus making this the primary method implemented
+<a href=#177 id=177 data-nosnippet>177</a>    /// by external (true) RNGs (e.g. `OsRng`) which can fail. It may be used
+<a href=#178 id=178 data-nosnippet>178</a>    /// directly to generate keys and to seed (infallible) PRNGs.
+<a href=#179 id=179 data-nosnippet>179</a>    ///
+<a href=#180 id=180 data-nosnippet>180</a>    /// Other than error handling, this method is identical to [`RngCore::fill_bytes`];
+<a href=#181 id=181 data-nosnippet>181</a>    /// thus this may be implemented using `Ok(self.fill_bytes(dest))` or
+<a href=#182 id=182 data-nosnippet>182</a>    /// `fill_bytes` may be implemented with
+<a href=#183 id=183 data-nosnippet>183</a>    /// `self.try_fill_bytes(dest).unwrap()` or more specific error handling.
+<a href=#184 id=184 data-nosnippet>184</a>    </span><span class="kw">fn </span>try_fill_bytes(<span class="kw-2">&amp;mut </span><span class="self">self</span>, dest: <span class="kw-2">&amp;mut </span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt;;
+<a href=#185 id=185 data-nosnippet>185</a>}
+<a href=#186 id=186 data-nosnippet>186</a>
+<a href=#187 id=187 data-nosnippet>187</a><span class="doccomment">/// A marker trait used to indicate that an [`RngCore`] or [`BlockRngCore`]
+<a href=#188 id=188 data-nosnippet>188</a>/// implementation is supposed to be cryptographically secure.
+<a href=#189 id=189 data-nosnippet>189</a>///
+<a href=#190 id=190 data-nosnippet>190</a>/// *Cryptographically secure generators*, also known as *CSPRNGs*, should
+<a href=#191 id=191 data-nosnippet>191</a>/// satisfy an additional properties over other generators: given the first
+<a href=#192 id=192 data-nosnippet>192</a>/// *k* bits of an algorithm's output
+<a href=#193 id=193 data-nosnippet>193</a>/// sequence, it should not be possible using polynomial-time algorithms to
+<a href=#194 id=194 data-nosnippet>194</a>/// predict the next bit with probability significantly greater than 50%.
+<a href=#195 id=195 data-nosnippet>195</a>///
+<a href=#196 id=196 data-nosnippet>196</a>/// Some generators may satisfy an additional property, however this is not
+<a href=#197 id=197 data-nosnippet>197</a>/// required by this trait: if the CSPRNG's state is revealed, it should not be
+<a href=#198 id=198 data-nosnippet>198</a>/// computationally-feasible to reconstruct output prior to this. Some other
+<a href=#199 id=199 data-nosnippet>199</a>/// generators allow backwards-computation and are considered *reversible*.
+<a href=#200 id=200 data-nosnippet>200</a>///
+<a href=#201 id=201 data-nosnippet>201</a>/// Note that this trait is provided for guidance only and cannot guarantee
+<a href=#202 id=202 data-nosnippet>202</a>/// suitability for cryptographic applications. In general it should only be
+<a href=#203 id=203 data-nosnippet>203</a>/// implemented for well-reviewed code implementing well-regarded algorithms.
+<a href=#204 id=204 data-nosnippet>204</a>///
+<a href=#205 id=205 data-nosnippet>205</a>/// Note also that use of a `CryptoRng` does not protect against other
+<a href=#206 id=206 data-nosnippet>206</a>/// weaknesses such as seeding from a weak entropy source or leaking state.
+<a href=#207 id=207 data-nosnippet>207</a>///
+<a href=#208 id=208 data-nosnippet>208</a>/// [`BlockRngCore`]: block::BlockRngCore
+<a href=#209 id=209 data-nosnippet>209</a></span><span class="kw">pub trait </span>CryptoRng {}
+<a href=#210 id=210 data-nosnippet>210</a>
+<a href=#211 id=211 data-nosnippet>211</a><span class="doccomment">/// An extension trait that is automatically implemented for any type
+<a href=#212 id=212 data-nosnippet>212</a>/// implementing [`RngCore`] and [`CryptoRng`].
+<a href=#213 id=213 data-nosnippet>213</a>///
+<a href=#214 id=214 data-nosnippet>214</a>/// It may be used as a trait object, and supports upcasting to [`RngCore`] via
+<a href=#215 id=215 data-nosnippet>215</a>/// the [`CryptoRngCore::as_rngcore`] method.
+<a href=#216 id=216 data-nosnippet>216</a>///
+<a href=#217 id=217 data-nosnippet>217</a>/// # Example
+<a href=#218 id=218 data-nosnippet>218</a>///
+<a href=#219 id=219 data-nosnippet>219</a>/// ```
+<a href=#220 id=220 data-nosnippet>220</a>/// use rand_core::CryptoRngCore;
+<a href=#221 id=221 data-nosnippet>221</a>///
+<a href=#222 id=222 data-nosnippet>222</a>/// #[allow(unused)]
+<a href=#223 id=223 data-nosnippet>223</a>/// fn make_token(rng: &amp;mut dyn CryptoRngCore) -&gt; [u8; 32] {
+<a href=#224 id=224 data-nosnippet>224</a>///     let mut buf = [0u8; 32];
+<a href=#225 id=225 data-nosnippet>225</a>///     rng.fill_bytes(&amp;mut buf);
+<a href=#226 id=226 data-nosnippet>226</a>///     buf
+<a href=#227 id=227 data-nosnippet>227</a>/// }
+<a href=#228 id=228 data-nosnippet>228</a>/// ```
+<a href=#229 id=229 data-nosnippet>229</a></span><span class="kw">pub trait </span>CryptoRngCore: CryptoRng + RngCore {
+<a href=#230 id=230 data-nosnippet>230</a>    <span class="doccomment">/// Upcast to an [`RngCore`] trait object.
+<a href=#231 id=231 data-nosnippet>231</a>    </span><span class="kw">fn </span>as_rngcore(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span><span class="kw">dyn </span>RngCore;
+<a href=#232 id=232 data-nosnippet>232</a>}
+<a href=#233 id=233 data-nosnippet>233</a>
+<a href=#234 id=234 data-nosnippet>234</a><span class="kw">impl</span>&lt;T: CryptoRng + RngCore&gt; CryptoRngCore <span class="kw">for </span>T {
+<a href=#235 id=235 data-nosnippet>235</a>    <span class="kw">fn </span>as_rngcore(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span><span class="kw">dyn </span>RngCore {
+<a href=#236 id=236 data-nosnippet>236</a>        <span class="self">self
+<a href=#237 id=237 data-nosnippet>237</a>    </span>}
+<a href=#238 id=238 data-nosnippet>238</a>}
+<a href=#239 id=239 data-nosnippet>239</a>
+<a href=#240 id=240 data-nosnippet>240</a><span class="doccomment">/// A random number generator that can be explicitly seeded.
+<a href=#241 id=241 data-nosnippet>241</a>///
+<a href=#242 id=242 data-nosnippet>242</a>/// This trait encapsulates the low-level functionality common to all
+<a href=#243 id=243 data-nosnippet>243</a>/// pseudo-random number generators (PRNGs, or algorithmic generators).
+<a href=#244 id=244 data-nosnippet>244</a>///
+<a href=#245 id=245 data-nosnippet>245</a>/// [`rand`]: https://docs.rs/rand
+<a href=#246 id=246 data-nosnippet>246</a></span><span class="kw">pub trait </span>SeedableRng: Sized {
+<a href=#247 id=247 data-nosnippet>247</a>    <span class="doccomment">/// Seed type, which is restricted to types mutably-dereferenceable as `u8`
+<a href=#248 id=248 data-nosnippet>248</a>    /// arrays (we recommend `[u8; N]` for some `N`).
+<a href=#249 id=249 data-nosnippet>249</a>    ///
+<a href=#250 id=250 data-nosnippet>250</a>    /// It is recommended to seed PRNGs with a seed of at least circa 100 bits,
+<a href=#251 id=251 data-nosnippet>251</a>    /// which means an array of `[u8; 12]` or greater to avoid picking RNGs with
+<a href=#252 id=252 data-nosnippet>252</a>    /// partially overlapping periods.
+<a href=#253 id=253 data-nosnippet>253</a>    ///
+<a href=#254 id=254 data-nosnippet>254</a>    /// For cryptographic RNG's a seed of 256 bits is recommended, `[u8; 32]`.
+<a href=#255 id=255 data-nosnippet>255</a>    ///
+<a href=#256 id=256 data-nosnippet>256</a>    ///
+<a href=#257 id=257 data-nosnippet>257</a>    /// # Implementing `SeedableRng` for RNGs with large seeds
+<a href=#258 id=258 data-nosnippet>258</a>    ///
+<a href=#259 id=259 data-nosnippet>259</a>    /// Note that the required traits `core::default::Default` and
+<a href=#260 id=260 data-nosnippet>260</a>    /// `core::convert::AsMut&lt;u8&gt;` are not implemented for large arrays
+<a href=#261 id=261 data-nosnippet>261</a>    /// `[u8; N]` with `N` &gt; 32. To be able to implement the traits required by
+<a href=#262 id=262 data-nosnippet>262</a>    /// `SeedableRng` for RNGs with such large seeds, the newtype pattern can be
+<a href=#263 id=263 data-nosnippet>263</a>    /// used:
+<a href=#264 id=264 data-nosnippet>264</a>    ///
+<a href=#265 id=265 data-nosnippet>265</a>    /// ```
+<a href=#266 id=266 data-nosnippet>266</a>    /// use rand_core::SeedableRng;
+<a href=#267 id=267 data-nosnippet>267</a>    ///
+<a href=#268 id=268 data-nosnippet>268</a>    /// const N: usize = 64;
+<a href=#269 id=269 data-nosnippet>269</a>    /// pub struct MyRngSeed(pub [u8; N]);
+<a href=#270 id=270 data-nosnippet>270</a>    /// pub struct MyRng(MyRngSeed);
+<a href=#271 id=271 data-nosnippet>271</a>    ///
+<a href=#272 id=272 data-nosnippet>272</a>    /// impl Default for MyRngSeed {
+<a href=#273 id=273 data-nosnippet>273</a>    ///     fn default() -&gt; MyRngSeed {
+<a href=#274 id=274 data-nosnippet>274</a>    ///         MyRngSeed([0; N])
+<a href=#275 id=275 data-nosnippet>275</a>    ///     }
+<a href=#276 id=276 data-nosnippet>276</a>    /// }
+<a href=#277 id=277 data-nosnippet>277</a>    ///
+<a href=#278 id=278 data-nosnippet>278</a>    /// impl AsMut&lt;[u8]&gt; for MyRngSeed {
+<a href=#279 id=279 data-nosnippet>279</a>    ///     fn as_mut(&amp;mut self) -&gt; &amp;mut [u8] {
+<a href=#280 id=280 data-nosnippet>280</a>    ///         &amp;mut self.0
+<a href=#281 id=281 data-nosnippet>281</a>    ///     }
+<a href=#282 id=282 data-nosnippet>282</a>    /// }
+<a href=#283 id=283 data-nosnippet>283</a>    ///
+<a href=#284 id=284 data-nosnippet>284</a>    /// impl SeedableRng for MyRng {
+<a href=#285 id=285 data-nosnippet>285</a>    ///     type Seed = MyRngSeed;
+<a href=#286 id=286 data-nosnippet>286</a>    ///
+<a href=#287 id=287 data-nosnippet>287</a>    ///     fn from_seed(seed: MyRngSeed) -&gt; MyRng {
+<a href=#288 id=288 data-nosnippet>288</a>    ///         MyRng(seed)
+<a href=#289 id=289 data-nosnippet>289</a>    ///     }
+<a href=#290 id=290 data-nosnippet>290</a>    /// }
+<a href=#291 id=291 data-nosnippet>291</a>    /// ```
+<a href=#292 id=292 data-nosnippet>292</a>    </span><span class="kw">type </span>Seed: Sized + Default + AsMut&lt;[u8]&gt;;
+<a href=#293 id=293 data-nosnippet>293</a>
+<a href=#294 id=294 data-nosnippet>294</a>    <span class="doccomment">/// Create a new PRNG using the given seed.
+<a href=#295 id=295 data-nosnippet>295</a>    ///
+<a href=#296 id=296 data-nosnippet>296</a>    /// PRNG implementations are allowed to assume that bits in the seed are
+<a href=#297 id=297 data-nosnippet>297</a>    /// well distributed. That means usually that the number of one and zero
+<a href=#298 id=298 data-nosnippet>298</a>    /// bits are roughly equal, and values like 0, 1 and (size - 1) are unlikely.
+<a href=#299 id=299 data-nosnippet>299</a>    /// Note that many non-cryptographic PRNGs will show poor quality output
+<a href=#300 id=300 data-nosnippet>300</a>    /// if this is not adhered to. If you wish to seed from simple numbers, use
+<a href=#301 id=301 data-nosnippet>301</a>    /// `seed_from_u64` instead.
+<a href=#302 id=302 data-nosnippet>302</a>    ///
+<a href=#303 id=303 data-nosnippet>303</a>    /// All PRNG implementations should be reproducible unless otherwise noted:
+<a href=#304 id=304 data-nosnippet>304</a>    /// given a fixed `seed`, the same sequence of output should be produced
+<a href=#305 id=305 data-nosnippet>305</a>    /// on all runs, library versions and architectures (e.g. check endianness).
+<a href=#306 id=306 data-nosnippet>306</a>    /// Any "value-breaking" changes to the generator should require bumping at
+<a href=#307 id=307 data-nosnippet>307</a>    /// least the minor version and documentation of the change.
+<a href=#308 id=308 data-nosnippet>308</a>    ///
+<a href=#309 id=309 data-nosnippet>309</a>    /// It is not required that this function yield the same state as a
+<a href=#310 id=310 data-nosnippet>310</a>    /// reference implementation of the PRNG given equivalent seed; if necessary
+<a href=#311 id=311 data-nosnippet>311</a>    /// another constructor replicating behaviour from a reference
+<a href=#312 id=312 data-nosnippet>312</a>    /// implementation can be added.
+<a href=#313 id=313 data-nosnippet>313</a>    ///
+<a href=#314 id=314 data-nosnippet>314</a>    /// PRNG implementations should make sure `from_seed` never panics. In the
+<a href=#315 id=315 data-nosnippet>315</a>    /// case that some special values (like an all zero seed) are not viable
+<a href=#316 id=316 data-nosnippet>316</a>    /// seeds it is preferable to map these to alternative constant value(s),
+<a href=#317 id=317 data-nosnippet>317</a>    /// for example `0xBAD5EEDu32` or `0x0DDB1A5E5BAD5EEDu64` ("odd biases? bad
+<a href=#318 id=318 data-nosnippet>318</a>    /// seed"). This is assuming only a small number of values must be rejected.
+<a href=#319 id=319 data-nosnippet>319</a>    </span><span class="kw">fn </span>from_seed(seed: <span class="self">Self</span>::Seed) -&gt; <span class="self">Self</span>;
+<a href=#320 id=320 data-nosnippet>320</a>
+<a href=#321 id=321 data-nosnippet>321</a>    <span class="doccomment">/// Create a new PRNG using a `u64` seed.
+<a href=#322 id=322 data-nosnippet>322</a>    ///
+<a href=#323 id=323 data-nosnippet>323</a>    /// This is a convenience-wrapper around `from_seed` to allow construction
+<a href=#324 id=324 data-nosnippet>324</a>    /// of any `SeedableRng` from a simple `u64` value. It is designed such that
+<a href=#325 id=325 data-nosnippet>325</a>    /// low Hamming Weight numbers like 0 and 1 can be used and should still
+<a href=#326 id=326 data-nosnippet>326</a>    /// result in good, independent seeds to the PRNG which is returned.
+<a href=#327 id=327 data-nosnippet>327</a>    ///
+<a href=#328 id=328 data-nosnippet>328</a>    /// This **is not suitable for cryptography**, as should be clear given that
+<a href=#329 id=329 data-nosnippet>329</a>    /// the input size is only 64 bits.
+<a href=#330 id=330 data-nosnippet>330</a>    ///
+<a href=#331 id=331 data-nosnippet>331</a>    /// Implementations for PRNGs *may* provide their own implementations of
+<a href=#332 id=332 data-nosnippet>332</a>    /// this function, but the default implementation should be good enough for
+<a href=#333 id=333 data-nosnippet>333</a>    /// all purposes. *Changing* the implementation of this function should be
+<a href=#334 id=334 data-nosnippet>334</a>    /// considered a value-breaking change.
+<a href=#335 id=335 data-nosnippet>335</a>    </span><span class="kw">fn </span>seed_from_u64(<span class="kw-2">mut </span>state: u64) -&gt; <span class="self">Self </span>{
+<a href=#336 id=336 data-nosnippet>336</a>        <span class="comment">// We use PCG32 to generate a u32 sequence, and copy to the seed
+<a href=#337 id=337 data-nosnippet>337</a>        </span><span class="kw">fn </span>pcg32(state: <span class="kw-2">&amp;mut </span>u64) -&gt; [u8; <span class="number">4</span>] {
+<a href=#338 id=338 data-nosnippet>338</a>            <span class="kw">const </span>MUL: u64 = <span class="number">6364136223846793005</span>;
+<a href=#339 id=339 data-nosnippet>339</a>            <span class="kw">const </span>INC: u64 = <span class="number">11634580027462260723</span>;
+<a href=#340 id=340 data-nosnippet>340</a>
+<a href=#341 id=341 data-nosnippet>341</a>            <span class="comment">// We advance the state first (to get away from the input value,
+<a href=#342 id=342 data-nosnippet>342</a>            // in case it has low Hamming Weight).
+<a href=#343 id=343 data-nosnippet>343</a>            </span><span class="kw-2">*</span>state = state.wrapping_mul(MUL).wrapping_add(INC);
+<a href=#344 id=344 data-nosnippet>344</a>            <span class="kw">let </span>state = <span class="kw-2">*</span>state;
+<a href=#345 id=345 data-nosnippet>345</a>
+<a href=#346 id=346 data-nosnippet>346</a>            <span class="comment">// Use PCG output function with to_le to generate x:
+<a href=#347 id=347 data-nosnippet>347</a>            </span><span class="kw">let </span>xorshifted = (((state &gt;&gt; <span class="number">18</span>) ^ state) &gt;&gt; <span class="number">27</span>) <span class="kw">as </span>u32;
+<a href=#348 id=348 data-nosnippet>348</a>            <span class="kw">let </span>rot = (state &gt;&gt; <span class="number">59</span>) <span class="kw">as </span>u32;
+<a href=#349 id=349 data-nosnippet>349</a>            <span class="kw">let </span>x = xorshifted.rotate_right(rot);
+<a href=#350 id=350 data-nosnippet>350</a>            x.to_le_bytes()
+<a href=#351 id=351 data-nosnippet>351</a>        }
+<a href=#352 id=352 data-nosnippet>352</a>
+<a href=#353 id=353 data-nosnippet>353</a>        <span class="kw">let </span><span class="kw-2">mut </span>seed = <span class="self">Self</span>::Seed::default();
+<a href=#354 id=354 data-nosnippet>354</a>        <span class="kw">let </span><span class="kw-2">mut </span>iter = seed.as_mut().chunks_exact_mut(<span class="number">4</span>);
+<a href=#355 id=355 data-nosnippet>355</a>        <span class="kw">for </span>chunk <span class="kw">in </span><span class="kw-2">&amp;mut </span>iter {
+<a href=#356 id=356 data-nosnippet>356</a>            chunk.copy_from_slice(<span class="kw-2">&amp;</span>pcg32(<span class="kw-2">&amp;mut </span>state));
+<a href=#357 id=357 data-nosnippet>357</a>        }
+<a href=#358 id=358 data-nosnippet>358</a>        <span class="kw">let </span>rem = iter.into_remainder();
+<a href=#359 id=359 data-nosnippet>359</a>        <span class="kw">if </span>!rem.is_empty() {
+<a href=#360 id=360 data-nosnippet>360</a>            rem.copy_from_slice(<span class="kw-2">&amp;</span>pcg32(<span class="kw-2">&amp;mut </span>state)[..rem.len()]);
+<a href=#361 id=361 data-nosnippet>361</a>        }
+<a href=#362 id=362 data-nosnippet>362</a>
+<a href=#363 id=363 data-nosnippet>363</a>        <span class="self">Self</span>::from_seed(seed)
+<a href=#364 id=364 data-nosnippet>364</a>    }
+<a href=#365 id=365 data-nosnippet>365</a>
+<a href=#366 id=366 data-nosnippet>366</a>    <span class="doccomment">/// Create a new PRNG seeded from another `Rng`.
+<a href=#367 id=367 data-nosnippet>367</a>    ///
+<a href=#368 id=368 data-nosnippet>368</a>    /// This may be useful when needing to rapidly seed many PRNGs from a master
+<a href=#369 id=369 data-nosnippet>369</a>    /// PRNG, and to allow forking of PRNGs. It may be considered deterministic.
+<a href=#370 id=370 data-nosnippet>370</a>    ///
+<a href=#371 id=371 data-nosnippet>371</a>    /// The master PRNG should be at least as high quality as the child PRNGs.
+<a href=#372 id=372 data-nosnippet>372</a>    /// When seeding non-cryptographic child PRNGs, we recommend using a
+<a href=#373 id=373 data-nosnippet>373</a>    /// different algorithm for the master PRNG (ideally a CSPRNG) to avoid
+<a href=#374 id=374 data-nosnippet>374</a>    /// correlations between the child PRNGs. If this is not possible (e.g.
+<a href=#375 id=375 data-nosnippet>375</a>    /// forking using small non-crypto PRNGs) ensure that your PRNG has a good
+<a href=#376 id=376 data-nosnippet>376</a>    /// mixing function on the output or consider use of a hash function with
+<a href=#377 id=377 data-nosnippet>377</a>    /// `from_seed`.
+<a href=#378 id=378 data-nosnippet>378</a>    ///
+<a href=#379 id=379 data-nosnippet>379</a>    /// Note that seeding `XorShiftRng` from another `XorShiftRng` provides an
+<a href=#380 id=380 data-nosnippet>380</a>    /// extreme example of what can go wrong: the new PRNG will be a clone
+<a href=#381 id=381 data-nosnippet>381</a>    /// of the parent.
+<a href=#382 id=382 data-nosnippet>382</a>    ///
+<a href=#383 id=383 data-nosnippet>383</a>    /// PRNG implementations are allowed to assume that a good RNG is provided
+<a href=#384 id=384 data-nosnippet>384</a>    /// for seeding, and that it is cryptographically secure when appropriate.
+<a href=#385 id=385 data-nosnippet>385</a>    /// As of `rand` 0.7 / `rand_core` 0.5, implementations overriding this
+<a href=#386 id=386 data-nosnippet>386</a>    /// method should ensure the implementation satisfies reproducibility
+<a href=#387 id=387 data-nosnippet>387</a>    /// (in prior versions this was not required).
+<a href=#388 id=388 data-nosnippet>388</a>    ///
+<a href=#389 id=389 data-nosnippet>389</a>    /// [`rand`]: https://docs.rs/rand
+<a href=#390 id=390 data-nosnippet>390</a>    </span><span class="kw">fn </span>from_rng&lt;R: RngCore&gt;(<span class="kw-2">mut </span>rng: R) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
+<a href=#391 id=391 data-nosnippet>391</a>        <span class="kw">let </span><span class="kw-2">mut </span>seed = <span class="self">Self</span>::Seed::default();
+<a href=#392 id=392 data-nosnippet>392</a>        rng.try_fill_bytes(seed.as_mut())<span class="question-mark">?</span>;
+<a href=#393 id=393 data-nosnippet>393</a>        <span class="prelude-val">Ok</span>(<span class="self">Self</span>::from_seed(seed))
+<a href=#394 id=394 data-nosnippet>394</a>    }
+<a href=#395 id=395 data-nosnippet>395</a>
+<a href=#396 id=396 data-nosnippet>396</a>    <span class="doccomment">/// Creates a new instance of the RNG seeded via [`getrandom`].
+<a href=#397 id=397 data-nosnippet>397</a>    ///
+<a href=#398 id=398 data-nosnippet>398</a>    /// This method is the recommended way to construct non-deterministic PRNGs
+<a href=#399 id=399 data-nosnippet>399</a>    /// since it is convenient and secure.
+<a href=#400 id=400 data-nosnippet>400</a>    ///
+<a href=#401 id=401 data-nosnippet>401</a>    /// In case the overhead of using [`getrandom`] to seed *many* PRNGs is an
+<a href=#402 id=402 data-nosnippet>402</a>    /// issue, one may prefer to seed from a local PRNG, e.g.
+<a href=#403 id=403 data-nosnippet>403</a>    /// `from_rng(thread_rng()).unwrap()`.
+<a href=#404 id=404 data-nosnippet>404</a>    ///
+<a href=#405 id=405 data-nosnippet>405</a>    /// # Panics
+<a href=#406 id=406 data-nosnippet>406</a>    ///
+<a href=#407 id=407 data-nosnippet>407</a>    /// If [`getrandom`] is unable to provide secure entropy this method will panic.
+<a href=#408 id=408 data-nosnippet>408</a>    ///
+<a href=#409 id=409 data-nosnippet>409</a>    /// [`getrandom`]: https://docs.rs/getrandom
+<a href=#410 id=410 data-nosnippet>410</a>    </span><span class="attr">#[cfg(feature = <span class="string">"getrandom"</span>)]
+<a href=#411 id=411 data-nosnippet>411</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"getrandom"</span>)))]
+<a href=#412 id=412 data-nosnippet>412</a>    </span><span class="kw">fn </span>from_entropy() -&gt; <span class="self">Self </span>{
+<a href=#413 id=413 data-nosnippet>413</a>        <span class="kw">let </span><span class="kw-2">mut </span>seed = <span class="self">Self</span>::Seed::default();
+<a href=#414 id=414 data-nosnippet>414</a>        <span class="kw">if let </span><span class="prelude-val">Err</span>(err) = getrandom::getrandom(seed.as_mut()) {
+<a href=#415 id=415 data-nosnippet>415</a>            <span class="macro">panic!</span>(<span class="string">"from_entropy failed: {}"</span>, err);
+<a href=#416 id=416 data-nosnippet>416</a>        }
+<a href=#417 id=417 data-nosnippet>417</a>        <span class="self">Self</span>::from_seed(seed)
+<a href=#418 id=418 data-nosnippet>418</a>    }
+<a href=#419 id=419 data-nosnippet>419</a>}
+<a href=#420 id=420 data-nosnippet>420</a>
+<a href=#421 id=421 data-nosnippet>421</a><span class="comment">// Implement `RngCore` for references to an `RngCore`.
+<a href=#422 id=422 data-nosnippet>422</a>// Force inlining all functions, so that it is up to the `RngCore`
+<a href=#423 id=423 data-nosnippet>423</a>// implementation and the optimizer to decide on inlining.
+<a href=#424 id=424 data-nosnippet>424</a></span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, R: RngCore + <span class="question-mark">?</span>Sized&gt; RngCore <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>R {
+<a href=#425 id=425 data-nosnippet>425</a>    <span class="attr">#[inline(always)]
+<a href=#426 id=426 data-nosnippet>426</a>    </span><span class="kw">fn </span>next_u32(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; u32 {
+<a href=#427 id=427 data-nosnippet>427</a>        (<span class="kw-2">**</span><span class="self">self</span>).next_u32()
+<a href=#428 id=428 data-nosnippet>428</a>    }
+<a href=#429 id=429 data-nosnippet>429</a>
+<a href=#430 id=430 data-nosnippet>430</a>    <span class="attr">#[inline(always)]
+<a href=#431 id=431 data-nosnippet>431</a>    </span><span class="kw">fn </span>next_u64(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; u64 {
+<a href=#432 id=432 data-nosnippet>432</a>        (<span class="kw-2">**</span><span class="self">self</span>).next_u64()
+<a href=#433 id=433 data-nosnippet>433</a>    }
+<a href=#434 id=434 data-nosnippet>434</a>
+<a href=#435 id=435 data-nosnippet>435</a>    <span class="attr">#[inline(always)]
+<a href=#436 id=436 data-nosnippet>436</a>    </span><span class="kw">fn </span>fill_bytes(<span class="kw-2">&amp;mut </span><span class="self">self</span>, dest: <span class="kw-2">&amp;mut </span>[u8]) {
+<a href=#437 id=437 data-nosnippet>437</a>        (<span class="kw-2">**</span><span class="self">self</span>).fill_bytes(dest)
+<a href=#438 id=438 data-nosnippet>438</a>    }
+<a href=#439 id=439 data-nosnippet>439</a>
+<a href=#440 id=440 data-nosnippet>440</a>    <span class="attr">#[inline(always)]
+<a href=#441 id=441 data-nosnippet>441</a>    </span><span class="kw">fn </span>try_fill_bytes(<span class="kw-2">&amp;mut </span><span class="self">self</span>, dest: <span class="kw-2">&amp;mut </span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+<a href=#442 id=442 data-nosnippet>442</a>        (<span class="kw-2">**</span><span class="self">self</span>).try_fill_bytes(dest)
+<a href=#443 id=443 data-nosnippet>443</a>    }
+<a href=#444 id=444 data-nosnippet>444</a>}
+<a href=#445 id=445 data-nosnippet>445</a>
+<a href=#446 id=446 data-nosnippet>446</a><span class="comment">// Implement `RngCore` for boxed references to an `RngCore`.
+<a href=#447 id=447 data-nosnippet>447</a>// Force inlining all functions, so that it is up to the `RngCore`
+<a href=#448 id=448 data-nosnippet>448</a>// implementation and the optimizer to decide on inlining.
+<a href=#449 id=449 data-nosnippet>449</a></span><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#450 id=450 data-nosnippet>450</a></span><span class="kw">impl</span>&lt;R: RngCore + <span class="question-mark">?</span>Sized&gt; RngCore <span class="kw">for </span>Box&lt;R&gt; {
+<a href=#451 id=451 data-nosnippet>451</a>    <span class="attr">#[inline(always)]
+<a href=#452 id=452 data-nosnippet>452</a>    </span><span class="kw">fn </span>next_u32(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; u32 {
+<a href=#453 id=453 data-nosnippet>453</a>        (<span class="kw-2">**</span><span class="self">self</span>).next_u32()
+<a href=#454 id=454 data-nosnippet>454</a>    }
+<a href=#455 id=455 data-nosnippet>455</a>
+<a href=#456 id=456 data-nosnippet>456</a>    <span class="attr">#[inline(always)]
+<a href=#457 id=457 data-nosnippet>457</a>    </span><span class="kw">fn </span>next_u64(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; u64 {
+<a href=#458 id=458 data-nosnippet>458</a>        (<span class="kw-2">**</span><span class="self">self</span>).next_u64()
+<a href=#459 id=459 data-nosnippet>459</a>    }
+<a href=#460 id=460 data-nosnippet>460</a>
+<a href=#461 id=461 data-nosnippet>461</a>    <span class="attr">#[inline(always)]
+<a href=#462 id=462 data-nosnippet>462</a>    </span><span class="kw">fn </span>fill_bytes(<span class="kw-2">&amp;mut </span><span class="self">self</span>, dest: <span class="kw-2">&amp;mut </span>[u8]) {
+<a href=#463 id=463 data-nosnippet>463</a>        (<span class="kw-2">**</span><span class="self">self</span>).fill_bytes(dest)
+<a href=#464 id=464 data-nosnippet>464</a>    }
+<a href=#465 id=465 data-nosnippet>465</a>
+<a href=#466 id=466 data-nosnippet>466</a>    <span class="attr">#[inline(always)]
+<a href=#467 id=467 data-nosnippet>467</a>    </span><span class="kw">fn </span>try_fill_bytes(<span class="kw-2">&amp;mut </span><span class="self">self</span>, dest: <span class="kw-2">&amp;mut </span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+<a href=#468 id=468 data-nosnippet>468</a>        (<span class="kw-2">**</span><span class="self">self</span>).try_fill_bytes(dest)
+<a href=#469 id=469 data-nosnippet>469</a>    }
+<a href=#470 id=470 data-nosnippet>470</a>}
+<a href=#471 id=471 data-nosnippet>471</a>
+<a href=#472 id=472 data-nosnippet>472</a><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#473 id=473 data-nosnippet>473</a></span><span class="kw">impl </span>std::io::Read <span class="kw">for dyn </span>RngCore {
+<a href=#474 id=474 data-nosnippet>474</a>    <span class="kw">fn </span>read(<span class="kw-2">&amp;mut </span><span class="self">self</span>, buf: <span class="kw-2">&amp;mut </span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;usize, std::io::Error&gt; {
+<a href=#475 id=475 data-nosnippet>475</a>        <span class="self">self</span>.try_fill_bytes(buf)<span class="question-mark">?</span>;
+<a href=#476 id=476 data-nosnippet>476</a>        <span class="prelude-val">Ok</span>(buf.len())
+<a href=#477 id=477 data-nosnippet>477</a>    }
+<a href=#478 id=478 data-nosnippet>478</a>}
+<a href=#479 id=479 data-nosnippet>479</a>
+<a href=#480 id=480 data-nosnippet>480</a><span class="comment">// Implement `CryptoRng` for references to a `CryptoRng`.
+<a href=#481 id=481 data-nosnippet>481</a></span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, R: CryptoRng + <span class="question-mark">?</span>Sized&gt; CryptoRng <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>R {}
+<a href=#482 id=482 data-nosnippet>482</a>
+<a href=#483 id=483 data-nosnippet>483</a><span class="comment">// Implement `CryptoRng` for boxed references to a `CryptoRng`.
+<a href=#484 id=484 data-nosnippet>484</a></span><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#485 id=485 data-nosnippet>485</a></span><span class="kw">impl</span>&lt;R: CryptoRng + <span class="question-mark">?</span>Sized&gt; CryptoRng <span class="kw">for </span>Box&lt;R&gt; {}
+<a href=#486 id=486 data-nosnippet>486</a>
+<a href=#487 id=487 data-nosnippet>487</a><span class="attr">#[cfg(test)]
+<a href=#488 id=488 data-nosnippet>488</a></span><span class="kw">mod </span>test {
+<a href=#489 id=489 data-nosnippet>489</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#490 id=490 data-nosnippet>490</a>
+<a href=#491 id=491 data-nosnippet>491</a>    <span class="attr">#[test]
+<a href=#492 id=492 data-nosnippet>492</a>    </span><span class="kw">fn </span>test_seed_from_u64() {
+<a href=#493 id=493 data-nosnippet>493</a>        <span class="kw">struct </span>SeedableNum(u64);
+<a href=#494 id=494 data-nosnippet>494</a>        <span class="kw">impl </span>SeedableRng <span class="kw">for </span>SeedableNum {
+<a href=#495 id=495 data-nosnippet>495</a>            <span class="kw">type </span>Seed = [u8; <span class="number">8</span>];
+<a href=#496 id=496 data-nosnippet>496</a>
+<a href=#497 id=497 data-nosnippet>497</a>            <span class="kw">fn </span>from_seed(seed: <span class="self">Self</span>::Seed) -&gt; <span class="self">Self </span>{
+<a href=#498 id=498 data-nosnippet>498</a>                <span class="kw">let </span><span class="kw-2">mut </span>x = [<span class="number">0u64</span>; <span class="number">1</span>];
+<a href=#499 id=499 data-nosnippet>499</a>                le::read_u64_into(<span class="kw-2">&amp;</span>seed, <span class="kw-2">&amp;mut </span>x);
+<a href=#500 id=500 data-nosnippet>500</a>                SeedableNum(x[<span class="number">0</span>])
+<a href=#501 id=501 data-nosnippet>501</a>            }
+<a href=#502 id=502 data-nosnippet>502</a>        }
+<a href=#503 id=503 data-nosnippet>503</a>
+<a href=#504 id=504 data-nosnippet>504</a>        <span class="kw">const </span>N: usize = <span class="number">8</span>;
+<a href=#505 id=505 data-nosnippet>505</a>        <span class="kw">const </span>SEEDS: [u64; N] = [<span class="number">0u64</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">8</span>, <span class="number">16</span>, -<span class="number">1i64 </span><span class="kw">as </span>u64];
+<a href=#506 id=506 data-nosnippet>506</a>        <span class="kw">let </span><span class="kw-2">mut </span>results = [<span class="number">0u64</span>; N];
+<a href=#507 id=507 data-nosnippet>507</a>        <span class="kw">for </span>(i, seed) <span class="kw">in </span>SEEDS.iter().enumerate() {
+<a href=#508 id=508 data-nosnippet>508</a>            <span class="kw">let </span>SeedableNum(x) = SeedableNum::seed_from_u64(<span class="kw-2">*</span>seed);
+<a href=#509 id=509 data-nosnippet>509</a>            results[i] = x;
+<a href=#510 id=510 data-nosnippet>510</a>        }
+<a href=#511 id=511 data-nosnippet>511</a>
+<a href=#512 id=512 data-nosnippet>512</a>        <span class="kw">for </span>(i1, r1) <span class="kw">in </span>results.iter().enumerate() {
+<a href=#513 id=513 data-nosnippet>513</a>            <span class="kw">let </span>weight = r1.count_ones();
+<a href=#514 id=514 data-nosnippet>514</a>            <span class="comment">// This is the binomial distribution B(64, 0.5), so chance of
+<a href=#515 id=515 data-nosnippet>515</a>            // weight &lt; 20 is binocdf(19, 64, 0.5) = 7.8e-4, and same for
+<a href=#516 id=516 data-nosnippet>516</a>            // weight &gt; 44.
+<a href=#517 id=517 data-nosnippet>517</a>            </span><span class="macro">assert!</span>((<span class="number">20</span>..=<span class="number">44</span>).contains(<span class="kw-2">&amp;</span>weight));
+<a href=#518 id=518 data-nosnippet>518</a>
+<a href=#519 id=519 data-nosnippet>519</a>            <span class="kw">for </span>(i2, r2) <span class="kw">in </span>results.iter().enumerate() {
+<a href=#520 id=520 data-nosnippet>520</a>                <span class="kw">if </span>i1 == i2 {
+<a href=#521 id=521 data-nosnippet>521</a>                    <span class="kw">continue</span>;
+<a href=#522 id=522 data-nosnippet>522</a>                }
+<a href=#523 id=523 data-nosnippet>523</a>                <span class="kw">let </span>diff_weight = (r1 ^ r2).count_ones();
+<a href=#524 id=524 data-nosnippet>524</a>                <span class="macro">assert!</span>(diff_weight &gt;= <span class="number">20</span>);
+<a href=#525 id=525 data-nosnippet>525</a>            }
+<a href=#526 id=526 data-nosnippet>526</a>        }
+<a href=#527 id=527 data-nosnippet>527</a>
+<a href=#528 id=528 data-nosnippet>528</a>        <span class="comment">// value-breakage test:
+<a href=#529 id=529 data-nosnippet>529</a>        </span><span class="macro">assert_eq!</span>(results[<span class="number">0</span>], <span class="number">5029875928683246316</span>);
+<a href=#530 id=530 data-nosnippet>530</a>    }
+<a href=#531 id=531 data-nosnippet>531</a>}</code></pre></div></section></main></body></html>
