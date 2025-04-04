@@ -10,7 +10,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
-## [2.2.9] 2025-03-31
+## [2.2.9] 2025-04-04
 ### Fixed
 
 * Fix an issue where `diesel migration generate --diff-schema` incorrectly uses the primary key of table B as the referenced column rather than the primary key of table A when B has a foreign key pointing to table A.
