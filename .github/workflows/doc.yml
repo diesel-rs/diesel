@@ -28,7 +28,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get -y install libmysqlclient-dev libsqlite3-dev libpq-dev
+        sudo apt-get -y install libmysqlclient-dev libsqlite3-dev libpq-dev libtirpc-dev
     - name: Build documentation
       env:
         RUSTFLAGS: "--cfg docsrs"
