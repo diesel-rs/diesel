@@ -18,8 +18,9 @@ error[E0106]: missing lifetime specifier
    |
 help: consider introducing a named lifetime parameter
    |
-12 | fn with_lifetime<'a>(name: &'a str) -> _ {
-   |                 ++++        ~~
+12 - fn with_lifetime(name: &'_ str) -> _ {
+12 + fn with_lifetime<'a>(name: &'a str) -> _ {
+   |
 
 error[E0106]: missing lifetime specifier
   --> tests/fail/auto_type_life_times.rs:17:25

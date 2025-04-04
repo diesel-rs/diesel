@@ -10,8 +10,15 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
-## [2.2.8] 2025-03-03
+## [2.2.9] 2025-04-04
+### Fixed
 
+* Fix an issue where `diesel migration generate --diff-schema` incorrectly uses the primary key of table B as the referenced column rather than the primary key of table A when B has a foreign key pointing to table A.
+* Bump maximal supported libsqlite3-sys version to 0.32.0 and add explicit feature entries for the `uuid` and `serde_json` feature.
+* Fixed an issue where diesel generated unnamed prepared statements would fail with an `unanmed prepared statement not found` error with pgbouncer.
+* Fix an issue with converting `ipnet::Ipnet` values with an subnet to SQL values
+
+## [2.2.8] 2025-03-03
 ### Fixed
 
 * Allow `#[diesel(check_for_backend(_))]` to check fields with `#[diesel(embed)]` annotations
@@ -2190,3 +2197,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.2.6]: https://github.com/diesel-rs/diesel/compare/v2.2.5...v2.2.6
 [2.2.7]: https://github.com/diesel-rs/diesel/compare/v2.2.6...v2.2.7
 [2.2.8]: https://github.com/diesel-rs/diesel/compare/v2.2.7...v2.2.8
+[2.2.9]: https://github.com/diesel-rs/diesel/compare/v2.2.8...v2.2.9

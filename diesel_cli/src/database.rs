@@ -420,7 +420,7 @@ fn change_database_of_url(
     let database = base
         .path_segments()
         .expect("The database url has at least one path segment")
-        .last()
+        .next_back()
         .expect("The database url has at least one path segment")
         .to_owned();
     let mut new_url = base
