@@ -1,5 +1,7 @@
 use std::path::{Path, PathBuf};
 
+use diesel_migrations::MigrationError;
+
 use crate::infer_schema_internals::TableName;
 
 #[derive(thiserror::Error, Debug)]
@@ -77,4 +79,13 @@ fn print_path(path: &Path) -> String {
 }
 fn print_optional_path(path: &Option<PathBuf>) -> String {
     path.as_ref().map(|p| print_path(p)).unwrap_or_default()
+}
+
+impl Error {
+    pub fn from_migration_error<T: Into<PathBuf>>(error: MigrationError, path: Option<T>) -> Self {
+        match error {
+            MigrationError::IoError(error) => Self::IoError(error, path.map(Into::into)),
+            _ => Self::MigrationError(Box::new(error)),
+        }
+    }
 }
