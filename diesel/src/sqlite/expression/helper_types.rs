@@ -73,3 +73,15 @@ pub type json_group_array<E> = super::functions::json_group_array<SqlTypeOf<E>, 
 #[allow(non_camel_case_types)]
 #[cfg(feature = "sqlite")]
 pub type jsonb_group_array<E> = super::functions::jsonb_group_array<SqlTypeOf<E>, E>;
+
+/// Return type of [`json_group_object(names, values)`](super::functions::json_group_object())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_group_object<N, V> =
+    super::functions::json_group_object<SqlTypeOf<N>, SqlTypeOf<V>, N, V>;
+
+/// Return type of [`jsonb_group_object(names, values)`](super::functions::jsonb_group_object())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type jsonb_group_object<N, V> =
+    super::functions::jsonb_group_object<SqlTypeOf<N>, SqlTypeOf<V>, N, V>;

@@ -993,6 +993,10 @@ extern "SQL" {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # See also
+    /// - [`jsonb_group_array`] will return data in JSONB format instead of JSON.
+    /// - [`json_group_object`] will return JSON object instead of array.
     #[cfg(feature = "sqlite")]
     #[aggregate]
     fn json_group_array<E: SqlType + SingleValue>(elements: E) -> Json;
@@ -1030,7 +1034,137 @@ extern "SQL" {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # See also
+    /// - [`json_group_array`] will return data in JSON format instead of JSONB.
+    /// - [`jsonb_group_object`] will return JSONB object instead of array.
     #[cfg(feature = "sqlite")]
     #[aggregate]
     fn jsonb_group_array<E: SqlType + SingleValue>(elements: E) -> Jsonb;
+
+    /// The json_group_object(NAME,VALUE) function returns a JSON object comprised of all NAME/VALUE pairs in
+    /// the aggregation.
+    ///
+    /// # Corner cases
+    ///
+    /// This function does not always return a valid JSON. For instance:
+    /// 1. If `names` contains `NULL` entries, the corresponding keys will be omitted, but the values will
+    /// remain: `{"key_1": 0, : 1, "key_3": 2}`.
+    /// 2. If `names` contains duplicate elements, the result will include all of them:
+    /// `{"key": 1, "key": 2, "key": 3}`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::Text;
+    /// #     use serde_json::json;
+    /// #     use schema::animals::dsl::*;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// #     let version = diesel::select(sql::<Text>("sqlite_version();"))
+    /// #         .get_result::<String>(connection)?;
+    /// #
+    /// #     let version_components: Vec<&str> = version.split('.').collect();
+    /// #     let major: u32 = version_components[0].parse().unwrap();
+    /// #     let minor: u32 = version_components[1].parse().unwrap();
+    /// #
+    /// #     if major < 3 || minor < 38 {
+    /// #         println!("SQLite version is too old, skipping the test.");
+    /// #         return Ok(());
+    /// #     }
+    /// #
+    /// let result = animals.select(json_group_object(species, name)).get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"dog":"Jack","spider":null}), result);
+    /// #
+    /// # // The first corner case(the second key is missing as it equals NULL).
+    /// # let result = animals.select(json_group_object(name, species)).get_result::<serde_json::Value>(connection);
+    /// # assert!(result.is_err());
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # See also
+    /// - [`jsonb_group_object`] will return data in JSONB format instead of JSON.
+    /// - [`json_group_array`] will return JSON array instead of object.
+    #[cfg(feature = "sqlite")]
+    #[aggregate]
+    fn json_group_object<N: SqlType + SingleValue, V: SqlType + SingleValue>(
+        names: N,
+        values: V,
+    ) -> Json;
+
+    /// The jsonb_group_object(NAME,VALUE) function returns a JSONB object comprised of all NAME/VALUE pairs in
+    /// the aggregation.
+    ///
+    /// # Corner cases
+    ///
+    /// This function does not always return a valid JSONB. For instance:
+    /// 1. If `names` contains `NULL` entries, the corresponding keys will be omitted, but the values will
+    /// remain: `{"key_1": 0, : 1, "key_3": 2}`.
+    /// 2. If `names` contains duplicate elements, the resulting string will include all of them:
+    /// `{"key": 1, "key": 2, "key": 3}`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::Text;
+    /// #     use serde_json::json;
+    /// #     use schema::animals::dsl::*;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// #     let version = diesel::select(sql::<Text>("sqlite_version();"))
+    /// #         .get_result::<String>(connection)?;
+    /// #
+    /// #     let version_components: Vec<&str> = version.split('.').collect();
+    /// #     let major: u32 = version_components[0].parse().unwrap();
+    /// #     let minor: u32 = version_components[1].parse().unwrap();
+    /// #
+    /// #     if major < 3 || minor < 38 {
+    /// #         println!("SQLite version is too old, skipping the test.");
+    /// #         return Ok(());
+    /// #     }
+    /// #
+    /// let result = animals.select(jsonb_group_object(species, name)).get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"dog":"Jack","spider":null}), result);
+    /// #
+    /// # // The first corner case(the second key is missing as it equals NULL).
+    /// # let result = animals.select(jsonb_group_object(name, species)).get_result::<serde_json::Value>(connection);
+    /// # assert!(result.is_err());
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # See also
+    /// - [`json_group_object`] will return data in JSON format instead of JSONB.
+    /// - [`jsonb_group_array`] will return JSONB array instead of object.
+    #[cfg(feature = "sqlite")]
+    #[aggregate]
+    fn jsonb_group_object<N: SqlType + SingleValue, V: SqlType + SingleValue>(
+        names: N,
+        values: V,
+    ) -> Jsonb;
 }

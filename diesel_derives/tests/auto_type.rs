@@ -528,6 +528,8 @@ fn sqlite_aggregate_functions() -> _ {
         json_group_array(users::id),
         jsonb_group_array(users::name),
         jsonb_group_array(users::id),
+        json_group_object(users::name, users::id),
+        jsonb_group_object(users::name, users::id),
     )
 }
 
