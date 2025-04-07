@@ -1045,10 +1045,10 @@ extern "SQL" {
     /// The json_group_object(NAME,VALUE) function returns a JSON object comprised of all NAME/VALUE pairs in
     /// the aggregation.
     ///
-    /// A potential edge case in this function arises when `names` contains duplicate elements. 
+    /// A potential edge case in this function arises when `names` contains duplicate elements.
     /// In such case, the result will include all duplicates (e.g., `{"key": 1, "key": 2, "key": 3}`).
     /// Note that any duplicate entries in the resulting JSON will be removed during deserialization.
-    /// 
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -1092,7 +1092,10 @@ extern "SQL" {
     /// - [`json_group_array`] will return JSON array instead of object.
     #[cfg(feature = "sqlite")]
     #[aggregate]
-    fn json_group_object<N: SqlType<IsNull = is_nullable::NotNull> + SingleValue, V: SqlType + SingleValue>(
+    fn json_group_object<
+        N: SqlType<IsNull = is_nullable::NotNull> + SingleValue,
+        V: SqlType + SingleValue,
+    >(
         names: N,
         values: V,
     ) -> Json;
@@ -1100,7 +1103,7 @@ extern "SQL" {
     /// The jsonb_group_object(NAME,VALUE) function returns a JSONB object comprised of all NAME/VALUE pairs in
     /// the aggregation.
     ///
-    /// A potential edge case in this function arises when `names` contains duplicate elements. 
+    /// A potential edge case in this function arises when `names` contains duplicate elements.
     /// In such case, the result will include all duplicates (e.g., `{"key": 1, "key": 2, "key": 3}`).
     /// Note that any duplicate entries in the resulting JSONB will be removed during deserialization.
     ///
@@ -1147,7 +1150,10 @@ extern "SQL" {
     /// - [`jsonb_group_array`] will return JSONB array instead of object.
     #[cfg(feature = "sqlite")]
     #[aggregate]
-    fn jsonb_group_object<N: SqlType<IsNull = is_nullable::NotNull> + SingleValue, V: SqlType + SingleValue>(
+    fn jsonb_group_object<
+        N: SqlType<IsNull = is_nullable::NotNull> + SingleValue,
+        V: SqlType + SingleValue,
+    >(
         names: N,
         values: V,
     ) -> Jsonb;
