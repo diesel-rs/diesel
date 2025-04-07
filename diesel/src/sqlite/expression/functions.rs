@@ -1019,6 +1019,16 @@ extern "SQL" {
     ///
     /// assert_eq!(json!({"a":{"x":1,"y":9},"b":3,"c":8}), result);
     ///
+    /// let result = diesel::select(json_patch::<Nullable<Json>, _, _>(None, json!({"a":{"x":1,"y":2},"b":3})))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(null), result);
+    ///
+    /// let result = diesel::select(json_patch::<Nullable<Json>, _, _>(json!({"a":{"x":1,"y":2},"b":3}), None))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(null), result);
+    ///
     /// # Ok(())
     /// # }
     /// ```
@@ -1084,7 +1094,18 @@ extern "SQL" {
     ///     .get_result::<Value>(connection)?;
     ///
     /// assert_eq!(json!({"a":{"x":1,"y":9},"b":3,"c":8}), result);
+    /// 
+    /// let result = diesel::select(jsonb_patch::<Nullable<Json>, _, _>(None, json!({"a":{"x":1,"y":2},"b":3})))
+    ///     .get_result::<Value>(connection)?;
     ///
+    /// assert_eq!(json!(null), result);
+    ///
+    /// let result = diesel::select(jsonb_patch::<Nullable<Json>, _, _>(json!({"a":{"x":1,"y":2},"b":3}), None))
+    ///     .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(json!(null), result);
+    /// 
+ 
     /// # Ok(())
     /// # }
     /// ```
