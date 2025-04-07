@@ -1045,14 +1045,10 @@ extern "SQL" {
     /// The json_group_object(NAME,VALUE) function returns a JSON object comprised of all NAME/VALUE pairs in
     /// the aggregation.
     ///
-    /// # Corner cases
-    ///
-    /// This function does not always return a valid JSON. For instance:
-    /// 1. If `names` contains `NULL` entries, the corresponding keys will be omitted, but the values will
-    /// remain: `{"key_1": 0, : 1, "key_3": 2}`.
-    /// 2. If `names` contains duplicate elements, the result will include all of them:
-    /// `{"key": 1, "key": 2, "key": 3}`.
-    ///
+    /// A potential edge case in this function arises when `names` contains duplicate elements. 
+    /// In such case, the result will include all duplicates (e.g., `{"key": 1, "key": 2, "key": 3}`).
+    /// Note that any duplicate entries in the resulting JSON will be removed during deserialization.
+    /// 
     /// # Examples
     ///
     /// ```rust
@@ -1087,10 +1083,6 @@ extern "SQL" {
     /// let result = animals.select(json_group_object(species, name)).get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(json!({"dog":"Jack","spider":null}), result);
     /// #
-    /// # // The first corner case(the second key is missing as it equals NULL).
-    /// # let result = animals.select(json_group_object(name, species)).get_result::<serde_json::Value>(connection);
-    /// # assert!(result.is_err());
-    /// #
     /// # Ok(())
     /// # }
     /// ```
@@ -1100,7 +1092,7 @@ extern "SQL" {
     /// - [`json_group_array`] will return JSON array instead of object.
     #[cfg(feature = "sqlite")]
     #[aggregate]
-    fn json_group_object<N: SqlType + SingleValue, V: SqlType + SingleValue>(
+    fn json_group_object<N: SqlType<IsNull = is_nullable::NotNull> + SingleValue, V: SqlType + SingleValue>(
         names: N,
         values: V,
     ) -> Json;
@@ -1108,13 +1100,9 @@ extern "SQL" {
     /// The jsonb_group_object(NAME,VALUE) function returns a JSONB object comprised of all NAME/VALUE pairs in
     /// the aggregation.
     ///
-    /// # Corner cases
-    ///
-    /// This function does not always return a valid JSONB. For instance:
-    /// 1. If `names` contains `NULL` entries, the corresponding keys will be omitted, but the values will
-    /// remain: `{"key_1": 0, : 1, "key_3": 2}`.
-    /// 2. If `names` contains duplicate elements, the resulting string will include all of them:
-    /// `{"key": 1, "key": 2, "key": 3}`.
+    /// A potential edge case in this function arises when `names` contains duplicate elements. 
+    /// In such case, the result will include all duplicates (e.g., `{"key": 1, "key": 2, "key": 3}`).
+    /// Note that any duplicate entries in the resulting JSONB will be removed during deserialization.
     ///
     /// # Examples
     ///
@@ -1150,10 +1138,6 @@ extern "SQL" {
     /// let result = animals.select(jsonb_group_object(species, name)).get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(json!({"dog":"Jack","spider":null}), result);
     /// #
-    /// # // The first corner case(the second key is missing as it equals NULL).
-    /// # let result = animals.select(jsonb_group_object(name, species)).get_result::<serde_json::Value>(connection);
-    /// # assert!(result.is_err());
-    /// #
     /// # Ok(())
     /// # }
     /// ```
@@ -1163,7 +1147,7 @@ extern "SQL" {
     /// - [`jsonb_group_array`] will return JSONB array instead of object.
     #[cfg(feature = "sqlite")]
     #[aggregate]
-    fn jsonb_group_object<N: SqlType + SingleValue, V: SqlType + SingleValue>(
+    fn jsonb_group_object<N: SqlType<IsNull = is_nullable::NotNull> + SingleValue, V: SqlType + SingleValue>(
         names: N,
         values: V,
     ) -> Jsonb;
