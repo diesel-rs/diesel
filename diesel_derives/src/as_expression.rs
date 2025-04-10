@@ -45,7 +45,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             {
                 type Expression = Bound<#sql_type, Self>;
 
-                fn as_expression(self) -> Self::Expression {
+                fn as_expression(self) -> <Self as AsExpression<#sql_type>>::Expression {
                     Bound::new(self)
                 }
             }
@@ -55,7 +55,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             {
                 type Expression = Bound<Nullable<#sql_type>, Self>;
 
-                fn as_expression(self) -> Self::Expression {
+                fn as_expression(self) -> <Self as AsExpression<Nullable<#sql_type>>>::Expression {
                     Bound::new(self)
                 }
             }
@@ -65,7 +65,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             {
                 type Expression = Bound<#sql_type, Self>;
 
-                fn as_expression(self) -> Self::Expression {
+                fn as_expression(self) -> <Self as AsExpression<#sql_type>>::Expression {
                     Bound::new(self)
                 }
             }
@@ -75,7 +75,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             {
                 type Expression = Bound<Nullable<#sql_type>, Self>;
 
-                fn as_expression(self) -> Self::Expression {
+                fn as_expression(self) -> <Self as AsExpression<Nullable<#sql_type>>>::Expression {
                     Bound::new(self)
                 }
             }
@@ -99,7 +99,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                 impl #impl_generics_plain AsExpression<#sql_type> for #struct_ty #where_clause_plain {
                     type Expression = Bound<#sql_type, Self>;
 
-                    fn as_expression(self) -> Self::Expression {
+                    fn as_expression(self) -> <Self as AsExpression<#sql_type>>::Expression {
                         Bound::new(self)
                     }
                 }
@@ -107,7 +107,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                 impl #impl_generics_plain AsExpression<Nullable<#sql_type>> for #struct_ty #where_clause_plain {
                     type Expression = Bound<Nullable<#sql_type>, Self>;
 
-                    fn as_expression(self) -> Self::Expression {
+                    fn as_expression(self) -> <Self as AsExpression<Nullable<#sql_type>>>::Expression {
                         Bound::new(self)
                     }
                 }
