@@ -19,6 +19,7 @@ create-release = false
 install-updater = false
 # Path that installers should place binaries in
 install-path = "CARGO_HOME"
+# Whether to use cargo-cyclonedx to generate an SBOM
 cargo-cyclonedx = true
 
 [dist.min-glibc-version]
@@ -32,4 +33,4 @@ libncurses5-dev = '*'
 aarch64-apple-darwin = "macos-14"
 aarch64-unknown-linux-gnu = "ubuntu-22.04-arm"
 x86_64-unknown-linux-gnu = "ubuntu-22.04"
-
+global = "ubuntu-latest"
