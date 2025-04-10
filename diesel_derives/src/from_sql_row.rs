@@ -36,7 +36,7 @@ pub fn derive(mut item: DeriveInput) -> Result<TokenStream> {
         {
             type Row = Self;
 
-            fn build(row: Self::Row) -> deserialize::Result<Self> {
+            fn build(row: <Self as Queryable<__ST, __DB>>::Row) -> deserialize::Result<Self> {
                 Ok(row)
             }
         }
