@@ -23,20 +23,18 @@ pub fn derive(mut item: DeriveInput) -> Result<TokenStream> {
             .push(parse_quote!(__ST: diesel::sql_types::SingleValue));
         where_clause
             .predicates
-            .push(parse_quote!(Self: FromSql<__ST, __DB>));
+            .push(parse_quote!(Self: diesel::deserialize::FromSql<__ST, __DB>));
     }
     let (impl_generics, _, where_clause) = item.generics.split_for_impl();
 
     Ok(wrap_in_dummy_mod(quote! {
-        use diesel::deserialize::{self, FromSql, Queryable};
-
         // Need to put __ST and __DB after lifetimes but before const params
-        impl #impl_generics Queryable<__ST, __DB> for #struct_ty
+        impl #impl_generics diesel::deserialize::Queryable<__ST, __DB> for #struct_ty
         #where_clause
         {
             type Row = Self;
 
-            fn build(row: <Self as Queryable<__ST, __DB>>::Row) -> deserialize::Result<Self> {
+            fn build(row: Self) -> diesel::deserialize::Result<Self> {
                 Ok(row)
             }
         }

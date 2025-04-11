@@ -116,6 +116,7 @@ mod associations_can_have_nullable_foreign_keys {
             foo_id -> Nullable<Integer>,
         }
     }
+
     // This test has no assertions, as it is for compilation purposes only.
     #[derive(Identifiable)]
     pub struct Foo {
