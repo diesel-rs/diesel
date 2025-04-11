@@ -108,14 +108,14 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     }
 
     let changeset_owned = quote! {
-        impl #impl_generics AsChangeset for #struct_name #ty_generics
+        impl #impl_generics diesel::query_builder::AsChangeset for #struct_name #ty_generics
         #where_clause
         {
             type Target = #table_name::table;
-            type Changeset = <(#(#direct_field_ty,)*) as AsChangeset>::Changeset;
+            type Changeset = <(#(#direct_field_ty,)*) as diesel::query_builder::AsChangeset>::Changeset;
 
-            fn as_changeset(self) -> Self::Changeset {
-                (#(#direct_field_assign,)*).as_changeset()
+            fn as_changeset(self) -> <Self as diesel::query_builder::AsChangeset>::Changeset {
+                diesel::query_builder::AsChangeset::as_changeset((#(#direct_field_assign,)*))
             }
         }
     };
@@ -126,14 +126,14 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         let (impl_generics, _, _) = impl_generics.split_for_impl();
 
         quote! {
-            impl #impl_generics AsChangeset for &'update #struct_name #ty_generics
+            impl #impl_generics diesel::query_builder::AsChangeset for &'update #struct_name #ty_generics
             #where_clause
             {
                 type Target = #table_name::table;
-                type Changeset = <(#(#ref_field_ty,)*) as AsChangeset>::Changeset;
+                type Changeset = <(#(#ref_field_ty,)*) as diesel::query_builder::AsChangeset>::Changeset;
 
-                fn as_changeset(self) -> Self::Changeset {
-                    (#(#ref_field_assign,)*).as_changeset()
+                fn as_changeset(self) -> <Self as diesel::query_builder::AsChangeset>::Changeset {
+                    diesel::query_builder::AsChangeset::as_changeset((#(#ref_field_assign,)*))
                 }
             }
         }
@@ -142,9 +142,6 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     };
 
     Ok(wrap_in_dummy_mod(quote!(
-        use diesel::query_builder::AsChangeset;
-        use diesel::prelude::*;
-
         #changeset_owned
 
         #changeset_borrowed
@@ -179,12 +176,18 @@ fn field_changeset_expr(
     let column_name = field.column_name()?.to_ident()?;
     if !treat_none_as_null && is_option_ty(&field.ty) {
         if lifetime.is_some() {
-            Ok(quote!(self.#field_name.as_ref().map(|x| #table_name::#column_name.eq(x))))
+            Ok(
+                quote!(self.#field_name.as_ref().map(|x| diesel::ExpressionMethods::eq(#table_name::#column_name, x))),
+            )
         } else {
-            Ok(quote!(self.#field_name.map(|x| #table_name::#column_name.eq(x))))
+            Ok(
+                quote!(self.#field_name.map(|x| diesel::ExpressionMethods::eq(#table_name::#column_name, x))),
+            )
         }
     } else {
-        Ok(quote!(#table_name::#column_name.eq(#lifetime self.#field_name)))
+        Ok(
+            quote!(diesel::ExpressionMethods::eq(#table_name::#column_name, #lifetime self.#field_name)),
+        )
     }
 }
 
@@ -213,7 +216,9 @@ fn field_changeset_expr_serialize_as(
     let column_name = field.column_name()?.to_ident()?;
     let column: Expr = parse_quote!(#table_name::#column_name);
     if !treat_none_as_null && is_option_ty(&field.ty) {
-        Ok(quote!(self.#field_name.map(|x| #column.eq(::std::convert::Into::<#ty>::into(x)))))
+        Ok(
+            quote!(self.#field_name.map(|x| diesel::ExpressionMethods::eq(#column, ::std::convert::Into::<#ty>::into(x)))),
+        )
     } else {
         Ok(quote!(#column.eq(::std::convert::Into::<#ty>::into(self.#field_name))))
     }

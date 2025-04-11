@@ -21,7 +21,7 @@ pub fn derive(mut item: DeriveInput) -> Result<TokenStream> {
         let where_clause = item.generics.make_where_clause();
         where_clause
             .predicates
-            .push(parse_quote!(#type_param: ValidGrouping<__GroupByClause>));
+            .push(parse_quote!(#type_param: diesel::expression::ValidGrouping<__GroupByClause>));
     }
 
     if model.aggregate {
@@ -29,19 +29,19 @@ pub fn derive(mut item: DeriveInput) -> Result<TokenStream> {
         let (impl_generics, _, where_clause) = item.generics.split_for_impl();
 
         Ok(wrap_in_dummy_mod(quote! {
-            use diesel::expression::{ValidGrouping, MixedAggregates, is_aggregate};
-
-            impl #impl_generics ValidGrouping<__GroupByClause> for #struct_ty
+            impl #impl_generics diesel::expression::ValidGrouping<__GroupByClause> for #struct_ty
             #where_clause
             {
-                type IsAggregate = is_aggregate::Yes;
+                type IsAggregate = diesel::expression::is_aggregate::Yes;
             }
         }))
     } else {
         let mut aggregates = item
             .generics
             .type_params()
-            .map(|t| quote!(#t::IsAggregate))
+            .map(
+                |t| quote!(<#t as diesel::expression::ValidGrouping<__GroupByClause>>::IsAggregate),
+            )
             .collect::<Vec<_>>()
             .into_iter();
 
@@ -51,20 +51,19 @@ pub fn derive(mut item: DeriveInput) -> Result<TokenStream> {
                 let where_clause = item.generics.make_where_clause();
                 aggregates.fold(first, |left, right| {
                     where_clause.predicates.push(parse_quote!(
-                        #left: MixedAggregates<#right>
+                        #left: diesel::expression::MixedAggregates<#right>
                     ));
-                    quote!(<#left as MixedAggregates<#right>>::Output)
+                    quote!(<#left as diesel::expression::MixedAggregates<#right>>::Output)
                 })
             })
-            .unwrap_or_else(|| quote!(is_aggregate::Never));
+            .unwrap_or_else(|| quote!(diesel::expression::is_aggregate::Never));
 
         item.generics.params.push(parse_quote!(__GroupByClause));
         let (impl_generics, _, where_clause) = item.generics.split_for_impl();
 
         Ok(wrap_in_dummy_mod(quote! {
-            use diesel::expression::{ValidGrouping, MixedAggregates, is_aggregate};
 
-            impl #impl_generics ValidGrouping<__GroupByClause> for #struct_ty
+            impl #impl_generics diesel::expression::ValidGrouping<__GroupByClause> for #struct_ty
             #where_clause
             {
                 type IsAggregate = #is_aggregate;
