@@ -50,7 +50,7 @@ fn main() {
 }
 
 fn inner_main() -> Result<(), crate::errors::Error> {
-    let filter = EnvFilter::from_default_env();
+    let filter = EnvFilter::from_env("DIESEL_LOG");
     let fmt = tracing_subscriber::fmt::layer();
 
     tracing_subscriber::Registry::default()
