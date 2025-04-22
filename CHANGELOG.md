@@ -16,7 +16,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed `#[derive(Identifiable)]` ignoring attribute `#[diesel(serialize_as)]` on primary keys
 * Added embedded struct support for `AsChangeset` via `#[diesel(embed)]`
 * Added a `#[diesel(skip_update)]` attribute for the `AsChangeset` derive to skip updating a field present in the struct
-* Support for libsqlite3-sys 0.32.0
+* Support for libsqlite3-sys 0.33.0
 * Add support for built-in PostgreSQL range operators and functions
 * Support for postgres multirange type
 * Added `diesel::r2d2::TestCustomizer`, which allows users to customize their `diesel::r2d2::Pool`s
