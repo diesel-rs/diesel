@@ -64,9 +64,8 @@ pub trait BelongsTo<Parent> {
 /// If this is not true, child rows will be grouped against the last row
 /// that produced a given ID.
 ///
-/// As a result, it is recommended to add [`QueryDsl::distinct`]
-/// to queries that may exhibit this behaviour,
-/// or use [`Vec::sort`] and [`Vec::dedup`] on the loaded rows,
+/// As a result, it is recommended to use [`QueryDsl::distinct`]
+/// or [`slice::sort`] and [`Vec::dedup`],
 /// to ensure the elements of `parents` are unique.
 ///
 /// # Example
