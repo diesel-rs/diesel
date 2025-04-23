@@ -64,12 +64,6 @@ pub trait BelongsTo<Parent> {
 /// If this is not true, child rows will be grouped against the last row
 /// that produced a given ID.
 ///
-/// This behaviour should typically be a result of `parents` containing
-/// duplicates of one or more rows.
-/// This may happen if parents rows are selected based on a join query,
-/// as a copy of the parent row will be retrieved
-/// for each child row they were joined with.
-///
 /// As a result, it is recommended to add [`QueryDsl::distinct`]
 /// to queries that may exhibit this behaviour,
 /// or use [`Vec::sort`] and [`Vec::dedup`] on the loaded rows,
