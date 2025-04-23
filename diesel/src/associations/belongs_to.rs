@@ -61,8 +61,7 @@ pub trait BelongsTo<Parent> {
 /// Both [`GroupedBy::grouped_by`] and [`GroupedBy::try_grouped_by`]
 /// expect all of the elements of `parents` to produce a unique value
 /// when calling [`Identifiable::id`].
-/// If this is not true, child rows will be grouped against the last row
-/// that produced a given ID.
+/// If this is not true, child rows may be added to an unexpected index.
 ///
 /// As a result, it is recommended to use [`QueryDsl::distinct`]
 /// or [`slice::sort`] and [`Vec::dedup`],
