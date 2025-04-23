@@ -1,72 +1,105 @@
 import init, {
-    install_opfs_sahpool,
-    switch_vfs,
-    create_post,
-    get_post,
-    delete_post,
-    publish_post,
-    show_posts
-} from "./pkg/sqlite_wasm_example.js";
+    installOpfsSahpool,
+    installRelaxedIdb,
+    switchVfs,
+    createPost,
+    getPost,
+    deletePost,
+    publishPost,
+    showPosts
+} from './pkg/sqlite_wasm_example.js';
 
+// Initialize WASM module
 await init();
-await install_opfs_sahpool();
+await installOpfsSahpool();
+await installRelaxedIdb();
 
-async function run_in_worker(event) {
-    const payload = event.data;
-    switch (payload.cmd) {
-        case 'switch_vfs':
-            switch_vfs(payload.id);
-            break;
-        case 'show_posts':
-            var posts = show_posts();
-            self.postMessage(
-                {
-                    cmd: 'show_posts',
-                    posts: posts
+/**
+ * Handles incoming messages from the main thread
+ * @param {MessageEvent} event - The message event
+ */
+async function handleMessage(event) {
+    const { cmd, ...payload } = event.data;
+
+    try {
+        switch (cmd) {
+            case 'switch_vfs':
+                switchVfs(payload.id);
+                break;
+
+            case 'show_posts': {
+                const posts = await showPosts();
+                postResponse(cmd, { posts });
+                break;
+            }
+
+            case 'create_post': {
+                const { title, body } = payload;
+                if (!title || !body) {
+                    throw new Error('Title and body are required');
                 }
-            );
-            break;
-        case 'create_post':
-            var post = create_post(payload.title, payload.body);
-            self.postMessage(
-                {
-                    cmd: 'create_post',
-                    post: post,
+                const post = await createPost(title, body);
+                postResponse(cmd, { post });
+                break;
+            }
+
+            case 'get_post': {
+                const { post_id: postId } = payload;
+                if (!postId) {
+                    throw new Error('Post ID is required');
                 }
-            );
-            break;
-        case 'get_post':
-            var post = get_post(payload.post_id);
-            self.postMessage(
-                {
-                    cmd: 'get_post',
-                    post: post,
+                const post = await getPost(postId);
+                postResponse(cmd, { post });
+                break;
+            }
+
+            case 'publish_post': {
+                const { post_id: postId } = payload;
+                if (!postId) {
+                    throw new Error('Post ID is required');
                 }
-            );
-            break;
-        case 'publish_post':
-            publish_post(payload.post_id);
-            self.postMessage(
-                {
-                    cmd: 'publish_post',
+                await publishPost(postId);
+                postResponse(cmd);
+                break;
+            }
+
+            case 'delete_post': {
+                const { title } = payload;
+                if (!title) {
+                    throw new Error('Title is required');
                 }
-            );
-            break;
-        case 'delete_post':
-            delete_post(payload.title);
-            self.postMessage(
-                {
-                    cmd: 'delete_post',
-                }
-            );
-            break;
-        default:
-            break;
-    };
+                await deletePost(title);
+                postResponse(cmd);
+                break;
+            }
+
+            default:
+                console.warn(`Unknown command: ${cmd}`);
+                postResponse('error', { error: `Unknown command: ${cmd}` });
+        }
+    } catch (error) {
+        console.error(`Error processing ${cmd}:`, error);
+        postResponse('error', {
+            error: error.message,
+            originalCmd: cmd
+        });
+    }
 }
 
-self.onmessage = function(event) {
-    run_in_worker(event);
+/**
+ * Posts a response back to the main thread
+ * @param {string} cmd - The command name
+ * @param {object} [data] - Additional response data
+ */
+function postResponse(cmd, data = {}) {
+    self.postMessage({
+        cmd,
+        ...data
+    });
 }
 
-self.postMessage("ready");
+// Set up message listener
+self.addEventListener('message', handleMessage);
+
+// Notify main thread that worker is ready
+postResponse('ready');

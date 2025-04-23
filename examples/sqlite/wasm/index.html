@@ -1,107 +1,354 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>diesel sqlite-wasm example</title>
-</head>
-
-<body>
-    <label for="vfs">choose vfs:</label>
-    <select id="vfs">
-        <option value="0">memory</option>
-        <option value="1">opfs-sahpool</option>
-    </select>
-    <button id="SwitchVFS">Switch VFS</button>
-    <p></p>
-
-    <button id="ShowButton">Show 5 Published Posts</button>
-    <p id="show_result"></p>
-
-    <input id="create_title" type="string" placeholder="Enter title" />
-    <input id="create_body" type="string" placeholder="Enter body">
-    <button id="CreateButton">CreatePost</button>
-    <p id="create_result"></p>
-
-    <input id="get_post_id" type="number" placeholder="Enter PostId" />
-    <button id="GetButton">GetPost</button>
-    <p id="get_result"></p>
-
-    <input id="publish_post_id" type="number" placeholder="Enter PostId" />
-    <button id="PublishButton">PublishPost</button>
-    <p id="publish_result"></p>
-
-    <input id="delete_post_title" type="string" placeholder="Enter PostTitle" />
-    <button id="DeleteButton">DeletePost</button>
-    <p id="delete_result"></p>
-
-    <script type="module">
-        function call(payload) {
-            worker.postMessage(payload);
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diesel SQLite-WASM Example</title>
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #f8f9fa;
+            --border-color: #dee2e6;
+            --hover-color: #e9ecef;
+            --text-color: #333;
         }
 
-        async function run() {
-            document.getElementById('SwitchVFS').onclick = () => {
-                const id = parseInt(document.getElementById('vfs').value);
-                call({ cmd: "switch_vfs", id: id })
-            };
-
-            document.getElementById('ShowButton').onclick = () => {
-                call({ cmd: "show_posts" })
-            };
-
-            document.getElementById('CreateButton').onclick = () => {
-                const title = document.getElementById('create_title').value;
-                const body = document.getElementById('create_body').value;
-                call({ cmd: "create_post", title: title, body: body })
-            };
-
-            document.getElementById('GetButton').onclick = () => {
-                const post_id = parseInt(document.getElementById('get_post_id').value);
-                call({ cmd: "get_post", post_id: post_id })
-            };
-
-            document.getElementById('PublishButton').onclick = () => {
-                const post_id = parseInt(document.getElementById('publish_post_id').value);
-                call({ cmd: "publish_post", post_id: post_id })
-            };
-
-            document.getElementById('DeleteButton').onclick = () => {
-                const title = document.getElementById('delete_post_title').value;
-                call({ cmd: "delete_post", title: title })
-            };
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
         }
 
-        const worker = new Worker('worker.js', { type: 'module' });
-        worker.onmessage = function (event) {
-            run();
-            worker.onmessage = function (event) {
-                const payload = event.data;
-                switch (payload.cmd) {
-                    case 'show_posts':
-                        var posts = payload.posts;
-                        document.getElementById('show_result').innerText = JSON.stringify(posts);
-                        break;
-                    case 'create_post':
-                        var post = payload.post;
-                        document.getElementById('create_result').innerText = JSON.stringify(post);
-                        break;
-                    case 'get_post':
-                        var post = payload.post;
-                        document.getElementById('get_result').innerText = JSON.stringify(post);
-                        break;
-                    case 'publish_post':
-                        document.getElementById('publish_result').innerText = 'Publish done.';
-                        break;
-                    case 'delete_post':
-                        document.getElementById('delete_result').innerText = 'Delete done.';
-                        break;
-                    default:
-                        break;
-                };
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .config-section {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--secondary-color);
+        }
+
+        .tab-container {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 15px;
+            cursor: pointer;
+            background-color: var(--secondary-color);
+            border: none;
+            border-right: 1px solid var(--border-color);
+            transition: all 0.3s;
+            color: var(--text-color);
+            font-weight: 500;
+            min-width: 80px;
+        }
+
+        .tab:last-child {
+            border-right: none;
+        }
+
+        .tab:hover {
+            background-color: var(--hover-color);
+            color: #000;
+        }
+
+        .tab.active {
+            background-color: white;
+            color: var(--primary-color);
+            font-weight: bold;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .tab-content {
+            padding: 20px;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #3a5a80;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            min-height: 50px;
+            overflow-x: auto;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        @media (max-width: 768px) {
+            .tab {
+                flex: 1;
+                text-align: center;
+                padding: 10px 5px;
+                font-size: 0.9rem;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .tab-container {
+                flex-direction: row;
+                flex-wrap: wrap;
             }
         }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Diesel SQLite-WASM Example</h1>
+        </header>
+
+        <div class="config-section">
+            <div class="form-group">
+                <label for="vfs">Database Storage Type:</label>
+                <p></p>
+                <select id="vfs">
+                    <option value="0">Memory (Temporary)</option>
+                    <option value="1">OPFS Sync Access Handle Pool (Persistent)</option>
+                    <option value="2">Indexed DB (Persistent)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="tab-container">
+            <button class="tab active" data-tab="view">View Posts</button>
+            <button class="tab" data-tab="create">Create Post</button>
+            <button class="tab" data-tab="get">Get Post</button>
+            <button class="tab" data-tab="publish">Publish Post</button>
+            <button class="tab" data-tab="delete">Delete Post</button>
+        </div>
+
+        <div class="tab-content active" id="view-tab">
+            <h2>Published Posts</h2>
+            <button id="show-posts">Load Latest Posts</button>
+            <div class="result" id="show-result"></div>
+        </div>
+
+        <div class="tab-content" id="create-tab">
+            <h2>Create New Post</h2>
+            <div class="form-group">
+                <label for="create-title">Title:</label>
+                <input id="create-title" type="text" placeholder="Enter post title">
+            </div>
+            <div class="form-group">
+                <label for="create-body">Content:</label>
+                <input id="create-body" type="text" placeholder="Enter post content">
+            </div>
+            <button id="create-post">Create Post</button>
+            <div class="result" id="create-result"></div>
+        </div>
+
+        <div class="tab-content" id="get-tab">
+            <h2>Get Post by ID</h2>
+            <div class="form-group">
+                <input id="get-post-id" type="number" placeholder="Enter post ID">
+                <p></p>
+                <button id="get-post">Get Post</button>
+            </div>
+            <div class="result" id="get-result"></div>
+        </div>
+
+        <div class="tab-content" id="publish-tab">
+            <h2>Publish Post</h2>
+            <div class="form-group">
+                <input id="publish-post-id" type="number" placeholder="Enter post ID to publish">
+                <p></p>
+                <button id="publish-post">Publish Post</button>
+            </div>
+            <div class="result" id="publish-result"></div>
+        </div>
+
+        <div class="tab-content" id="delete-tab">
+            <h2>Delete Post</h2>
+            <div class="form-group">
+                <input id="delete-post-title" type="text" placeholder="Enter post title to delete">
+                <p></p>
+                <button id="delete-post">Delete Post</button>
+            </div>
+            <div class="result" id="delete-result"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and contents
+                document.querySelectorAll('.tab, .tab-content').forEach(el => {
+                    el.classList.remove('active');
+                });
+
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            });
+        });
+
+        // DOM Elements
+        const elements = {
+            vfs: document.getElementById('vfs'),
+            showPosts: document.getElementById('show-posts'),
+            showResult: document.getElementById('show-result'),
+            createTitle: document.getElementById('create-title'),
+            createBody: document.getElementById('create-body'),
+            createPost: document.getElementById('create-post'),
+            createResult: document.getElementById('create-result'),
+            getPostId: document.getElementById('get-post-id'),
+            getPost: document.getElementById('get-post'),
+            getResult: document.getElementById('get-result'),
+            publishPostId: document.getElementById('publish-post-id'),
+            publishPost: document.getElementById('publish-post'),
+            publishResult: document.getElementById('publish-result'),
+            deletePostTitle: document.getElementById('delete-post-title'),
+            deletePost: document.getElementById('delete-post'),
+            deleteResult: document.getElementById('delete-result')
+        };
+
+        // Initialize Web Worker
+        const worker = new Worker('worker.js', { type: 'module' });
+
+        // Message handler
+        worker.onmessage = function(event) {
+            const { cmd, ...data } = event.data;
+
+            switch (cmd) {
+                case 'show_posts':
+                    elements.showResult.innerHTML = `<pre>${JSON.stringify(data.posts, null, 2)}</pre>`;
+                    break;
+                case 'create_post':
+                    elements.createResult.innerHTML = `<pre>${JSON.stringify(data.post, null, 2)}</pre>`;
+                    break;
+                case 'get_post':
+                    elements.getResult.innerHTML = `<pre>${JSON.stringify(data.post, null, 2)}</pre>`;
+                    break;
+                case 'publish_post':
+                    elements.publishResult.textContent = 'Post published successfully';
+                    break;
+                case 'delete_post':
+                    elements.deleteResult.textContent = 'Post deleted successfully';
+                    break;
+                case 'error':
+                    // Show error in all result areas for visibility
+                    document.querySelectorAll('.result').forEach(el => {
+                        el.innerHTML = `<pre style="color: red">Error: ${data.error}</pre>`;
+                    });
+                    break;
+            }
+        };
+
+        // Event listeners
+        elements.vfs.addEventListener('change', () => {
+            const id = parseInt(elements.vfs.value);
+            worker.postMessage({ cmd: "switch_vfs", id });
+        });
+
+        elements.showPosts.addEventListener('click', () => {
+            worker.postMessage({ cmd: "show_posts" });
+        });
+
+        elements.createPost.addEventListener('click', () => {
+            const title = elements.createTitle.value.trim();
+            const body = elements.createBody.value.trim();
+            if (title && body) {
+                worker.postMessage({ cmd: "create_post", title, body });
+            } else {
+                elements.createResult.innerHTML = '<pre style="color: red">Please enter both title and content</pre>';
+            }
+        });
+
+        elements.getPost.addEventListener('click', () => {
+            const postId = parseInt(elements.getPostId.value);
+            if (!isNaN(postId)) {
+                worker.postMessage({ cmd: "get_post", post_id: postId });
+            } else {
+                elements.getResult.innerHTML = '<pre style="color: red">Please enter a valid post ID</pre>';
+            }
+        });
+
+        elements.publishPost.addEventListener('click', () => {
+            const postId = parseInt(elements.publishPostId.value);
+            if (!isNaN(postId)) {
+                worker.postMessage({ cmd: "publish_post", post_id: postId });
+            } else {
+                elements.publishResult.innerHTML = '<pre style="color: red">Please enter a valid post ID</pre>';
+            }
+        });
+
+        elements.deletePost.addEventListener('click', () => {
+            const title = elements.deletePostTitle.value.trim();
+            if (title) {
+                worker.postMessage({ cmd: "delete_post", title });
+            } else {
+                elements.deleteResult.innerHTML = '<pre style="color: red">Please enter a post title</pre>';
+            }
+        });
+
+        // Load initial posts
+        elements.showPosts.click();
     </script>
 </body>
-
 </html>
