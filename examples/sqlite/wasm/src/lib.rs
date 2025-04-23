@@ -38,6 +38,7 @@ pub fn establish_connection() -> SqliteConnection {
     let url = match vfs {
         0 => "post.db",
         1 => "file:post.db?vfs=opfs-sahpool",
+        2 => "file:post.db?vfs=relaxed-idb",
         _ => unreachable!(),
     };
     let mut conn =
@@ -49,19 +50,27 @@ pub fn establish_connection() -> SqliteConnection {
 }
 
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = installOpfsSahpool)]
 pub async fn install_opfs_sahpool() {
-    sqlite_wasm_rs::export::install_opfs_sahpool(None, false)
+    sqlite_wasm_rs::sahpool_vfs::install(None, false)
         .await
         .unwrap();
 }
 
-#[wasm_bindgen]
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
+#[wasm_bindgen(js_name = installRelaxedIdb)]
+pub async fn install_relaxed_idb() {
+    sqlite_wasm_rs::relaxed_idb_vfs::install(None, false)
+        .await
+        .unwrap();
+}
+
+#[wasm_bindgen(js_name = switchVfs)]
 pub fn switch_vfs(id: i32) {
     *VFS.lock().unwrap() = (id, Once::new());
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = createPost)]
 pub fn create_post(title: &str, body: &str) -> JsValue {
     use crate::schema::posts;
 
@@ -76,7 +85,7 @@ pub fn create_post(title: &str, body: &str) -> JsValue {
     serde_wasm_bindgen::to_value(&post).unwrap()
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = deletePost)]
 pub fn delete_post(pattern: &str) {
     let connection = &mut establish_connection();
     let num_deleted = diesel::delete(
@@ -88,7 +97,7 @@ pub fn delete_post(pattern: &str) {
     console_log!("Deleted {num_deleted} posts");
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = getPost)]
 pub fn get_post(post_id: i32) -> JsValue {
     use schema::posts::dsl::posts;
 
@@ -108,7 +117,7 @@ pub fn get_post(post_id: i32) -> JsValue {
     serde_wasm_bindgen::to_value(&post.ok().flatten()).unwrap()
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = publishPost)]
 pub fn publish_post(id: i32) {
     let connection = &mut establish_connection();
 
@@ -121,7 +130,7 @@ pub fn publish_post(id: i32) {
     console_log!("Published post {}", post.title);
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = showPosts)]
 pub fn show_posts() -> Vec<JsValue> {
     let connection = &mut establish_connection();
     let results = schema::posts::dsl::posts
