@@ -56,6 +56,25 @@ pub trait BelongsTo<Parent> {
 /// If discarding these rows is undesirable, it may be preferable to use
 /// [`GroupedBy::try_grouped_by`].
 ///
+/// # Handling Duplicate Parent Rows
+///
+/// Both [`GroupedBy::grouped_by`] and [`GroupedBy::try_grouped_by`]
+/// expect all of the elements of `parents` to produce a unique value
+/// when calling [`Identifiable::id`].
+/// If this is not true, child rows will be grouped against the last row
+/// that produced a given ID.
+///
+/// This behaviour should typically be a result of `parents` containing
+/// duplicates of one or more rows.
+/// This may happen if parents rows are selected based on a join query,
+/// as a copy of the parent row will be retrieved
+/// for each child row they were joined with.
+///
+/// As a result, it is recommended to add [`QueryDsl::distinct`]
+/// to queries that may exhibit this behaviour,
+/// or use [`Vec::sort`] and [`Vec::dedup`] on the loaded rows,
+/// to ensure the elements of `parents` are unique.
+///
 /// # Example
 ///
 /// ```rust
