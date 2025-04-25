@@ -27,34 +27,32 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     }
 
     Ok(wrap_in_dummy_mod(quote! {
-        use diesel::associations::{HasTable, Identifiable};
-
-        impl #impl_generics HasTable for #struct_name #ty_generics
+        impl #impl_generics diesel::associations::HasTable for #struct_name #ty_generics
         #where_clause
         {
             type Table = #table_name::table;
 
-            fn table() -> Self::Table {
+            fn table() -> <Self as diesel::associations::HasTable>::Table {
                 #table_name::table
             }
         }
 
-        impl #ref_generics Identifiable for &'ident #struct_name #ty_generics
+        impl #ref_generics diesel::associations::Identifiable for &'ident #struct_name #ty_generics
         #where_clause
         {
             type Id = (#(&'ident #field_ty),*);
 
-            fn id(self) -> Self::Id {
+            fn id(self) -> <Self as diesel::associations::Identifiable>::Id {
                 (#(&self.#field_name),*)
             }
         }
 
-        impl #ref_generics Identifiable for &'_ &'ident #struct_name #ty_generics
+        impl #ref_generics diesel::associations::Identifiable for &'_ &'ident #struct_name #ty_generics
             #where_clause
         {
             type Id = (#(&'ident #field_ty),*);
 
-            fn id(self) -> Self::Id {
+            fn id(self) -> <Self as diesel::associations::Identifiable>::Id {
                 (#(&self.#field_name),*)
             }
         }

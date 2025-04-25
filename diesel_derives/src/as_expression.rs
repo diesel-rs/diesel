@@ -36,56 +36,56 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         let mut to_sql_generics = item.generics.clone();
         to_sql_generics.params.push(parse_quote!(__DB));
         to_sql_generics.make_where_clause().predicates.push(parse_quote!(__DB: diesel::backend::Backend));
-        to_sql_generics.make_where_clause().predicates.push(parse_quote!(Self: ToSql<#sql_type, __DB>));
+        to_sql_generics.make_where_clause().predicates.push(parse_quote!(Self: diesel::serialize::ToSql<#sql_type, __DB>));
         let (to_sql_impl_generics, _, to_sql_where_clause) = to_sql_generics.split_for_impl();
 
         let tokens = quote!(
-            impl #impl_generics AsExpression<#sql_type>
+            impl #impl_generics diesel::expression::AsExpression<#sql_type>
                 for &'__expr #struct_ty #where_clause
             {
-                type Expression = Bound<#sql_type, Self>;
+                type Expression = diesel::internal::derives::as_expression::Bound<#sql_type, Self>;
 
-                fn as_expression(self) -> Self::Expression {
-                    Bound::new(self)
+                fn as_expression(self) -> <Self as diesel::expression::AsExpression<#sql_type>>::Expression {
+                    diesel::internal::derives::as_expression::Bound::new(self)
                 }
             }
 
-            impl #impl_generics AsExpression<Nullable<#sql_type>>
+            impl #impl_generics diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>>
                 for &'__expr #struct_ty #where_clause
             {
-                type Expression = Bound<Nullable<#sql_type>, Self>;
+                type Expression = diesel::internal::derives::as_expression::Bound<diesel::sql_types::Nullable<#sql_type>, Self>;
 
-                fn as_expression(self) -> Self::Expression {
-                    Bound::new(self)
+                fn as_expression(self) -> <Self as diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>>>::Expression {
+                    diesel::internal::derives::as_expression::Bound::new(self)
                 }
             }
 
-            impl #impl_generics2 AsExpression<#sql_type>
+            impl #impl_generics2 diesel::expression::AsExpression<#sql_type>
                 for &'__expr2 &'__expr #struct_ty #where_clause2
             {
-                type Expression = Bound<#sql_type, Self>;
+                type Expression = diesel::internal::derives::as_expression::Bound<#sql_type, Self>;
 
-                fn as_expression(self) -> Self::Expression {
-                    Bound::new(self)
+                fn as_expression(self) -> <Self as diesel::expression::AsExpression<#sql_type>>::Expression {
+                    diesel::internal::derives::as_expression::Bound::new(self)
                 }
             }
 
-            impl #impl_generics2 AsExpression<Nullable<#sql_type>>
+            impl #impl_generics2 diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>>
                 for &'__expr2 &'__expr #struct_ty #where_clause2
             {
-                type Expression = Bound<Nullable<#sql_type>, Self>;
+                type Expression = diesel::internal::derives::as_expression::Bound<diesel::sql_types::Nullable<#sql_type>, Self>;
 
-                fn as_expression(self) -> Self::Expression {
-                    Bound::new(self)
+                fn as_expression(self) -> <Self as diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>>>::Expression {
+                    diesel::internal::derives::as_expression::Bound::new(self)
                 }
             }
 
-            impl #to_sql_impl_generics diesel::serialize::ToSql<Nullable<#sql_type>, __DB>
+            impl #to_sql_impl_generics diesel::serialize::ToSql<diesel::sql_types::Nullable<#sql_type>, __DB>
                 for #struct_ty #to_sql_where_clause
             {
-                fn to_sql<'__b>(&'__b self, out: &mut Output<'__b, '_, __DB>) -> serialize::Result
+                fn to_sql<'__b>(&'__b self, out: &mut diesel::serialize::Output<'__b, '_, __DB>) -> diesel::serialize::Result
                 {
-                    ToSql::<#sql_type, __DB>::to_sql(self, out)
+                    diesel::serialize::ToSql::<#sql_type, __DB>::to_sql(self, out)
                 }
             }
         );
@@ -96,19 +96,21 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             quote!(
                 #tokens
 
-                impl #impl_generics_plain AsExpression<#sql_type> for #struct_ty #where_clause_plain {
-                    type Expression = Bound<#sql_type, Self>;
+                impl #impl_generics_plain diesel::expression::AsExpression<#sql_type> for #struct_ty #where_clause_plain {
+                    type Expression = diesel::internal::derives::as_expression::Bound<#sql_type, Self>;
 
-                    fn as_expression(self) -> Self::Expression {
-                        Bound::new(self)
+                    fn as_expression(self) -> <Self as diesel::expression::AsExpression<#sql_type>>::Expression {
+                        diesel::internal::derives::as_expression::Bound::new(self)
                     }
                 }
 
-                impl #impl_generics_plain AsExpression<Nullable<#sql_type>> for #struct_ty #where_clause_plain {
-                    type Expression = Bound<Nullable<#sql_type>, Self>;
+                impl #impl_generics_plain diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>> for #struct_ty
+                #where_clause_plain
+                {
+                    type Expression = diesel::internal::derives::as_expression::Bound<diesel::sql_types::Nullable<#sql_type>, Self>;
 
-                    fn as_expression(self) -> Self::Expression {
-                        Bound::new(self)
+                    fn as_expression(self) -> <Self as diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>>>::Expression {
+                        diesel::internal::derives::as_expression::Bound::new(self)
                     }
                 }
             )
@@ -116,11 +118,6 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     });
 
     Ok(wrap_in_dummy_mod(quote! {
-        use diesel::expression::AsExpression;
-        use diesel::internal::derives::as_expression::Bound;
-        use diesel::sql_types::Nullable;
-        use diesel::serialize::{self, ToSql, Output};
-
         #(#tokens)*
     }))
 }
