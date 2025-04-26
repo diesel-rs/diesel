@@ -61,7 +61,18 @@ impl UserName {
     }
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, AsChangeset, Insertable, Identifiable, Associations, Selectable)]
+#[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    AsChangeset,
+    Insertable,
+    Identifiable,
+    Associations,
+    Selectable,
+)]
 #[diesel(belongs_to(Post), table_name = comments)]
 pub struct Comment {
     pub id: i32,
