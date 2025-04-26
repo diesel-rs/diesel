@@ -379,6 +379,79 @@ fn upsert_with_sql_literal_for_target() {
 }
 
 #[diesel_test_helper::test]
+#[cfg(feature = "sqlite")]
+fn upsert_with_sql_literal_for_target_with_condition_for_sqlite() {
+    use crate::schema::comments::dsl::*;
+    use diesel::query_dsl::methods::FilterDsl;
+    use diesel::upsert::*;
+
+    let connection = &mut connection();
+    diesel::sql_query(
+        "CREATE TEMPORARY TABLE comments(\
+            id INTEGER PRIMARY KEY NOT NULL, \
+            post_id INTEGER NOT NULL, \
+            text TEXT NOT NULL)",
+    )
+    .execute(connection)
+    .unwrap();
+
+    let new_comments = vec![Comment::new(0, 3, "Green"), Comment::new(1, 4, "Blue")];
+    // First, we populate the table with some data
+    for new_comment in new_comments {
+        let inserted_comment: Option<Comment> = insert_into(comments)
+            .values(&new_comment)
+            .get_results(connection)
+            .unwrap()
+            .pop();
+        assert_eq!(inserted_comment, Some(new_comment));
+    }
+
+    // Next, we execute an upsert where we want to update
+    // the rows that have been changed, which in this case
+    // are the rows with id 1.
+    // The row with id 0 should not be updated as it is identical
+    // to the one we inserted, and should be handled by a No-Op,
+    // while the row with id 2 is a new row that should be inserted.
+
+    let comment_to_not_update = Comment::new(0, 3, "Green");
+
+    let updated_comments: Vec<Comment> = insert_into(comments)
+        .values(&comment_to_not_update)
+        .on_conflict(id)
+        .do_update()
+        .set(&comment_to_not_update)
+        .filter(post_id.ne(excluded(post_id)).and(text.ne(excluded(text))))
+        .get_results(connection)
+        .unwrap();
+
+    assert!(updated_comments.is_empty());
+
+    let comments_to_update_or_insert = vec![Comment::new(1, 10, "Red"), Comment::new(2, 4, "Blue")];
+
+    for comment_to_update_or_insert in comments_to_update_or_insert {
+        let mut updated_comments: Vec<Comment> = insert_into(comments)
+            .values(&comment_to_update_or_insert)
+            .on_conflict(id)
+            .do_update()
+            .set((post_id.eq(excluded(post_id)), text.eq(excluded(text))))
+            .filter(post_id.ne(excluded(post_id)).and(text.ne(excluded(text))))
+            .get_results(connection)
+            .unwrap();
+        let updated_comment: Option<Comment> = updated_comments.pop();
+
+        assert_eq!(updated_comment, Some(comment_to_update_or_insert));
+    }
+
+    let data = comments.select((post_id, text)).order(id).load(connection);
+    let expected_data = vec![
+        (3, "Green".to_string()),
+        (10, "Red".to_string()),
+        (4, "Blue".to_string()),
+    ];
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn upsert_with_sql_literal_for_target_with_condition() {
     use crate::schema::users::dsl::*;
