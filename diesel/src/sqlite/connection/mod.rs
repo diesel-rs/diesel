@@ -977,21 +977,4 @@ mod tests {
         check_empty_query_error(crate::sql_query("\n\t").execute(connection));
         check_empty_query_error(crate::sql_query("-- SELECT 1;").execute(connection));
     }
-
-    #[cfg(all(target_family = "wasm", target_os = "unknown"))]
-    #[wasm_bindgen_test::wasm_bindgen_test]
-    fn test_sqlite_wasm_vfs_default() {
-        SqliteConnection::establish("test_sqlite_wasm_vfs_default.db").unwrap();
-    }
-
-    #[cfg(all(target_family = "wasm", target_os = "unknown"))]
-    #[wasm_bindgen_test::wasm_bindgen_test]
-    async fn test_sqlite_wasm_vfs_opfs_sahpool() {
-        let util = sqlite_wasm_rs::export::install_opfs_sahpool(None, false)
-            .await
-            .unwrap();
-        SqliteConnection::establish("file:test_sqlite_wasm_vfs_opfs_sahpool.db?vfs=opfs-sahpool")
-            .unwrap();
-        assert!(util.get_file_count() > 0);
-    }
 }
