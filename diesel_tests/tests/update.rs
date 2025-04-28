@@ -379,7 +379,7 @@ fn upsert_with_sql_literal_for_target() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "sqlite")]
+#[cfg(all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"))]
 fn upsert_with_sql_literal_for_target_with_condition_for_sqlite() {
     use crate::schema::comments::dsl::*;
     use diesel::query_dsl::methods::FilterDsl;
