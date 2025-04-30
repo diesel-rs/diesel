@@ -85,3 +85,25 @@ pub type json_group_object<N, V> =
 #[cfg(feature = "sqlite")]
 pub type jsonb_group_object<N, V> =
     super::functions::jsonb_group_object<SqlTypeOf<N>, SqlTypeOf<V>, N, V>;
+
+/// Return type of [`json_array_1(value_1)`](super::functions::json_array_1())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_array_1<V1> = super::functions::json_array_1<SqlTypeOf<V1>, V1>;
+
+/// Return type of [`json_array_2(value_1, value_2)`](super::functions::json_array_2())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_array_2<V1, V2> =
+    super::functions::json_array_2<SqlTypeOf<V1>, SqlTypeOf<V2>, V1, V2>;
+
+/// Return type of [`jsonb_array_1(value_1)`](super::functions::jsonb_array_1())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type jsonb_array_1<V1> = super::functions::jsonb_array_1<SqlTypeOf<V1>, V1>;
+
+/// Return type of [`jsonb_array_2(value_1, value_2)`](super::functions::jsonb_array_2())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type jsonb_array_2<V1, V2> =
+    super::functions::jsonb_array_2<SqlTypeOf<V1>, SqlTypeOf<V2>, V1, V2>;

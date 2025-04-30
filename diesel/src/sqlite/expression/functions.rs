@@ -1157,4 +1157,113 @@ extern "SQL" {
         names: N,
         values: V,
     ) -> Jsonb;
+
+    /// The json_array() SQL function accepts zero or more arguments and returns a well-formed JSON array that
+    /// is composed from those arguments. If any argument to json_array() is a BLOB then an error is thrown.
+    ///
+    /// An argument with SQL type TEXT is normally converted into a quoted JSON string. However, if the argument
+    /// is the output from another json function, then it is stored as JSON. This allows calls to json_array()
+    /// and json_object() to be nested. The json() function can also be used to force strings to be recognized
+    /// as JSON.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Text, Double};
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// #     let version = diesel::select(sql::<Text>("sqlite_version();"))
+    /// #         .get_result::<String>(connection)?;
+    /// #
+    /// #     let version_components: Vec<&str> = version.split('.').collect();
+    /// #     let major: u32 = version_components[0].parse().unwrap();
+    /// #     let minor: u32 = version_components[1].parse().unwrap();
+    /// #
+    /// #     if major < 3 || minor < 38 {
+    /// #         println!("SQLite version is too old, skipping the test.");
+    /// #         return Ok(());
+    /// #     }
+    /// #
+    /// let result = diesel::select(json_array_1::<Text, _>("abc"))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(["abc"]), result);
+    ///
+    /// let result = diesel::select(json_array_2::<Text, Double, _, _>("abc", 3.1415))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(["abc", 3.1415]), result);
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "sqlite")]
+    #[variadic(1)]
+    fn json_array<V: SqlType + SingleValue>(value: V) -> Json;
+
+    /// The jsonb_array() SQL function accepts zero or more arguments and returns a well-formed JSON array that
+    /// is composed from those arguments. If any argument to jsonb_array() is a BLOB then an error is thrown.
+    ///
+    /// An argument with SQL type TEXT is normally converted into a quoted JSON string. However, if the argument
+    /// is the output from another json function, then it is stored as JSON. This allows calls to jsonb_array()
+    /// and jsonb_object() to be nested. The json() function can also be used to force strings to be recognized
+    /// as JSON.
+    ///
+    /// This function works just like the json_array() function except that it returns the constructed JSON
+    /// array in the SQLite's private JSONB format rather than in the standard RFC 8259 text format.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Text, Double};
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// #     let version = diesel::select(sql::<Text>("sqlite_version();"))
+    /// #         .get_result::<String>(connection)?;
+    /// #
+    /// #     let version_components: Vec<&str> = version.split('.').collect();
+    /// #     let major: u32 = version_components[0].parse().unwrap();
+    /// #     let minor: u32 = version_components[1].parse().unwrap();
+    /// #
+    /// #     if major < 3 || minor < 38 {
+    /// #         println!("SQLite version is too old, skipping the test.");
+    /// #         return Ok(());
+    /// #     }
+    /// #
+    /// let result = diesel::select(jsonb_array_1::<Text, _>("abc"))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(["abc"]), result);
+    ///
+    /// let result = diesel::select(jsonb_array_2::<Text, Double, _, _>("abc", 3.1415))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(["abc", 3.1415]), result);
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "sqlite")]
+    #[variadic(1)]
+    fn jsonb_array<V: SqlType + SingleValue>(value: V) -> Jsonb;
 }
