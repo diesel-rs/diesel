@@ -1747,6 +1747,10 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///   - The SQL to be generated is different from the Rust name of the function.
 ///     This can be used to represent functions which can take many argument
 ///     types, or to capitalize function names.
+/// - `#[variadic(argument_count)]`
+///   - Indicates that this is a variadic function, where `argument_count` is a
+///     positive integer representing the number of variadic arguments the
+///     function accepts.
 ///
 /// Functions can also be generic. Take the definition of `sum`, for example:
 ///
@@ -2008,6 +2012,78 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///
 /// #    assert_eq!(Some(90f32), result);
 ///     Ok(())
+/// }
+/// ```
+///
+/// ## Variadic functions
+///
+/// Since Rust does not support variadic functions, the SQL variadic functions are
+/// handled differently. For example, consider the variadic function `json_array`.
+/// To add support for it, you can use the `#[variadic]` attribute:
+///
+/// ```rust
+/// # extern crate diesel;
+/// # use diesel::sql_types::*;
+/// # use diesel::expression::functions::declare_sql_function;
+///
+/// # #[cfg(feature = "sqlite")]
+/// #[declare_sql_function]
+/// extern "SQL" {
+///     #[variadic(1)]
+///     fn json_array<V: SqlType + SingleValue>(value: V) -> Json;
+/// }
+/// ```
+///
+/// This will generate multiple implementations, one for each possible argument
+/// count (up to a predefined limit). For instance, it will generate functions like
+/// `json_array_1`, `json_array_2`, and so on, which are equivalent to:
+///
+/// ```rust
+/// # extern crate diesel;
+/// # use diesel::sql_types::*;
+/// # use diesel::expression::functions::declare_sql_function;
+///
+/// # #[cfg(feature = "sqlite")]
+/// #[declare_sql_function]
+/// extern "SQL" {
+///     #[sql_name = "json_array"]
+///     fn json_array_1<V1: SqlType + SingleValue>(value_1: V1) -> Json;
+///
+///     #[sql_name = "json_array"]
+///     fn json_array_2<
+///         V1: SqlType + SingleValue,
+///         V2: SqlType + SingleValue
+///     >(
+///         value_1: V1,
+///         value_2: V2
+///     ) -> Json;
+///
+///     // ...
+/// }
+/// ```
+///
+/// The argument to the `variadic` attribute specifies the number of trailing arguments to repeat.
+/// For example, if you have a variadic function `foo(a: A, b: B, c: C)` and want `b: B` and `c: C`
+/// to repeat, you would write:
+///
+/// ```ignore
+/// #[declare_sql_function]
+/// extern "SQL" {
+///     #[variadic(2)]
+///     fn foo<A, B, C>(a: A, b: B, c: C) -> Text;
+/// }
+/// ```
+///
+/// Which will be equivalent to
+///
+/// ```ignore
+/// #[declare_sql_function]
+/// extern "SQL" {
+///     #[sql_name = "foo"]
+///     fn foo_1<A, B1, C1>(a: A, b_1: B1, c_1: C1) -> Text;
+///
+///     #[sql_name = "foo"]
+///     fn foo_2<A, B1, C1, B2, C2>(a: A, b_1: B1, c_1: C1, b_2: B2, c_2: C2) -> Text;
 /// }
 /// ```
 #[proc_macro_attribute]

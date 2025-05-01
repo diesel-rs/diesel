@@ -62,6 +62,8 @@ fn expand_variadic(
     variadic_argument_count: usize,
     variant_no: usize,
 ) -> TokenStream {
+    add_variadic_doc_comments(&mut input.attributes, &input.fn_name.to_string());
+
     let sql_name = parse_sql_name_attr(&mut input).unwrap_or_else(|| input.fn_name.to_string());
 
     input.fn_name = format_ident!("{}_{}", input.fn_name, variant_no);
@@ -113,6 +115,39 @@ fn expand_variadic(
     }
 
     expand_nonvariadic(input, sql_name, legacy_helper_type_and_module)
+}
+
+fn add_variadic_doc_comments(attributes: &mut Vec<Attribute>, fn_name: &str) {
+    let mut doc_comments_end = attributes.len()
+        - attributes
+            .iter()
+            .rev()
+            .position(|attr| match &attr.meta {
+                Meta::NameValue(MetaNameValue { path, .. }) => path.is_ident("doc"),
+                _ => false,
+            })
+            .unwrap_or(attributes.len());
+
+    let fn_family = format!("`{0}_1`, `{0}_2`, ... `{0}_n`", fn_name);
+
+    let doc_comments: Vec<Attribute> = parse_quote! {
+        ///
+        /// # Variadic functions
+        ///
+        /// This function is variadic in SQL, so there's a family of functions
+        /// on a diesel side:
+        ///
+        #[doc = #fn_family]
+        ///
+        /// Here, the postfix indicates repetitions of variadic arguments.
+        /// To use this function, the appropriate version with the correct
+        /// argument count must be selected.
+    };
+
+    for new_attribute in doc_comments {
+        attributes.insert(doc_comments_end, new_attribute);
+        doc_comments_end += 1;
+    }
 }
 
 fn append_index_to_strict_fn_arg(arg: &mut StrictFnArg, index: usize) {
