@@ -90,25 +90,47 @@ pub fn get_table_data(
     conn: &mut PgConnection,
     table: &TableName,
     column_sorting: &ColumnSorting,
+    domain_types_enabled: bool,
 ) -> QueryResult<Vec<ColumnInformation>> {
     use self::information_schema::columns::dsl::*;
+    use diesel::sql_types::{Nullable, SingleValue};
 
     let schema_name = match table.schema {
         Some(ref name) => Cow::Borrowed(name),
         None => Cow::Owned(Pg::default_schema(conn)?),
     };
 
-    let query = columns
-        .select((
-            column_name,
-            udt_name,
-            udt_schema.nullable(),
-            __is_nullable,
-            character_maximum_length,
-            col_description(regclass(table), ordinal_position),
-        ))
-        .filter(table_name.eq(&table.sql_name))
-        .filter(table_schema.eq(schema_name));
+    let query = if domain_types_enabled {
+        define_sql_function!(#[sql_name = "coalesce"] fn coalesce_maybe<T: SingleValue>(x: Nullable<T>, y: Nullable<T>) -> Nullable<T>);
+        define_sql_function!(#[sql_name = "coalesce"] fn coalesce_strict<T: SingleValue>(x: Nullable<T>, y: T) -> T);
+
+        columns
+            .select((
+                column_name,
+                coalesce_strict(domain_name, udt_name),
+                coalesce_maybe(domain_schema, udt_schema.nullable()),
+                __is_nullable,
+                character_maximum_length,
+                col_description(regclass(table), ordinal_position),
+            ))
+            .filter(table_name.eq(&table.sql_name))
+            .filter(table_schema.eq(schema_name))
+            .into_boxed()
+    } else {
+        columns
+            .select((
+                column_name,
+                udt_name,
+                udt_schema.nullable(),
+                __is_nullable,
+                character_maximum_length,
+                col_description(regclass(table), ordinal_position),
+            ))
+            .filter(table_name.eq(&table.sql_name))
+            .filter(table_schema.eq(schema_name))
+            .into_boxed()
+    };
+
     match column_sorting {
         ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn),
         ColumnSorting::Name => query.order(column_name).load(conn),
@@ -174,6 +196,8 @@ mod information_schema {
             ordinal_position -> BigInt,
             udt_name -> VarChar,
             udt_schema -> VarChar,
+            domain_name -> Nullable<VarChar>,
+            domain_schema -> Nullable<VarChar>,
         }
     }
 }
@@ -290,11 +314,21 @@ mod test {
             ColumnInformation::new("array_col", "_varchar", pg_catalog, false, None, None);
         assert_eq!(
             Ok(vec![id, text_col, not_null]),
-            get_table_data(&mut connection, &table_1, &ColumnSorting::OrdinalPosition)
+            get_table_data(
+                &mut connection,
+                &table_1,
+                &ColumnSorting::OrdinalPosition,
+                false
+            )
         );
         assert_eq!(
             Ok(vec![array_col]),
-            get_table_data(&mut connection, &table_2, &ColumnSorting::OrdinalPosition)
+            get_table_data(
+                &mut connection,
+                &table_2,
+                &ColumnSorting::OrdinalPosition,
+                false
+            )
         );
     }
 
