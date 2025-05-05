@@ -1,3 +1,4 @@
 [print_schema]
 file = "src/schema.rs"
 with_docs = true
+with_domain_types = true
