@@ -50,6 +50,12 @@ fn run_infer_schema_django_bool_case() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn run_infer_schema_domain_types_default_case() {
+    test_print_schema("print_schema_domain_types_default", vec!["--with-docs"]);
+}
+
+#[test]
 fn run_infer_schema_exclude() {
     test_print_schema(
         "print_schema_except_tables",
