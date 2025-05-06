@@ -93,43 +93,42 @@ pub fn get_table_data(
     domain_types_enabled: bool,
 ) -> QueryResult<Vec<ColumnInformation>> {
     use self::information_schema::columns::dsl::*;
-    use diesel::sql_types::{Nullable, SingleValue};
+    use diesel::sql_types::{Nullable, SingleValue, Text};
+
+    type BoxedTextExpr = Box<dyn BoxableExpression<columns, Pg, SqlType = Text>>;
+    type BoxedMaybeTextExpr = Box<dyn BoxableExpression<columns, Pg, SqlType = Nullable<Text>>>;
 
     let schema_name = match table.schema {
         Some(ref name) => Cow::Borrowed(name),
         None => Cow::Owned(Pg::default_schema(conn)?),
     };
 
-    let query = if domain_types_enabled {
+    let (select_name, select_schema) = if domain_types_enabled {
         define_sql_function!(#[sql_name = "coalesce"] fn coalesce_maybe<T: SingleValue>(x: Nullable<T>, y: Nullable<T>) -> Nullable<T>);
         define_sql_function!(#[sql_name = "coalesce"] fn coalesce_strict<T: SingleValue>(x: Nullable<T>, y: T) -> T);
 
-        columns
-            .select((
-                column_name,
-                coalesce_strict(domain_name, udt_name),
-                coalesce_maybe(domain_schema, udt_schema.nullable()),
-                __is_nullable,
-                character_maximum_length,
-                col_description(regclass(table), ordinal_position),
-            ))
-            .filter(table_name.eq(&table.sql_name))
-            .filter(table_schema.eq(schema_name))
-            .into_boxed()
+        (
+            Box::new(coalesce_strict(domain_name, udt_name)) as BoxedTextExpr,
+            Box::new(coalesce_maybe(domain_schema, udt_schema.nullable())) as BoxedMaybeTextExpr,
+        )
     } else {
-        columns
-            .select((
-                column_name,
-                udt_name,
-                udt_schema.nullable(),
-                __is_nullable,
-                character_maximum_length,
-                col_description(regclass(table), ordinal_position),
-            ))
-            .filter(table_name.eq(&table.sql_name))
-            .filter(table_schema.eq(schema_name))
-            .into_boxed()
+        (
+            Box::new(udt_name) as BoxedTextExpr,
+            Box::new(udt_schema.nullable()) as BoxedMaybeTextExpr,
+        )
     };
+
+    let query = columns
+        .select((
+            column_name,
+            select_name,
+            select_schema,
+            __is_nullable,
+            character_maximum_length,
+            col_description(regclass(table), ordinal_position),
+        ))
+        .filter(table_name.eq(&table.sql_name))
+        .filter(table_schema.eq(schema_name));
 
     match column_sorting {
         ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn),
