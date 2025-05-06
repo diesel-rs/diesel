@@ -284,7 +284,7 @@ pub fn load_table_data(
         connection,
         &name,
         &config.column_sorting,
-        config.domain_types,
+        config.use_domains_as_column_sql_types,
     )?
     .into_iter()
     .map(|c| {
