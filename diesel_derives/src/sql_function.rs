@@ -25,11 +25,9 @@ pub(crate) fn expand(
         .iter()
         .find(|attr| attr.meta.path().is_ident("variadic"))
         .map(|attr| {
-            attr.parse_args::<VariadicAttributeArgs>()
-                .expect("Invalid format for variadic attribute")
+            attr.parse_args::<VariadicAttributeArgs>()?
                 .argument_count
                 .base10_parse::<usize>()
-                .expect("Invalid format for variadic attribute")
         });
 
     let Some(variadic_argument_count) = variadic_argument_count else {
@@ -38,18 +36,25 @@ pub(crate) fn expand(
         return expand_nonvariadic(input, sql_name, legacy_helper_type_and_module);
     };
 
+    let variadic_argument_count = match variadic_argument_count {
+        Ok(arg_count) => arg_count,
+        Err(err) => return err.into_compile_error(),
+    };
+
     attributes.retain(|attr| !attr.meta.path().is_ident("variadic"));
 
     let variadic_variants = VARIADIC_VARIANTS_DEFAULT;
 
     let mut result = TokenStream::new();
     for variant_no in 1..=variadic_variants {
-        let expanded = expand_variadic(
+        let expanded: TokenStream = expand_variadic(
             input.clone(),
             legacy_helper_type_and_module,
             variadic_argument_count,
             variant_no,
-        );
+        )
+        .unwrap_or_else(syn::Error::into_compile_error);
+
         result.append_all(expanded.into_iter());
     }
 
@@ -61,7 +66,7 @@ fn expand_variadic(
     legacy_helper_type_and_module: bool,
     variadic_argument_count: usize,
     variant_no: usize,
-) -> TokenStream {
+) -> syn::Result<TokenStream> {
     add_variadic_doc_comments(&mut input.attributes, &input.fn_name.to_string());
 
     let sql_name = parse_sql_name_attr(&mut input).unwrap_or_else(|| input.fn_name.to_string());
@@ -103,18 +108,21 @@ fn expand_variadic(
         .args
         .iter_mut()
         .skip(nonvariadic_args_count)
-        .for_each(|arg| {
-            append_index_to_strict_fn_arg(arg, 1);
-        });
+        .map(|arg| append_index_to_strict_fn_arg(arg, 1))
+        .collect::<syn::Result<Vec<_>>>()?;
 
     for additional_arg in 2..=variant_no {
         for mut arg in variadic_args.clone() {
-            append_index_to_strict_fn_arg(&mut arg, additional_arg);
+            append_index_to_strict_fn_arg(&mut arg, additional_arg)?;
             input.args.push(arg);
         }
     }
 
-    expand_nonvariadic(input, sql_name, legacy_helper_type_and_module)
+    Ok(expand_nonvariadic(
+        input,
+        sql_name,
+        legacy_helper_type_and_module,
+    ))
 }
 
 fn add_variadic_doc_comments(attributes: &mut Vec<Attribute>, fn_name: &str) {
@@ -151,18 +159,23 @@ fn add_variadic_doc_comments(attributes: &mut Vec<Attribute>, fn_name: &str) {
     }
 }
 
-fn append_index_to_strict_fn_arg(arg: &mut StrictFnArg, index: usize) {
+fn append_index_to_strict_fn_arg(arg: &mut StrictFnArg, index: usize) -> syn::Result<()> {
     arg.name = format_ident!("{}_{}", arg.name, index);
 
     let Type::Path(mut ty_path) = arg.ty.clone() else {
-        panic!("Variadic arguments are expected to have path type");
+        return Err(syn::Error::new(
+            arg.span(),
+            "Variadic argument should have path type",
+        ));
     };
     let ident = ty_path
         .path
         .require_ident()
-        .expect("Variadic arguments are expected to have ident type");
+        .map_err(|_| syn::Error::new(ty_path.span(), "Variadic argumentsshould have ident type"))?;
     ty_path.path.segments[0].ident = format_ident!("{}{}", ident, index);
     arg.ty = Type::Path(ty_path);
+
+    Ok(())
 }
 
 fn parse_sql_name_attr(input: &mut SqlFunctionDecl) -> Option<String> {
