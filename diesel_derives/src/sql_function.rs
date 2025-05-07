@@ -25,9 +25,17 @@ pub(crate) fn expand(
         .iter()
         .find(|attr| attr.meta.path().is_ident("variadic"))
         .map(|attr| {
-            attr.parse_args::<VariadicAttributeArgs>()?
-                .argument_count
-                .base10_parse::<usize>()
+            let argument_count_literal = attr.parse_args::<VariadicAttributeArgs>()?.argument_count;
+            let argument_count = argument_count_literal.base10_parse::<usize>()?;
+
+            if argument_count > input.args.len() {
+                return Err(syn::Error::new(
+                    argument_count_literal.span(),
+                    "invalid variadic argument count: not enough function arguments",
+                ));
+            }
+
+            Ok(argument_count)
         });
 
     let Some(variadic_argument_count) = variadic_argument_count else {
@@ -165,13 +173,13 @@ fn append_index_to_strict_fn_arg(arg: &mut StrictFnArg, index: usize) -> syn::Re
     let Type::Path(mut ty_path) = arg.ty.clone() else {
         return Err(syn::Error::new(
             arg.span(),
-            "Variadic argument should have path type",
+            "variadic argument should have path type",
         ));
     };
     let ident = ty_path
         .path
         .require_ident()
-        .map_err(|_| syn::Error::new(ty_path.span(), "Variadic argumentsshould have ident type"))?;
+        .map_err(|_| syn::Error::new(ty_path.span(), "variadic argumentsshould have ident type"))?;
     ty_path.path.segments[0].ident = format_ident!("{}{}", ident, index);
     arg.ty = Type::Path(ty_path);
 
