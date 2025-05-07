@@ -139,9 +139,10 @@ fn add_variadic_doc_comments(attributes: &mut Vec<Attribute>, fn_name: &str) {
         ///
         #[doc = #fn_family]
         ///
-        /// Here, the postfix indicates repetitions of variadic arguments.
+        /// Here, the postfix number indicates repetitions of variadic arguments.
         /// To use this function, the appropriate version with the correct
         /// argument count must be selected.
+        #[doc(alias = #fn_name)]
     };
 
     for new_attribute in doc_comments {

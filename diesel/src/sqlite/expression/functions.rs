@@ -1158,13 +1158,14 @@ extern "SQL" {
         values: V,
     ) -> Jsonb;
 
-    /// The json_array() SQL function accepts zero or more arguments and returns a well-formed JSON array that
-    /// is composed from those arguments. If any argument to json_array() is a BLOB then an error is thrown.
+    /// The `json_array()` SQL function accepts zero or more arguments and returns a well-formed JSON array
+    /// that is composed from those arguments. If any argument to `json_array()` is a BLOB then an error is
+    /// thrown.
     ///
-    /// An argument with SQL type TEXT is normally converted into a quoted JSON string. However, if the argument
-    /// is the output from another json function, then it is stored as JSON. This allows calls to json_array()
-    /// and json_object() to be nested. The json() function can also be used to force strings to be recognized
-    /// as JSON.
+    /// An argument with SQL type TEXT is normally converted into a quoted JSON string. However, if the
+    /// argument is the output from another json function, then it is stored as JSON. This allows calls to
+    /// `json_array()` and `json_object()` to be nested. The [`json()`] function can also be used to force
+    /// strings to be recognized as JSON.
     ///
     /// # Examples
     ///
@@ -1211,16 +1212,18 @@ extern "SQL" {
     #[variadic(1)]
     fn json_array<V: SqlType + SingleValue>(value: V) -> Json;
 
-    /// The jsonb_array() SQL function accepts zero or more arguments and returns a well-formed JSON array that
-    /// is composed from those arguments. If any argument to jsonb_array() is a BLOB then an error is thrown.
+    /// The `jsonb_array()` SQL function accepts zero or more arguments and returns a well-formed JSON array
+    /// that is composed from those arguments. If any argument to `jsonb_array()` is a BLOB then an error is
+    /// thrown.
     ///
-    /// An argument with SQL type TEXT is normally converted into a quoted JSON string. However, if the argument
-    /// is the output from another json function, then it is stored as JSON. This allows calls to jsonb_array()
-    /// and jsonb_object() to be nested. The json() function can also be used to force strings to be recognized
-    /// as JSON.
+    /// An argument with SQL type TEXT is normally converted into a quoted JSON string. However, if the
+    /// argument is the output from another json function, then it is stored as JSON. This allows calls to
+    /// `jsonb_array()` and `jsonb_object()` to be nested. The [`json()`] function can also be used to force
+    /// strings to be recognized as JSON.
     ///
-    /// This function works just like the json_array() function except that it returns the constructed JSON
-    /// array in the SQLite's private JSONB format rather than in the standard RFC 8259 text format.
+    /// This function works just like the [`json_array()`](json_array_1()) function except that it returns the
+    /// constructed JSON array in the SQLite's private JSONB format rather than in the standard RFC 8259 text
+    /// format.
     ///
     /// # Examples
     ///
