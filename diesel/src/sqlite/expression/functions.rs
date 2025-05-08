@@ -5,6 +5,7 @@ use crate::sqlite::expression::expression_methods::BinaryOrNullableBinary;
 use crate::sqlite::expression::expression_methods::JsonOrNullableJson;
 use crate::sqlite::expression::expression_methods::JsonOrNullableJsonOrJsonbOrNullableJsonb;
 use crate::sqlite::expression::expression_methods::MaybeNullableValue;
+use crate::sqlite::expression::expression_methods::NotBlob;
 use crate::sqlite::expression::expression_methods::TextOrNullableText;
 use crate::sqlite::expression::expression_methods::TextOrNullableTextOrBinaryOrNullableBinary;
 
@@ -1159,8 +1160,8 @@ extern "SQL" {
     ) -> Jsonb;
 
     /// The `json_array()` SQL function accepts zero or more arguments and returns a well-formed JSON array
-    /// that is composed from those arguments. If any argument to `json_array()` is a BLOB then an error is
-    /// thrown.
+    /// that is composed from those arguments. Note that arguments of type BLOB will not be accepted by this
+    /// function.
     ///
     /// An argument with SQL type TEXT is normally converted into a quoted JSON string. However, if the
     /// argument is the output from another json function, then it is stored as JSON. This allows calls to
@@ -1210,11 +1211,11 @@ extern "SQL" {
     /// ```
     #[cfg(feature = "sqlite")]
     #[variadic(1)]
-    fn json_array<V: SqlType + SingleValue>(value: V) -> Json;
+    fn json_array<V: NotBlob>(value: V) -> Json;
 
     /// The `jsonb_array()` SQL function accepts zero or more arguments and returns a well-formed JSON array
-    /// that is composed from those arguments. If any argument to `jsonb_array()` is a BLOB then an error is
-    /// thrown.
+    /// that is composed from those arguments. Note that arguments of type BLOB will not be accepted by this
+    /// function.
     ///
     /// An argument with SQL type TEXT is normally converted into a quoted JSON string. However, if the
     /// argument is the output from another json function, then it is stored as JSON. This allows calls to
@@ -1268,5 +1269,5 @@ extern "SQL" {
     /// ```
     #[cfg(feature = "sqlite")]
     #[variadic(1)]
-    fn jsonb_array<V: SqlType + SingleValue>(value: V) -> Jsonb;
+    fn jsonb_array<V: NotBlob>(value: V) -> Jsonb;
 }

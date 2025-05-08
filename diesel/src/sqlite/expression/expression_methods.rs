@@ -2,7 +2,7 @@
 
 pub(in crate::sqlite) use self::private::{
     BinaryOrNullableBinary, JsonOrNullableJson, JsonOrNullableJsonOrJsonbOrNullableJsonb,
-    MaybeNullableValue, TextOrNullableText, TextOrNullableTextOrBinaryOrNullableBinary,
+    MaybeNullableValue, NotBlob, TextOrNullableText, TextOrNullableTextOrBinaryOrNullableBinary,
 };
 use super::operators::*;
 use crate::dsl;
@@ -88,7 +88,11 @@ pub trait SqliteExpressionMethods: Expression + Sized {
 impl<T: Expression> SqliteExpressionMethods for T {}
 
 pub(in crate::sqlite) mod private {
-    use crate::sql_types::{Binary, Json, Jsonb, MaybeNullableType, Nullable, SingleValue, Text};
+    use crate::sql_types::{
+        BigInt, Binary, Bool, Date, Double, Float, Integer, Json, Jsonb, MaybeNullableType,
+        Nullable, Numeric, SingleValue, SmallInt, SqlType, Text, Time, Timestamp,
+        TimestamptzSqlite,
+    };
 
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Text` nor `diesel::sql_types::Nullable<Text>`",
@@ -149,4 +153,32 @@ pub(in crate::sqlite) mod private {
     {
         type Out = <T::IsNull as MaybeNullableType<O>>::Out;
     }
+
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Text`, `diesel::sql_types::Float`, 
+        `diesel::sql_types::Double`, `diesel::sql_types::Numeric`, `diesel::sql_types::Bool`,
+        `diesel::sql_types::Integer`, `diesel::sql_types::SmallInt`, `diesel::sql_types::BigInt`,
+        `diesel::sql_types::Date`, `diesel::sql_types::Time`, `diesel::sql_types::Timestamp`,
+        `diesel::sql_types::TimestamptzSqlite`, `diesel::sql_types::Binary`, `diesel::sql_types::Json`,        
+        `diesel::sql_types::Jsonb` nor `diesel::sql_types::Nullable<Any of the above>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait NotBlob: SqlType + SingleValue {}
+
+    impl<T> NotBlob for Nullable<T> where T: NotBlob {}
+    impl NotBlob for Text {}
+    impl NotBlob for Float {}
+    impl NotBlob for Double {}
+    impl NotBlob for Numeric {}
+    impl NotBlob for Bool {}
+    impl NotBlob for Integer {}
+    impl NotBlob for SmallInt {}
+    impl NotBlob for BigInt {}
+    impl NotBlob for Date {}
+    impl NotBlob for Time {}
+    impl NotBlob for Timestamp {}
+    impl NotBlob for TimestamptzSqlite {}
+    impl NotBlob for Binary {}
+    impl NotBlob for Json {}
+    impl NotBlob for Jsonb {}
 }
