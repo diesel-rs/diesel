@@ -159,8 +159,8 @@ pub(in crate::sqlite) mod private {
         `diesel::sql_types::Double`, `diesel::sql_types::Numeric`, `diesel::sql_types::Bool`,
         `diesel::sql_types::Integer`, `diesel::sql_types::SmallInt`, `diesel::sql_types::BigInt`,
         `diesel::sql_types::Date`, `diesel::sql_types::Time`, `diesel::sql_types::Timestamp`,
-        `diesel::sql_types::TimestamptzSqlite`, `diesel::sql_types::Binary`, `diesel::sql_types::Json`,        
-        `diesel::sql_types::Jsonb` nor `diesel::sql_types::Nullable<Any of the above>`",
+        `diesel::sql_types::TimestamptzSqlite`,  `diesel::sql_types::Json` nor 
+        `diesel::sql_types::Nullable<Any of the above>`",
         note = "try to provide an expression that produces one of the expected sql types"
     )]
     pub trait NotBlob: SqlType + SingleValue {}
@@ -178,7 +178,5 @@ pub(in crate::sqlite) mod private {
     impl NotBlob for Time {}
     impl NotBlob for Timestamp {}
     impl NotBlob for TimestamptzSqlite {}
-    impl NotBlob for Binary {}
     impl NotBlob for Json {}
-    impl NotBlob for Jsonb {}
 }
