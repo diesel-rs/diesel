@@ -155,12 +155,10 @@ pub(in crate::sqlite) mod private {
     }
 
     #[diagnostic::on_unimplemented(
-        message = "`{Self}` is neither `diesel::sql_types::Text`, `diesel::sql_types::Float`, 
-        `diesel::sql_types::Double`, `diesel::sql_types::Numeric`, `diesel::sql_types::Bool`,
-        `diesel::sql_types::Integer`, `diesel::sql_types::SmallInt`, `diesel::sql_types::BigInt`,
-        `diesel::sql_types::Date`, `diesel::sql_types::Time`, `diesel::sql_types::Timestamp`,
-        `diesel::sql_types::TimestamptzSqlite`,  `diesel::sql_types::Json` nor 
-        `diesel::sql_types::Nullable<Any of the above>`",
+        message = "`{Self}` is neither any of `diesel::sql_types::{{
+            Text, Float, Double, Numeric,  Bool, Integer, SmallInt, BigInt, 
+            Date, Time, Timestamp, TimestamptzSqlite, Json
+         }}`  nor `diesel::sql_types::Nullable<Any of the above>`",
         note = "try to provide an expression that produces one of the expected sql types"
     )]
     pub trait NotBlob: SqlType + SingleValue {}
