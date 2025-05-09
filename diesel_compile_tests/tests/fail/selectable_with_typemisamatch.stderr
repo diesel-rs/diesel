@@ -15,18 +15,21 @@ error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is 
    = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Pg>`
    = help: see issue #48214
 
-error[E0277]: cannot deserialize a value of the database type `diesel::sql_types::Integer` as `*const str`
+error[E0277]: the trait bound `std::string::String: FromSqlRow<diesel::sql_types::Integer, Pg>` is not satisfied
   --> tests/fail/selectable_with_typemisamatch.rs:16:9
    |
 16 |     id: String,
-   |         ^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `*const str`
+   |         ^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `std::string::String`
    |
    = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`
+   = note: `diesel::sql_query` requires the loading target to column names for loading values.
+           You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
    = help: the following other types implement trait `FromSql<A, DB>`:
-             `*const str` implements `FromSql<diesel::sql_types::Text, Mysql>`
-             `*const str` implements `FromSql<diesel::sql_types::Text, Pg>`
-             `*const str` implements `FromSql<diesel::sql_types::Text, Sqlite>`
-   = note: required for `std::string::String` to implement `FromSql<diesel::sql_types::Integer, Pg>`
+             `std::string::String` implements `FromSql<Citext, Pg>`
+             `std::string::String` implements `FromSql<TimestamptzSqlite, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Date, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Time, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Timestamp, Sqlite>`
    = note: required for `std::string::String` to implement `diesel::Queryable<diesel::sql_types::Integer, Pg>`
    = note: required for `std::string::String` to implement `FromSqlRow<diesel::sql_types::Integer, Pg>`
    = help: see issue #48214
