@@ -465,6 +465,8 @@ pub struct PrintSchema {
     pub custom_type_derives: Option<Vec<String>>,
     #[serde(default)]
     pub sqlite_integer_primary_key_is_bigint: Option<bool>,
+    #[serde(default)]
+    pub domains_as_custom_types: Vec<Regex>,
 }
 
 impl PrintSchema {
