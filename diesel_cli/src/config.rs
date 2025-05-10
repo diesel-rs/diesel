@@ -466,7 +466,7 @@ pub struct PrintSchema {
     #[serde(default)]
     pub sqlite_integer_primary_key_is_bigint: Option<bool>,
     #[serde(default)]
-    pub use_domains_as_column_sql_types: bool,
+    pub domains_as_custom_types: Vec<Regex>,
 }
 
 impl PrintSchema {
