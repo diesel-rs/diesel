@@ -1,0 +1,3 @@
+[print_schema]
+file = "src/schema.rs"
+domains_as_custom_types = ["int", "longtext"]
