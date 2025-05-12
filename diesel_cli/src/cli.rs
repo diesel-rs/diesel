@@ -336,6 +336,14 @@ pub fn build_cli() -> Command {
                 .help("A list of derives to implement for every automatically generated SqlType in the schema, separated by commas."),
         )
         .arg(
+            Arg::new("domains-as-custom-types")
+                .long("domains-as-custom-types")
+                .num_args(1..)
+                .action(clap::ArgAction::Append)
+                .number_of_values(1)
+                .help("A regex to distinguish domain names to generate custom types for instead of relying on underlying type."),
+        )
+        .arg(
             Arg::new("schema-key")
                 .long("schema-key")
                 .action(ArgAction::Append)

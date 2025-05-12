@@ -381,6 +381,15 @@ impl Config {
                 let derives = derives.cloned().collect();
                 config.custom_type_derives = Some(derives);
             }
+
+            if let Some(domains) = matches.get_many::<String>("domains-as-custom-types") {
+                let regexes: Vec<String> = domains.cloned().collect();
+                config.domains_as_custom_types = regexes
+                    .into_iter()
+                    .map(|x| regex::Regex::new(&x).map(Into::into))
+                    .collect::<Result<Vec<Regex>, _>>()?;
+            }
+
             if matches.get_flag("sqlite-integer-primary-key-is-bigint") {
                 config.sqlite_integer_primary_key_is_bigint = Some(true);
             }
