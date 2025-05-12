@@ -1278,4 +1278,168 @@ extern "SQL" {
     #[cfg(feature = "sqlite")]
     #[variadic(1)]
     fn jsonb_array<V: NotBlob>(value: V) -> Jsonb;
+
+    /// The `json_remove(X,P,...)` SQL function takes a single JSON value as its first argument followed by
+    /// zero or more path arguments. The `json_remove(X,P,...)` function returns a copy of the X parameter
+    /// with all the elements identified by path arguments removed. Paths that select elements not found in X
+    /// are silently ignored.
+    ///
+    /// Removals occurs sequentially from left to right. Changes caused by prior removals can affect the path
+    /// search for subsequent arguments.
+    ///
+    /// If the `json_remove(X)` function is called with no path arguments, then it returns the input X
+    /// reformatted, with excess whitespace removed.
+    ///
+    /// The `json_remove()` function throws an error if any of the path arguments is not a well-formed path.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Json, Text};
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// #     let version = diesel::select(sql::<Text>("sqlite_version();"))
+    /// #         .get_result::<String>(connection)?;
+    /// #
+    /// #     let version_components: Vec<&str> = version.split('.').collect();
+    /// #     let major: u32 = version_components[0].parse().unwrap();
+    /// #     let minor: u32 = version_components[1].parse().unwrap();
+    /// #
+    /// #     if major < 3 || minor < 38 {
+    /// #         println!("SQLite version is too old, skipping the test.");
+    /// #         return Ok(());
+    /// #     }
+    /// #
+    /// let json = json!(['a', 'b', 'c', 'd']);
+    /// let result = diesel::select(json_remove_0::<Json, _>(json))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!(['a', 'b', 'c', 'd'])), result);
+    ///
+    /// // Values are removed sequentially from left to right.
+    /// let json = json!(['a', 'b', 'c', 'd']);
+    /// let result = diesel::select(json_remove_2::<Json, _, _, _>(json, "$[0]", "$[2]"))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!(['b', 'c'])), result);
+    ///
+    /// let json = json!({"a": 10, "b": 20});
+    /// let result = diesel::select(json_remove_1::<Json, _, _>(json, "$.a"))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!({"b": 20})), result);
+    ///
+    /// // Paths that select not existing elements are silently ignored.
+    /// let json = json!({"a": 10, "b": 20});
+    /// let result = diesel::select(json_remove_1::<Json, _, _>(json, "$.c"))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!({"a": 10, "b": 20})), result);
+    ///
+    /// let json = json!({"a": 10, "b": 20});
+    /// let result = diesel::select(json_remove_1::<Json, _, _>(json, "$"))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(None, result);
+    ///
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "sqlite")]
+    #[variadic(1)]
+    fn json_remove<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
+        json: J,
+        path: Text,
+    ) -> Nullable<Json>;
+
+    /// The `jsonb_remove(X,P,...)` SQL function takes a single JSON value as its first argument followed by
+    /// zero or more path arguments. The `jsonb_remove(X,P,...)` function returns a copy of the X parameter
+    /// with all the elements identified by path arguments removed. Paths that select elements not found in X
+    /// are silently ignored.
+    ///
+    /// Removals occurs sequentially from left to right. Changes caused by prior removals can affect the path
+    /// search for subsequent arguments.
+    ///
+    /// If the `jsonb_remove(X)` function is called with no path arguments, then it returns the input X
+    /// reformatted, with excess whitespace removed.
+    ///
+    /// The `jsonb_remove()` function throws an error if any of the path arguments is not a well-formed path.
+    ///
+    /// This function returns value in a binary JSONB format.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Jsonb, Text};
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// #     let version = diesel::select(sql::<Text>("sqlite_version();"))
+    /// #         .get_result::<String>(connection)?;
+    /// #
+    /// #     let version_components: Vec<&str> = version.split('.').collect();
+    /// #     let major: u32 = version_components[0].parse().unwrap();
+    /// #     let minor: u32 = version_components[1].parse().unwrap();
+    /// #
+    /// #     if major < 3 || minor < 38 {
+    /// #         println!("SQLite version is too old, skipping the test.");
+    /// #         return Ok(());
+    /// #     }
+    /// #
+    /// let json = json!(['a', 'b', 'c', 'd']);
+    /// let result = diesel::select(jsonb_remove_0::<Jsonb, _>(json))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!(['a', 'b', 'c', 'd'])), result);
+    ///
+    /// // Values are removed sequentially from left to right.
+    /// let json = json!(['a', 'b', 'c', 'd']);
+    /// let result = diesel::select(jsonb_remove_2::<Jsonb, _, _, _>(json, "$[0]", "$[2]"))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!(['b', 'c'])), result);
+    ///
+    /// let json = json!({"a": 10, "b": 20});
+    /// let result = diesel::select(jsonb_remove_1::<Jsonb, _, _>(json, "$.a"))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!({"b": 20})), result);
+    ///
+    /// // Paths that select not existing elements are silently ignored.
+    /// let json = json!({"a": 10, "b": 20});
+    /// let result = diesel::select(jsonb_remove_1::<Jsonb, _, _>(json, "$.c"))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!({"a": 10, "b": 20})), result);
+    ///
+    /// let json = json!({"a": 10, "b": 20});
+    /// let result = diesel::select(jsonb_remove_1::<Jsonb, _, _>(json, "$"))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(None, result);
+    ///
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "sqlite")]
+    #[variadic(1)]
+    fn jsonb_remove<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
+        json: J,
+        path: Text,
+    ) -> Nullable<Jsonb>;
 }
