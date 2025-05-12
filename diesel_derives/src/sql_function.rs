@@ -207,7 +207,7 @@ fn add_variadic_doc_comments(attributes: &mut Vec<Attribute>, fn_name: &str) {
             })
             .unwrap_or(attributes.len());
 
-    let fn_family = format!("`{0}_1`, `{0}_2`, ... `{0}_n`", fn_name);
+    let fn_family = format!("`{0}_0`, `{0}_1`, ... `{0}_n`", fn_name);
 
     let doc_comments: Vec<Attribute> = parse_quote! {
         ///

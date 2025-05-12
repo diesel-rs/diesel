@@ -1198,6 +1198,10 @@ extern "SQL" {
     /// #         return Ok(());
     /// #     }
     /// #
+    /// let result = diesel::select(json_array_0())
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([]), result);
+    ///
     /// let result = diesel::select(json_array_1::<Text, _>("abc"))
     ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(json!(["abc"]), result);
@@ -1256,6 +1260,10 @@ extern "SQL" {
     /// #         return Ok(());
     /// #     }
     /// #
+    /// let result = diesel::select(jsonb_array_0())
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([]), result);
+    ///
     /// let result = diesel::select(jsonb_array_1::<Text, _>("abc"))
     ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(json!(["abc"]), result);
