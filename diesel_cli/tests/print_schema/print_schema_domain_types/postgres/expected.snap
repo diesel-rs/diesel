@@ -1,16 +1,16 @@
 ---
 source: diesel_cli/tests/print_schema.rs
-assertion_line: 533
+assertion_line: 517
 description: "Test: print_schema_domain_types"
 ---
 // @generated automatically by Diesel CLI.
 
 pub mod sql_types {
-    #[derive(diesel::sql_types::SqlType)]
+    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "neginteger"))]
     pub struct Neginteger;
 
-    #[derive(diesel::sql_types::SqlType)]
+    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "posinteger"))]
     pub struct Posinteger;
 }

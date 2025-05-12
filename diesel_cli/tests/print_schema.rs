@@ -52,7 +52,15 @@ fn run_infer_schema_django_bool_case() {
 #[test]
 #[cfg(feature = "postgres")]
 fn run_infer_schema_domain_types_case() {
-    test_print_schema("print_schema_domain_types", vec![]);
+    test_print_schema(
+        "print_schema_domain_types",
+        vec![
+            "--domains-as-custom-types",
+            "int",
+            "--domains-as-custom-types",
+            "longtext",
+        ],
+    );
 }
 
 #[test]
