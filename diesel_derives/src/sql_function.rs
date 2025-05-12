@@ -1,9 +1,12 @@
+use proc_macro2::Span;
 use proc_macro2::TokenStream;
 use quote::format_ident;
 use quote::quote;
 use quote::ToTokens;
 use quote::TokenStreamExt;
+use std::iter;
 use syn::parse::{Parse, ParseStream, Result};
+use syn::punctuated::Pair;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::GenericParam;
@@ -54,7 +57,7 @@ pub(crate) fn expand(
     let variadic_variants = VARIADIC_VARIANTS_DEFAULT;
 
     let mut result = TokenStream::new();
-    for variant_no in 1..=variadic_variants {
+    for variant_no in 0..=variadic_variants {
         let expanded: TokenStream = expand_variadic(
             input.clone(),
             legacy_helper_type_and_module,
@@ -83,48 +86,108 @@ fn expand_variadic(
 
     let nonvariadic_args_count = input.args.len() - variadic_argument_count;
 
-    let variadic_type_params: Vec<_> = input
-        .generics
-        .type_params()
-        .skip(nonvariadic_args_count)
-        .cloned()
-        .collect();
+    let mut variadic_generic_indexes = vec![];
+    let mut arguments_with_generic_types = vec![];
+    for (arg_idx, arg) in input.args.iter().skip(nonvariadic_args_count).enumerate() {
+        // If argument is of type that definitely cannot be a generic then we skip it.
+        let Type::Path(ty_path) = arg.ty.clone() else {
+            continue;
+        };
+        let Ok(ty_ident) = ty_path.path.require_ident() else {
+            continue;
+        };
 
-    let variadic_args: Vec<_> = input
-        .args
-        .iter()
-        .skip(nonvariadic_args_count)
-        .cloned()
-        .collect();
-
-    input
-        .generics
-        .type_params_mut()
-        .skip(nonvariadic_args_count)
-        .for_each(|type_param| {
-            type_param.ident = format_ident!("{}1", type_param.ident);
+        let idx = input.generics.params.iter().position(|param| match param {
+            GenericParam::Type(type_param) => type_param.ident == *ty_ident,
+            _ => false,
         });
 
-    for additional_generic in 2..=variant_no {
-        for mut type_param in variadic_type_params.clone() {
-            type_param.ident = format_ident!("{}{}", type_param.ident, additional_generic);
-            input.generics.params.push(GenericParam::Type(type_param));
+        if let Some(idx) = idx {
+            variadic_generic_indexes.push(idx);
+            arguments_with_generic_types.push(arg_idx);
         }
     }
 
-    input
-        .args
-        .iter_mut()
-        .skip(nonvariadic_args_count)
-        .map(|arg| append_index_to_strict_fn_arg(arg, 1))
-        .collect::<syn::Result<Vec<_>>>()?;
+    let mut args: Vec<_> = input.args.into_pairs().collect();
+    let variadic_args = args.split_off(nonvariadic_args_count);
+    let nonvariadic_args = args;
 
-    for additional_arg in 2..=variant_no {
-        for mut arg in variadic_args.clone() {
-            append_index_to_strict_fn_arg(&mut arg, additional_arg)?;
-            input.args.push(arg);
-        }
-    }
+    let variadic_args: Vec<_> = iter::repeat(variadic_args)
+        .take(variant_no)
+        .enumerate()
+        .flat_map(|(arg_group_idx, arg_group)| {
+            let mut resulting_args = vec![];
+
+            for (arg_idx, arg) in arg_group.into_iter().enumerate() {
+                let mut arg = arg.into_value();
+
+                arg.name = format_ident!("{}_{}", arg.name, arg_group_idx + 1);
+
+                if arguments_with_generic_types.contains(&arg_idx) {
+                    let Type::Path(mut ty_path) = arg.ty.clone() else {
+                        unreachable!("This argument should have path type as checked earlier")
+                    };
+                    let Ok(ident) = ty_path.path.require_ident() else {
+                        unreachable!("This argument should have ident type as checked earlier")
+                    };
+
+                    ty_path.path.segments[0].ident =
+                        format_ident!("{}{}", ident, arg_group_idx + 1);
+                    arg.ty = Type::Path(ty_path);
+                }
+
+                let pair = Pair::new(arg, Some(Token![,]([Span::call_site()])));
+                resulting_args.push(pair);
+            }
+
+            resulting_args
+        })
+        .collect();
+
+    input.args = nonvariadic_args.into_iter().chain(variadic_args).collect();
+
+    let generics: Vec<_> = input.generics.params.into_pairs().collect();
+    input.generics.params = if variant_no == 0 {
+        generics
+            .into_iter()
+            .enumerate()
+            .filter_map(|(generic_idx, generic)| {
+                (!variadic_generic_indexes.contains(&generic_idx)).then_some(generic)
+            })
+            .collect()
+    } else {
+        iter::repeat(generics)
+            .take(variant_no)
+            .enumerate()
+            .flat_map(|(generic_group_idx, generic_group)| {
+                let mut resulting_generics = vec![];
+
+                for (generic_idx, generic) in generic_group.into_iter().enumerate() {
+                    if !variadic_generic_indexes.contains(&generic_idx) {
+                        if generic_group_idx == 0 {
+                            resulting_generics.push(generic);
+                        }
+
+                        continue;
+                    }
+
+                    let mut generic = generic.into_value();
+
+                    if let GenericParam::Type(type_param) = &mut generic {
+                        type_param.ident =
+                            format_ident!("{}{}", type_param.ident, generic_group_idx + 1);
+                    } else {
+                        unreachable!("This generic should be a type param as checked earlier")
+                    }
+
+                    let pair = Pair::new(generic, Some(Token![,]([Span::call_site()])));
+                    resulting_generics.push(pair);
+                }
+
+                resulting_generics
+            })
+            .collect()
+    };
 
     Ok(expand_nonvariadic(
         input,
@@ -165,25 +228,6 @@ fn add_variadic_doc_comments(attributes: &mut Vec<Attribute>, fn_name: &str) {
         attributes.insert(doc_comments_end, new_attribute);
         doc_comments_end += 1;
     }
-}
-
-fn append_index_to_strict_fn_arg(arg: &mut StrictFnArg, index: usize) -> syn::Result<()> {
-    arg.name = format_ident!("{}_{}", arg.name, index);
-
-    let Type::Path(mut ty_path) = arg.ty.clone() else {
-        return Err(syn::Error::new(
-            arg.span(),
-            "variadic argument should have path type",
-        ));
-    };
-    let ident = ty_path
-        .path
-        .require_ident()
-        .map_err(|_| syn::Error::new(ty_path.span(), "variadic argumentsshould have ident type"))?;
-    ty_path.path.segments[0].ident = format_ident!("{}{}", ident, index);
-    arg.ty = Type::Path(ty_path);
-
-    Ok(())
 }
 
 fn parse_sql_name_attr(input: &mut SqlFunctionDecl) -> Option<String> {
