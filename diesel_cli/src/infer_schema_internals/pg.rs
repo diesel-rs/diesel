@@ -440,4 +440,70 @@ mod test {
             load_foreign_key_constraints(&mut connection, Some("test_schema"))
         );
     }
+
+    #[test]
+    fn get_table_data_considers_domain_types() {
+        let mut connection = connection();
+
+        diesel::sql_query("CREATE SCHEMA test_schema")
+            .execute(&mut connection)
+            .unwrap();
+
+        diesel::sql_query("CREATE DOMAIN posinteger AS integer CHECK (VALUE > 0)")
+            .execute(&mut connection)
+            .unwrap();
+
+        diesel::sql_query("CREATE TABLE test_schema.table_1 (id posinteger PRIMARY KEY)")
+            .execute(&mut connection)
+            .unwrap();
+
+        let table_1 = TableName::new("table_1", "test_schema");
+
+        let id_int = ColumnInformation::new(
+            "id",
+            "int4",
+            Some(String::from("pg_catalog")),
+            false,
+            None,
+            None,
+        );
+        let id_domain = ColumnInformation::new(
+            "id",
+            "posinteger",
+            Some(String::from("public")),
+            false,
+            None,
+            None,
+        );
+
+        assert_eq!(
+            Ok(vec![id_int.clone()]),
+            get_table_data(
+                &mut connection,
+                &table_1,
+                &ColumnSorting::OrdinalPosition,
+                &[]
+            )
+        );
+
+        assert_eq!(
+            Ok(vec![id_int.clone()]),
+            get_table_data(
+                &mut connection,
+                &table_1,
+                &ColumnSorting::OrdinalPosition,
+                &[&"non-matching-regex".try_into().unwrap()]
+            )
+        );
+
+        assert_eq!(
+            Ok(vec![id_domain]),
+            get_table_data(
+                &mut connection,
+                &table_1,
+                &ColumnSorting::OrdinalPosition,
+                &[&"int".try_into().unwrap()]
+            )
+        );
+    }
 }
