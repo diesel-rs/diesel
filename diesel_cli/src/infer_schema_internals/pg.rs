@@ -144,9 +144,11 @@ pub fn get_table_data(
             let max_length = row
                 .max_length
                 .map(|n| {
-                    n.try_into().map_err(|_| {
-                        // format!("Max column length can't be converted to u64: {e} (got: {n})")
-                        diesel::result::Error::RollbackTransaction
+                    n.try_into().map_err(|e| {
+                        diesel::result::Error::DeserializationError(
+                            format!("Max column length can't be converted to u64: {e} (got: {n})")
+                                .into(),
+                        )
                     })
                 })
                 .transpose()?;
