@@ -55,9 +55,9 @@ fn run_infer_schema_domain_types_case() {
     test_print_schema(
         "print_schema_domain_types",
         vec![
-            "--domains-as-custom-types",
+            "--pg-domains-as-custom-types",
             "int",
-            "--domains-as-custom-types",
+            "--pg-domains-as-custom-types",
             "longtext",
         ],
     );

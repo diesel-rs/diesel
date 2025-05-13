@@ -336,8 +336,8 @@ pub fn build_cli() -> Command {
                 .help("A list of derives to implement for every automatically generated SqlType in the schema, separated by commas."),
         )
         .arg(
-            Arg::new("domains-as-custom-types")
-                .long("domains-as-custom-types")
+            Arg::new("pg-domains-as-custom-types")
+                .long("pg-domains-as-custom-types")
                 .num_args(1..)
                 .action(clap::ArgAction::Append)
                 .number_of_values(1)

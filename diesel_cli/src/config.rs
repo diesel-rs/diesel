@@ -382,7 +382,7 @@ impl Config {
                 config.custom_type_derives = Some(derives);
             }
 
-            if let Some(domains) = matches.get_many::<String>("domains-as-custom-types") {
+            if let Some(domains) = matches.get_many::<String>("pg-domains-as-custom-types") {
                 let regexes: Vec<String> = domains.cloned().collect();
                 config.pg_domains_as_custom_types = regexes
                     .into_iter()
