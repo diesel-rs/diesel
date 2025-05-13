@@ -281,7 +281,7 @@ pub fn load_table_data(
     let primary_key = get_primary_keys(connection, &name)?;
 
     let domains_as_custom_types = config
-        .domains_as_custom_types
+        .pg_domains_as_custom_types
         .iter()
         .map(|regex| regex as &regex::Regex)
         .collect::<Vec<_>>();

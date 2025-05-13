@@ -1,4 +1,4 @@
 [print_schema]
 file = "src/schema.rs"
-domains_as_custom_types = ["int", "longtext"]
+pg_domains_as_custom_types = ["int", "longtext"]
 custom_type_derives = ["diesel::query_builder::QueryId", "Clone"]
