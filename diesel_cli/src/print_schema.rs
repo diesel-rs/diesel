@@ -40,6 +40,9 @@ pub enum AllowTablesToAppearInSameQueryConfig {
     #[serde(rename = "all_tables")]
     #[default]
     AllTables,
+    /// Don't generate any invocation
+    #[serde(rename = "none")]
+    None,
 }
 
 pub fn run_print_schema<W: IoWrite>(
@@ -585,6 +588,7 @@ impl Display for TableDefinitions<'_> {
             AllowTablesToAppearInSameQueryConfig::AllTables => {
                 vec![self.tables.iter().map(|table| &table.name).collect()]
             }
+            AllowTablesToAppearInSameQueryConfig::None => vec![],
         };
         for (table_group_index, table_group) in table_groups
             .into_iter()
@@ -989,6 +993,7 @@ impl str::FromStr for AllowTablesToAppearInSameQueryConfig {
         Ok(match s {
             "fk_related_tables" => AllowTablesToAppearInSameQueryConfig::FkRelatedTables,
             "all_tables" => AllowTablesToAppearInSameQueryConfig::AllTables,
+            "none" => AllowTablesToAppearInSameQueryConfig::None,
             _ => {
                 return Err(
                     "Unknown variant for `allow_tables_to_appear_in_same_query!` config \
