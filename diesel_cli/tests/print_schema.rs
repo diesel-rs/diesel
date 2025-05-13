@@ -360,6 +360,15 @@ fn print_schema_fk_related_tables() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_allows_none() {
+    test_print_schema(
+        "print_schema_allows_none",
+        vec!["--allow-tables-to-appear-in-same-query-config", "none"],
+    )
+}
+
+#[test]
 fn print_schema_reserved_names() {
     test_print_schema("print_schema_reserved_name_mitigation_issue_3404", vec![])
 }
