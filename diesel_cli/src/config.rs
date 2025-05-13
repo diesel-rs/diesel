@@ -384,7 +384,7 @@ impl Config {
 
             if let Some(domains) = matches.get_many::<String>("domains-as-custom-types") {
                 let regexes: Vec<String> = domains.cloned().collect();
-                config.domains_as_custom_types = regexes
+                config.pg_domains_as_custom_types = regexes
                     .into_iter()
                     .map(|x| regex::Regex::new(&x).map(Into::into))
                     .collect::<Result<Vec<Regex>, _>>()?;
@@ -475,7 +475,7 @@ pub struct PrintSchema {
     #[serde(default)]
     pub sqlite_integer_primary_key_is_bigint: Option<bool>,
     #[serde(default)]
-    pub domains_as_custom_types: Vec<Regex>,
+    pub pg_domains_as_custom_types: Vec<Regex>,
 }
 
 impl PrintSchema {
