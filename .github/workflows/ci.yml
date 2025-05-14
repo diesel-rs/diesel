@@ -286,6 +286,15 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: clippy-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - name: Fixing up rustup
+        shell: bash
+        run: |
+          rustc --version
+          rustup component add rustfmt clippy
+          which rustc
+          rustup component list
+          cargo fmt --version
+          cargo clippy --version
 
       - name: Install dependencies
         run: |
