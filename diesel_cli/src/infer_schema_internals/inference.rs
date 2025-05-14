@@ -162,8 +162,11 @@ fn get_column_information(
     conn: &mut InferConnection,
     table: &TableName,
     column_sorting: &ColumnSorting,
-    domains_as_custom_types: &[&regex::Regex],
+    pg_domains_as_custom_types: &[&regex::Regex],
 ) -> Result<Vec<ColumnInformation>, crate::errors::Error> {
+    #[cfg(not(feature = "postgres"))]
+    let _ = pg_domains_as_custom_types;
+
     let column_info = match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref mut c) => {
@@ -171,7 +174,7 @@ fn get_column_information(
         }
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref mut c) => {
-            super::pg::get_table_data(c, table, column_sorting, domains_as_custom_types)
+            super::pg::get_table_data(c, table, column_sorting, pg_domains_as_custom_types)
         }
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(ref mut c) => super::mysql::get_table_data(c, table, column_sorting),
@@ -280,7 +283,7 @@ pub fn load_table_data(
 
     let primary_key = get_primary_keys(connection, &name)?;
 
-    let domains_as_custom_types = config
+    let pg_domains_as_custom_types = config
         .pg_domains_as_custom_types
         .iter()
         .map(|regex| regex as &regex::Regex)
@@ -290,7 +293,7 @@ pub fn load_table_data(
         connection,
         &name,
         &config.column_sorting,
-        &domains_as_custom_types,
+        &pg_domains_as_custom_types,
     )?
     .into_iter()
     .map(|c| {
