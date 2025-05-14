@@ -1,7 +1,6 @@
 use super::find_project_root;
 use crate::infer_schema_internals::TableName;
-use crate::print_schema::ColumnSorting;
-use crate::print_schema::{self, DocConfig};
+use crate::print_schema::{self, ColumnSorting, DocConfig};
 use clap::ArgMatches;
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
@@ -10,8 +9,7 @@ use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
 use std::ops::Bound;
 use std::path::{Path, PathBuf};
-use std::{env, fmt};
-use std::{fs, iter};
+use std::{env, fmt, fs, iter};
 
 #[derive(Deserialize, Default, Debug)]
 #[serde(deny_unknown_fields)]
@@ -22,18 +20,13 @@ pub struct Config {
     pub migrations_directory: Option<MigrationsDirectory>,
 }
 
-fn get_values_with_indices<T: Clone + Send + Sync + 'static>(
-    matches: &ArgMatches,
+fn get_values_with_indices<'a, T: Clone + Send + Sync + 'static>(
+    matches: &'a ArgMatches,
     id: &str,
-) -> Result<Option<BTreeMap<usize, T>>, crate::errors::Error> {
+) -> Result<Option<BTreeMap<usize, &'a T>>, crate::errors::Error> {
     match matches.indices_of(id) {
         Some(indices) => match matches.try_get_many::<T>(id) {
-            Ok(Some(values)) => Ok(Some(
-                indices
-                    .zip(values)
-                    .map(|(index, value)| (index, value.clone()))
-                    .collect(),
-            )),
+            Ok(Some(values)) => Ok(Some(indices.zip(values).collect())),
             Ok(None) => {
                 unreachable!("`ids` only reports what is present")
             }
@@ -56,7 +49,8 @@ impl Config {
         let path = Self::file_path(matches);
 
         if path.exists() {
-            let content = fs::read_to_string(&path)?;
+            let content = fs::read_to_string(&path)
+                .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_owned())))?;
             let mut result = toml::from_str::<Self>(&content)?;
             result.set_relative_path_base(
                 path.parent()
@@ -85,15 +79,15 @@ impl Config {
             let except_tables_with_indices =
                 get_values_with_indices::<bool>(matches, "except-tables")?;
 
-            for (key, boundary) in selected_schema_keys.values().cloned().zip(
+            for (key, boundary) in selected_schema_keys.values().map(|k| k.as_str()).zip(
                 selected_schema_keys
                     .keys()
-                    .cloned()
+                    .copied()
                     .map(Bound::Included)
                     .zip(
                         selected_schema_keys
                             .keys()
-                            .cloned()
+                            .copied()
                             .skip(1)
                             .map(Bound::Excluded)
                             .chain(iter::once(Bound::Unbounded)),
@@ -102,56 +96,48 @@ impl Config {
                 let print_schema = self
                     .print_schema
                     .all_configs
-                    .get_mut(&key)
-                    .ok_or(crate::errors::Error::NoSchemaKeyFound(key))?;
-                if let Some(table_names_with_indices) = table_names_with_indices.clone() {
+                    .get_mut(key)
+                    .ok_or_else(|| crate::errors::Error::NoSchemaKeyFound(key.to_owned()))?;
+                if let Some(table_names_with_indices) = &table_names_with_indices {
                     let table_names = table_names_with_indices
                         .range(boundary)
-                        .map(|(_, v)| v.clone())
-                        .map(|table_name_regex| {
-                            regex::Regex::new(&table_name_regex).map(Into::into)
-                        })
+                        .map(|(_, v)| v.as_str())
+                        .map(|table_name_regex| regex::Regex::new(table_name_regex).map(Into::into))
                         .collect::<Result<Vec<Regex>, _>>()?;
                     if table_names.is_empty() {
                         continue;
                     }
-                    if only_tables_with_indices
-                        .clone()
-                        .and_then(|only_tables_with_indices| {
-                            only_tables_with_indices
-                                .range(boundary)
-                                .nth(0)
-                                .map(|v| *v.1)
-                        })
-                        .unwrap_or(false)
-                    {
-                        print_schema.filter = Filtering::OnlyTables(table_names.clone());
-                    }
                     if except_tables_with_indices
-                        .clone()
+                        .as_ref()
                         .and_then(|except_tables_with_indices| {
                             except_tables_with_indices
                                 .range(boundary)
                                 .nth(0)
-                                .map(|v| *v.1)
+                                .map(|v| **v.1)
                         })
                         .unwrap_or(false)
                     {
                         print_schema.filter = Filtering::ExceptTables(table_names);
+                    } else if only_tables_with_indices
+                        .as_ref()
+                        .and_then(|only_tables_with_indices| {
+                            only_tables_with_indices
+                                .range(boundary)
+                                .nth(0)
+                                .map(|v| **v.1)
+                        })
+                        .unwrap_or(false)
+                    {
+                        print_schema.filter = Filtering::OnlyTables(table_names);
                     }
                 }
             }
         } else {
-            let print_schema = self
-                .print_schema
-                .all_configs
-                .entry("default".to_string())
-                .or_insert(PrintSchema::default().set_filter(matches)?);
-            let print_schema = print_schema.clone().set_filter(matches)?;
             self.print_schema
                 .all_configs
                 .entry("default".to_string())
-                .and_modify(|v| *v = print_schema);
+                .or_default()
+                .set_filter(matches)?;
         }
         Ok(self)
     }
@@ -165,6 +151,11 @@ impl Config {
                 let with_docs_with_indices = get_values_with_indices::<bool>(matches, "with-docs")?;
                 let with_docs_config_with_indices =
                     get_values_with_indices::<String>(matches, "with-docs-config")?;
+                let allow_tables_to_appear_in_same_query_config_with_indices =
+                    get_values_with_indices::<String>(
+                        matches,
+                        "allow-tables-to-appear-in-same-query-config",
+                    )?;
                 let patch_file_with_indices =
                     get_values_with_indices::<PathBuf>(matches, "patch-file")?;
                 let column_sorting_with_indices =
@@ -186,35 +177,34 @@ impl Config {
                         "except-custom-type-definitions",
                     )?;
 
-                for (key, boundary) in selected_schema_keys.values().cloned().zip(
+                for (key, boundary) in selected_schema_keys.values().map(|k| k.as_str()).zip(
                     selected_schema_keys
                         .keys()
-                        .cloned()
+                        .copied()
                         .map(Bound::Included)
                         .zip(
                             selected_schema_keys
                                 .keys()
-                                .cloned()
+                                .copied()
                                 .skip(1)
                                 .map(Bound::Excluded)
                                 .chain(iter::once(Bound::Unbounded)),
                         ),
                 ) {
-                    let print_schema = self
-                        .print_schema
-                        .all_configs
-                        .get_mut(&key)
-                        .ok_or(crate::errors::Error::NoSchemaKeyFound(key))?;
+                    let print_schema =
+                        self.print_schema.all_configs.get_mut(key).ok_or_else(|| {
+                            crate::errors::Error::NoSchemaKeyFound(key.to_owned())
+                        })?;
                     if let Some(schema) = schema_with_indices
-                        .clone()
-                        .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.clone()))
+                        .as_ref()
+                        .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.as_str()))
                     {
-                        print_schema.schema = Some(schema)
+                        print_schema.schema = Some(schema.to_owned());
                     }
                     if with_docs_with_indices
-                        .clone()
+                        .as_ref()
                         .and_then(|with_docs_with_indices| {
-                            with_docs_with_indices.range(boundary).nth(0).map(|v| *v.1)
+                            with_docs_with_indices.range(boundary).nth(0).map(|v| **v.1)
                         })
                         .unwrap_or(false)
                     {
@@ -223,8 +213,8 @@ impl Config {
                     }
 
                     if let Some(doc_config) = with_docs_config_with_indices
-                        .clone()
-                        .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.clone()))
+                        .as_ref()
+                        .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.as_str()))
                     {
                         print_schema.with_docs = doc_config.parse().map_err(|_| {
                             crate::errors::Error::UnsupportedFeature(format!(
@@ -233,11 +223,27 @@ impl Config {
                         })?;
                     }
 
-                    if let Some(sorting) = column_sorting_with_indices
-                        .clone()
-                        .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.clone()))
+                    if let Some(allow_tables_to_appear_in_same_query_config) =
+                        allow_tables_to_appear_in_same_query_config_with_indices
+                            .as_ref()
+                            .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.as_str()))
                     {
-                        match sorting.as_str() {
+                        print_schema.allow_tables_to_appear_in_same_query_config =
+                            allow_tables_to_appear_in_same_query_config
+                                .parse()
+                                .map_err(|_| {
+                                    crate::errors::Error::UnsupportedFeature(format!(
+                                        "Invalid `allow_tables_to_appear_in_same_query!` config \
+                                        mode: {allow_tables_to_appear_in_same_query_config}"
+                                    ))
+                                })?;
+                    }
+
+                    if let Some(sorting) = column_sorting_with_indices
+                        .as_ref()
+                        .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.as_str()))
+                    {
+                        match sorting {
                             "ordinal_position" => {
                                 print_schema.column_sorting = ColumnSorting::OrdinalPosition
                             }
@@ -251,27 +257,27 @@ impl Config {
                     }
 
                     if let Some(patch_file) = patch_file_with_indices
-                        .clone()
-                        .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.clone()))
+                        .as_ref()
+                        .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.as_path()))
                     {
-                        print_schema.patch_file = Some(patch_file);
+                        print_schema.patch_file = Some(patch_file.to_owned());
                     }
 
                     let import_types = import_types_with_indices
-                        .clone()
-                        .map(|v| v.range(boundary).map(|v| v.1.clone()).collect())
+                        .as_ref()
+                        .map(|v| v.range(boundary).map(|v| v.1.as_str().to_owned()).collect())
                         .unwrap_or(vec![]);
                     if !import_types.is_empty() {
                         print_schema.import_types = Some(import_types);
                     }
 
                     if generate_custom_type_definitions_with_indices
-                        .clone()
+                        .as_ref()
                         .and_then(|generate_custom_type_definitions_with_indices| {
                             generate_custom_type_definitions_with_indices
                                 .range(boundary)
                                 .nth(0)
-                                .map(|v| *v.1)
+                                .map(|v| **v.1)
                         })
                         .unwrap_or(false)
                     {
@@ -287,17 +293,17 @@ impl Config {
                     }
 
                     let custom_type_derives = custom_type_derives_with_indices
-                        .clone()
-                        .map(|v| v.range(boundary).map(|v| v.1.clone()).collect())
+                        .as_ref()
+                        .map(|v| v.range(boundary).map(|v| v.1.as_str().to_owned()).collect())
                         .unwrap_or(vec![]);
                     if !custom_type_derives.is_empty() {
                         print_schema.custom_type_derives = Some(custom_type_derives);
                     }
                     if let Some(sqlite_integer_primary_key_is_bigint) =
                         sqlite_integer_primary_key_is_bigint_with_indices
-                            .clone()
+                            .as_ref()
                             .and_then(|with_docs_with_indices| {
-                                with_docs_with_indices.range(boundary).nth(0).map(|v| *v.1)
+                                with_docs_with_indices.range(boundary).nth(0).map(|v| **v.1)
                             })
                     {
                         print_schema.sqlite_integer_primary_key_is_bigint =
@@ -311,7 +317,7 @@ impl Config {
                 Entry::Occupied(entry) => entry.into_mut(),
             };
             if let Some(schema_name) = matches.get_one::<String>("schema") {
-                config.schema = Some(schema_name.clone())
+                config.schema = Some(schema_name.to_owned())
             }
             if matches.get_flag("with-docs") {
                 config.with_docs = DocConfig::DatabaseCommentsFallbackToAutoGeneratedDocComment;
@@ -322,6 +328,20 @@ impl Config {
                         "Invalid documentation config mode: {doc_config}"
                     ))
                 })?;
+            }
+
+            if let Some(allow_tables_to_appear_in_same_query_config) =
+                matches.get_one::<String>("allow-tables-to-appear-in-same-query-config")
+            {
+                config.allow_tables_to_appear_in_same_query_config =
+                    allow_tables_to_appear_in_same_query_config
+                        .parse()
+                        .map_err(|_| {
+                            crate::errors::Error::UnsupportedFeature(format!(
+                                "Invalid `allow_tables_to_appear_in_same_query!` config \
+                                mode: {allow_tables_to_appear_in_same_query_config}"
+                            ))
+                        })?;
             }
 
             if let Some(sorting) = matches.get_one::<String>("column-sorting") {
@@ -425,6 +445,9 @@ pub struct PrintSchema {
     #[serde(default)]
     pub with_docs: print_schema::DocConfig,
     #[serde(default)]
+    pub allow_tables_to_appear_in_same_query_config:
+        print_schema::AllowTablesToAppearInSameQueryConfig,
+    #[serde(default)]
     pub filter: Filtering,
     #[serde(default)]
     pub column_sorting: ColumnSorting,
@@ -457,6 +480,9 @@ impl PrintSchema {
         self.import_types.as_deref()
     }
 
+    // it's a false positive
+    // https://github.com/rust-lang/rust-clippy/issues/12856
+    #[allow(clippy::needless_borrows_for_generic_args)]
     fn set_relative_path_base(&mut self, base: &Path) {
         if let Some(ref mut file) = self.file {
             if file.is_relative() {
@@ -488,7 +514,7 @@ impl PrintSchema {
         }
     }
 
-    pub fn set_filter(mut self, matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
+    pub fn set_filter(&mut self, matches: &ArgMatches) -> Result<(), crate::errors::Error> {
         let table_names = matches
             .get_many::<String>("table-name")
             .unwrap_or_default()
@@ -497,18 +523,18 @@ impl PrintSchema {
 
         if matches
             .try_get_one::<bool>("only-tables")?
-            .cloned()
+            .copied()
             .unwrap_or(false)
         {
             self.filter = Filtering::OnlyTables(table_names)
         } else if matches
             .try_get_one::<bool>("except-tables")?
-            .cloned()
+            .copied()
             .unwrap_or(false)
         {
             self.filter = Filtering::ExceptTables(table_names)
         }
-        Ok(self)
+        Ok(())
     }
 }
 
@@ -528,18 +554,12 @@ impl MigrationsDirectory {
 
 type Regex = RegexWrapper<::regex::Regex>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub enum Filtering {
     OnlyTables(Vec<Regex>),
     ExceptTables(Vec<Regex>),
+    #[default]
     None,
-}
-
-#[allow(clippy::derivable_impls)] // that's not supported on rust 1.65
-impl Default for Filtering {
-    fn default() -> Self {
-        Filtering::None
-    }
 }
 
 impl Filtering {

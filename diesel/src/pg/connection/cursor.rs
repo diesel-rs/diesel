@@ -1,7 +1,6 @@
 use super::raw::RawConnection;
 use super::result::PgResult;
 use super::row::PgRow;
-use crate::connection::Instrumentation;
 use crate::pg::Pg;
 use crate::query_builder::QueryFragment;
 use std::rc::Rc;
@@ -85,7 +84,7 @@ impl<'conn, 'query> RowByRowCursor<'conn, 'query> {
     }
 }
 
-impl<'conn, 'query> Iterator for RowByRowCursor<'conn, 'query> {
+impl Iterator for RowByRowCursor<'_, '_> {
     type Item = crate::QueryResult<PgRow>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -122,7 +121,7 @@ impl<'conn, 'query> Iterator for RowByRowCursor<'conn, 'query> {
     }
 }
 
-impl<'conn, 'query> Drop for RowByRowCursor<'conn, 'query> {
+impl Drop for RowByRowCursor<'_, '_> {
     fn drop(&mut self) {
         loop {
             let res = super::update_transaction_manager_status(
@@ -152,7 +151,7 @@ mod tests {
     use crate::connection::DefaultLoadingMode;
     use crate::pg::PgRowByRowLoadingMode;
 
-    #[test]
+    #[diesel_test_helper::test]
     fn fun_with_row_iters() {
         crate::table! {
             #[allow(unused_parens)]
@@ -265,7 +264,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn loading_modes_return_the_same_result() {
         use crate::prelude::*;
 
@@ -309,7 +308,7 @@ mod tests {
         assert_eq!(users_by_default_mode, vec!["Sean", "Tess"]);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn fun_with_row_iters_row_by_row() {
         crate::table! {
             #[allow(unused_parens)]

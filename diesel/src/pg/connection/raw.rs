@@ -12,6 +12,7 @@ use std::{ptr, str};
 use crate::result::*;
 
 use super::result::PgResult;
+use crate::pg::PgNotification;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub(super) struct RawConnection {
@@ -62,6 +63,40 @@ impl RawConnection {
 
     pub(super) unsafe fn exec(&self, query: *const libc::c_char) -> QueryResult<RawResult> {
         RawResult::new(PQexec(self.internal_connection.as_ptr(), query), self)
+    }
+
+    /// Sends a query and parameters to the server without using the prepare/bind cycle.
+    ///
+    /// This method uses PQsendQueryParams which combines the prepare and bind steps
+    /// and is more compatible with connection poolers like PgBouncer.
+    pub(super) unsafe fn send_query_params(
+        &self,
+        query: *const libc::c_char,
+        param_count: libc::c_int,
+        param_types: *const Oid,
+        param_values: *const *const libc::c_char,
+        param_lengths: *const libc::c_int,
+        param_formats: *const libc::c_int,
+        result_format: libc::c_int,
+    ) -> QueryResult<()> {
+        let res = PQsendQueryParams(
+            self.internal_connection.as_ptr(),
+            query,
+            param_count,
+            param_types,
+            param_values,
+            param_lengths,
+            param_formats,
+            result_format,
+        );
+        if res == 1 {
+            Ok(())
+        } else {
+            Err(Error::DatabaseError(
+                DatabaseErrorKind::UnableToSendCommand,
+                Box::new(self.last_error_message()),
+            ))
+        }
     }
 
     pub(super) unsafe fn send_query_prepared(
@@ -147,7 +182,9 @@ impl RawConnection {
                 pq_sys::PQputCopyData(
                     self.internal_connection.as_ptr(),
                     c.as_ptr() as *const libc::c_char,
-                    c.len() as libc::c_int,
+                    c.len()
+                        .try_into()
+                        .map_err(|e| Error::SerializationError(Box::new(e)))?,
                 )
             };
             if res != 1 {
@@ -179,6 +216,77 @@ impl RawConnection {
                 DatabaseErrorKind::Unknown,
                 Box::new(self.last_error_message()),
             ))
+        }
+    }
+
+    pub(super) fn pq_notifies(&self) -> Result<Option<PgNotification>, Error> {
+        let conn = self.internal_connection;
+        let ret = unsafe { PQconsumeInput(conn.as_ptr()) };
+        if ret == 0 {
+            return Err(Error::DatabaseError(
+                DatabaseErrorKind::Unknown,
+                Box::new(self.last_error_message()),
+            ));
+        }
+
+        let pgnotify = unsafe { PQnotifies(conn.as_ptr()) };
+        if pgnotify.is_null() {
+            Ok(None)
+        } else {
+            // we use a drop guard here to
+            // make sure that we always free
+            // the provided pointer, even if we
+            // somehow return an error below
+            struct Guard<'a> {
+                value: &'a mut pgNotify,
+            }
+
+            impl Drop for Guard<'_> {
+                fn drop(&mut self) {
+                    unsafe {
+                        // SAFETY: We know that this value is not null here
+                        PQfreemem(self.value as *mut pgNotify as *mut std::ffi::c_void)
+                    };
+                }
+            }
+
+            let pgnotify = unsafe {
+                // SAFETY: We checked for null values above
+                Guard {
+                    value: &mut *pgnotify,
+                }
+            };
+            if pgnotify.value.relname.is_null() {
+                return Err(Error::DeserializationError(
+                    "Received an unexpected null value for `relname` from the notification".into(),
+                ));
+            }
+            if pgnotify.value.extra.is_null() {
+                return Err(Error::DeserializationError(
+                    "Received an unexpected null value for `extra` from the notification".into(),
+                ));
+            }
+
+            let channel = unsafe {
+                // SAFETY: We checked for null values above
+                CStr::from_ptr(pgnotify.value.relname)
+            }
+            .to_str()
+            .map_err(|e| Error::DeserializationError(e.into()))?
+            .to_string();
+            let payload = unsafe {
+                // SAFETY: We checked for null values above
+                CStr::from_ptr(pgnotify.value.extra)
+            }
+            .to_str()
+            .map_err(|e| Error::DeserializationError(e.into()))?
+            .to_string();
+            let ret = PgNotification {
+                process_id: pgnotify.value.be_pid,
+                channel,
+                payload,
+            };
+            Ok(Some(ret))
         }
     }
 }

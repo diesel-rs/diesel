@@ -1,4 +1,5 @@
 use crate::schema::*;
+use diesel::sql_types::VarChar;
 use diesel::*;
 
 macro_rules! assert_sets_eq {
@@ -20,7 +21,7 @@ macro_rules! assert_sets_eq {
     };
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_by_int_equality() {
     use crate::schema::users::dsl::*;
 
@@ -39,7 +40,7 @@ fn filter_by_int_equality() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_by_string_equality() {
     use crate::schema::users::dsl::*;
 
@@ -55,7 +56,7 @@ fn filter_by_string_equality() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_by_equality_on_nullable_columns() {
     use crate::schema::users::dsl::*;
 
@@ -82,7 +83,7 @@ fn filter_by_equality_on_nullable_columns() {
     assert_eq!(vec![tess], source.load(connection).unwrap());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_by_is_not_null_on_nullable_columns() {
     use crate::schema::users::dsl::*;
 
@@ -102,7 +103,7 @@ fn filter_by_is_not_null_on_nullable_columns() {
     assert_eq!(vec![derek], source.load(connection).unwrap());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_by_is_null_on_nullable_columns() {
     use crate::schema::users::dsl::*;
 
@@ -122,7 +123,7 @@ fn filter_by_is_null_on_nullable_columns() {
     assert_eq!(vec![gordon], source.load(connection).unwrap());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_after_joining() {
     use crate::schema::users::name;
 
@@ -155,7 +156,7 @@ fn filter_after_joining() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn select_then_filter() {
     use crate::schema::users::dsl::*;
 
@@ -176,7 +177,7 @@ fn select_then_filter() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_then_select() {
     use crate::schema::users::dsl::*;
 
@@ -204,7 +205,7 @@ fn filter_then_select() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn select_by_then_filter() {
     use crate::schema::users::dsl::*;
 
@@ -225,7 +226,7 @@ fn select_by_then_filter() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_then_select_by() {
     use crate::schema::users::dsl::*;
 
@@ -254,7 +255,7 @@ fn filter_then_select_by() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_on_multiple_columns() {
     use crate::schema::users::dsl::*;
 
@@ -286,7 +287,7 @@ fn filter_on_multiple_columns() {
     assert_eq!(vec![brown_haired_tess], source.load(connection).unwrap());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_called_twice_means_same_thing_as_and() {
     use crate::schema::users::dsl::*;
 
@@ -325,7 +326,7 @@ table! {
     }
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_on_column_equality() {
     use self::points::dsl::*;
 
@@ -340,7 +341,7 @@ fn filter_on_column_equality() {
     assert_sets_eq!(expected_data, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_with_or() {
     use crate::schema::users::dsl::*;
 
@@ -360,7 +361,7 @@ fn filter_with_or() {
     assert_sets_eq!(expected_users, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn or_doesnt_mess_with_precedence_of_previous_statements() {
     use crate::schema::users::dsl::*;
 
@@ -382,7 +383,7 @@ fn or_doesnt_mess_with_precedence_of_previous_statements() {
     assert_eq!(Ok(0), count);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn not_does_not_affect_expressions_other_than_those_passed_to_it() {
     use crate::schema::users::dsl::*;
     use diesel::dsl::not;
@@ -397,7 +398,7 @@ fn not_does_not_affect_expressions_other_than_those_passed_to_it() {
     assert_eq!(Ok(1), count);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn not_affects_arguments_passed_when_they_contain_higher_operator_precedence() {
     use crate::schema::users::dsl::*;
     use diesel::dsl::not;
@@ -411,10 +412,12 @@ fn not_affects_arguments_passed_when_they_contain_higher_operator_precedence() {
     assert_eq!(Ok(2), count);
 }
 
-use diesel::sql_types::VarChar;
-define_sql_function!(fn lower(x: VarChar) -> VarChar);
+#[declare_sql_function]
+extern "SQL" {
+    fn lower(x: VarChar) -> VarChar;
+}
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_by_boxed_predicate() {
     fn by_name(
         name: &str,
@@ -432,7 +435,7 @@ fn filter_by_boxed_predicate() {
     assert_eq!(Ok(tess), queried_tess);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_like_nullable_column() {
     use crate::schema::users::dsl::*;
 
@@ -445,7 +448,7 @@ fn filter_like_nullable_column() {
     assert_eq!(expected, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_subselect_referencing_outer_table() {
     use diesel::dsl::exists;
 
@@ -478,7 +481,7 @@ fn filter_subselect_referencing_outer_table() {
     assert_eq!(expected, users_with_published_posts);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn filter_subselect_with_boxed_query() {
     use crate::schema::users::dsl::*;
 
@@ -492,7 +495,7 @@ fn filter_subselect_with_boxed_query() {
     assert_eq!(expected, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 // FIXME: this test shouldn't need to modify schema each run
 #[cfg(not(feature = "mysql"))]
 // https://github.com/rust-lang/rust/issues/124396
@@ -605,12 +608,9 @@ fn filter_subselect_with_nullable_column() {
     assert_eq!(query, expected);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
-#[allow(deprecated)]
 fn filter_subselect_with_pg_any() {
-    use diesel::dsl::any;
-
     let conn = &mut connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", conn);
 
@@ -624,9 +624,11 @@ fn filter_subselect_with_pg_any() {
 
     let users_with_published_posts = users::table
         .filter(
-            users::id.eq(any(posts::table
-                .select(posts::user_id)
-                .filter(posts::user_id.eq(users::id)))),
+            users::id.eq_any(
+                posts::table
+                    .select(posts::user_id)
+                    .filter(posts::user_id.eq(users::id)),
+            ),
         )
         .load(conn);
     assert_eq!(Ok(vec![sean]), users_with_published_posts);

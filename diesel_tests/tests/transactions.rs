@@ -2,7 +2,7 @@ use crate::schema::*;
 use diesel::result::Error;
 use diesel::*;
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(not(feature = "sqlite"))] // FIXME: This test is only valid when operating on a file and not :memory:
 fn transaction_executes_fn_in_a_sql_transaction() {
     const TEST_NAME: &str = "transaction_executes_fn_in_a_sql_transaction";
@@ -31,14 +31,14 @@ fn transaction_executes_fn_in_a_sql_transaction() {
     drop_test_table(conn1, TEST_NAME);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn transaction_returns_the_returned_value() {
     let conn1 = &mut connection_without_transaction();
 
     assert_eq!(Ok(1), conn1.transaction::<_, Error, _>(|_| Ok(1)));
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn transaction_is_rolled_back_when_returned_an_error() {
     let connection = &mut connection_without_transaction();
     let test_name = "transaction_is_rolled_back_when_returned_an_error";
@@ -66,7 +66,7 @@ fn transaction_is_rolled_back_when_returned_an_error() {
 // The same trick seems to work for MySQL as well based on the
 // test result, but I cannot find a document support yet. Hence
 // this test is marked for "sqlite" only as this moment. FIXME.
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn transaction_rollback_returns_error() {
     let connection = &mut connection_without_transaction();
@@ -94,7 +94,7 @@ fn transaction_rollback_returns_error() {
     drop_test_table(connection, test_name);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn transactions_can_be_nested() {
     let connection = &mut connection_without_transaction();
     const TEST_NAME: &str = "transactions_can_be_nested";
@@ -131,7 +131,7 @@ fn transactions_can_be_nested() {
     drop_test_table(connection, TEST_NAME);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn test_transaction_always_rolls_back() {
     let connection = &mut connection_without_transaction();
     let test_name = "test_transaction_always_rolls_back";
@@ -148,7 +148,7 @@ fn test_transaction_always_rolls_back() {
     drop_test_table(connection, test_name);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[should_panic(expected = "Transaction did not succeed")]
 fn test_transaction_panics_on_error() {
     let connection = &mut connection_without_transaction();
@@ -177,7 +177,7 @@ fn count_test_table(connection: &mut TestConnection, table_name: &str) -> i64 {
     .unwrap()
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn regression_test_for_2123() {
     let conn = &mut connection_without_transaction();

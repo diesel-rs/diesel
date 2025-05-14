@@ -1,14 +1,16 @@
 use crate::Bencher;
+use rand_chacha::rand_core::SeedableRng;
 use std::{collections::HashMap, fmt::Write};
 use tokio::{net::TcpStream, runtime::Runtime};
 use wtx::{
-    database::{
-        client::postgres::{Config, Executor, ExecutorBuffer},
-        Executor as _, Record as _,
-    },
-    misc::{Either, UriRef},
-    rng::StdRng,
+    database::{Executor, Record},
+    misc::{Either, UriRef, Wrapper},
 };
+
+#[cfg(feature = "mysql")]
+use wtx::database::client::mysql::{Config, ExecutorBuffer, MysqlExecutor as LocalExecutor};
+#[cfg(feature = "postgres")]
+use wtx::database::client::postgres::{Config, ExecutorBuffer, PostgresExecutor as LocalExecutor};
 
 pub struct Comment {
     pub id: i32,
@@ -84,15 +86,18 @@ pub fn bench_loading_associations_sequentially(b: &mut Bencher) {
 
             let mut posts_query =
                 String::from("SELECT id, title, user_id, body FROM posts WHERE user_id IN(");
-            concat(0..users.len(), &mut posts_query, |local_str, idx| {
-                local_str.write_fmt(format_args!("${}", idx + 1)).unwrap();
+            concat(0..users.len(), &mut posts_query, |local_str, _idx| {
+                #[cfg(feature = "postgres")]
+                local_str.write_fmt(format_args!("${}", _idx + 1)).unwrap();
+                #[cfg(feature = "mysql")]
+                local_str.push('?');
             });
             posts_query.push(')');
 
             let mut posts = Vec::with_capacity(LEN);
             conn.fetch_many_with_stmt(
                 posts_query.as_str(),
-                &mut users.iter().map(|user| user.id),
+                Wrapper(users.iter().map(|user| user.id)),
                 |record| {
                     posts.push(Post {
                         body: record.decode_opt(3).unwrap(),
@@ -105,18 +110,22 @@ pub fn bench_loading_associations_sequentially(b: &mut Bencher) {
             )
             .await
             .unwrap();
+            assert_eq!(posts.len(), LEN * 10);
 
             let mut comments_query =
                 String::from("SELECT id, post_id, text FROM comments WHERE post_id IN(");
-            concat(0..posts.len(), &mut comments_query, |local_str, idx| {
-                local_str.write_fmt(format_args!("${}", idx + 1)).unwrap();
+            concat(0..posts.len(), &mut comments_query, |local_str, _idx| {
+                #[cfg(feature = "postgres")]
+                local_str.write_fmt(format_args!("${}", _idx + 1)).unwrap();
+                #[cfg(feature = "mysql")]
+                local_str.push('?');
             });
             comments_query.push(')');
 
             let mut comments = Vec::with_capacity(LEN);
             conn.fetch_many_with_stmt(
                 comments_query.as_str(),
-                &mut posts.iter().map(|post| post.id),
+                Wrapper(posts.iter().map(|post| post.id)),
                 |record| {
                     comments.push(Comment {
                         id: record.decode(0).unwrap(),
@@ -128,6 +137,7 @@ pub fn bench_loading_associations_sequentially(b: &mut Bencher) {
             )
             .await
             .unwrap();
+            assert_eq!(comments.len(), LEN * 10 * 10);
 
             let mut posts = posts
                 .into_iter()
@@ -151,10 +161,10 @@ pub fn bench_loading_associations_sequentially(b: &mut Bencher) {
                     .push(post_with_comments);
             }
 
-            let _ = users
+            users
                 .into_iter()
                 .map(|(_, users_with_post_and_comment)| users_with_post_and_comment)
-                .collect::<Vec<(User, Vec<(Post, Vec<Comment>)>)>>();
+                .collect::<Vec<(User, Vec<(Post, Vec<Comment>)>)>>()
         });
     })
 }
@@ -174,8 +184,12 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
         }
         let stmt_hash = conn
             .prepare(
+                #[cfg(feature = "postgres")]
                 "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
                 FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = $1",
+                #[cfg(feature = "mysql")]
+                "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
+                FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = ?",
             )
             .await
             .unwrap();
@@ -253,31 +267,46 @@ where
     }
 }
 
-async fn connection() -> Executor<wtx::Error, ExecutorBuffer, TcpStream> {
+async fn connection() -> LocalExecutor<wtx::Error, ExecutorBuffer, TcpStream> {
     dotenvy::dotenv().ok();
     let url = dotenvy::var("POSTGRES_DATABASE_URL")
         .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let uri = UriRef::new(url.as_str());
-    let mut rng = StdRng::default();
-    let mut conn = Executor::connect(
+    let mut rng = rand_chacha::ChaCha20Rng::try_from_os_rng().unwrap();
+    let stream = TcpStream::connect(uri.host()).await.unwrap();
+    #[cfg(feature = "postgres")]
+    let mut conn = LocalExecutor::connect(
         &Config::from_uri(&uri).unwrap(),
-        ExecutorBuffer::with_default_params(&mut rng),
+        ExecutorBuffer::with_capacity((512, 8192, 512, 32), 32, &mut rng).unwrap(),
         &mut rng,
-        TcpStream::connect(uri.host()).await.unwrap(),
+        stream,
+    )
+    .await
+    .unwrap();
+    #[cfg(feature = "mysql")]
+    let mut conn = LocalExecutor::connect(
+        &Config::from_uri(&uri).unwrap(),
+        ExecutorBuffer::with_capacity((512, 512, 8192, 512, 32), 32, &mut rng).unwrap(),
+        stream,
     )
     .await
     .unwrap();
     conn.execute(
+        #[cfg(feature = "postgres")]
         "TRUNCATE TABLE comments CASCADE;TRUNCATE TABLE posts CASCADE;TRUNCATE TABLE users CASCADE",
-        |_| {},
+        #[cfg(feature = "mysql")]
+        "SET FOREIGN_KEY_CHECKS = 0;DELETE FROM comments;DELETE FROM posts;DELETE FROM users;SET FOREIGN_KEY_CHECKS = 1;",
+        |_| Ok(()),
     )
     .await
     .unwrap();
     conn
 }
 
-async fn insert_posts<const N: usize>(conn: &mut Executor<wtx::Error, ExecutorBuffer, TcpStream>) {
+async fn insert_posts<const N: usize>(
+    conn: &mut LocalExecutor<wtx::Error, ExecutorBuffer, TcpStream>,
+) {
     let mut users_ids: Vec<i32> = Vec::with_capacity(N);
     conn.fetch_many_with_stmt("SELECT id FROM users", (), |record| {
         users_ids.push(record.decode(0).unwrap());
@@ -285,6 +314,7 @@ async fn insert_posts<const N: usize>(conn: &mut Executor<wtx::Error, ExecutorBu
     })
     .await
     .unwrap();
+    assert_eq!(users_ids.len(), N);
 
     let params = users_ids
         .into_iter()
@@ -303,42 +333,96 @@ async fn insert_posts<const N: usize>(conn: &mut Executor<wtx::Error, ExecutorBu
     concat(
         0..params.len(),
         &mut insert_stmt,
-        |local_insert_stmt, idx| {
+        |local_insert_stmt, _idx| {
+            #[cfg(feature = "postgres")]
             local_insert_stmt
                 .write_fmt(format_args!(
                     "(${}, ${}, ${})",
-                    3 * idx + 1,
-                    3 * idx + 2,
-                    3 * idx + 3
+                    3 * _idx + 1,
+                    3 * _idx + 2,
+                    3 * _idx + 3
                 ))
                 .unwrap();
+            #[cfg(feature = "mysql")]
+            local_insert_stmt.push_str("(?, ?, ?)");
         },
     );
 
-    conn.execute_with_stmt(insert_stmt.as_str(), &mut params.into_iter().flatten())
+    conn.execute_with_stmt(insert_stmt.as_str(), Wrapper(params.into_iter().flatten()))
         .await
         .unwrap();
+
+    let mut post_ids: Vec<i32> = Vec::with_capacity(N * 10);
+    conn.fetch_many_with_stmt("SELECT id FROM posts", (), |record| {
+        post_ids.push(record.decode(0).unwrap());
+        Ok(())
+    })
+    .await
+    .unwrap();
+    assert_eq!(post_ids.len(), N * 10);
+
+    let params = post_ids
+        .into_iter()
+        .flat_map(|post_id| {
+            (0..10).map(move |idx| {
+                [
+                    Either::Left(format!("Comment {idx} for post {post_id}")),
+                    Either::Right(post_id),
+                ]
+            })
+        })
+        .collect::<Vec<_>>();
+
+    let mut insert_stmt = String::from("INSERT INTO comments(text, post_id) VALUES ");
+    concat(
+        0..params.len(),
+        &mut insert_stmt,
+        |local_insert_stmt, _idx| {
+            #[cfg(feature = "postgres")]
+            local_insert_stmt
+                .write_fmt(format_args!("(${}, ${})", 2 * _idx + 1, 2 * _idx + 2,))
+                .unwrap();
+            #[cfg(feature = "mysql")]
+            local_insert_stmt.push_str("(?, ?)");
+        },
+    );
+
+    conn.execute_with_stmt(insert_stmt.as_str(), Wrapper(params.into_iter().flatten()))
+        .await
+        .unwrap();
+
+    let mut count: Vec<i64> = Vec::with_capacity(N * 10);
+    conn.fetch_many_with_stmt("SELECT count(id) FROM comments", (), |record| {
+        count.push(record.decode(0).unwrap());
+        Ok(())
+    })
+    .await
+    .unwrap();
+    assert_eq!(count[0] as usize, N * 10 * 10);
 }
 
 async fn insert_users<const N: usize>(
-    conn: &mut Executor<wtx::Error, ExecutorBuffer, TcpStream>,
+    conn: &mut LocalExecutor<wtx::Error, ExecutorBuffer, TcpStream>,
     hair_color_init: impl Fn(usize) -> Option<&'static str>,
 ) {
-    let mut query = String::from("INSERT INTO users (name, hair_color) VALUES");
-    concat(0..N, &mut query, |local_query, idx| {
+    let mut query = String::from("INSERT INTO users (name, hair_color) VALUES ");
+    concat(0..N, &mut query, |local_query, _idx| {
+        #[cfg(feature = "postgres")]
         local_query
-            .write_fmt(format_args!("(${}, ${})", 2 * idx + 1, 2 * idx + 2))
+            .write_fmt(format_args!("(${}, ${})", 2 * _idx + 1, 2 * _idx + 2))
             .unwrap();
+        #[cfg(feature = "mysql")]
+        local_query.push_str("(?, ?)");
     });
 
-    let mut params = (0..N).into_iter().flat_map(|idx| {
+    let params = (0..N).into_iter().flat_map(|idx| {
         [
             Either::Left(format!("User {idx}")),
             Either::Right(hair_color_init(idx)),
         ]
     });
 
-    conn.execute_with_stmt(query.as_str(), &mut params)
+    conn.execute_with_stmt(query.as_str(), Wrapper(params))
         .await
         .unwrap();
 }

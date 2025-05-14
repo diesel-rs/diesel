@@ -107,7 +107,9 @@ pub trait ExpressionMethods: Expression + Sized {
     /// query will use the cache (assuming the subquery
     /// itself is safe to cache).
     /// On PostgreSQL, this method automatically performs a `= ANY()`
-    /// query.
+    /// query if this is possible. For cases where this is not possible
+    /// like for example if values is a vector of arrays we
+    /// generate an ordinary `IN` expression instead.
     ///
     /// # Example
     ///
@@ -149,7 +151,10 @@ pub trait ExpressionMethods: Expression + Sized {
     ///
     /// Queries using this method will not be
     /// placed in the prepared statement cache. On PostgreSQL, this
-    /// method automatically performs a `!= ALL()` query.
+    /// method automatically performs a `!= ALL()` query if this is possible.
+    /// For cases where this is not possible
+    /// like for example if values is a vector of arrays we
+    /// generate an ordinary `NOT IN` expression instead.
     ///
     /// # Example
     ///

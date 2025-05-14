@@ -2,7 +2,7 @@ error[E0271]: type mismatch resolving `<FromClause<table> as AppearsInFromClause
   --> tests/fail/invalid_group_by.rs:27:10
    |
 27 |         .group_by(posts::id)
-   |          ^^^^^^^^ expected `Never`, found `Once`
+   |          ^^^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<FromClause<users::table>>`
   --> tests/fail/invalid_group_by.rs:15:9
@@ -18,7 +18,7 @@ error[E0271]: type mismatch resolving `<id as IsContainedInGroupBy<id>>::Output 
 28 |         .select(users::id)
    |          ^^^^^^ type mismatch resolving `<id as IsContainedInGroupBy<id>>::Output == Yes`
    |
-note: expected this to be `diesel::expression::is_contained_in_group_by::No`
+note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
   --> tests/fail/invalid_group_by.rs:15:9
    |
 15 |         id -> Integer,
@@ -29,14 +29,13 @@ note: required for `users::columns::id` to implement `ValidGrouping<posts::colum
 8  |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
-   = note: consider using `--verbose` to print the full type name to the console
+   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>` to implement `SelectDsl<users::columns::id>`
 
 error[E0271]: type mismatch resolving `<FromClause<table> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:35:10
    |
 35 |         .group_by(posts::id)
-   |          ^^^^^^^^ expected `Never`, found `Once`
+   |          ^^^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<FromClause<users::table>>`
   --> tests/fail/invalid_group_by.rs:15:9
@@ -50,7 +49,7 @@ error[E0271]: type mismatch resolving `<FromClause<Alias<user1>> as AppearsInFro
   --> tests/fail/invalid_group_by.rs:43:10
    |
 43 |         .group_by(posts::id)
-   |          ^^^^^^^^ expected `Never`, found `Once`
+   |          ^^^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<FromClause<Alias<user1>>>`
   --> tests/fail/invalid_group_by.rs:15:9
@@ -64,14 +63,14 @@ error[E0277]: the trait bound `AliasedField<user1, users::columns::id>: ValidGro
   --> tests/fail/invalid_group_by.rs:44:17
    |
 44 |         .select(user_alias.field(users::id))
-   |          ------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `ValidGrouping<posts::columns::id>` is not implemented for `AliasedField<user1, users::columns::id>`, which is required by `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<Alias<user1>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>: SelectDsl<_>`
+   |          ------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `ValidGrouping<posts::columns::id>` is not implemented for `AliasedField<user1, users::columns::id>`
    |          |
    |          required by a bound introduced by this call
    |
    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-             <AliasedField<S, C> as ValidGrouping<()>>
-             <AliasedField<S, C2> as ValidGrouping<AliasedField<S, C1>>>
-   = note: required for `SelectStatement<FromClause<Alias<user1>>, DefaultSelectClause<FromClause<...>>, ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, users::columns::id>>`
+             `AliasedField<S, C2>` implements `ValidGrouping<AliasedField<S, C1>>`
+             `AliasedField<S, C>` implements `ValidGrouping<()>`
+   = note: required for `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<Alias<user1>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>` to implement `SelectDsl<AliasedField<user1, users::columns::id>>`
 note: required by a bound in `diesel::QueryDsl::select`
   --> $DIESEL/src/query_dsl/mod.rs
    |
@@ -80,13 +79,12 @@ note: required by a bound in `diesel::QueryDsl::select`
 ...
    |         Self: methods::SelectDsl<Selection>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0271]: type mismatch resolving `<FromClause<table> as AppearsInFromClause<Alias<post1>>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:49:10
    |
 49 |         .group_by(post_alias.field(posts::id))
-   |          ^^^^^^^^ expected `Never`, found `Once`
+   |          ^^^^^^^^ expected `Once`, found `Never`
    |
    = note: required for `AliasedField<post1, posts::columns::id>` to implement `AppearsOnTable<FromClause<users::table>>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `GroupByDsl<AliasedField<post1, posts::columns::id>>`
@@ -95,31 +93,30 @@ error[E0277]: the trait bound `AliasedField<post1, posts::columns::id>: IsContai
   --> tests/fail/invalid_group_by.rs:50:10
    |
 50 |         .select(users::id)
-   |          ^^^^^^ the trait `IsContainedInGroupBy<users::columns::id>` is not implemented for `AliasedField<post1, posts::columns::id>`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<AliasedField<post1, posts::columns::id>>>: SelectDsl<_>`
+   |          ^^^^^^ the trait `IsContainedInGroupBy<users::columns::id>` is not implemented for `AliasedField<post1, posts::columns::id>`
    |
    = help: the following other types implement trait `IsContainedInGroupBy<T>`:
-             <posts::columns::id as IsContainedInGroupBy<posts::columns::id>>
-             <posts::columns::id as IsContainedInGroupBy<users::columns::id>>
-             <users::columns::name as IsContainedInGroupBy<users::columns::name>>
-             <users::columns::name as IsContainedInGroupBy<users::columns::id>>
-             <users::columns::id as IsContainedInGroupBy<posts::columns::id>>
-             <users::columns::id as IsContainedInGroupBy<users::columns::name>>
-             <users::columns::id as IsContainedInGroupBy<users::columns::id>>
-             <pg::metadata_lookup::pg_namespace::columns::nspname as IsContainedInGroupBy<pg::metadata_lookup::pg_namespace::columns::nspname>>
+             `(T0, T1)` implements `IsContainedInGroupBy<Col>`
+             `(T0, T1, T2)` implements `IsContainedInGroupBy<Col>`
+             `(T0, T1, T2, T3)` implements `IsContainedInGroupBy<Col>`
+             `(T0, T1, T2, T3, T4)` implements `IsContainedInGroupBy<Col>`
+             `(T0, T1, T2, T3, T4, T5)` implements `IsContainedInGroupBy<Col>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `IsContainedInGroupBy<Col>`
+             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `IsContainedInGroupBy<Col>`
+             `(T0, T1, T2, T3, T4, T5, T6, T7, T8)` implements `IsContainedInGroupBy<Col>`
            and $N others
 note: required for `users::columns::id` to implement `ValidGrouping<AliasedField<post1, posts::columns::id>>`
   --> tests/fail/invalid_group_by.rs:8:9
    |
 8  |         id -> Integer,
    |         ^^
-   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
-   = note: consider using `--verbose` to print the full type name to the console
+   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<AliasedField<post1, posts::columns::id>>>` to implement `SelectDsl<users::columns::id>`
 
 error[E0271]: type mismatch resolving `<FromClause<Alias<user1>> as AppearsInFromClause<Alias<post1>>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:55:10
    |
 55 |         .group_by(post_alias.field(posts::id))
-   |          ^^^^^^^^ expected `Never`, found `Once`
+   |          ^^^^^^^^ expected `Once`, found `Never`
    |
    = note: required for `AliasedField<post1, posts::columns::id>` to implement `AppearsOnTable<FromClause<Alias<user1>>>`
    = note: required for `SelectStatement<FromClause<Alias<user1>>>` to implement `GroupByDsl<AliasedField<post1, posts::columns::id>>`
@@ -128,14 +125,14 @@ error[E0277]: the trait bound `AliasedField<user1, users::columns::id>: ValidGro
   --> tests/fail/invalid_group_by.rs:56:17
    |
 56 |         .select(user_alias.field(users::id))
-   |          ------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `ValidGrouping<AliasedField<post1, posts::columns::id>>` is not implemented for `AliasedField<user1, users::columns::id>`, which is required by `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<Alias<user1>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<AliasedField<post1, posts::columns::id>>>: SelectDsl<_>`
+   |          ------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `ValidGrouping<AliasedField<post1, posts::columns::id>>` is not implemented for `AliasedField<user1, users::columns::id>`
    |          |
    |          required by a bound introduced by this call
    |
    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-             <AliasedField<S, C> as ValidGrouping<()>>
-             <AliasedField<S, C2> as ValidGrouping<AliasedField<S, C1>>>
-   = note: required for `SelectStatement<FromClause<Alias<user1>>, DefaultSelectClause<FromClause<...>>, ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, users::columns::id>>`
+             `AliasedField<S, C2>` implements `ValidGrouping<AliasedField<S, C1>>`
+             `AliasedField<S, C>` implements `ValidGrouping<()>`
+   = note: required for `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<Alias<user1>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<AliasedField<post1, posts::columns::id>>>` to implement `SelectDsl<AliasedField<user1, users::columns::id>>`
 note: required by a bound in `diesel::QueryDsl::select`
   --> $DIESEL/src/query_dsl/mod.rs
    |
@@ -144,13 +141,12 @@ note: required by a bound in `diesel::QueryDsl::select`
 ...
    |         Self: methods::SelectDsl<Selection>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0271]: type mismatch resolving `<FromClause<Alias<user1>> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:62:10
    |
 62 |         .group_by(posts::id)
-   |          ^^^^^^^^ expected `Never`, found `Once`
+   |          ^^^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<FromClause<Alias<user1>>>`
   --> tests/fail/invalid_group_by.rs:15:9
@@ -164,7 +160,7 @@ error[E0271]: type mismatch resolving `<FromClause<table> as AppearsInFromClause
   --> tests/fail/invalid_group_by.rs:68:10
    |
 68 |         .group_by(post_alias.field(posts::id))
-   |          ^^^^^^^^ expected `Never`, found `Once`
+   |          ^^^^^^^^ expected `Once`, found `Never`
    |
    = note: required for `AliasedField<post1, posts::columns::id>` to implement `AppearsOnTable<FromClause<users::table>>`
    = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::id>>` to implement `GroupByDsl<AliasedField<post1, posts::columns::id>>`
@@ -173,7 +169,7 @@ error[E0271]: type mismatch resolving `<FromClause<Alias<user1>> as AppearsInFro
   --> tests/fail/invalid_group_by.rs:74:10
    |
 74 |         .group_by(post_alias.field(posts::id))
-   |          ^^^^^^^^ expected `Never`, found `Once`
+   |          ^^^^^^^^ expected `Once`, found `Never`
    |
    = note: required for `AliasedField<post1, posts::columns::id>` to implement `AppearsOnTable<FromClause<Alias<user1>>>`
    = note: required for `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::SelectClause<AliasedField<user1, users::columns::id>>>` to implement `GroupByDsl<AliasedField<post1, posts::columns::id>>`

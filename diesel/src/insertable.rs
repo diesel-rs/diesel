@@ -86,7 +86,7 @@ pub trait CanInsertInSingleQuery<DB: Backend> {
     fn rows_to_insert(&self) -> Option<usize>;
 }
 
-impl<'a, T, DB> CanInsertInSingleQuery<DB> for &'a T
+impl<T, DB> CanInsertInSingleQuery<DB> for &T
 where
     T: ?Sized + CanInsertInSingleQuery<DB>,
     DB: Backend,
@@ -115,7 +115,7 @@ where
     }
 }
 
-pub trait InsertValues<T: Table, DB: Backend>: QueryFragment<DB> {
+pub trait InsertValues<DB: Backend, T: Table>: QueryFragment<DB> {
     fn column_names(&self, out: AstPass<'_, '_, DB>) -> QueryResult<()>;
 }
 
@@ -135,10 +135,11 @@ impl<Col, Expr> ColumnInsertValue<Col, Expr> {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 #[doc(hidden)]
 pub enum DefaultableColumnInsertValue<T> {
     Expression(T),
+    #[default]
     Default,
 }
 
@@ -147,14 +148,7 @@ impl<T> QueryId for DefaultableColumnInsertValue<T> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-#[allow(clippy::derivable_impls)] // that's not supported on rust 1.65
-impl<T> Default for DefaultableColumnInsertValue<T> {
-    fn default() -> Self {
-        DefaultableColumnInsertValue::Default
-    }
-}
-
-impl<Col, Expr, DB> InsertValues<Col::Table, DB>
+impl<Col, Expr, DB> InsertValues<DB, Col::Table>
     for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
     DB: Backend + SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>,
@@ -168,7 +162,7 @@ where
     }
 }
 
-impl<Col, Expr, DB> InsertValues<Col::Table, DB> for ColumnInsertValue<Col, Expr>
+impl<Col, Expr, DB> InsertValues<DB, Col::Table> for ColumnInsertValue<Col, Expr>
 where
     DB: Backend,
     Col: Column,
@@ -218,7 +212,7 @@ where
 }
 
 #[cfg(feature = "sqlite")]
-impl<Col, Expr> InsertValues<Col::Table, crate::sqlite::Sqlite>
+impl<Col, Expr> InsertValues<crate::sqlite::Sqlite, Col::Table>
     for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
     Col: Column,
@@ -291,14 +285,8 @@ where
 {
     type Values = BatchInsert<Vec<T::Values>, Tab, [T::Values; N], true>;
 
-    // We must use the deprecated `IntoIter` function
-    // here as 1.51 (MSRV) does not support the new not
-    // deprecated variant
-    #[allow(deprecated)]
     fn values(self) -> Self::Values {
-        let values = std::array::IntoIter::new(self)
-            .map(Insertable::values)
-            .collect::<Vec<_>>();
+        let values = self.into_iter().map(Insertable::values).collect::<Vec<_>>();
         BatchInsert::new(values)
     }
 }

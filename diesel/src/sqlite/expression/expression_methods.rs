@@ -1,5 +1,9 @@
 //! Sqlite specific expression methods.
 
+pub(in crate::sqlite) use self::private::{
+    BinaryOrNullableBinary, JsonOrNullableJson, JsonOrNullableJsonOrJsonbOrNullableJsonb,
+    MaybeNullableValue, NotBlob, TextOrNullableText, TextOrNullableTextOrBinaryOrNullableBinary,
+};
 use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
@@ -82,3 +86,95 @@ pub trait SqliteExpressionMethods: Expression + Sized {
 }
 
 impl<T: Expression> SqliteExpressionMethods for T {}
+
+pub(in crate::sqlite) mod private {
+    use crate::sql_types::{
+        BigInt, Binary, Bool, Date, Double, Float, Integer, Json, Jsonb, MaybeNullableType,
+        Nullable, Numeric, SingleValue, SmallInt, SqlType, Text, Time, Timestamp,
+        TimestamptzSqlite,
+    };
+
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Text` nor `diesel::sql_types::Nullable<Text>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait TextOrNullableText {}
+
+    impl TextOrNullableText for Text {}
+    impl TextOrNullableText for Nullable<Text> {}
+
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Binary` nor `diesel::sql_types::Nullable<Binary>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait BinaryOrNullableBinary {}
+
+    impl BinaryOrNullableBinary for Binary {}
+    impl BinaryOrNullableBinary for Nullable<Binary> {}
+
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Text`, `diesel::sql_types::Nullable<Text>`, `diesel::sql_types::Binary` nor `diesel::sql_types::Nullable<Binary>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait TextOrNullableTextOrBinaryOrNullableBinary {}
+
+    impl TextOrNullableTextOrBinaryOrNullableBinary for Text {}
+    impl TextOrNullableTextOrBinaryOrNullableBinary for Nullable<Text> {}
+    impl TextOrNullableTextOrBinaryOrNullableBinary for Binary {}
+    impl TextOrNullableTextOrBinaryOrNullableBinary for Nullable<Binary> {}
+
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Json`, `diesel::sql_types::Jsonb`, `diesel::sql_types::Nullable<Json>` nor `diesel::sql_types::Nullable<Jsonb>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait JsonOrNullableJsonOrJsonbOrNullableJsonb {}
+    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Json {}
+    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Json> {}
+    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Jsonb {}
+    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Jsonb> {}
+
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Json` nor `diesel::sql_types::Nullable<Json>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait JsonOrNullableJson {}
+    impl JsonOrNullableJson for Json {}
+    impl JsonOrNullableJson for Nullable<Json> {}
+
+    pub trait MaybeNullableValue<T>: SingleValue {
+        type Out: SingleValue;
+    }
+
+    impl<T, O> MaybeNullableValue<O> for T
+    where
+        T: SingleValue,
+        T::IsNull: MaybeNullableType<O>,
+        <T::IsNull as MaybeNullableType<O>>::Out: SingleValue,
+    {
+        type Out = <T::IsNull as MaybeNullableType<O>>::Out;
+    }
+
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither any of `diesel::sql_types::{{
+            Text, Float, Double, Numeric,  Bool, Integer, SmallInt, BigInt, 
+            Date, Time, Timestamp, TimestamptzSqlite, Json
+         }}`  nor `diesel::sql_types::Nullable<Any of the above>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait NotBlob: SqlType + SingleValue {}
+
+    impl<T> NotBlob for Nullable<T> where T: NotBlob {}
+    impl NotBlob for Text {}
+    impl NotBlob for Float {}
+    impl NotBlob for Double {}
+    impl NotBlob for Numeric {}
+    impl NotBlob for Bool {}
+    impl NotBlob for Integer {}
+    impl NotBlob for SmallInt {}
+    impl NotBlob for BigInt {}
+    impl NotBlob for Date {}
+    impl NotBlob for Time {}
+    impl NotBlob for Timestamp {}
+    impl NotBlob for TimestamptzSqlite {}
+    impl NotBlob for Json {}
+}

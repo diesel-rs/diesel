@@ -18,9 +18,9 @@ impl ToSql<sql_types::Timestamp, Pg> for SystemTime {
             Err(time_err) => (true, time_err.duration()),
         };
         let time_since_epoch = if before_epoch {
-            -(duration_to_usecs(duration) as i64)
+            -(i64::try_from(duration_to_usecs(duration))?)
         } else {
-            duration_to_usecs(duration) as i64
+            duration_to_usecs(duration).try_into()?
         };
         ToSql::<sql_types::BigInt, Pg>::to_sql(&time_since_epoch, &mut out.reborrow())
     }
@@ -69,14 +69,14 @@ mod tests {
     use crate::sql_types::Timestamp;
     use crate::test_helpers::pg_connection;
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_encodes_correctly() {
         let connection = &mut pg_connection();
         let query = select(sql::<Timestamp>("'1970-01-01'").eq(UNIX_EPOCH));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_decodes_correctly() {
         let connection = &mut pg_connection();
         let epoch_from_sql = select(sql::<Timestamp>("'1970-01-01'::timestamp"))
@@ -84,7 +84,7 @@ mod tests {
         assert_eq!(Ok(UNIX_EPOCH), epoch_from_sql);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut pg_connection();
         let time = SystemTime::now() + Duration::from_secs(60);

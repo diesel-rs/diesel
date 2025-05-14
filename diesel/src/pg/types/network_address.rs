@@ -17,6 +17,8 @@ const AF_INET: u8 = 2;
 // Maybe not used, but defining to follow Rust's libstd/net/sys
 #[cfg(target_os = "redox")]
 const AF_INET: u8 = 1;
+
+#[allow(clippy::cast_possible_truncation)] // it's 2
 #[cfg(not(any(windows, target_os = "redox")))]
 const AF_INET: u8 = libc::AF_INET as u8;
 
@@ -138,138 +140,146 @@ macro_rules! impl_Sql {
 impl_Sql!(Inet, 0);
 impl_Sql!(Cidr, 1);
 
-#[test]
-fn v4address_to_sql() {
-    macro_rules! test_to_sql {
-        ($ty:ty, $net_type:expr) => {
-            let mut buffer = Vec::new();
-            {
-                let mut bytes = Output::test(ByteWrapper(&mut buffer));
-                let test_address =
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[diesel_test_helper::test]
+    fn v4address_to_sql() {
+        macro_rules! test_to_sql {
+            ($ty:ty, $net_type:expr) => {
+                let mut buffer = Vec::new();
+                {
+                    let mut bytes = Output::test(ByteWrapper(&mut buffer));
+                    let test_address =
+                        IpNetwork::V4(Ipv4Network::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
+                    ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
+                }
+                assert_eq!(buffer, vec![PGSQL_AF_INET, 32, $net_type, 4, 127, 0, 0, 1]);
+            };
+        }
+
+        test_to_sql!(Inet, 0);
+        test_to_sql!(Cidr, 1);
+    }
+
+    #[diesel_test_helper::test]
+    fn some_v4address_from_sql() {
+        macro_rules! test_some_address_from_sql {
+            ($ty:tt) => {
+                let input_address =
                     IpNetwork::V4(Ipv4Network::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
-                ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
-            }
-            assert_eq!(buffer, vec![PGSQL_AF_INET, 32, $net_type, 4, 127, 0, 0, 1]);
-        };
+                let mut buffer = Vec::new();
+                {
+                    let mut bytes = Output::test(ByteWrapper(&mut buffer));
+                    ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
+                }
+                let output_address =
+                    FromSql::<$ty, Pg>::from_sql(PgValue::for_test(&buffer)).unwrap();
+                assert_eq!(input_address, output_address);
+            };
+        }
+
+        test_some_address_from_sql!(Cidr);
+        test_some_address_from_sql!(Inet);
     }
 
-    test_to_sql!(Inet, 0);
-    test_to_sql!(Cidr, 1);
-}
+    #[diesel_test_helper::test]
+    fn v6address_to_sql() {
+        macro_rules! test_to_sql {
+            ($ty:ty, $net_type:expr) => {
+                let mut buffer = Vec::new();
+                {
+                    let mut bytes = Output::test(ByteWrapper(&mut buffer));
+                    let test_address = IpNetwork::V6(
+                        Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap(),
+                    );
+                    ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
+                }
+                assert_eq!(
+                    buffer,
+                    vec![
+                        PGSQL_AF_INET6,
+                        64,
+                        $net_type,
+                        16,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                    ]
+                );
+            };
+        }
 
-#[test]
-fn some_v4address_from_sql() {
-    macro_rules! test_some_address_from_sql {
-        ($ty:tt) => {
-            let input_address =
-                IpNetwork::V4(Ipv4Network::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
-            let mut buffer = Vec::new();
-            {
-                let mut bytes = Output::test(ByteWrapper(&mut buffer));
-                ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
-            }
-            let output_address = FromSql::<$ty, Pg>::from_sql(PgValue::for_test(&buffer)).unwrap();
-            assert_eq!(input_address, output_address);
-        };
+        test_to_sql!(Inet, 0);
+        test_to_sql!(Cidr, 1);
     }
 
-    test_some_address_from_sql!(Cidr);
-    test_some_address_from_sql!(Inet);
-}
-
-#[test]
-fn v6address_to_sql() {
-    macro_rules! test_to_sql {
-        ($ty:ty, $net_type:expr) => {
-            let mut buffer = Vec::new();
-            {
-                let mut bytes = Output::test(ByteWrapper(&mut buffer));
-                let test_address = IpNetwork::V6(
+    #[diesel_test_helper::test]
+    fn some_v6address_from_sql() {
+        macro_rules! test_some_address_from_sql {
+            ($ty:tt) => {
+                let input_address = IpNetwork::V6(
                     Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap(),
                 );
-                ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
-            }
-            assert_eq!(
-                buffer,
-                vec![
-                    PGSQL_AF_INET6,
-                    64,
-                    $net_type,
-                    16,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    1,
-                ]
-            );
-        };
+                let mut buffer = Vec::new();
+                {
+                    let mut bytes = Output::test(ByteWrapper(&mut buffer));
+                    ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
+                }
+                let output_address =
+                    FromSql::<$ty, Pg>::from_sql(PgValue::for_test(&buffer)).unwrap();
+                assert_eq!(input_address, output_address);
+            };
+        }
+
+        test_some_address_from_sql!(Inet);
+        test_some_address_from_sql!(Cidr);
     }
 
-    test_to_sql!(Inet, 0);
-    test_to_sql!(Cidr, 1);
-}
+    #[diesel_test_helper::test]
+    fn bad_address_from_sql() {
+        macro_rules! bad_address_from_sql {
+            ($ty:tt) => {
+                let address: Result<IpNetwork, _> =
+                    FromSql::<$ty, Pg>::from_sql(PgValue::for_test(&[7, PGSQL_AF_INET, 0]));
+                assert_eq!(
+                    address.unwrap_err().to_string(),
+                    "invalid network address format. input is too short."
+                );
+            };
+        }
 
-#[test]
-fn some_v6address_from_sql() {
-    macro_rules! test_some_address_from_sql {
-        ($ty:tt) => {
-            let input_address =
-                IpNetwork::V6(Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap());
-            let mut buffer = Vec::new();
-            {
-                let mut bytes = Output::test(ByteWrapper(&mut buffer));
-                ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
-            }
-            let output_address = FromSql::<$ty, Pg>::from_sql(PgValue::for_test(&buffer)).unwrap();
-            assert_eq!(input_address, output_address);
-        };
+        bad_address_from_sql!(Inet);
+        bad_address_from_sql!(Cidr);
     }
 
-    test_some_address_from_sql!(Inet);
-    test_some_address_from_sql!(Cidr);
-}
+    #[diesel_test_helper::test]
+    fn no_address_from_sql() {
+        macro_rules! test_no_address_from_sql {
+            ($ty:ty) => {
+                let address: Result<IpNetwork, _> = FromSql::<$ty, Pg>::from_nullable_sql(None);
+                assert_eq!(
+                    address.unwrap_err().to_string(),
+                    "Unexpected null for non-null column"
+                );
+            };
+        }
 
-#[test]
-fn bad_address_from_sql() {
-    macro_rules! bad_address_from_sql {
-        ($ty:tt) => {
-            let address: Result<IpNetwork, _> =
-                FromSql::<$ty, Pg>::from_sql(PgValue::for_test(&[7, PGSQL_AF_INET, 0]));
-            assert_eq!(
-                address.unwrap_err().to_string(),
-                "invalid network address format. input is too short."
-            );
-        };
+        test_no_address_from_sql!(Inet);
+        test_no_address_from_sql!(Cidr);
     }
-
-    bad_address_from_sql!(Inet);
-    bad_address_from_sql!(Cidr);
-}
-
-#[test]
-fn no_address_from_sql() {
-    macro_rules! test_no_address_from_sql {
-        ($ty:ty) => {
-            let address: Result<IpNetwork, _> = FromSql::<$ty, Pg>::from_nullable_sql(None);
-            assert_eq!(
-                address.unwrap_err().to_string(),
-                "Unexpected null for non-null column"
-            );
-        };
-    }
-
-    test_no_address_from_sql!(Inet);
-    test_no_address_from_sql!(Cidr);
 }

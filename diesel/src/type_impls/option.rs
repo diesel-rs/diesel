@@ -71,7 +71,7 @@ where
     }
 }
 
-impl<'a, T, ST> AsExpression<Nullable<ST>> for &'a Option<T>
+impl<T, ST> AsExpression<Nullable<ST>> for &Option<T>
 where
     ST: SqlType<IsNull = is_nullable::NotNull>,
     Nullable<ST>: TypedExpressionType,
@@ -123,7 +123,8 @@ where
     }
 }
 
-#[test]
+#[cfg(test)]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn option_to_sql() {
     use crate::pg::Pg;

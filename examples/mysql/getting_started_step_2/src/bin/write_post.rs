@@ -1,4 +1,4 @@
-use diesel_demo_step_2_mysql::*;
+use getting_started_step_2_mysql::*;
 use std::io::{stdin, Read};
 
 fn main() {

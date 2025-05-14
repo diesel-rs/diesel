@@ -8,8 +8,7 @@ use self::stmt::iterator::StatementIterator;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
-use crate::connection::instrumentation::DebugQuery;
-use crate::connection::instrumentation::StrQueryHelper;
+use crate::connection::instrumentation::{DebugQuery, DynInstrumentation, StrQueryHelper};
 use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
@@ -24,14 +23,14 @@ use crate::RunQueryDsl;
 /// `mysql://[user[:password]@]host/database_name[?unix_socket=socket-path&ssl_mode=SSL_MODE*&ssl_ca=/etc/ssl/certs/ca-certificates.crt&ssl_cert=/etc/ssl/certs/client-cert.crt&ssl_key=/etc/ssl/certs/client-key.crt]`
 ///
 ///* `host` can be an IP address or a hostname. If it is set to `localhost`, a connection
-///   will be attempted through the socket at `/tmp/mysql.sock`. If you want to connect to
-///   a local server via TCP (e.g. docker containers), use `0.0.0.0` or `127.0.0.1` instead.
+///  will be attempted through the socket at `/tmp/mysql.sock`. If you want to connect to
+///  a local server via TCP (e.g. docker containers), use `0.0.0.0` or `127.0.0.1` instead.
 /// * `unix_socket` expects the path to the unix socket
 /// * `ssl_ca` accepts a path to the system's certificate roots
 /// * `ssl_cert` accepts a path to the client's certificate file
 /// * `ssl_key` accepts a path to the client's private key file
 /// * `ssl_mode` expects a value defined for MySQL client command option `--ssl-mode`
-/// See <https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode>
+///   See <https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode>
 ///
 /// # Supported loading model implementations
 ///
@@ -111,7 +110,7 @@ pub struct MysqlConnection {
     raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
     statement_cache: StatementCache<Mysql, Statement>,
-    instrumentation: Option<Box<dyn Instrumentation>>,
+    instrumentation: DynInstrumentation,
 }
 
 // mysql connection can be shared between threads according to libmysqlclients documentation
@@ -154,9 +153,9 @@ impl Connection for MysqlConnection {
     /// * `ssl_cert` accepts a path to the client's certificate file
     /// * `ssl_key` accepts a path to the client's private key file
     /// * `ssl_mode` expects a value defined for MySQL client command option `--ssl-mode`
-    /// See <https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode>
+    ///   See <https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode>
     fn establish(database_url: &str) -> ConnectionResult<Self> {
-        let mut instrumentation = crate::connection::instrumentation::get_default_instrumentation();
+        let mut instrumentation = DynInstrumentation::default_instrumentation();
         instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
             url: database_url,
         });
@@ -181,13 +180,13 @@ impl Connection for MysqlConnection {
                 &source,
                 &mut self.statement_cache,
                 &mut self.raw_connection,
-                &mut self.instrumentation,
+                &mut *self.instrumentation,
             )
             .and_then(|stmt| {
                 // we have not called result yet, so calling `execute` is
                 // fine
                 let stmt_use = unsafe { stmt.execute() }?;
-                Ok(stmt_use.affected_rows())
+                stmt_use.affected_rows()
             }),
             &mut self.transaction_state,
             &mut self.instrumentation,
@@ -200,11 +199,15 @@ impl Connection for MysqlConnection {
     }
 
     fn instrumentation(&mut self) -> &mut dyn Instrumentation {
-        &mut self.instrumentation
+        &mut *self.instrumentation
     }
 
     fn set_instrumentation(&mut self, instrumentation: impl Instrumentation) {
-        self.instrumentation = Some(Box::new(instrumentation));
+        self.instrumentation = instrumentation.into();
+    }
+
+    fn set_prepared_statement_cache_size(&mut self, size: CacheSize) {
+        self.statement_cache.set_cache_size(size);
     }
 }
 
@@ -212,7 +215,7 @@ impl Connection for MysqlConnection {
 fn update_transaction_manager_status<T>(
     query_result: QueryResult<T>,
     transaction_manager: &mut AnsiTransactionManager,
-    instrumentation: &mut Option<Box<dyn Instrumentation>>,
+    instrumentation: &mut DynInstrumentation,
     query: &dyn DebugQuery,
 ) -> QueryResult<T> {
     if let Err(Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)) = query_result {
@@ -244,7 +247,7 @@ impl LoadConnection<DefaultLoadingMode> for MysqlConnection {
                 &source,
                 &mut self.statement_cache,
                 &mut self.raw_connection,
-                &mut self.instrumentation,
+                &mut *self.instrumentation,
             )
             .and_then(|stmt| {
                 let mut metadata = Vec::new();
@@ -296,7 +299,8 @@ fn prepared_query<'a, T: QueryFragment<Mysql> + QueryId>(
         source,
         &Mysql,
         &[],
-        |sql, _| raw_connection.prepare(sql),
+        &*raw_connection,
+        RawConnection::prepare,
         instrumentation,
     )?;
 
@@ -329,7 +333,7 @@ impl MysqlConnection {
             raw_connection,
             transaction_state: AnsiTransactionManager::default(),
             statement_cache: StatementCache::new(),
-            instrumentation: None,
+            instrumentation: DynInstrumentation::none(),
         };
         conn.set_config_options()
             .map_err(CouldntSetupConfiguration)?;
@@ -353,14 +357,14 @@ mod tests {
         MysqlConnection::establish(&database_url).unwrap()
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn batch_execute_handles_single_queries_with_results() {
         let connection = &mut connection();
         assert!(connection.batch_execute("SELECT 1").is_ok());
         assert!(connection.batch_execute("SELECT 1").is_ok());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn batch_execute_handles_multi_queries_with_results() {
         let connection = &mut connection();
         let query = "SELECT 1; SELECT 2; SELECT 3;";
@@ -368,14 +372,14 @@ mod tests {
         assert!(connection.batch_execute(query).is_ok());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn execute_handles_queries_which_return_results() {
         let connection = &mut connection();
         assert!(crate::sql_query("SELECT 1").execute(connection).is_ok());
         assert!(crate::sql_query("SELECT 1").execute(connection).is_ok());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn check_client_found_rows_flag() {
         let conn = &mut crate::test_helpers::connection();
         crate::sql_query("DROP TABLE IF EXISTS update_test CASCADE")

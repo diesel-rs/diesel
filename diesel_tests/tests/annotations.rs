@@ -2,7 +2,7 @@ use crate::schema::*;
 use diesel::sql_types::Text;
 use diesel::*;
 
-#[test]
+#[diesel_test_helper::test]
 fn association_where_struct_name_doesnt_match_table_name() {
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
     #[diesel(belongs_to(Post))]
@@ -31,7 +31,7 @@ fn association_where_struct_name_doesnt_match_table_name() {
     assert_eq!(Ok("comment".into()), comment_text);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn association_where_parent_and_child_have_underscores() {
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
@@ -116,6 +116,7 @@ mod associations_can_have_nullable_foreign_keys {
             foo_id -> Nullable<Integer>,
         }
     }
+
     // This test has no assertions, as it is for compilation purposes only.
     #[derive(Identifiable)]
     pub struct Foo {
@@ -195,7 +196,7 @@ mod derive_identifiable_with_lifetime {
     }
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn derive_identifiable_with_non_standard_pk() {
     use diesel::associations::*;
 
@@ -225,7 +226,7 @@ fn derive_identifiable_with_non_standard_pk() {
     let _: posts::table = Foo::<'static>::table();
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn derive_identifiable_with_composite_pk() {
     use diesel::associations::Identifiable;
 
@@ -256,7 +257,7 @@ fn derive_identifiable_with_composite_pk() {
     assert_eq!((&6, &7), foo2.id());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn derive_insertable_with_option_for_not_null_field_with_default() {
     #[derive(Insertable)]
     #[diesel(table_name = users)]
@@ -286,9 +287,12 @@ fn derive_insertable_with_option_for_not_null_field_with_default() {
     assert_eq!(Some(&User::new(123, "Bob")), bob);
 }
 
-define_sql_function!(fn nextval(a: Text) -> Integer);
+#[declare_sql_function]
+extern "SQL" {
+    fn nextval(a: Text) -> Integer;
+}
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn derive_insertable_with_field_that_cannot_convert_expression_to_nullable() {
     #[derive(Insertable)]
@@ -311,7 +315,7 @@ fn derive_insertable_with_field_that_cannot_convert_expression_to_nullable() {
     assert!(jim.is_some());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn nested_queryable_derives() {
     #[derive(Queryable, Debug, PartialEq)]
     struct UserAndPost {

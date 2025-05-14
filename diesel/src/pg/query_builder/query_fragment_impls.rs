@@ -1,4 +1,4 @@
-use crate::expression::array_comparison::{In, Many, MaybeEmpty, NotIn};
+use crate::expression::array_comparison::{In, InExpression, Many, NotIn};
 use crate::pg::backend::PgStyleArrayComparison;
 use crate::pg::types::sql_types::Array;
 use crate::pg::Pg;
@@ -63,13 +63,17 @@ impl QueryFragment<Pg> for NoWait {
 impl<T, U> QueryFragment<Pg, PgStyleArrayComparison> for In<T, U>
 where
     T: QueryFragment<Pg>,
-    U: QueryFragment<Pg> + MaybeEmpty,
+    U: QueryFragment<Pg> + InExpression,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
-        self.left.walk_ast(out.reborrow())?;
-        out.push_sql(" = ANY(");
-        self.values.walk_ast(out.reborrow())?;
-        out.push_sql(")");
+        if self.values.is_array() {
+            self.walk_ansi_ast(out)?;
+        } else {
+            self.left.walk_ast(out.reborrow())?;
+            out.push_sql(" = ANY(");
+            self.values.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+        }
         Ok(())
     }
 }
@@ -77,13 +81,17 @@ where
 impl<T, U> QueryFragment<Pg, PgStyleArrayComparison> for NotIn<T, U>
 where
     T: QueryFragment<Pg>,
-    U: QueryFragment<Pg> + MaybeEmpty,
+    U: QueryFragment<Pg> + InExpression,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
-        self.left.walk_ast(out.reborrow())?;
-        out.push_sql(" != ALL(");
-        self.values.walk_ast(out.reborrow())?;
-        out.push_sql(")");
+        if self.values.is_array() {
+            self.walk_ansi_ast(out)?;
+        } else {
+            self.left.walk_ast(out.reborrow())?;
+            out.push_sql(" != ALL(");
+            self.values.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+        }
         Ok(())
     }
 }
@@ -92,10 +100,15 @@ impl<ST, I> QueryFragment<Pg, PgStyleArrayComparison> for Many<ST, I>
 where
     ST: SingleValue,
     Vec<I>: ToSql<Array<ST>, Pg>,
+    I: ToSql<ST, Pg>,
     Pg: HasSqlType<ST>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
-        out.push_bind_param::<Array<ST>, Vec<I>>(&self.values)
+        if ST::IS_ARRAY {
+            self.walk_ansi_ast(out)
+        } else {
+            out.push_bind_param::<Array<ST>, Vec<I>>(&self.values)
+        }
     }
 }
 

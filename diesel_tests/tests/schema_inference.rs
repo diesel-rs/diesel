@@ -22,7 +22,7 @@ mod sqlite {
         col13: i64,
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn integers_infer_to_semantically_correct_types() {
         let conn = &mut connection();
         let inferred_ints = InferredInts {
@@ -60,7 +60,7 @@ mod sqlite {
         col4: bool,
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn bool_types_infer_to_bool() {
         let conn = &mut connection();
         let inferred_bools = InferredBools {
@@ -95,7 +95,7 @@ mod sqlite {
         col10: Vec<u8>,
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn strings_infer_to_semantically_correct_types() {
         let conn = &mut connection();
         let inferred_strings = InferredStrings {
@@ -132,7 +132,7 @@ mod sqlite {
         col6: f64,
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn floats_infer_to_semantically_correct_types() {
         let conn = &mut connection();
         let inferred_floats = InferredFloats {
@@ -163,7 +163,7 @@ mod sqlite {
         timestamp: NaiveDateTime,
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn datetime_types_are_correctly_inferred() {
         let conn = &mut connection();
 
@@ -207,9 +207,16 @@ mod postgres {
         ts: (Bound<NaiveDateTime>, Bound<NaiveDateTime>),
         tstz: (Bound<DateTime<Utc>>, Bound<DateTime<Utc>>),
         date: (Bound<NaiveDate>, Bound<NaiveDate>),
+        int4multi: Vec<(Bound<i32>, Bound<i32>)>,
+        int8multi: Vec<(Bound<i64>, Bound<i64>)>,
+        nummulti: Vec<(Bound<PgNumeric>, Bound<PgNumeric>)>,
+        tsmulti: Vec<(Bound<NaiveDateTime>, Bound<NaiveDateTime>)>,
+        #[allow(clippy::type_complexity)]
+        tstzmulti: Vec<(Bound<DateTime<Utc>>, Bound<DateTime<Utc>>)>,
+        datemulti: Vec<(Bound<NaiveDate>, Bound<NaiveDate>)>,
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn ranges_are_correctly_inferred() {
         let conn = &mut connection();
         let numeric = PgNumeric::Positive {
@@ -225,13 +232,22 @@ mod postgres {
         let inferred_ranges = InferredRanges {
             int4: (Bound::Included(5), Bound::Excluded(12)),
             int8: (Bound::Included(5), Bound::Excluded(13)),
-            num: (Bound::Included(numeric), Bound::Unbounded),
+            num: (Bound::Included(numeric.clone()), Bound::Unbounded),
             ts: (Bound::Included(dt), Bound::Unbounded),
             tstz: (
                 Bound::Unbounded,
                 Bound::Excluded(Utc.from_utc_datetime(&dt)),
             ),
             date: (Bound::Included(dt.date()), Bound::Unbounded),
+            int4multi: vec![(Bound::Included(5), Bound::Excluded(12))],
+            int8multi: vec![(Bound::Included(5), Bound::Excluded(13))],
+            nummulti: vec![(Bound::Included(numeric), Bound::Unbounded)],
+            tsmulti: vec![(Bound::Included(dt), Bound::Unbounded)],
+            tstzmulti: vec![(
+                Bound::Unbounded,
+                Bound::Excluded(Utc.from_utc_datetime(&dt)),
+            )],
+            datemulti: vec![(Bound::Included(dt.date()), Bound::Unbounded)],
         };
 
         insert_into(all_the_ranges::table)
@@ -267,7 +283,7 @@ mod mysql {
         big: Vec<u8>,
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn blobs_are_correctly_inferred() {
         let conn = &mut connection();
         let inferred_blobs = InferredBlobs {
@@ -294,7 +310,7 @@ mod mysql {
     }
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn columns_named_as_reserved_keywords_are_renamed() {
     use crate::schema::*;
     use diesel::*;

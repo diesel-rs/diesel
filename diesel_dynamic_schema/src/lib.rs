@@ -71,9 +71,9 @@
 //!
 //! ## Getting help
 //!
-//! If you run into problems, Diesel has a very active Gitter room.
+//! If you run into problems, Diesel has a very active discussion forum.
 //! You can come ask for help at
-//! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
+//! [github.com/diesel-rs/diesel/discussions](https://github.com/diesel-rs/diesel/discussions)
 
 // Built-in Lints
 #![warn(missing_docs)]

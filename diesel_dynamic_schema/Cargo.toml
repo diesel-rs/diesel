@@ -1,6 +1,6 @@
 [package]
 name = "diesel-dynamic-schema"
-version = "0.2.1"
+version = "0.2.2"
 license = "MIT OR Apache-2.0"
 edition = "2018"
 autotests = false
@@ -10,11 +10,11 @@ homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
 keywords = ["orm", "database", "sql"]
 categories = ["database"]
-include = ["src/**/*", "LICENSE-*", "README.md"]
+include.workspace = true
 rust-version.workspace = true
 
 [dependencies.diesel]
-version = "~2.1.0"
+version = "~2.2.0"
 path = "../diesel/"
 default-features = false
 

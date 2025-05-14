@@ -18,12 +18,22 @@ quickcheck = "1.0.3"
 uuid = { version = "1.0.0" }
 serde_json = { version=">=0.9, <2.0" }
 ipnet = { version = "2.5.0" }
-ipnetwork = ">=0.12.2, <0.21.0"
+ipnetwork = ">=0.12.2, <0.22.0"
 bigdecimal = ">= 0.0.13, < 0.5.0"
-rand = "0.8.4"
-libsqlite3-sys = { version = "0.28", optional = true }
-pq-sys = { version = "0.5", optional = true }
-pq-src = { version = "0.1.1", optional = true }
+libsqlite3-sys = { workspace = true, optional = true }
+rand = "0.9.0"
+pq-sys = { workspace = true, optional = true }
+pq-src = { version = "0.3", optional = true }
+mysqlclient-sys = { workspace = true, optional = true }
+mysqlclient-src = { version = "0.1.0", optional = true }
+diesel_test_helper = { path = "../diesel_test_helper" }
+
+[target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
+# Something is dependent on it, so we use feature to override it.
+getrandom = { version = "0.3", features = ["wasm_js"] }
+getrandom_02 = { version = "0.2", package = "getrandom", features = ["js"] }
+wasm-bindgen-test = "0.3.49"
+sqlite-wasm-rs = { version = ">=0.3.4, <0.4.0", default-features = false, features = ["bundled"] }
 
 [features]
 default = []

@@ -1,7 +1,7 @@
 use crate::schema::*;
 use diesel::*;
 
-#[test]
+#[diesel_test_helper::test]
 // This test is a shim for a feature which is not sufficiently implemented. It
 // has been added as we have a user who needs a reasonable workaround, but this
 // functionality will change and this test is allowed to change post-1.0
@@ -28,7 +28,7 @@ fn group_by_generates_group_by_sql() {
     assert!(source.execute(conn).is_ok());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn group_by_mixed_aggregate_column_and_aggregate_function() {
     use diesel::dsl::max;
     let source = users::table
@@ -54,7 +54,7 @@ fn group_by_mixed_aggregate_column_and_aggregate_function() {
     assert!(source.execute(conn).is_ok());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn boxed_queries_have_group_by_method() {
     let source = users::table
         .group_by(users::name)
@@ -77,7 +77,7 @@ fn boxed_queries_have_group_by_method() {
     assert!(source.execute(conn).is_ok());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn check_group_by_primary_key_allows_other_columns_in_select_clause() {
     let source = users::table
         .group_by(users::id)
@@ -104,7 +104,7 @@ fn check_group_by_primary_key_allows_other_columns_in_select_clause() {
     assert!(source.execute(conn).is_ok());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn check_group_by_multiple_columns_in_group_by_clause_single_select() {
     let source = users::table
         .group_by((users::name, users::hair_color))
@@ -131,7 +131,7 @@ fn check_group_by_multiple_columns_in_group_by_clause_single_select() {
     assert!(source.execute(conn).is_ok());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn check_group_by_multiple_columns_in_group_by_clause_complex_select() {
     let source = users::table
         .group_by((users::name, users::hair_color))
@@ -165,7 +165,7 @@ diesel::allow_columns_to_appear_in_same_group_by_clause!(
     users::name
 );
 
-#[test]
+#[diesel_test_helper::test]
 fn check_group_by_multiple_tables() {
     let source = users::table
         .inner_join(posts::table.inner_join(comments::table))
@@ -197,7 +197,7 @@ fn check_group_by_multiple_tables() {
     assert!(source.execute(conn).is_ok());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn check_filter_with_group_by_subselect() {
     let subselect = posts::table
         .group_by(posts::user_id)
@@ -240,7 +240,7 @@ fn check_filter_with_group_by_subselect() {
     assert!(source.execute(conn).is_ok());
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn check_filter_with_boxed_group_by_subselect() {
     // this query is identical to `check_filter_with_group_by_subselect`, but the subselect also calls `into_boxed`
     let subselect = posts::table

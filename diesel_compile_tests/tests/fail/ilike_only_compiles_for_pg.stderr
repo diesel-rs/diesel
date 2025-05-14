@@ -2,18 +2,19 @@ error[E0277]: `diesel::pg::expression::operators::ILike<columns::name, diesel::e
   --> tests/fail/ilike_only_compiles_for_pg.rs:21:61
    |
 21 |     users::table.filter(users::name.ilike("%hey%")).execute(&mut connection);
-   |                                                     ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>: ExecuteDsl<_, _>`
+   |                                                     ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
    |                                                     |
    |                                                     required by a bound introduced by this call
    |
    = note: this usually means that the `Sqlite` database system does not support
            this SQL syntax
-   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>`
+   = help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>`
+           but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
    = help: for that trait implementation, expected `Pg`, found `Sqlite`
-   = note: required for `Grouped<ILike<name, Bound<Text, &str>>>` to implement `QueryFragment<Sqlite>`
+   = note: required for `diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>` to implement `QueryFragment<Sqlite>`
    = note: 3 redundant requirements hidden
-   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `QueryFragment<Sqlite>`
-   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `ExecuteDsl<diesel::SqliteConnection, Sqlite>`
+   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>` to implement `QueryFragment<Sqlite>`
+   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>` to implement `ExecuteDsl<diesel::SqliteConnection, Sqlite>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
   --> $DIESEL/src/query_dsl/mod.rs
    |
@@ -22,25 +23,24 @@ note: required by a bound in `diesel::RunQueryDsl::execute`
 ...
    |         Self: methods::ExecuteDsl<Conn>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console
 
 error[E0277]: `diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>` is no valid SQL fragment for the `Mysql` backend
   --> tests/fail/ilike_only_compiles_for_pg.rs:24:61
    |
 24 |     users::table.filter(users::name.ilike("%hey%")).execute(&mut connection);
-   |                                                     ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>: ExecuteDsl<_, _>`
+   |                                                     ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
    |                                                     |
    |                                                     required by a bound introduced by this call
    |
    = note: this usually means that the `Mysql` database system does not support
            this SQL syntax
-   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>`
+   = help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>`
+           but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
    = help: for that trait implementation, expected `Pg`, found `Mysql`
-   = note: required for `Grouped<ILike<name, Bound<Text, &str>>>` to implement `QueryFragment<Mysql>`
+   = note: required for `diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>` to implement `QueryFragment<Mysql>`
    = note: 3 redundant requirements hidden
-   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `QueryFragment<Mysql>`
-   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `ExecuteDsl<diesel::MysqlConnection, Mysql>`
+   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>` to implement `QueryFragment<Mysql>`
+   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>` to implement `ExecuteDsl<diesel::MysqlConnection, Mysql>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
   --> $DIESEL/src/query_dsl/mod.rs
    |
@@ -49,5 +49,3 @@ note: required by a bound in `diesel::RunQueryDsl::execute`
 ...
    |         Self: methods::ExecuteDsl<Conn>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-   = note: consider using `--verbose` to print the full type name to the console
-   = note: consider using `--verbose` to print the full type name to the console

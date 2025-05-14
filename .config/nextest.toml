@@ -1,0 +1,19 @@
+[test-groups]
+cli_tests = { max-threads = 8 }
+
+[profile.default.junit]
+path = "target/junit.xml"
+# These are the default values, specified for clarity.
+store-success-output = false
+store-failure-output = true
+
+[[profile.default.overrides]]
+# these are quite heavy so don't run too much of
+# those in parallel
+filter = 'package(diesel_cli)'
+test-group = 'cli_tests'
+
+[[profile.default.overrides]]
+# fails sometimes due to a deadlock
+filter = 'test(insert_get_results_batch)'
+retries = 2 

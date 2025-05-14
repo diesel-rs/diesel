@@ -293,13 +293,19 @@ pub struct Date;
 /// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
+/// - [`chrono::Duration`][Duration] with `feature = "chrono"`
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
+/// - [`chrono::Duration`][Duration] with `feature = "chrono"`
+///   (There might be some information loss due to special behavior for literal `month` (or longer) intervals;
+///   Please read official documentation of [PostgreSQL Interval].)
 ///
 /// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
 /// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
+/// [Duration]: https://docs.rs/chrono/*/chrono/type.Duration.html
+/// [PostgreSQL Interval]: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 1186, array_oid = 1187))]
 pub struct Interval;
@@ -392,7 +398,131 @@ pub struct Timestamp;
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 114, array_oid = 199))]
 #[diesel(mysql_type(name = "String"))]
+#[diesel(sqlite_type(name = "Text"))]
 pub struct Json;
+
+/// The [`jsonb`] SQL type.  This type can only be used with `feature =
+/// "serde_json"`
+///
+/// In SQLite, `jsonb` brings mainly [performance improvements][sqlite-adv] over
+/// regular JSON:
+///
+/// > The advantage of JSONB in SQLite is that it is smaller and faster than
+/// > text JSON - potentially several times faster. There is space in the
+/// > on-disk JSONB format to add enhancements and future versions of SQLite
+/// > might include options to provide O(1) lookup of elements in JSONB, but no
+/// > such capability is currently available.
+///
+/// <div class="warning">
+/// In SQLite, JSONB is intended for internal use by SQLite only. Thus, future
+/// SQLite updates might break our JSONB implementation. And one might have to
+/// wait and then upgrade <code>diesel</code> for those changes to be  accounted
+/// for. If you do not want this, prefer the regular
+/// <a href="./struct.Json.html"><code>Json</code></a> type.
+/// </div>
+///
+/// In PostgreSQL, `jsonb` offers [several advantages][pg-adv] over regular JSON:
+///
+/// > There are two JSON data types: `json` and `jsonb`. They accept almost
+/// > identical sets of values as input. The major practical difference
+/// > is one of efficiency. The `json` data type stores an exact copy of
+/// > the input text, which processing functions must reparse on each
+/// > execution; while `jsonb` data is stored in a decomposed binary format
+/// > that makes it slightly slower to input due to added conversion
+/// > overhead, but significantly faster to process, since no reparsing
+/// > is needed. `jsonb` also supports indexing, which can be a significant
+/// > advantage.
+/// >
+/// > ...In general, most applications should prefer to store JSON data as
+/// > `jsonb`, unless there are quite specialized needs, such as legacy
+/// > assumptions about ordering of object keys.
+///
+/// [pg-adv]: https://www.postgresql.org/docs/current/static/datatype-json.html
+/// [sqlite-adv]: https://sqlite.org/draft/jsonb.html
+///
+/// ### [`ToSql`] impls
+///
+/// - [`serde_json::Value`]
+///
+/// ### [`FromSql`] impls
+///
+/// - [`serde_json::Value`]
+///
+/// [`ToSql`]: crate::serialize::ToSql
+/// [`FromSql`]: crate::deserialize::FromSql
+/// [`jsonb`]: https://www.postgresql.org/docs/current/datatype-json.html
+#[cfg_attr(
+    feature = "serde_json",
+    doc = "[`serde_json::Value`]: serde_json::value::Value"
+)]
+#[cfg_attr(
+    not(feature = "serde_json"),
+    doc = "[`serde_json::Value`]: https://docs.rs/serde_json/1.0.64/serde_json/value/enum.Value.html"
+)]
+///
+/// ## Examples
+///
+/// ```rust
+/// # #![allow(dead_code)]
+/// # include!("../doctest_setup.rs");
+/// #
+/// table! {
+///     contacts {
+///         id -> Integer,
+///         name -> Text,
+///         address -> Jsonb,
+///     }
+/// }
+///
+/// # #[cfg(all(
+/// #   feature = "serde_json",
+/// #   any(
+/// #       feature = "postgres_backend",
+/// #       all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"),
+/// #   )
+/// # ))]
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// #     use diesel::insert_into;
+/// #     use self::contacts::dsl::*;
+/// #     let connection = &mut connection_no_data();
+/// # #[cfg(feature = "postgres_backend")]
+/// #     diesel::sql_query("CREATE TABLE contacts (
+/// #         id SERIAL PRIMARY KEY,
+/// #         name VARCHAR NOT NULL,
+/// #         address JSONB NOT NULL
+/// #     )").execute(connection)?;
+/// # #[cfg(feature = "sqlite")]
+/// #     diesel::sql_query("CREATE TABLE contacts (
+/// #         id INT PRIMARY KEY,
+/// #         name TEXT NOT NULL,
+/// #         address BLOB NOT NULL
+/// #     )").execute(connection)?;
+/// let santas_address: serde_json::Value = serde_json::from_str(r#"{
+///     "street": "Article Circle Expressway 1",
+///     "city": "North Pole",
+///     "postcode": "99705",
+///     "state": "Alaska"
+/// }"#)?;
+/// let inserted_address = insert_into(contacts)
+///     .values((name.eq("Claus"), address.eq(&santas_address)))
+///     .returning(address)
+///     .get_result::<serde_json::Value>(connection)?;
+/// assert_eq!(santas_address, inserted_address);
+/// #     Ok(())
+/// # }
+/// # #[cfg(not(all(
+/// #   feature = "serde_json",
+/// #   any(
+/// #       feature = "postgres_backend",
+/// #       all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"),
+/// #   )
+/// # )))]
+/// # fn main() {}
+/// ```
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[diesel(postgres_type(oid = 3802, array_oid = 3807))]
+#[diesel(sqlite_type(name = "Binary"))]
+pub struct Jsonb;
 
 /// The nullable SQL type.
 ///
@@ -546,6 +676,9 @@ pub trait SqlType: 'static {
     ///
     /// ['is_nullable`]: is_nullable
     type IsNull: OneIsNullable<is_nullable::IsNullable> + OneIsNullable<is_nullable::NotNull>;
+
+    #[doc(hidden)]
+    const IS_ARRAY: bool = false;
 }
 
 /// Is one value of `IsNull` nullable?

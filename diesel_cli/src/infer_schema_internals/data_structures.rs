@@ -55,11 +55,11 @@ impl ColumnType {
         };
 
         let sql_name = if !ret.is_nullable && !ret.is_array && !ret.is_unsigned {
-            last.ident
-                .to_string()
-                .split('_')
-                .collect::<Vec<_>>()
-                .join(" ")
+            if last.ident == "PgLsn" {
+                "pg_lsn".to_string()
+            } else {
+                last.ident.to_string()
+            }
         } else if let syn::PathArguments::AngleBracketed(ref args) = last.arguments {
             let arg = args.args.first().expect("There is at least one argument");
             if let syn::GenericArgument::Type(syn::Type::Path(p)) = arg {

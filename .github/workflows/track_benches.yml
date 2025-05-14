@@ -21,45 +21,27 @@ jobs:
       PR_BENCHMARK_RESULTS: pr_${{ matrix.backend }}.txt
       BASE_BENCHMARK_RESULTS: base_${{ matrix.backend }}.txt
       GITHUB_EVENT: event_${{ matrix.backend }}.json
-      # This is the confidence interval for the t-test Threshold
+      # This is the percentage that the PR can be slower than the base benchmark
       # Adjust this value to lower to make the test more sensitive to changes
       # Adjust this value to higher to make the test less sensitive to changes
-      # https://bencher.dev/docs/explanation/thresholds/#t-test-threshold-upper-boundary
-      UPPER_BOUNDARY: 0.98
+      # https://bencher.dev/docs/explanation/thresholds/#percentage-upper-boundary
+      UPPER_BOUNDARY: 1.0
     steps:
-      - name: Download Benchmark Results
-        uses: actions/github-script@v6
+      - name: Download PR Benchmark Results
+        uses: dawidd6/action-download-artifact@v6
         with:
-          script: |
-            async function downloadArtifact(artifactName) {
-              let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                run_id: context.payload.workflow_run.id,
-              });
-              let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
-                return artifact.name == artifactName
-              })[0];
-              if (!matchArtifact) {
-                core.setFailed(`Failed to find artifact: ${artifactName}`);
-              }
-              let download = await github.rest.actions.downloadArtifact({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                artifact_id: matchArtifact.id,
-                archive_format: 'zip',
-              });
-              let fs = require('fs');
-              fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/${artifactName}.zip`, Buffer.from(download.data));
-            }
-            await downloadArtifact(process.env.PR_BENCHMARK_RESULTS);
-            await downloadArtifact(process.env.BASE_BENCHMARK_RESULTS);
-            await downloadArtifact(process.env.GITHUB_EVENT);
-      - name: Unzip Benchmark Results
-        run: |
-          unzip $PR_BENCHMARK_RESULTS.zip
-          unzip $BASE_BENCHMARK_RESULTS.zip
-          unzip $GITHUB_EVENT.zip
+          name: ${{ env.PR_BENCHMARK_RESULTS }}
+          run_id: ${{ github.event.workflow_run.id }}
+      - name: Download Base Benchmark Results
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          name: ${{ env.BASE_BENCHMARK_RESULTS }}
+          run_id: ${{ github.event.workflow_run.id }}
+      - name: Download GitHub Event
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          name: ${{ env.GITHUB_EVENT }}
+          run_id: ${{ github.event.workflow_run.id }}
       - name: Export GitHub Event Data
         uses: actions/github-script@v6
         with:
@@ -67,34 +49,34 @@ jobs:
             let fs = require('fs');
             let githubEvent = JSON.parse(fs.readFileSync("event.json", {encoding: 'utf8'}));
             console.log(githubEvent);
-            core.exportVariable("PR_HEAD", `${githubEvent.pull_request.head.ref}-${githubEvent.pull_request.head.sha.slice(0, 8)}`);
-            core.exportVariable("PR_ID", `${githubEvent.pull_request.head.ref}/${process.env.BENCHER_TESTBED}/${process.env.BENCHER_ADAPTER}`);
+            core.exportVariable("PR_HEAD", githubEvent.pull_request.head.ref);
+            core.exportVariable("PR_HEAD_SHA", githubEvent.pull_request.head.sha);
+            core.exportVariable("PR_BASE", githubEvent.pull_request.base.ref);
+            core.exportVariable("PR_BASE_SHA", githubEvent.pull_request.base.sha);
             core.exportVariable("PR_NUMBER", githubEvent.number);
       - uses: bencherdev/bencher@main
-      - name: Track base Benchmarks
+      - name: Track PR Base Benchmarks
         run: |
           bencher run \
-          --if-branch '${{ env.PR_HEAD }}' \
-          --else-branch \
           --token "${{ secrets.BENCHER_API_TOKEN }}" \
+          --branch "$PR_BASE" \
+          --hash "$PR_BASE_SHA" \
+          --start-point-reset \
           --file "$BASE_BENCHMARK_RESULTS"
-      - name: Create PR threshold
-        run: |
-          bencher threshold create \
-          --project "$BENCHER_PROJECT" \
-          --branch '${{ env.PR_HEAD }}' \
-          --testbed "$BENCHER_TESTBED" \
-          --measure latency \
-          --test t \
-          --upper-boundary ${{ env.UPPER_BOUNDARY }} \
-          --token "${{ secrets.BENCHER_API_TOKEN }}"
-      - name: Track PR Benchmarks
+      - name: Track PR Head Benchmarks
         run: |
           bencher run \
-          --branch '${{ env.PR_HEAD }}' \
           --token "${{ secrets.BENCHER_API_TOKEN }}" \
-          --ci-id '${{ env.PR_ID }}' \
-          --ci-number '${{ env.PR_NUMBER }}' \
+          --branch "$PR_HEAD" \
+          --hash "$PR_HEAD_SHA" \
+          --start-point "$PR_BASE" \
+          --start-point-hash "$PR_BASE_SHA" \
+          --start-point-reset \
+          --threshold-measure latency \
+          --threshold-test percentage \
+          --threshold-upper-boundary ${{ env.UPPER_BOUNDARY }} \
+          --thresholds-reset \
           --github-actions "${{ secrets.GITHUB_TOKEN }}" \
+          --ci-number "$PR_NUMBER" \
           --err \
           --file "$PR_BENCHMARK_RESULTS"

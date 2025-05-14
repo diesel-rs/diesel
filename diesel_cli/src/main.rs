@@ -30,6 +30,7 @@ use database::InferConnection;
 use diesel::backend::Backend;
 use diesel::Connection;
 use diesel_migrations::{FileBasedMigrations, HarnessWithOutput, MigrationHarness};
+use similar_asserts::SimpleDiff;
 use std::error::Error;
 use std::io::stdout;
 use std::path::{Path, PathBuf};
@@ -49,7 +50,7 @@ fn main() {
 }
 
 fn inner_main() -> Result<(), crate::errors::Error> {
-    let filter = EnvFilter::from_default_env();
+    let filter = EnvFilter::from_env("DIESEL_LOG");
     let fmt = tracing_subscriber::fmt::layer();
 
     tracing_subscriber::Registry::default()
@@ -150,8 +151,10 @@ fn create_config_file(
             "dir = \"migrations\"",
             &format!("dir = \"{}\"", migrations_dir_toml_string),
         );
-        let mut file = fs::File::create(path)?;
-        file.write_all(modified_content.as_bytes())?;
+        let mut file = fs::File::create(&path)
+            .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_owned())))?;
+        file.write_all(modified_content.as_bytes())
+            .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_owned())))?;
     }
 
     Ok(())
@@ -193,13 +196,15 @@ fn generate_completions_command(matches: &ArgMatches) {
 /// Returns a `DatabaseError::ProjectRootNotFound` if no Cargo.toml is found.
 fn create_migrations_directory(path: &Path) -> Result<PathBuf, crate::errors::Error> {
     println!("Creating migrations directory at: {}", path.display());
-    fs::create_dir_all(path)?;
-    fs::File::create(path.join(".keep"))?;
+    fs::create_dir_all(path)
+        .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_owned())))?;
+    let keep_path = path.join(".keep");
+    fs::File::create(&keep_path).map_err(|e| crate::errors::Error::IoError(e, Some(keep_path)))?;
     Ok(path.to_owned())
 }
 
 fn find_project_root() -> Result<PathBuf, crate::errors::Error> {
-    let current_dir = env::current_dir()?;
+    let current_dir = env::current_dir().map_err(|e| crate::errors::Error::IoError(e, None))?;
     search_for_directory_containing_file(&current_dir, "diesel.toml")
         .or_else(|_| search_for_directory_containing_file(&current_dir, "Cargo.toml"))
 }
@@ -260,8 +265,6 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), crate::errors::Error> {
 
 #[tracing::instrument]
 fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), crate::errors::Error> {
-    use std::io::Read;
-
     tracing::debug!("Regenerate schema if required");
 
     let config = Config::read(matches)?.print_schema;
@@ -269,28 +272,29 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), crate
         if let Some(ref path) = config.file {
             let mut connection = InferConnection::from_matches(matches)?;
             if let Some(parent) = path.parent() {
-                fs::create_dir_all(parent)?;
+                fs::create_dir_all(parent)
+                    .map_err(|e| crate::errors::Error::IoError(e, Some(parent.to_owned())))?;
             }
 
+            let schema = print_schema::output_schema(&mut connection, config)?;
             if matches.get_flag("LOCKED_SCHEMA") {
-                let mut buf = Vec::new();
-                print_schema::run_print_schema(&mut connection, config, &mut buf)?;
+                let old_buf = std::fs::read_to_string(path)
+                    .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_owned())))?;
 
-                let mut old_buf = Vec::new();
-                let mut file = fs::File::open(path)?;
-                file.read_to_end(&mut old_buf)?;
-
-                if buf != old_buf {
+                if schema.lines().ne(old_buf.lines()) {
+                    let label = path.file_name().expect("We have a file name here");
+                    let label = label.to_string_lossy();
+                    println!(
+                        "{}",
+                        SimpleDiff::from_str(&old_buf, &schema, &label, "new schema")
+                    );
                     return Err(crate::errors::Error::SchemaWouldChange(
                         path.display().to_string(),
                     ));
                 }
             } else {
-                use std::io::Write;
-
-                let mut file = fs::File::create(path)?;
-                let schema = print_schema::output_schema(&mut connection, config)?;
-                file.write_all(schema.as_bytes())?;
+                std::fs::write(path, schema.as_bytes())
+                    .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_owned())))?;
             }
         }
     }

@@ -1,4 +1,10 @@
-simple_clause!(NoOrderClause, OrderClause, " ORDER BY ");
+simple_clause!(
+    /// DSL node that represents that no order clause is set
+    NoOrderClause,
+    /// DSL node that represents that an order clause is set
+    OrderClause,
+    " ORDER BY "
+);
 
 impl<'a, DB, Expr> From<OrderClause<Expr>> for Option<Box<dyn QueryFragment<DB> + Send + 'a>>
 where
@@ -10,7 +16,7 @@ where
     }
 }
 
-impl<'a, DB> From<NoOrderClause> for Option<Box<dyn QueryFragment<DB> + Send + 'a>>
+impl<DB> From<NoOrderClause> for Option<Box<dyn QueryFragment<DB> + Send + '_>>
 where
     DB: Backend,
 {

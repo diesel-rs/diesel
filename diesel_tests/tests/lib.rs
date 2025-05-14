@@ -1,5 +1,10 @@
 #![recursion_limit = "1024"]
 
+// Running wasm tests on dedicated_worker
+#[cfg(test)]
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
+wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_dedicated_worker);
+
 #[macro_use]
 extern crate assert_matches;
 
@@ -28,6 +33,7 @@ mod filter_operators;
 mod find;
 mod group_by;
 mod having;
+mod index;
 mod insert;
 mod insert_from_select;
 mod instrumentation;
@@ -37,6 +43,8 @@ mod limit_offset;
 mod macros;
 #[cfg(feature = "postgres")]
 mod only;
+#[cfg(not(feature = "sqlite"))]
+mod operations;
 mod order;
 mod perf_details;
 #[cfg(feature = "postgres")]

@@ -2,16 +2,16 @@ error[E0277]: the trait bound `diesel::expression::bound::Bound<diesel::sql_type
   --> tests/fail/update_requires_left_side_of_eq_to_be_a_column.rs:16:33
    |
 16 |     let command = update(users).set(foo.eq(name));
-   |                                 ^^^ the trait `Column` is not implemented for `diesel::expression::bound::Bound<diesel::sql_types::Text, &str>`, which is required by `diesel::expression::operators::Eq<diesel::expression::bound::Bound<diesel::sql_types::Text, &str>, columns::name>: AsChangeset`
+   |                                 ^^^ the trait `Column` is not implemented for `diesel::expression::bound::Bound<diesel::sql_types::Text, &str>`
    |
    = help: the following other types implement trait `Column`:
-             columns::name
              columns::id
+             columns::name
              pg::metadata_lookup::pg_namespace::columns::nspname
              pg::metadata_lookup::pg_namespace::columns::oid
-             pg::metadata_lookup::pg_type::columns::typnamespace
+             pg::metadata_lookup::pg_type::columns::oid
              pg::metadata_lookup::pg_type::columns::typarray
              pg::metadata_lookup::pg_type::columns::typname
-             pg::metadata_lookup::pg_type::columns::oid
+             pg::metadata_lookup::pg_type::columns::typnamespace
    = note: required for `diesel::expression::bound::Bound<diesel::sql_types::Text, &str>` to implement `diesel::query_builder::update_statement::changeset::AssignmentTarget`
    = note: required for `diesel::expression::operators::Eq<diesel::expression::bound::Bound<diesel::sql_types::Text, &str>, columns::name>` to implement `AsChangeset`

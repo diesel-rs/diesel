@@ -165,6 +165,22 @@ fn print_schema_custom_types() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_custom_types_custom_schema() {
+    test_print_schema(
+        "print_schema_custom_types_custom_schema",
+        vec![
+            "--schema",
+            "v2",
+            "--custom-type-derives",
+            "diesel::query_builder::QueryId",
+            "--custom-type-derives",
+            "Clone",
+        ],
+    );
+}
+
+#[test]
 fn print_schema_with_unmappable_names() {
     test_print_schema("print_schema_with_unmappable_names", vec!["--with-docs"]);
 }
@@ -332,6 +348,18 @@ fn print_schema_comments_dont_fallback_on_generated() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_fk_related_tables() {
+    test_print_schema(
+        "print_schema_fk_related_tables",
+        vec![
+            "--allow-tables-to-appear-in-same-query-config",
+            "fk_related_tables",
+        ],
+    )
+}
+
+#[test]
 fn print_schema_reserved_names() {
     test_print_schema("print_schema_reserved_name_mitigation_issue_3404", vec![])
 }
@@ -362,6 +390,12 @@ fn print_schema_quoted_schema_and_table_name() {
         "print_schema_quoted_schema_and_table_name",
         vec!["--schema", "CustomSchema"],
     )
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn print_schema_citext() {
+    test_print_schema("print_schema_citext", vec![])
 }
 
 #[test]

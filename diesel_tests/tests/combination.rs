@@ -1,8 +1,8 @@
 use crate::schema::*;
-use diesel::query_dsl::positional_order_dsl::PositionalOrderDsl;
+use diesel::query_dsl::positional_order_dsl::{OrderColumn, PositionalOrderDsl};
 use diesel::*;
 
-#[test]
+#[diesel_test_helper::test]
 fn union() {
     use crate::schema::users::dsl::*;
 
@@ -32,7 +32,7 @@ fn union() {
     assert_eq!(expected_data, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn union_all() {
     use crate::schema::users::dsl::*;
 
@@ -63,7 +63,7 @@ fn union_all() {
     assert_eq!(expected_data, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn intersect() {
     use crate::schema::users::dsl::*;
@@ -90,7 +90,7 @@ fn intersect() {
     assert_eq!(expected_data, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn except() {
     use crate::schema::users::dsl::*;
@@ -117,7 +117,64 @@ fn except() {
     assert_eq!(expected_data, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
+fn union_with_limit() {
+    use crate::schema::users::dsl::*;
+
+    let conn = &mut connection();
+    let data = vec![
+        NewUser::new("Sean", None),
+        NewUser::new("Tess", None),
+        NewUser::new("Jim", None),
+    ];
+    insert_into(users).values(&data).execute(conn).unwrap();
+    let data = users.order(id).load::<User>(conn).unwrap();
+    let sean = &data[0];
+    let tess = &data[1];
+    let _jim = &data[2];
+
+    let data: Vec<User> = users
+        .filter(id.le(tess.id))
+        .union(users.filter(id.ge(tess.id)))
+        .limit(2)
+        .positional_order_by(1) // id is the first column
+        .load(conn)
+        .unwrap();
+
+    let expected_data = vec![User::new(sean.id, "Sean"), User::new(tess.id, "Tess")];
+    assert_eq!(expected_data, data);
+}
+
+#[diesel_test_helper::test]
+fn union_with_offset() {
+    use crate::schema::users::dsl::*;
+
+    let conn = &mut connection();
+    let data = vec![
+        NewUser::new("Sean", None),
+        NewUser::new("Tess", None),
+        NewUser::new("Jim", None),
+    ];
+    insert_into(users).values(&data).execute(conn).unwrap();
+    let data = users.order(id).load::<User>(conn).unwrap();
+    let sean = &data[0];
+    let tess = &data[1];
+    let _jim = &data[2];
+
+    let data: Vec<User> = users
+        .filter(id.le(tess.id))
+        .union(users.filter(id.ge(tess.id)))
+        .positional_order_by(2) // name is the second column
+        .limit(3)
+        .offset(1)
+        .load(conn)
+        .unwrap();
+
+    let expected_data = vec![User::new(sean.id, "Sean"), User::new(tess.id, "Tess")];
+    assert_eq!(expected_data, data);
+}
+
+#[diesel_test_helper::test]
 fn union_with_order() {
     let conn = &mut connection();
     let data = vec![
@@ -140,14 +197,14 @@ fn union_with_order() {
                 .select(users::name)
                 .limit(1),
         )
-        .positional_order_by(1)
+        .positional_order_by(OrderColumn::from(1).asc())
         .load::<String>(conn)
         .unwrap();
 
     assert_eq!(vec![String::from("Jim"), "Sean".into()], users);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn as_subquery_for_eq_in() {
     let conn = &mut connection_with_sean_and_tess_in_users_table();
 
@@ -176,4 +233,50 @@ fn as_subquery_for_eq_in() {
         .unwrap();
 
     assert_eq!(out, vec!["First post", "Second post"]);
+}
+
+#[diesel_test_helper::test]
+fn positional_order_by() {
+    use crate::schema::users::dsl::*;
+
+    let conn = &mut connection();
+    let data = vec![
+        NewUser::new("Sean", None),
+        NewUser::new("Tess", Some("green")),
+        NewUser::new("Jim", None),
+        NewUser::new("Tess", Some("blue")),
+        NewUser::new("Arnold", Some("red")),
+    ];
+    insert_into(users).values(&data).execute(conn).unwrap();
+    let data = users.order(id).load::<User>(conn).unwrap();
+    let sean = &data[0];
+    let tess_green = &data[1];
+    let jim = &data[2];
+    let tess_blue = &data[3];
+    let arnold = &data[4];
+
+    let expected_data = vec![
+        User::new(sean.id, "Sean"),
+        User::new(jim.id, "Jim"),
+        User::with_hair_color(tess_blue.id, "Tess", "blue"),
+        User::with_hair_color(tess_green.id, "Tess", "green"),
+        User::with_hair_color(arnold.id, "Arnold", "red"),
+    ];
+    let data: Vec<_> = users
+        .filter(id.le(jim.id))
+        .union(users.filter(id.ge(jim.id)))
+        .positional_order_by((
+            // hair color is the third column
+            // Also, we don't need OrderColumn here because .asc() is the default direction
+            #[cfg(not(feature = "postgres"))]
+            3,
+            // postgres doesn't sort nulls first by default, so we need to call nulls_first().
+            // This also tests whether or not NullsFirst implements PositionalOrderExpr
+            #[cfg(feature = "postgres")]
+            OrderColumn::from(3).asc().nulls_first(), // hair color is the third column
+            OrderColumn::from(2).desc(), // name is the second column
+        ))
+        .load(conn)
+        .unwrap();
+    assert_eq!(expected_data, data);
 }

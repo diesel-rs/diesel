@@ -5,18 +5,18 @@ mod result;
 mod row;
 mod stmt;
 
-use self::copy::CopyFromSink;
-use self::copy::CopyToBuffer;
+use self::copy::{CopyFromSink, CopyToBuffer};
 use self::cursor::*;
 use self::private::ConnectionAndTransactionManager;
 use self::raw::{PgTransactionStatus, RawConnection};
 use self::stmt::Statement;
-use crate::connection::instrumentation::DebugQuery;
-use crate::connection::instrumentation::Instrumentation;
-use crate::connection::instrumentation::StrQueryHelper;
+use crate::connection::instrumentation::{
+    DebugQuery, DynInstrumentation, Instrumentation, StrQueryHelper,
+};
 use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
+use crate::pg::backend::PgNotification;
 use crate::pg::metadata_lookup::{GetPgMetadataCache, PgMetadataCache};
 use crate::pg::query_builder::copy::InternalCopyFromQuery;
 use crate::pg::{Pg, TransactionBuilder};
@@ -29,9 +29,7 @@ use std::ffi::CString;
 use std::fmt::Debug;
 use std::os::raw as libc;
 
-use super::query_builder::copy::CopyFromExpression;
-use super::query_builder::copy::CopyTarget;
-use super::query_builder::copy::CopyToCommand;
+use super::query_builder::copy::{CopyFromExpression, CopyTarget, CopyToCommand};
 
 pub(super) use self::result::PgResult;
 
@@ -178,7 +176,7 @@ impl Connection for PgConnection {
     type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
-        let mut instrumentation = crate::connection::instrumentation::get_default_instrumentation();
+        let mut instrumentation = DynInstrumentation::default_instrumentation();
         instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
             url: database_url,
         });
@@ -187,7 +185,7 @@ impl Connection for PgConnection {
                 connection_and_transaction_manager: ConnectionAndTransactionManager {
                     raw_connection: raw_conn,
                     transaction_state: AnsiTransactionManager::default(),
-                    instrumentation: None,
+                    instrumentation: DynInstrumentation::none(),
                 },
                 statement_cache: StatementCache::new(),
                 metadata_cache: PgMetadataCache::new(),
@@ -233,11 +231,15 @@ impl Connection for PgConnection {
     }
 
     fn instrumentation(&mut self) -> &mut dyn Instrumentation {
-        &mut self.connection_and_transaction_manager.instrumentation
+        &mut *self.connection_and_transaction_manager.instrumentation
     }
 
     fn set_instrumentation(&mut self, instrumentation: impl Instrumentation) {
-        self.connection_and_transaction_manager.instrumentation = Some(Box::new(instrumentation));
+        self.connection_and_transaction_manager.instrumentation = instrumentation.into();
+    }
+
+    fn set_prepared_statement_cache_size(&mut self, size: CacheSize) {
+        self.statement_cache.set_cache_size(size);
     }
 }
 
@@ -502,22 +504,15 @@ impl PgConnection {
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
 
-        let cache_len = self.statement_cache.len();
         let cache = &mut self.statement_cache;
         let conn = &mut self.connection_and_transaction_manager.raw_connection;
         let query = cache.cached_statement(
             &source,
             &Pg,
             &metadata,
-            |sql, _| {
-                let query_name = if source.is_safe_to_cache_prepared(&Pg)? {
-                    Some(format!("__diesel_stmt_{cache_len}"))
-                } else {
-                    None
-                };
-                Statement::prepare(conn, sql, query_name.as_deref(), &metadata)
-            },
-            &mut self.connection_and_transaction_manager.instrumentation,
+            conn,
+            Statement::prepare,
+            &mut *self.connection_and_transaction_manager.instrumentation,
         );
         if !execute_returning_count {
             if let Err(ref e) = query {
@@ -546,6 +541,51 @@ impl PgConnection {
             .set_notice_processor(noop_notice_processor);
         Ok(())
     }
+
+    /// See Postgres documentation for SQL commands [NOTIFY][] and [LISTEN][]
+    ///
+    /// The returned iterator can yield items even after a None value when new notifications have been received.
+    /// The iterator can be polled again after a `None` value was received as new notifications might have
+    /// been send in the mean time.
+    ///
+    /// [NOTIFY]: https://www.postgresql.org/docs/current/sql-notify.html
+    /// [LISTEN]: https://www.postgresql.org/docs/current/sql-listen.html
+    ///
+    /// ## Example
+    ///
+    /// ```
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// // register the notifications channel we want to receive notifications for
+    /// diesel::sql_query("LISTEN example_channel").execute(connection)?;
+    /// // send some notification
+    /// // this is usually done from a different connection/thread/application
+    /// diesel::sql_query("NOTIFY example_channel, 'additional data'").execute(connection)?;
+    ///
+    /// for result in connection.notifications_iter() {
+    ///     let notification = result.unwrap();
+    ///     assert_eq!(notification.channel, "example_channel");
+    ///     assert_eq!(notification.payload, "additional data");
+    ///
+    ///     println!(
+    ///         "Notification received from server process with id {}.",
+    ///         notification.process_id
+    ///    );
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn notifications_iter(&mut self) -> impl Iterator<Item = QueryResult<PgNotification>> + '_ {
+        let conn = &self.connection_and_transaction_manager.raw_connection;
+        std::iter::from_fn(move || conn.pq_notifies().transpose())
+    }
 }
 
 extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc::c_char) {}
@@ -557,7 +597,7 @@ mod private {
     pub struct ConnectionAndTransactionManager {
         pub(super) raw_connection: RawConnection,
         pub(super) transaction_state: AnsiTransactionManager,
-        pub(super) instrumentation: Option<Box<dyn Instrumentation>>,
+        pub(super) instrumentation: DynInstrumentation,
     }
 
     pub trait PgLoadingMode<B> {
@@ -617,13 +657,56 @@ mod tests {
     extern crate dotenvy;
 
     use super::*;
-    use crate::dsl::sql;
     use crate::prelude::*;
     use crate::result::Error::DatabaseError;
-    use crate::sql_types::{Integer, VarChar};
     use std::num::NonZeroU32;
 
-    #[test]
+    fn connection() -> PgConnection {
+        crate::test_helpers::pg_connection_no_transaction()
+    }
+
+    #[diesel_test_helper::test]
+    fn notifications_arrive() {
+        use crate::sql_query;
+
+        let conn = &mut connection();
+        sql_query("LISTEN test_notifications")
+            .execute(conn)
+            .unwrap();
+        sql_query("NOTIFY test_notifications, 'first'")
+            .execute(conn)
+            .unwrap();
+        sql_query("NOTIFY test_notifications, 'second'")
+            .execute(conn)
+            .unwrap();
+
+        let notifications = conn
+            .notifications_iter()
+            .map(Result::unwrap)
+            .collect::<Vec<_>>();
+
+        assert_eq!(2, notifications.len());
+        assert_eq!(notifications[0].channel, "test_notifications");
+        assert_eq!(notifications[1].channel, "test_notifications");
+        assert_eq!(notifications[0].payload, "first");
+        assert_eq!(notifications[1].payload, "second");
+
+        let next_notification = conn.notifications_iter().next();
+        assert!(
+            next_notification.is_none(),
+            "Got a next notification, while not expecting one: {next_notification:?}"
+        );
+
+        sql_query("NOTIFY test_notifications")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(
+            conn.notifications_iter().next().unwrap().unwrap().payload,
+            ""
+        );
+    }
+
+    #[diesel_test_helper::test]
     fn malformed_sql_query() {
         let connection = &mut connection();
         let query =
@@ -636,67 +719,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn prepared_statements_are_cached() {
-        let connection = &mut connection();
-
-        let query = crate::select(1.into_sql::<Integer>());
-
-        assert_eq!(Ok(1), query.get_result(connection));
-        assert_eq!(Ok(1), query.get_result(connection));
-        assert_eq!(1, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn queries_with_identical_sql_but_different_types_are_cached_separately() {
-        let connection = &mut connection();
-
-        let query = crate::select(1.into_sql::<Integer>());
-        let query2 = crate::select("hi".into_sql::<VarChar>());
-
-        assert_eq!(Ok(1), query.get_result(connection));
-        assert_eq!(Ok("hi".to_string()), query2.get_result(connection));
-        assert_eq!(2, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn queries_with_identical_types_and_sql_but_different_bind_types_are_cached_separately() {
-        let connection = &mut connection();
-
-        let query = crate::select(1.into_sql::<Integer>()).into_boxed::<Pg>();
-        let query2 = crate::select("hi".into_sql::<VarChar>()).into_boxed::<Pg>();
-
-        assert_eq!(0, connection.statement_cache.len());
-        assert_eq!(Ok(1), query.get_result(connection));
-        assert_eq!(Ok("hi".to_string()), query2.get_result(connection));
-        assert_eq!(2, connection.statement_cache.len());
-    }
-
-    define_sql_function!(fn lower(x: VarChar) -> VarChar);
-
-    #[test]
-    fn queries_with_identical_types_and_binds_but_different_sql_are_cached_separately() {
-        let connection = &mut connection();
-
-        let hi = "HI".into_sql::<VarChar>();
-        let query = crate::select(hi).into_boxed::<Pg>();
-        let query2 = crate::select(lower(hi)).into_boxed::<Pg>();
-
-        assert_eq!(0, connection.statement_cache.len());
-        assert_eq!(Ok("HI".to_string()), query.get_result(connection));
-        assert_eq!(Ok("hi".to_string()), query2.get_result(connection));
-        assert_eq!(2, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn queries_with_sql_literal_nodes_are_not_cached() {
-        let connection = &mut connection();
-        let query = crate::select(sql::<Integer>("1"));
-
-        assert_eq!(Ok(1), query.get_result(connection));
-        assert_eq!(0, connection.statement_cache.len());
-    }
-
     table! {
         users {
             id -> Integer,
@@ -704,104 +726,9 @@ mod tests {
         }
     }
 
-    #[test]
-    fn inserts_from_select_are_cached() {
-        let connection = &mut connection();
-        connection.begin_test_transaction().unwrap();
-
-        crate::sql_query(
-            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
-        )
-        .execute(connection)
-        .unwrap();
-
-        let query = users::table.filter(users::id.eq(42));
-        let insert = query
-            .insert_into(users::table)
-            .into_columns((users::id, users::name));
-        assert!(insert.execute(connection).is_ok());
-        assert_eq!(1, connection.statement_cache.len());
-
-        let query = users::table.filter(users::id.eq(42)).into_boxed();
-        let insert = query
-            .insert_into(users::table)
-            .into_columns((users::id, users::name));
-        assert!(insert.execute(connection).is_ok());
-        assert_eq!(2, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn single_inserts_are_cached() {
-        let connection = &mut connection();
-        connection.begin_test_transaction().unwrap();
-
-        crate::sql_query(
-            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
-        )
-        .execute(connection)
-        .unwrap();
-
-        let insert =
-            crate::insert_into(users::table).values((users::id.eq(42), users::name.eq("Foo")));
-
-        assert!(insert.execute(connection).is_ok());
-        assert_eq!(1, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn dynamic_batch_inserts_are_not_cached() {
-        let connection = &mut connection();
-        connection.begin_test_transaction().unwrap();
-
-        crate::sql_query(
-            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
-        )
-        .execute(connection)
-        .unwrap();
-
-        let insert = crate::insert_into(users::table)
-            .values(vec![(users::id.eq(42), users::name.eq("Foo"))]);
-
-        assert!(insert.execute(connection).is_ok());
-        assert_eq!(0, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn static_batch_inserts_are_cached() {
-        let connection = &mut connection();
-        connection.begin_test_transaction().unwrap();
-
-        crate::sql_query(
-            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
-        )
-        .execute(connection)
-        .unwrap();
-
-        let insert =
-            crate::insert_into(users::table).values([(users::id.eq(42), users::name.eq("Foo"))]);
-
-        assert!(insert.execute(connection).is_ok());
-        assert_eq!(1, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn queries_containing_in_with_vec_are_cached() {
-        let connection = &mut connection();
-        let one_as_expr = 1.into_sql::<Integer>();
-        let query = crate::select(one_as_expr.eq_any(vec![1, 2, 3]));
-
-        assert_eq!(Ok(true), query.get_result(connection));
-        assert_eq!(1, connection.statement_cache.len());
-    }
-
-    fn connection() -> PgConnection {
-        crate::test_helpers::pg_connection_no_transaction()
-    }
-
-    #[test]
+    #[diesel_test_helper::test]
     fn transaction_manager_returns_an_error_when_attempting_to_commit_outside_of_a_transaction() {
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::result::Error;
         use crate::PgConnection;
 
@@ -816,10 +743,9 @@ mod tests {
         assert!(matches!(result, Err(Error::NotInTransaction)))
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn transaction_manager_returns_an_error_when_attempting_to_rollback_outside_of_a_transaction() {
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::result::Error;
         use crate::PgConnection;
 
@@ -834,12 +760,11 @@ mod tests {
         assert!(matches!(result, Err(Error::NotInTransaction)))
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn postgres_transaction_is_rolled_back_upon_syntax_error() {
         use std::num::NonZeroU32;
 
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::*;
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
@@ -879,12 +804,11 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn nested_postgres_transaction_is_rolled_back_upon_syntax_error() {
         use std::num::NonZeroU32;
 
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::*;
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
@@ -940,7 +864,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     // This function uses collect with an side effect (spawning threads)
     // so this is a false positive from clippy
     #[allow(clippy::needless_collect)]
@@ -1047,7 +971,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     // This function uses collect with an side effect (spawning threads)
     // so this is a false positive from clippy
     #[allow(clippy::needless_collect)]
@@ -1163,10 +1087,9 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn postgres_transaction_is_rolled_back_upon_deferred_constraint_failure() {
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::Error;
         use crate::*;
@@ -1213,10 +1136,9 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn postgres_transaction_is_rolled_back_upon_deferred_trigger_failure() {
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::Error;
         use crate::*;
@@ -1289,10 +1211,9 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn nested_postgres_transaction_is_rolled_back_upon_deferred_trigger_failure() {
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::Error;
         use crate::*;
@@ -1372,10 +1293,9 @@ mod tests {
         assert!(result.is_ok(), "Expected success, got {:?}", result);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn nested_postgres_transaction_is_rolled_back_upon_deferred_constraint_failure() {
-        use crate::connection::AnsiTransactionManager;
-        use crate::connection::TransactionManager;
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::Error;
         use crate::*;

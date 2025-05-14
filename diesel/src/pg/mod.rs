@@ -16,7 +16,8 @@ pub(crate) mod serialize;
 mod transaction;
 mod value;
 
-pub use self::backend::{Pg, PgTypeMetadata};
+#[doc(inline)]
+pub use self::backend::{Pg, PgNotification, PgTypeMetadata};
 #[cfg(feature = "postgres")]
 pub use self::connection::{PgConnection, PgRowByRowLoadingMode};
 #[doc(inline)]
@@ -61,6 +62,8 @@ pub mod data_types {
     #[doc(inline)]
     pub use super::types::money::PgMoney;
     pub use super::types::money::PgMoney as Cents;
+    #[doc(inline)]
+    pub use super::types::pg_lsn::PgLsn;
 }
 
 #[doc(inline)]

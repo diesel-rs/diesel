@@ -1,7 +1,7 @@
 use crate::schema::*;
 use diesel::*;
 
-#[test]
+#[diesel_test_helper::test]
 fn order_by_column() {
     use crate::schema::users::dsl::*;
 
@@ -40,7 +40,7 @@ fn order_by_column() {
     assert_eq!(expected_data, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn order_by_descending_column() {
     use crate::schema::users::dsl::*;
 
@@ -80,7 +80,7 @@ fn order_by_descending_column() {
 }
 
 // regression test for #3412
-#[test]
+#[diesel_test_helper::test]
 fn dynamic_order() {
     use crate::schema::users;
     use diesel::expression::expression_types::NotSelectable;

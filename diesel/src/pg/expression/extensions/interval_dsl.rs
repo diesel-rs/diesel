@@ -124,7 +124,7 @@ pub trait IntervalDsl: Sized + From<i32> + Mul<Self, Output = Self> {
     ///
     /// ```rust
     /// # use diesel::dsl::*;
-    /// assert_eq!(1.08.years(), 1.year());
+    /// assert_eq!(1.04.years(), 1.year());
     /// assert_eq!(1.09.years(), 1.year() + 1.month());
     /// ```
     fn years(self) -> PgInterval {
@@ -213,14 +213,19 @@ impl IntervalDsl for i64 {
     }
 
     fn days(self) -> PgInterval {
-        (self as i32).days()
+        i32::try_from(self)
+            .expect("Maximal supported day interval size is 32 bit")
+            .days()
     }
 
     fn months(self) -> PgInterval {
-        (self as i32).months()
+        i32::try_from(self)
+            .expect("Maximal supported month interval size is 32 bit")
+            .months()
     }
 }
 
+#[allow(clippy::cast_possible_truncation)] // we want to truncate
 impl IntervalDsl for f64 {
     fn microseconds(self) -> PgInterval {
         (self.round() as i64).microseconds()
@@ -237,7 +242,7 @@ impl IntervalDsl for f64 {
     }
 
     fn years(self) -> PgInterval {
-        ((self * 12.0).trunc() as i32).months()
+        ((self * 12.0).round() as i32).months()
     }
 }
 
@@ -259,9 +264,12 @@ mod tests {
 
     macro_rules! test_fn {
         ($tpe:ty, $test_name:ident, $units: ident, $max_range: expr) => {
-            test_fn!($tpe, $test_name, $units, $max_range, 1);
+            test_fn!($tpe, $test_name, $units, $max_range, 1, 0);
         };
         ($tpe:ty, $test_name:ident, $units:ident, $max_range: expr, $max_diff: expr) => {
+            test_fn!($tpe, $test_name, $units, $max_range, $max_diff, 0);
+        };
+        ($tpe:ty, $test_name:ident, $units:ident, $max_range: expr, $max_diff: expr, $max_month_diff: expr) => {
             fn $test_name(val: $tpe) -> bool {
                 if val > $max_range || val < (-1 as $tpe) * $max_range || (val as f64).is_nan() {
                     return true;
@@ -273,7 +281,7 @@ mod tests {
                 query
                     .get_result::<PgInterval>(conn)
                     .map(|res| {
-                        value.months == res.months
+                        (value.months - res.months).abs() <= $max_month_diff
                             && value.days == res.days
                             && (value.microseconds - res.microseconds).abs() <= $max_diff
                     })
@@ -284,7 +292,7 @@ mod tests {
         };
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn intervals_match_pg_values_i32() {
         test_fn!(i32, test_microseconds, microseconds, i32::MAX);
         test_fn!(i32, test_milliseconds, milliseconds, i32::MAX);
@@ -297,7 +305,7 @@ mod tests {
         test_fn!(i32, test_years, years, i32::MAX / 12);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn intervals_match_pg_values_i64() {
         // postgres does not really support intervals with more than i32::MAX microseconds
         // https://www.postgresql.org/message-id/20140126025049.GL9750@momjian.us
@@ -312,7 +320,7 @@ mod tests {
         test_fn!(i64, test_years, years, (i32::MAX / 12) as i64);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn intervals_match_pg_values_f64() {
         const MAX_DIFF: i64 = 1_000_000;
         // postgres does not really support intervals with more than i32::MAX microseconds
@@ -337,6 +345,9 @@ mod tests {
         test_fn!(f64, test_days, days, i32::MAX as f64, MAX_DIFF);
         test_fn!(f64, test_weeks, weeks, (i32::MAX / 7) as f64, MAX_DIFF);
         test_fn!(f64, test_months, months, i32::MAX as f64, MAX_DIFF);
-        test_fn!(f64, test_years, years, (i32::MAX / 12) as f64, MAX_DIFF);
+        // different postgres versions seem to round intervals with years differently
+        // -1681.9781874756495 years is reported as -20183 months for postgres 14
+        // and as -20184 months for postgres 16
+        test_fn!(f64, test_years, years, (i32::MAX / 12) as f64, MAX_DIFF, 1);
     }
 }

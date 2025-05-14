@@ -121,8 +121,17 @@ fn get_sql_name(
             syn::Lit::Str(lit_str) => Some(lit_str),
             _ => None,
         })? {
-            None => fallback_ident.to_string(),
-            Some(str_lit) => str_lit.value(),
+            None => {
+                use syn::ext::IdentExt;
+                fallback_ident.unraw().to_string()
+            }
+            Some(str_lit) => {
+                let mut str_lit = str_lit.value();
+                if str_lit.starts_with("r#") {
+                    str_lit.drain(..2);
+                }
+                str_lit
+            }
         },
     )
 }

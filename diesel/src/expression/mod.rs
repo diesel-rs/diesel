@@ -75,6 +75,9 @@ pub(crate) mod dsl {
     #[cfg(feature = "postgres_backend")]
     pub use crate::pg::expression::dsl::*;
 
+    #[cfg(feature = "sqlite")]
+    pub use crate::sqlite::expression::dsl::*;
+
     /// The return type of [`count(expr)`](crate::dsl::count())
     pub type count<Expr> = super::count::count<SqlTypeOf<Expr>, Expr>;
 
@@ -136,10 +139,13 @@ pub mod expression_types {
     #[derive(Clone, Copy, Debug)]
     pub struct Untyped;
 
-    /// Query nodes witch cannot be part of a select clause.
+    /// Query nodes which cannot be part of a select clause.
     ///
     /// If you see an error message containing `FromSqlRow` and this type
     /// recheck that you have written a valid select clause
+    ///
+    /// These may notably be used as intermediate Expression nodes of the query builder
+    /// which do not map to actual SQL expressions (for implementation simplicity).
     #[derive(Debug, Clone, Copy)]
     pub struct NotSelectable;
 
@@ -159,7 +165,7 @@ impl<T: Expression + ?Sized> Expression for Box<T> {
     type SqlType = T::SqlType;
 }
 
-impl<'a, T: Expression + ?Sized> Expression for &'a T {
+impl<T: Expression + ?Sized> Expression for &T {
     type SqlType = T::SqlType;
 }
 
@@ -699,7 +705,7 @@ impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for Box<T> {
     type IsAggregate = T::IsAggregate;
 }
 
-impl<'a, T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for &'a T {
+impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for &T {
     type IsAggregate = T::IsAggregate;
 }
 
@@ -1028,32 +1034,26 @@ where
 {
 }
 
-impl<'a, QS, ST, DB, GB, IsAggregate> QueryId
-    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a
+impl<QS, ST, DB, GB, IsAggregate> QueryId
+    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + '_
 {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<'a, QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
-    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a
+impl<QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
+    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + '_
 {
     type IsAggregate = IsAggregate;
 }
 
-/// Converts a tuple of values into a tuple of Diesel expressions.
-///
-/// This trait is similar to [`AsExpression`], but it operates on tuples.
-/// The expressions must all be of the same SQL type.
-///
-pub trait AsExpressionList<ST> {
-    /// The final output expression
-    type Expression;
-
-    /// Perform the conversion
-    // That's public API, we cannot change
-    // that to appease clippy
-    #[allow(clippy::wrong_self_convention)]
-    fn as_expression_list(self) -> Self::Expression;
-}
+// Some amount of backwards-compat
+// We used to require `AsExpressionList` on the `array` function.
+// Now we require `IntoArrayExpression` instead, which means something very different.
+// However for most people just checking this bound to call `array`, this won't break.
+// Only people who directly implement `AsExpressionList` would break, but I expect that to be
+// nobody.
+#[doc(hidden)]
+#[cfg(feature = "postgres_backend")]
+pub use crate::pg::expression::array::IntoArrayExpression as AsExpressionList;

@@ -1,4 +1,6 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+use diesel_migrations::MigrationError;
 
 use crate::infer_schema_internals::TableName;
 
@@ -18,8 +20,8 @@ pub enum Error {
     ProjectRootNotFound(PathBuf),
     #[error("The --database-url argument must be passed, or the DATABASE_URL environment variable must be set.")]
     DatabaseUrlMissing,
-    #[error("Encountered an IO error: {0}")]
-    IoError(#[from] std::io::Error),
+    #[error("Encountered an IO error: {0} for `{n}`", n=print_optional_path(.1))]
+    IoError(#[source] std::io::Error, Option<PathBuf>),
     #[error("Failed to execute a database query: {0}")]
     QueryError(#[from] diesel::result::Error),
     #[error("Failed to run migrations: {0}")]
@@ -52,7 +54,7 @@ pub enum Error {
     FmtError(#[from] std::fmt::Error),
     #[error("Failed to parse patch file: {0}")]
     DiffyParseError(#[from] diffy::ParsePatchError),
-    #[error("Failed to apply path: {0}")]
+    #[error("Failed to apply patch: {0}")]
     DiffyApplyError(#[from] diffy::ApplyError),
     #[error("Column length literal can't be parsed as u64: {0}")]
     ColumnLiteralParseError(syn::Error),
@@ -62,4 +64,28 @@ pub enum Error {
     ClapMatchesError(#[from] clap::parser::MatchesError),
     #[error("No `[print_schema.{0}]` entries in your diesel.toml")]
     NoSchemaKeyFound(String),
+    #[error("Failed To Run rustfmt")]
+    RustFmtFail(String),
+    #[error("Failed to acquire migration folder lock: {1} for `{n}`", n=print_path(.0))]
+    FailedToAcquireMigrationFolderLock(PathBuf, String),
+    #[error("Tried to generate too many migrations with the same version `{1}` - Migrations folder is `{n}`", n=print_path(.0))]
+    TooManyMigrations(PathBuf, String),
+    #[error("Specified migration version `{1}` already exists inside `{n}`", n=print_path(.0))]
+    DuplicateMigrationVersion(PathBuf, String),
+}
+
+fn print_path(path: &Path) -> String {
+    format!("{}", path.display())
+}
+fn print_optional_path(path: &Option<PathBuf>) -> String {
+    path.as_ref().map(|p| print_path(p)).unwrap_or_default()
+}
+
+impl Error {
+    pub fn from_migration_error<T: Into<PathBuf>>(error: MigrationError, path: Option<T>) -> Self {
+        match error {
+            MigrationError::IoError(error) => Self::IoError(error, path.map(Into::into)),
+            _ => Self::MigrationError(Box::new(error)),
+        }
+    }
 }

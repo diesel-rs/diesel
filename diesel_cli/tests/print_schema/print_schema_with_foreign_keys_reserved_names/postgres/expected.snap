@@ -1,6 +1,7 @@
 ---
 source: diesel_cli/tests/print_schema.rs
 description: "Test: print_schema_with_foreign_keys_reserved_names"
+snapshot_kind: text
 ---
 // @generated automatically by Diesel CLI.
 
@@ -41,8 +42,4 @@ diesel::table! {
 
 diesel::joinable!(posts -> users (type_));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    posts,
-    users,
-);
-
+diesel::allow_tables_to_appear_in_same_query!(posts, users,);

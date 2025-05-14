@@ -49,12 +49,15 @@ where
     U: FromSqlRow<<T::SqlType as CompatibleType<U, DB>>::SqlType, DB> + 'static,
     <T::SqlType as CompatibleType<U, DB>>::SqlType: 'static,
 {
-    type RowIter<'conn> = LoadIter<
+    type RowIter<'conn>
+        = LoadIter<
         U,
         <Conn as LoadConnection<B>>::Cursor<'conn, 'query>,
         <T::SqlType as CompatibleType<U, DB>>::SqlType,
         DB,
-    > where Conn: 'conn;
+    >
+    where
+        Conn: 'conn;
 
     fn internal_load(self, conn: &mut Conn) -> QueryResult<Self::RowIter<'_>> {
         Ok(LoadIter {
@@ -182,8 +185,8 @@ mod private {
     #[diagnostic::on_unimplemented(
         note = "this is a mismatch between what your query returns and what your type expects the query to return",
         note = "the fields in your struct need to match the fields returned by your query in count, order and type",
-        note = "consider using `#[derive(Selectable)]` + `#[diesel(check_for_backend({DB}))]` on your struct `{U}` and \n\
-                in your query `.select({U}::as_select())` to get a better error message"
+        note = "consider using `#[diesel(check_for_backend({DB}))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` \n\
+                on your struct `{U}` and in your query `.select({U}::as_select())` to get a better error message"
     )]
     pub trait CompatibleType<U, DB> {
         type SqlType;

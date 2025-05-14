@@ -146,7 +146,6 @@ where
     /// let user = User { id: 1, name: "Sean" };
     /// let same_name_different_id = User { id: 2, name: "Sean" };
     /// let same_id_different_name = User { id: 1, name: "Pascal" };
-
     /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
     ///
     /// let query = diesel::insert_into(users)
@@ -258,6 +257,7 @@ where
     /// use diesel::upsert::*;
     ///
     /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE users").execute(conn).unwrap();
     /// #     diesel::sql_query("CREATE TEMPORARY TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255), hair_color VARCHAR(255))").execute(conn).unwrap();
     /// diesel::sql_query("CREATE UNIQUE INDEX users_name ON users (name)").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Sean" };
@@ -365,8 +365,8 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// Note: When inserting more than one row at a time, this query can still fail
     /// if the rows being inserted conflict with each other.
     ///
-    /// Some backends (PostgreSQL) support `WHERE` clause is used to limit the rows actually updated.
-    /// For PostgreSQL you can use the `.filter()` method to add conditions like this.
+    /// For some backends (PostgreSQL, SQLite) a `WHERE` clause can be used to limit the rows actually updated.
+    /// For PostgreSQL and SQLite you can use the `.filter()` method to add conditions like that.
     ///
     /// # Examples
     ///
@@ -548,7 +548,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
-    /// # #[cfg(feature = "postgres")]
+    /// # #[cfg(not(feature = "mysql"))]
     /// # fn main() {
     /// #     use diesel::QueryDsl;
     /// #     use diesel::query_dsl::methods::FilterDsl;
@@ -556,6 +556,8 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// #     let conn = &mut establish_connection();
     /// #     #[cfg(feature = "postgres")]
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
+    /// #     #[cfg(feature = "sqlite")]
+    /// #     diesel::delete(users).execute(conn).unwrap();
     /// let user = User { id: 1, name: "Pascal" };
     /// let user2 = User { id: 1, name: "Sean" };
     ///
@@ -573,7 +575,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// let users_in_db = users.load(conn);
     /// assert_eq!(Ok(vec![(1, "Pascal".to_string())]), users_in_db);
     /// # }
-    /// # #[cfg(any(feature = "sqlite", feature = "mysql"))]
+    /// # #[cfg(feature = "mysql")]
     /// # fn main() {}
     /// ```
     pub fn do_update(self) -> IncompleteDoUpdate<Stmt, Target> {

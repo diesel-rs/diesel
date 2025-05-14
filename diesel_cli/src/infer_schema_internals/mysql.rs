@@ -10,9 +10,13 @@ use super::information_schema::DefaultSchema;
 use super::table_data::TableName;
 use crate::print_schema::ColumnSorting;
 
-diesel::define_sql_function! {
+#[diesel::declare_sql_function]
+extern "SQL" {
     #[sql_name = "NULLIF"]
-    fn null_if_text(lhs: sql_types::Text, rhs: sql_types::Text) -> sql_types::Nullable<sql_types::Text>
+    fn null_if_text(
+        lhs: sql_types::Text,
+        rhs: sql_types::Text,
+    ) -> sql_types::Nullable<sql_types::Text>;
 }
 
 pub fn get_table_data(

@@ -3,6 +3,10 @@ use crate::serialize::{IsNull, Output};
 use crate::sql_types::HasSqlType;
 use crate::sqlite::{Sqlite, SqliteType};
 use crate::QueryResult;
+#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+use libsqlite3_sys as ffi;
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
+use sqlite_wasm_rs::export as ffi;
 
 #[derive(Debug, Default)]
 pub struct SqliteBindCollector<'a> {
@@ -24,7 +28,7 @@ pub struct SqliteBindValue<'a> {
     pub(in crate::sqlite) inner: InternalSqliteBindValue<'a>,
 }
 
-impl<'a> From<i32> for SqliteBindValue<'a> {
+impl From<i32> for SqliteBindValue<'_> {
     fn from(i: i32) -> Self {
         Self {
             inner: InternalSqliteBindValue::I32(i),
@@ -32,7 +36,7 @@ impl<'a> From<i32> for SqliteBindValue<'a> {
     }
 }
 
-impl<'a> From<i64> for SqliteBindValue<'a> {
+impl From<i64> for SqliteBindValue<'_> {
     fn from(i: i64) -> Self {
         Self {
             inner: InternalSqliteBindValue::I64(i),
@@ -40,7 +44,7 @@ impl<'a> From<i64> for SqliteBindValue<'a> {
     }
 }
 
-impl<'a> From<f64> for SqliteBindValue<'a> {
+impl From<f64> for SqliteBindValue<'_> {
     fn from(f: f64) -> Self {
         Self {
             inner: InternalSqliteBindValue::F64(f),
@@ -70,7 +74,7 @@ impl<'a> From<&'a str> for SqliteBindValue<'a> {
     }
 }
 
-impl<'a> From<String> for SqliteBindValue<'a> {
+impl From<String> for SqliteBindValue<'_> {
     fn from(s: String) -> Self {
         Self {
             inner: InternalSqliteBindValue::String(s.into_boxed_str()),
@@ -78,7 +82,7 @@ impl<'a> From<String> for SqliteBindValue<'a> {
     }
 }
 
-impl<'a> From<Vec<u8>> for SqliteBindValue<'a> {
+impl From<Vec<u8>> for SqliteBindValue<'_> {
     fn from(b: Vec<u8>) -> Self {
         Self {
             inner: InternalSqliteBindValue::Binary(b.into_boxed_slice()),
@@ -125,8 +129,10 @@ impl std::fmt::Display for InternalSqliteBindValue<'_> {
 
 impl InternalSqliteBindValue<'_> {
     #[allow(unsafe_code)] // ffi function calls
-    pub(in crate::sqlite) fn result_of(self, ctx: &mut libsqlite3_sys::sqlite3_context) {
-        use libsqlite3_sys as ffi;
+    pub(in crate::sqlite) fn result_of(
+        self,
+        ctx: &mut ffi::sqlite3_context,
+    ) -> Result<(), std::num::TryFromIntError> {
         use std::os::raw as libc;
         // This unsafe block assumes the following invariants:
         //
@@ -136,25 +142,25 @@ impl InternalSqliteBindValue<'_> {
                 InternalSqliteBindValue::BorrowedString(s) => ffi::sqlite3_result_text(
                     ctx,
                     s.as_ptr() as *const libc::c_char,
-                    s.len() as libc::c_int,
+                    s.len().try_into()?,
                     ffi::SQLITE_TRANSIENT(),
                 ),
                 InternalSqliteBindValue::String(s) => ffi::sqlite3_result_text(
                     ctx,
                     s.as_ptr() as *const libc::c_char,
-                    s.len() as libc::c_int,
+                    s.len().try_into()?,
                     ffi::SQLITE_TRANSIENT(),
                 ),
                 InternalSqliteBindValue::Binary(b) => ffi::sqlite3_result_blob(
                     ctx,
                     b.as_ptr() as *const libc::c_void,
-                    b.len() as libc::c_int,
+                    b.len().try_into()?,
                     ffi::SQLITE_TRANSIENT(),
                 ),
                 InternalSqliteBindValue::BorrowedBinary(b) => ffi::sqlite3_result_blob(
                     ctx,
                     b.as_ptr() as *const libc::c_void,
-                    b.len() as libc::c_int,
+                    b.len().try_into()?,
                     ffi::SQLITE_TRANSIENT(),
                 ),
                 InternalSqliteBindValue::I32(i) => ffi::sqlite3_result_int(ctx, i as libc::c_int),
@@ -165,6 +171,7 @@ impl InternalSqliteBindValue<'_> {
                 InternalSqliteBindValue::Null => ffi::sqlite3_result_null(ctx),
             }
         }
+        Ok(())
     }
 }
 
@@ -230,7 +237,7 @@ impl<'a> std::convert::From<&InternalSqliteBindValue<'a>> for OwnedSqliteBindVal
     }
 }
 
-impl<'a> std::convert::From<&OwnedSqliteBindValue> for InternalSqliteBindValue<'a> {
+impl std::convert::From<&OwnedSqliteBindValue> for InternalSqliteBindValue<'_> {
     fn from(value: &OwnedSqliteBindValue) -> Self {
         match value {
             OwnedSqliteBindValue::String(s) => Self::String(s.clone()),

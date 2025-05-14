@@ -54,7 +54,7 @@ mod tests {
     use crate::serialize::{Output, ToSql};
     use crate::sql_types;
 
-    #[test]
+    #[diesel_test_helper::test]
     fn json_to_sql() {
         let mut buffer = Vec::new();
         let mut bytes = Output::test(ByteWrapper(&mut buffer));
@@ -63,7 +63,7 @@ mod tests {
         assert_eq!(buffer, b"true");
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn some_json_from_sql() {
         let input_json = b"true";
         let output_json: serde_json::Value =
@@ -71,14 +71,14 @@ mod tests {
         assert_eq!(output_json, serde_json::Value::Bool(true));
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn bad_json_from_sql() {
         let uuid: Result<serde_json::Value, _> =
             FromSql::<sql_types::Json, Pg>::from_sql(PgValue::for_test(b"boom"));
         assert_eq!(uuid.unwrap_err().to_string(), "Invalid Json");
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn no_json_from_sql() {
         let uuid: Result<serde_json::Value, _> =
             FromSql::<sql_types::Json, Pg>::from_nullable_sql(None);
@@ -88,7 +88,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn jsonb_to_sql() {
         let mut buffer = Vec::new();
         let mut bytes = Output::test(ByteWrapper(&mut buffer));
@@ -97,7 +97,7 @@ mod tests {
         assert_eq!(buffer, b"\x01true");
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn some_jsonb_from_sql() {
         let input_json = b"\x01true";
         let output_json: serde_json::Value =
@@ -105,14 +105,14 @@ mod tests {
         assert_eq!(output_json, serde_json::Value::Bool(true));
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn bad_jsonb_from_sql() {
         let uuid: Result<serde_json::Value, _> =
             FromSql::<sql_types::Jsonb, Pg>::from_sql(PgValue::for_test(b"\x01boom"));
         assert_eq!(uuid.unwrap_err().to_string(), "Invalid Json");
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn bad_jsonb_version_from_sql() {
         let uuid: Result<serde_json::Value, _> =
             FromSql::<sql_types::Jsonb, Pg>::from_sql(PgValue::for_test(b"\x02true"));
@@ -122,7 +122,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn no_jsonb_from_sql() {
         let uuid: Result<serde_json::Value, _> =
             FromSql::<sql_types::Jsonb, Pg>::from_nullable_sql(None);

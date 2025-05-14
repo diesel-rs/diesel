@@ -2,7 +2,11 @@ mod date_and_time;
 mod decimal;
 #[cfg(all(
     feature = "serde_json",
-    any(feature = "postgres_backend", feature = "mysql_backend")
+    any(
+        feature = "postgres_backend",
+        feature = "mysql_backend",
+        feature = "sqlite"
+    )
 ))]
 mod json;
 mod option;

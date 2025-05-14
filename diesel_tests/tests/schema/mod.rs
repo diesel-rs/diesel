@@ -61,12 +61,23 @@ impl UserName {
     }
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations, Selectable)]
+#[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    AsChangeset,
+    Insertable,
+    Identifiable,
+    Associations,
+    Selectable,
+)]
 #[diesel(belongs_to(Post), table_name = comments)]
 pub struct Comment {
-    id: i32,
-    post_id: i32,
-    text: String,
+    pub id: i32,
+    pub post_id: i32,
+    pub text: String,
 }
 
 impl Comment {
@@ -204,7 +215,7 @@ pub struct DropTable<'a> {
     pub can_drop: bool,
 }
 
-impl<'a> Drop for DropTable<'a> {
+impl Drop for DropTable<'_> {
     fn drop(&mut self) {
         if self.can_drop {
             diesel::sql_query(format!("DROP TABLE {}", self.table_name))
@@ -220,7 +231,7 @@ const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
 
 #[cfg(feature = "postgres")]
 const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
-    diesel_migrations::embed_migrations!("../migrations/postgresql");
+    diesel_migrations::embed_migrations!("../migrations/postgres");
 
 #[cfg(feature = "mysql")]
 const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
@@ -318,7 +329,10 @@ pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
         .unwrap();
 }
 
-define_sql_function!(fn nextval(a: sql_types::VarChar) -> sql_types::BigInt);
+#[declare_sql_function]
+extern "SQL" {
+    fn nextval(a: sql_types::VarChar) -> sql_types::BigInt;
+}
 
 pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
     let mut connection = connection();

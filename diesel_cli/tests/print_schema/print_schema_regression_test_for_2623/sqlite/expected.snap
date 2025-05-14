@@ -1,6 +1,7 @@
 ---
 source: diesel_cli/tests/print_schema.rs
 description: "Test: print_schema_regression_test_for_2623"
+snapshot_kind: text
 ---
 // @generated automatically by Diesel CLI.
 
@@ -19,8 +20,4 @@ diesel::table! {
 
 diesel::joinable!(tab_problem -> tab_key1 (key1));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    tab_key1,
-    tab_problem,
-);
-
+diesel::allow_tables_to_appear_in_same_query!(tab_key1, tab_problem,);

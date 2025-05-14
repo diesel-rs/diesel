@@ -1,5 +1,7 @@
 use crate::schema::*;
 use diesel::backend::Backend;
+use diesel::deserialize::FromSqlRow;
+use diesel::expression::AsExpression;
 use diesel::serialize::{Output, ToSql};
 use diesel::*;
 
@@ -38,7 +40,7 @@ struct ChangeUser {
     name: String,
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn insert_serialization_can_be_customized() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();
@@ -58,7 +60,7 @@ fn insert_serialization_can_be_customized() {
     );
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn update_serialization_can_be_customized() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();

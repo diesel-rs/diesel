@@ -9,7 +9,7 @@ use self::time::{
 };
 
 use super::{PgDate, PgTime, PgTimestamp};
-use crate::deserialize::{self, FromSql};
+use crate::deserialize::{self, Defaultable, FromSql};
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, Output, ToSql};
 use crate::sql_types::{Date, Time, Timestamp, Timestamptz};
@@ -39,8 +39,7 @@ impl ToSql<Timestamp, Pg> for PrimitiveDateTime {
             let error_message = format!("{self:?} as microseconds is too large to fit in an i64");
             return Err(error_message.into());
         }
-        let micros = micros as i64;
-        ToSql::<Timestamp, Pg>::to_sql(&PgTimestamp(micros), &mut out.reborrow())
+        ToSql::<Timestamp, Pg>::to_sql(&PgTimestamp(micros.try_into()?), &mut out.reborrow())
     }
 }
 
@@ -55,6 +54,13 @@ impl FromSql<Timestamptz, Pg> for PrimitiveDateTime {
 impl ToSql<Timestamptz, Pg> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<Timestamp, Pg>::to_sql(self, out)
+    }
+}
+
+#[cfg(all(feature = "time", feature = "postgres_backend"))]
+impl Defaultable for PrimitiveDateTime {
+    fn default_value() -> Self {
+        PG_EPOCH
     }
 }
 
@@ -76,12 +82,20 @@ impl ToSql<Timestamptz, Pg> for OffsetDateTime {
 }
 
 #[cfg(all(feature = "time", feature = "postgres_backend"))]
+impl Defaultable for OffsetDateTime {
+    fn default_value() -> Self {
+        datetime!(2000-01-01 0:00:00 UTC)
+    }
+}
+
+#[cfg(all(feature = "time", feature = "postgres_backend"))]
 impl ToSql<Time, Pg> for NaiveTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let duration = *self - NaiveTime::MIDNIGHT;
-        // microseconds in a day cannot overflow i64
-        let micros = duration.whole_microseconds() as i64;
-        ToSql::<Time, Pg>::to_sql(&PgTime(micros), &mut out.reborrow())
+        ToSql::<Time, Pg>::to_sql(
+            &PgTime(duration.whole_microseconds().try_into()?),
+            &mut out.reborrow(),
+        )
     }
 }
 
@@ -100,7 +114,7 @@ const PG_EPOCH_DATE: NaiveDate = date!(2000 - 1 - 1);
 impl ToSql<Date, Pg> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let days_since_epoch = (*self - PG_EPOCH_DATE).whole_days();
-        ToSql::<Date, Pg>::to_sql(&PgDate(days_since_epoch as i32), &mut out.reborrow())
+        ToSql::<Date, Pg>::to_sql(&PgDate(days_since_epoch.try_into()?), &mut out.reborrow())
     }
 }
 
@@ -116,6 +130,13 @@ impl FromSql<Date, Pg> for NaiveDate {
                 Err(error_message.into())
             }
         }
+    }
+}
+
+#[cfg(all(feature = "time", feature = "postgres_backend"))]
+impl Defaultable for NaiveDate {
+    fn default_value() -> Self {
+        PG_EPOCH_DATE
     }
 }
 
@@ -139,7 +160,7 @@ mod tests {
         PrimitiveDateTime::new(offset_now.date(), offset_now.time())
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_encodes_correctly() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:00:00);
@@ -147,7 +168,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_encodes_correctly_with_utc_timezone() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:00:00 utc);
@@ -155,7 +176,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_encodes_correctly_with_timezone() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:00:00 -1:00);
@@ -163,7 +184,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_decodes_correctly() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:0:0);
@@ -172,7 +193,7 @@ mod tests {
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_decodes_correctly_with_timezone() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:00:00 utc);
@@ -181,7 +202,7 @@ mod tests {
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
         let time = naive_now() + Duration::seconds(60);
@@ -193,7 +214,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_with_timezones_round_trip_after_conversion() {
         let connection = &mut connection();
         let time = datetime!(2016-1-2 1:00:00 +1);
@@ -202,7 +223,7 @@ mod tests {
         assert_eq!(Ok(expected), query.get_result(connection));
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_of_day_encode_correctly() {
         let connection = &mut connection();
 
@@ -219,7 +240,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_of_day_decode_correctly() {
         let connection = &mut connection();
         let query = select(sql::<Time>("'00:00:00'::time"));
@@ -238,7 +259,7 @@ mod tests {
         assert_eq!(Ok(roughly_half_past_eleven), result);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn dates_encode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = date!(2000 - 1 - 1);
@@ -266,7 +287,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn dates_decode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = date!(2000 - 1 - 1);

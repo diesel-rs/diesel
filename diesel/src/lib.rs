@@ -97,49 +97,48 @@
 //! The following error messages are common:
 //!
 //! * `the trait bound (diesel::sql_types::Integer, …, diesel::sql_types::Text): load_dsl::private::CompatibleType<YourModel, Pg> is not satisfied`
-//!    while trying to execute a query:
-//!    This error indicates a mismatch between what your query returns and what your model struct
-//!    expects the query to return. The fields need to match in terms of field order, field type
-//!    and field count. If you are sure that everything matches, double check the enabled diesel
-//!    features (for support for types from other crates) and double check (via `cargo tree`)
-//!    that there is only one version of such a shared crate in your dependency tree.
-//!    Consider using [`#[derive(Selectable)]`](derive@crate::prelude::Selectable) +
-//!    `#[diesel(check_for_backend(diesel::pg::Pg))]`
-//!    to improve the generated error message.
+//!   while trying to execute a query:
+//!   This error indicates a mismatch between what your query returns and what your model struct
+//!   expects the query to return. The fields need to match in terms of field order, field type
+//!   and field count. If you are sure that everything matches, double check the enabled diesel
+//!   features (for support for types from other crates) and double check (via `cargo tree`)
+//!   that there is only one version of such a shared crate in your dependency tree.
+//!   Consider using [`#[derive(Selectable)]`](derive@crate::prelude::Selectable) +
+//!   `#[diesel(check_for_backend(diesel::pg::Pg))]`
+//!   to improve the generated error message.
 //! * `the trait bound i32: diesel::Expression is not satisfied` in the context of `Insertable`
-//!    model structs:
-//!    This error indicates a type mismatch between the field you are trying to insert into the database
-//!    and the actual database type. These error messages contain a line
-//!    like ` = note: required for i32 to implement AsExpression<diesel::sql_types::Text>`
-//!    that show both the provided rust side type (`i32` in that case) and the expected
-//!    database side type (`Text` in that case).
+//!   model structs:
+//!   This error indicates a type mismatch between the field you are trying to insert into the database
+//!   and the actual database type. These error messages contain a line
+//!   like ` = note: required for i32 to implement AsExpression<diesel::sql_types::Text>`
+//!   that show both the provided rust side type (`i32` in that case) and the expected
+//!   database side type (`Text` in that case).
 //! * `the trait bound i32: AppearsOnTable<users::table> is not satisfied` in the context of `AsChangeset`
-//!    model structs:
-//!    This error indicates a type mismatch between the field you are trying to update and the actual
-//!    database type. Double check your type mapping.
+//!   model structs:
+//!   This error indicates a type mismatch between the field you are trying to update and the actual
+//!   database type. Double check your type mapping.
 //! * `the trait bound SomeLargeType: QueryFragment<Sqlite, SomeMarkerType> is not satisfied` while
-//!    trying to execute a query.
-//!    This error message indicates that a given query is not supported by your backend. This usually
-//!    means that you are trying to use SQL features from one SQL dialect on a different database
-//!    system. Double check your query that everything required is supported by the selected
-//!    backend. If that's the case double check that the relevant feature flags are enabled
-//!    (for example, `returning_clauses_for_sqlite_3_35` for enabling support for returning clauses in newer
-//!    sqlite versions)
+//!   trying to execute a query.
+//!   This error message indicates that a given query is not supported by your backend. This usually
+//!   means that you are trying to use SQL features from one SQL dialect on a different database
+//!   system. Double check your query that everything required is supported by the selected
+//!   backend. If that's the case double check that the relevant feature flags are enabled
+//!   (for example, `returning_clauses_for_sqlite_3_35` for enabling support for returning clauses in newer
+//!   sqlite versions)
 //! * `the trait bound posts::title: SelectableExpression<users::table> is not satisfied` while
-//!    executing a query:
-//!    This error message indicates that you're trying to select a field from a table
-//!    that does not appear in your from clause. If your query joins the relevant table via
-//!    [`left_join`](crate::query_dsl::QueryDsl::left_join) you need to call
-//!    [`.nullable()`](crate::expression_methods::NullableExpressionMethods::nullable)
-//!    on the relevant column in your select clause.
+//!   executing a query:
+//!   This error message indicates that you're trying to select a field from a table
+//!   that does not appear in your from clause. If your query joins the relevant table via
+//!   [`left_join`](crate::query_dsl::QueryDsl::left_join) you need to call
+//!   [`.nullable()`](crate::expression_methods::NullableExpressionMethods::nullable)
+//!   on the relevant column in your select clause.
 //!
 //!
 //! ## Getting help
 //!
 //! If you run into problems, Diesel has an active community.
-//! Either open a new [discussion] thread at diesel github repository or
-//! use the active Gitter room at
-//! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
+//! Open a new [discussion] thread at diesel github repository
+//! and we will try to help you
 //!
 //! [discussion]: https://github.com/diesel-rs/diesel/discussions/categories/q-a
 //!
@@ -151,64 +150,76 @@
 
 //!
 //! - `sqlite`: This feature enables the diesel sqlite backend. Enabling this feature requires per default
-//! a compatible copy of `libsqlite3` for your target architecture. Alternatively, you can add `libsqlite3-sys`
-//! with the `bundled` feature as a dependency to your crate so SQLite will be bundled:
-//! ```toml
-//! [dependencies]
-//! libsqlite3-sys = { version = "0.25.2", features = ["bundled"] }
-//! ```
-//! - `postgres`: This feature enables the diesel postgres backend. Enabling this feature requires a compatible
-//! copy of `libpq` for your target architecture. This features implies `postgres_backend`
-//! - `mysql`: This feature enables the idesel mysql backend. Enabling this feature requires a compatible copy
-//! of `libmysqlclient` for your target architecture. This feature implies `mysql_backend`
+//!   a compatible copy of `libsqlite3` for your target architecture. Alternatively, you can add `libsqlite3-sys`
+//!   with the `bundled` feature as a dependency to your crate so SQLite will be bundled:
+//!   ```toml
+//!   [dependencies]
+//!   libsqlite3-sys = { version = "0.29", features = ["bundled"] }
+//!   ```
+//! - `postgres`: This feature enables the diesel postgres backend. This features implies `postgres_backend`
+//!   Enabling this feature requires a compatible copy of `libpq` for your target architecture.
+//!   Alternatively, you can add `pq-sys` with the `bundled` feature as a dependency to your
+//!   crate so libpq will be bundled:
+//!   ```toml
+//!   [dependencies]
+//!   pq-sys = { version = "0.6", features = ["bundled"] }
+//!   openssl-sys = { version = "0.9.100", features = ["vendored"] }
+//!   ```
+//! - `mysql`: This feature enables the diesel mysql backend. This feature implies `mysql_backend`.
+//!   Enabling this feature requires a compatible copy of `libmysqlclient` for your target architecture.
+//!   Alternatively, you can add `mysqlclient-sys` with the `bundled` feature as a dependency to your
+//!   crate so libmysqlclient will be bundled:
+//!   ```toml
+//!   [dependencies]
+//!   mysqlclient-sys = { version = "0.4", features = ["bundled"] }
 //! - `postgres_backend`: This feature enables those parts of diesels postgres backend, that are not dependent
-//! on `libpq`. Diesel does not provide any connection implementation with only this feature enabled.
-//! This feature can be used to implement a custom implementation of diesels `Connection` trait for the
-//! postgres backend outside of diesel itself, while reusing the existing query dsl extensions for the
-//! postgres backend
+//!   on `libpq`. Diesel does not provide any connection implementation with only this feature enabled.
+//!   This feature can be used to implement a custom implementation of diesels `Connection` trait for the
+//!   postgres backend outside of diesel itself, while reusing the existing query dsl extensions for the
+//!   postgres backend
 //! - `mysql_backend`: This feature enables those parts of diesels mysql backend, that are not dependent
-//! on `libmysqlclient`. Diesel does not provide any connection implementation with only this feature enabled.
-//! This feature can be used to implement a custom implementation of diesels `Connection` trait for the
-//! mysql backend outside of diesel itself, while reusing the existing query dsl extensions for the
-//! mysql backend
+//!   on `libmysqlclient`. Diesel does not provide any connection implementation with only this feature enabled.
+//!   This feature can be used to implement a custom implementation of diesels `Connection` trait for the
+//!   mysql backend outside of diesel itself, while reusing the existing query dsl extensions for the
+//!   mysql backend
 //! - `returning_clauses_for_sqlite_3_35`: This feature enables support for `RETURNING` clauses in the sqlite backend.
-//! Enabling this feature requires sqlite 3.35.0 or newer.
+//!   Enabling this feature requires sqlite 3.35.0 or newer.
 //! - `32-column-tables`: This feature enables support for tables with up to 32 columns.
-//! This feature is enabled by default. Consider disabling this feature if you write a library crate
-//! providing general extensions for diesel or if you do not need to support tables with more than 16 columns
-//! and you want to minimize your compile times.
+//!   This feature is enabled by default. Consider disabling this feature if you write a library crate
+//!   providing general extensions for diesel or if you do not need to support tables with more than 16 columns
+//!   and you want to minimize your compile times.
 //! - `64-column-tables`: This feature enables support for tables with up to 64 columns. It implies the
-//! `32-column-tables` feature. Enabling this feature will increase your compile times.
+//!   `32-column-tables` feature. Enabling this feature will increase your compile times.
 //! - `128-column-tables`: This feature enables support for tables with up to 128 columns. It implies the
-//! `64-column-tables` feature. Enabling this feature will increase your compile times significantly.
+//!   `64-column-tables` feature. Enabling this feature will increase your compile times significantly.
 //! - `i-implement-a-third-party-backend-and-opt-into-breaking-changes`: This feature opens up some otherwise
-//! private API, that can be useful to implement a third party [`Backend`](crate::backend::Backend)
-//! or write a custom [`Connection`] implementation. **Do not use this feature for
-//! any other usecase**. By enabling this feature you explicitly opt out diesel stability guarantees. We explicitly
-//! reserve us the right to break API's exported under this feature flag in any upcoming minor version release.
-//! If you publish a crate depending on this feature flag consider to restrict the supported diesel version to the
-//! currently released minor version.
+//!   private API, that can be useful to implement a third party [`Backend`](crate::backend::Backend)
+//!   or write a custom [`Connection`] implementation. **Do not use this feature for
+//!   any other usecase**. By enabling this feature you explicitly opt out diesel stability guarantees. We explicitly
+//!   reserve us the right to break API's exported under this feature flag in any upcoming minor version release.
+//!   If you publish a crate depending on this feature flag consider to restrict the supported diesel version to the
+//!   currently released minor version.
 //! - `serde_json`: This feature flag enables support for (de)serializing json values from the database using
-//! types provided by `serde_json`.
+//!   types provided by `serde_json`.
 //! - `chrono`: This feature flags enables support for (de)serializing date/time values from the database using
-//! types provided by `chrono`
+//!   types provided by `chrono`
 //! - `uuid`: This feature flag enables support for (de)serializing uuid values from the database using types
-//! provided by `uuid`
+//!   provided by `uuid`
 //! - `network-address`: This feature flag enables support for (de)serializing
-//! IP values from the database using types provided by `ipnetwork`.
+//!   IP values from the database using types provided by `ipnetwork`.
 //! - `ipnet-address`: This feature flag enables support for (de)serializing IP
-//! values from the database using types provided by `ipnet`.
+//!   values from the database using types provided by `ipnet`.
 //! - `numeric`: This feature flag enables support for (de)serializing numeric values from the database using types
-//! provided by `bigdecimal`
+//!   provided by `bigdecimal`
 //! - `r2d2`: This feature flag enables support for the `r2d2` connection pool implementation.
 //! - `extras`: This feature enables the feature flagged support for any third party crate. This implies the
-//! following feature flags: `serde_json`, `chrono`, `uuid`, `network-address`, `numeric`, `r2d2`
+//!   following feature flags: `serde_json`, `chrono`, `uuid`, `network-address`, `numeric`, `r2d2`
 //! - `with-deprecated`: This feature enables items marked as `#[deprecated]`. It is enabled by default.
-//! disabling this feature explicitly opts out diesels stability guarantee.
+//!   disabling this feature explicitly opts out diesels stability guarantee.
 //! - `without-deprecated`: This feature disables any item marked as `#[deprecated]`. Enabling this feature
-//! explicitly opts out the stability guarantee given by diesel. This feature overrides the `with-deprecated`.
-//! Note that this may also remove items that are not shown as `#[deprecated]` in our documentation, due to
-//! various bugs in rustdoc. It can be used to check if you depend on any such hidden `#[deprecated]` item.
+//!   explicitly opts out the stability guarantee given by diesel. This feature overrides the `with-deprecated`.
+//!   Note that this may also remove items that are not shown as `#[deprecated]` in our documentation, due to
+//!   various bugs in rustdoc. It can be used to check if you depend on any such hidden `#[deprecated]` item.
 //!
 //! By default the following features are enabled:
 //!
@@ -216,6 +227,11 @@
 //! - `32-column-tables`
 
 #![cfg_attr(feature = "unstable", feature(trait_alias))]
+#![cfg_attr(feature = "unstable", feature(strict_provenance_lints))]
+#![cfg_attr(
+    feature = "unstable",
+    warn(fuzzy_provenance_casts, lossy_provenance_casts)
+)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![cfg_attr(feature = "128-column-tables", recursion_limit = "256")]
 // Built-in Lints
@@ -244,10 +260,18 @@
     clippy::enum_glob_use,
     clippy::if_not_else,
     clippy::items_after_statements,
-    clippy::used_underscore_binding
+    clippy::used_underscore_binding,
+    clippy::cast_possible_wrap,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss
 )]
 #![deny(unsafe_code)]
 #![cfg_attr(test, allow(clippy::map_unwrap_or, clippy::unwrap_used))]
+
+// Running wasm tests on dedicated_worker
+#[cfg(test)]
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
+wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_dedicated_worker);
 
 extern crate diesel_derives;
 
@@ -355,6 +379,7 @@ pub mod helper_types {
     use super::query_dsl::methods::*;
     use super::query_dsl::*;
     use super::query_source::{aliasing, joins};
+    use crate::dsl::CountStar;
     use crate::query_builder::select_clause::SelectClause;
 
     #[doc(inline)]
@@ -648,6 +673,11 @@ pub mod helper_types {
     #[allow(non_camel_case_types)] // required for `#[auto_type]`
     pub type insert_into<T> = crate::query_builder::IncompleteInsertStatement<T>;
 
+    /// Represents the return type of [`diesel::update`]
+    #[allow(non_camel_case_types)] // required for `#[auto_type]`
+    pub type update<T> =
+        UpdateStatement<<T as HasTable>::Table, <T as IntoUpdateTarget>::WhereClause>;
+
     /// Represents the return type of [`diesel::insert_or_ignore_into`]
     #[allow(non_camel_case_types)] // required for `#[auto_type]`
     pub type insert_or_ignore_into<T> = crate::query_builder::IncompleteInsertOrIgnoreStatement<T>;
@@ -673,6 +703,16 @@ pub mod helper_types {
         <U as crate::query_builder::update_statement::UpdateAutoTypeHelper>::Where,
         <V as crate::AsChangeset>::Changeset,
     >;
+
+    /// Represents the return type of
+    /// [`InsertStatement::returning`](crate::query_builder::InsertStatement::returning),
+    /// [`UpdateStatement::returning`] and
+    /// [`DeleteStatement::returning`](crate::query_builder::DeleteStatement::returning)
+    pub type Returning<Q, S> =
+        <Q as crate::query_builder::returning_clause::ReturningClauseHelper<S>>::WithReturning;
+
+    #[doc(hidden)] // used for `QueryDsl::count`
+    pub type Count<Q> = Select<Q, CountStar>;
 }
 
 pub mod prelude {
@@ -694,6 +734,8 @@ pub mod prelude {
     // That issue can be avoided by also importing it anonymously:
     pub use crate::expression::IntoSql as _;
 
+    #[doc(inline)]
+    pub use crate::expression::functions::declare_sql_function;
     #[doc(inline)]
     pub use crate::expression::functions::define_sql_function;
     #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
@@ -719,7 +761,10 @@ pub mod prelude {
     #[doc(inline)]
     pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
     #[doc(inline)]
-    pub use crate::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
+    pub use crate::result::{
+        ConnectionError, ConnectionResult, OptionalEmptyChangesetExtension, OptionalExtension,
+        QueryResult,
+    };
     #[doc(inline)]
     pub use diesel_derives::table_proc as table;
 

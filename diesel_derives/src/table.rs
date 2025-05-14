@@ -211,7 +211,7 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
 
     quote::quote! {
         #(#meta)*
-        #[allow(unused_imports, dead_code, unreachable_pub)]
+        #[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
         pub mod #table_name {
             use ::diesel;
             pub use self::columns::*;
@@ -586,6 +586,7 @@ fn is_numeric(ty: &syn::TypePath) -> bool {
         "Int8",
         "Bigint",
         "BigSerial",
+        "Decimal",
         "Float",
         "Float4",
         "Float8",

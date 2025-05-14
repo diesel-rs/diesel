@@ -1,4 +1,8 @@
+#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 extern crate libsqlite3_sys as ffi;
+
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
+use sqlite_wasm_rs::export as ffi;
 
 use super::raw::RawConnection;
 use super::row::PrivateSqliteRow;
@@ -129,7 +133,7 @@ struct FunctionRow<'a> {
     marker: PhantomData<&'a ffi::sqlite3_value>,
 }
 
-impl<'a> Drop for FunctionRow<'a> {
+impl Drop for FunctionRow<'_> {
     #[allow(unsafe_code)] // manual drop calls
     fn drop(&mut self) {
         if let Some(args) = Rc::get_mut(&mut self.args) {
@@ -146,7 +150,7 @@ impl<'a> Drop for FunctionRow<'a> {
     }
 }
 
-impl<'a> FunctionRow<'a> {
+impl FunctionRow<'_> {
     #[allow(unsafe_code)] // complicated ptr cast
     fn new(args: &mut [*mut ffi::sqlite3_value]) -> Self {
         let lengths = args.len();
@@ -190,7 +194,11 @@ impl<'a> FunctionRow<'a> {
 impl RowSealed for FunctionRow<'_> {}
 
 impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
-    type Field<'f> = FunctionArgument<'f> where 'a: 'f, Self: 'f;
+    type Field<'f>
+        = FunctionArgument<'f>
+    where
+        'a: 'f,
+        Self: 'f;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
@@ -202,10 +210,10 @@ impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
         'a: 'b,
         Self: crate::row::RowIndex<I>,
     {
-        let idx = self.idx(idx)?;
+        let col_idx = self.idx(idx)?;
         Some(FunctionArgument {
             args: self.args.borrow(),
-            col_idx: idx as i32,
+            col_idx,
         })
     }
 
@@ -214,7 +222,7 @@ impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
     }
 }
 
-impl<'a> RowIndex<usize> for FunctionRow<'a> {
+impl RowIndex<usize> for FunctionRow<'_> {
     fn idx(&self, idx: usize) -> Option<usize> {
         if idx < self.field_count() {
             Some(idx)
@@ -224,7 +232,7 @@ impl<'a> RowIndex<usize> for FunctionRow<'a> {
     }
 }
 
-impl<'a, 'b> RowIndex<&'a str> for FunctionRow<'b> {
+impl<'a> RowIndex<&'a str> for FunctionRow<'_> {
     fn idx(&self, _idx: &'a str) -> Option<usize> {
         None
     }
@@ -232,7 +240,7 @@ impl<'a, 'b> RowIndex<&'a str> for FunctionRow<'b> {
 
 struct FunctionArgument<'a> {
     args: Ref<'a, ManuallyDrop<PrivateSqliteRow<'a, 'static>>>,
-    col_idx: i32,
+    col_idx: usize,
 }
 
 impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {

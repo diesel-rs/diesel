@@ -68,7 +68,7 @@ macro_rules! test_round_trip {
         test_round_trip!($test_name, $sql_type, $tpe, $map_fn, ne);
     };
     ($test_name:ident, $sql_type:ty, $tpe:ty, $map_fn:ident, $cmp: expr) => {
-        #[test]
+        #[diesel_test_helper::test]
         #[allow(clippy::type_complexity)]
         fn $test_name() {
             use diesel::sql_types::*;
@@ -186,6 +186,12 @@ mod pg_types {
         (u8, u8, u8, u8, u8, u8),
         mk_macaddr
     );
+    test_round_trip!(
+        macaddr8_roundtrips,
+        MacAddr8,
+        (u8, u8, u8, u8, u8, u8, u8, u8),
+        mk_macaddr8
+    );
     test_round_trip!(cidr_v4_roundtrips, Cidr, (u8, u8, u8, u8), mk_ipv4);
     test_round_trip!(
         cidr_v4_roundtrips_ipnet,
@@ -251,11 +257,49 @@ mod pg_types {
         (i64, u32, i64, u32),
         mk_tstz_bounds
     );
+    test_round_trip!(
+        int4multirange_roundtrips,
+        Multirange<Int4>,
+        Vec<(i32, i32)>,
+        mk_bound_list
+    );
+    test_round_trip!(
+        int8multirange_roundtrips,
+        Multirange<Int8>,
+        Vec<(i64, i64)>,
+        mk_bound_list
+    );
+    test_round_trip!(
+        datemultirange_roundtrips,
+        Multirange<Date>,
+        (u32, u32), // if we use Vec here we receive a weird values which postgres don't accept
+        mk_date_bound_lists
+    );
+    test_round_trip!(
+        numrange_multirangetrips,
+        Multirange<Numeric>,
+        Vec<(i64, u64, i64, u64)>,
+        mk_num_bound_lists
+    );
+    test_round_trip!(
+        tsrange_multirangetrips,
+        Multirange<Timestamp>,
+        (i64, u32, i64, u32), // if we use Vec here we receive a weird values which postgres don't accept
+        mk_ts_bound_lists
+    );
+    test_round_trip!(
+        tstzrange_multirangetrips,
+        Multirange<Timestamptz>,
+        (i64, u32, i64, u32), // if we use Vec here we receive a weird values which postgres don't accept
+        mk_tstz_bound_lists
+    );
 
     test_round_trip!(json_roundtrips, Json, SerdeWrapper, mk_serde_json);
     test_round_trip!(jsonb_roundtrips, Jsonb, SerdeWrapper, mk_serde_json);
 
     test_round_trip!(char_roundtrips, CChar, u8);
+
+    test_round_trip!(pg_lsn_roundtrips, PgLsn, u64, mk_pg_lsn);
 
     #[allow(clippy::type_complexity)]
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
@@ -266,6 +310,12 @@ mod pg_types {
 
     fn mk_macaddr(data: (u8, u8, u8, u8, u8, u8)) -> [u8; 6] {
         [data.0, data.1, data.2, data.3, data.4, data.5]
+    }
+
+    fn mk_macaddr8(data: (u8, u8, u8, u8, u8, u8, u8, u8)) -> [u8; 8] {
+        [
+            data.0, data.1, data.2, data.3, data.4, data.5, data.6, data.7,
+        ]
     }
 
     fn mk_ipv4(data: (u8, u8, u8, u8)) -> ipnetwork::IpNetwork {
@@ -333,6 +383,61 @@ mod pg_types {
         mk_bounds((tstz1, tstz2))
     }
 
+    fn is_sorted2<T>(data: &[(T, T)]) -> bool
+    where
+        T: Ord,
+    {
+        data.windows(2).all(|w| w[0].1 < w[1].0)
+    }
+
+    fn is_sorted4<T, U>(data: &[(T, U, T, U)]) -> bool
+    where
+        T: Ord,
+    {
+        data.windows(2).all(|w| w[0].2 < w[1].0)
+    }
+
+    fn mk_bound_list<T: Ord + PartialEq>(data: Vec<(T, T)>) -> Vec<(Bound<T>, Bound<T>)> {
+        let data: Vec<_> = data.into_iter().filter(|d| d.0 < d.1).collect();
+
+        if !is_sorted2(&data) {
+            // This is invalid but we don't have a way to say that to quickcheck
+            return vec![];
+        }
+
+        data.into_iter().map(mk_bounds).collect()
+    }
+
+    fn mk_date_bound_lists(data: (u32, u32)) -> Vec<(Bound<NaiveDate>, Bound<NaiveDate>)> {
+        vec![mk_date_bounds(data)]
+    }
+
+    fn mk_num_bound_lists(
+        data: Vec<(i64, u64, i64, u64)>,
+    ) -> Vec<(Bound<BigDecimal>, Bound<BigDecimal>)> {
+        let data: Vec<_> = data.into_iter().filter(|d| d.0 < d.2).collect();
+
+        if !is_sorted4(&data) {
+            // This is invalid but we don't have a way to say that to quickcheck
+            return vec![];
+        }
+
+        data.into_iter().map(mk_num_bounds).collect()
+    }
+
+    fn mk_ts_bound_lists(
+        data: (i64, u32, i64, u32),
+    ) -> Vec<(Bound<NaiveDateTime>, Bound<NaiveDateTime>)> {
+        vec![mk_ts_bounds(data)]
+    }
+
+    #[allow(clippy::type_complexity)]
+    fn mk_tstz_bound_lists(
+        data: (i64, u32, i64, u32),
+    ) -> Vec<(Bound<DateTime<Utc>>, Bound<DateTime<Utc>>)> {
+        vec![mk_tstz_bounds(data)]
+    }
+
     pub fn mk_pg_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
         // https://www.postgresql.org/docs/current/datatype-datetime.html
         let earliest_pg_date = NaiveDate::from_ymd_opt(-4713, 1, 1)
@@ -368,6 +473,10 @@ mod pg_types {
 
     pub fn mk_datetime(data: (i64, u32)) -> DateTime<Utc> {
         Utc.from_utc_datetime(&mk_pg_naive_datetime(data))
+    }
+
+    pub fn mk_pg_lsn(data: u64) -> PgLsn {
+        PgLsn(data)
     }
 }
 

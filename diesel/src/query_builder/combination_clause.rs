@@ -1,34 +1,49 @@
 //! Combine queries using a combinator like `UNION`, `INTERSECT` or `EXPECT`
 //! with or without `ALL` rule for duplicates
+//!
+//! Within this module, types commonly use the following abbreviations:
+//!
+//! O: Order By Clause
+//! L: Limit Clause
+//! Of: Offset Clause
+//! LOf: Limit Offset Clause
 
 use crate::backend::{Backend, DieselReserveSpecialization};
+use crate::dsl::AsExprOf;
 use crate::expression::subselect::ValidSubselect;
+use crate::expression::IntoSql;
 use crate::expression::NonAggregate;
 use crate::query_builder::insert_statement::InsertFromSelect;
+use crate::query_builder::limit_clause::{LimitClause, NoLimitClause};
+use crate::query_builder::limit_offset_clause::LimitOffsetClause;
+use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
+use crate::query_builder::order_clause::{NoOrderClause, OrderClause};
 use crate::query_builder::{AsQuery, AstPass, Query, QueryFragment, QueryId, SelectQuery};
-use crate::{CombineDsl, Insertable, QueryResult, RunQueryDsl, Table};
-
-#[derive(Debug, Clone, Copy, QueryId)]
-pub(crate) struct NoCombinationClause;
-
-impl<DB> QueryFragment<DB> for NoCombinationClause
-where
-    DB: Backend + DieselReserveSpecialization,
-{
-    fn walk_ast<'b>(&'b self, _: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        Ok(())
-    }
-}
+use crate::query_dsl::methods::*;
+use crate::query_dsl::positional_order_dsl::{IntoPositionalOrderExpr, PositionalOrderDsl};
+use crate::sql_types::BigInt;
+use crate::{CombineDsl, Insertable, QueryDsl, QueryResult, RunQueryDsl, Table};
 
 #[derive(Debug, Copy, Clone, QueryId)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Combine queries using a combinator like `UNION`, `INTERSECT` or `EXPECT`
 /// with or without `ALL` rule for duplicates
-pub struct CombinationClause<Combinator, Rule, Source, Rhs> {
+pub struct CombinationClause<
+    Combinator,
+    Rule,
+    Source,
+    Rhs,
+    Order = NoOrderClause,
+    LimitOffset = LimitOffsetClause<NoLimitClause, NoOffsetClause>,
+> {
     combinator: Combinator,
     duplicate_rule: Rule,
     source: ParenthesisWrapper<Source>,
     rhs: ParenthesisWrapper<Rhs>,
+    /// The order clause of the query
+    order: Order,
+    /// The combined limit/offset clause of the query
+    limit_offset: LimitOffset,
 }
 
 impl<Combinator, Rule, Source, Rhs> CombinationClause<Combinator, Rule, Source, Rhs> {
@@ -42,13 +57,24 @@ impl<Combinator, Rule, Source, Rhs> CombinationClause<Combinator, Rule, Source, 
         CombinationClause {
             combinator,
             duplicate_rule,
-            source: ParenthesisWrapper(source),
-            rhs: ParenthesisWrapper(rhs),
+            source: ParenthesisWrapper { inner: source },
+            rhs: ParenthesisWrapper { inner: rhs },
+            order: NoOrderClause,
+            limit_offset: LimitOffsetClause {
+                limit_clause: NoLimitClause,
+                offset_clause: NoOffsetClause,
+            },
         }
     }
 }
 
-impl<Combinator, Rule, Source, Rhs> Query for CombinationClause<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs, O, LOf> QueryDsl
+    for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
+{
+}
+
+impl<Combinator, Rule, Source, Rhs, O, LOf> Query
+    for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 where
     Source: Query,
     Rhs: Query<SqlType = Source::SqlType>,
@@ -56,7 +82,8 @@ where
     type SqlType = Source::SqlType;
 }
 
-impl<Combinator, Rule, Source, Rhs> SelectQuery for CombinationClause<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs, O, LOf> SelectQuery
+    for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 where
     Source: SelectQuery,
     Rhs: SelectQuery<SqlType = Source::SqlType>,
@@ -64,21 +91,21 @@ where
     type SqlType = Source::SqlType;
 }
 
-impl<Combinator, Rule, Source, Rhs, QS> ValidSubselect<QS>
-    for CombinationClause<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs, O, LOf, QS> ValidSubselect<QS>
+    for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 where
     Source: ValidSubselect<QS>,
     Rhs: ValidSubselect<QS>,
 {
 }
 
-impl<Combinator, Rule, Source, Rhs, Conn> RunQueryDsl<Conn>
-    for CombinationClause<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs, O, LOf, Conn> RunQueryDsl<Conn>
+    for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 {
 }
 
-impl<Combinator, Rule, Source, Rhs, T> Insertable<T>
-    for CombinationClause<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs, O, LOf, T> Insertable<T>
+    for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 where
     T: Table,
     T::AllColumns: NonAggregate,
@@ -91,8 +118,8 @@ where
     }
 }
 
-impl<Combinator, Rule, Source, OriginRhs> CombineDsl
-    for CombinationClause<Combinator, Rule, Source, OriginRhs>
+impl<Combinator, Rule, Source, OriginRhs, O, LOf> CombineDsl
+    for CombinationClause<Combinator, Rule, Source, OriginRhs, O, LOf>
 where
     Self: Query,
 {
@@ -141,20 +168,118 @@ where
     }
 }
 
-impl<Combinator, Rule, Source, Rhs, DB: Backend> QueryFragment<DB>
-    for CombinationClause<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs, O, LOf, DB: Backend> QueryFragment<DB>
+    for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 where
     Combinator: QueryFragment<DB>,
     Rule: QueryFragment<DB>,
     ParenthesisWrapper<Source>: QueryFragment<DB>,
     ParenthesisWrapper<Rhs>: QueryFragment<DB>,
+    O: QueryFragment<DB>,
+    LOf: QueryFragment<DB>,
     DB: Backend + SupportsCombinationClause<Combinator, Rule> + DieselReserveSpecialization,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.source.walk_ast(out.reborrow())?;
         self.combinator.walk_ast(out.reborrow())?;
         self.duplicate_rule.walk_ast(out.reborrow())?;
-        self.rhs.walk_ast(out)
+        self.rhs.walk_ast(out.reborrow())?;
+        self.order.walk_ast(out.reborrow())?;
+        self.limit_offset.walk_ast(out)
+    }
+}
+
+impl<ST, Combinator, Rule, Source, Rhs, O, LOf, RawExpr, Expr> PositionalOrderDsl<RawExpr>
+    for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
+where
+    Self: SelectQuery<SqlType = ST>,
+    CombinationClause<Combinator, Rule, Source, Rhs, OrderClause<Expr>, LOf>:
+        SelectQuery<SqlType = ST>,
+    RawExpr: IntoPositionalOrderExpr<Output = Expr>,
+{
+    type Output = CombinationClause<Combinator, Rule, Source, Rhs, OrderClause<Expr>, LOf>;
+
+    fn positional_order_by(self, expr: RawExpr) -> Self::Output {
+        let order = OrderClause(expr.into_positional_expr());
+
+        CombinationClause {
+            combinator: self.combinator,
+            duplicate_rule: self.duplicate_rule,
+            source: self.source,
+            rhs: self.rhs,
+            order,
+            limit_offset: self.limit_offset,
+        }
+    }
+}
+
+#[doc(hidden)]
+type Limit = AsExprOf<i64, BigInt>;
+
+impl<ST, Combinator, Rule, Source, Rhs, O, L, Of> LimitDsl
+    for CombinationClause<Combinator, Rule, Source, Rhs, O, LimitOffsetClause<L, Of>>
+where
+    Self: SelectQuery<SqlType = ST>,
+    CombinationClause<Combinator, Rule, Source, Rhs, O, LimitOffsetClause<LimitClause<Limit>, Of>>:
+        SelectQuery<SqlType = ST>,
+{
+    type Output = CombinationClause<
+        Combinator,
+        Rule,
+        Source,
+        Rhs,
+        O,
+        LimitOffsetClause<LimitClause<Limit>, Of>,
+    >;
+
+    fn limit(self, limit: i64) -> Self::Output {
+        let limit_clause = LimitClause(limit.into_sql::<BigInt>());
+        CombinationClause {
+            combinator: self.combinator,
+            duplicate_rule: self.duplicate_rule,
+            source: self.source,
+            rhs: self.rhs,
+            order: self.order,
+            limit_offset: LimitOffsetClause {
+                limit_clause,
+                offset_clause: self.limit_offset.offset_clause,
+            },
+        }
+    }
+}
+
+#[doc(hidden)]
+type Offset = Limit;
+
+impl<ST, Combinator, Rule, Source, Rhs, O, L, Of> OffsetDsl
+    for CombinationClause<Combinator, Rule, Source, Rhs, O, LimitOffsetClause<L, Of>>
+where
+    Self: SelectQuery<SqlType = ST>,
+    CombinationClause<Combinator, Rule, Source, Rhs, O, LimitOffsetClause<L, OffsetClause<Offset>>>:
+        SelectQuery<SqlType = ST>,
+{
+    type Output = CombinationClause<
+        Combinator,
+        Rule,
+        Source,
+        Rhs,
+        O,
+        LimitOffsetClause<L, OffsetClause<Offset>>,
+    >;
+
+    fn offset(self, offset: i64) -> Self::Output {
+        let offset_clause = OffsetClause(offset.into_sql::<BigInt>());
+        CombinationClause {
+            combinator: self.combinator,
+            duplicate_rule: self.duplicate_rule,
+            source: self.source,
+            rhs: self.rhs,
+            order: self.order,
+            limit_offset: LimitOffsetClause {
+                limit_clause: self.limit_offset.limit_clause,
+                offset_clause,
+            },
+        }
     }
 }
 
@@ -232,7 +357,15 @@ pub trait SupportsCombinationClause<Combinator, Rule> {}
 
 #[derive(Debug, Copy, Clone, QueryId)]
 /// Wrapper used to wrap rhs sql in parenthesis when supported by backend
-pub struct ParenthesisWrapper<T>(T);
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    public_fields(inner)
+)]
+pub struct ParenthesisWrapper<T> {
+    /// the inner parenthesis definition
+    #[allow(dead_code)]
+    inner: T,
+}
 
 #[cfg(feature = "postgres_backend")]
 mod postgres {
@@ -242,7 +375,7 @@ mod postgres {
     impl<T: QueryFragment<Pg>> QueryFragment<Pg> for ParenthesisWrapper<T> {
         fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
             out.push_sql("(");
-            self.0.walk_ast(out.reborrow())?;
+            self.inner.walk_ast(out.reborrow())?;
             out.push_sql(")");
             Ok(())
         }
@@ -264,7 +397,7 @@ mod mysql {
     impl<T: QueryFragment<Mysql>> QueryFragment<Mysql> for ParenthesisWrapper<T> {
         fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
             out.push_sql("(");
-            self.0.walk_ast(out.reborrow())?;
+            self.inner.walk_ast(out.reborrow())?;
             out.push_sql(")");
             Ok(())
         }
@@ -285,7 +418,7 @@ mod sqlite {
             // we can emulate this by construct a fake outer
             // SELECT * FROM (inner_query) statement
             out.push_sql("SELECT * FROM (");
-            self.0.walk_ast(out.reborrow())?;
+            self.inner.walk_ast(out.reborrow())?;
             out.push_sql(")");
             Ok(())
         }

@@ -22,14 +22,12 @@ error[E0107]: type alias takes 0 generic arguments but 1 generic argument was su
 30 |   #[dsl::auto_type]
    |  __________________-
 31 | | fn users_with_posts_with_id_greater_than(id_greater_than: i32) -> _ {
-32 | |     // This fails because the macro infers the type of
-33 | |     // `user_has_post_with_id_greater_than(id_greater_than)` to be
-34 | |     // `user_has_post_with_id_greater_than<i32>`
+...  |
 35 | |     users::table
 36 | |         .filter(user_has_post_with_id_greater_than(id_greater_than))
    | |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
    | |_________________|________________________________|
-   |                   |                                help: remove these generics
+   |                   |                                help: remove the unnecessary generics
    |                   expected 0 generic arguments
    |
 note: type alias defined here, with 0 generic parameters
@@ -63,7 +61,7 @@ error[E0061]: this method takes 1 argument but 0 arguments were supplied
   --> tests/fail/auto_type.rs:56:20
    |
 56 |     posts::user_id.eq::<_>()
-   |                    ^^^^^^^-- an argument is missing
+   |                    ^^^^^^^-- argument #1 is missing
    |
 note: method defined here
   --> $DIESEL/src/expression_methods/global_expression_methods.rs
@@ -72,5 +70,6 @@ note: method defined here
    |        ^^
 help: provide the argument
    |
-56 |     posts::user_id.eq::<_>(/* other */)
-   |                           ~~~~~~~~~~~~~
+56 -     posts::user_id.eq::<_>()
+56 +     posts::user_id.eq::<_>(/* other */)
+   |

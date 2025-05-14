@@ -1,6 +1,7 @@
 mod case;
 pub mod expression_type_inference;
 mod local_variables_map;
+mod referenced_generics;
 mod settings_builder;
 
 use {
@@ -134,6 +135,9 @@ pub(crate) fn auto_type_impl(
                     parent: None,
                 },
             };
+            for const_generic in input_function.sig.generics.const_params() {
+                local_variables_map.process_const_generic(const_generic);
+            }
             for function_param in &input_function.sig.inputs {
                 if let syn::FnArg::Typed(syn::PatType { pat, ty, .. }) = function_param {
                     match local_variables_map.process_pat(pat, Some(ty), None) {
@@ -165,11 +169,19 @@ pub(crate) fn auto_type_impl(
 
     let type_alias = match type_alias {
         Some(type_alias) => {
+            // We're generating a type alias so we need to extract the necessary lifetimes and
+            // generic type parameters for that type alias
+            let type_alias_generics = referenced_generics::extract_referenced_generics(
+                &return_type,
+                &input_function.sig.generics,
+                &mut errors,
+            );
+
             let vis = &input_function.vis;
-            input_function.sig.output = parse_quote!(-> #type_alias);
+            input_function.sig.output = parse_quote!(-> #type_alias #type_alias_generics);
             quote! {
                 #[allow(non_camel_case_types)]
-                #vis type #type_alias = #return_type;
+                #vis type #type_alias #type_alias_generics = #return_type;
             }
         }
         None => {
@@ -180,12 +192,13 @@ pub(crate) fn auto_type_impl(
 
     let mut res = quote! {
         #type_alias
+        #[allow(clippy::needless_lifetimes)]
         #input_function
     };
 
     for error in errors {
         // Extracting from the `Rc` only if it's the last reference is an elegant way to
-        // deduplicate errors For this to work it is necessary that the rest of
+        // deduplicate errors. For this to work it is necessary that the rest of
         // the errors (those from the local variables map that weren't used) are
         // dropped before, which is the case here, and that we are iterating on the
         // errors in an owned manner.

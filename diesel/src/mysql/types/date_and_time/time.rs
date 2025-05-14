@@ -15,7 +15,7 @@ fn to_time(dt: MysqlTime) -> Result<NaiveTime, Box<dyn std::error::Error>> {
         ("year", dt.year),
         ("month", dt.month),
         ("day", dt.day),
-        ("offset", dt.time_zone_displacement as u32),
+        ("offset", dt.time_zone_displacement.try_into()?),
     ] {
         if field != 0 {
             return Err(format!("Unable to convert {dt:?} to time: {name} must be 0").into());
@@ -63,7 +63,7 @@ fn to_primitive_datetime(dt: OffsetDateTime) -> PrimitiveDateTime {
 impl ToSql<Datetime, Mysql> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         let mysql_time = MysqlTime {
-            year: self.year() as libc::c_uint,
+            year: self.year().try_into()?,
             month: self.month() as libc::c_uint,
             day: self.day() as libc::c_uint,
             hour: self.hour() as libc::c_uint,
@@ -171,7 +171,7 @@ impl FromSql<Time, Mysql> for NaiveTime {
 impl ToSql<Date, Mysql> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         let mysql_time = MysqlTime {
-            year: self.year() as libc::c_uint,
+            year: self.year().try_into()?,
             month: self.month() as libc::c_uint,
             day: self.day() as libc::c_uint,
             hour: 0,
@@ -223,7 +223,7 @@ mod tests {
     use crate::sql_types::{Date, Datetime, Time, Timestamp};
     use crate::test_helpers::connection;
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_encodes_correctly() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:0:0);
@@ -233,7 +233,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_decodes_correctly() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:0:0);
@@ -245,7 +245,7 @@ mod tests {
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
         let time = to_primitive_datetime(OffsetDateTime::now_utc()) + Duration::days(1);
@@ -257,7 +257,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_of_day_encode_correctly() {
         let connection = &mut connection();
 
@@ -274,7 +274,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_of_day_decode_correctly() {
         let connection = &mut connection();
         let midnight = time!(0:0:0);
@@ -293,7 +293,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn dates_encode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = date!(2000 - 1 - 1);
@@ -305,7 +305,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn dates_decode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = date!(2000 - 1 - 1);

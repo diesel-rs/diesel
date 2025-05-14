@@ -5,8 +5,8 @@ table! {
     users {
         id -> Integer,
         name -> Text,
-        #[sql_name = "type"]
-        tpe -> Text,
+        #[sql_name = "spa ce"]
+        space -> Text,
     }
 }
 
@@ -35,16 +35,16 @@ struct User3 {
 #[derive(Insertable)]
 #[diesel(table_name = users)]
 struct User4 {
-    #[diesel(column_name = "type")]
-    ty: String,
+    #[diesel(column_name = "spa ce")]
+    space: String,
 }
 
 
 #[derive(AsChangeset)]
 #[diesel(table_name = users)]
 struct User5 {
-    #[diesel(column_name = "type")]
-    ty: String,
+    #[diesel(column_name = "spa ce")]
+    space: String,
 }
 
 fn main() {}

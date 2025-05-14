@@ -1,8 +1,10 @@
 use crate::schema::*;
 use diesel::connection::SimpleConnection;
-use diesel::deserialize::FromSql;
+use diesel::deserialize::{FromSql, FromSqlRow};
+use diesel::expression::AsExpression;
 use diesel::pg::{Pg, PgValue};
 use diesel::serialize::{IsNull, Output, ToSql};
+use diesel::sql_types::SqlType;
 use diesel::*;
 use std::io::Write;
 
@@ -53,7 +55,7 @@ struct HasCustomTypes {
     custom_enum: MyEnum,
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn custom_types_round_trip() {
     let data = vec![
         HasCustomTypes {
@@ -132,7 +134,7 @@ struct HasCustomTypesInCustomSchema {
     custom_enum: MyEnumInCustomSchema,
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn custom_types_in_custom_schema_round_trip() {
     let data = vec![
         HasCustomTypesInCustomSchema {
@@ -177,7 +179,7 @@ struct PublicTy;
 #[diesel(postgres_type(name = "ty"))]
 struct InferredTy;
 
-#[test]
+#[diesel_test_helper::test]
 fn custom_type_schema_inference() {
     use diesel::sql_types::HasSqlType;
 

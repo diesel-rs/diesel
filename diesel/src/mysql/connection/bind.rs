@@ -6,8 +6,7 @@ use std::ops::Index;
 use std::os::raw as libc;
 use std::ptr::NonNull;
 
-use super::stmt::MysqlFieldMetadata;
-use super::stmt::StatementUse;
+use super::stmt::{MysqlFieldMetadata, StatementUse};
 use crate::mysql::connection::stmt::StatementMetadata;
 use crate::mysql::types::date_and_time::MysqlTime;
 use crate::mysql::{MysqlType, MysqlValue};
@@ -179,7 +178,10 @@ impl Clone for BindData {
                 // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
                 // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
-                std::slice::from_raw_parts(ptr.as_ptr(), self.length as usize)
+                std::slice::from_raw_parts(
+                    ptr.as_ptr(),
+                    self.length.try_into().expect("usize is at least 32bit"),
+                )
             };
             let mut vec = slice.to_owned();
             let ptr = NonNull::new(vec.as_mut_ptr());
@@ -375,9 +377,9 @@ impl BindData {
     }
 
     fn from_tpe_and_flags((tpe, flags): (ffi::enum_field_types, Flags)) -> Self {
-        let mut bytes = known_buffer_size_for_ffi_type(tpe)
-            .map(|len| vec![0; len])
-            .unwrap_or_default();
+        // newer mysqlclient versions do not accept a zero sized buffer
+        let len = known_buffer_size_for_ffi_type(tpe).unwrap_or(1);
+        let mut bytes = vec![0; len];
         let length = bytes.len() as libc::c_ulong;
         let capacity = bytes.capacity();
         let ptr = NonNull::new(bytes.as_mut_ptr());
@@ -389,13 +391,13 @@ impl BindData {
             length,
             capacity,
             flags,
-            is_null: 0,
-            is_truncated: Some(0),
+            is_null: super::raw::ffi_false(),
+            is_truncated: Some(super::raw::ffi_false()),
         }
     }
 
     fn is_truncated(&self) -> bool {
-        self.is_truncated.unwrap_or(0) != 0
+        self.is_truncated.unwrap_or(super::raw::ffi_false()) != super::raw::ffi_false()
     }
 
     fn is_fixed_size_buffer(&self) -> bool {
@@ -416,20 +418,26 @@ impl BindData {
                 // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
                 // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
-                std::slice::from_raw_parts(data.as_ptr(), self.length as usize)
+                std::slice::from_raw_parts(
+                    data.as_ptr(),
+                    self.length.try_into().expect("Usize is at least 32 bit"),
+                )
             };
             Some(MysqlValue::new_internal(slice, tpe))
         }
     }
 
     pub(super) fn is_null(&self) -> bool {
-        self.is_null != 0
+        self.is_null != ffi::my_bool::default()
     }
 
     fn update_buffer_length(&mut self) {
         use std::cmp::min;
 
-        let actual_bytes_in_buffer = min(self.capacity, self.length as usize);
+        let actual_bytes_in_buffer = min(
+            self.capacity,
+            self.length.try_into().expect("Usize is at least 32 bit"),
+        );
         self.length = actual_bytes_in_buffer as libc::c_ulong;
     }
 
@@ -475,7 +483,8 @@ impl BindData {
                 self.bytes = None;
 
                 let offset = self.capacity;
-                let truncated_amount = self.length as usize - offset;
+                let truncated_amount =
+                    usize::try_from(self.length).expect("Usize is at least 32 bit") - offset;
 
                 debug_assert!(
                     truncated_amount > 0,
@@ -505,7 +514,7 @@ impl BindData {
                 // offset is zero here as we don't have a buffer yet
                 // we know the requested length here so we can just request
                 // the correct size
-                let mut vec = vec![0_u8; self.length as usize];
+                let mut vec = vec![0_u8; self.length.try_into().expect("usize is at least 32 bit")];
                 self.capacity = vec.capacity();
                 self.bytes = NonNull::new(vec.as_mut_ptr());
                 mem::forget(vec);
@@ -711,6 +720,15 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
                  something has gone wrong. Please open an issue at \
                  the diesel github repo."
             ),
+            // depending on the bindings version
+            // there might be no unlisted field type
+            #[allow(unreachable_patterns)]
+            t => unreachable!(
+                "Unsupported type encountered: {t:?}. \
+                 If you ever see this error, something has gone wrong. \
+                 Please open an issue at the diesel github \
+                 repo in this case."
+            ),
         }
     }
 }
@@ -735,12 +753,12 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::connection::statement_cache::MaybeCached;
+    use crate::connection::statement_cache::{MaybeCached, PrepareForCache};
     use crate::deserialize::FromSql;
     use crate::mysql::connection::stmt::Statement;
     use crate::prelude::*;
     use crate::sql_types::*;
-    #[cfg(feature = "bigdecimal")]
+    #[cfg(feature = "numeric")]
     use std::str::FromStr;
 
     fn to_value<ST, T>(
@@ -759,7 +777,7 @@ mod tests {
     }
 
     #[cfg(feature = "extras")]
-    #[test]
+    #[diesel_test_helper::test]
     fn check_all_the_types() {
         let conn = &mut crate::test_helpers::connection();
 
@@ -861,7 +879,7 @@ mod tests {
             ),
             &mut conn.statement_cache,
             &mut conn.raw_connection,
-            &mut conn.instrumentation,
+            &mut *conn.instrumentation,
         ).unwrap();
 
         let metadata = stmt.metadata().unwrap();
@@ -1005,7 +1023,7 @@ mod tests {
         assert!(!time_col.flags.contains(Flags::NUM_FLAG));
         assert_eq!(
             to_value::<Time, chrono::NaiveTime>(time_col).unwrap(),
-            chrono::NaiveTime::from_hms_opt(23, 01, 01).unwrap()
+            chrono::NaiveTime::from_hms_opt(23, 1, 1).unwrap()
         );
 
         let year_col = &results[16].0;
@@ -1229,7 +1247,10 @@ mod tests {
         conn: &MysqlConnection,
         bind_tpe: impl Into<(ffi::enum_field_types, Flags)>,
     ) -> BindData {
-        let stmt: Statement = conn.raw_connection.prepare(query).unwrap();
+        let stmt: Statement = conn
+            .raw_connection
+            .prepare(query, PrepareForCache::No, &[])
+            .unwrap();
         let stmt = MaybeCached::CannotCache(stmt);
 
         let bind = BindData::from_tpe_and_flags(bind_tpe.into());
@@ -1248,7 +1269,10 @@ mod tests {
         id: i32,
         (mut field, tpe): (Vec<u8>, impl Into<(ffi::enum_field_types, Flags)>),
     ) {
-        let mut stmt = conn.raw_connection.prepare(query).unwrap();
+        let mut stmt = conn
+            .raw_connection
+            .prepare(query, PrepareForCache::No, &[])
+            .unwrap();
         let length = field.len() as _;
         let (tpe, flags) = tpe.into();
         let capacity = field.capacity();
@@ -1261,7 +1285,7 @@ mod tests {
             capacity,
             length,
             flags,
-            is_null: 0,
+            is_null: ffi::FALSE,
             is_truncated: None,
         };
 
@@ -1277,7 +1301,7 @@ mod tests {
             capacity,
             length,
             flags: Flags::empty(),
-            is_null: 0,
+            is_null: ffi::FALSE,
             is_truncated: None,
         };
 
@@ -1292,7 +1316,7 @@ mod tests {
         }
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn check_json_bind() {
         table! {
             json_test {
@@ -1456,7 +1480,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn check_enum_bind() {
         let conn = &mut crate::test_helpers::connection();
 
@@ -1646,7 +1670,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn check_set_bind() {
         let conn = &mut crate::test_helpers::connection();
 

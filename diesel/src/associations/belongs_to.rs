@@ -44,6 +44,29 @@ pub trait BelongsTo<Parent> {
 /// In the following relationship, User has many Posts,
 /// so User is the parent and Posts are children.
 ///
+/// # Unrelated Rows
+///
+/// When using [`GroupedBy::grouped_by`], if the child rows were not queried
+/// using the provided parent rows, it is not guaranteed a parent row
+/// will be found for a given child row.
+/// This is possible, if the foreign key in the relationship is nullable,
+/// or if a child row's parent was not present in the provided slice,
+/// in which case, unrelated child rows will be discarded.
+///
+/// If discarding these rows is undesirable, it may be preferable to use
+/// [`GroupedBy::try_grouped_by`].
+///
+/// # Handling Duplicate Parent Rows
+///
+/// Both [`GroupedBy::grouped_by`] and [`GroupedBy::try_grouped_by`]
+/// expect all of the elements of `parents` to produce a unique value
+/// when calling [`Identifiable::id`].
+/// If this is not true, child rows may be added to an unexpected index.
+///
+/// As a result, it is recommended to use [`QueryDsl::distinct`]
+/// or [`slice::sort`] and [`Vec::dedup`],
+/// to ensure the elements of `parents` are unique.
+///
 /// # Example
 ///
 /// ```rust
@@ -104,9 +127,129 @@ pub trait BelongsTo<Parent> {
 pub trait GroupedBy<'a, Parent>: IntoIterator + Sized {
     /// See the trait documentation.
     fn grouped_by(self, parents: &'a [Parent]) -> Vec<Vec<Self::Item>>;
+
+    /// A fallible alternative to [`GroupedBy::grouped_by`].
+    ///
+    /// If any child record could not be grouped,
+    /// either because of a `NULL` foreign key,
+    /// or a parent record with a matching key could not be found,
+    /// this function should return `Err`,
+    /// with all successfully grouped records, as well as any ungrouped records.
+    ///
+    /// # Errors
+    ///
+    /// If a parent record could not be found for any of the child records,
+    /// this function should return the `TryGroupedByError`.
+    /// Every supplied record should be contained in the returned error,
+    /// either in the `grouped` field, if it was successfully grouped,
+    /// or the `ungrouped` field, if it was not possible to associate
+    /// with a parent record.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::associations::TryGroupedByError;
+    /// # use schema::{posts, users};
+    /// #
+    /// # #[derive(Identifiable, Queryable, PartialEq, Debug)]
+    /// # pub struct User {
+    /// #     id: i32,
+    /// #     name: String,
+    /// # }
+    /// #
+    /// # #[derive(Debug, PartialEq)]
+    /// # #[derive(Identifiable, Queryable, Associations)]
+    /// # #[diesel(belongs_to(User))]
+    /// # pub struct Post {
+    /// #     id: i32,
+    /// #     user_id: i32,
+    /// #     title: String,
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let connection = &mut establish_connection();
+    /// let users = users::table.load::<User>(connection)?;
+    /// let mut posts = Post::belonging_to(&users)
+    ///     .load::<Post>(connection)?;
+    /// posts.push(
+    ///     Post { id: 9, user_id: 42, title: "A post returned from another query".into() }
+    /// );
+    /// let TryGroupedByError { grouped, ungrouped, .. } = posts.try_grouped_by(&users).unwrap_err();
+    ///
+    /// let grouped_data = users.into_iter().zip(grouped).collect::<Vec<_>>();
+    ///
+    /// let expected_grouped_data = vec![
+    ///     (
+    ///         User { id: 1, name: "Sean".into() },
+    ///         vec![
+    ///             Post { id: 1, user_id: 1, title: "My first post".into() },
+    ///             Post { id: 2, user_id: 1, title: "About Rust".into() },
+    ///         ],
+    ///     ),
+    ///     (
+    ///         User { id: 2, name: "Tess".into() },
+    ///         vec![
+    ///             Post { id: 3, user_id: 2, title: "My first post too".into() },
+    ///         ],
+    ///     ),
+    /// ];
+    ///
+    /// let expected_ungrouped_data = vec![
+    ///     Post { id: 9, user_id: 42, title: "A post returned from another query".into() }
+    /// ];
+    ///
+    /// assert_eq!(expected_grouped_data, grouped_data);
+    /// assert_eq!(expected_ungrouped_data, ungrouped);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn try_grouped_by(
+        self,
+        parents: &'a [Parent],
+    ) -> Result<Vec<Vec<Self::Item>>, TryGroupedByError<Self::Item>> {
+        Ok(self.grouped_by(parents))
+    }
+}
+
+/// A type of error which can be returned when attempting to group
+/// a list of records.
+///
+/// If a child record has a nullable foreign key, or is being grouped
+/// using a different relationship to the one that was used to query it,
+/// it may not be possible to find a parent record it should be grouped by.
+///
+/// When encountering these missing relationships,
+/// it may still be possible to group remaining records,
+/// but would affect the contents of the returned values.
+/// By extracting the contents of this struct, it is still possible
+/// to use these resulting groups, as well as any records
+/// that could not be grouped.
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+#[non_exhaustive]
+pub struct TryGroupedByError<Child> {
+    /// The collection of records which were successfully indexed
+    /// against a parent record.
+    pub grouped: Vec<Vec<Child>>,
+    /// The collection of records that could not be indexed
+    /// against a parent record.
+    pub ungrouped: Vec<Child>,
 }
 
 type Id<T> = <T as Identifiable>::Id;
+
+impl<Child> TryGroupedByError<Child> {
+    /// Creates a `TryGroupedByError`.
+    ///
+    /// This is generally used by methods like [`GroupedBy::try_grouped_by`].
+    pub fn new(grouped: Vec<Vec<Child>>, ungrouped: Vec<Child>) -> Self {
+        Self { grouped, ungrouped }
+    }
+}
 
 impl<'a, Parent: 'a, Child, Iter> GroupedBy<'a, Parent> for Iter
 where
@@ -117,19 +260,57 @@ where
 {
     fn grouped_by(self, parents: &'a [Parent]) -> Vec<Vec<Child>> {
         use std::collections::HashMap;
+        use std::iter;
+
+        let mut grouped: Vec<_> = iter::repeat_with(Vec::new).take(parents.len()).collect();
 
         let id_indices: HashMap<_, _> = parents
             .iter()
             .enumerate()
             .map(|(i, u)| (u.id(), i))
             .collect();
-        let mut result = parents.iter().map(|_| Vec::new()).collect::<Vec<_>>();
+
+        self.into_iter()
+            .filter_map(|child| {
+                let fk = child.foreign_key()?;
+                let i = id_indices.get(fk)?;
+
+                Some((i, child))
+            })
+            .for_each(|(i, child)| grouped[*i].push(child));
+
+        grouped
+    }
+
+    fn try_grouped_by(
+        self,
+        parents: &'a [Parent],
+    ) -> Result<Vec<Vec<Child>>, TryGroupedByError<Child>> {
+        use std::collections::HashMap;
+        use std::iter;
+
+        let mut grouped: Vec<_> = iter::repeat_with(Vec::new).take(parents.len()).collect();
+        let mut ungrouped: Vec<_> = Vec::new();
+
+        let id_indices: HashMap<_, _> = parents
+            .iter()
+            .enumerate()
+            .map(|(i, u)| (u.id(), i))
+            .collect();
+
         for child in self {
-            if let Some(index) = child.foreign_key().map(|i| id_indices[i]) {
-                result[index].push(child);
-            }
+            child
+                .foreign_key()
+                .and_then(|i| id_indices.get(i))
+                .map_or(&mut ungrouped, |i| &mut grouped[*i])
+                .push(child);
         }
-        result
+
+        if ungrouped.is_empty() {
+            Ok(grouped)
+        } else {
+            Err(TryGroupedByError::new(grouped, ungrouped))
+        }
     }
 }
 

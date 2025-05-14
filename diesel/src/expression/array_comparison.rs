@@ -1,9 +1,8 @@
 //! This module contains the query dsl node definitions
 //! for array comparison operations like `IN` and `NOT IN`
 
-use crate::backend::sql_dialect;
-use crate::backend::Backend;
-use crate::backend::SqlDialect;
+use super::expression_types::NotSelectable;
+use crate::backend::{sql_dialect, Backend, SqlDialect};
 use crate::expression::subselect::Subselect;
 use crate::expression::{
     AppearsOnTable, AsExpression, Expression, SelectableExpression, TypedExpressionType,
@@ -15,8 +14,7 @@ use crate::query_builder::{
 };
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
-use crate::sql_types::HasSqlType;
-use crate::sql_types::{Bool, SingleValue, SqlType};
+use crate::sql_types::{self, HasSqlType, SingleValue, SqlType};
 use std::marker::PhantomData;
 
 /// Query dsl node that represents a `left IN (values)`
@@ -29,7 +27,10 @@ use std::marker::PhantomData;
 /// `IN` expression.
 ///
 /// The postgres backend provided a specialized implementation
-/// by using `left = ANY(values)` as optimized variant instead.
+/// by using `left = ANY(values)` as optimized variant instead
+/// if this is possible. For cases where this is not possible
+/// like for example if values is a vector of arrays we
+/// generate an ordinary `IN` expression instead.
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 #[non_exhaustive]
 pub struct In<T, U> {
@@ -49,7 +50,10 @@ pub struct In<T, U> {
 /// `NOT IN` expression.0
 ///
 /// The postgres backend provided a specialized implementation
-/// by using `left = ALL(values)` as optimized variant instead.
+/// by using `left != ALL(values)` as optimized variant instead
+/// if this is possible. For cases where this is not possible
+/// like for example if values is a vector of arrays we
+/// generate a ordinary `NOT IN` expression instead
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 #[non_exhaustive]
 pub struct NotIn<T, U> {
@@ -63,28 +67,74 @@ impl<T, U> In<T, U> {
     pub(crate) fn new(left: T, values: U) -> Self {
         In { left, values }
     }
+
+    pub(crate) fn walk_ansi_ast<'b, DB>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        DB: Backend,
+        T: QueryFragment<DB>,
+        U: QueryFragment<DB> + InExpression,
+    {
+        if self.values.is_empty() {
+            out.push_sql("1=0");
+        } else {
+            self.left.walk_ast(out.reborrow())?;
+            out.push_sql(" IN (");
+            self.values.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+        }
+        Ok(())
+    }
 }
 
 impl<T, U> NotIn<T, U> {
     pub(crate) fn new(left: T, values: U) -> Self {
         NotIn { left, values }
     }
+
+    pub(crate) fn walk_ansi_ast<'b, DB>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        DB: Backend,
+        T: QueryFragment<DB>,
+        U: QueryFragment<DB> + InExpression,
+    {
+        if self.values.is_empty() {
+            out.push_sql("1=1");
+        } else {
+            self.left.walk_ast(out.reborrow())?;
+            out.push_sql(" NOT IN (");
+            self.values.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+        }
+        Ok(())
+    }
 }
 
 impl<T, U> Expression for In<T, U>
 where
     T: Expression,
-    U: Expression<SqlType = T::SqlType>,
+    U: InExpression<SqlType = T::SqlType>,
+    T::SqlType: SqlType,
+    sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>:
+        sql_types::MaybeNullableType<sql_types::Bool>,
 {
-    type SqlType = Bool;
+    type SqlType = sql_types::is_nullable::MaybeNullable<
+        sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>,
+        sql_types::Bool,
+    >;
 }
 
 impl<T, U> Expression for NotIn<T, U>
 where
     T: Expression,
-    U: Expression<SqlType = T::SqlType>,
+    U: InExpression<SqlType = T::SqlType>,
+    T::SqlType: SqlType,
+    sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>:
+        sql_types::MaybeNullableType<sql_types::Bool>,
 {
-    type SqlType = Bool;
+    type SqlType = sql_types::is_nullable::MaybeNullable<
+        sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>,
+        sql_types::Bool,
+    >;
 }
 
 impl<T, U, DB> QueryFragment<DB> for In<T, U>
@@ -102,18 +152,10 @@ where
     DB: Backend
         + SqlDialect<ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison>,
     T: QueryFragment<DB>,
-    U: QueryFragment<DB> + MaybeEmpty,
+    U: QueryFragment<DB> + InExpression,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        if self.values.is_empty() {
-            out.push_sql("1=0");
-        } else {
-            self.left.walk_ast(out.reborrow())?;
-            out.push_sql(" IN (");
-            self.values.walk_ast(out.reborrow())?;
-            out.push_sql(")");
-        }
-        Ok(())
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.walk_ansi_ast(out)
     }
 }
 
@@ -133,18 +175,10 @@ where
     DB: Backend
         + SqlDialect<ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison>,
     T: QueryFragment<DB>,
-    U: QueryFragment<DB> + MaybeEmpty,
+    U: QueryFragment<DB> + InExpression,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        if self.values.is_empty() {
-            out.push_sql("1=1");
-        } else {
-            self.left.walk_ast(out.reborrow())?;
-            out.push_sql(" NOT IN (");
-            self.values.walk_ast(out.reborrow())?;
-            out.push_sql(")");
-        }
-        Ok(())
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.walk_ansi_ast(out)
     }
 }
 
@@ -157,19 +191,19 @@ impl_selectable_expression!(NotIn<T, U>);
 /// Diesel provided several implementations here:
 ///
 ///  - An implementation for any [`Iterator`] over values
-///  that implement [`AsExpression<ST>`] for the corresponding
-///  sql type ST. The corresponding values clause will contain
-///  bind statements for each individual value.
+///    that implement [`AsExpression<ST>`] for the corresponding
+///    sql type ST. The corresponding values clause will contain
+///    bind statements for each individual value.
 ///  - An implementation for select statements, that returns
-///  a single field. The corresponding values clause will contain
-///  the sub query.
+///    a single field. The corresponding values clause will contain
+///    the sub query.
 ///
 ///  This trait is exposed for custom third party backends so
 ///  that they can restrict the [`QueryFragment`] implementations
 ///  for [`In`] and [`NotIn`].
-pub trait AsInExpression<T: SqlType + TypedExpressionType> {
+pub trait AsInExpression<T: SqlType> {
     /// Type of the expression returned by [AsInExpression::as_in_expression]
-    type InExpression: MaybeEmpty + Expression<SqlType = T>;
+    type InExpression: InExpression<SqlType = T>;
 
     /// Construct the diesel query dsl representation of
     /// the `IN (values)` clause for the given type
@@ -195,18 +229,28 @@ where
     }
 }
 
-/// A helper trait to check if the values clause of
-/// an [`In`] or [`NotIn`] query dsl node is empty or not
-pub trait MaybeEmpty {
+/// A marker trait that identifies query fragments that can be used in `IN(...)` and `NOT IN(...)`
+/// clauses, (or `= ANY (...)` clauses on the Postgres backend)
+///
+/// These can be wrapped in [`In`] or [`NotIn`] query dsl nodes
+pub trait InExpression {
+    /// The SQL type of the inner values, which should be the same as the left of the `IN` or
+    /// `NOT IN` clause
+    type SqlType: SqlType;
+
     /// Returns `true` if self represents an empty collection
     /// Otherwise `false` is returned.
     fn is_empty(&self) -> bool;
+
+    /// Returns `true` if the values clause represents
+    /// bind values and each bind value is a postgres array type
+    fn is_array(&self) -> bool;
 }
 
 impl<ST, F, S, D, W, O, LOf, G, H, LC> AsInExpression<ST>
     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
-    ST: SqlType + TypedExpressionType,
+    ST: SqlType,
     Subselect<Self, ST>: Expression<SqlType = ST>,
     Self: SelectQuery<SqlType = ST>,
 {
@@ -219,7 +263,7 @@ where
 
 impl<'a, ST, QS, DB, GB> AsInExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB, GB>
 where
-    ST: SqlType + TypedExpressionType,
+    ST: SqlType,
     Subselect<BoxedSelectStatement<'a, ST, QS, DB, GB>, ST>: Expression<SqlType = ST>,
 {
     type InExpression = Subselect<Self, ST>;
@@ -232,7 +276,7 @@ where
 impl<ST, Combinator, Rule, Source, Rhs> AsInExpression<ST>
     for CombinationClause<Combinator, Rule, Source, Rhs>
 where
-    ST: SqlType + TypedExpressionType,
+    ST: SqlType,
     Self: SelectQuery<SqlType = ST>,
     Subselect<Self, ST>: Expression<SqlType = ST>,
 {
@@ -243,8 +287,8 @@ where
     }
 }
 
-/// Query dsl node for an `IN (values)` clause containing
-/// a variable number of bind values.
+/// Query dsl node for the `values` part of an `IN (values)` clause
+/// containing a variable number of bind values.
 ///
 /// Third party backend can customize the [`QueryFragment`]
 /// implementation of this query dsl node via
@@ -275,12 +319,24 @@ impl<ST, I> Expression for Many<ST, I>
 where
     ST: TypedExpressionType,
 {
-    type SqlType = ST;
+    // Comma-ed fake expressions are not usable directly in SQL
+    // This is only implemented so that we can use the usual SelectableExpression & co traits
+    // as constraints for the same implementations on [`In`] and [`NotIn`]
+    type SqlType = NotSelectable;
 }
 
-impl<ST, I> MaybeEmpty for Many<ST, I> {
+impl<ST, I> InExpression for Many<ST, I>
+where
+    ST: SqlType,
+{
+    type SqlType = ST;
+
     fn is_empty(&self) -> bool {
         self.values.is_empty()
+    }
+
+    fn is_array(&self) -> bool {
+        ST::IS_ARRAY
     }
 }
 
@@ -321,7 +377,18 @@ where
     ST: SingleValue,
     I: ToSql<ST, DB>,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.walk_ansi_ast(out)
+    }
+}
+
+impl<ST, I> Many<ST, I> {
+    pub(crate) fn walk_ansi_ast<'b, DB>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        DB: Backend + HasSqlType<ST>,
+        ST: SingleValue,
+        I: ToSql<ST, DB>,
+    {
         out.unsafe_to_cache_prepared();
         let mut first = true;
         for value in &self.values {

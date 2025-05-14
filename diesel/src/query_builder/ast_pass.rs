@@ -90,7 +90,15 @@ where
         }
     }
 
-    #[cfg(feature = "sqlite")]
+    /// Register an internal flag whether or not diesel should
+    /// generate explicitly qualified column names
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    #[cfg(any(
+        feature = "sqlite",
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    ))]
     pub(crate) fn skip_from(&mut self, value: bool) {
         if let AstPassInternals::ToSql(_, ref mut options) = self.internals {
             options.skip_from = value

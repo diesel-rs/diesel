@@ -2,21 +2,21 @@ error[E0277]: `diesel::query_builder::update_statement::SetNotCalled` is no vali
   --> tests/fail/update_requires_set.rs:14:18
    |
 14 |         .execute(&mut conn);
-   |          ------- ^^^^^^^^^ the trait `QueryFragment<_>` is not implemented for `diesel::query_builder::update_statement::SetNotCalled`, which is required by `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>: ExecuteDsl<_, _>`
+   |          ------- ^^^^^^^^^ the trait `QueryFragment<_>` is not implemented for `diesel::query_builder::update_statement::SetNotCalled`
    |          |
    |          required by a bound introduced by this call
    |
    = note: this usually means that the `_` database system does not support
            this SQL syntax
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <columns::id as QueryFragment<DB>>
-             <columns::star as QueryFragment<DB>>
-             <users::table as QueryFragment<DB>>
-             <Box<T> as QueryFragment<DB>>
-             <DeleteStatement<T, U, Ret> as QueryFragment<DB>>
-             <FromClause<F> as QueryFragment<DB>>
-             <diesel::query_builder::insert_statement::insert_with_default_for_sqlite::SqliteBatchInsertWrapper<Vec<diesel::query_builder::insert_statement::ValuesClause<V, Tab>>, Tab, QId, STATIC_QUERY_ID> as QueryFragment<Sqlite>>
-             <BoxedLimitOffsetClause<'a, Mysql> as QueryFragment<Mysql>>
+             `&T` implements `QueryFragment<DB>`
+             `()` implements `QueryFragment<DB>`
+             `(T0, T1)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3, T4)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3, T4, T5)` implements `QueryFragment<__DB>`
+             `(T0, T1, T2, T3, T4, T5, T6)` implements `QueryFragment<__DB>`
            and $N others
    = note: required for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>` to implement `QueryFragment<_>`
    = note: required for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>` to implement `ExecuteDsl<_, _>`

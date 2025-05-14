@@ -100,60 +100,65 @@ mod quickcheck_impls {
     }
 }
 
-#[test]
-fn add_money() {
-    let c1 = PgMoney(123);
-    let c2 = PgMoney(456);
-    assert_eq!(PgMoney(579), c1 + c2);
-}
+#[cfg(test)]
+mod tests {
+    use super::PgMoney;
 
-#[test]
-fn add_assign_money() {
-    let mut c1 = PgMoney(123);
-    c1 += PgMoney(456);
-    assert_eq!(PgMoney(579), c1);
-}
+    #[diesel_test_helper::test]
+    fn add_money() {
+        let c1 = PgMoney(123);
+        let c2 = PgMoney(456);
+        assert_eq!(PgMoney(579), c1 + c2);
+    }
 
-#[test]
-#[should_panic(expected = "overflow adding money amounts")]
-fn add_money_overflow() {
-    let c1 = PgMoney(::std::i64::MAX);
-    let c2 = PgMoney(1);
-    let _overflow = c1 + c2;
-}
+    #[diesel_test_helper::test]
+    fn add_assign_money() {
+        let mut c1 = PgMoney(123);
+        c1 += PgMoney(456);
+        assert_eq!(PgMoney(579), c1);
+    }
 
-#[test]
-#[should_panic(expected = "overflow adding money amounts")]
-fn add_assign_money_overflow() {
-    let mut c1 = PgMoney(::std::i64::MAX);
-    c1 += PgMoney(1);
-}
+    #[diesel_test_helper::test]
+    #[should_panic(expected = "overflow adding money amounts")]
+    fn add_money_overflow() {
+        let c1 = PgMoney(i64::MAX);
+        let c2 = PgMoney(1);
+        let _overflow = c1 + c2;
+    }
 
-#[test]
-fn sub_money() {
-    let c1 = PgMoney(123);
-    let c2 = PgMoney(456);
-    assert_eq!(PgMoney(-333), c1 - c2);
-}
+    #[diesel_test_helper::test]
+    #[should_panic(expected = "overflow adding money amounts")]
+    fn add_assign_money_overflow() {
+        let mut c1 = PgMoney(i64::MAX);
+        c1 += PgMoney(1);
+    }
 
-#[test]
-fn sub_assign_money() {
-    let mut c1 = PgMoney(123);
-    c1 -= PgMoney(456);
-    assert_eq!(PgMoney(-333), c1);
-}
+    #[diesel_test_helper::test]
+    fn sub_money() {
+        let c1 = PgMoney(123);
+        let c2 = PgMoney(456);
+        assert_eq!(PgMoney(-333), c1 - c2);
+    }
 
-#[test]
-#[should_panic(expected = "underflow subtracting money amounts")]
-fn sub_money_underflow() {
-    let c1 = PgMoney(::std::i64::MIN);
-    let c2 = PgMoney(1);
-    let _underflow = c1 - c2;
-}
+    #[diesel_test_helper::test]
+    fn sub_assign_money() {
+        let mut c1 = PgMoney(123);
+        c1 -= PgMoney(456);
+        assert_eq!(PgMoney(-333), c1);
+    }
 
-#[test]
-#[should_panic(expected = "underflow subtracting money amounts")]
-fn sub_assign_money_underflow() {
-    let mut c1 = PgMoney(::std::i64::MIN);
-    c1 -= PgMoney(1);
+    #[diesel_test_helper::test]
+    #[should_panic(expected = "underflow subtracting money amounts")]
+    fn sub_money_underflow() {
+        let c1 = PgMoney(i64::MIN);
+        let c2 = PgMoney(1);
+        let _underflow = c1 - c2;
+    }
+
+    #[diesel_test_helper::test]
+    #[should_panic(expected = "underflow subtracting money amounts")]
+    fn sub_assign_money_underflow() {
+        let mut c1 = PgMoney(i64::MIN);
+        c1 -= PgMoney(1);
+    }
 }

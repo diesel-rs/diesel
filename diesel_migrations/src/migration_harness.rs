@@ -31,6 +31,15 @@ pub trait MigrationHarness<DB: Backend> {
     }
 
     /// Execute all unapplied migrations for a given migration source
+    ///
+    /// # Concurrent Usage Safety
+    /// This method can be safely called concurrently from multiple processes. The behavior is as follows:
+    ///
+    /// * All migrations are applied atomically by the first process that successfully acquires the database lock
+    /// * Concurrent processes attempting to run migrations while the lock is held will receive a "database is locked" error
+    /// * Processes that start after successful migration completion will find no pending migrations and complete successfully
+    /// * Each migration is guaranteed to be applied exactly once
+    ///
     fn run_pending_migrations<S: MigrationSource<DB>>(
         &mut self,
         source: S,
@@ -262,7 +271,7 @@ impl<'a, C> HarnessWithOutput<'a, C, std::io::Stdout> {
     }
 }
 
-impl<'a, C, W, DB> MigrationHarness<DB> for HarnessWithOutput<'a, C, W>
+impl<C, W, DB> MigrationHarness<DB> for HarnessWithOutput<'_, C, W>
 where
     W: Write,
     C: MigrationHarness<DB>,

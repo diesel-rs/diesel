@@ -217,14 +217,19 @@ pub(crate) mod private {
         }
     }
 
-    impl<'a, R> RowSealed for PartialRow<'a, R> {}
+    impl<R> RowSealed for PartialRow<'_, R> {}
 
-    impl<'a, 'b, DB, R> Row<'a, DB> for PartialRow<'b, R>
+    impl<'a, DB, R> Row<'a, DB> for PartialRow<'_, R>
     where
         DB: Backend,
         R: Row<'a, DB>,
     {
-        type Field<'f> = R::Field<'f> where 'a: 'f, R: 'f, Self: 'f;
+        type Field<'f>
+            = R::Field<'f>
+        where
+            'a: 'f,
+            R: 'f,
+            Self: 'f;
         type InnerPartialRow = R;
 
         fn field_count(&self) -> usize {
@@ -250,7 +255,7 @@ pub(crate) mod private {
         }
     }
 
-    impl<'a, 'b, R> RowIndex<&'a str> for PartialRow<'b, R>
+    impl<'a, R> RowIndex<&'a str> for PartialRow<'_, R>
     where
         R: RowIndex<&'a str>,
     {
@@ -264,7 +269,7 @@ pub(crate) mod private {
         }
     }
 
-    impl<'a, R> RowIndex<usize> for PartialRow<'a, R>
+    impl<R> RowIndex<usize> for PartialRow<'_, R>
     where
         R: RowIndex<usize>,
     {
@@ -297,6 +302,9 @@ pub(crate) mod private {
         DB: Backend,
         for<'a> R: super::Row<'a, DB>,
     {
-        type Field<'f> = <R as super::Row<'f, DB>>::Field<'f> where R: 'f;
+        type Field<'f>
+            = <R as super::Row<'f, DB>>::Field<'f>
+        where
+            R: 'f;
     }
 }

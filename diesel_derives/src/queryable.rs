@@ -18,7 +18,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let build_expr = model.fields().iter().enumerate().map(|(i, f)| {
         let field_name = &f.name;
         let i = Index::from(i);
-        quote!(#field_name: row.#i.try_into()?)
+        quote!(#field_name: std::convert::TryInto::try_into(row.#i)?)
     });
     let sql_type = &(0..model.fields().len())
         .map(|i| {
@@ -40,21 +40,19 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
         where_clause
             .predicates
-            .push(parse_quote!((#(#field_ty,)*): FromStaticSqlRow<(#(#sql_type,)*), __DB>));
+            .push(parse_quote!((#(#field_ty,)*): diesel::deserialize::FromStaticSqlRow<(#(#sql_type,)*), __DB>));
     }
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     Ok(wrap_in_dummy_mod(quote! {
-        use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
-        use diesel::row::{Row, Field};
-        use std::convert::TryInto;
+        use diesel::row::{Row as _, Field as _};
 
-        impl #impl_generics Queryable<(#(#sql_type,)*), __DB> for #struct_name #ty_generics
+        impl #impl_generics diesel::deserialize::Queryable<(#(#sql_type,)*), __DB> for #struct_name #ty_generics
             #where_clause
         {
             type Row = (#(#field_ty,)*);
 
-            fn build(row: Self::Row) -> deserialize::Result<Self> {
+            fn build(row: (#(#field_ty,)*)) -> diesel::deserialize::Result<Self> {
                 Ok(Self {
                     #(#build_expr,)*
                 })

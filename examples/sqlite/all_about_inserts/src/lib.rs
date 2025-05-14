@@ -30,7 +30,7 @@ pub struct UserForm<'a> {
 }
 
 #[derive(Queryable, PartialEq, Debug)]
-struct User {
+pub struct User {
     id: i32,
     name: String,
     hair_color: Option<String>,
@@ -340,38 +340,37 @@ fn examine_sql_from_insert_get_results_batch() {
     assert_eq!(load_sql, debug_query::<Sqlite, _>(&load_query).to_string());
 }
 
-// FIXME: This test fails with "database is locked" for no obvious reason
-// #[test]
-// fn insert_get_result() {
-//     use diesel::result::Error;
+#[test]
+fn insert_get_result() {
+    use diesel::result::Error;
 
-//     let conn = &mut establish_connection();
-//     conn.test_transaction::<_, Error, _>(|conn| {
-//         use diesel::select;
-//         use schema::users::dsl::*;
+    let conn = &mut establish_connection();
+    conn.test_transaction::<_, Error, _>(|conn| {
+        use diesel::select;
+        use schema::users::dsl::*;
 
-//         let now = select(diesel::dsl::now).get_result::<NaiveDateTime>(&conn)?;
+        let now = select(diesel::dsl::now).get_result::<NaiveDateTime>(conn)?;
 
-//         let inserted_user = conn.transaction::<_, Error, _>(|conn| {
-//             insert_into(users)
-//                 .values((id.eq(3), name.eq("Ruby")))
-//                 .execute(&conn)?;
+        let inserted_user = conn.transaction::<_, Error, _>(|conn| {
+            insert_into(users)
+                .values((id.eq(3), name.eq("Ruby")))
+                .execute(conn)?;
 
-//             users.order(id.desc()).first(&conn)
-//         })?;
+            users.order(id.desc()).first(conn)
+        })?;
 
-//         let expected_user = User {
-//             id: 3,
-//             name: "Ruby".into(),
-//             hair_color: None,
-//             created_at: now,
-//             updated_at: now,
-//         };
-//         assert_eq!(expected_user, inserted_user);
+        let expected_user = User {
+            id: 3,
+            name: "Ruby".into(),
+            hair_color: None,
+            created_at: now,
+            updated_at: now,
+        };
+        assert_eq!(expected_user, inserted_user);
 
-//         Ok(())
-//     });
-// }
+        Ok(())
+    });
+}
 
 #[test]
 fn examine_sql_from_insert_get_result() {
@@ -421,6 +420,21 @@ fn examine_sql_from_explicit_returning() {
 
 #[cfg(test)]
 fn establish_connection() -> SqliteConnection {
-    let url = ::std::env::var("DATABASE_URL").unwrap();
-    SqliteConnection::establish(&url).unwrap()
+    let url = std::env::var("SQLITE_DATABASE_URL")
+        .or_else(|_| std::env::var("DATABASE_URL"))
+        .unwrap();
+    let mut conn = SqliteConnection::establish(&url).unwrap();
+    diesel::sql_query(
+        "CREATE TEMPORARY TABLE users (\
+            id INTEGER PRIMARY KEY AUTOINCREMENT, \
+            name TEXT NOT NULL, \
+            hair_color TEXT, \
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP \
+        );",
+    )
+    .execute(&mut conn)
+    .unwrap();
+
+    conn
 }

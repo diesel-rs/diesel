@@ -11,7 +11,7 @@ struct CowUser<'a> {
     name: Cow<'a, str>,
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn generated_queryable_allows_lifetimes() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -65,7 +65,7 @@ impl Queryable<my_users::SqlType, TestBackend> for User {
     }
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn check_deserialize_composite_ptr_types() {
     let conn = &mut connection();
 

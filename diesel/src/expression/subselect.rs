@@ -1,10 +1,19 @@
 use std::marker::PhantomData;
 
-use crate::expression::array_comparison::MaybeEmpty;
+use crate::expression::array_comparison::InExpression;
 use crate::expression::*;
 use crate::query_builder::*;
 use crate::result::QueryResult;
 
+/// This struct tells our type system that the whatever we put in `values`
+/// will be handled by SQL as an expression of type `ST`.
+/// It also implements the usual `SelectableExpression` and `AppearsOnTable` traits
+/// (which is useful when using this as an expression). To enforce correctness here, it checks
+/// the dedicated [`ValidSubselect`]. This however does not check that the `SqlType` of
+/// [`SelectQuery`], matches `ST`, so appropriate constraints should be checked in places that
+/// construct Subselect. (It's not always equal, notably .single_value() makes `ST` nullable, and
+/// `exists` checks bounds on `SubSelect<T, Bool>` although there is actually no such subquery in
+/// the final SQL.)
 #[derive(Debug, Copy, Clone, QueryId)]
 pub struct Subselect<T, ST> {
     values: T,
@@ -24,11 +33,16 @@ impl<T: SelectQuery, ST> Expression for Subselect<T, ST>
 where
     ST: SqlType + TypedExpressionType,
 {
+    // This is useful for `.single_value()`
     type SqlType = ST;
 }
 
-impl<T, ST> MaybeEmpty for Subselect<T, ST> {
+impl<T, ST: SqlType> InExpression for Subselect<T, ST> {
+    type SqlType = ST;
     fn is_empty(&self) -> bool {
+        false
+    }
+    fn is_array(&self) -> bool {
         false
     }
 }

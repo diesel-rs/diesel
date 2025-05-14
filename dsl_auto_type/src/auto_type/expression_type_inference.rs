@@ -44,7 +44,7 @@ pub struct InferrerSettings {
     pub(crate) function_types_case: Case,
 }
 
-impl<'a, 'p> LocalVariablesMap<'a, 'p> {
+impl<'a> LocalVariablesMap<'a, '_> {
     pub(crate) fn inferrer(&'a self) -> TypeInferrer<'a> {
         TypeInferrer {
             local_variables_map: self,
@@ -73,10 +73,12 @@ impl TypeInferrer<'_> {
             Err(e) => self.register_error(e, expr.span()),
         }
     }
+
     fn register_error(&self, error: syn::Error, infer_type_span: Span) -> syn::Type {
         self.errors.borrow_mut().push(Rc::new(error));
         parse_quote_spanned!(infer_type_span=> _)
     }
+
     fn try_infer_expression_type(
         &self,
         expr: &syn::Expr,
@@ -87,6 +89,9 @@ impl TypeInferrer<'_> {
             type_hint.filter(|h| !matches!(h, syn::Type::Infer(_))),
         ) {
             (syn::Expr::Group(syn::ExprGroup { expr, .. }), type_hint) => {
+                return self.try_infer_expression_type(expr, type_hint)
+            }
+            (syn::Expr::Paren(syn::ExprParen { expr, .. }), type_hint) => {
                 return self.try_infer_expression_type(expr, type_hint)
             }
             (
@@ -128,7 +133,7 @@ impl TypeInferrer<'_> {
                 // This is either a local variable or we should assume that the type exists at
                 // the same path as the function (with applied casing for last segment)
                 let path_is_ident = path.get_ident();
-                if path_is_ident.map_or(false, |ident| ident == "self") {
+                if path_is_ident.is_some_and(|ident| ident == "self") {
                     parse_quote!(Self)
                 } else if let Some(LetStatementInferredType { type_, errors }) = path_is_ident
                     .and_then(|path_single_ident| {
@@ -296,6 +301,54 @@ impl TypeInferrer<'_> {
                         }
                     }
                 }
+            }
+            (syn::Expr::Binary(binary_expression), None) => {
+                let op_span = Span::mixed_site().located_at(binary_expression.op.span());
+                let trait_name = match binary_expression.op {
+                    syn::BinOp::Add(_) => "Add",
+                    syn::BinOp::Sub(_) => "Sub",
+                    syn::BinOp::Mul(_) => "Mul",
+                    syn::BinOp::Div(_) => "Div",
+                    syn::BinOp::Rem(_) => "Rem",
+                    syn::BinOp::BitXor(_) => "BitXor",
+                    syn::BinOp::BitAnd(_) => "BitAnd",
+                    syn::BinOp::BitOr(_) => "BitOr",
+                    syn::BinOp::Shl(_) => "Shl",
+                    syn::BinOp::Shr(_) => "Shr",
+                    syn::BinOp::And(_)
+                    | syn::BinOp::Or(_)
+                    | syn::BinOp::Eq(_)
+                    | syn::BinOp::Lt(_)
+                    | syn::BinOp::Le(_)
+                    | syn::BinOp::Ne(_)
+                    | syn::BinOp::Ge(_)
+                    | syn::BinOp::Gt(_) => return Ok(parse_quote!(bool)),
+                    syn::BinOp::AddAssign(_)
+                    | syn::BinOp::SubAssign(_)
+                    | syn::BinOp::MulAssign(_)
+                    | syn::BinOp::DivAssign(_)
+                    | syn::BinOp::RemAssign(_)
+                    | syn::BinOp::BitXorAssign(_)
+                    | syn::BinOp::BitAndAssign(_)
+                    | syn::BinOp::BitOrAssign(_)
+                    | syn::BinOp::ShlAssign(_)
+                    | syn::BinOp::ShrAssign(_) => return Ok(parse_quote!(())),
+                    _ => {
+                        // This is here because the `BinOp` enum is marked as #[non_exhaustive],
+                        // but in effect we really support all the variants
+                        return Err(syn::Error::new(
+                            op_span,
+                            format_args!(
+                                "unsupported binary operator for auto_type: {:?}",
+                                binary_expression.op
+                            ),
+                        ));
+                    }
+                };
+                let trait_name_ident = syn::Ident::new(trait_name, op_span);
+                let left_type = self.infer_expression_type(&binary_expression.left, None);
+                let right_type = self.infer_expression_type(&binary_expression.right, None);
+                parse_quote!(<#left_type as ::core::ops::#trait_name_ident<#right_type>>::Output)
             }
             (_, None) => {
                 return Err(syn::Error::new(

@@ -15,7 +15,7 @@ pub(crate) struct LetStatementInferredType {
     pub(crate) type_: Type,
     pub(crate) errors: Vec<Rc<syn::Error>>,
 }
-impl<'a, 'p> LocalVariablesMapInner<'a, 'p> {
+impl LocalVariablesMapInner<'_, '_> {
     /// Lookup in this map, and if not found, in the parent map
     /// This is to support nested blocks
     pub(crate) fn get(&self, ident: &Ident) -> Option<&LetStatementInferredType> {
@@ -29,7 +29,7 @@ impl<'a, 'p> LocalVariablesMapInner<'a, 'p> {
     }
 }
 
-impl<'a, 'p> LocalVariablesMap<'a, 'p> {
+impl<'a> LocalVariablesMap<'a, '_> {
     pub(crate) fn process_pat(
         &mut self,
         pat: &'a syn::Pat,
@@ -114,6 +114,16 @@ impl<'a, 'p> LocalVariablesMap<'a, 'p> {
             }
         };
         Ok(())
+    }
+
+    pub(crate) fn process_const_generic(&mut self, const_generic: &'a syn::ConstParam) {
+        self.inner.map.insert(
+            &const_generic.ident,
+            LetStatementInferredType {
+                type_: const_generic.ty.clone(),
+                errors: Vec::new(),
+            },
+        );
     }
 
     /// Finishes a block inference for this map.

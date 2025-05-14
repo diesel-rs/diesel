@@ -1,0 +1,6 @@
+CREATE EXTENSION IF NOT EXISTS citext;
+
+CREATE TABLE users (
+    id   SERIAL PRIMARY KEY,
+    email citext NOT NULL
+);

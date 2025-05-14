@@ -2,7 +2,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/order_requires_column_from_same_table.rs:20:31
    |
 20 |     let source = users::table.order(posts::id);
-   |                               ^^^^^ expected `Never`, found `Once`
+   |                               ^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/order_requires_column_from_same_table.rs:13:9

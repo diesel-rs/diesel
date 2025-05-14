@@ -12,7 +12,63 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
-* Support `[print_schema] exclude_custom_type_definitions=["Vector"]`. If a `custom type` matches one element on the list it's skipped.
+* Added `limit()` and `offset()` DSL to combination clauses such as `UNION`
+* Fixed `#[derive(Identifiable)]` ignoring attribute `#[diesel(serialize_as)]` on primary keys
+* Added embedded struct support for `AsChangeset` via `#[diesel(embed)]`
+* Added a `#[diesel(skip_update)]` attribute for the `AsChangeset` derive to skip updating a field present in the struct
+* Support for libsqlite3-sys 0.33.0
+* Add support for built-in PostgreSQL range operators and functions
+* Support for postgres multirange type
+* Added `diesel::r2d2::TestCustomizer`, which allows users to customize their `diesel::r2d2::Pool`s
+in a way that makes the pools suitable for use in parallel tests.
+* Added support for built-in PostgreSQL range operators and functions
+* Added support for various built-in PostgreSQL array functions
+* Added `Json` and `Jsonb` support for the SQLite backend.
+* Added a `#[diesel::declare_sql_function]` attribute macro to easily define support for 
+  multiple sql functions at once via an `extern "SQL"` block
+* Support `[print_schema] allow_tables_to_appear_in_same_query_config = "fk_related_tables"` to generate separate `allow_tables_to_appear_in_same_query!` calls containing only tables that are related through foreign keys. (Default: `"all_tables"`.) It is not possible to build queries using two tables that don't appear in the same `allow_tables_to_appear_in_same_query!` call, but that macro generates O(n²) rust code, so this option may be useful to reduce compilation time. ([#4333](https://github.com/diesel-rs/diesel/issues/4333))
+
+### Fixed 
+
+* Fixed diesel thinking `a.eq_any(b)` was non-nullable even if `a` and `b` were nullable.
+* Generate `InstrumentationEvent::BeginTransaction` for immediate and exclusive transactions in SQLite
+* Added `wasm32-unknown-unknown` target support for sqlite backend.
+
+### Fixed
+
+* Use a single space instead of two spaces between `DELETE FROM`.
+* Diesel CLI now ensures that migration versions are always unique. If it fails to generate a unique version, it will return an error. The new version format remains compatible with older Diesel versions.
+* Updated `ipnetwork` to allow version 0.21.
+
+### Changed
+
+* Use distinct `DIESEL_LOG` logging filter env variable instead of the default `RUST_LOG` one (#4575)
+
+## [2.2.2] 2024-07-19
+
+### Fixed
+
+* Support for libsqlite3-sys 0.29.0
+* Fixed a potential panic in the sqlite cursor implementation
+* Fixed support for rust numeric operators with columns of the type `Numeric`
+* Removed the `SerializedDatabase::new` function due to unsoundness
+
+## [2.2.1] 2024-06-12
+
+## Fixed
+
+* Fixed using `#[dsl::auto_type]` with functions that accept reference arguments
+* Fixed using `#[derive(Queryable)]` with structs that use a type named `Row` as field type
+* Fixed a regression that prevented using `mysqlclient-sys` 0.2.x with diesel 2.2
+* Fixed connecting to postgres database using the scram-sha-256 authentication method on windows while using the bundled postgres builds
+* Improved the error messages in diesel-cli for cases where a file/folder was not found
+* Fixed several version detection bugs in mysqlclient-sys to use pre-generated bindings in more situations
+
+## [2.2.0] 2024-05-31
+
+### Added
+
+* Support `[print_schema] except_custom_type_definitions = ["Vector"]`. If a `custom type` matches one element on the list it's skipped.
 * Added automatic usage of all sqlite `rowid` aliases when no explicit primary key is defined for `print-schema`
 * Added a `#[dsl::auto_type]` attribute macro, allowing to infer type of query fragment functions
 * Added the same type inference on `Selectable` derives, which allows skipping specifying `select_expression_type` most of the time, in turn enabling most queries to be written using just a `Selectable` derive.
@@ -23,11 +79,63 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Add `sqlite-integer-primary-key-is-bigint` configuration option, usable with SQLite 3.37 or above, allowing to use `BigInt` for `INTEGER PRIMARY KEY` columns in SQLite for tables without the `WITHOUT ROWID` attribute ([SQLite doc](https://www.sqlite.org/lang_createtable.html#rowid)).
 * Support for multiple `print_schema` entry in `diesel.toml` (e.g. `[print_schema.user1]`), which allows generating multiple schema.rs files
 * Add support for `COPY TO` and `COPY FROM` statements
+* Add support for mapping `chrono::Duration` to postgresql's `INTERVAL` sql type
+* Added `serialize_database_to_buffer` and `deserialize_readonly_database_from_buffer` methods in `SqliteConnection` to support serialization/deserialization of SQLite databases to and from byte buffers.
+* Added `SerializedDatabase` wrapper type for a serialized database that is dynamically allocated by calling `serialize_database_to_buffer`. This RAII wrapper deallocates the memory when it goes out of scope with `sqlite3_free`.
 
 ### Changed
 
 * The minimal officially supported rustc version is now 1.78.0
 * Deprecated `sql_function!` in favour of `define_sql_function!` which provides compatibility with `#[dsl::auto_type]`
+* Deserialization error messages now contain information about the field that failed to deserialize
+
+## [2.1.6] 2024-04-19
+
+* Fix using `BoxableExpression` with having clauses
+* Fix using numeric expressions with aliased fields
+* Minor documentation fixes
+
+## [2.1.5] 2024-03-15
+
+* Fix `impl SqlOrd` postgres > postgres_backend feature flag.
+* Allow `Queryable` to be used with multiple table names.
+* Fix an inconsistent unit test
+* Fix a clippy lint
+* Fix ./bin/test feature flag calls.
+* Update `libsqlite3-sys` to allow version 0.28 as well
+
+## [2.1.4] 2023-11-14
+
+* Update `libsqlite3-sys` to allow version 0.27 as well
+
+## [2.1.3] 2023-10-05
+
+* Increased accidently decreased limit around element count in  `DISTINCT ON` and `ORDER BY` clauses again as that broke existing code
+
+## [2.1.2] 2023-09-25
+
+## Fixed
+
+* Fixed another potential breaking chaneg around queries containing `DISTINCT ON` and `ORDER BY` clauses consisting of custom sql expressions (e.g. `.nullable()`)
+* Fixed an issue where `#[derive(Selectable)]` and `#[diesel(check_for_backend)]` generates invalid rust code if the struct contains lifetimes/generic types
+
+## [2.1.1] 2023-08-25
+
+## Fixed
+
+* Fixed an issue in diesel-cli that lead to using unquoted table names in one of the internal queries
+* Fixed a bug in `diesel print-schema` that lead to generating invalid `table!` macros if both the `#[sql_name]` and the `#[max_length]` attribute are present
+* Fixed an issue in diesel-cli that lead to ignoring certain foreign key constraints for postgresql
+* Fixed an crash while using `diesel print-schema` with really old sqlite versions
+* Fixed an issue where `#[diesel(check_for_backend)]` ignored `#[diesel(deserialize_as)]` attributes
+* Fixed several issues with the new `#[derive(MultiConnection)]` feature
+* Fixed some edge cases in our sqlite timestamp parsing behaviour
+* `diesel migration generate --diff-schema` now respects table filters as setup for `print-schema` via `diesel.toml`
+* Fixed a potential breaking change around queries containing `DISTINCT ON` and `ORDER BY` clauses consisting of custom sql expressions (e.g. `diesel::dsl::sql`)
+
+## Added
+
+* Support for bigdecimal 0.4
 
 ## [2.1.0] 2023-05-26
 
@@ -37,8 +145,6 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
-* Added `serialize_database_to_buffer` and `deserialize_readonly_database_from_buffer` methods in `SqliteConnection` to support serialization/deserialization of SQLite databases to and from byte buffers.
-* Added `SerializedDatabase` wrapper type for a serialized database that is dynamically allocated by calling `serialize_database_to_buffer`. This RAII wrapper deallocates the memory when it goes out of scope with `sqlite3_free`.
 * Added the `custom_type_derives` config option to customize the derives for SQL
   type definitions automatically generated by Diesel CLI.
 * Add a `#[derive(MultiConnection)]` proc-macro that lets you easily implement `diesel::Connection`
@@ -2046,3 +2152,12 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.0.3]: https://github.com/diesel-rs/diesel/compare/v.2.0.2...v2.0.3
 [2.0.4]: https://github.com/diesel-rs/diesel/compare/v.2.0.3...v2.0.4
 [2.1.0]: https://github.com/diesel-rs/diesel/compare/v.2.0.0...v2.1.0
+[2.1.1]: https://github.com/diesel-rs/diesel/compare/v.2.1.0...v2.1.1
+[2.1.2]: https://github.com/diesel-rs/diesel/compare/v.2.1.1...v2.1.2
+[2.1.3]: https://github.com/diesel-rs/diesel/compare/v.2.1.2...v2.1.3
+[2.1.4]: https://github.com/diesel-rs/diesel/compare/v.2.1.3...v2.1.4
+[2.1.5]: https://github.com/diesel-rs/diesel/compare/v.2.1.4...v2.1.5
+[2.1.6]: https://github.com/diesel-rs/diesel/compare/v.2.1.5...v2.1.6
+[2.2.0]: https://github.com/diesel-rs/diesel/compare/v.2.1.0...v2.2.0
+[2.2.1]: https://github.com/diesel-rs/diesel/compare/v.2.2.0...v2.2.1
+[2.2.2]: https://github.com/diesel-rs/diesel/compare/v.2.2.1...v2.2.2

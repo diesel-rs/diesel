@@ -1,6 +1,6 @@
 use self::models::*;
 use diesel::prelude::*;
-use diesel_demo_step_1_mysql::*;
+use getting_started_step_1_mysql::*;
 
 fn main() {
     use self::schema::posts::dsl::*;

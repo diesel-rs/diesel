@@ -12,12 +12,12 @@ pub struct DynamicSelectClause<'a, DB, QS> {
     p: PhantomData<QS>,
 }
 
-impl<'a, DB, QS> QueryId for DynamicSelectClause<'a, DB, QS> {
+impl<DB, QS> QueryId for DynamicSelectClause<'_, DB, QS> {
     const HAS_STATIC_QUERY_ID: bool = false;
     type QueryId = ();
 }
 
-impl<'a, DB, QS> Default for DynamicSelectClause<'a, DB, QS> {
+impl<DB, QS> Default for DynamicSelectClause<'_, DB, QS> {
     fn default() -> Self {
         Self::new()
     }
@@ -42,18 +42,18 @@ impl<'a, DB, QS> DynamicSelectClause<'a, DB, QS> {
     }
 }
 
-impl<'a, DB, QS> AppearsOnTable<QS> for DynamicSelectClause<'a, DB, QS> where Self: Expression {}
+impl<DB, QS> AppearsOnTable<QS> for DynamicSelectClause<'_, DB, QS> where Self: Expression {}
 
-impl<'a, DB, QS> SelectableExpression<QS> for DynamicSelectClause<'a, DB, QS> where
+impl<DB, QS> SelectableExpression<QS> for DynamicSelectClause<'_, DB, QS> where
     Self: AppearsOnTable<QS>
 {
 }
 
-impl<'a, QS, DB> Expression for DynamicSelectClause<'a, DB, QS> {
+impl<QS, DB> Expression for DynamicSelectClause<'_, DB, QS> {
     type SqlType = Untyped;
 }
 
-impl<'a, DB, QS> QueryFragment<DB> for DynamicSelectClause<'a, DB, QS>
+impl<DB, QS> QueryFragment<DB> for DynamicSelectClause<'_, DB, QS>
 where
     DB: Backend,
 {
@@ -71,6 +71,6 @@ where
     }
 }
 
-impl<'a, DB, QS> ValidGrouping<()> for DynamicSelectClause<'a, DB, QS> {
+impl<DB, QS> ValidGrouping<()> for DynamicSelectClause<'_, DB, QS> {
     type IsAggregate = is_aggregate::No;
 }

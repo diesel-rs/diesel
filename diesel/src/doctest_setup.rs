@@ -171,15 +171,7 @@ cfg_if::cfg_if! {
             create_tables_with_data(connection);
         }
 
-        fn clean_tables(connection: &mut MysqlConnection) {
-            diesel::sql_query("SET FOREIGN_KEY_CHECKS=0").execute(connection).unwrap();
-            diesel::sql_query("DROP TABLE IF EXISTS users CASCADE").execute(connection).unwrap();
-            diesel::sql_query("DROP TABLE IF EXISTS animals CASCADE").execute(connection).unwrap();
-            diesel::sql_query("DROP TABLE IF EXISTS posts CASCADE").execute(connection).unwrap();
-            diesel::sql_query("DROP TABLE IF EXISTS comments CASCADE").execute(connection).unwrap();
-            diesel::sql_query("DROP TABLE IF EXISTS brands CASCADE").execute(connection).unwrap();
-            diesel::sql_query("SET FOREIGN_KEY_CHECKS=1").execute(connection).unwrap();
-        }
+        fn clean_tables(_connection: &mut MysqlConnection) {}
 
         fn connection_no_data() -> MysqlConnection {
             let connection_url = database_url_for_env();
@@ -189,14 +181,14 @@ cfg_if::cfg_if! {
         }
 
         fn create_tables_with_data(connection: &mut MysqlConnection) {
-            diesel::sql_query("CREATE TABLE users (
+            diesel::sql_query("CREATE TEMPORARY TABLE users (
                 id INTEGER PRIMARY KEY AUTO_INCREMENT,
                 name TEXT NOT NULL
             ) CHARACTER SET utf8mb4").execute(connection).unwrap();
             diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
                       .execute(connection).unwrap();
 
-            diesel::sql_query("CREATE TABLE animals (
+            diesel::sql_query("CREATE TEMPORARY TABLE animals (
                 id INTEGER PRIMARY KEY AUTO_INCREMENT,
                 species TEXT NOT NULL,
                 legs INTEGER NOT NULL,
@@ -206,7 +198,7 @@ cfg_if::cfg_if! {
                                ('dog', 4, 'Jack'),
                                ('spider', 8, null)").execute(connection).unwrap();
 
-            diesel::sql_query("CREATE TABLE posts (
+            diesel::sql_query("CREATE TEMPORARY TABLE posts (
                 id INTEGER PRIMARY KEY AUTO_INCREMENT,
                 user_id INTEGER NOT NULL,
                 title TEXT NOT NULL
@@ -216,7 +208,7 @@ cfg_if::cfg_if! {
                 (1, 'About Rust'),
                 (2, 'My first post too')").execute(connection).unwrap();
 
-            diesel::sql_query("CREATE TABLE comments (
+            diesel::sql_query("CREATE TEMPORARY TABLE comments (
                 id INTEGER PRIMARY KEY AUTO_INCREMENT,
                 post_id INTEGER NOT NULL,
                 body TEXT NOT NULL
@@ -226,7 +218,7 @@ cfg_if::cfg_if! {
                 (2, 'Yay! I am learning Rust'),
                 (3, 'I enjoyed your post')").execute(connection).unwrap();
 
-            diesel::sql_query("CREATE TABLE brands (
+            diesel::sql_query("CREATE TEMPORARY TABLE brands (
                 id INTEGER PRIMARY KEY AUTO_INCREMENT,
                 color VARCHAR(255) NOT NULL DEFAULT 'Green',
                 accent VARCHAR(255) DEFAULT 'Blue'

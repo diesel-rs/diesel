@@ -131,12 +131,13 @@ fn parse_julian(julian_days: f64) -> Result<PrimitiveDateTime, ComponentRange> {
     const EPOCH_IN_JULIAN_DAYS: f64 = 2_440_587.5;
     const SECONDS_IN_DAY: f64 = 86400.0;
     let timestamp = (julian_days - EPOCH_IN_JULIAN_DAYS) * SECONDS_IN_DAY;
+    #[allow(clippy::cast_possible_truncation)] // we multiply by 1E9 to prevent that
     OffsetDateTime::from_unix_timestamp_nanos((timestamp * 1E9) as i128).map(naive_utc)
 }
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<Date, Sqlite> for NaiveDate {
-    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value
             .parse_string(|s| Self::parse(s, DATE_FORMAT))
             .map_err(Into::into)
@@ -153,7 +154,7 @@ impl ToSql<Date, Sqlite> for NaiveDate {
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<Time, Sqlite> for NaiveTime {
-    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             for format in TIME_FORMATS {
                 if let Ok(time) = Self::parse(text, format) {
@@ -181,7 +182,7 @@ impl ToSql<Time, Sqlite> for NaiveTime {
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<Timestamp, Sqlite> for PrimitiveDateTime {
-    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             for format in PRIMITIVE_DATETIME_FORMATS {
                 if let Ok(dt) = Self::parse(text, format) {
@@ -215,7 +216,7 @@ impl ToSql<Timestamp, Sqlite> for PrimitiveDateTime {
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
-    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             for format in PRIMITIVE_DATETIME_FORMATS {
                 if let Ok(dt) = Self::parse(text, format) {
@@ -249,7 +250,7 @@ impl ToSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for OffsetDateTime {
-    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         // First try to parse the timezone
         if let Ok(dt) = value.parse_string(|text| {
             for format in DATETIME_FORMATS {
@@ -302,11 +303,14 @@ mod tests {
     use crate::sql_types::{Text, Time, Timestamp, TimestamptzSqlite};
     use crate::test_helpers::connection;
 
-    define_sql_function!(fn datetime(x: Text) -> Timestamp);
-    define_sql_function!(fn time(x: Text) -> Time);
-    define_sql_function!(fn date(x: Text) -> Date);
+    #[declare_sql_function]
+    extern "SQL" {
+        fn datetime(x: Text) -> Timestamp;
+        fn time(x: Text) -> Time;
+        fn date(x: Text) -> Date;
+    }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_encodes_correctly() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:0:0);
@@ -314,7 +318,7 @@ mod tests {
         assert_eq!(Ok(true), query.get_result(connection));
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_decodes_correctly_in_all_possible_formats() {
         let connection = &mut connection();
         let time = datetime!(1970-1-1 0:0:0);
@@ -369,7 +373,7 @@ mod tests {
         }
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
         let time = naive_utc(OffsetDateTime::now_utc()) + Duration::seconds(60);
@@ -381,7 +385,7 @@ mod tests {
         assert_eq!(Ok(true), query.get_result(connection));
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_of_day_encode_correctly() {
         let connection = &mut connection();
 
@@ -398,7 +402,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn times_of_day_decode_correctly() {
         let connection = &mut connection();
         let midnight = NaiveTime::from_hms(0, 0, 0).unwrap();
@@ -446,7 +450,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn dates_encode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = date!(2000 - 1 - 1);
@@ -466,7 +470,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn dates_decode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = date!(2000 - 1 - 1);
@@ -495,7 +499,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn datetimes_decode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = datetime!(2000-1-1 1:1:1);
@@ -527,7 +531,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn datetimes_encode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = datetime!(2000-1-1 0:0:0);
@@ -547,7 +551,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn insert_timestamptz_into_table_as_text() {
         crate::table! {
             #[allow(unused_parens)]
@@ -584,7 +588,7 @@ mod tests {
         assert_eq!(result, time);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn can_query_timestamptz_column_with_between() {
         crate::table! {
             #[allow(unused_parens)]
@@ -653,7 +657,7 @@ mod tests {
         assert_eq!(result, Ok(3));
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_encodes_correctly_with_timezone() {
         let connection = &mut connection();
         // West one hour is negative offset
@@ -662,7 +666,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_encodes_correctly_with_utc_timezone() {
         let connection = &mut connection();
         let time: OffsetDateTime = datetime!(1970-1-1 0:0:0.001 utc);
@@ -675,7 +679,7 @@ mod tests {
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn unix_epoch_decodes_correctly_with_utc_timezone_in_all_possible_formats() {
         let connection = &mut connection();
         let time: OffsetDateTime = datetime!(1970-1-1 0:0:0 utc);

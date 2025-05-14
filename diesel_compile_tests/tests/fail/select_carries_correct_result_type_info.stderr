@@ -2,15 +2,15 @@ error[E0277]: cannot deserialize a value of the database type `diesel::sql_types
   --> tests/fail/select_carries_correct_result_type_info.rs:19:39
    |
 19 |     let ids = select_name.load::<i32>(&mut connection);
-   |                           ----        ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, _>` is not implemented for `i32`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::name>>: LoadQuery<'_, _, i32>`
+   |                           ----        ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, _>` is not implemented for `i32`
    |                           |
    |                           required by a bound introduced by this call
    |
    = note: double check your type mappings via the documentation of `diesel::sql_types::Text`
    = help: the following other types implement trait `FromSql<A, DB>`:
-             <i32 as FromSql<diesel::sql_types::Integer, Mysql>>
-             <i32 as FromSql<diesel::sql_types::Integer, Pg>>
-             <i32 as FromSql<diesel::sql_types::Integer, Sqlite>>
+             `i32` implements `FromSql<diesel::sql_types::Integer, Mysql>`
+             `i32` implements `FromSql<diesel::sql_types::Integer, Pg>`
+             `i32` implements `FromSql<diesel::sql_types::Integer, Sqlite>`
    = note: required for `i32` to implement `Queryable<diesel::sql_types::Text, _>`
    = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, _>`
    = note: required for `diesel::sql_types::Text` to implement `load_dsl::private::CompatibleType<i32, _>`
@@ -24,20 +24,19 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0277]: cannot deserialize a value of the database type `diesel::sql_types::Integer` as `*const str`
+error[E0277]: cannot deserialize a value of the database type `diesel::sql_types::Integer` as `std::string::String`
   --> tests/fail/select_carries_correct_result_type_info.rs:20:42
    |
 20 |     let names = select_id.load::<String>(&mut connection);
-   |                           ----           ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, _>` is not implemented for `*const str`, which is required by `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>: LoadQuery<'_, _, std::string::String>`
-   |                           |
-   |                           required by a bound introduced by this call
+   |                                          ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, _>` is not implemented for `std::string::String`
    |
    = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`
    = help: the following other types implement trait `FromSql<A, DB>`:
-             <*const str as FromSql<diesel::sql_types::Text, Mysql>>
-             <*const str as FromSql<diesel::sql_types::Text, Pg>>
-             <*const str as FromSql<diesel::sql_types::Text, Sqlite>>
-   = note: required for `std::string::String` to implement `FromSql<diesel::sql_types::Integer, _>`
+             `std::string::String` implements `FromSql<Citext, Pg>`
+             `std::string::String` implements `FromSql<TimestamptzSqlite, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Date, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Time, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Timestamp, Sqlite>`
    = note: required for `std::string::String` to implement `Queryable<diesel::sql_types::Integer, _>`
    = note: required for `std::string::String` to implement `FromSqlRow<diesel::sql_types::Integer, _>`
    = note: required for `diesel::sql_types::Integer` to implement `load_dsl::private::CompatibleType<std::string::String, _>`

@@ -2,17 +2,17 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
    |
 21 |     let source = users::table.select(sum(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
+   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::id as SelectableExpression<posts::table>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
+             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::id` implements `SelectableExpression<posts::table>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
    = note: required for `diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>>`
 
@@ -20,7 +20,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
    |
 21 |     let source = users::table.select(sum(posts::id));
-   |                               ^^^^^^ expected `Never`, found `Once`
+   |                               ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
@@ -37,17 +37,17 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
    |
 22 |     let source = users::table.select(avg(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
+   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::id as SelectableExpression<posts::table>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
+             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::id` implements `SelectableExpression<posts::table>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
    = note: required for `diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>>`
 
@@ -55,7 +55,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
    |
 22 |     let source = users::table.select(avg(posts::id));
-   |                               ^^^^^^ expected `Never`, found `Once`
+   |                               ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
@@ -72,17 +72,17 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:23:31
    |
 23 |     let source = users::table.select(max(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
+   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::id as SelectableExpression<posts::table>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
+             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::id` implements `SelectableExpression<posts::table>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
    = note: required for `diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>>`
 
@@ -90,7 +90,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:23:31
    |
 23 |     let source = users::table.select(max(posts::id));
-   |                               ^^^^^^ expected `Never`, found `Once`
+   |                               ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
@@ -107,17 +107,17 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:24:31
    |
 24 |     let source = users::table.select(min(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`, which is required by `SelectStatement<FromClause<users::table>>: SelectDsl<_>`
+   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <posts::columns::id as SelectableExpression<posts::table>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
+             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::id` implements `SelectableExpression<posts::table>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
    = note: required for `diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>>`
 
@@ -125,7 +125,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:24:31
    |
 24 |     let source = users::table.select(min(posts::id));
-   |                               ^^^^^^ expected `Never`, found `Once`
+   |                               ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9

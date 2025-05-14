@@ -960,9 +960,9 @@ error[E0599]: no function or associated item named `belonging_to` found for type
 Please check out other [official guides] and [docs]
 for more information on using the Diesel framework.
 
-If you have any questions, join our [gitter channel],
+If you have any questions, join our [discussion forum],
 the Diesel team is happy to help.
 
 [official guides]: https://diesel.rs/guides/
 [docs]: https://docs.diesel.rs
-[gitter channel]: https://gitter.im/diesel-rs/diesel
+[discussion forum]: https://github.com/diesel-rs/diesel/discussions

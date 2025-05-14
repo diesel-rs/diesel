@@ -1,6 +1,7 @@
 ---
 source: diesel_cli/tests/print_schema.rs
 description: "Test: print_schema_sqlite_implicit_foreign_key_reference"
+snapshot_kind: text
 ---
 // @generated automatically by Diesel CLI.
 
@@ -22,8 +23,4 @@ diesel::table! {
 
 diesel::joinable!(accounts -> data_centers (data_center_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    accounts,
-    data_centers,
-);
-
+diesel::allow_tables_to_appear_in_same_query!(accounts, data_centers,);

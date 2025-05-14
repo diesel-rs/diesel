@@ -63,7 +63,7 @@ where
     }
 }
 
-impl<'a, DB> From<NoWhereClause> for BoxedWhereClause<'a, DB> {
+impl<DB> From<NoWhereClause> for BoxedWhereClause<'_, DB> {
     fn from(_: NoWhereClause) -> Self {
         BoxedWhereClause::None
     }
@@ -147,7 +147,7 @@ pub enum BoxedWhereClause<'a, DB> {
     None,
 }
 
-impl<'a, DB> QueryFragment<DB> for BoxedWhereClause<'a, DB>
+impl<DB> QueryFragment<DB> for BoxedWhereClause<'_, DB>
 where
     DB: Backend + DieselReserveSpecialization,
 {
@@ -162,7 +162,7 @@ where
     }
 }
 
-impl<'a, DB> QueryId for BoxedWhereClause<'a, DB> {
+impl<DB> QueryId for BoxedWhereClause<'_, DB> {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;

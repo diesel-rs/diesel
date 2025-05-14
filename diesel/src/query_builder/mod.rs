@@ -65,11 +65,17 @@ pub use self::update_statement::target::{IntoUpdateTarget, UpdateTarget};
 pub use self::update_statement::{BoxedUpdateStatement, UpdateStatement};
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::combination_clause::{
+    All, Distinct, Except, Intersect, ParenthesisWrapper, SupportsCombinationClause, Union,
+};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::limit_clause::{LimitClause, NoLimitClause};
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::offset_clause::{NoOffsetClause, OffsetClause};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::order_clause::{NoOrderClause, OrderClause};
 
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
@@ -83,7 +89,7 @@ pub(crate) use self::insert_statement::{UndecoratedInsertRecord, ValuesClause};
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
-pub use self::insert_statement::DefaultValues;
+pub use self::insert_statement::{DefaultValues, InsertOrIgnore, Replace};
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
@@ -184,7 +190,7 @@ pub trait Query {
     type SqlType;
 }
 
-impl<'a, T: Query> Query for &'a T {
+impl<T: Query> Query for &T {
     type SqlType = T::SqlType;
 }
 
@@ -298,7 +304,7 @@ where
     }
 }
 
-impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T
+impl<T: ?Sized, DB> QueryFragment<DB> for &T
 where
     DB: Backend,
     T: QueryFragment<DB>,

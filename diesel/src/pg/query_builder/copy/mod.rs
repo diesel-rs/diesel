@@ -148,11 +148,11 @@ macro_rules! copy_target_for_columns {
         $(
             impl<T, $($ST,)*> CopyTarget for ($($ST,)*)
             where
-                $($ST: Column<Table = T>,)*
+                $($ST: Column<Table = T> + Default,)*
                 ($(<$ST as Expression>::SqlType,)*): SqlType,
                 T: Table + StaticQueryFragment,
                 T::Component: QueryFragment<Pg>,
-                Self: ColumnList + Default,
+                Self: ColumnList,
             {
                 type Table = T;
                 type SqlType = crate::dsl::SqlTypeOf<Self>;
@@ -162,7 +162,7 @@ macro_rules! copy_target_for_columns {
                 ) -> crate::QueryResult<()> {
                     T::STATIC_COMPONENT.walk_ast(pass.reborrow())?;
                     pass.push_sql("(");
-                    <Self as ColumnList>::walk_ast(&Self::default(), pass.reborrow())?;
+                    <Self as ColumnList>::walk_ast(&($($ST::default(),)*), pass.reborrow())?;
                     pass.push_sql(")");
                     Ok(())
                 }

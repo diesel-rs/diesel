@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "2.1.4"
+version = "2.2.4"
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"
 readme = "README.md"
@@ -11,21 +11,29 @@ keywords = ["orm", "database", "sql"]
 categories = ["database"]
 edition = "2021"
 rust-version.workspace = true
+include = [
+    "src/**/*.rs",
+    "tests/**/*.rs",
+    "LICENSE-*",
+    "README.md",
+    "src/sqlite/connection/diesel_manage_updated_at.sql",
+    "src/migration/setup_migration_table.sql",
+]
 
 [dependencies]
 byteorder = { version = "1.0", optional = true }
 chrono = { version = "0.4.20", optional = true, default-features = false, features = ["clock", "std"] }
 libc = { version = "0.2.0", optional = true }
-libsqlite3-sys = { version = ">=0.17.2, <0.29.0", optional = true, features = ["bundled_bindings"] }
-mysqlclient-sys = { version = "0.2.5", optional = true }
-pq-sys = { version = ">=0.4.0, <0.6.0", optional = true }
-pq-src = { version = "0.1", optional = true }
+mysqlclient-sys = { version = ">=0.2.5, <0.5.0",  optional = true }
+mysqlclient-src = { version = "0.1.0", optional = true }
+pq-sys = { version = ">=0.4.0, <0.8.0", optional = true }
+pq-src = { version = "0.3", optional = true }
 quickcheck = { version = "1.0.3", optional = true }
 serde_json = { version = ">=0.8.0, <2.0", optional = true }
 url = { version = "2.1.0", optional = true }
 percent-encoding = { version = "2.1.0", optional = true }
 uuid = { version = ">=0.7.0, <2.0.0", optional = true }
-ipnetwork = { version = ">=0.12.2, <0.21.0", optional = true }
+ipnetwork = { version = ">=0.12.2, <0.22.0", optional = true }
 ipnet = { version = "2.5.0", optional = true }
 num-bigint = { version = ">=0.2.0, <0.5.0", optional = true }
 num-traits = { version = "0.2.0", optional = true }
@@ -35,16 +43,31 @@ bitflags = { version = "2.0.0", optional = true }
 r2d2 = { version = ">= 0.8.2, < 0.9.0", optional = true }
 itoa = { version = "1.0.0", optional = true }
 time = { version = "0.3.9", optional = true, features = ["macros"] }
+downcast-rs = "2.0.1"
 
 [dependencies.diesel_derives]
-version = "~2.1.0"
+version = "~2.2.0"
 path = "../diesel_derives"
+
+[target.'cfg(not(all(target_family = "wasm", target_os = "unknown")))'.dependencies]
+libsqlite3-sys = { version = ">=0.17.2, <0.34.0", optional = true, features = ["bundled_bindings"] }
+
+[target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
+sqlite-wasm-rs = { version = ">=0.3.4, <0.4.0", optional = true, default-features = false }
+
+[target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dev-dependencies]
+# Something is dependent on it, we use feature to override it.
+getrandom = { version = "0.2", features = ["js"] }
+wasm-bindgen-test = "0.3.49"
+sqlite-wasm-rs = { version = ">=0.3.4, <0.4.0", default-features = false, features = ["bundled"] }
 
 [dev-dependencies]
 cfg-if = "1"
 dotenvy = "0.15"
-ipnetwork = ">=0.12.2, <0.21.0"
+ipnetwork = ">=0.12.2, <0.22.0"
 quickcheck = "1.0.3"
+tempfile = "3.10.1"
+diesel_test_helper = { path = "../diesel_test_helper" }
 
 [features]
 default = ["with-deprecated", "32-column-tables"]
@@ -55,21 +78,31 @@ huge-tables = ["64-column-tables"]
 32-column-tables = ["diesel_derives/32-column-tables"]
 64-column-tables = ["32-column-tables", "diesel_derives/64-column-tables"]
 128-column-tables = ["64-column-tables", "diesel_derives/128-column-tables"]
-postgres = ["pq-sys", "postgres_backend"]
-sqlite = ["libsqlite3-sys", "diesel_derives/sqlite", "time?/formatting", "time?/parsing"]
-mysql = ["mysqlclient-sys", "url", "percent-encoding", "bitflags", "mysql_backend"]
+postgres = ["dep:pq-sys", "postgres_backend"]
+sqlite = ["dep:libsqlite3-sys", "dep:sqlite-wasm-rs", "diesel_derives/sqlite", "time?/formatting", "time?/parsing"]
+mysql = ["dep:mysqlclient-sys", "dep:url", "dep:percent-encoding", "dep:bitflags", "mysql_backend"]
 without-deprecated = ["diesel_derives/without-deprecated"]
 with-deprecated = ["diesel_derives/with-deprecated"]
-network-address = ["ipnetwork", "libc"]
-ipnet-address = ["ipnet", "libc"]
-numeric = ["num-bigint", "bigdecimal", "num-traits", "num-integer"]
-postgres_backend = ["diesel_derives/postgres", "bitflags", "byteorder", "itoa"]
-mysql_backend = ["diesel_derives/mysql", "byteorder"]
+network-address = ["dep:ipnetwork", "dep:libc"]
+ipnet-address = ["dep:ipnet", "dep:libc"]
+numeric = ["dep:num-bigint", "dep:bigdecimal", "dep:num-traits", "dep:num-integer"]
+postgres_backend = ["diesel_derives/postgres", "dep:bitflags", "dep:byteorder", "dep:itoa"]
+mysql_backend = ["diesel_derives/mysql", "dep:byteorder"]
 returning_clauses_for_sqlite_3_35 = []
 i-implement-a-third-party-backend-and-opt-into-breaking-changes = []
 r2d2 = ["diesel_derives/r2d2", "dep:r2d2"]
 chrono = ["diesel_derives/chrono", "dep:chrono"]
 time = ["diesel_derives/time", "dep:time"]
+uuid = ["dep:uuid"]
+serde_json = ["dep:serde_json"]
+__with_asan_tests = [
+    "libsqlite3-sys?/bundled",
+    "libsqlite3-sys?/with-asan",
+    "pq-sys?/bundled",
+    "pq-src?/with-asan",
+    "mysqlclient-sys?/bundled",
+    "mysqlclient-src?/with-asan",
+]
 
 [package.metadata.docs.rs]
 features = ["postgres", "mysql", "sqlite", "extras"]

@@ -1,6 +1,6 @@
 use self::models::*;
 use diesel::prelude::*;
-use diesel_demo_step_2_sqlite::*;
+use getting_started_step_2_sqlite::*;
 
 fn main() {
     use self::schema::posts::dsl::*;

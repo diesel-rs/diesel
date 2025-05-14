@@ -22,7 +22,7 @@ impl<'conn> CopyFromSink<'conn> {
     }
 }
 
-impl<'conn> Write for CopyFromSink<'conn> {
+impl Write for CopyFromSink<'_> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         self.conn
             .put_copy_data(buf)
@@ -70,7 +70,7 @@ impl<'conn> CopyToBuffer<'conn> {
     }
 }
 
-impl<'conn> Drop for CopyToBuffer<'conn> {
+impl Drop for CopyToBuffer<'_> {
     #[allow(unsafe_code)] // ffi code
     fn drop(&mut self) {
         if !self.ptr.is_null() {
@@ -80,7 +80,7 @@ impl<'conn> Drop for CopyToBuffer<'conn> {
     }
 }
 
-impl<'conn> Read for CopyToBuffer<'conn> {
+impl Read for CopyToBuffer<'_> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         let data = self.fill_buf()?;
         let len = usize::min(buf.len(), data.len());
@@ -90,7 +90,7 @@ impl<'conn> Read for CopyToBuffer<'conn> {
     }
 }
 
-impl<'conn> BufRead for CopyToBuffer<'conn> {
+impl BufRead for CopyToBuffer<'_> {
     #[allow(unsafe_code)] // ffi code + ptr arithmetic
     fn fill_buf(&mut self) -> std::io::Result<&[u8]> {
         if self.data_slice().is_empty() {
@@ -102,7 +102,10 @@ impl<'conn> BufRead for CopyToBuffer<'conn> {
                 let len =
                     pq_sys::PQgetCopyData(self.conn.internal_connection.as_ptr(), &mut self.ptr, 0);
                 match len {
-                    len if len >= 0 => self.len = len as usize + 1,
+                    len if len >= 0 => {
+                        self.len = 1 + usize::try_from(len)
+                            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
+                    }
                     -1 => self.len = 0,
                     _ => {
                         let error = self.conn.last_error_message();

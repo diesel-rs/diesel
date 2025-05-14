@@ -34,6 +34,8 @@ impl<Inner> SqlQuery<Inner> {
     /// [PostgreSQL PREPARE syntax](https://www.postgresql.org/docs/current/sql-prepare.html),
     /// or [MySQL bind syntax](https://dev.mysql.com/doc/refman/8.0/en/mysql-stmt-bind-param.html).
     ///
+    /// For binding a variable number of values in a loop, use `into_boxed` first.
+    ///
     /// # Safety
     ///
     /// This function should be used with care, as Diesel cannot validate that
@@ -64,6 +66,7 @@ impl<Inner> SqlQuery<Inner> {
     /// # #[cfg(feature = "postgres")]
     /// # let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
     /// # #[cfg(not(feature = "postgres"))]
+    /// // sqlite/mysql bind syntax
     /// let users = sql_query("SELECT * FROM users WHERE id > ? AND name <> ?")
     /// # ;
     /// # let users = users
@@ -80,8 +83,55 @@ impl<Inner> SqlQuery<Inner> {
         UncheckedBind::new(self, value)
     }
 
-    /// Internally boxes future calls on `bind` and `sql` so that they don't
-    /// change the type.
+    /// Internally boxes the query, which allows to  calls `bind` and `sql` so that they don't
+    /// change the type nor the instance. This allows to call `bind` or `sql`
+    /// in a loop, e.g.:
+    ///
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # use schema::users;
+    /// #
+    /// # #[derive(QueryableByName, Debug, PartialEq)]
+    /// # struct User {
+    /// #     id: i32,
+    /// #     name: String,
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use diesel::sql_query;
+    /// #     use diesel::sql_types::{Integer};
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::insert_into(users::table)
+    /// #         .values(users::name.eq("Jim"))
+    /// #         .execute(connection).unwrap();
+    /// let mut q = diesel::sql_query("SELECT * FROM users WHERE id IN(").into_boxed();
+    /// for (idx, user_id) in [3, 4, 5].into_iter().enumerate() {
+    ///     if idx != 0 {
+    ///         q = q.sql(", ");
+    ///     }
+    /// # #[cfg(feature = "postgres")]
+    /// # {
+    ///    q = q
+    ///        // postgresql bind syntax
+    ///        .sql(format!("${}", idx + 1))
+    ///        .bind::<Integer, _>(user_id);
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # {
+    /// #   q = q
+    /// #       .sql(format!("?"))
+    /// #       .bind::<Integer, _>(user_id);
+    /// # }
+    /// }
+    /// let users = q.sql(");").get_results(connection);
+    /// let expected_users = vec![
+    ///     User { id: 3, name: "Jim".into() },
+    /// ];
+    /// assert_eq!(Ok(expected_users), users);
+    /// # }
+    /// ```
     ///
     /// This allows doing things you otherwise couldn't do, e.g. `bind`ing in a
     /// loop.
@@ -202,6 +252,7 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     /// # #[cfg(feature = "postgres")]
     /// # let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
     /// # #[cfg(not(feature = "postgres"))]
+    /// // sqlite/mysql bind syntax
     /// let users = sql_query("SELECT * FROM users WHERE id > ? AND name <> ?")
     /// # ;
     /// # let users = users
@@ -365,7 +416,7 @@ mod private {
 mod tests {
     fn assert_send<S: Send>(_: S) {}
 
-    #[test]
+    #[diesel_test_helper::test]
     fn check_boxed_sql_query_is_send() {
         let query = crate::sql_query("SELECT 1")
             .into_boxed::<<crate::test_helpers::TestConnection as crate::Connection>::Backend>(

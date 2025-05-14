@@ -1,10 +1,7 @@
 use crate::schema::*;
 use diesel::*;
 
-#[cfg(feature = "postgres")]
-static USER_INDEX_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-
-#[test]
+#[diesel_test_helper::test]
 fn test_updating_single_column() {
     use crate::schema::users::dsl::*;
 
@@ -19,7 +16,7 @@ fn test_updating_single_column() {
     assert_eq!(expected_data, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn test_updating_single_column_of_single_row() {
     use crate::schema::users::dsl::*;
 
@@ -36,7 +33,7 @@ fn test_updating_single_column_of_single_row() {
     assert_eq!(expected_data, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn test_updating_nullable_column() {
     use crate::schema::users::dsl::*;
 
@@ -67,7 +64,7 @@ fn test_updating_nullable_column() {
     assert_eq!(Ok(None::<String>), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn test_updating_multiple_columns() {
     use crate::schema::users::dsl::*;
 
@@ -84,7 +81,7 @@ fn test_updating_multiple_columns() {
     assert_eq!(Ok(expected_user), user);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(not(any(
     all(feature = "sqlite", not(feature = "returning_clauses_for_sqlite_3_35")),
     feature = "mysql"
@@ -102,7 +99,7 @@ fn update_returning_struct() {
     assert_eq!(Ok(expected_user), user);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(not(any(
     all(feature = "sqlite", not(feature = "returning_clauses_for_sqlite_3_35")),
     feature = "mysql"
@@ -121,7 +118,7 @@ fn update_with_custom_returning_clause() {
     assert_eq!(Ok(expected_result), user);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn update_with_struct_as_changes() {
     use crate::schema::users::dsl::*;
 
@@ -139,7 +136,7 @@ fn update_with_struct_as_changes() {
     assert_eq!(Ok(expected_user), user);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn save_on_struct_with_primary_key_changes_that_struct() {
     use crate::schema::users::dsl::*;
 
@@ -152,7 +149,7 @@ fn save_on_struct_with_primary_key_changes_that_struct() {
     assert_eq!(user, user_in_db);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
     #[derive(AsChangeset)]
     #[diesel(table_name = users)]
@@ -177,7 +174,7 @@ fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
     assert_eq!(Ok(expected_user), user);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
     #[derive(AsChangeset)]
     #[diesel(table_name = posts)]
@@ -213,8 +210,7 @@ fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
     assert_eq!(expected_post, post);
 }
 
-#[test]
-#[should_panic(expected = "There are no changes to save.")]
+#[diesel_test_helper::test]
 fn update_with_no_changes() {
     #[derive(AsChangeset)]
     #[diesel(table_name = users)]
@@ -228,13 +224,33 @@ fn update_with_no_changes() {
         name: None,
         hair_color: None,
     };
-    update(users::table)
+    let update_result = update(users::table).set(&changes).execute(connection);
+    assert!(update_result.is_err());
+}
+
+#[diesel_test_helper::test]
+fn update_with_optional_empty_changeset() {
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    struct Changes {
+        name: Option<String>,
+        hair_color: Option<String>,
+    }
+
+    let connection = &mut connection();
+    let changes = Changes {
+        name: None,
+        hair_color: None,
+    };
+    let update_result = update(users::table)
         .set(&changes)
         .execute(connection)
+        .optional_empty_changeset()
         .unwrap();
+    assert_eq!(None, update_result);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn upsert_with_no_changes_executes_do_nothing() {
     #[derive(AsChangeset)]
@@ -254,7 +270,7 @@ fn upsert_with_no_changes_executes_do_nothing() {
     assert_eq!(Ok(0), result);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "mysql")]
 fn upsert_with_no_changes_executes_do_nothing() {
     #[derive(AsChangeset)]
@@ -277,7 +293,7 @@ fn upsert_with_no_changes_executes_do_nothing() {
     assert_eq!(Ok(1), result);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn upsert_with_no_changes_executes_do_nothing_owned() {
     #[derive(AsChangeset)]
@@ -294,13 +310,10 @@ fn upsert_with_no_changes_executes_do_nothing_owned() {
         .set(&Changes { hair_color: None })
         .execute(connection);
 
-    #[cfg(not(feature = "mysql"))]
     assert_eq!(Ok(0), result);
-    #[cfg(feature = "mysql")]
-    assert_eq!(Ok(1), result);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "mysql")]
 fn upsert_with_no_changes_executes_do_nothing_owned() {
     #[derive(AsChangeset)]
@@ -317,13 +330,10 @@ fn upsert_with_no_changes_executes_do_nothing_owned() {
         .set(&Changes { hair_color: None })
         .execute(connection);
 
-    #[cfg(not(feature = "mysql"))]
-    assert_eq!(Ok(0), result);
-    #[cfg(feature = "mysql")]
     assert_eq!(Ok(1), result);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn upsert_with_sql_literal_for_target() {
     use crate::schema::users::dsl::*;
@@ -331,10 +341,15 @@ fn upsert_with_sql_literal_for_target() {
     use diesel::sql_types::Text;
     use diesel::upsert::*;
 
-    // cannot run these tests in parallel due to index creation
-    let _guard = USER_INDEX_LOCK.lock();
-
     let connection = &mut connection();
+    diesel::sql_query(
+        "CREATE TEMPORARY TABLE users(\
+             id SERIAL PRIMARY KEY, \
+             name TEXT NOT NULL, \
+             hair_color TEXT)",
+    )
+    .execute(connection)
+    .unwrap();
     // This index needs to happen before the insert or we'll get a deadlock
     // with any transactions that are trying to get the row lock from insert
     diesel::sql_query("CREATE UNIQUE INDEX ON users (name) WHERE name != 'Tess'")
@@ -363,7 +378,83 @@ fn upsert_with_sql_literal_for_target() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
+#[cfg(any(
+    feature = "postgres",
+    all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35")
+))]
+fn upsert_for_target_with_condition() {
+    use crate::schema::comments::dsl::*;
+    use diesel::query_dsl::methods::FilterDsl;
+    use diesel::upsert::*;
+
+    let connection = &mut connection();
+    diesel::sql_query(
+        "CREATE TEMPORARY TABLE comments(\
+            id INTEGER PRIMARY KEY NOT NULL, \
+            post_id INTEGER NOT NULL, \
+            text TEXT NOT NULL)",
+    )
+    .execute(connection)
+    .unwrap();
+
+    let new_comments = vec![Comment::new(0, 3, "Green"), Comment::new(1, 4, "Blue")];
+    // First, we populate the table with some data
+    for new_comment in new_comments {
+        let inserted_comment: Option<Comment> = insert_into(comments)
+            .values(&new_comment)
+            .get_results(connection)
+            .unwrap()
+            .pop();
+        assert_eq!(inserted_comment, Some(new_comment));
+    }
+
+    // Next, we execute an upsert where we want to update
+    // the rows that have been changed, which in this case
+    // are the rows with id 1.
+    // The row with id 0 should not be updated as it is identical
+    // to the one we inserted, and should be handled by a No-Op,
+    // while the row with id 2 is a new row that should be inserted.
+
+    let comment_to_not_update = Comment::new(0, 3, "Green");
+
+    let updated_comments: Vec<Comment> = insert_into(comments)
+        .values(&comment_to_not_update)
+        .on_conflict(id)
+        .do_update()
+        .set(&comment_to_not_update)
+        .filter(post_id.ne(excluded(post_id)).and(text.ne(excluded(text))))
+        .get_results(connection)
+        .unwrap();
+
+    assert!(updated_comments.is_empty());
+
+    let comments_to_update_or_insert = vec![Comment::new(1, 10, "Red"), Comment::new(2, 4, "Blue")];
+
+    for comment_to_update_or_insert in comments_to_update_or_insert {
+        let mut updated_comments: Vec<Comment> = insert_into(comments)
+            .values(&comment_to_update_or_insert)
+            .on_conflict(id)
+            .do_update()
+            .set((post_id.eq(excluded(post_id)), text.eq(excluded(text))))
+            .filter(post_id.ne(excluded(post_id)).and(text.ne(excluded(text))))
+            .get_results(connection)
+            .unwrap();
+        let updated_comment: Option<Comment> = updated_comments.pop();
+
+        assert_eq!(updated_comment, Some(comment_to_update_or_insert));
+    }
+
+    let data = comments.select((post_id, text)).order(id).load(connection);
+    let expected_data = vec![
+        (3, "Green".to_string()),
+        (10, "Red".to_string()),
+        (4, "Blue".to_string()),
+    ];
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn upsert_with_sql_literal_for_target_with_condition() {
     use crate::schema::users::dsl::*;
@@ -373,9 +464,16 @@ fn upsert_with_sql_literal_for_target_with_condition() {
     use diesel::upsert::*;
 
     // cannot run these tests in parallel due to index creation
-    let _guard = USER_INDEX_LOCK.lock();
 
     let connection = &mut connection();
+    diesel::sql_query(
+        "CREATE TEMPORARY TABLE users(\
+             id SERIAL PRIMARY KEY, \
+             name TEXT NOT NULL, \
+             hair_color TEXT)",
+    )
+    .execute(connection)
+    .unwrap();
     // This index needs to happen before the insert or we'll get a deadlock
     // with any transactions that are trying to get the row lock from insert
     diesel::sql_query("CREATE UNIQUE INDEX ON users (name) WHERE name != 'Tess'")
@@ -405,7 +503,7 @@ fn upsert_with_sql_literal_for_target_with_condition() {
     assert_eq!(Ok(expected_data), data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn update_array_index_expression() {
     use crate::schema::posts::dsl::*;

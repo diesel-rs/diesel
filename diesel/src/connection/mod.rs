@@ -37,13 +37,23 @@ pub(crate) use self::private::ConnectionSealed;
 pub use self::private::MultiConnectionHelper;
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-pub use self::instrumentation::StrQueryHelper;
+pub use self::instrumentation::{DynInstrumentation, StrQueryHelper};
 
 #[cfg(all(
     not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
     any(feature = "sqlite", feature = "postgres", feature = "mysql")
 ))]
 pub(crate) use self::private::MultiConnectionHelper;
+
+/// Set cache size for a connection
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum CacheSize {
+    /// Caches all queries if possible
+    Unbounded,
+    /// Disable statement cache
+    Disabled,
+}
 
 /// Perform simple operations on a backend.
 ///
@@ -401,6 +411,9 @@ where
 
     /// Set a specific [`Instrumentation`] implementation for this connection
     fn set_instrumentation(&mut self, instrumentation: impl Instrumentation);
+
+    /// Set the prepared statement cache size to [`CacheSize`] for this connection
+    fn set_prepared_statement_cache_size(&mut self, size: CacheSize);
 }
 
 /// The specific part of a [`Connection`] which actually loads data from the database
@@ -588,6 +601,9 @@ pub(crate) mod private {
     where
         T: super::LoadConnection<B>,
     {
-        type Cursor<'conn, 'query> = <T as super::LoadConnection<B>>::Cursor<'conn, 'query> where T: 'conn;
+        type Cursor<'conn, 'query>
+            = <T as super::LoadConnection<B>>::Cursor<'conn, 'query>
+        where
+            T: 'conn;
     }
 }
