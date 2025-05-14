@@ -588,6 +588,11 @@ fn count_query() -> _ {
     users::table.count()
 }
 
+#[auto_type]
+fn test_cast() -> _ {
+    users::id.cast::<sql_types::Text>()
+}
+
 // #[auto_type]
 // fn test_sql_fragment() -> _ {
 //     sql("foo")

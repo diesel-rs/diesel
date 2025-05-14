@@ -27,15 +27,13 @@ in a way that makes the pools suitable for use in parallel tests.
 * Added a `#[diesel::declare_sql_function]` attribute macro to easily define support for 
   multiple sql functions at once via an `extern "SQL"` block
 * Support `[print_schema] allow_tables_to_appear_in_same_query_config = "fk_related_tables"` to generate separate `allow_tables_to_appear_in_same_query!` calls containing only tables that are related through foreign keys. (Default: `"all_tables"`.) It is not possible to build queries using two tables that don't appear in the same `allow_tables_to_appear_in_same_query!` call, but that macro generates O(n²) rust code, so this option may be useful to reduce compilation time. ([#4333](https://github.com/diesel-rs/diesel/issues/4333))
+* Added `wasm32-unknown-unknown` target support for sqlite backend.
+* Add support for the `CAST` operator
 
 ### Fixed 
 
 * Fixed diesel thinking `a.eq_any(b)` was non-nullable even if `a` and `b` were nullable.
 * Generate `InstrumentationEvent::BeginTransaction` for immediate and exclusive transactions in SQLite
-* Added `wasm32-unknown-unknown` target support for sqlite backend.
-
-### Fixed
-
 * Use a single space instead of two spaces between `DELETE FROM`.
 * Diesel CLI now ensures that migration versions are always unique. If it fails to generate a unique version, it will return an error. The new version format remains compatible with older Diesel versions.
 * Updated `ipnetwork` to allow version 0.21.
