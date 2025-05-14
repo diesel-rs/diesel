@@ -30,8 +30,7 @@ in a way that makes the pools suitable for use in parallel tests.
 * Added `wasm32-unknown-unknown` target support for sqlite backend.
 * Add support for the `CAST` operator
 * Support `[print_schema] allow_tables_to_appear_in_same_query_config = "none"` to generate no `allow_tables_to_appear_in_same_query!` calls. (Default: `"all_tables"`.). ([#4333](https://github.com/diesel-rs/diesel/issues/4333))
-* Add `[print_schema] pg_domains_as_custom_types` parameter to generate custom types for [PostgreSQL domains](https://www.postgresql.org/docs/current/domains.html) that match given regex. (Default: `empty`.) This option allows an application to selectively give special meaning for the serialization/deserialization of these types, avoiding the default behavior of treating the domain as the underlying type. ([#4592](https://github.com/diesel-rs/diesel/discussions/4592))
->>>>>>> a388b4a4 (add changelog for domain types)
+* Add `[print_schema] pg_domains_as_custom_types` parameter to generate custom types for [PostgreSQL domains](https://www.postgresql.org/docs/current/domains.html) that matches any regex in a given list. (Default: `empty`.) This option allows an application to selectively give special meaning for the serialization/deserialization of these types, avoiding the default behavior of treating the domain as the underlying type. ([#4592](https://github.com/diesel-rs/diesel/discussions/4592))
 
 ### Fixed 
 
