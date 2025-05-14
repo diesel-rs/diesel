@@ -66,7 +66,7 @@ where
         out.push_sql("CAST(");
         self.expr.walk_ast(out.reborrow())?;
         out.push_sql(" AS ");
-        out.push_sql(ST::sql_type_name());
+        out.push_sql(ST::SQL_TYPE_NAME);
         out.push_sql(")");
         Ok(())
     }
@@ -85,16 +85,14 @@ where
 pub trait KnownCastSqlTypeName<DB> {
     /// What to write as `sql_type` in the `CAST(expr AS sql_type)` SQL for
     /// `Self`
-    fn sql_type_name() -> &'static str;
+    const SQL_TYPE_NAME: &'static str;
 }
 
 impl<ST, DB> KnownCastSqlTypeName<DB> for sql_types::Nullable<ST>
 where
     ST: KnownCastSqlTypeName<DB>,
 {
-    fn sql_type_name() -> &'static str {
-        <ST as KnownCastSqlTypeName<DB>>::sql_type_name()
-    }
+    const SQL_TYPE_NAME: &'static str = <ST as KnownCastSqlTypeName<DB>>::SQL_TYPE_NAME;
 }
 
 macro_rules! type_name {
@@ -103,9 +101,7 @@ macro_rules! type_name {
             $(
 				#[cfg(feature = $backend_feature)]
                 impl KnownCastSqlTypeName<$backend> for sql_types::$type {
-                    fn sql_type_name() -> &'static str {
-                        $val
-                    }
+                    const SQL_TYPE_NAME: &'static str = $val;
                 }
             )*
         )*
