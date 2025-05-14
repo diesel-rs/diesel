@@ -360,7 +360,6 @@ fn print_schema_fk_related_tables() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
 fn print_schema_allows_none() {
     test_print_schema(
         "print_schema_allows_none",
