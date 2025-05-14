@@ -385,7 +385,7 @@ impl Config {
             if let Some(domains) = matches.get_many::<String>("pg-domains-as-custom-types") {
                 config.pg_domains_as_custom_types = domains
                     .into_iter()
-                    .map(|x| regex::Regex::new(&x).map(Into::into))
+                    .map(|x| regex::Regex::new(x).map(Into::into))
                     .collect::<Result<Vec<Regex>, _>>()?;
             }
 

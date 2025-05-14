@@ -136,7 +136,7 @@ pub fn get_table_data(
                 .filter(|name| {
                     domains_as_custom_types
                         .iter()
-                        .any(|regex| regex.is_match(&name))
+                        .any(|regex| regex.is_match(name))
                 })
                 .map(|name| (name, row.domain_schema))
                 .unwrap_or((row.type_name, row.type_schema));
