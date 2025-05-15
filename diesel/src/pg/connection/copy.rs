@@ -26,7 +26,7 @@ impl Write for CopyFromSink<'_> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         self.conn
             .put_copy_data(buf)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            .map_err(std::io::Error::other)?;
         Ok(buf.len())
     }
 
@@ -103,13 +103,12 @@ impl BufRead for CopyToBuffer<'_> {
                     pq_sys::PQgetCopyData(self.conn.internal_connection.as_ptr(), &mut self.ptr, 0);
                 match len {
                     len if len >= 0 => {
-                        self.len = 1 + usize::try_from(len)
-                            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
+                        self.len = 1 + usize::try_from(len).map_err(std::io::Error::other)?
                     }
                     -1 => self.len = 0,
                     _ => {
                         let error = self.conn.last_error_message();
-                        return Err(std::io::Error::new(std::io::ErrorKind::Other, error));
+                        return Err(std::io::Error::other(error));
                     }
                 }
                 self.offset = 0;
