@@ -121,11 +121,13 @@ type_name! {
         Interval => "interval",
         Time => "time",
         Timestamp => "timestamp",
+        Uuid => "uuid",
     }
     diesel::mysql::Mysql: "mysql_backend" {
         Int4 => "integer",
         Int8 => "integer",
         Text => "char",
+
     }
     diesel::sqlite::Sqlite: "sqlite" {
         Int4 => "integer",
@@ -157,6 +159,14 @@ impl<ST1, ST2> CastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> wh
 {}
 
 impl CastsTo<sql_types::Int8> for sql_types::Int4 {}
+impl CastsTo<sql_types::Int8> for sql_types::Text {}
 impl CastsTo<sql_types::Int4> for sql_types::Int8 {}
+impl CastsTo<sql_types::Int4> for sql_types::Text {}
+impl CastsTo<sql_types::Uuid> for sql_types::Text {}
 impl CastsTo<sql_types::Text> for sql_types::Int4 {}
 impl CastsTo<sql_types::Text> for sql_types::Int8 {}
+impl CastsTo<sql_types::Text> for sql_types::Uuid {}
+impl CastsTo<sql_types::Text> for sql_types::Jsonb {}
+impl CastsTo<sql_types::Text> for sql_types::Json {}
+impl CastsTo<sql_types::Jsonb> for sql_types::Text {}
+impl CastsTo<sql_types::Json> for sql_types::Text {}
