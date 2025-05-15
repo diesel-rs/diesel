@@ -122,6 +122,8 @@ type_name! {
         Time => "time",
         Timestamp => "timestamp",
         Uuid => "uuid",
+        Json => "json",
+        Jsonb => "jsonb",
     }
     diesel::mysql::Mysql: "mysql_backend" {
         Int4 => "integer",
