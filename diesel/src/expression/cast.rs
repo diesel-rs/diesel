@@ -96,10 +96,11 @@ where
 }
 
 macro_rules! type_name {
-    ($($backend: ty: $backend_feature: literal { $($type: ident => $val: literal,)+ })*) => {
+    ($($backend: ty: $backend_feature: literal { $($($feature: literal;)? $type: ident => $val: literal,)+ })*) => {
         $(
             $(
 				#[cfg(feature = $backend_feature)]
+                $(#[cfg(feature = $feature)])?
                 impl KnownCastSqlTypeName<$backend> for sql_types::$type {
                     const SQL_TYPE_NAME: &'static str = $val;
                 }
@@ -121,7 +122,7 @@ type_name! {
         Interval => "interval",
         Time => "time",
         Timestamp => "timestamp",
-        Uuid => "uuid",
+        "uuid"; Uuid => "uuid",
         Json => "json",
         Jsonb => "jsonb",
     }
@@ -164,9 +165,11 @@ impl CastsTo<sql_types::Int8> for sql_types::Int4 {}
 impl CastsTo<sql_types::Int8> for sql_types::Text {}
 impl CastsTo<sql_types::Int4> for sql_types::Int8 {}
 impl CastsTo<sql_types::Int4> for sql_types::Text {}
+#[cfg(feature = "uuid")]
 impl CastsTo<sql_types::Uuid> for sql_types::Text {}
 impl CastsTo<sql_types::Text> for sql_types::Int4 {}
 impl CastsTo<sql_types::Text> for sql_types::Int8 {}
+#[cfg(feature = "uuid")]
 impl CastsTo<sql_types::Text> for sql_types::Uuid {}
 impl CastsTo<sql_types::Text> for sql_types::Jsonb {}
 impl CastsTo<sql_types::Text> for sql_types::Json {}
