@@ -165,11 +165,11 @@ impl CastsTo<sql_types::Int8> for sql_types::Int4 {}
 impl CastsTo<sql_types::Int8> for sql_types::Text {}
 impl CastsTo<sql_types::Int4> for sql_types::Int8 {}
 impl CastsTo<sql_types::Int4> for sql_types::Text {}
-#[cfg(feature = "uuid")]
+#[cfg(all(feature = "uuid", feature = "postgres_backend"))]
 impl CastsTo<sql_types::Uuid> for sql_types::Text {}
 impl CastsTo<sql_types::Text> for sql_types::Int4 {}
 impl CastsTo<sql_types::Text> for sql_types::Int8 {}
-#[cfg(feature = "uuid")]
+#[cfg(all(feature = "uuid", feature = "postgres_backend"))]
 impl CastsTo<sql_types::Text> for sql_types::Uuid {}
 impl CastsTo<sql_types::Text> for sql_types::Jsonb {}
 impl CastsTo<sql_types::Text> for sql_types::Json {}
