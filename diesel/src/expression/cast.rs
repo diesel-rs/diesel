@@ -161,9 +161,10 @@ where
 /// Marker trait: this SQL type (`Self`) can be casted to the target SQL type, but some values can be invalid
 pub trait FaillibleCastsTo<ST> {}
 
-impl<ST1, ST2> FaillibleCastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where ST1: CastsTo<ST2>
-{}
-
+impl<ST1, ST2> FaillibleCastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where
+    ST1: CastsTo<ST2>
+{
+}
 
 /// Marker trait: this SQL type (`Self`) can be casted to the target SQL type
 /// (`ST`) using `CAST(expr AS target_sql_type)`
@@ -171,8 +172,6 @@ pub trait CastsTo<ST>: FaillibleCastsTo<ST> {}
 
 impl<ST1, ST2> CastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where ST1: CastsTo<ST2>
 {}
-
-
 
 macro_rules! casts_impl {
     (
