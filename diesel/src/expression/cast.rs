@@ -160,11 +160,45 @@ pub trait CastsTo<ST> {}
 impl<ST1, ST2> CastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where ST1: CastsTo<ST2>
 {}
 
-impl CastsTo<sql_types::Int4> for sql_types::Int8 {}
-impl CastsTo<sql_types::Int8> for sql_types::Int4 {}
-#[cfg(feature = "postgres_backend")]
-impl CastsTo<sql_types::Text> for sql_types::Uuid {}
-impl CastsTo<sql_types::Text> for sql_types::Int4 {}
-impl CastsTo<sql_types::Text> for sql_types::Int8 {}
-impl CastsTo<sql_types::Text> for sql_types::Jsonb {}
-impl CastsTo<sql_types::Text> for sql_types::Json {}
+macro_rules! casts_impl {
+    (
+        $(
+            $($feature: literal : )? ($to: tt <- $from: tt),
+        )+
+    ) => {
+        $(
+            $(#[cfg(feature = $feature)])?
+            impl CastsTo<sql_types::$to> for sql_types::$from {}
+        )+
+    };
+}
+
+casts_impl!(
+    (Bool <- Int4),
+    (Bool <- Int8),
+    (Bool <- Float4),
+    (Bool <- Float8),
+    (Float4 <- Float8),
+    (Float4 <- Int4),
+    (Float4 <- Int8),
+    (Float8 <- Float4),
+    (Float8 <- Int4),
+    (Float8 <- Int8),
+    (Int8 <- Bool),
+    (Int8 <- Int4),
+    (Int8 <- Float4),
+    (Int8 <- Float8),
+    (Int4 <- Bool),
+    (Int4 <- Int8),
+    (Int4 <- Float4),
+    (Int4 <- Float8),
+    (Text <- Bool),
+    (Text <- Float4),
+    (Text <- Float8),
+    (Text <- Int4),
+    (Text <- Int8),
+    (Text <- Date),
+    (Text <- Json),
+    (Text <- Jsonb),
+    "postgres_backend": (Text <- Uuid),
+);
