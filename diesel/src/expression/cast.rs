@@ -191,6 +191,7 @@ macro_rules! casts_impl {
 casts_impl!(
     (Bool <- Int4),
     (Float4 <- Int4),
+    (Float4 <- Int8),
     (Float8 <- Float4),
     (Float8 <- Int4),
     (Float8 <- Int8),
@@ -232,7 +233,6 @@ faillible_casts_impl!(
     (Int4 <- Float8),
     (Int4 <- Text),
     (Int8 <- Text),
-    (Float4 <- Int8),
     (Float4 <- Float8),
     (Float4 <- Text),
     (Float8 <- Text),
