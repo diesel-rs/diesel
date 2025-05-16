@@ -52,7 +52,7 @@ impl Model {
             }) => Some(unnamed),
             _ if !allow_unit_structs => {
                 return Err(syn::Error::new(
-                    proc_macro2::Span::call_site(),
+                    proc_macro2::Span::mixed_site(),
                     "This derive can only be used on non-unit structs",
                 ));
             }
@@ -60,7 +60,7 @@ impl Model {
         };
 
         let mut table_names = vec![];
-        let mut primary_key_names = vec![Ident::new("id", Span::call_site())];
+        let mut primary_key_names = vec![Ident::new("id", Span::mixed_site())];
         let mut treat_none_as_default_value = None;
         let mut treat_none_as_null = None;
         let mut belongs_to = vec![];
