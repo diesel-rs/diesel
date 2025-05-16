@@ -483,6 +483,42 @@ pub trait ExpressionMethods: Expression + Sized {
         cast::Cast::new(self)
     }
 
+    /// Generates a `CAST(expr AS sql_type)` not compile expression
+    ///
+    /// This doesn't check the castability between the types.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::animals::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// use diesel::sql_types;
+    ///
+    /// let data = diesel::select(
+    ///     12_i32
+    ///         .into_sql::<sql_types::Text>()
+    ///         .faillible_cast::<sql_types::Int4>(),
+    /// )
+    /// .first::<i32>(connection)?;
+    /// assert_eq!("12", data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn faillible_cast<ST>(self) -> dsl::Cast<Self, ST>
+    where
+        ST: SingleValue,
+    {
+        cast::Cast::new(self)
+    }
+
     /// Creates a SQL `DESC` expression, representing this expression in
     /// descending order.
     ///
