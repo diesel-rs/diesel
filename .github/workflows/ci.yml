@@ -502,3 +502,17 @@ jobs:
         run: cargo +1.84.0 minimal-versions check -p diesel_migrations --all-features
       - name: Check diesel_cli
         run: cargo +1.84.0 minimal-versions check -p diesel_cli --features "default sqlite-bundled"
+
+  Semver-Checks:
+    name: Run Cargo Semver-Checks
+    runs-on: ubuntu-latest
+    needs: [rustfmt_and_clippy]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-semver-checks
+      - name: Run cargo semver-checks
+        run: |
+          cargo xtask semver-checks
