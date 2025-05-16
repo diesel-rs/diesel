@@ -70,6 +70,9 @@ ways that you can set it:
 * Set it as an environment variable using [dotenv](https://github.com/dotenv-rs/dotenv#examples)
 * Pass it directly by adding the `--database-url` flag
 
+To support a test database during development, passing --test-db to have
+diesel load the database url from TEST_DATABASE_URL instead.
+
 As an alternative to running migrations with the CLI, you can call
 [`diesel::migrations::run_pending_migrations`][pending-migrations] from
 `build.rs`.
