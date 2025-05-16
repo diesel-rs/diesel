@@ -73,7 +73,54 @@ pub trait ExpressionMethods: Expression + Sized {
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
-        Grouped(Eq::new(self, other.as_expression()))
+        Eq::new_unchecked(self, other.as_expression())
+    }
+
+    /// Creates a SQL ` = ` expression, letting differents types go through
+    /// where coercion is supported
+    ///
+    /// With the regular [`.eq()`](ExpressionMethods::eq), the SQL types of the expression
+    /// must match exactly, and that allows writings of the form `column.eq(1_i32)` to work:
+    /// it knows that it should convert `1_i32` to an SQL expression of type
+    /// [`sql_types::Int4`](crate::sql_types::Int4) because `column` is an expression of SQL type
+    /// `Int4`.
+    ///
+    /// However, that `.eq()` interface does not allow comparing an expression of type `Int4` to an
+    /// expression of type `Int8` for example.
+    /// When this is needed, the `.eq_coerce()` method can be used.
+    ///
+    /// # Example
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// use diesel::sql_types;
+    ///
+    /// let data = diesel::select((
+    ///     1_i32
+    ///         .into_sql::<sql_types::Int4>()
+    ///         .eq_coerce(1_i64.into_sql::<sql_types::Int8>()),
+    ///     1_i32
+    ///         .into_sql::<sql_types::Int4>()
+    ///         .eq_coerce(2_i64.into_sql::<sql_types::Int8>()),
+    /// ))
+    /// .first::<(bool, bool)>(connection);
+    /// assert_eq!(Ok((true, false)), data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn eq_coerce<T>(self, other: T) -> dsl::EqCoerce<Self, T>
+    where
+        T: Expression,
+        Self::SqlType: CoerceEqual<T::SqlType>,
+    {
+        Eq::new_unchecked(self, other)
     }
 
     /// Creates a SQL `!=` expression.
