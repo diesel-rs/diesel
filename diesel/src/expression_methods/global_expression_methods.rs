@@ -506,7 +506,7 @@ pub trait ExpressionMethods: Expression + Sized {
     ///         .faillible_cast::<sql_types::Int4>(),
     /// )
     /// .first::<i32>(connection)?;
-    /// assert_eq!("12", data);
+    /// assert_eq!(12i32, data);
     /// #     Ok(())
     /// # }
     /// ```
