@@ -513,6 +513,7 @@ pub trait ExpressionMethods: Expression + Sized {
     fn faillible_cast<ST>(self) -> dsl::Cast<Self, ST>
     where
         ST: SingleValue,
+        Self::SqlType: cast::FaillibleCastsTo<ST>,
     {
         cast::Cast::new(self)
     }

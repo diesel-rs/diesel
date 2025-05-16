@@ -158,12 +158,21 @@ where
     }
 }
 
+/// Marker trait: this SQL type (`Self`) can be casted to the target SQL type, but some values can be invalid
+pub trait FaillibleCastsTo<ST> {}
+
+impl<ST1, ST2> FaillibleCastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where ST1: CastsTo<ST2>
+{}
+
+
 /// Marker trait: this SQL type (`Self`) can be casted to the target SQL type
 /// (`ST`) using `CAST(expr AS target_sql_type)`
-pub trait CastsTo<ST> {}
+pub trait CastsTo<ST>: FaillibleCastsTo<ST> {}
 
 impl<ST1, ST2> CastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where ST1: CastsTo<ST2>
 {}
+
+
 
 macro_rules! casts_impl {
     (
@@ -173,6 +182,8 @@ macro_rules! casts_impl {
     ) => {
         $(
             $(#[cfg(feature = $feature)])?
+            impl FaillibleCastsTo<sql_types::$to> for sql_types::$from {}
+            $(#[cfg(feature = $feature)])?
             impl CastsTo<sql_types::$to> for sql_types::$from {}
         )+
     };
@@ -180,23 +191,15 @@ macro_rules! casts_impl {
 
 casts_impl!(
     (Bool <- Int4),
-    (Bool <- Int8),
-    (Bool <- Float4),
-    (Bool <- Float8),
-    (Float4 <- Float8),
     (Float4 <- Int4),
-    (Float4 <- Int8),
     (Float8 <- Float4),
     (Float8 <- Int4),
     (Float8 <- Int8),
-    (Int8 <- Bool),
     (Int8 <- Int4),
     (Int8 <- Float4),
     (Int8 <- Float8),
     (Int4 <- Bool),
-    (Int4 <- Int8),
     (Int4 <- Float4),
-    (Int4 <- Float8),
     (Text <- Bool),
     (Text <- Float4),
     (Text <- Float8),
@@ -205,5 +208,39 @@ casts_impl!(
     (Text <- Date),
     (Text <- Json),
     (Text <- Jsonb),
+    (Text <- Time),
+    (Json <- Jsonb),
+    (Jsonb <- Json),
     "postgres_backend": (Text <- Uuid),
+);
+
+macro_rules! faillible_casts_impl {
+    (
+        $(
+            $($feature: literal : )? ($to: tt <- $from: tt),
+        )+
+    ) => {
+        $(
+            $(#[cfg(feature = $feature)])?
+            impl FaillibleCastsTo<sql_types::$to> for sql_types::$from {}
+        )+
+    };
+}
+
+faillible_casts_impl!(
+    (Int4 <- Int8),
+    (Int4 <- Float8),
+    (Int4 <- Text),
+    (Int8 <- Text),
+    (Float4 <- Int8),
+    (Float4 <- Float8),
+    (Float4 <- Text),
+    (Float8 <- Text),
+    (Json <- Text),
+    (Jsonb <- Text),
+    (Bool <- Text),
+    (Date <- Text),
+    (Time <- Text),
+    "mysql_backend": (Datetime <- Text),
+    "postgres_backend": (Uuid <- Text),
 );
