@@ -97,7 +97,7 @@ pub(crate) mod dsl {
 #[doc(inline)]
 pub use self::case_when::CaseWhen;
 #[doc(inline)]
-pub use self::cast::{CastsTo, KnownCastSqlTypeName};
+pub use self::cast::{CastsTo, KnownCastSqlTypeName, FaillibleCastsTo};
 #[doc(inline)]
 pub use self::sql_literal::{SqlLiteral, UncheckedBind};
 
