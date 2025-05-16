@@ -135,6 +135,8 @@ type_name! {
         Int4 => "integer",
         Int8 => "bigint",
         Text => "text",
+        Json => "json",
+        Jsonb => "jsoonb",
     }
 }
 
