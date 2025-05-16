@@ -107,6 +107,7 @@ macro_rules! type_name {
         )*
     };
 }
+
 type_name! {
     diesel::pg::Pg: "postgres_backend" {
         Bool => "bool",
@@ -129,7 +130,6 @@ type_name! {
         Int4 => "integer",
         Int8 => "integer",
         Text => "char",
-
     }
     diesel::sqlite::Sqlite: "sqlite" {
         Int4 => "integer",
