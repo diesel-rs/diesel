@@ -483,7 +483,7 @@ pub trait ExpressionMethods: Expression + Sized {
         cast::Cast::new(self)
     }
 
-    /// Generates a `CAST(expr AS sql_type)` expression, it's not type compile time checked.
+    /// Generates a `CAST(expr AS sql_type)` expression, this version does not check the castability, like [`cast()`](Self::cast).
     ///
     /// # Example
     ///
