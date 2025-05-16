@@ -1749,7 +1749,7 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///     types, or to capitalize function names.
 /// - `#[variadic(argument_count)]`
 ///   - Indicates that this is a variadic function, where `argument_count` is a
-///     positive integer representing the number of variadic arguments the
+///     nonnegative integer representing the number of variadic arguments the
 ///     function accepts.
 ///
 /// Functions can also be generic. Take the definition of `sum`, for example:
@@ -2036,7 +2036,7 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///
 /// This will generate multiple implementations, one for each possible argument
 /// count (up to a predefined limit). For instance, it will generate functions like
-/// `json_array_1`, `json_array_2`, and so on, which are equivalent to:
+/// `json_array_0`, `json_array_1`, and so on, which are equivalent to:
 ///
 /// ```rust
 /// # extern crate diesel;
@@ -2046,6 +2046,9 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// # #[cfg(feature = "sqlite")]
 /// #[declare_sql_function]
 /// extern "SQL" {
+///     #[sql_name = "json_array"]
+///     fn json_array_0() -> Json;
+///
 ///     #[sql_name = "json_array"]
 ///     fn json_array_1<V1: SqlType + SingleValue>(value_1: V1) -> Json;
 ///
@@ -2080,10 +2083,15 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// #[declare_sql_function]
 /// extern "SQL" {
 ///     #[sql_name = "foo"]
+///     fn foo_0<A>(a: A) -> Text;
+///
+///     #[sql_name = "foo"]
 ///     fn foo_1<A, B1, C1>(a: A, b_1: B1, c_1: C1) -> Text;
 ///
 ///     #[sql_name = "foo"]
 ///     fn foo_2<A, B1, C1, B2, C2>(a: A, b_1: B1, c_1: C1, b_2: B2, c_2: C2) -> Text;
+///
+///     ...
 /// }
 /// ```
 #[proc_macro_attribute]

@@ -537,10 +537,26 @@ fn sqlite_aggregate_functions() -> _ {
 #[auto_type]
 fn sqlite_variadic_functions() -> _ {
     (
+        json_array_0(),
         json_array_1(sqlite_extras::text),
         json_array_2(sqlite_extras::id, sqlite_extras::json),
+        jsonb_array_0(),
         jsonb_array_1(sqlite_extras::text),
         jsonb_array_2(sqlite_extras::id, sqlite_extras::json),
+        json_remove_0(sqlite_extras::json),
+        json_remove_1(sqlite_extras::jsonb, sqlite_extras::text),
+        json_remove_2(
+            sqlite_extras::json,
+            sqlite_extras::text,
+            sqlite_extras::text,
+        ),
+        jsonb_remove_0(sqlite_extras::jsonb),
+        jsonb_remove_1(sqlite_extras::json, sqlite_extras::text),
+        jsonb_remove_2(
+            sqlite_extras::jsonb,
+            sqlite_extras::text,
+            sqlite_extras::text,
+        ),
     )
 }
 

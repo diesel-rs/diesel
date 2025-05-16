@@ -29,6 +29,7 @@ in a way that makes the pools suitable for use in parallel tests.
 * Support `[print_schema] allow_tables_to_appear_in_same_query_config = "fk_related_tables"` to generate separate `allow_tables_to_appear_in_same_query!` calls containing only tables that are related through foreign keys. (Default: `"all_tables"`.) It is not possible to build queries using two tables that don't appear in the same `allow_tables_to_appear_in_same_query!` call, but that macro generates O(n²) rust code, so this option may be useful to reduce compilation time. ([#4333](https://github.com/diesel-rs/diesel/issues/4333))
 * Added `wasm32-unknown-unknown` target support for sqlite backend.
 * Add support for the `CAST` operator
+* Support `[print_schema] allow_tables_to_appear_in_same_query_config = "none"` to generate no `allow_tables_to_appear_in_same_query!` calls. (Default: `"all_tables"`.). ([#4333](https://github.com/diesel-rs/diesel/issues/4333))
 
 ### Fixed 
 

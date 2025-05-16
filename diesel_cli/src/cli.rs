@@ -286,7 +286,7 @@ pub fn build_cli() -> Command {
                 .help("Group tables in allow_tables_to_appear_in_same_query!().")
                 .num_args(1)
                 .action(ArgAction::Append)
-                .value_parser(PossibleValuesParser::new(["fk_related_tables", "all_tables"])),
+                .value_parser(PossibleValuesParser::new(["fk_related_tables", "all_tables", "none"])),
         )
         .arg(
             Arg::new("column-sorting")

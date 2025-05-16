@@ -1,0 +1,12 @@
+-- Three related tables.
+CREATE TABLE users (id SERIAL PRIMARY KEY);
+CREATE TABLE posts (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users);
+CREATE TABLE comments (id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL REFERENCES posts);
+
+-- Two related tables.
+CREATE TABLE sessions (id SERIAL PRIMARY KEY);
+CREATE TABLE transactions (id SERIAL PRIMARY KEY, session_id INTEGER NOT NULL REFERENCES sessions);
+
+-- Unrelated tables.
+CREATE TABLE cars (id SERIAL PRIMARY KEY);
+CREATE TABLE bikes (id SERIAL PRIMARY KEY);

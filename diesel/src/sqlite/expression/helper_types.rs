@@ -86,6 +86,11 @@ pub type json_group_object<N, V> =
 pub type jsonb_group_object<N, V> =
     super::functions::jsonb_group_object<SqlTypeOf<N>, SqlTypeOf<V>, N, V>;
 
+/// Return type of [`json_array_0()`](super::functions::json_array_0())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_array_0 = super::functions::json_array_0;
+
 /// Return type of [`json_array_1(value_1)`](super::functions::json_array_1())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "sqlite")]
@@ -97,6 +102,11 @@ pub type json_array_1<V1> = super::functions::json_array_1<SqlTypeOf<V1>, V1>;
 pub type json_array_2<V1, V2> =
     super::functions::json_array_2<SqlTypeOf<V1>, SqlTypeOf<V2>, V1, V2>;
 
+/// Return type of [`jsonb_array_0()`](super::functions::jsonb_array_0())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type jsonb_array_0 = super::functions::jsonb_array_0;
+
 /// Return type of [`jsonb_array_1(value_1)`](super::functions::jsonb_array_1())
 #[allow(non_camel_case_types)]
 #[cfg(feature = "sqlite")]
@@ -107,3 +117,33 @@ pub type jsonb_array_1<V1> = super::functions::jsonb_array_1<SqlTypeOf<V1>, V1>;
 #[cfg(feature = "sqlite")]
 pub type jsonb_array_2<V1, V2> =
     super::functions::jsonb_array_2<SqlTypeOf<V1>, SqlTypeOf<V2>, V1, V2>;
+
+/// Return type of [`json_remove_0(json)`](super::functions::json_remove_0())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_remove_0<J> = super::functions::json_remove_0<SqlTypeOf<J>, J>;
+
+/// Return type of [`json_remove_1(json, path_1)`](super::functions::json_remove_1())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_remove_1<J, P1> = super::functions::json_remove_1<SqlTypeOf<J>, J, P1>;
+
+/// Return type of [`json_remove_2(json, path_1, path_2)`](super::functions::json_remove_2())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type json_remove_2<J, P1, P2> = super::functions::json_remove_2<SqlTypeOf<J>, J, P1, P2>;
+
+/// Return type of [`jsonb_remove_0(json)`](super::functions::jsonb_remove_0())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type jsonb_remove_0<J> = super::functions::jsonb_remove_0<SqlTypeOf<J>, J>;
+
+/// Return type of [`jsonb_remove_1(json, path_1)`](super::functions::jsonb_remove_1())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type jsonb_remove_1<J, P1> = super::functions::jsonb_remove_1<SqlTypeOf<J>, J, P1>;
+
+/// Return type of [`jsonb_remove_2(json, path_1, path_2)`](super::functions::jsonb_remove_2())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "sqlite")]
+pub type jsonb_remove_2<J, P1, P2> = super::functions::jsonb_remove_2<SqlTypeOf<J>, J, P1, P2>;

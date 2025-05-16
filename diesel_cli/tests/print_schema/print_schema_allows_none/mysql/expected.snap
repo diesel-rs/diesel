@@ -1,0 +1,52 @@
+---
+source: diesel_cli/tests/print_schema.rs
+assertion_line: 503
+description: "Test: print_schema_allows_none"
+snapshot_kind: text
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    bikes (id) {
+        id -> Unsigned<Bigint>,
+    }
+}
+
+diesel::table! {
+    cars (id) {
+        id -> Unsigned<Bigint>,
+    }
+}
+
+diesel::table! {
+    comments (id) {
+        id -> Unsigned<Bigint>,
+        post_id -> Integer,
+    }
+}
+
+diesel::table! {
+    posts (id) {
+        id -> Unsigned<Bigint>,
+        user_id -> Integer,
+    }
+}
+
+diesel::table! {
+    sessions (id) {
+        id -> Unsigned<Bigint>,
+    }
+}
+
+diesel::table! {
+    transactions (id) {
+        id -> Unsigned<Bigint>,
+        session_id -> Integer,
+    }
+}
+
+diesel::table! {
+    users (id) {
+        id -> Unsigned<Bigint>,
+    }
+}
