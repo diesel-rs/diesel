@@ -483,9 +483,7 @@ pub trait ExpressionMethods: Expression + Sized {
         cast::Cast::new(self)
     }
 
-    /// Generates a `CAST(expr AS sql_type)` not compile expression
-    ///
-    /// This doesn't check the castability between the types.
+    /// Generates a `CAST(expr AS sql_type)` expression, it's not type compile time checked.
     ///
     /// # Example
     ///
@@ -503,7 +501,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// use diesel::sql_types;
     ///
     /// let data = diesel::select(
-    ///     12_i32
+    ///     "12"
     ///         .into_sql::<sql_types::Text>()
     ///         .faillible_cast::<sql_types::Int4>(),
     /// )
