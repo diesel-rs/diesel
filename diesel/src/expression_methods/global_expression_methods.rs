@@ -503,10 +503,10 @@ pub trait ExpressionMethods: Expression + Sized {
     /// let data = diesel::select(
     ///     "12"
     ///         .into_sql::<sql_types::Text>()
-    ///         .faillible_cast::<sql_types::Int4>(),
+    ///         .faillible_cast::<sql_types::Int8>(),
     /// )
-    /// .first::<i32>(connection)?;
-    /// assert_eq!(12i32, data);
+    /// .first::<i64>(connection)?;
+    /// assert_eq!(12i64, data);
     /// #     Ok(())
     /// # }
     /// ```

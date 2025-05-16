@@ -127,16 +127,19 @@ type_name! {
         Jsonb => "jsonb",
     }
     diesel::mysql::Mysql: "mysql_backend" {
-        Int4 => "integer",
-        Int8 => "integer",
+        Int8 => "signed",
         Text => "char",
+        Date => "date",
+        Datetime => "datetime",
+        Decimal => "decimal",
+        Time => "time",
     }
     diesel::sqlite::Sqlite: "sqlite" {
         Int4 => "integer",
         Int8 => "bigint",
         Text => "text",
         Json => "json",
-        Jsonb => "jsoonb",
+        Jsonb => "jsonb",
     }
 }
 
