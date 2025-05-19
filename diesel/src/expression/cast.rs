@@ -158,17 +158,17 @@ where
     }
 }
 
-/// Marker trait: this SQL type (`Self`) can be casted to the target SQL type, but some values can be invalid
-pub trait FaillibleCastsTo<ST> {}
+/// Marker trait: this SQL type (`Self`) can be cast to the target SQL type, but some values can be invalid
+pub trait FallibleCastsTo<ST> {}
 
-impl<ST1, ST2> FaillibleCastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where
+impl<ST1, ST2> FallibleCastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where
     ST1: CastsTo<ST2>
 {
 }
 
-/// Marker trait: this SQL type (`Self`) can be casted to the target SQL type
+/// Marker trait: this SQL type (`Self`) can be cast to the target SQL type
 /// (`ST`) using `CAST(expr AS target_sql_type)`
-pub trait CastsTo<ST>: FaillibleCastsTo<ST> {}
+pub trait CastsTo<ST>: FallibleCastsTo<ST> {}
 
 impl<ST1, ST2> CastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where ST1: CastsTo<ST2>
 {}
@@ -181,7 +181,7 @@ macro_rules! casts_impl {
     ) => {
         $(
             $(#[cfg(feature = $feature)])?
-            impl FaillibleCastsTo<sql_types::$to> for sql_types::$from {}
+            impl FallibleCastsTo<sql_types::$to> for sql_types::$from {}
             $(#[cfg(feature = $feature)])?
             impl CastsTo<sql_types::$to> for sql_types::$from {}
         )+
@@ -215,7 +215,7 @@ casts_impl!(
     "postgres_backend": (Text <- Uuid),
 );
 
-macro_rules! faillible_casts_impl {
+macro_rules! fallible_casts_impl {
     (
         $(
             $($feature: literal : )? ($to: tt <- $from: tt),
@@ -223,12 +223,12 @@ macro_rules! faillible_casts_impl {
     ) => {
         $(
             $(#[cfg(feature = $feature)])?
-            impl FaillibleCastsTo<sql_types::$to> for sql_types::$from {}
+            impl FallibleCastsTo<sql_types::$to> for sql_types::$from {}
         )+
     };
 }
 
-faillible_casts_impl!(
+fallible_casts_impl!(
     (Int4 <- Int8),
     (Int4 <- Float8),
     (Int4 <- Text),
