@@ -35,3 +35,5 @@ where
         self.as_query().group_by(expr)
     }
 }
+
+pub trait ValidDistinctForGroupBy<Selection, GroupBy> {}
