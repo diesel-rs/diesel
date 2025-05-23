@@ -91,6 +91,44 @@ impl Comment {
 }
 
 #[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    AsChangeset,
+    Insertable,
+    Identifiable,
+    Associations,
+    Selectable,
+)]
+#[diesel(belongs_to(Post), table_name = comments)]
+pub struct CommentRc {
+    pub id: i32,
+    pub post_id: i32,
+    pub text: std::rc::Rc<String>,
+}
+
+#[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    AsChangeset,
+    Insertable,
+    Identifiable,
+    Associations,
+    Selectable,
+)]
+#[diesel(belongs_to(Post), table_name = comments)]
+pub struct CommentArc {
+    pub id: i32,
+    pub post_id: i32,
+    pub text: std::sync::Arc<String>,
+}
+
+#[derive(
     Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Associations, Identifiable, Selectable,
 )]
 #[diesel(belongs_to(User))]
