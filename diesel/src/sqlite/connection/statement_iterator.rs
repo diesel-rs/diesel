@@ -92,7 +92,7 @@ impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
     fn next(&mut self) -> Option<Self::Item> {
         use PrivateStatementIterator::{NotStarted, Started};
         match &mut self.inner {
-            NotStarted(ref mut stmt @ Some(_)) => {
+            NotStarted(stmt @ Some(_)) => {
                 let mut stmt = stmt
                     .take()
                     .expect("It must be there because we checked that above");
@@ -115,7 +115,7 @@ impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
                     }
                 }
             }
-            Started(ref mut last_row) => {
+            Started(last_row) => {
                 // There was already at least one iteration step
                 // We check here if the caller already released the row value or not
                 // by checking if our Rc owns the data or not
@@ -125,7 +125,7 @@ impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
                     // datastructures for now
                     // We don't need to use the runtime borrowing system of the RefCell here
                     // as we have a mutable reference, so all of this below is checked at compile time
-                    if let PrivateSqliteRow::Direct(ref mut stmt) = last_row_ref.get_mut() {
+                    if let PrivateSqliteRow::Direct(stmt) = last_row_ref.get_mut() {
                         let step = unsafe {
                             // This is actually safe here as we've already
                             // performed one step. For the first step we would have

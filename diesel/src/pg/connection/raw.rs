@@ -62,7 +62,8 @@ impl RawConnection {
     }
 
     pub(super) unsafe fn exec(&self, query: *const libc::c_char) -> QueryResult<RawResult> {
-        RawResult::new(PQexec(self.internal_connection.as_ptr(), query), self)
+        let result_ptr = unsafe { PQexec(self.internal_connection.as_ptr(), query) };
+        RawResult::new(result_ptr, self)
     }
 
     /// Sends a query and parameters to the server without using the prepare/bind cycle.
@@ -79,16 +80,18 @@ impl RawConnection {
         param_formats: *const libc::c_int,
         result_format: libc::c_int,
     ) -> QueryResult<()> {
-        let res = PQsendQueryParams(
-            self.internal_connection.as_ptr(),
-            query,
-            param_count,
-            param_types,
-            param_values,
-            param_lengths,
-            param_formats,
-            result_format,
-        );
+        let res = unsafe {
+            PQsendQueryParams(
+                self.internal_connection.as_ptr(),
+                query,
+                param_count,
+                param_types,
+                param_values,
+                param_lengths,
+                param_formats,
+                result_format,
+            )
+        };
         if res == 1 {
             Ok(())
         } else {
@@ -108,15 +111,17 @@ impl RawConnection {
         param_formats: *const libc::c_int,
         result_format: libc::c_int,
     ) -> QueryResult<()> {
-        let res = PQsendQueryPrepared(
-            self.internal_connection.as_ptr(),
-            stmt_name,
-            param_count,
-            param_values,
-            param_lengths,
-            param_formats,
-            result_format,
-        );
+        let res = unsafe {
+            PQsendQueryPrepared(
+                self.internal_connection.as_ptr(),
+                stmt_name,
+                param_count,
+                param_values,
+                param_lengths,
+                param_formats,
+                result_format,
+            )
+        };
         if res == 1 {
             Ok(())
         } else {
@@ -134,13 +139,15 @@ impl RawConnection {
         param_count: libc::c_int,
         param_types: *const Oid,
     ) -> QueryResult<RawResult> {
-        let ptr = PQprepare(
-            self.internal_connection.as_ptr(),
-            stmt_name,
-            query,
-            param_count,
-            param_types,
-        );
+        let ptr = unsafe {
+            PQprepare(
+                self.internal_connection.as_ptr(),
+                stmt_name,
+                query,
+                param_count,
+                param_types,
+            )
+        };
         RawResult::new(ptr, self)
     }
 

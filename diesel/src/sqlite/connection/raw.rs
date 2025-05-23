@@ -457,7 +457,7 @@ where
             Some(&mut OptionalAggregator::Some(ref mut agg)) => agg,
             Some(a_ptr @ &mut OptionalAggregator::None) => {
                 ptr::write_unaligned(a_ptr as *mut _, OptionalAggregator::Some(A::default()));
-                if let OptionalAggregator::Some(ref mut agg) = a_ptr {
+                if let OptionalAggregator::Some(agg) = a_ptr {
                     agg
                 } else {
                     return Err(SqliteCallbackError::Abort(NULL_CTX_ERR));
@@ -533,7 +533,9 @@ unsafe fn context_error_str(ctx: *mut ffi::sqlite3_context, error: &str) {
         .len()
         .try_into()
         .expect("Trying to set a error message with more than 2^32 byte is not supported");
-    ffi::sqlite3_result_error(ctx, error.as_ptr() as *const _, len);
+    unsafe {
+        ffi::sqlite3_result_error(ctx, error.as_ptr() as *const _, len);
+    }
 }
 
 struct CollationUserPtr<F> {
