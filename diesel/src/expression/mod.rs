@@ -319,6 +319,20 @@ where
 {
 }
 
+impl<T: ?Sized, QS> AppearsOnTable<QS> for std::rc::Rc<T>
+where
+    T: AppearsOnTable<QS>,
+    std::rc::Rc<T>: Expression,
+{
+}
+
+impl<T: ?Sized, QS> AppearsOnTable<QS> for std::sync::Arc<T>
+where
+    T: AppearsOnTable<QS>,
+    std::sync::Arc<T>: Expression,
+{
+}
+
 impl<'a, T: ?Sized, QS> AppearsOnTable<QS> for &'a T
 where
     T: AppearsOnTable<QS>,
