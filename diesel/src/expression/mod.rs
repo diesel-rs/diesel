@@ -362,6 +362,20 @@ where
 {
 }
 
+impl<T: ?Sized, QS> SelectableExpression<QS> for std::rc::Rc<T>
+where
+    T: SelectableExpression<QS>,
+    std::rc::Rc<T>: AppearsOnTable<QS>,
+{
+}
+
+impl<T: ?Sized, QS> SelectableExpression<QS> for std::sync::Arc<T>
+where
+    T: SelectableExpression<QS>,
+    std::sync::Arc<T>: AppearsOnTable<QS>,
+{
+}
+
 impl<'a, T: ?Sized, QS> SelectableExpression<QS> for &'a T
 where
     T: SelectableExpression<QS>,
