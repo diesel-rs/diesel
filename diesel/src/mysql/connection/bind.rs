@@ -450,24 +450,26 @@ impl BindData {
         let mut bind: MaybeUninit<ffi::MYSQL_BIND> = mem::MaybeUninit::zeroed();
         let ptr = bind.as_mut_ptr();
 
-        addr_of_mut!((*ptr).buffer_type).write(self.tpe);
-        addr_of_mut!((*ptr).buffer).write(
-            self.bytes
-                .map(|p| p.as_ptr())
-                .unwrap_or(std::ptr::null_mut()) as *mut libc::c_void,
-        );
-        addr_of_mut!((*ptr).buffer_length).write(self.capacity as libc::c_ulong);
-        addr_of_mut!((*ptr).length).write(&mut self.length);
-        addr_of_mut!((*ptr).is_null).write(&mut self.is_null);
-        addr_of_mut!((*ptr).is_unsigned)
-            .write(self.flags.contains(Flags::UNSIGNED_FLAG) as ffi::my_bool);
+        unsafe {
+            addr_of_mut!((*ptr).buffer_type).write(self.tpe);
+            addr_of_mut!((*ptr).buffer).write(
+                self.bytes
+                    .map(|p| p.as_ptr())
+                    .unwrap_or(std::ptr::null_mut()) as *mut libc::c_void,
+            );
+            addr_of_mut!((*ptr).buffer_length).write(self.capacity as libc::c_ulong);
+            addr_of_mut!((*ptr).length).write(&mut self.length);
+            addr_of_mut!((*ptr).is_null).write(&mut self.is_null);
+            addr_of_mut!((*ptr).is_unsigned)
+                .write(self.flags.contains(Flags::UNSIGNED_FLAG) as ffi::my_bool);
 
-        if let Some(ref mut is_truncated) = self.is_truncated {
-            addr_of_mut!((*ptr).error).write(is_truncated);
+            if let Some(ref mut is_truncated) = self.is_truncated {
+                addr_of_mut!((*ptr).error).write(is_truncated);
+            }
+
+            // That's what the mysqlclient examples are doing
+            bind.assume_init()
         }
-
-        // That's what the mysqlclient examples are doing
-        bind.assume_init()
     }
 
     /// Resizes the byte buffer to fit the value of `self.length`, and returns
@@ -479,7 +481,8 @@ impl BindData {
     unsafe fn bind_for_truncated_data(&mut self) -> Option<(ffi::MYSQL_BIND, usize)> {
         if self.is_truncated() {
             if let Some(bytes) = self.bytes {
-                let mut bytes = Vec::from_raw_parts(bytes.as_ptr(), self.capacity, self.capacity);
+                let mut bytes =
+                    unsafe { Vec::from_raw_parts(bytes.as_ptr(), self.capacity, self.capacity) };
                 self.bytes = None;
 
                 let offset = self.capacity;
@@ -499,12 +502,12 @@ impl BindData {
                 self.bytes = NonNull::new(bytes.as_mut_ptr());
                 mem::forget(bytes);
 
-                let mut bind = self.mysql_bind();
+                let mut bind = unsafe { self.mysql_bind() };
 
                 if let Some(ptr) = self.bytes {
                     // Using offset is safe here as we have a u8 array (where std::mem::size_of::<u8> == 1)
                     // and we have a buffer that has at least
-                    bind.buffer = ptr.as_ptr().add(offset) as *mut libc::c_void;
+                    bind.buffer = unsafe { ptr.as_ptr().add(offset) as *mut libc::c_void };
                     bind.buffer_length = truncated_amount as libc::c_ulong;
                 } else {
                     bind.buffer_length = 0;
@@ -519,7 +522,7 @@ impl BindData {
                 self.bytes = NonNull::new(vec.as_mut_ptr());
                 mem::forget(vec);
 
-                let bind = self.mysql_bind();
+                let bind = unsafe { self.mysql_bind() };
                 // As we did not have a buffer before
                 // we couldn't have loaded any data yet, therefore
                 // request everything

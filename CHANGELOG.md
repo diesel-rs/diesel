@@ -43,6 +43,7 @@ in a way that makes the pools suitable for use in parallel tests.
 ### Changed
 
 * Use distinct `DIESEL_LOG` logging filter env variable instead of the default `RUST_LOG` one (#4575)
+* The minimal supported Rust version is now 1.82.0
 
 ## [2.2.2] 2024-07-19
 

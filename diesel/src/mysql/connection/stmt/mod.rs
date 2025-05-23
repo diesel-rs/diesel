@@ -116,7 +116,9 @@ impl Statement {
     /// If the pointers referenced by the `MYSQL_BIND` structures are invalidated,
     /// you must call this function again before calling `mysql_stmt_fetch`.
     pub unsafe fn bind_result(&self, binds: *mut ffi::MYSQL_BIND) -> QueryResult<()> {
-        ffi::mysql_stmt_bind_result(self.stmt.as_ptr(), binds);
+        unsafe {
+            ffi::mysql_stmt_bind_result(self.stmt.as_ptr(), binds);
+        }
         self.did_an_error_occur()
     }
 }
@@ -136,9 +138,13 @@ impl<'a> MaybeCached<'a, Statement> {
     /// have no return value. It should never be called on a statement on
     /// which `results` has previously been called?
     pub(super) unsafe fn execute(self) -> QueryResult<StatementUse<'a>> {
-        ffi::mysql_stmt_execute(self.stmt.as_ptr());
+        unsafe {
+            ffi::mysql_stmt_execute(self.stmt.as_ptr());
+        }
         self.did_an_error_occur()?;
-        ffi::mysql_stmt_store_result(self.stmt.as_ptr());
+        unsafe {
+            ffi::mysql_stmt_store_result(self.stmt.as_ptr());
+        }
         let ret = StatementUse { inner: self };
         ret.inner.did_an_error_occur()?;
         Ok(ret)
@@ -167,7 +173,7 @@ impl StatementUse<'_> {
     /// This function should be called after `execute` only
     /// otherwise it's not guaranteed to return a valid result
     pub(in crate::mysql::connection) unsafe fn result_size(&mut self) -> QueryResult<usize> {
-        let size = ffi::mysql_stmt_num_rows(self.inner.stmt.as_ptr());
+        let size = unsafe { ffi::mysql_stmt_num_rows(self.inner.stmt.as_ptr()) };
         usize::try_from(size).map_err(|e| Error::DeserializationError(Box::new(e)))
     }
 
@@ -195,13 +201,15 @@ impl StatementUse<'_> {
         idx: usize,
         offset: usize,
     ) -> QueryResult<()> {
-        ffi::mysql_stmt_fetch_column(
-            self.inner.stmt.as_ptr(),
-            bind,
-            idx.try_into()
-                .map_err(|e| Error::DeserializationError(Box::new(e)))?,
-            offset as libc::c_ulong,
-        );
+        unsafe {
+            ffi::mysql_stmt_fetch_column(
+                self.inner.stmt.as_ptr(),
+                bind,
+                idx.try_into()
+                    .map_err(|e| Error::DeserializationError(Box::new(e)))?,
+                offset as libc::c_ulong,
+            );
+        }
         self.inner.did_an_error_occur()
     }
 
@@ -211,7 +219,7 @@ impl StatementUse<'_> {
         &self,
         binds: *mut ffi::MYSQL_BIND,
     ) -> QueryResult<()> {
-        self.inner.bind_result(binds)
+        unsafe { self.inner.bind_result(binds) }
     }
 }
 

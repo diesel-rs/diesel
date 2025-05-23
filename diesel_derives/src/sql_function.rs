@@ -112,8 +112,7 @@ fn expand_variadic(
     let variadic_args = args.split_off(nonvariadic_args_count);
     let nonvariadic_args = args;
 
-    let variadic_args: Vec<_> = iter::repeat(variadic_args)
-        .take(variant_no)
+    let variadic_args: Vec<_> = iter::repeat_n(variadic_args, variant_no)
         .enumerate()
         .flat_map(|(arg_group_idx, arg_group)| {
             let mut resulting_args = vec![];
@@ -156,8 +155,7 @@ fn expand_variadic(
             })
             .collect()
     } else {
-        iter::repeat(generics)
-            .take(variant_no)
+        iter::repeat_n(generics, variant_no)
             .enumerate()
             .flat_map(|(generic_group_idx, generic_group)| {
                 let mut resulting_generics = vec![];
