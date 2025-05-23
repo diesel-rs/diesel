@@ -283,7 +283,7 @@ where
     }
 }
 
-impl<T: ?Sized, ST, DB> FromSql<ST, DB> for std::rc::Rc<T>
+impl<T, ST, DB> FromSql<ST, DB> for std::rc::Rc<T>
 where
     DB: Backend,
     T: FromSql<ST, DB>,
@@ -317,7 +317,7 @@ where
     }
 }
 
-impl<T: ?Sized, ST, DB> FromSql<ST, DB> for std::sync::Arc<T>
+impl<T, ST, DB> FromSql<ST, DB> for std::sync::Arc<T>
 where
     DB: Backend,
     T: FromSql<ST, DB>,
@@ -327,7 +327,7 @@ where
     }
 }
 
-impl<T: ?Sized, ST, DB> Queryable<ST, DB> for std::sync::Arc<T>
+impl<T, ST, DB> Queryable<ST, DB> for std::sync::Arc<T>
 where
     ST: SingleValue,
     DB: Backend,
