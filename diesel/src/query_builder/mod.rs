@@ -304,6 +304,26 @@ where
     }
 }
 
+impl<T: ?Sized, DB> QueryFragment<DB> for std::rc::Rc<T>
+where
+    DB: Backend,
+    T: QueryFragment<DB>,
+{
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        QueryFragment::walk_ast(&**self, pass)
+    }
+}
+
+impl<T: ?Sized, DB> QueryFragment<DB> for std::sync::Arc<T>
+where
+    DB: Backend,
+    T: QueryFragment<DB>,
+{
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        QueryFragment::walk_ast(&**self, pass)
+    }
+}
+
 impl<T: ?Sized, DB> QueryFragment<DB> for &T
 where
     DB: Backend,
