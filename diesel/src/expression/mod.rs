@@ -171,6 +171,14 @@ impl<T: Expression + ?Sized> Expression for &T {
     type SqlType = T::SqlType;
 }
 
+impl<T: Expression + ?Sized> Expression for std::rc::Rc<T> {
+    type SqlType = T::SqlType;
+}
+
+impl<T: Expression + ?Sized> Expression for std::sync::Arc<T> {
+    type SqlType = T::SqlType;
+}
+
 /// A helper to translate type level sql type information into
 /// runtime type information for specific queries
 ///
