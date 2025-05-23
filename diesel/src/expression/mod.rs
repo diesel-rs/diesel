@@ -743,6 +743,14 @@ impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for Box<T> {
     type IsAggregate = T::IsAggregate;
 }
 
+impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for std::rc::Rc<T> {
+    type IsAggregate = T::IsAggregate;
+}
+
+impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for std::sync::Arc<T> {
+    type IsAggregate = T::IsAggregate;
+}
+
 impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for &T {
     type IsAggregate = T::IsAggregate;
 }
