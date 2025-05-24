@@ -1,0 +1,56 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Declare a sql function for use in your code."><title>define_sql_function in diesel::prelude - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-0ce1a80b.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0-nightly (3e674b06b 2025-05-23)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-4e99c027.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-fd3af306.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.2.4</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">define_<wbr>sql_<wbr>function</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#adding-doc-comments" title="Adding Doc Comments">Adding Doc Comments</a></li><li><a href="#special-attributes" title="Special Attributes">Special Attributes</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>prelude</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">diesel</a>::<wbr><a href="index.html">prelude</a></div><h1>Macro <span class="macro">define_sql_function</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/diesel_derives/lib.rs.html#1087">Source</a> </span></div><pre class="rust item-decl"><code>define_sql_function!() { <span class="comment">/* proc-macro */</span> }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Declare a sql function for use in your code.</p>
+<p>Diesel only provides support for a very small number of SQL functions.
+This macro enables you to add additional functions from the SQL standard,
+as well as any custom functions your application might have.</p>
+<p>This is a legacy variant of the [<code>#[declare_sql_function]</code>] attribute macro, which
+should be preferred instead. It will generate the same code as the attribute macro
+and also it will accept the same syntax as the other macro.</p>
+<p>The syntax for this macro is very similar to that of a normal Rust function,
+except the argument and return types will be the SQL types being used.
+Typically, these types will come from <a href="../diesel/sql_types/index.html"><code>diesel::sql_types</code></a></p>
+<p>This macro will generate two items. A function with the name that you’ve
+given, and a module with a helper type representing the return type of your
+function. For example, this invocation:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="macro">define_sql_function!</span>(<span class="kw">fn </span>lower(x: Text) -&gt; Text);</code></pre></div>
+<p>will generate this code:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">pub fn </span>lower&lt;X&gt;(x: X) -&gt; lower&lt;X&gt; {
+    ...
+}
+
+<span class="kw">pub type </span>lower&lt;X&gt; = ...;</code></pre></div>
+<p>Most attributes given to this macro will be put on the generated function
+(including doc comments).</p>
+<h2 id="adding-doc-comments"><a class="doc-anchor" href="#adding-doc-comments">§</a>Adding Doc Comments</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::sql_types::Text;
+
+<span class="macro">define_sql_function!</span> {
+    <span class="doccomment">/// Represents the `canon_crate_name` SQL function, created in
+    /// migration ....
+    </span><span class="kw">fn </span>canon_crate_name(a: Text) -&gt; Text;
+}
+
+<span class="kw">let </span>target_name = <span class="string">"diesel"</span>;
+crates.filter(canon_crate_name(name).eq(canon_crate_name(target_name)));
+<span class="comment">// This will generate the following SQL
+// SELECT * FROM crates WHERE canon_crate_name(crates.name) = canon_crate_name($1)</span></code></pre></div>
+<h2 id="special-attributes"><a class="doc-anchor" href="#special-attributes">§</a>Special Attributes</h2>
+<p>There are a handful of special attributes that Diesel will recognize. They
+are:</p>
+<ul>
+<li><code>#[aggregate]</code>
+<ul>
+<li>Indicates that this is an aggregate function, and that <code>NonAggregate</code>
+shouldn’t be implemented.</li>
+</ul>
+</li>
+<li><code>#[sql_name = "name"]</code>
+<ul>
+<li>The SQL to be generated is different from the Rust name of the function.
+This can be used to represent functions which can take many argument
+types, or to capitalize function names.</li>
+</ul>
+</li>
+</ul>
+</div></details></section></div></main></body></html>
