@@ -3,9 +3,3 @@ error: expected integer literal
   |
 7 |     #[variadic(not_a_literal_number)]
   |                ^^^^^^^^^^^^^^^^^^^^
-
-error: invalid variadic argument count: not enough function arguments
-  --> tests/fail/derive/bad_variadic.rs:10:16
-   |
-10 |     #[variadic(3)]
-   |                ^
