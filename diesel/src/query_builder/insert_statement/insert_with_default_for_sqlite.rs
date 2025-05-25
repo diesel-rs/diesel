@@ -1,11 +1,15 @@
 use super::{BatchInsert, InsertStatement};
+use crate::connection::LoadConnection;
+use crate::deserialize::FromSqlRow;
+use crate::expression::{NonAggregate, QueryMetadata};
 use crate::insertable::InsertValues;
 use crate::insertable::{CanInsertInSingleQuery, ColumnInsertValue, DefaultableColumnInsertValue};
 use crate::prelude::*;
+use crate::query_builder::returning_clause::ReturningClause;
 use crate::query_builder::upsert::on_conflict_clause::OnConflictValues;
 use crate::query_builder::{AstPass, QueryId, ValuesClause};
 use crate::query_builder::{DebugQuery, QueryFragment};
-use crate::query_dsl::methods::ExecuteDsl;
+use crate::query_dsl::{methods::ExecuteDsl, LoadQuery};
 use crate::sqlite::Sqlite;
 use std::fmt::{self, Debug, Display};
 
@@ -273,6 +277,36 @@ where
     }
 }
 
+impl<'query, V, T, QId, Op, O, U, B, const STATIC_QUERY_ID: bool>
+    LoadQuery<'query, SqliteConnection, U, B>
+    for InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>
+where
+    T: QuerySource,
+    V: ContainsDefaultableValue<Out = O>,
+    O: Default,
+    (O, Self): LoadQuery<'query, SqliteConnection, U, B>,
+{
+    type RowIter<'conn> = <(O, Self) as LoadQuery<'query, SqliteConnection, U, B>>::RowIter<'conn>;
+
+    fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
+        <(O, Self) as LoadQuery<'query, SqliteConnection, U, B>>::internal_load(
+            (O::default(), self),
+            conn,
+        )
+    }
+}
+
+impl<V, T, QId, Op, const STATIC_QUERY_ID: bool> RunQueryDsl<SqliteConnection>
+    for (
+        No,
+        InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op>,
+    )
+where
+    T: QuerySource,
+    InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op>: RunQueryDsl<SqliteConnection>,
+{
+}
+
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 #[repr(transparent)]
 pub struct SqliteBatchInsertWrapper<V, T, QId, const STATIC_QUERY_ID: bool>(
@@ -397,6 +431,46 @@ where
             into_clause: query.into_clause,
         };
         query.execute(conn)
+    }
+}
+
+impl<'query, V, T, QId, Op, U, B, const STATIC_QUERY_ID: bool>
+    LoadQuery<'query, SqliteConnection, U, B>
+    for (
+        No,
+        InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op>,
+    )
+where
+    T: Table + QueryId + 'static,
+    T::FromClause: QueryFragment<Sqlite>,
+    Op: QueryFragment<Sqlite> + QueryId,
+    <T as Table>::AllColumns: QueryFragment<Sqlite> + QueryId + NonAggregate,
+    Sqlite: QueryMetadata<<<T as Table>::AllColumns as Expression>::SqlType>,
+    SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>:
+        QueryFragment<Sqlite> + QueryId + CanInsertInSingleQuery<Sqlite>,
+    // Row to U deserialization bounds
+    U: FromSqlRow<<<T as Table>::AllColumns as Expression>::SqlType, Sqlite> + 'static,
+    // Connection bounds
+    SqliteConnection: LoadConnection<B>,
+{
+    type RowIter<'conn> = Box<dyn Iterator<Item = QueryResult<U>> + 'conn>;
+
+    fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
+        let (No, query) = self;
+
+        let query = InsertStatement {
+            records: SqliteBatchInsertWrapper(query.records),
+            operator: query.operator,
+            target: query.target,
+            returning: ReturningClause(T::all_columns()),
+            into_clause: query.into_clause,
+        };
+
+        let results = <_ as LoadConnection<B>>::load(conn, query)?
+            .map(|row| U::build_from_row(&row?).map_err(crate::result::Error::DeserializationError))
+            .collect::<Vec<_>>();
+
+        Ok(Box::new(results.into_iter()))
     }
 }
 
