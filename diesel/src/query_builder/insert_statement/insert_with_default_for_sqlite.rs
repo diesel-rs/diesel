@@ -1,11 +1,7 @@
 use super::{BatchInsert, InsertStatement};
-use crate::connection::LoadConnection;
-use crate::deserialize::FromSqlRow;
-use crate::expression::{NonAggregate, QueryMetadata};
 use crate::insertable::InsertValues;
 use crate::insertable::{CanInsertInSingleQuery, ColumnInsertValue, DefaultableColumnInsertValue};
 use crate::prelude::*;
-use crate::query_builder::returning_clause::ReturningClause;
 use crate::query_builder::upsert::on_conflict_clause::OnConflictValues;
 use crate::query_builder::{AstPass, QueryId, ValuesClause};
 use crate::query_builder::{DebugQuery, QueryFragment};
@@ -434,6 +430,7 @@ where
     }
 }
 
+#[cfg(feature = "returning_clauses_for_sqlite_3_35")]
 impl<'query, V, T, QId, Op, U, B, const STATIC_QUERY_ID: bool>
     LoadQuery<'query, SqliteConnection, U, B>
     for (
@@ -444,14 +441,15 @@ where
     T: Table + QueryId + 'static,
     T::FromClause: QueryFragment<Sqlite>,
     Op: QueryFragment<Sqlite> + QueryId,
-    <T as Table>::AllColumns: QueryFragment<Sqlite> + QueryId + NonAggregate,
-    Sqlite: QueryMetadata<<<T as Table>::AllColumns as Expression>::SqlType>,
+    <T as Table>::AllColumns: QueryFragment<Sqlite> + QueryId + crate::expression::NonAggregate,
+    Sqlite: crate::expression::QueryMetadata<<<T as Table>::AllColumns as Expression>::SqlType>,
     SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>:
         QueryFragment<Sqlite> + QueryId + CanInsertInSingleQuery<Sqlite>,
     // Row to U deserialization bounds
-    U: FromSqlRow<<<T as Table>::AllColumns as Expression>::SqlType, Sqlite> + 'static,
+    U: crate::deserialize::FromSqlRow<<<T as Table>::AllColumns as Expression>::SqlType, Sqlite>
+        + 'static,
     // Connection bounds
-    SqliteConnection: LoadConnection<B>,
+    SqliteConnection: crate::connection::LoadConnection<B>,
 {
     type RowIter<'conn> = Box<dyn Iterator<Item = QueryResult<U>> + 'conn>;
 
@@ -462,11 +460,11 @@ where
             records: SqliteBatchInsertWrapper(query.records),
             operator: query.operator,
             target: query.target,
-            returning: ReturningClause(T::all_columns()),
+            returning: crate::query_builder::returning_clause::ReturningClause(T::all_columns()),
             into_clause: query.into_clause,
         };
 
-        let results = <_ as LoadConnection<B>>::load(conn, query)?
+        let results = <_ as crate::connection::LoadConnection<B>>::load(conn, query)?
             .map(|row| U::build_from_row(&row?).map_err(crate::result::Error::DeserializationError))
             .collect::<Vec<_>>();
 
