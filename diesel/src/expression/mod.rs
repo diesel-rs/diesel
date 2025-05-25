@@ -715,6 +715,11 @@ impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for &T {
 pub use diesel_derives::ValidGrouping;
 
 #[doc(hidden)]
+#[diagnostic::on_unimplemented(
+    note = "if your query contains columns from several tables in your group by or select \
+            clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` \
+            with these columns"
+)]
 pub trait IsContainedInGroupBy<T> {
     type Output;
 }
