@@ -77,6 +77,14 @@ impl ToSql<sql_types::Citext, Pg> for str {
 }
 
 #[cfg(feature = "postgres_backend")]
+impl ToSql<sql_types::Citext, Pg> for Box<str> {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        out.write_all(self.as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Citext, Pg> for String {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let string = String::from_utf8(value.as_bytes().to_vec())?;
