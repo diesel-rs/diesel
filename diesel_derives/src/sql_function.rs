@@ -17,6 +17,7 @@ use syn::{
 };
 
 const VARIADIC_VARIANTS_DEFAULT: usize = 2;
+const VARIADIC_ARG_COUNT_ENV: Option<&str> = option_env!("DIESEL_VARIADIC_FUNCTION_ARGS");
 
 pub(crate) fn expand(
     mut input: SqlFunctionDecl,
@@ -54,7 +55,10 @@ pub(crate) fn expand(
 
     attributes.retain(|attr| !attr.meta.path().is_ident("variadic"));
 
-    let variadic_variants = VARIADIC_VARIANTS_DEFAULT;
+    let variadic_variants = VARIADIC_ARG_COUNT_ENV
+        .map(|arg_count| arg_count.parse::<usize>().ok())
+        .flatten()
+        .unwrap_or(VARIADIC_VARIANTS_DEFAULT);
 
     let mut result = TokenStream::new();
     for variant_no in 0..=variadic_variants {
