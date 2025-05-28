@@ -1,5 +1,5 @@
 //! SQLite specific functions
-use crate::expression::functions::declare_sql_function;
+use crate::expression::functions::declare_sql_function_and_return_type_helpers;
 use crate::sql_types::*;
 use crate::sqlite::expression::expression_methods::BinaryOrNullableBinary;
 use crate::sqlite::expression::expression_methods::JsonOrNullableJson;
@@ -10,7 +10,7 @@ use crate::sqlite::expression::expression_methods::TextOrNullableText;
 use crate::sqlite::expression::expression_methods::TextOrNullableTextOrBinaryOrNullableBinary;
 
 #[cfg(feature = "sqlite")]
-#[declare_sql_function]
+#[declare_sql_function_and_return_type_helpers]
 extern "SQL" {
     /// Verifies that its argument is a valid JSON string or JSONB blob and returns a minified
     /// version of that JSON string with all unnecessary whitespace removed.
