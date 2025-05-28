@@ -277,8 +277,12 @@ fn expand_nonvariadic(
     let is_aggregate = attributes
         .iter()
         .any(|attr| attr.meta.path().is_ident("aggregate"));
-
     attributes.retain(|attr| !attr.meta.path().is_ident("aggregate"));
+
+    let skip_return_type_helper = attributes
+        .iter()
+        .any(|attr| attr.meta.path().is_ident("skip_return_type_helper"));
+    attributes.retain(|attr| !attr.meta.path().is_ident("skip_return_type_helper"));
 
     let args = &args;
     let (ref arg_name, ref arg_type): (Vec<_>, Vec<_>) = args
@@ -647,6 +651,55 @@ fn expand_nonvariadic(
             )
         };
 
+    let auto_derived_types = type_args
+        .iter()
+        .map(|type_arg| {
+            for arg in args {
+                let Type::Path(path) = &arg.ty else {
+                    continue;
+                };
+
+                let Some(path_ident) = path.path.get_ident() else {
+                    continue;
+                };
+
+                if path_ident == type_arg {
+                    return Ok(arg.name.clone());
+                }
+            }
+
+            Err(syn::Error::new(
+                type_arg.span(),
+                "cannot find argument corresponding to the generic",
+            ))
+        })
+        .collect::<Result<Vec<_>>>();
+
+    let return_type_helper_module = if skip_return_type_helper {
+        None
+    } else {
+        let auto_derived_types = match auto_derived_types {
+            Ok(a) => a,
+            Err(err) => return err.into_compile_error(),
+        };
+
+        let arg_names_iter: Vec<_> = args.iter().map(|arg| arg.name.clone()).collect();
+
+        let return_type_helper_module = quote! {
+            pub mod return_type {
+                pub type #fn_name<
+                    #(#arg_names_iter,)*
+                > = super:: #fn_name<
+                    #( <#auto_derived_types as diesel::expression::Expression>::SqlType, )*
+                    #(#arg_names_iter,)*
+                >;
+            }
+
+        };
+
+        Some(return_type_helper_module)
+    };
+
     quote! {
         #(#attributes)*
         #[allow(non_camel_case_types)]
@@ -667,6 +720,8 @@ fn expand_nonvariadic(
         #[allow(non_camel_case_types, non_snake_case, unused_imports)]
         pub(crate) mod #internals_module_name {
             #tokens
+
+            #return_type_helper_module
         }
     }
 }
