@@ -2127,7 +2127,53 @@ pub fn declare_sql_function(
     }
 }
 
-/// TODO: Add docs
+/// Declare a sql function for use in your code.
+///
+/// This macro works like [`declare_sql_function`], but also generates type aliases to simplify
+/// working with the return types of the functions created by [`declare_sql_function`].
+///
+/// All generated type aliases are available in the `return_type_helpers` module:
+///
+/// ```rust
+/// # extern crate diesel;
+/// # use diesel::expression::functions::declare_sql_function_and_return_type_helpers;
+/// # use diesel::sql_types::*;
+/// #
+/// # fn main() {
+/// #   // Without the main function this code will be wrapped in the auto-generated
+/// #   // `main` function and `#[declare_sql_function_and_return_type_helpers]` won't
+/// #   // work properly.
+/// # }
+/// #
+/// #[declare_sql_function_and_return_type_helpers]
+/// extern "SQL" {
+///     fn f<V: SqlType + SingleValue>(arg: V);
+/// }
+///
+/// type return_type_helper_for_f<V> = return_type_helpers::f<V>;
+/// ```
+///
+/// If you want to skip generating a type alias for a specific function, you can use the
+/// `#[skip_return_type_helper]` attribute, like this:
+///
+/// ```compile_fail
+/// # extern crate diesel;
+/// # use diesel::expression::functions::declare_sql_function_and_return_type_helpers;
+/// #
+/// # fn main() {
+/// #   // Without the main function this code will be wrapped in the auto-generated
+/// #   // `main` function and `#[declare_sql_function_and_return_type_helpers]` won't
+/// #   // work properly.
+/// # }
+/// #
+/// #[declare_sql_function_and_return_type_helpers]
+/// extern "SQL" {
+///     #[skip_return_type_helper]
+///     fn f();
+/// }
+///
+/// # type skipped_type = return_type_helpers::f;
+/// ```
 #[proc_macro_attribute]
 pub fn declare_sql_function_and_return_type_helpers(
     _attr: proc_macro::TokenStream,
