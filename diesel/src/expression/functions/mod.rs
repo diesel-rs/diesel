@@ -4,6 +4,9 @@
 pub use diesel_derives::declare_sql_function;
 
 #[doc(inline)]
+pub use diesel_derives::declare_sql_function_and_return_type_helpers;
+
+#[doc(inline)]
 pub use diesel_derives::define_sql_function;
 
 #[doc(inline)]

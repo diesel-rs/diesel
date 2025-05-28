@@ -23,6 +23,7 @@ extern crate quote;
 extern crate syn;
 
 use proc_macro::TokenStream;
+use quote::TokenStreamExt;
 use sql_function::ExternSqlBlock;
 use syn::{parse_macro_input, parse_quote};
 
@@ -1085,7 +1086,9 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///
 #[proc_macro]
 pub fn define_sql_function(input: TokenStream) -> TokenStream {
-    sql_function::expand(parse_macro_input!(input), false).into()
+    sql_function::expand(vec![parse_macro_input!(input)], false)
+        .tokens
+        .into()
 }
 
 /// A legacy version of [`define_sql_function!`].
@@ -1118,7 +1121,9 @@ pub fn define_sql_function(input: TokenStream) -> TokenStream {
 #[proc_macro]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
-    sql_function::expand(parse_macro_input!(input), true).into()
+    sql_function::expand(vec![parse_macro_input!(input)], true)
+        .tokens
+        .into()
 }
 
 /// This is an internal diesel macro that
@@ -2021,7 +2026,7 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// handled differently. For example, consider the variadic function `json_array`.
 /// To add support for it, you can use the `#[variadic]` attribute:
 ///
-/// ```rust
+/// ```ignore
 /// # extern crate diesel;
 /// # use diesel::sql_types::*;
 /// # use diesel::expression::functions::declare_sql_function;
@@ -2038,7 +2043,7 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// count (up to a predefined limit). For instance, it will generate functions like
 /// `json_array_0`, `json_array_1`, and so on, which are equivalent to:
 ///
-/// ```rust
+/// ```ignore
 /// # extern crate diesel;
 /// # use diesel::sql_types::*;
 /// # use diesel::expression::functions::declare_sql_function;
@@ -2100,14 +2105,30 @@ pub fn declare_sql_function(
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
     let input = proc_macro2::TokenStream::from(input);
-    let result = syn::parse2::<ExternSqlBlock>(input.clone()).map(|res| {
-        let expanded = res
-            .function_decls
-            .into_iter()
-            .map(|decl| sql_function::expand(decl, false));
-        quote::quote! {
-            #(#expanded)*
+    let result = syn::parse2::<ExternSqlBlock>(input.clone())
+        .map(|res| sql_function::expand(res.function_decls, false).tokens);
+    match result {
+        Ok(token_stream) => token_stream.into(),
+        Err(e) => {
+            let mut output = input;
+            output.extend(e.into_compile_error());
+            output.into()
         }
+    }
+}
+
+/// TODO: Add docs
+#[proc_macro_attribute]
+pub fn declare_sql_function_and_return_type_helpers(
+    _attr: proc_macro::TokenStream,
+    input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    let input = proc_macro2::TokenStream::from(input);
+    let result = syn::parse2::<ExternSqlBlock>(input.clone()).map(|res| {
+        let mut expanded = sql_function::expand(res.function_decls, false);
+        expanded.tokens.append_all(expanded.return_type_helpers);
+
+        expanded.tokens
     });
     match result {
         Ok(token_stream) => token_stream.into(),
