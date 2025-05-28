@@ -291,6 +291,13 @@ fn add_variadic_doc_comments(attributes: &mut Vec<Attribute>, fn_name: &str) {
         /// Here, the postfix number indicates repetitions of variadic arguments.
         /// To use this function, the appropriate version with the correct
         /// argument count must be selected.
+        ///
+        /// ## Controlling the generation of variadic function variants
+        ///
+        /// By default, only variants with 0, 1, and 2 repetitions of variadic
+        /// arguments are generated. To generate more variants, set the
+        /// `DIESEL_VARIADIC_FUNCTION_ARGS` environment variable to the desired
+        /// number of variants.
         #[doc(alias = #fn_name)]
     };
 

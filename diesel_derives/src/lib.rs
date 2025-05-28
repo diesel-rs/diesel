@@ -2109,6 +2109,12 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///     ...
 /// }
 /// ```
+///
+/// ### Controlling the generation of variadic function variants
+///
+/// By default, only variants with 0, 1, and 2 repetitions of variadic arguments are generated. To
+/// generate more variants, set the `DIESEL_VARIADIC_FUNCTION_ARGS` environment variable to the
+/// desired number of variants.
 #[proc_macro_attribute]
 pub fn declare_sql_function(
     _attr: proc_macro::TokenStream,
