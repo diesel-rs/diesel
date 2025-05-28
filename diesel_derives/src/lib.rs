@@ -2026,10 +2026,15 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// handled differently. For example, consider the variadic function `json_array`.
 /// To add support for it, you can use the `#[variadic]` attribute:
 ///
-/// ```ignore
+/// ```rust
 /// # extern crate diesel;
 /// # use diesel::sql_types::*;
 /// # use diesel::expression::functions::declare_sql_function;
+/// #
+/// # fn main() {
+/// #   // Without the main function this code will be wrapped in the auto-generated
+/// #   // `main` function and `#[declare_sql_function]` won't work properly.
+/// # }
 ///
 /// # #[cfg(feature = "sqlite")]
 /// #[declare_sql_function]
@@ -2043,10 +2048,15 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// count (up to a predefined limit). For instance, it will generate functions like
 /// `json_array_0`, `json_array_1`, and so on, which are equivalent to:
 ///
-/// ```ignore
+/// ```rust
 /// # extern crate diesel;
 /// # use diesel::sql_types::*;
 /// # use diesel::expression::functions::declare_sql_function;
+/// #
+/// # fn main() {
+/// #   // Without the main function this code will be wrapped in the auto-generated
+/// #   // `main` function and `#[declare_sql_function]` won't work properly.
+/// # }
 ///
 /// # #[cfg(feature = "sqlite")]
 /// #[declare_sql_function]

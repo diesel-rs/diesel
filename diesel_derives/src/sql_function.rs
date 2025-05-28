@@ -129,7 +129,7 @@ fn expand_one(
 
         #[doc(hidden)]
         #[allow(unused_imports)]
-        pub mod #return_types_module_name {
+        mod #return_types_module_name {
             #(pub use super:: #helper_type_modules ::*;)*
         }
     };
@@ -750,7 +750,7 @@ fn expand_nonvariadic(
         let return_type_helper_module = quote! {
             #[doc(hidden)]
             #[allow(non_camel_case_types, non_snake_case, unused_imports)]
-            pub mod #return_type_module_name {
+            mod #return_type_module_name {
                 pub type #fn_name<
                     #(#arg_names_iter,)*
                 > = super::#fn_name<
