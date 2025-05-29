@@ -306,6 +306,30 @@ where
     }
 }
 
+impl<T: ?Sized, ST> AsExpression<ST> for std::rc::Rc<T>
+where
+    Bound<ST, std::rc::Rc<T>>: Expression<SqlType = ST>,
+    ST: SqlType + TypedExpressionType,
+{
+    type Expression = Bound<ST, Self>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(self)
+    }
+}
+
+impl<'a, T: ?Sized, ST> AsExpression<ST> for &'a std::rc::Rc<T>
+where
+    Bound<ST, &'a T>: Expression<SqlType = ST>,
+    ST: SqlType + TypedExpressionType,
+{
+    type Expression = Bound<ST, &'a T>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(&**self)
+    }
+}
+
 impl<T: ?Sized, ST, DB> ToSql<ST, DB> for std::sync::Arc<T>
 where
     T: ToSql<ST, DB>,
@@ -337,5 +361,29 @@ where
 
     fn build(row: Self::Row) -> deserialize::Result<Self> {
         Ok(row)
+    }
+}
+
+impl<T: ?Sized, ST> AsExpression<ST> for std::sync::Arc<T>
+where
+    Bound<ST, std::sync::Arc<T>>: Expression<SqlType = ST>,
+    ST: SqlType + TypedExpressionType,
+{
+    type Expression = Bound<ST, Self>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(self)
+    }
+}
+
+impl<'a, T: ?Sized, ST> AsExpression<ST> for &'a std::sync::Arc<T>
+where
+    Bound<ST, &'a T>: Expression<SqlType = ST>,
+    ST: SqlType + TypedExpressionType,
+{
+    type Expression = Bound<ST, &'a T>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(&**self)
     }
 }
