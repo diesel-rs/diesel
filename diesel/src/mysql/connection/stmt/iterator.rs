@@ -47,7 +47,7 @@ impl Iterator for StatementIterator<'_> {
         // if that's not the case, we need to copy the output bind buffers
         // to somewhere else
         let res = if let Some(binds) = Rc::get_mut(&mut self.last_row) {
-            if let PrivateMysqlRow::Direct(ref mut binds) = RefCell::get_mut(binds) {
+            if let PrivateMysqlRow::Direct(binds) = RefCell::get_mut(binds) {
                 self.stmt.populate_row_buffers(binds)
             } else {
                 // any other state than `PrivateMysqlRow::Direct` is invalid here

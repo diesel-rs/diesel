@@ -107,6 +107,7 @@ macro_rules! type_name {
         )*
     };
 }
+
 type_name! {
     diesel::pg::Pg: "postgres_backend" {
         Bool => "bool",
@@ -121,16 +122,24 @@ type_name! {
         Interval => "interval",
         Time => "time",
         Timestamp => "timestamp",
+        Uuid => "uuid",
+        Json => "json",
+        Jsonb => "jsonb",
     }
     diesel::mysql::Mysql: "mysql_backend" {
-        Int4 => "integer",
-        Int8 => "integer",
+        Int8 => "signed",
         Text => "char",
+        Date => "date",
+        Datetime => "datetime",
+        Decimal => "decimal",
+        Time => "time",
     }
     diesel::sqlite::Sqlite: "sqlite" {
         Int4 => "integer",
         Int8 => "bigint",
         Text => "text",
+        Json => "json",
+        Jsonb => "jsonb",
     }
 }
 
@@ -149,14 +158,89 @@ where
     }
 }
 
-/// Marker trait: this SQL type (`Self`) can be casted to the target SQL type
+/// Marker trait: this SQL type (`Self`) can be cast to the target SQL type, but some values can be invalid
+pub trait FallibleCastsTo<ST> {}
+
+impl<ST1, ST2> FallibleCastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where
+    ST1: CastsTo<ST2>
+{
+}
+
+/// Marker trait: this SQL type (`Self`) can be cast to the target SQL type
 /// (`ST`) using `CAST(expr AS target_sql_type)`
-pub trait CastsTo<ST> {}
+pub trait CastsTo<ST>: FallibleCastsTo<ST> {}
 
 impl<ST1, ST2> CastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where ST1: CastsTo<ST2>
 {}
 
-impl CastsTo<sql_types::Int8> for sql_types::Int4 {}
-impl CastsTo<sql_types::Int4> for sql_types::Int8 {}
-impl CastsTo<sql_types::Text> for sql_types::Int4 {}
-impl CastsTo<sql_types::Text> for sql_types::Int8 {}
+macro_rules! casts_impl {
+    (
+        $(
+            $($feature: literal : )? ($to: tt <- $from: tt),
+        )+
+    ) => {
+        $(
+            $(#[cfg(feature = $feature)])?
+            impl FallibleCastsTo<sql_types::$to> for sql_types::$from {}
+            $(#[cfg(feature = $feature)])?
+            impl CastsTo<sql_types::$to> for sql_types::$from {}
+        )+
+    };
+}
+
+casts_impl!(
+    (Bool <- Int4),
+    (Float4 <- Int4),
+    (Float4 <- Int8),
+    (Float8 <- Float4),
+    (Float8 <- Int4),
+    (Float8 <- Int8),
+    (Int8 <- Int4),
+    (Int8 <- Float4),
+    (Int8 <- Float8),
+    (Int4 <- Bool),
+    (Int4 <- Float4),
+    (Text <- Bool),
+    (Text <- Float4),
+    (Text <- Float8),
+    (Text <- Int4),
+    (Text <- Int8),
+    (Text <- Date),
+    (Text <- Json),
+    (Text <- Jsonb),
+    (Text <- Time),
+    (Json <- Jsonb),
+    (Jsonb <- Json),
+    "mysql_backend": (Text <- Datetime),
+    "postgres_backend": (Text <- Uuid),
+);
+
+macro_rules! fallible_casts_impl {
+    (
+        $(
+            $($feature: literal : )? ($to: tt <- $from: tt),
+        )+
+    ) => {
+        $(
+            $(#[cfg(feature = $feature)])?
+            impl FallibleCastsTo<sql_types::$to> for sql_types::$from {}
+        )+
+    };
+}
+
+fallible_casts_impl!(
+    (Int4 <- Int8),
+    (Int4 <- Float8),
+    (Int4 <- Text),
+    (Int8 <- Text),
+    (Float4 <- Float8),
+    (Float4 <- Text),
+    (Float8 <- Text),
+    (Json <- Text),
+    (Jsonb <- Text),
+    (Bool <- Text),
+    (Date <- Text),
+    (Time <- Text),
+    "mysql_backend": (Datetime <- Text),
+    "postgres_backend": (Uuid <- Text),
+);

@@ -101,14 +101,14 @@ impl PgTypeMetadata {
     /// The [OID] of `T`
     ///
     /// [OID]: https://www.postgresql.org/docs/current/static/datatype-oid.html
-    pub fn oid(&self) -> Result<u32, impl std::error::Error + Send + Sync> {
+    pub fn oid(&self) -> Result<u32, impl std::error::Error + Send + Sync + use<>> {
         self.0.as_ref().map(|i| i.oid).map_err(Clone::clone)
     }
 
     /// The [OID] of `T[]`
     ///
     /// [OID]: https://www.postgresql.org/docs/current/static/datatype-oid.html
-    pub fn array_oid(&self) -> Result<u32, impl std::error::Error + Send + Sync> {
+    pub fn array_oid(&self) -> Result<u32, impl std::error::Error + Send + Sync + use<>> {
         self.0.as_ref().map(|i| i.array_oid).map_err(Clone::clone)
     }
 }

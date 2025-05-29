@@ -130,7 +130,10 @@ mod tests {
     #[test]
     fn current_user_from_env_fails_when_no_username_set() {
         let _guard = this_test_modifies_env();
-        env::remove_var("BLOG_USERNAME");
+        // There doesn't seem to be a better solution
+        unsafe {
+            env::remove_var("BLOG_USERNAME");
+        }
 
         let conn = &mut connection();
 
@@ -140,8 +143,11 @@ mod tests {
     #[test]
     fn current_user_from_env_fails_when_no_password_set() {
         let _guard = this_test_modifies_env();
-        env::remove_var("BLOG_PASSWORD");
-        env::set_var("BLOG_USERNAME", "sgrif");
+        // There doesn't seem to be a better solution
+        unsafe {
+            env::remove_var("BLOG_PASSWORD");
+            env::set_var("BLOG_USERNAME", "sgrif");
+        }
 
         let conn = &mut connection();
 
