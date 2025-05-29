@@ -139,6 +139,10 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
 /// - `impl AsExpression<Nullable<SqlType>> for YourType`
 /// - `impl AsExpression<SqlType> for &'a YourType`
 /// - `impl AsExpression<Nullable<SqlType>> for &'a YourType`
+/// - `impl AsExpression<SqlType> for std::rc::Rc<YourType>`
+/// - `impl AsExpression<SqlType> for &'a std::rc::Rc<YourType>`
+/// - `impl AsExpression<SqlType> for std::sync::Arc<YourType>`
+/// - `impl AsExpression<SqlType> for &'a std::sync::Arc<YourType>`
 /// - `impl AsExpression<SqlType> for &'a &'b YourType`
 /// - `impl AsExpression<Nullable<SqlType>> for &'a &'b YourType`
 ///

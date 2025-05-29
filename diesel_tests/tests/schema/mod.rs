@@ -106,7 +106,7 @@ impl Comment {
 pub struct CommentRc {
     pub id: i32,
     pub post_id: i32,
-    pub text: std::rc::Rc<String>,
+    pub text: std::rc::Rc<str>,
 }
 
 #[derive(
