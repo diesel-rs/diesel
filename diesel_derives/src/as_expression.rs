@@ -50,6 +50,42 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                 }
             }
 
+            impl #impl_generics AsExpression<#sql_type> for std::rc::Rc<#struct_ty> #where_clause
+            {
+                type Expression = diesel::internal::derives::as_expression::Bound<#sql_type, Self>;
+
+                fn as_expression(self) -> <Self as diesel::expression::AsExpression<#sql_type>>::Expression {
+                    diesel::internal::derives::as_expression::Bound::new(self)
+                }
+            }
+
+            impl #impl_generics AsExpression<#sql_type> for &'__expr std::rc::Rc<#struct_ty> #where_clause
+            {
+                type Expression = diesel::internal::derives::as_expression::Bound<#sql_type, Self>;
+
+                fn as_expression(self) -> <Self as diesel::expression::AsExpression<#sql_type>>::Expression {
+                    diesel::internal::derives::as_expression::Bound::new(self)
+                }
+            }
+
+            impl #impl_generics AsExpression<#sql_type> for std::sync::Arc<#struct_ty> #where_clause
+            {
+                type Expression = diesel::internal::derives::as_expression::Bound<#sql_type, Self>;
+
+                fn as_expression(self) -> <Self as diesel::expression::AsExpression<#sql_type>>::Expression {
+                    diesel::internal::derives::as_expression::Bound::new(self)
+                }
+            }
+
+            impl #impl_generics AsExpression<#sql_type> for &'__expr std::sync::Arc<#struct_ty> #where_clause
+            {
+                type Expression = diesel::internal::derives::as_expression::Bound<#sql_type, Self>;
+
+                fn as_expression(self) -> <Self as diesel::expression::AsExpression<#sql_type>>::Expression {
+                    diesel::internal::derives::as_expression::Bound::new(self)
+                }
+            }
+
             impl #impl_generics diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>>
                 for &'__expr #struct_ty #where_clause
             {
