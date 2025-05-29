@@ -273,50 +273,6 @@ where
     }
 }
 
-impl<V, T, QId, C, Op, Target, ConflictOpt, const STATIC_QUERY_ID: bool> ExecuteDsl<C, Sqlite>
-    for (
-        Yes,
-        InsertStatement<
-            T,
-            OnConflictValues<
-                BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>,
-                Target,
-                ConflictOpt,
-            >,
-            Op,
-        >,
-    )
-where
-    C: Connection<Backend = Sqlite>,
-    T: Table + Copy + QueryId + 'static,
-    T::FromClause: QueryFragment<Sqlite>,
-    Op: Copy + QueryId + QueryFragment<Sqlite>,
-    V: InsertValues<Sqlite, T> + CanInsertInSingleQuery<Sqlite> + QueryId,
-{
-    fn execute((Yes, query): Self, conn: &mut C) -> QueryResult<usize> {
-        conn.transaction(|conn| {
-            let mut result = 0;
-            for record in &query.records.values.values {
-                let stmt = InsertStatement {
-                    operator: query.operator,
-                    target: query.target,
-                    records: OnConflictValues {
-                        values: record,
-                        target: query.records.target,
-                        action: query.records.action,
-                        where_clause: query.records.where_clause,
-                    },
-                    returning: query.returning,
-                    into_clause: query.into_clause,
-                };
-
-                result += stmt.execute(conn)?;
-            }
-            Ok(result)
-        })
-    }
-}
-
 impl<'query, V, T, QId, Op, O, U, B, const STATIC_QUERY_ID: bool>
     LoadQuery<'query, SqliteConnection, U, B>
     for InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>
