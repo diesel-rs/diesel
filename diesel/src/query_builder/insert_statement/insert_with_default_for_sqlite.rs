@@ -306,6 +306,43 @@ where
 {
 }
 
+impl<'query, V, T, QId, Op, U, B, const STATIC_QUERY_ID: bool>
+    LoadQuery<'query, SqliteConnection, U, B>
+    for (
+        Yes,
+        InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>,
+    )
+where
+    T: Table + Copy + QueryId + 'static,
+    Op: Copy + QueryId + QueryFragment<Sqlite>,
+    InsertStatement<T, ValuesClause<V, T>, Op>: LoadQuery<'query, SqliteConnection, U, B>,
+    Self: RunQueryDsl<SqliteConnection>,
+{
+    type RowIter<'conn> = std::vec::IntoIter<QueryResult<U>>;
+
+    fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
+        let (Yes, query) = self;
+
+        conn.transaction(|conn| {
+            let mut results = Vec::with_capacity(query.records.values.len());
+
+            for record in query.records.values {
+                let stmt =
+                    InsertStatement::new(query.target, record, query.operator, query.returning);
+
+                let result = stmt
+                    .internal_load(conn)?
+                    .next()
+                    .ok_or(crate::result::Error::NotFound)?;
+
+                results.push(result);
+            }
+
+            Ok(results.into_iter())
+        })
+    }
+}
+
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 #[repr(transparent)]
 pub struct SqliteBatchInsertWrapper<V, T, QId, const STATIC_QUERY_ID: bool>(
