@@ -443,11 +443,14 @@ impl<'query, V, T, QId, Op, U, B, const STATIC_QUERY_ID: bool>
 where
     T: Table + QueryId + 'static,
     T::FromClause: QueryFragment<Sqlite>,
-    Op: QueryFragment<Sqlite> + QueryId,
+    Op: QueryFragment<Sqlite> + QueryId + 'query,
     <T as Table>::AllColumns: QueryFragment<Sqlite> + QueryId + crate::expression::NonAggregate,
     Sqlite: crate::expression::QueryMetadata<<<T as Table>::AllColumns as Expression>::SqlType>,
     SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>:
         QueryFragment<Sqlite> + QueryId + CanInsertInSingleQuery<Sqlite>,
+    // Lifetimes
+    V: 'query,
+    QId: 'query,
     // Row to U deserialization bounds
     U: crate::deserialize::FromSqlRow<<<T as Table>::AllColumns as Expression>::SqlType, Sqlite>
         + 'static,
@@ -455,7 +458,12 @@ where
     SqliteConnection: crate::connection::LoadConnection<B>,
     Self: RunQueryDsl<SqliteConnection>,
 {
-    type RowIter<'conn> = Box<dyn Iterator<Item = QueryResult<U>> + 'conn>;
+    type RowIter<'conn> = crate::query_dsl::load_dsl::LoadIter<
+        U,
+        <SqliteConnection as crate::connection::LoadConnection<B>>::Cursor<'conn, 'query>,
+        <<T as Table>::AllColumns as Expression>::SqlType,
+        Sqlite,
+    >;
 
     fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
         let (No, query) = self;
@@ -468,11 +476,10 @@ where
             into_clause: query.into_clause,
         };
 
-        let results = <_ as crate::connection::LoadConnection<B>>::load(conn, query)?
-            .map(|row| U::build_from_row(&row?).map_err(crate::result::Error::DeserializationError))
-            .collect::<Vec<_>>();
-
-        Ok(Box::new(results.into_iter()))
+        Ok(crate::query_dsl::load_dsl::LoadIter {
+            cursor: <_ as crate::connection::LoadConnection<B>>::load(conn, query)?,
+            _marker: Default::default(),
+        })
     }
 }
 
