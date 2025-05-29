@@ -292,14 +292,17 @@ where
     }
 }
 
-impl<V, T, QId, Op, const STATIC_QUERY_ID: bool> RunQueryDsl<SqliteConnection>
+impl<V, T, QId, Op, O, const STATIC_QUERY_ID: bool> RunQueryDsl<SqliteConnection>
     for (
-        No,
-        InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op>,
+        O,
+        InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>,
     )
 where
     T: QuerySource,
-    InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op>: RunQueryDsl<SqliteConnection>,
+    V: ContainsDefaultableValue<Out = O>,
+    O: Default,
+    InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>:
+        RunQueryDsl<SqliteConnection>,
 {
 }
 
@@ -450,6 +453,7 @@ where
         + 'static,
     // Connection bounds
     SqliteConnection: crate::connection::LoadConnection<B>,
+    Self: RunQueryDsl<SqliteConnection>,
 {
     type RowIter<'conn> = Box<dyn Iterator<Item = QueryResult<U>> + 'conn>;
 
