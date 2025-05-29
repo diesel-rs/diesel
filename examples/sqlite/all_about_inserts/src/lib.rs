@@ -143,16 +143,13 @@ pub fn insert_single_column_batch(conn: &mut SqliteConnection) -> QueryResult<us
 
 #[test]
 fn examine_sql_from_insert_single_column_batch() {
-    // Sorry, we can't inspect this as a single query on SQLite.
-    // You can loop over the values to see each individual insert statement.
-    //
-    // use schema::users::dsl::*;
+    use schema::users::dsl::*;
 
-    // let values = vec![name.eq("Sean"), name.eq("Tess")];
-    // let query = insert_into(users).values(&values);
-    // let sql = "INSERT INTO `users` (`name`) VALUES (?), (?) \
-    //            -- binds: [\"Sean\", \"Tess\"]";
-    // assert_eq!(sql, debug_query::<Sqlite, _>(&query).to_string());
+    let values = vec![name.eq("Sean"), name.eq("Tess")];
+    let query = insert_into(users).values(&values);
+    let sql = "INSERT INTO `users` (`name`) VALUES (?), (?) \
+               -- binds: [\"Sean\", \"Tess\"]";
+    assert_eq!(sql, debug_query::<Sqlite, _>(&query).to_string());
 }
 
 pub fn insert_single_column_batch_with_default(conn: &mut SqliteConnection) -> QueryResult<usize> {
@@ -190,20 +187,17 @@ pub fn insert_tuple_batch(conn: &mut SqliteConnection) -> QueryResult<usize> {
 
 #[test]
 fn examine_sql_from_insert_tuple_batch() {
-    // Sorry, we can't inspect this as a single query on SQLite.
-    // You can loop over the values to see each individual insert statement.
-    //
-    // use schema::users::dsl::*;
+    use schema::users::dsl::*;
 
-    // let values = vec![
-    //     (name.eq("Sean"), hair_color.eq("Black")),
-    //     (name.eq("Tess"), hair_color.eq("Brown")),
-    // ];
-    // let query = insert_into(users).values(&values);
-    // let sql = "INSERT INTO `users` (`name`, `hair_color`) \
-    //            VALUES (?, ?), (?, ?) \
-    //            -- binds: [\"Sean\", \"Black\", \"Tess\", \"Brown\"]";
-    // assert_eq!(sql, debug_query::<Sqlite, _>(&query).to_string());
+    let values = vec![
+        (name.eq("Sean"), hair_color.eq("Black")),
+        (name.eq("Tess"), hair_color.eq("Brown")),
+    ];
+    let query = insert_into(users).values(&values);
+    let sql = "INSERT INTO `users` (`name`, `hair_color`) \
+               VALUES (?, ?), (?, ?) \
+               -- binds: [\"Sean\", \"Black\", \"Tess\", \"Brown\"]";
+    assert_eq!(sql, debug_query::<Sqlite, _>(&query).to_string());
 }
 
 pub fn insert_tuple_batch_with_default(conn: &mut SqliteConnection) -> QueryResult<usize> {
@@ -279,22 +273,12 @@ fn insert_get_results_batch() {
 
         let now = select(diesel::dsl::now).get_result::<NaiveDateTime>(conn)?;
 
-        let inserted_users = conn.transaction::<_, Error, _>(|conn| {
-            let inserted_count = insert_into(users)
-                .values(&vec![
-                    (id.eq(1), name.eq("Sean")),
-                    (id.eq(2), name.eq("Tess")),
-                ])
-                .execute(conn)?;
-
-            Ok(users
-                .order(id.desc())
-                .limit(inserted_count as i64)
-                .load(conn)?
-                .into_iter()
-                .rev()
-                .collect::<Vec<_>>())
-        })?;
+        let inserted_users = insert_into(users)
+            .values(&vec![
+                (id.eq(1), name.eq("Sean")),
+                (id.eq(2), name.eq("Tess")),
+            ])
+            .get_results(conn)?;
 
         let expected_users = vec![
             User {
@@ -319,17 +303,58 @@ fn insert_get_results_batch() {
 }
 
 #[test]
+fn insert_insertable_struct_get_results_batch() {
+    use diesel::result::Error;
+
+    let conn = &mut establish_connection();
+    conn.test_transaction::<_, Error, _>(|conn| {
+        use diesel::select;
+        use schema::users::dsl::*;
+
+        let now = select(diesel::dsl::now).get_result::<NaiveDateTime>(conn)?;
+
+        let json = r#"[
+            { "name": "Sean", "hair_color": "Black" },
+            { "name": "Tess", "hair_color": "Brown" }
+        ]"#;
+        let user_form = serde_json::from_str::<Vec<UserForm>>(json).unwrap();
+
+        let inserted_users = insert_into(users).values(&user_form).get_results(conn)?;
+
+        let expected_users = vec![
+            User {
+                id: 1,
+                name: "Sean".into(),
+                hair_color: Some("Black".into()),
+                created_at: now,
+                updated_at: now,
+            },
+            User {
+                id: 2,
+                name: "Tess".into(),
+                hair_color: Some("Brown".into()),
+                created_at: now,
+                updated_at: now,
+            },
+        ];
+        assert_eq!(expected_users, inserted_users);
+
+        Ok(())
+    });
+}
+
+#[test]
 fn examine_sql_from_insert_get_results_batch() {
     use schema::users::dsl::*;
 
-    // Sorry, we can't inspect this as a single query on SQLite.
-    // You can loop over the values to see each individual insert statement.
-    //
-    // let values = vec![(id.eq(1), name.eq("Sean")), (id.eq(2), name.eq("Tess"))];
-    // let insert_query = insert_into(users).values(&values);
-    // let insert_sql = "INSERT INTO `users` (`id`, `name`) VALUES (?, ?), (?, ?) \
-    //            -- binds: [1, \"Sean\", 2, \"Tess\"]";
-    // assert_eq!(insert_sql, debug_query::<Sqlite, _>(&insert_query).to_string());
+    let values = vec![(id.eq(1), name.eq("Sean")), (id.eq(2), name.eq("Tess"))];
+    let insert_query = insert_into(users).values(&values);
+    let insert_sql = "INSERT INTO `users` (`id`, `name`) VALUES (?, ?), (?, ?) \
+               -- binds: [1, \"Sean\", 2, \"Tess\"]";
+    assert_eq!(
+        insert_sql,
+        debug_query::<Sqlite, _>(&insert_query).to_string()
+    );
     let load_query = users.order(id.desc());
     let load_sql = "SELECT `users`.`id`, `users`.`name`, \
                     `users`.`hair_color`, `users`.`created_at`, \
@@ -351,13 +376,9 @@ fn insert_get_result() {
 
         let now = select(diesel::dsl::now).get_result::<NaiveDateTime>(conn)?;
 
-        let inserted_user = conn.transaction::<_, Error, _>(|conn| {
-            insert_into(users)
-                .values((id.eq(3), name.eq("Ruby")))
-                .execute(conn)?;
-
-            users.order(id.desc()).first(conn)
-        })?;
+        let inserted_user = insert_into(users)
+            .values((id.eq(3), name.eq("Ruby")))
+            .get_result(conn)?;
 
         let expected_user = User {
             id: 3,
