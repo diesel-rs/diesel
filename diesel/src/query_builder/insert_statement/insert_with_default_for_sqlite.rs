@@ -392,7 +392,14 @@ where
                     .next()
                     .ok_or(crate::result::Error::NotFound)?;
 
-                results.push(result);
+                match &result {
+                    Ok(_) | Err(crate::result::Error::DeserializationError(_)) => {
+                        results.push(result)
+                    }
+                    Err(_) => {
+                        result?;
+                    }
+                };
             }
 
             Ok(results.into_iter())
@@ -451,7 +458,14 @@ where
                     .next()
                     .ok_or(crate::result::Error::NotFound)?;
 
-                results.push(result);
+                match &result {
+                    Ok(_) | Err(crate::result::Error::DeserializationError(_)) => {
+                        results.push(result)
+                    }
+                    Err(_) => {
+                        result?;
+                    }
+                };
             }
 
             Ok(results.into_iter())
