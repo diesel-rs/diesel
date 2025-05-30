@@ -47,7 +47,7 @@ use crate::sqlite::Sqlite;
 ///
 /// * [`DefaultLoadingMode`]
 ///
-/// As `SqliteConnection` only supports a single loading mode implementation
+/// As `SqliteConnection` only supports a single loading mode implementation,
 /// it is **not required** to explicitly specify a loading mode
 /// when calling [`RunQueryDsl::load_iter()`] or [`LoadConnection::load`]
 ///
@@ -116,6 +116,40 @@ use crate::sqlite::Sqlite;
 ///     let (id, name) = r?;
 ///     println!("Id: {} Name: {}", id, name);
 /// }
+/// #   Ok(())
+/// # }
+/// ```
+///
+/// # Concurrency
+///
+/// By default, when running into a database lock, the operation will abort with a
+/// `Database locked` error. However, it's possible to configure it for greater concurrency,
+/// trading latency for not having to deal with retries yourself.
+///
+/// You can use this example as blue-print for which statements to run after establishing a connection.
+/// ```rust
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// use diesel::connection::SimpleConnection;
+/// let conn = &mut establish_connection();
+/// // see https://fractaledmind.github.io/2023/09/07/enhancing-rails-sqlite-fine-tuning/
+/// // sleep if the database is busy, this corresponds to up to 2 seconds sleeping time.
+/// conn.batch_execute("PRAGMA busy_timeout = 2000;")?;
+/// // better write-concurrency
+/// conn.batch_execute("PRAGMA journal_mode = WAL;")?;
+/// // fsync only in critical moments
+/// conn.batch_execute("PRAGMA synchronous = NORMAL;")?;
+/// // write WAL changes back every 1000 pages, for an in average 1MB WAL file.
+/// // May affect readers if number is increased
+/// conn.batch_execute("PRAGMA wal_autocheckpoint = 1000;")?;
+/// // free some space by truncating possibly massive WAL files from the last run
+/// conn.batch_execute("PRAGMA wal_checkpoint(TRUNCATE);")?;
 /// #   Ok(())
 /// # }
 /// ```
