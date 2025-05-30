@@ -300,6 +300,10 @@ fn add_variadic_doc_comments(attributes: &mut Vec<Attribute>, fn_name: &str) {
         /// arguments are generated. To generate more variants, set the
         /// `DIESEL_VARIADIC_FUNCTION_ARGS` environment variable to the desired
         /// number of variants.
+        ///
+        /// For a greater convenience this environment variable can also be set
+        /// in a `.cargo/config.toml` file as described in the
+        /// [cargo documentation](https://doc.rust-lang.org/cargo/reference/config.html#env).
         #[doc(alias = #fn_name)]
     };
 

@@ -2121,6 +2121,9 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// generate more variants, set the `DIESEL_VARIADIC_FUNCTION_ARGS` environment variable to the
 /// desired number of variants.
 ///
+/// For a greater convenience this environment variable can also be set in a `.cargo/config.toml`
+/// file as described in the [cargo documentation](https://doc.rust-lang.org/cargo/reference/config.html#env).
+///
 /// ## Helper types generation
 ///
 /// When the `generate_return_type_helpers` attribute is specified, for each function defined inside
