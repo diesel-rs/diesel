@@ -319,6 +319,20 @@ where
     }
 }
 
+impl<V, T, QId, Op, O, const STATIC_QUERY_ID: bool> RunQueryDsl<SqliteConnection>
+    for (
+        O,
+        InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>,
+    )
+where
+    T: QuerySource,
+    V: ContainsDefaultableValue<Out = O>,
+    O: Default,
+    InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>:
+        RunQueryDsl<SqliteConnection>,
+{
+}
+
 impl<V, T, QId, Op, O, Target, ConflictOpt, const STATIC_QUERY_ID: bool>
     RunQueryDsl<SqliteConnection>
     for (
@@ -346,20 +360,6 @@ where
         >,
         Op,
     >: RunQueryDsl<SqliteConnection>,
-{
-}
-
-impl<V, T, QId, Op, O, const STATIC_QUERY_ID: bool> RunQueryDsl<SqliteConnection>
-    for (
-        O,
-        InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>,
-    )
-where
-    T: QuerySource,
-    V: ContainsDefaultableValue<Out = O>,
-    O: Default,
-    InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>:
-        RunQueryDsl<SqliteConnection>,
 {
 }
 
@@ -424,7 +424,7 @@ impl<'query, V, T, QId, Op, U, B, Target, ConflictOpt, const STATIC_QUERY_ID: bo
 where
     T: Table + Copy + QueryId + 'static,
     T::FromClause: Copy,
-    Op: Copy + QueryId + QueryFragment<Sqlite>,
+    Op: Copy,
     Target: Copy,
     ConflictOpt: Copy,
     InsertStatement<T, OnConflictValues<ValuesClause<V, T>, Target, ConflictOpt>, Op>:
@@ -600,7 +600,39 @@ where
     }
 }
 
-#[cfg(feature = "returning_clauses_for_sqlite_3_35")]
+impl<'query, V, T, QId, Op, U, B, const STATIC_QUERY_ID: bool>
+    LoadQuery<'query, SqliteConnection, U, B>
+    for (
+        No,
+        InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op>,
+    )
+where
+    T: Table + QueryId + 'static,
+    InsertStatement<T, SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Op>:
+        LoadQuery<'query, SqliteConnection, U, B>,
+    Self: RunQueryDsl<SqliteConnection>,
+{
+    type RowIter<'conn> = <InsertStatement<
+        T,
+        SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>,
+        Op,
+    > as LoadQuery<'query, SqliteConnection, U, B>>::RowIter<'conn>;
+
+    fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
+        let (No, query) = self;
+
+        let query = InsertStatement {
+            records: SqliteBatchInsertWrapper(query.records),
+            operator: query.operator,
+            target: query.target,
+            returning: query.returning,
+            into_clause: query.into_clause,
+        };
+
+        query.internal_load(conn)
+    }
+}
+
 impl<'query, V, T, QId, Op, U, B, Target, ConflictOpt, const STATIC_QUERY_ID: bool>
     LoadQuery<'query, SqliteConnection, U, B>
     for (
@@ -613,30 +645,18 @@ impl<'query, V, T, QId, Op, U, B, Target, ConflictOpt, const STATIC_QUERY_ID: bo
     )
 where
     T: Table + QueryId + 'static,
-    T::FromClause: QueryFragment<Sqlite>,
-    Op: QueryFragment<Sqlite> + QueryId + 'query,
-    <T as Table>::AllColumns: QueryFragment<Sqlite> + QueryId + crate::expression::NonAggregate,
-    Sqlite: crate::expression::QueryMetadata<<<T as Table>::AllColumns as Expression>::SqlType>,
-    OnConflictValues<SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Target, ConflictOpt>:
-        QueryFragment<Sqlite> + CanInsertInSingleQuery<Sqlite> + QueryId,
-    // Lifetimes
-    V: 'query,
-    QId: 'query,
-    Target: 'query,
-    ConflictOpt: 'query,
-    // Row to U deserialization bounds
-    U: crate::deserialize::FromSqlRow<<<T as Table>::AllColumns as Expression>::SqlType, Sqlite>
-        + 'static,
-    // Connection bounds
-    SqliteConnection: crate::connection::LoadConnection<B>,
+    InsertStatement<
+        T,
+        OnConflictValues<SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Target, ConflictOpt>,
+        Op,
+    >: LoadQuery<'query, SqliteConnection, U, B>,
     Self: RunQueryDsl<SqliteConnection>,
 {
-    type RowIter<'conn> = crate::query_dsl::load_dsl::LoadIter<
-        U,
-        <SqliteConnection as crate::connection::LoadConnection<B>>::Cursor<'conn, 'query>,
-        <<T as Table>::AllColumns as Expression>::SqlType,
-        Sqlite,
-    >;
+    type RowIter<'conn> = <InsertStatement<
+        T,
+        OnConflictValues<SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Target, ConflictOpt>,
+        Op,
+    > as LoadQuery<'query, SqliteConnection, U, B>>::RowIter<'conn>;
 
     fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
         let (No, query) = self;
@@ -650,64 +670,11 @@ where
                 action: query.records.action,
                 where_clause: query.records.where_clause,
             },
-            returning: crate::query_builder::returning_clause::ReturningClause(T::all_columns()),
+            returning: query.returning,
             into_clause: query.into_clause,
         };
 
-        Ok(crate::query_dsl::load_dsl::LoadIter {
-            cursor: <_ as crate::connection::LoadConnection<B>>::load(conn, query)?,
-            _marker: Default::default(),
-        })
-    }
-}
-
-#[cfg(feature = "returning_clauses_for_sqlite_3_35")]
-impl<'query, V, T, QId, Op, U, B, const STATIC_QUERY_ID: bool>
-    LoadQuery<'query, SqliteConnection, U, B>
-    for (
-        No,
-        InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op>,
-    )
-where
-    T: Table + QueryId + 'static,
-    T::FromClause: QueryFragment<Sqlite>,
-    Op: QueryFragment<Sqlite> + QueryId + 'query,
-    <T as Table>::AllColumns: QueryFragment<Sqlite> + QueryId + crate::expression::NonAggregate,
-    Sqlite: crate::expression::QueryMetadata<<<T as Table>::AllColumns as Expression>::SqlType>,
-    SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>:
-        QueryFragment<Sqlite> + QueryId + CanInsertInSingleQuery<Sqlite>,
-    // Lifetimes
-    V: 'query,
-    QId: 'query,
-    // Row to U deserialization bounds
-    U: crate::deserialize::FromSqlRow<<<T as Table>::AllColumns as Expression>::SqlType, Sqlite>
-        + 'static,
-    // Connection bounds
-    SqliteConnection: crate::connection::LoadConnection<B>,
-    Self: RunQueryDsl<SqliteConnection>,
-{
-    type RowIter<'conn> = crate::query_dsl::load_dsl::LoadIter<
-        U,
-        <SqliteConnection as crate::connection::LoadConnection<B>>::Cursor<'conn, 'query>,
-        <<T as Table>::AllColumns as Expression>::SqlType,
-        Sqlite,
-    >;
-
-    fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
-        let (No, query) = self;
-
-        let query = InsertStatement {
-            records: SqliteBatchInsertWrapper(query.records),
-            operator: query.operator,
-            target: query.target,
-            returning: crate::query_builder::returning_clause::ReturningClause(T::all_columns()),
-            into_clause: query.into_clause,
-        };
-
-        Ok(crate::query_dsl::load_dsl::LoadIter {
-            cursor: <_ as crate::connection::LoadConnection<B>>::load(conn, query)?,
-            _marker: Default::default(),
-        })
+        query.internal_load(conn)
     }
 }
 
