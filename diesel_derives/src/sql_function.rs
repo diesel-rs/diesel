@@ -760,7 +760,7 @@ fn expand_nonvariadic(
         let return_type_module_name =
             Ident::new(&format!("__{}_return_type", fn_name), fn_name.span());
 
-        let doc = format!("Return type of [`{fn_name}()`](super::{fn_name}()).");
+        let doc = format!("Return type of the [`{fn_name}()`](fn@super::{fn_name}) SQL function.");
         let return_type_helper_module = quote! {
             #[allow(non_camel_case_types, non_snake_case, unused_imports)]
             #[doc(hidden)]

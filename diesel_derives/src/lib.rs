@@ -22,6 +22,7 @@ extern crate proc_macro2;
 extern crate quote;
 extern crate syn;
 
+use darling::{ast::NestedMeta, FromMeta};
 use proc_macro::TokenStream;
 use quote::TokenStreamExt;
 use sql_function::ExternSqlBlock;
@@ -1713,6 +1714,10 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// Most attributes given to this macro will be put on the generated function
 /// (including doc comments).
 ///
+/// If the `generate_return_type_helpers` attribute is specified, an additional module named
+/// `return_type_helpers` will be generated, containing all return type helpers. For more
+/// information, refer to the `Helper types generation` section.
+///
 /// # Adding Doc Comments
 ///
 /// ```no_run
@@ -2115,43 +2120,24 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// By default, only variants with 0, 1, and 2 repetitions of variadic arguments are generated. To
 /// generate more variants, set the `DIESEL_VARIADIC_FUNCTION_ARGS` environment variable to the
 /// desired number of variants.
-#[proc_macro_attribute]
-pub fn declare_sql_function(
-    _attr: proc_macro::TokenStream,
-    input: proc_macro::TokenStream,
-) -> proc_macro::TokenStream {
-    let input = proc_macro2::TokenStream::from(input);
-    let result = syn::parse2::<ExternSqlBlock>(input.clone())
-        .map(|res| sql_function::expand(res.function_decls, false).tokens);
-    match result {
-        Ok(token_stream) => token_stream.into(),
-        Err(e) => {
-            let mut output = input;
-            output.extend(e.into_compile_error());
-            output.into()
-        }
-    }
-}
-
-/// Declare a sql function for use in your code.
 ///
-/// This macro works like [`declare_sql_function`], but also generates type aliases to simplify
-/// working with the return types of the functions created by [`declare_sql_function`].
+/// ## Helper types generation
 ///
-/// All generated type aliases are available in the `return_type_helpers` module:
+/// When the `generate_return_type_helpers` attribute is specified, for each function defined inside
+/// an `extern "SQL"` block, a return type alias with the same name as the function is created and
+/// placed in the `return_type_helpers` module:
 ///
 /// ```rust
 /// # extern crate diesel;
-/// # use diesel::expression::functions::declare_sql_function_and_return_type_helpers;
+/// # use diesel::expression::functions::declare_sql_function;
 /// # use diesel::sql_types::*;
 /// #
 /// # fn main() {
 /// #   // Without the main function this code will be wrapped in the auto-generated
-/// #   // `main` function and `#[declare_sql_function_and_return_type_helpers]` won't
-/// #   // work properly.
+/// #   // `main` function and `#[declare_sql_function]` won't work properly.
 /// # }
 /// #
-/// #[declare_sql_function_and_return_type_helpers]
+/// #[declare_sql_function(generate_return_type_helpers = true)]
 /// extern "SQL" {
 ///     fn f<V: SqlType + SingleValue>(arg: V);
 /// }
@@ -2164,15 +2150,14 @@ pub fn declare_sql_function(
 ///
 /// ```compile_fail
 /// # extern crate diesel;
-/// # use diesel::expression::functions::declare_sql_function_and_return_type_helpers;
+/// # use diesel::expression::functions::declare_sql_function;
 /// #
 /// # fn main() {
 /// #   // Without the main function this code will be wrapped in the auto-generated
-/// #   // `main` function and `#[declare_sql_function_and_return_type_helpers]` won't
-/// #   // work properly.
+/// #   // `main` function and `#[declare_sql_function]` won't work properly.
 /// # }
 /// #
-/// #[declare_sql_function_and_return_type_helpers]
+/// #[declare_sql_function(generate_return_type_helpers = true)]
 /// extern "SQL" {
 ///     #[skip_return_type_helper]
 ///     fn f();
@@ -2181,17 +2166,29 @@ pub fn declare_sql_function(
 /// # type skipped_type = return_type_helpers::f;
 /// ```
 #[proc_macro_attribute]
-pub fn declare_sql_function_and_return_type_helpers(
-    _attr: proc_macro::TokenStream,
+pub fn declare_sql_function(
+    attr: proc_macro::TokenStream,
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
     let input = proc_macro2::TokenStream::from(input);
+
+    let attr = match DeclareSqlFunctionArgs::parse_from_macro_input(attr) {
+        Err(e) => {
+            return e.into_compile_error().into();
+        }
+        Ok(attr) => attr,
+    };
+
     let result = syn::parse2::<ExternSqlBlock>(input.clone()).map(|res| {
         let mut expanded = sql_function::expand(res.function_decls, false);
-        expanded.tokens.append_all(expanded.return_type_helpers);
+
+        if attr.generate_return_type_helpers {
+            expanded.tokens.append_all(expanded.return_type_helpers);
+        }
 
         expanded.tokens
     });
+
     match result {
         Ok(token_stream) => token_stream.into(),
         Err(e) => {
@@ -2199,5 +2196,18 @@ pub fn declare_sql_function_and_return_type_helpers(
             output.extend(e.into_compile_error());
             output.into()
         }
+    }
+}
+
+#[derive(darling::FromMeta, Default)]
+#[darling(default)]
+struct DeclareSqlFunctionArgs {
+    generate_return_type_helpers: bool,
+}
+
+impl DeclareSqlFunctionArgs {
+    fn parse_from_macro_input(input: TokenStream) -> syn::Result<Self> {
+        let args = NestedMeta::parse_meta_list(input.into())?;
+        Ok(DeclareSqlFunctionArgs::from_list(&args)?)
     }
 }
