@@ -65,7 +65,9 @@ fn filter_rc_by_int_equality() {
     assert_eq!(Ok(tess), users.filter(id.eq(tess_id)).first(connection));
     assert_eq!(
         Err(NotFound),
-        users.filter(id.eq(unused_id)).first::<UserRcString>(connection)
+        users
+            .filter(id.eq(unused_id))
+            .first::<UserRcString>(connection)
     );
 }
 
@@ -92,7 +94,9 @@ fn filter_arc_by_int_equality() {
     assert_eq!(Ok(tess), users.filter(id.eq(tess_id)).first(connection));
     assert_eq!(
         Err(NotFound),
-        users.filter(id.eq(unused_id)).first::<UserArcString>(connection)
+        users
+            .filter(id.eq(unused_id))
+            .first::<UserArcString>(connection)
     );
 }
 
