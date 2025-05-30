@@ -22,7 +22,9 @@ extern crate proc_macro2;
 extern crate quote;
 extern crate syn;
 
+use darling::{ast::NestedMeta, FromMeta};
 use proc_macro::TokenStream;
+use quote::TokenStreamExt;
 use sql_function::ExternSqlBlock;
 use syn::{parse_macro_input, parse_quote};
 
@@ -1085,7 +1087,9 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///
 #[proc_macro]
 pub fn define_sql_function(input: TokenStream) -> TokenStream {
-    sql_function::expand(parse_macro_input!(input), false).into()
+    sql_function::expand(vec![parse_macro_input!(input)], false)
+        .tokens
+        .into()
 }
 
 /// A legacy version of [`define_sql_function!`].
@@ -1118,7 +1122,9 @@ pub fn define_sql_function(input: TokenStream) -> TokenStream {
 #[proc_macro]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
-    sql_function::expand(parse_macro_input!(input), true).into()
+    sql_function::expand(vec![parse_macro_input!(input)], true)
+        .tokens
+        .into()
 }
 
 /// This is an internal diesel macro that
@@ -1708,6 +1714,10 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// Most attributes given to this macro will be put on the generated function
 /// (including doc comments).
 ///
+/// If the `generate_return_type_helpers` attribute is specified, an additional module named
+/// `return_type_helpers` will be generated, containing all return type helpers. For more
+/// information, refer to the `Helper types generation` section.
+///
 /// # Adding Doc Comments
 ///
 /// ```no_run
@@ -2025,6 +2035,11 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// # extern crate diesel;
 /// # use diesel::sql_types::*;
 /// # use diesel::expression::functions::declare_sql_function;
+/// #
+/// # fn main() {
+/// #   // Without the main function this code will be wrapped in the auto-generated
+/// #   // `main` function and `#[declare_sql_function]` won't work properly.
+/// # }
 ///
 /// # #[cfg(feature = "sqlite")]
 /// #[declare_sql_function]
@@ -2042,6 +2057,11 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// # extern crate diesel;
 /// # use diesel::sql_types::*;
 /// # use diesel::expression::functions::declare_sql_function;
+/// #
+/// # fn main() {
+/// #   // Without the main function this code will be wrapped in the auto-generated
+/// #   // `main` function and `#[declare_sql_function]` won't work properly.
+/// # }
 ///
 /// # #[cfg(feature = "sqlite")]
 /// #[declare_sql_function]
@@ -2094,21 +2114,84 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///     ...
 /// }
 /// ```
+///
+/// ### Controlling the generation of variadic function variants
+///
+/// By default, only variants with 0, 1, and 2 repetitions of variadic arguments are generated. To
+/// generate more variants, set the `DIESEL_VARIADIC_FUNCTION_ARGS` environment variable to the
+/// desired number of variants.
+///
+/// For a greater convenience this environment variable can also be set in a `.cargo/config.toml`
+/// file as described in the [cargo documentation](https://doc.rust-lang.org/cargo/reference/config.html#env).
+///
+/// ## Helper types generation
+///
+/// When the `generate_return_type_helpers` attribute is specified, for each function defined inside
+/// an `extern "SQL"` block, a return type alias with the same name as the function is created and
+/// placed in the `return_type_helpers` module:
+///
+/// ```rust
+/// # extern crate diesel;
+/// # use diesel::expression::functions::declare_sql_function;
+/// # use diesel::sql_types::*;
+/// #
+/// # fn main() {
+/// #   // Without the main function this code will be wrapped in the auto-generated
+/// #   // `main` function and `#[declare_sql_function]` won't work properly.
+/// # }
+/// #
+/// #[declare_sql_function(generate_return_type_helpers = true)]
+/// extern "SQL" {
+///     fn f<V: SqlType + SingleValue>(arg: V);
+/// }
+///
+/// type return_type_helper_for_f<V> = return_type_helpers::f<V>;
+/// ```
+///
+/// If you want to skip generating a type alias for a specific function, you can use the
+/// `#[skip_return_type_helper]` attribute, like this:
+///
+/// ```compile_fail
+/// # extern crate diesel;
+/// # use diesel::expression::functions::declare_sql_function;
+/// #
+/// # fn main() {
+/// #   // Without the main function this code will be wrapped in the auto-generated
+/// #   // `main` function and `#[declare_sql_function]` won't work properly.
+/// # }
+/// #
+/// #[declare_sql_function(generate_return_type_helpers = true)]
+/// extern "SQL" {
+///     #[skip_return_type_helper]
+///     fn f();
+/// }
+///
+/// # type skipped_type = return_type_helpers::f;
+/// ```
 #[proc_macro_attribute]
 pub fn declare_sql_function(
-    _attr: proc_macro::TokenStream,
+    attr: proc_macro::TokenStream,
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
     let input = proc_macro2::TokenStream::from(input);
-    let result = syn::parse2::<ExternSqlBlock>(input.clone()).map(|res| {
-        let expanded = res
-            .function_decls
-            .into_iter()
-            .map(|decl| sql_function::expand(decl, false));
-        quote::quote! {
-            #(#expanded)*
+
+    let attr = match DeclareSqlFunctionArgs::parse_from_macro_input(attr) {
+        Err(e) => {
+            return e.into_compile_error().into();
         }
+        Ok(attr) => attr,
+    };
+
+    let result = syn::parse2::<ExternSqlBlock>(input.clone()).map(|res| {
+        let mut expanded = sql_function::expand(res.function_decls, false);
+
+        if attr.generate_return_type_helpers {
+            expanded.tokens.append_all(expanded.return_type_helpers);
+        }
+
+        expanded.tokens
     });
+
     match result {
         Ok(token_stream) => token_stream.into(),
         Err(e) => {
@@ -2116,5 +2199,18 @@ pub fn declare_sql_function(
             output.extend(e.into_compile_error());
             output.into()
         }
+    }
+}
+
+#[derive(darling::FromMeta, Default)]
+#[darling(default)]
+struct DeclareSqlFunctionArgs {
+    generate_return_type_helpers: bool,
+}
+
+impl DeclareSqlFunctionArgs {
+    fn parse_from_macro_input(input: TokenStream) -> syn::Result<Self> {
+        let args = NestedMeta::parse_meta_list(input.into())?;
+        Ok(DeclareSqlFunctionArgs::from_list(&args)?)
     }
 }

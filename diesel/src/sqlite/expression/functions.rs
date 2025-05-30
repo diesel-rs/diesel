@@ -10,7 +10,7 @@ use crate::sqlite::expression::expression_methods::TextOrNullableText;
 use crate::sqlite::expression::expression_methods::TextOrNullableTextOrBinaryOrNullableBinary;
 
 #[cfg(feature = "sqlite")]
-#[declare_sql_function]
+#[declare_sql_function(generate_return_type_helpers = true)]
 extern "SQL" {
     /// Verifies that its argument is a valid JSON string or JSONB blob and returns a minified
     /// version of that JSON string with all unnecessary whitespace removed.
@@ -1259,4 +1259,10 @@ extern "SQL" {
         json: J,
         path: Text,
     ) -> Nullable<Jsonb>;
+}
+
+pub(super) mod return_type_helpers_reexported {
+    #[allow(unused_imports)]
+    #[doc(inline)]
+    pub use super::return_type_helpers::*;
 }
