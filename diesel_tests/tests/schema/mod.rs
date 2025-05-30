@@ -70,7 +70,6 @@ pub struct UserRcString {
     pub hair_color: Option<std::rc::Rc<String>>,
 }
 
-
 #[derive(
     PartialEq,
     Eq,
