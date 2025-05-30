@@ -172,6 +172,22 @@ pub type Fields<Alias, Fields> = <Fields as crate::query_source::aliasing::Field
     <Alias as crate::query_source::aliasing::GetAliasSourceFromAlias>::Source,
 >>::Out;
 
+/// The return type of
+/// [`l + r`](expression::ops::numeric::Add)
+pub type Add<L, R> = <L as ::core::ops::Add<R>>::Output;
+
+/// The return type of
+/// [`l - r`](expression::ops::numeric::Sub)
+pub type Sub<L, R> = <L as ::core::ops::Sub<R>>::Output;
+
+/// The return type of
+/// [`l * r`](expression::ops::numeric::Mul)
+pub type Mul<L, R> = <L as ::core::ops::Mul<R>>::Output;
+
+/// The return type of
+/// [`l / r`](expression::ops::numeric::Div)
+pub type Div<L, R> = <L as ::core::ops::Div<R>>::Output;
+
 // we allow unreachable_pub here
 // as rustc otherwise shows false positives
 // for every item in this module. We reexport
