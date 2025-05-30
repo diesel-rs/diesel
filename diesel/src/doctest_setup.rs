@@ -157,6 +157,33 @@ cfg_if::cfg_if! {
             create_tables_with_data(&mut connection);
             connection
         }
+
+        #[allow(dead_code)]
+        fn sqlite_version(conn: &mut SqliteConnection) -> (u32, u32, u32) {
+            let version = diesel::select(diesel::dsl::sql::<diesel::sql_types::Text>("sqlite_version();"))
+                .get_result::<String>(conn)
+                .unwrap();
+
+            let mut version_components = version.split('.');
+            let major: u32 = version_components.next().unwrap().parse().unwrap();
+            let minor: u32 = version_components.next().unwrap().parse().unwrap();
+            let patch: u32 = version_components.next().unwrap().parse().unwrap();
+            (major, minor, patch)
+        }
+
+        macro_rules! assert_version {
+            ($conn: ident, $major: literal, $minor: literal, $patch: literal) => {
+                let version = sqlite_version($conn);
+                if version.0 < $major ||
+                    (version.0 == $major && version.1 < $minor) ||
+                    (version.0 == $major && version.1 == $minor && version.2 < $patch)
+                {
+                    println!("SQLite version is too old, skipping the test.");
+                    return Ok(());
+                }
+            }
+        }
+
     } else if #[cfg(feature = "mysql")] {
         #[allow(dead_code)]
         type DB = diesel::mysql::Mysql;
