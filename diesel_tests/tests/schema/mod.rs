@@ -51,6 +51,45 @@ impl User {
     }
 }
 
+#[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    Identifiable,
+    Insertable,
+    AsChangeset,
+    QueryableByName,
+    Selectable,
+)]
+#[diesel(table_name = users)]
+pub struct UserRcString {
+    pub id: i32,
+    pub name: std::rc::Rc<String>,
+    pub hair_color: Option<std::rc::Rc<String>>,
+}
+
+
+#[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    Identifiable,
+    Insertable,
+    AsChangeset,
+    QueryableByName,
+    Selectable,
+)]
+#[diesel(table_name = users)]
+pub struct UserArcString {
+    pub id: i32,
+    pub name: std::sync::Arc<String>,
+    pub hair_color: Option<std::sync::Arc<String>>,
+}
+
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Selectable)]
 #[diesel(table_name = users)]
 pub struct UserName(#[diesel(column_name = name)] pub String);
@@ -91,44 +130,6 @@ impl Comment {
 }
 
 #[derive(
-    PartialEq,
-    Eq,
-    Debug,
-    Clone,
-    Queryable,
-    AsChangeset,
-    Insertable,
-    Identifiable,
-    Associations,
-    Selectable,
-)]
-#[diesel(belongs_to(Post), table_name = comments)]
-pub struct CommentRc {
-    pub id: i32,
-    pub post_id: i32,
-    pub text: std::rc::Rc<str>,
-}
-
-#[derive(
-    PartialEq,
-    Eq,
-    Debug,
-    Clone,
-    Queryable,
-    AsChangeset,
-    Insertable,
-    Identifiable,
-    Associations,
-    Selectable,
-)]
-#[diesel(belongs_to(Post), table_name = comments)]
-pub struct CommentArc {
-    pub id: i32,
-    pub post_id: i32,
-    pub text: std::sync::Arc<String>,
-}
-
-#[derive(
     Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Associations, Identifiable, Selectable,
 )]
 #[diesel(belongs_to(User))]
@@ -157,11 +158,25 @@ pub struct NewUser {
 
 impl NewUser {
     pub fn new(name: &str, hair_color: Option<&str>) -> Self {
-        NewUser {
+        Self {
             name: name.to_string(),
             hair_color: hair_color.map(|s| s.to_string()),
         }
     }
+}
+
+#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset, Selectable)]
+#[diesel(table_name = users)]
+pub struct NewUserRcString {
+    pub name: std::rc::Rc<String>,
+    pub hair_color: Option<std::rc::Rc<String>>,
+}
+
+#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset, Selectable)]
+#[diesel(table_name = users)]
+pub struct NewUserArcString {
+    pub name: std::sync::Arc<String>,
+    pub hair_color: Option<std::sync::Arc<String>>,
 }
 
 #[derive(Debug, PartialEq, Eq, Insertable)]
