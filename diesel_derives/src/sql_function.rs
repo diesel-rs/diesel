@@ -50,7 +50,7 @@ pub(crate) fn expand(input: Vec<SqlFunctionDecl>, legacy_helper_type_and_module:
     let return_type_helpers = quote! {
         #[allow(unused_imports)]
         #[doc(hidden)]
-        pub mod return_type_helpers {
+        mod return_type_helpers {
             #(
                 #[doc(inline)]
                 pub use super:: #return_type_helper_module_paths ::*;
@@ -131,7 +131,7 @@ fn expand_one(
         #result
 
         #[allow(unused_imports)]
-        #[doc(hidden)]
+        #[doc(inline)]
         mod #return_types_module_name {
             #(
                 #[doc(inline)]
@@ -767,7 +767,7 @@ fn expand_nonvariadic(
         let doc = format!("Return type of the [`{fn_name}()`](fn@super::{fn_name}) SQL function.");
         let return_type_helper_module = quote! {
             #[allow(non_camel_case_types, non_snake_case, unused_imports)]
-            #[doc(hidden)]
+            #[doc(inline)]
             mod #return_type_module_name {
                 #[doc = #doc]
                 pub type #fn_name<

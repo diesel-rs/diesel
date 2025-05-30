@@ -1260,3 +1260,9 @@ extern "SQL" {
         path: Text,
     ) -> Nullable<Jsonb>;
 }
+
+pub(super) mod return_type_helpers_reexported {
+    #[allow(unused_imports)]
+    #[doc(inline)]
+    pub use super::return_type_helpers::*;
+}
