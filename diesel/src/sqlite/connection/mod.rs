@@ -127,6 +127,10 @@ use crate::sqlite::Sqlite;
 /// trading latency for not having to deal with retries yourself.
 ///
 /// You can use this example as blue-print for which statements to run after establishing a connection.
+/// It is **important** to run each `PRAGMA` in a single statement to make sure all of them apply
+/// correctly. In addition the order of the `PRAGMA` statements is relevant to prevent timeout
+/// issues for the later `PRAGMA` statements.
+///
 /// ```rust
 /// # include!("../../doctest_setup.rs");
 /// #
