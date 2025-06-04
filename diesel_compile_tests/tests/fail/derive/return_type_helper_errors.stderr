@@ -1,5 +1,11 @@
 error: cannot find argument corresponding to the generic
-  --> tests/fail/derive/return_type_helper_errors.rs:15:10
+  --> tests/fail/derive/return_type_helper_errors.rs:18:14
    |
-15 |     fn f<A: SingleValue>(a: <A as TypeWrapper>::Type);
-   |          ^
+18 |         fn f<A: SingleValue>(a: <A as TypeWrapper>::Type);
+   |              ^
+
+error: cannot find argument corresponding to the generic
+  --> tests/fail/derive/return_type_helper_errors.rs:21:14
+   |
+21 |         fn g<A: SingleValue>(a: <A as TypeWrapper>::Type);
+   |              ^

@@ -248,6 +248,7 @@ dependencies = [
 name = "diesel_derives"
 version = "2.2.0"
 dependencies = [
+ "darling",
  "diesel_table_macro_syntax",
  "dsl_auto_type",
  "proc-macro2",

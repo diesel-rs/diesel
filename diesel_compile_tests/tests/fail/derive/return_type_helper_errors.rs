@@ -10,12 +10,35 @@ impl<T: SingleValue> TypeWrapper for T {
     type Type = T;
 }
 
-#[declare_sql_function]
-extern "SQL" {
-    fn f<A: SingleValue>(a: <A as TypeWrapper>::Type);
+mod with_return_type_helpers {
+    use super::*;
 
-    #[skip_return_type_helper]
-    fn g<A: SingleValue>(a: <A as TypeWrapper>::Type);
+    #[declare_sql_function(generate_return_type_helpers)]
+    extern "SQL" {
+        fn f<A: SingleValue>(a: <A as TypeWrapper>::Type);
+
+        #[variadic(1)]
+        fn g<A: SingleValue>(a: <A as TypeWrapper>::Type);
+
+        #[skip_return_type_helper]
+        fn h<A: SingleValue>(a: <A as TypeWrapper>::Type);
+
+        #[skip_return_type_helper]
+        #[variadic(1)]
+        fn i<A: SingleValue>(a: <A as TypeWrapper>::Type);
+    }
+}
+
+mod without_return_type_helpers {
+    use super::*;
+
+    #[declare_sql_function]
+    extern "SQL" {
+        fn f<A: SingleValue>(a: <A as TypeWrapper>::Type);
+
+        #[variadic(1)]
+        fn g<A: SingleValue>(a: <A as TypeWrapper>::Type);
+    }
 }
 
 fn main() {}

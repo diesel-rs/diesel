@@ -24,7 +24,6 @@ extern crate syn;
 
 use darling::{ast::NestedMeta, FromMeta};
 use proc_macro::TokenStream;
-use quote::TokenStreamExt;
 use sql_function::ExternSqlBlock;
 use syn::{parse_macro_input, parse_quote};
 
@@ -1087,9 +1086,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///
 #[proc_macro]
 pub fn define_sql_function(input: TokenStream) -> TokenStream {
-    sql_function::expand(vec![parse_macro_input!(input)], false)
-        .tokens
-        .into()
+    sql_function::expand(vec![parse_macro_input!(input)], false, false).into()
 }
 
 /// A legacy version of [`define_sql_function!`].
@@ -1122,9 +1119,7 @@ pub fn define_sql_function(input: TokenStream) -> TokenStream {
 #[proc_macro]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
-    sql_function::expand(vec![parse_macro_input!(input)], true)
-        .tokens
-        .into()
+    sql_function::expand(vec![parse_macro_input!(input)], true, false).into()
 }
 
 /// This is an internal diesel macro that
@@ -2183,13 +2178,7 @@ pub fn declare_sql_function(
     };
 
     let result = syn::parse2::<ExternSqlBlock>(input.clone()).map(|res| {
-        let mut expanded = sql_function::expand(res.function_decls, false);
-
-        if attr.generate_return_type_helpers {
-            expanded.tokens.append_all(expanded.return_type_helpers);
-        }
-
-        expanded.tokens
+        sql_function::expand(res.function_decls, false, attr.generate_return_type_helpers)
     });
 
     match result {
