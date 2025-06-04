@@ -1432,7 +1432,7 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
             fn column_names(
                 &self,
                 mut out: diesel::query_builder::AstPass<'_, '_, super::multi_connection_impl::backend::MultiBackend>
-            ) -> QueryResult<()> {
+            ) -> diesel::QueryResult<()> {
                 use diesel::internal::derives::multiconnection::AstPassHelper;
 
                 match out.backend() {
