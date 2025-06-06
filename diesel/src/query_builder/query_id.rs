@@ -80,6 +80,18 @@ impl<T: QueryId + ?Sized> QueryId for Box<T> {
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
 }
 
+impl<T: QueryId + ?Sized> QueryId for std::rc::Rc<T> {
+    type QueryId = T::QueryId;
+
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
+}
+
+impl<T: QueryId + ?Sized> QueryId for std::sync::Arc<T> {
+    type QueryId = T::QueryId;
+
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
+}
+
 impl<T: QueryId + ?Sized> QueryId for &T {
     type QueryId = T::QueryId;
 
