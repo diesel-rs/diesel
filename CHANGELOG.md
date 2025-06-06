@@ -10,6 +10,15 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.2.11] 2025-06-12
+
+## Fixed
+
+* Disallow mixing aggregate and non-aggregate expressions in `DISTINCT ON` clauses
+* Fixed an item referenced by a non-absolute path in `#[derive(MultiConnection)]`
+* Improved compiler errors in some cases
+* Improved the documentation for creating SqliteConnections for concurrent applications
+
 ## [2.2.10] 2025-04-25
 
 ## Fixed
@@ -2206,3 +2215,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.2.8]: https://github.com/diesel-rs/diesel/compare/v2.2.7...v2.2.8
 [2.2.9]: https://github.com/diesel-rs/diesel/compare/v2.2.8...v2.2.9
 [2.2.10]: https://github.com/diesel-rs/diesel/compare/v2.2.9...v2.2.10
+[2.2.11]: https://github.com/diesel-rs/diesel/compare/v2.2.10...v2.2.11
