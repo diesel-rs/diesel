@@ -149,7 +149,7 @@ where
 }
 
 /// This is a helper trait
-/// that provideds a fake `DO NOTHING` clause
+/// that provides a fake `DO NOTHING` clause
 /// based on reassigning the possible
 /// composite primary key to itself
 trait DoNothingClauseHelper {

@@ -23,6 +23,8 @@ extend-ignore-re = [
     "big_sur",
     # That's Spanish for "type" (used in a unit-test)
     "tipe",
+    # we use this often in place of the reserved type identifier
+    "tpe", 
 ]
 
 [type.md]

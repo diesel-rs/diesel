@@ -125,6 +125,7 @@ mod foreign_impls {
     struct BinaryArrayProxy<const N: usize>([u8; N]);
 }
 
+#[diagnostic::do_not_recommend]
 impl<ST, DB> FromSql<ST, DB> for String
 where
     DB: Backend,

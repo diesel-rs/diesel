@@ -88,6 +88,7 @@ error[E0277]: the trait bound `users::columns::id: IsContainedInGroupBy<comments
 102 |         .select((users::all_columns, posts::all_columns, comments::id));
     |          ^^^^^^ the trait `IsContainedInGroupBy<comments::columns::id>` is not implemented for `users::columns::id`
     |
+    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
     = help: the following other types implement trait `IsContainedInGroupBy<T>`:
               `users::columns::id` implements `IsContainedInGroupBy<posts::columns::id>`
               `users::columns::id` implements `IsContainedInGroupBy<posts::columns::title>`
@@ -111,6 +112,7 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<comments
 102 |         .select((users::all_columns, posts::all_columns, comments::id));
     |          ^^^^^^ the trait `IsContainedInGroupBy<comments::columns::id>` is not implemented for `posts::columns::id`
     |
+    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
     = help: the following other types implement trait `IsContainedInGroupBy<T>`:
               `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::id>`
               `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::title>`

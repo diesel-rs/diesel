@@ -95,6 +95,7 @@ error[E0277]: the trait bound `AliasedField<post1, posts::columns::id>: IsContai
 50 |         .select(users::id)
    |          ^^^^^^ the trait `IsContainedInGroupBy<users::columns::id>` is not implemented for `AliasedField<post1, posts::columns::id>`
    |
+   = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
    = help: the following other types implement trait `IsContainedInGroupBy<T>`:
              `(T0, T1)` implements `IsContainedInGroupBy<Col>`
              `(T0, T1, T2)` implements `IsContainedInGroupBy<Col>`

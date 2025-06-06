@@ -5,7 +5,8 @@ use crate::result::QueryResult;
 use crate::sql_types::DieselNumericOps;
 
 #[derive(Debug, Copy, Clone, QueryId, Default, DieselNumericOps, ValidGrouping)]
-pub struct Grouped<T>(pub T);
+#[doc(hidden)]
+pub struct Grouped<T>(pub(crate) T);
 
 impl<T: Expression> Expression for Grouped<T> {
     type SqlType = T::SqlType;

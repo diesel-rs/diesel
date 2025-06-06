@@ -18,7 +18,7 @@ mod delete_statement;
 mod distinct_clause;
 pub(crate) mod from_clause;
 pub(crate) mod functions;
-mod group_by_clause;
+pub(crate) mod group_by_clause;
 mod having_clause;
 pub(crate) mod insert_statement;
 pub(crate) mod limit_clause;

@@ -23,6 +23,7 @@ use crate::query_builder::NoFromClause;
 use crate::query_builder::{
     AsQuery, IntoBoxedClause, Query, QueryFragment, SelectQuery, SelectStatement,
 };
+use crate::query_dsl::group_by_dsl::ValidDistinctForGroupBy;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::query_dsl::*;
@@ -128,6 +129,7 @@ where
     F: QuerySource,
     Selection: SelectableExpression<F> + ValidGrouping<G::Expressions>,
     SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: SelectQuery,
+    D: ValidDistinctForGroupBy<Selection, G::Expressions>,
 {
     type Output = SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>;
 
@@ -152,6 +154,7 @@ where
     G: ValidGroupByClause,
     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expressions>,
     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: SelectQuery,
+    D: ValidDistinctForGroupBy<Selection, G::Expressions>,
 {
     type Output = SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>;
 

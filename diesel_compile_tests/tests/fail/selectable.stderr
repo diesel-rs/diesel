@@ -205,6 +205,7 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::c
 170 |         .select(UserWithEmbeddedPost::as_select())
     |          ^^^^^^ the trait `IsContainedInGroupBy<users::columns::id>` is not implemented for `posts::columns::id`
     |
+    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
     = help: the following other types implement trait `IsContainedInGroupBy<T>`:
               `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::id>`
               `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::title>`
@@ -224,6 +225,7 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::c
 170 |         .select(UserWithEmbeddedPost::as_select())
     |          ^^^^^^ the trait `IsContainedInGroupBy<users::columns::name>` is not implemented for `posts::columns::id`
     |
+    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
     = help: the following other types implement trait `IsContainedInGroupBy<T>`:
               `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::id>`
               `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::title>`
