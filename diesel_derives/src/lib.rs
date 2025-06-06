@@ -464,7 +464,7 @@ pub fn derive_insertable(input: TokenStream) -> TokenStream {
 /// meaning that `HAS_STATIC_QUERY_ID` should always be false,
 /// you shouldn't derive this trait.
 /// In that case, you should implement it manually instead.
-#[proc_macro_derive(QueryId)]
+#[proc_macro_derive(QueryId, attributes(diesel))]
 pub fn derive_query_id(input: TokenStream) -> TokenStream {
     query_id::derive(parse_macro_input!(input)).into()
 }

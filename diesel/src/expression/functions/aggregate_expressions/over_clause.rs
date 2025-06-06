@@ -22,6 +22,7 @@ impl<DB, T> WindowFunctionFragment<T, DB> for NoWindow where DB: crate::backend:
 
 #[derive(Clone, Copy, QueryId, Debug)]
 #[doc(hidden)] // not even sure why rustc believes this is public
+#[diesel(diesel_internal_is_window = true)]
 pub struct OverClause<Partition = NoPartition, Order = NoOrder, Frame = NoFrame> {
     pub(crate) partition_by: Partition,
     pub(crate) order: Order,
