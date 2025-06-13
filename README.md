@@ -262,3 +262,19 @@ for useful information about setting up Diesel locally, coding style and common 
 Unless you explicitly state otherwise, any contribution you intentionally submit
 for inclusion in the work, as defined in the Apache-2.0 license, shall be
 dual-licensed as above, without any additional terms or conditions.
+
+### Notable Sponsors and Supporters
+
+We would like to thank all of the sponsors supporting the work on Diesel. Notable large sponsors are:
+
+![[NLNet Foundation](https://nlnet.nl/project/Diesel/)](https://diesel.rs/assets/images/nl_net_foundation_logo.svg)
+
+![[NGI Zero Core](https://nlnet.nl/project/Diesel/)](https://diesel.rs/assets/images/NGI0Core_tag.svg)
+
+![[Prototype Fund](https://www.prototypefund.de/projects/diesel-databaseviews)](https://diesel.rs/assets/images/PrototypeFund_logo_dark.png)
+
+![[Federal Ministry of Research, Technology and Space (Germany)](https://www.prototypefund.de/projects/diesel-databaseviews)](https://diesel.rs/assets/images/bmbf_logo.jpg)
+
+![[GiGa Infosystems GmbH](https://giga-infosystems.com/)](https://diesel.rs/assets/images/logo_giga.svg)
+
+Additionally we would like to thank all persons sponsoring the project on [GitHub](https://github.com/sponsors/weiznich#sponsors). Without them developing Diesel wouldn't be possible.
