@@ -262,3 +262,50 @@ for useful information about setting up Diesel locally, coding style and common 
 Unless you explicitly state otherwise, any contribution you intentionally submit
 for inclusion in the work, as defined in the Apache-2.0 license, shall be
 dual-licensed as above, without any additional terms or conditions.
+
+### Notable Sponsors and Supporters
+
+We would like to thank all of the sponsors supporting the work on Diesel. Notable large sponsors are:
+
+
+<p align="center">
+    <a href="https://nlnet.nl/project/Diesel/">
+        <img src="https://diesel.rs/assets/images/nl_net_foundation_logo.svg" width="50%"/>
+        <br/>
+        NLNet Foundation
+    </a>
+</p>
+
+<p align="center">
+    <a href="https://nlnet.nl/project/Diesel/">
+        <img src="https://diesel.rs/assets/images/NGI0Core_tag.svg" width="50%"/>
+        <br/>
+        NGI Zero Core
+    </a>
+</p>
+
+<p align="center">
+    <a href="https://www.prototypefund.de/projects/diesel-databaseviews">
+        <img src="https://diesel.rs/assets/images/PrototypeFund_logo_dark.png" width="50%"/>
+        <br/>
+        Prototype Fund
+    </a>
+</p>
+
+<p align="center">
+    <a href="https://www.prototypefund.de/projects/diesel-databaseviews">
+        <img src="https://diesel.rs/assets/images/bmbf_logo.jpg" width="50%"/>
+        <br/>
+        Federal Ministry of Research, Technology and Space (Germany)
+    </a>
+</p>
+
+<p align="center">
+    <a href="https://giga-infosystems.com/">
+        <img src="https://diesel.rs/assets/images/logo_giga.svg" width="35%"/>
+        <br/>
+        GiGa Infosystems GmbH
+    </a>
+</p>
+
+Additionally we would like to thank all persons sponsoring the project on [GitHub](https://github.com/sponsors/weiznich#sponsors). Without them developing Diesel wouldn't be possible.
