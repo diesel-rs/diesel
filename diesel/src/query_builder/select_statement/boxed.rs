@@ -8,7 +8,7 @@ use crate::insertable::Insertable;
 use crate::query_builder::combination_clause::*;
 use crate::query_builder::distinct_clause::DistinctClause;
 use crate::query_builder::group_by_clause::ValidGroupByClause;
-use crate::query_builder::having_clause::HavingClause;
+use crate::query_builder::having_clause::{BoxedHavingClause, HavingClause};
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::limit_clause::LimitClause;
 use crate::query_builder::limit_offset_clause::BoxedLimitOffsetClause;
@@ -57,7 +57,7 @@ pub struct BoxedSelectStatement<'a, ST, QS, DB, GB = ()> {
     /// The group by clause of the query
     group_by: Box<dyn QueryFragment<DB> + Send + 'a>,
     /// The having clause of the query
-    having: Box<dyn QueryFragment<DB> + Send + 'a>,
+    having: BoxedHavingClause<'a, DB>,
     _marker: PhantomData<(ST, GB)>,
 }
 
@@ -71,7 +71,7 @@ impl<'a, ST, QS: QuerySource, DB, GB> BoxedSelectStatement<'a, ST, FromClause<QS
         order: Option<Box<dyn QueryFragment<DB> + Send + 'a>>,
         limit_offset: BoxedLimitOffsetClause<'a, DB>,
         group_by: G,
-        having: Box<dyn QueryFragment<DB> + Send + 'a>,
+        having: BoxedHavingClause<'a, DB>,
     ) -> Self
     where
         DB: Backend,
@@ -106,7 +106,7 @@ impl<'a, ST, DB, GB> BoxedSelectStatement<'a, ST, NoFromClause, DB, GB> {
         order: Option<Box<dyn QueryFragment<DB> + Send + 'a>>,
         limit_offset: BoxedLimitOffsetClause<'a, DB>,
         group_by: G,
-        having: Box<dyn QueryFragment<DB> + Send + 'a>,
+        having: BoxedHavingClause<'a, DB>,
     ) -> Self
     where
         DB: Backend,
@@ -141,6 +141,10 @@ pub trait BoxedQueryHelper<'a, QS, DB> {
             &'b BoxedWhereClause<'a, DB>,
             AstPass<'_, 'c, DB>,
         ) -> QueryResult<()>,
+        having_clause_handler: impl Fn(
+            &'b BoxedHavingClause<'a, DB>,
+            AstPass<'_, 'c, DB>,
+        ) -> QueryResult<()>,
     ) -> QueryResult<()>
     where
         DB: Backend,
@@ -157,6 +161,10 @@ impl<'a, ST, QS, DB, GB> BoxedQueryHelper<'a, QS, DB> for BoxedSelectStatement<'
             &'b BoxedWhereClause<'a, DB>,
             AstPass<'_, 'c, DB>,
         ) -> QueryResult<()>,
+        having_clause_handler: impl Fn(
+            &'b BoxedHavingClause<'a, DB>,
+            AstPass<'_, 'c, DB>,
+        ) -> QueryResult<()>,
     ) -> QueryResult<()>
     where
         DB: Backend,
@@ -170,7 +178,7 @@ impl<'a, ST, QS, DB, GB> BoxedQueryHelper<'a, QS, DB> for BoxedSelectStatement<'
         self.from.walk_ast(out.reborrow())?;
         where_clause_handler(&self.where_clause, out.reborrow())?;
         self.group_by.walk_ast(out.reborrow())?;
-        self.having.walk_ast(out.reborrow())?;
+        having_clause_handler(&self.having, out.reborrow())?;
 
         if let Some(ref order) = self.order {
             out.push_sql(" ORDER BY ");
@@ -219,9 +227,14 @@ where
         > + DieselReserveSpecialization,
     QS: QueryFragment<DB>,
     BoxedLimitOffsetClause<'a, DB>: QueryFragment<DB>,
+    BoxedHavingClause<'a, DB>: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        self.build_query(out, |where_clause, out| where_clause.walk_ast(out))
+        self.build_query(
+            out,
+            |where_clause, out| where_clause.walk_ast(out),
+            |having_clause, out| having_clause.walk_ast(out),
+        )
     }
 }
 
@@ -510,14 +523,14 @@ where
     QS: QuerySource,
     DB: Backend,
     GB: Expression,
-    HavingClause<Predicate>: QueryFragment<DB> + Send + 'a,
+    BoxedHavingClause<'a, DB>: WhereAnd<Predicate, Output = BoxedHavingClause<'a, DB>>,
     Predicate: AppearsOnTable<QS>,
     Predicate::SqlType: BoolOrNullableBool,
 {
     type Output = Self;
 
     fn having(mut self, predicate: Predicate) -> Self::Output {
-        self.having = Box::new(HavingClause(predicate));
+        self.having = self.having.and(predicate);
         self
     }
 }

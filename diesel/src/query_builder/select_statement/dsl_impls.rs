@@ -10,6 +10,7 @@ use crate::query_builder::distinct_clause::*;
 use crate::query_builder::from_clause::AsQuerySource;
 use crate::query_builder::from_clause::FromClause;
 use crate::query_builder::group_by_clause::*;
+use crate::query_builder::having_clause::BoxedHavingClause;
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::limit_clause::*;
 use crate::query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
@@ -478,7 +479,7 @@ where
     O: Into<Option<Box<dyn QueryFragment<DB> + Send + 'a>>>,
     LOf: IntoBoxedClause<'a, DB, BoxedClause = BoxedLimitOffsetClause<'a, DB>>,
     G: ValidGroupByClause + QueryFragment<DB> + Send + 'a,
-    H: QueryFragment<DB> + Send + 'a,
+    H: Into<BoxedHavingClause<'a, DB>> + Send + 'a,
 {
     type Output =
         BoxedSelectStatement<'a, S::SelectClauseSqlType, FromClause<F>, DB, G::Expressions>;
@@ -492,7 +493,7 @@ where
             self.order.into(),
             self.limit_offset.into_boxed(),
             self.group_by,
-            Box::new(self.having),
+            self.having.into(),
         )
     }
 }
@@ -509,7 +510,7 @@ where
     O: Into<Option<Box<dyn QueryFragment<DB> + Send + 'a>>>,
     LOf: IntoBoxedClause<'a, DB, BoxedClause = BoxedLimitOffsetClause<'a, DB>>,
     G: ValidGroupByClause + QueryFragment<DB> + Send + 'a,
-    H: QueryFragment<DB> + Send + 'a,
+    H: Into<BoxedHavingClause<'a, DB>> + Send + 'a,
 {
     type Output =
         BoxedSelectStatement<'a, S::SelectClauseSqlType, NoFromClause, DB, G::Expressions>;
@@ -523,7 +524,7 @@ where
             self.order.into(),
             self.limit_offset.into_boxed(),
             self.group_by,
-            Box::new(self.having),
+            self.having.into(),
         )
     }
 }
@@ -670,9 +671,9 @@ where
     Predicate: AppearsOnTable<F>,
     Predicate: Expression,
     Predicate::SqlType: BoolOrNullableBool,
+    H: WhereAnd<Predicate>,
 {
-    type Output =
-        SelectStatement<FromClause<F>, S, D, W, O, LOf, GroupByClause<G>, HavingClause<Predicate>>;
+    type Output = SelectStatement<FromClause<F>, S, D, W, O, LOf, GroupByClause<G>, H::Output>;
 
     fn having(self, predicate: Predicate) -> Self::Output {
         SelectStatement::new(
@@ -683,7 +684,7 @@ where
             self.order,
             self.limit_offset,
             self.group_by,
-            HavingClause(predicate),
+            self.having.and(predicate),
             self.locking,
         )
     }

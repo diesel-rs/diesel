@@ -150,3 +150,66 @@ fn boxed_multi_condition_having_with_group_by() {
 
     assert_eq!(expected_data, data);
 }
+
+#[diesel_test_helper::test]
+fn multiple_having_calls() {
+    let connection = &mut connection();
+    diesel::sql_query("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess'), (3, 'Nick')")
+        .execute(connection)
+        .unwrap();
+    diesel::sql_query(
+            "INSERT INTO posts (id, user_id, title) VALUES (1, 1, 'Hi Sean'), (2, 2, 'Hi Tess'), (3, 3, 'Hi Nick')",
+        ).execute(connection)
+        .unwrap();
+    diesel::sql_query(
+        "INSERT INTO comments (id, post_id, text) VALUES (1, 1, 'Comment for Hi Sean'), \
+        (2, 2, 'Comment for Hi Tess'), (3, 2, 'Another comment for Hi Tess'), \
+        (4, 3, 'Comment for Hi Nick'), (5, 3, 'Another comment for Hi Nick')",
+    )
+    .execute(connection)
+    .unwrap();
+
+    let source = users::table
+        .inner_join(posts::table.inner_join(comments::table))
+        .select((users::id, users::name, posts::title))
+        .group_by((users::id, posts::id))
+        .having(diesel::dsl::count(comments::id).eq(2))
+        .having(users::id.eq(3));
+
+    let expected_data = vec![(3, "Nick".to_string(), "Hi Nick".to_string())];
+    let data: Vec<(i32, String, String)> = source.load(connection).unwrap();
+
+    assert_eq!(expected_data, data);
+}
+
+#[diesel_test_helper::test]
+fn boxed_multiple_having_calls() {
+    let connection = &mut connection();
+    diesel::sql_query("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess'), (3, 'Nick')")
+        .execute(connection)
+        .unwrap();
+    diesel::sql_query(
+            "INSERT INTO posts (id, user_id, title) VALUES (1, 1, 'Hi Sean'), (2, 2, 'Hi Tess'), (3, 3, 'Hi Nick')",
+        ).execute(connection)
+        .unwrap();
+    diesel::sql_query(
+        "INSERT INTO comments (id, post_id, text) VALUES (1, 1, 'Comment for Hi Sean'), \
+        (2, 2, 'Comment for Hi Tess'), (3, 2, 'Another comment for Hi Tess'), \
+        (4, 3, 'Comment for Hi Nick'), (5, 3, 'Another comment for Hi Nick')",
+    )
+    .execute(connection)
+    .unwrap();
+
+    let source = users::table
+        .inner_join(posts::table.inner_join(comments::table))
+        .select((users::id, users::name, posts::title))
+        .group_by((users::id, posts::id))
+        .into_boxed()
+        .having(diesel::dsl::count(comments::id).eq(2))
+        .having(users::id.eq(3));
+
+    let expected_data = vec![(3, "Nick".to_string(), "Hi Nick".to_string())];
+    let data: Vec<(i32, String, String)> = source.load(connection).unwrap();
+
+    assert_eq!(expected_data, data);
+}
