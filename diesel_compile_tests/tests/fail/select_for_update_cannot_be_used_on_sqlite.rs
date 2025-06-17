@@ -1,7 +1,7 @@
 extern crate diesel;
 
-use diesel::*;
 use diesel::sqlite::SqliteConnection;
+use diesel::*;
 
 table! {
     users {
@@ -14,5 +14,8 @@ fn main() {
     users::table
         .for_update()
         .load(&mut conn)
+        //~^ ERROR: `diesel::query_builder::locking_clause::ForUpdate` is no valid SQL fragment for the `Sqlite` backend
+        //~| ERROR: `diesel::query_builder::locking_clause::NoModifier` is no valid SQL fragment for the `Sqlite` backend
+        //~| ERROR: the trait bound `{type error}: FromSqlRow<(diesel::sql_types::Integer,), Sqlite>` is not satisfied
         .unwrap();
 }

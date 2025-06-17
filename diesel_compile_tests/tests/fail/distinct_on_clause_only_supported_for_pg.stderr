@@ -1,85 +1,89 @@
 error[E0277]: `DistinctOnClause<columns::name>` is no valid SQL fragment for the `Sqlite` backend
-  --> tests/fail/distinct_on_clause_only_supported_for_pg.rs:16:41
-   |
-16 |     users.distinct_on(name).get_results(&mut sqlite_connection);
-   |                             ----------- ^^^^^^^^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `DistinctOnClause<columns::name>`
-   |                             |
-   |                             required by a bound introduced by this call
-   |
-   = note: this usually means that the `Sqlite` database system does not support
-           this SQL syntax
-   = help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `DistinctOnClause<columns::name>`
-           but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
-   = help: for that trait implementation, expected `Pg`, found `Sqlite`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>` to implement `QueryFragment<Sqlite, AnsiSqlSelectStatement>`
-   = note: 1 redundant requirement hidden
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>` to implement `QueryFragment<Sqlite>`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
+    --> tests/fail/distinct_on_clause_only_supported_for_pg.rs:16:41
+     |
+16   |     users.distinct_on(name).get_results(&mut sqlite_connection);
+     |                             ----------- ^^^^^^^^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `DistinctOnClause<columns::name>`
+     |                             |
+     |                             required by a bound introduced by this call
+     |
+     = note: this usually means that the `Sqlite` database system does not support 
+             this SQL syntax
+     = help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `DistinctOnClause<columns::name>`
+             but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+     = help: for that trait implementation, expected `Pg`, found `Sqlite`
+     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `QueryFragment<Sqlite, AnsiSqlSelectStatement>`
+     = note: 1 redundant requirement hidden
+     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `QueryFragment<Sqlite>`
+     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
 note: required by a bound in `get_results`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-   |        ----------- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_results`
-
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ----------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_results`
+  
+     
 error[E0277]: `DistinctOnClause<columns::name>` is no valid SQL fragment for the `Mysql` backend
-  --> tests/fail/distinct_on_clause_only_supported_for_pg.rs:20:41
-   |
-20 |     users.distinct_on(name).get_results(&mut mysql_connection);
-   |                             ----------- ^^^^^^^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `DistinctOnClause<columns::name>`
-   |                             |
-   |                             required by a bound introduced by this call
-   |
-   = note: this usually means that the `Mysql` database system does not support
-           this SQL syntax
-   = help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `DistinctOnClause<columns::name>`
-           but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
-   = help: for that trait implementation, expected `Pg`, found `Mysql`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>` to implement `QueryFragment<Mysql, AnsiSqlSelectStatement>`
-   = note: 1 redundant requirement hidden
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>` to implement `QueryFragment<Mysql>`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>` to implement `LoadQuery<'_, diesel::MysqlConnection, _>`
+    --> tests/fail/distinct_on_clause_only_supported_for_pg.rs:22:41
+     |
+22   |     users.distinct_on(name).get_results(&mut mysql_connection);
+     |                             ----------- ^^^^^^^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `DistinctOnClause<columns::name>`
+     |                             |
+     |                             required by a bound introduced by this call
+     |
+     = note: this usually means that the `Mysql` database system does not support 
+             this SQL syntax
+     = help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `DistinctOnClause<columns::name>`
+             but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+     = help: for that trait implementation, expected `Pg`, found `Mysql`
+     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `QueryFragment<Mysql, AnsiSqlSelectStatement>`
+     = note: 1 redundant requirement hidden
+     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `QueryFragment<Mysql>`
+     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, _>`
 note: required by a bound in `get_results`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-   |        ----------- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_results`
-
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ----------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_results`
+  
+     
 error[E0277]: the trait bound `{type error}: FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Sqlite>` is not satisfied
-  --> tests/fail/distinct_on_clause_only_supported_for_pg.rs:16:41
-   |
-16 |     users.distinct_on(name).get_results(&mut sqlite_connection);
-   |                             ----------- ^^^^^^^^^^^^^^^^^^^^^^ the trait `SingleValue` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text)`
-   |                             |
-   |                             required by a bound introduced by this call
-   |
-   = note: double check your type mappings via the documentation of `(diesel::sql_types::Integer, diesel::sql_types::Text)`
-   = note: `diesel::sql_query` requires the loading target to column names for loading values.
-           You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
-   = help: the following other types implement trait `SingleValue`:
-             Array<ST>
-             BigInt
-             Bool
-             CChar
-             Cidr
-             Citext
-             Datetime
-             Inet
-           and $N others
-   = note: required for `{type error}` to implement `FromStaticSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Sqlite>`
-   = note: required for `{type error}` to implement `FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Sqlite>`
-   = note: required for `(diesel::sql_types::Integer, diesel::sql_types::Text)` to implement `load_dsl::private::CompatibleType<{type error}, Sqlite>`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>` to implement `LoadQuery<'_, diesel::SqliteConnection, {type error}>`
+    --> tests/fail/distinct_on_clause_only_supported_for_pg.rs:16:41
+     |
+16   |     users.distinct_on(name).get_results(&mut sqlite_connection);
+     |                             ----------- ^^^^^^^^^^^^^^^^^^^^^^ the trait `SingleValue` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text)`
+     |                             |
+     |                             required by a bound introduced by this call
+     |
+     = note: double check your type mappings via the documentation of `(diesel::sql_types::Integer, diesel::sql_types::Text)`
+     = note: `diesel::sql_query` requires the loading target to column names for loading values.
+             You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
+     = help: the following other types implement trait `SingleValue`:
+               Array<ST>
+               BigInt
+               Bool
+               CChar
+               Cidr
+               Citext
+               Datetime
+               Inet
+             and N others
+     = note: required for `{type error}` to implement `FromStaticSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Sqlite>`
+     = note: required for `{type error}` to implement `FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Sqlite>`
+     = note: required for `(diesel::sql_types::Integer, diesel::sql_types::Text)` to implement `load_dsl::private::CompatibleType<{type error}, Sqlite>`
+     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, {type error}>`
 note: required by a bound in `get_results`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-   |        ----------- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_results`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ----------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_results`
+  
+     For more information about this error, try `rustc --explain E0277`.

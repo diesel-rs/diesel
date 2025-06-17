@@ -1,7 +1,7 @@
 error[E0369]: cannot add `columns::name` to `columns::name`
   --> tests/fail/numeric_ops_require_numeric_column.rs:15:31
    |
-15 |     let _ = users.select(name + name);
+LL |     let _ = users.select(name + name);
    |                          ---- ^ ---- columns::name
    |                          |
    |                          columns::name
@@ -12,4 +12,5 @@ note: an implementation of `std::ops::Add` might be missing for `columns::name`
 8  |         name -> VarChar,
    |         ^^^^ must implement `std::ops::Add`
 note: the trait `std::ops::Add` must be implemented
-  --> $RUST/core/src/ops/arith.rs
+  --> /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ops/arith.rs:78:1
+For more information about this error, try `rustc --explain E0369`.

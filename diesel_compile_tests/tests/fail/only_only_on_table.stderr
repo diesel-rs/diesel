@@ -1,17 +1,17 @@
 error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<table>, SelectClause<id>>`, but its trait bounds were not satisfied
   --> tests/fail/only_only_on_table.rs:13:32
    |
-13 |       foo::table.select(foo::id).only();
+LL |       foo::table.select(foo::id).only();
    |                                  ^^^^ method cannot be called due to unsatisfied trait bounds
    |
-  ::: $DIESEL/src/query_builder/select_statement/mod.rs
+  ::: DIESEL/diesel/diesel/src/query_builder/select_statement/mod.rs
    |
-   | / #[diesel_derives::__diesel_public_if(
-   | |     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-   | |     public_fields(
-   | |         select,
+LL | / #[diesel_derives::__diesel_public_if(
+LL | |     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+LL | |     public_fields(
+LL | |         select,
 ...  |
-   | | )]
+LL | | )]
    | |__- doesn't satisfy `_: OnlyDsl` or `_: Table`
    |
    = note: the following trait bounds were not satisfied:
@@ -22,20 +22,20 @@ error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<ta
            `&mut SelectStatement<FromClause<foo::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>: Table`
            which is required by `&mut SelectStatement<FromClause<foo::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>: diesel::dsl::OnlyDsl`
 
-error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<table>, SelectClause<id>, NoDistinctClause, WhereClause<Grouped<Eq<id, Bound<BigInt, i64>>>>>`, but its trait bounds were not satisfied
-  --> tests/fail/only_only_on_table.rs:14:54
+error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<table>, SelectClause<id>, ..., ...>`, but its trait bounds were not satisfied
+  --> tests/fail/only_only_on_table.rs:15:54
    |
-14 |       foo::table.select(foo::id).filter(foo::id.eq(1)).only();
+LL |       foo::table.select(foo::id).filter(foo::id.eq(1)).only();
    |                                                        ^^^^ method cannot be called due to unsatisfied trait bounds
    |
-  ::: $DIESEL/src/query_builder/select_statement/mod.rs
+  ::: DIESEL/diesel/diesel/src/query_builder/select_statement/mod.rs
    |
-   | / #[diesel_derives::__diesel_public_if(
-   | |     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-   | |     public_fields(
-   | |         select,
+LL | / #[diesel_derives::__diesel_public_if(
+LL | |     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+LL | |     public_fields(
+LL | |         select,
 ...  |
-   | | )]
+LL | | )]
    | |__- doesn't satisfy `_: OnlyDsl` or `_: Table`
    |
    = note: the following trait bounds were not satisfied:
@@ -47,12 +47,12 @@ error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<ta
            which is required by `&mut SelectStatement<FromClause<foo::table>, diesel::query_builder::select_clause::SelectClause<columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::expression::bound::Bound<BigInt, i64>>>>>: diesel::dsl::OnlyDsl`
 
 error[E0599]: the method `only` exists for struct `id`, but its trait bounds were not satisfied
-  --> tests/fail/only_only_on_table.rs:15:31
+  --> tests/fail/only_only_on_table.rs:17:31
    |
 8  |         id -> Int8,
    |         -- method `only` not found for this struct because it doesn't satisfy `columns::id: Table` or `columns::id: diesel::dsl::OnlyDsl`
 ...
-15 |     foo::table.select(foo::id.only());
+LL |     foo::table.select(foo::id.only());
    |                               ^^^^ method cannot be called on `id` due to unsatisfied trait bounds
    |
    = note: the following trait bounds were not satisfied:
@@ -63,92 +63,92 @@ error[E0599]: the method `only` exists for struct `id`, but its trait bounds wer
            `&mut columns::id: Table`
            which is required by `&mut columns::id: diesel::dsl::OnlyDsl`
 note: the trait `Table` must be implemented
-  --> $DIESEL/src/query_source/mod.rs
+  --> DIESEL/diesel/diesel/src/query_source/mod.rs
    |
-   | pub trait Table: QuerySource + AsQuery + Sized {
+LL | pub trait Table: QuerySource + AsQuery + Sized {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    = help: items from traits can only be used if the trait is implemented and in scope
    = note: the following trait defines an item `only`, perhaps you need to implement it:
            candidate #1: `diesel::dsl::OnlyDsl`
 
 error[E0277]: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::SqliteConnection, _>` is not satisfied
-  --> tests/fail/only_only_on_table.rs:19:28
-   |
-19 |     foo::table.only().load(&mut conn).unwrap();
-   |                       ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `Only<foo::table>`
-   |                       |
-   |                       required by a bound introduced by this call
-   |
-   = help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `Only<foo::table>`
-           but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
-   = help: for that trait implementation, expected `Pg`, found `Sqlite`
-   = note: required for `FromClause<Only<foo::table>>` to implement `QueryFragment<Sqlite>`
-   = note: 2 redundant requirements hidden
-   = note: required for `SelectStatement<FromClause<Only<foo::table>>>` to implement `QueryFragment<Sqlite>`
-   = note: required for `Only<foo::table>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
+    --> tests/fail/only_only_on_table.rs:22:28
+     |
+22   |     foo::table.only().load(&mut conn).unwrap();
+     |                       ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `Only<foo::table>`
+     |                       |
+     |                       required by a bound introduced by this call
+     |
+     = help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `Only<foo::table>`
+             but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+     = help: for that trait implementation, expected `Pg`, found `Sqlite`
+     = note: required for `FromClause<Only<foo::table>>` to implement `QueryFragment<Sqlite>`
+     = note: 2 redundant requirements hidden
+     = note: required for `SelectStatement<FromClause<Only<foo::table>>>` to implement `QueryFragment<Sqlite>`
+     = note: required for `Only<foo::table>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-   |        ---- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::MysqlConnection, _>` is not satisfied
-  --> tests/fail/only_only_on_table.rs:23:28
-   |
-23 |     foo::table.only().load(&mut conn).unwrap();
-   |                       ---- ^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `Only<foo::table>`
-   |                       |
-   |                       required by a bound introduced by this call
-   |
-   = help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `Only<foo::table>`
-           but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
-   = help: for that trait implementation, expected `Pg`, found `Mysql`
-   = note: required for `FromClause<Only<foo::table>>` to implement `QueryFragment<Mysql>`
-   = note: 2 redundant requirements hidden
-   = note: required for `SelectStatement<FromClause<Only<foo::table>>>` to implement `QueryFragment<Mysql>`
-   = note: required for `Only<foo::table>` to implement `LoadQuery<'_, diesel::MysqlConnection, _>`
+    --> tests/fail/only_only_on_table.rs:28:28
+     |
+28   |     foo::table.only().load(&mut conn).unwrap();
+     |                       ---- ^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `Only<foo::table>`
+     |                       |
+     |                       required by a bound introduced by this call
+     |
+     = help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `Only<foo::table>`
+             but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+     = help: for that trait implementation, expected `Pg`, found `Mysql`
+     = note: required for `FromClause<Only<foo::table>>` to implement `QueryFragment<Mysql>`
+     = note: 2 redundant requirements hidden
+     = note: required for `SelectStatement<FromClause<Only<foo::table>>>` to implement `QueryFragment<Mysql>`
+     = note: required for `Only<foo::table>` to implement `LoadQuery<'_, diesel::MysqlConnection, _>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-   |        ---- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `{type error}: FromSqlRow<(BigInt,), Sqlite>` is not satisfied
-  --> tests/fail/only_only_on_table.rs:19:28
-   |
-19 |     foo::table.only().load(&mut conn).unwrap();
-   |                       ---- ^^^^^^^^^ the trait `SingleValue` is not implemented for `(BigInt,)`
-   |                       |
-   |                       required by a bound introduced by this call
-   |
-   = note: double check your type mappings via the documentation of `(BigInt,)`
-   = note: `diesel::sql_query` requires the loading target to column names for loading values.
-           You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
-   = help: the following other types implement trait `SingleValue`:
-             Array<ST>
-             BigInt
-             Bool
-             CChar
-             Cidr
-             Citext
-             Datetime
-             Inet
-           and $N others
-   = note: required for `{type error}` to implement `FromStaticSqlRow<(BigInt,), Sqlite>`
-   = note: required for `{type error}` to implement `FromSqlRow<(BigInt,), Sqlite>`
-   = note: required for `(BigInt,)` to implement `load_dsl::private::CompatibleType<{type error}, Sqlite>`
-   = note: required for `Only<foo::table>` to implement `LoadQuery<'_, diesel::SqliteConnection, {type error}>`
+    --> tests/fail/only_only_on_table.rs:22:28
+     |
+22   |     foo::table.only().load(&mut conn).unwrap();
+     |                       ---- ^^^^^^^^^ the trait `SingleValue` is not implemented for `(BigInt,)`
+     |                       |
+     |                       required by a bound introduced by this call
+     |
+     = note: double check your type mappings via the documentation of `(BigInt,)`
+     = note: `diesel::sql_query` requires the loading target to column names for loading values.
+             You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
+     = help: the following other types implement trait `SingleValue`:
+               Array<ST>
+               BigInt
+               Bool
+               CChar
+               Cidr
+               Citext
+               Datetime
+               Inet
+             and N others
+     = note: required for `{type error}` to implement `FromStaticSqlRow<(BigInt,), Sqlite>`
+     = note: required for `{type error}` to implement `FromSqlRow<(BigInt,), Sqlite>`
+     = note: required for `(BigInt,)` to implement `load_dsl::private::CompatibleType<{type error}, Sqlite>`
+     = note: required for `Only<foo::table>` to implement `LoadQuery<'_, diesel::SqliteConnection, {type error}>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-   |        ---- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`

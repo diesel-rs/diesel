@@ -1,9 +1,11 @@
-#[macro_use] extern crate diesel;
+#[macro_use]
+extern crate diesel;
 
 table! {
     users {
         id -> Integer,
         users -> Integer,
+        //~^ ERROR: Column `users` cannot be named the same as it's table.
     }
 }
 // error-pattern: Column `users` cannot be named the same as its table.

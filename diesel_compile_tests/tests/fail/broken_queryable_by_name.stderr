@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is not satisfied
-  --> tests/fail/broken_queryable_by_name.rs:17:5
+  --> tests/fail/broken_queryable_by_name.rs:18:5
    |
-17 |     name: i32,
+LL |     name: i32,
    |     ^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, Pg>` is not implemented for `i32`
    |
    = note: double check your type mappings via the documentation of `diesel::sql_types::Text`
@@ -18,7 +18,7 @@ error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is 
 error[E0277]: the trait bound `std::string::String: FromSqlRow<diesel::sql_types::Integer, Pg>` is not satisfied
   --> tests/fail/broken_queryable_by_name.rs:16:5
    |
-16 |     id: String,
+LL |     id: String,
    |     ^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `std::string::String`
    |
    = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`
@@ -35,9 +35,9 @@ error[E0277]: the trait bound `std::string::String: FromSqlRow<diesel::sql_types
    = help: see issue #48214
 
 error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is not satisfied
-  --> tests/fail/broken_queryable_by_name.rs:26:5
+  --> tests/fail/broken_queryable_by_name.rs:29:5
    |
-26 |     name: i32,
+LL |     name: i32,
    |     ^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, Pg>` is not implemented for `i32`
    |
    = note: double check your type mappings via the documentation of `diesel::sql_types::Text`
@@ -52,9 +52,9 @@ error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is 
    = help: see issue #48214
 
 error[E0277]: the trait bound `std::string::String: FromSqlRow<diesel::sql_types::Integer, Pg>` is not satisfied
-  --> tests/fail/broken_queryable_by_name.rs:24:5
+  --> tests/fail/broken_queryable_by_name.rs:26:5
    |
-24 |     id: String,
+LL |     id: String,
    |     ^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `std::string::String`
    |
    = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`
@@ -71,55 +71,56 @@ error[E0277]: the trait bound `std::string::String: FromSqlRow<diesel::sql_types
    = help: see issue #48214
 
 error[E0277]: the trait bound `Untyped: load_dsl::private::CompatibleType<User, _>` is not satisfied
-  --> tests/fail/broken_queryable_by_name.rs:32:49
-   |
-32 |     let s = diesel::sql_query("…").load::<User>(conn);
-   |                                    ----         ^^^^ the trait `load_dsl::private::CompatibleType<User, _>` is not implemented for `Untyped`
-   |                                    |
-   |                                    required by a bound introduced by this call
-   |
-   = note: this is a mismatch between what your query returns and what your type expects the query to return
-   = note: the fields in your struct need to match the fields returned by your query in count, order and type
-   = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]`
-           on your struct `User` and in your query `.select(User::as_select())` to get a better error message
-   = help: the trait `load_dsl::private::CompatibleType<U, DB>` is implemented for `Untyped`
-   = note: required for `SqlQuery` to implement `LoadQuery<'_, _, User>`
+    --> tests/fail/broken_queryable_by_name.rs:36:49
+     |
+36   |     let s = diesel::sql_query("…").load::<User>(conn);
+     |                                    ----         ^^^^ the trait `load_dsl::private::CompatibleType<User, _>` is not implemented for `Untyped`
+     |                                    |
+     |                                    required by a bound introduced by this call
+     |
+     = note: this is a mismatch between what your query returns and what your type expects the query to return
+     = note: the fields in your struct need to match the fields returned by your query in count, order and type
+     = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
+             on your struct `User` and in your query `.select(User::as_select())` to get a better error message
+     = help: the trait `load_dsl::private::CompatibleType<U, DB>` is implemented for `Untyped`
+     = note: required for `SqlQuery` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-   |        ---- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `User: FromSqlRow<_, _>` is not satisfied
-  --> tests/fail/broken_queryable_by_name.rs:32:49
-   |
-32 |     let s = diesel::sql_query("…").load::<User>(conn);
-   |                                    ----         ^^^^ the trait `FromSqlRow<_, _>` is not implemented for `User`
-   |                                    |
-   |                                    required by a bound introduced by this call
-   |
-   = note: double check your type mappings via the documentation of `_`
-   = note: `diesel::sql_query` requires the loading target to column names for loading values.
-           You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
-   = help: the following other types implement trait `FromSqlRow<ST, DB>`:
-             `(T1, T0)` implements `FromSqlRow<(ST1, Untyped), __DB>`
-             `(T1, T2, T0)` implements `FromSqlRow<(ST1, ST2, Untyped), __DB>`
-             `(T1, T2, T3, T0)` implements `FromSqlRow<(ST1, ST2, ST3, Untyped), __DB>`
-             `(T1, T2, T3, T4, T0)` implements `FromSqlRow<(ST1, ST2, ST3, ST4, Untyped), __DB>`
-             `(T1, T2, T3, T4, T5, T0)` implements `FromSqlRow<(ST1, ST2, ST3, ST4, ST5, Untyped), __DB>`
-             `(T1, T2, T3, T4, T5, T6, T0)` implements `FromSqlRow<(ST1, ST2, ST3, ST4, ST5, ST6, Untyped), __DB>`
-             `(T1, T2, T3, T4, T5, T6, T7, T0)` implements `FromSqlRow<(ST1, ST2, ST3, ST4, ST5, ST6, ST7, Untyped), __DB>`
-             `(T1, T2, T3, T4, T5, T6, T7, T8, T0)` implements `FromSqlRow<(ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8, Untyped), __DB>`
-           and $N others
-   = note: required for `SqlQuery` to implement `LoadQuery<'_, _, User>`
+    --> tests/fail/broken_queryable_by_name.rs:36:49
+     |
+36   |     let s = diesel::sql_query("…").load::<User>(conn);
+     |                                    ----         ^^^^ the trait `FromSqlRow<_, _>` is not implemented for `User`
+     |                                    |
+     |                                    required by a bound introduced by this call
+     |
+     = note: double check your type mappings via the documentation of `_`
+     = note: `diesel::sql_query` requires the loading target to column names for loading values.
+             You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
+     = help: the following other types implement trait `FromSqlRow<ST, DB>`:
+               `(T1, T0)` implements `FromSqlRow<(ST1, Untyped), __DB>`
+               `(T1, T2, T0)` implements `FromSqlRow<(ST1, ST2, Untyped), __DB>`
+               `(T1, T2, T3, T0)` implements `FromSqlRow<(ST1, ST2, ST3, Untyped), __DB>`
+               `(T1, T2, T3, T4, T0)` implements `FromSqlRow<(ST1, ST2, ST3, ST4, Untyped), __DB>`
+               `(T1, T2, T3, T4, T5, T0)` implements `FromSqlRow<(ST1, ST2, ST3, ST4, ST5, Untyped), __DB>`
+               `(T1, T2, T3, T4, T5, T6, T0)` implements `FromSqlRow<(ST1, ST2, ST3, ST4, ST5, ST6, Untyped), __DB>`
+               `(T1, T2, T3, T4, T5, T6, T7, T0)` implements `FromSqlRow<(ST1, ST2, ST3, ST4, ST5, ST6, ST7, Untyped), __DB>`
+               `(T1, T2, T3, T4, T5, T6, T7, T8, T0)` implements `FromSqlRow<(ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8, Untyped), __DB>`
+             and N others
+     = note: required for `SqlQuery` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-   |        ---- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+For more information about this error, try `rustc --explain E0277`.

@@ -1,39 +1,39 @@
 error: No field with column name id
   --> tests/fail/derive/identifiable_missing_pk_field.rs:10:10
    |
-10 | #[derive(Identifiable)]
+LL | #[derive(Identifiable)]
    |          ^^^^^^^^^^^^
    |
    = note: this error originates in the derive macro `Identifiable` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: No field with column name id
-  --> tests/fail/derive/identifiable_missing_pk_field.rs:14:10
+  --> tests/fail/derive/identifiable_missing_pk_field.rs:15:10
    |
-14 | #[derive(Identifiable)]
+LL | #[derive(Identifiable)]
    |          ^^^^^^^^^^^^
    |
    = note: this error originates in the derive macro `Identifiable` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: No field with column name bar
-  --> tests/fail/derive/identifiable_missing_pk_field.rs:22:22
+  --> tests/fail/derive/identifiable_missing_pk_field.rs:24:22
    |
-22 | #[diesel(primary_key(bar))]
+LL | #[diesel(primary_key(bar))]
    |                      ^^^
 
 error: No field with column name baz
-  --> tests/fail/derive/identifiable_missing_pk_field.rs:27:22
+  --> tests/fail/derive/identifiable_missing_pk_field.rs:30:22
    |
-27 | #[diesel(primary_key(baz))]
+LL | #[diesel(primary_key(baz))]
    |                      ^^^
 
 error: No field with column name bar
-  --> tests/fail/derive/identifiable_missing_pk_field.rs:35:27
+  --> tests/fail/derive/identifiable_missing_pk_field.rs:39:27
    |
-35 | #[diesel(primary_key(foo, bar))]
+LL | #[diesel(primary_key(foo, bar))]
    |                           ^^^
 
 error: No field with column name bar
-  --> tests/fail/derive/identifiable_missing_pk_field.rs:42:27
+  --> tests/fail/derive/identifiable_missing_pk_field.rs:47:27
    |
-42 | #[diesel(primary_key(foo, bar))]
+LL | #[diesel(primary_key(foo, bar))]
    |                           ^^^

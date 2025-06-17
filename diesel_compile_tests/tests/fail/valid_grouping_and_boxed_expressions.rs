@@ -1,3 +1,4 @@
+//@no-rustfix
 extern crate diesel;
 
 use diesel::expression::{is_aggregate, MixedAggregates, ValidGrouping};
@@ -69,11 +70,15 @@ fn main() {
     users::table
         .group_by(users::id)
         .select(some_ungrouped_expression(true))
+        //~^ ERROR: the trait bound `dyn BoxableExpression<table, Pg, SqlType = Integer>: ValidGrouping<id>` is not satisfied
         .load::<i32>(&mut conn);
+    //~^ ERROR: the trait bound `dyn BoxableExpression<table, Pg, SqlType = Integer>: ValidGrouping<id>` is not satisfied
 
     // it's fine to pass this to some query without group by clause
     // rustc should infer the correct bounds here
-    users::table.select(maybe_grouped(false)).load::<i32>(&mut conn);
+    users::table
+        .select(maybe_grouped(false))
+        .load::<i32>(&mut conn);
 
     // it's also fine to pass this to some query with a matching
     // group by clause
@@ -86,6 +91,7 @@ fn main() {
     users::table
         .group_by(users::name)
         .select(maybe_grouped(true))
+        //~^ ERROR: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
         .load::<i32>(&mut conn);
 
     // aggregated expressions work to
@@ -102,10 +108,12 @@ fn main() {
     // but we cannot mix a aggregated expression with an non aggregate one
     users::table
         .select((
+            //~^ ERROR: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggregates<diesel::expression::is_aggregate::No>` is not satisfied
             something_that_is_aggregate(),
             some_ungrouped_expression(false),
         ))
         .load::<(Option<i32>, i32)>(&mut conn);
+    //~^ ERROR: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggregates<diesel::expression::is_aggregate::No>` is not satisfied
 
     // using two potential aggregated expressions works
     users::table

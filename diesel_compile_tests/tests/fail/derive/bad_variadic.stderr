@@ -1,11 +1,11 @@
 error: expected integer literal
  --> tests/fail/derive/bad_variadic.rs:7:16
   |
-7 |     #[variadic(not_a_literal_number)]
+LL |     #[variadic(not_a_literal_number)]
   |                ^^^^^^^^^^^^^^^^^^^^
 
 error: invalid variadic argument count: not enough function arguments
-  --> tests/fail/derive/bad_variadic.rs:10:16
+  --> tests/fail/derive/bad_variadic.rs:11:16
    |
-10 |     #[variadic(3)]
+LL |     #[variadic(3)]
    |                ^

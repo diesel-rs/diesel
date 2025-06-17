@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:23:24
    |
-23 |     let source = users.select((id, count_star()));
+LL |     let source = users.select((id, count_star()));
    |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
@@ -11,32 +11,35 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(columns::id, CountStar)>`
 
 error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
-  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:25:24
+  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:26:24
    |
-25 |     let source = users.select(nullable_int_col + max(nullable_int_col));
+LL |     let source = users.select(nullable_int_col + max(nullable_int_col));
    |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
-   = note: required for `diesel::expression::ops::numeric::Add<columns::nullable_int_col, diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>` to implement `ValidGrouping<()>`
+   = note: required for `Add<nullable_int_col, max<Nullable<Integer>, nullable_int_col>>` to implement `ValidGrouping<()>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::ops::numeric::Add<columns::nullable_int_col, diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>>`
 
+   
 error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
-  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:27:24
+  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:29:24
    |
-27 |     let source = users.select(f(nullable_int_col, max(nullable_int_col)));
+LL |     let source = users.select(f(nullable_int_col, max(nullable_int_col)));
    |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
-note: required for `__Derived<columns::nullable_int_col, diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>` to implement `ValidGrouping<()>`
+note: required for `__Derived<nullable_int_col, max<Nullable<Integer>, nullable_int_col>>` to implement `ValidGrouping<()>`
   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:14:1
    |
-14 | #[declare_sql_function]
+LL | #[declare_sql_function]
    | ^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound introduced in this `derive` macro
    = note: 1 redundant requirement hidden
-   = note: required for `f_utils::f<columns::nullable_int_col, diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>` to implement `ValidGrouping<()>`
+   = note: required for `f<nullable_int_col, max<Nullable<Integer>, nullable_int_col>>` to implement `ValidGrouping<()>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<f_utils::f<columns::nullable_int_col, diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>>`
-   = note: this error originates in the derive macro `ValidGrouping` which comes from the expansion of the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+      = note: this error originates in the derive macro `ValidGrouping` which comes from the expansion of the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.
