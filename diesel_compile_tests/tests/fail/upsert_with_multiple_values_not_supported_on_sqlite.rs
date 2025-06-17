@@ -31,5 +31,7 @@ fn main() {
         .values(Vec::<NewUser>::new())
         .on_conflict_do_nothing()
         .execute(&mut connection)
+        //~^ ERROR: type mismatch resolving `<Sqlite as SqlDialect>::InsertWithDefaultKeyword == IsoSqlDefaultKeyword`
+        //~| ERROR: `BatchInsert<Vec<ValuesClause<(...,), ...>>, ..., (), false>` is no valid SQL fragment for the `Sqlite` backend
         .unwrap();
 }

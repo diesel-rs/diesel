@@ -21,5 +21,6 @@ table! {
         column_18 -> Integer,
     }
 }
+//~^^^^^^^^^^^^^^^^^^^^^ ERROR: Table contains more than 16 columns. Consider enabling the `32-column-tables` feature to enable diesels support for tables with more than 16 columns.
 
 fn main() {}

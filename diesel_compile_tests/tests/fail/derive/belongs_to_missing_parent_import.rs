@@ -10,6 +10,7 @@ table! {
 
 #[derive(Associations)]
 #[diesel(belongs_to(Bar))]
+//~^ ERROR: cannot find type `Bar` in this scope
 struct Foo {
     bar_id: i32,
 }

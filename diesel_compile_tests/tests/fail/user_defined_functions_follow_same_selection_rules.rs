@@ -38,8 +38,10 @@ fn main() {
     let mut conn = PgConnection::establish("").unwrap();
 
     let _ = users::table.filter(name.eq(foo(1)));
+    //~^ ERROR: type mismatch resolving `<foo<Bound<Integer, i32>> as Expression>::SqlType == Text
 
     let _ = users::table
         .filter(name.eq(bar(title)))
         .load::<User>(&mut conn);
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
 }

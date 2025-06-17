@@ -1,7 +1,7 @@
-error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate` is not satisfied
+error[E0277]: the trait bound `Bool: SqlOrdAggregate` is not satisfied
   --> tests/fail/ordering_functions_require_ord.rs:13:38
    |
-13 |     let source = stuff::table.select(max(stuff::b));
+LL |     let source = stuff::table.select(max(stuff::b));
    |                                      ^^^^^^^^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
    = help: the following other types implement trait `SqlOrd`:
@@ -13,18 +13,19 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::expression::func
              Nullable<T>
              Unsigned<BigInt>
              Unsigned<diesel::sql_types::Integer>
-           and $N others
+           and N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
 note: required by a bound in `diesel::dsl::max`
-  --> $DIESEL/src/expression/functions/aggregate_ordering.rs
+  --> DIESEL/diesel/diesel/src/expression/functions/aggregate_ordering.rs
    |
-   |     fn max<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
+LL |     fn max<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
    |                ^^^^^^^^^^^^^^^ required by this bound in `max`
 
+   
 error[E0277]: expressions of the type `diesel::sql_types::Bool` cannot be ordered by the database
   --> tests/fail/ordering_functions_require_ord.rs:13:31
    |
-13 |     let source = stuff::table.select(max(stuff::b));
+LL |     let source = stuff::table.select(max(stuff::b));
    |                               ^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
    = help: the following other types implement trait `SqlOrd`:
@@ -36,15 +37,16 @@ error[E0277]: expressions of the type `diesel::sql_types::Bool` cannot be ordere
              Nullable<T>
              Unsigned<BigInt>
              Unsigned<diesel::sql_types::Integer>
-           and $N others
+           and N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
-   = note: required for `diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Bool, columns::b>` to implement `diesel::Expression`
+   = note: required for `max<Bool, b>` to implement `diesel::Expression`
    = note: required for `stuff::table` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Bool, columns::b>>`
 
-error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate` is not satisfied
-  --> tests/fail/ordering_functions_require_ord.rs:14:38
+   
+error[E0277]: the trait bound `Bool: SqlOrdAggregate` is not satisfied
+  --> tests/fail/ordering_functions_require_ord.rs:16:38
    |
-14 |     let source = stuff::table.select(min(stuff::b));
+LL |     let source = stuff::table.select(min(stuff::b));
    |                                      ^^^^^^^^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
    = help: the following other types implement trait `SqlOrd`:
@@ -56,18 +58,19 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::expression::func
              Nullable<T>
              Unsigned<BigInt>
              Unsigned<diesel::sql_types::Integer>
-           and $N others
+           and N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
 note: required by a bound in `diesel::dsl::min`
-  --> $DIESEL/src/expression/functions/aggregate_ordering.rs
+  --> DIESEL/diesel/diesel/src/expression/functions/aggregate_ordering.rs
    |
-   |     fn min<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
+LL |     fn min<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
    |                ^^^^^^^^^^^^^^^ required by this bound in `min`
 
+   
 error[E0277]: expressions of the type `diesel::sql_types::Bool` cannot be ordered by the database
-  --> tests/fail/ordering_functions_require_ord.rs:14:31
+  --> tests/fail/ordering_functions_require_ord.rs:16:31
    |
-14 |     let source = stuff::table.select(min(stuff::b));
+LL |     let source = stuff::table.select(min(stuff::b));
    |                               ^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
    = help: the following other types implement trait `SqlOrd`:
@@ -79,7 +82,9 @@ error[E0277]: expressions of the type `diesel::sql_types::Bool` cannot be ordere
              Nullable<T>
              Unsigned<BigInt>
              Unsigned<diesel::sql_types::Integer>
-           and $N others
+           and N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
-   = note: required for `diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Bool, columns::b>` to implement `diesel::Expression`
+   = note: required for `min<Bool, b>` to implement `diesel::Expression`
    = note: required for `stuff::table` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Bool, columns::b>>`
+
+   For more information about this error, try `rustc --explain E0277`.

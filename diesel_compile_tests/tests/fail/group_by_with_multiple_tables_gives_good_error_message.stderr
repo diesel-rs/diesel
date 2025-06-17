@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `posts::columns::user_id: IsContainedInGroupBy<users::columns::id>` is not satisfied
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:29:10
    |
-29 |         .select((users::id, posts::user_id, diesel::dsl::count_star()));
+LL |         .select((users::id, posts::user_id, diesel::dsl::count_star()));
    |          ^^^^^^ the trait `IsContainedInGroupBy<users::columns::id>` is not implemented for `posts::columns::user_id`
    |
    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
@@ -19,12 +19,13 @@ note: required for `users::columns::id` to implement `ValidGrouping<(users::colu
    |         ^^
    = note: 1 redundant requirement hidden
    = note: required for `(users::columns::id, posts::columns::user_id, CountStar)` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
-   = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<(users::columns::id, posts::columns::user_id)>>` to implement `SelectDsl<(users::columns::id, posts::columns::user_id, CountStar)>`
+   = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(users::columns::id, posts::columns::user_id, CountStar)>`
 
+   
 error[E0277]: the trait bound `users::columns::id: IsContainedInGroupBy<posts::columns::user_id>` is not satisfied
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:29:10
    |
-29 |         .select((users::id, posts::user_id, diesel::dsl::count_star()));
+LL |         .select((users::id, posts::user_id, diesel::dsl::count_star()));
    |          ^^^^^^ the trait `IsContainedInGroupBy<posts::columns::user_id>` is not implemented for `users::columns::id`
    |
    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
@@ -35,8 +36,10 @@ error[E0277]: the trait bound `users::columns::id: IsContainedInGroupBy<posts::c
 note: required for `posts::columns::user_id` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:16:9
    |
-16 |         user_id -> Integer,
+LL |         user_id -> Integer,
    |         ^^^^^^^
    = note: 2 redundant requirements hidden
    = note: required for `(users::columns::id, posts::columns::user_id, CountStar)` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
-   = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<(users::columns::id, posts::columns::user_id)>>` to implement `SelectDsl<(users::columns::id, posts::columns::user_id, CountStar)>`
+   = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(users::columns::id, posts::columns::user_id, CountStar)>`
+
+   For more information about this error, try `rustc --explain E0277`.

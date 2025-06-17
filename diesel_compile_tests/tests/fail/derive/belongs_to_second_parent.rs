@@ -27,6 +27,7 @@ struct Baz {
 
 #[derive(Associations)]
 #[diesel(belongs_to(Bar, Baz))]
+//~^ ERROR: unknown attribute, expected `foreign_key`
 #[diesel(table_name = foo)]
 struct Foo {
     bar_id: i32,

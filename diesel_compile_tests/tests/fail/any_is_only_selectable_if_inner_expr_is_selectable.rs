@@ -32,4 +32,6 @@ fn main() {
     let _ = stuff
         .filter(name.eq(any(more_stuff::names)))
         .load(&mut conn);
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+    //~| ERROR: the trait bound `{type error}: FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Pg>` is not satisfied
 }

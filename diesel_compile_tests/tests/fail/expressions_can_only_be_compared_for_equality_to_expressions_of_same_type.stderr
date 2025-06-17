@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `str: diesel::Expression` is not satisfied
   --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:15:19
    |
-15 |     let pred = id.eq("string");
+LL |     let pred = id.eq("string");
    |                   ^^ the trait `diesel::Expression` is not implemented for `str`
    |
    = help: the following other types implement trait `diesel::Expression`:
@@ -13,14 +13,14 @@ error[E0277]: the trait bound `str: diesel::Expression` is not satisfied
              (T0, T1, T2, T3, T4, T5)
              (T0, T1, T2, T3, T4, T5, T6)
              (T0, T1, T2, T3, T4, T5, T6, T7)
-           and $N others
+           and N others
    = note: required for `&str` to implement `diesel::Expression`
    = note: required for `&str` to implement `AsExpression<diesel::sql_types::Integer>`
 
 error[E0271]: type mismatch resolving `<name as Expression>::SqlType == Integer`
-  --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:16:19
+  --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:17:19
    |
-16 |     let pred = id.eq(name);
+LL |     let pred = id.eq(name);
    |                   ^^ type mismatch resolving `<name as Expression>::SqlType == Integer`
    |
 note: expected this to be `diesel::sql_types::Integer`

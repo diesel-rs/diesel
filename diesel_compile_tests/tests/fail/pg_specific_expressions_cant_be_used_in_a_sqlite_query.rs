@@ -30,16 +30,20 @@ fn main() {
         .select(id)
         .filter(name.eq(any(Vec::<String>::new())))
         .load::<i32>(&mut connection);
+    //~^ ERROR: `Any<Bound<Array<Text>, Vec<String>>>` is no valid SQL fragment for the `Sqlite` backend
     users
         .select(id)
         .filter(name.is_not_distinct_from("Sean"))
         .load::<i32>(&mut connection);
+    //~^ ERROR: `IsNotDistinctFrom<name, Bound<Text, &str>>` is no valid SQL fragment for the `Sqlite` backend
     users
         .select(id)
         .filter(now.eq(now.at_time_zone("UTC")))
         .load::<i32>(&mut connection);
+    //~^ ERROR: `AtTimeZone<now, Bound<Text, &str>>` is no valid SQL fragment for the `Sqlite` backend
     insert_into(users)
         .values(&NewUser("Sean"))
         .on_conflict(on_constraint("name"))
         .execute(&mut connection);
+    //~^ ERROR: the method `execute` exists for struct `IncompleteOnConflict<InsertStatement<table, ...>, ...>`, but its trait bounds were not satisfied
 }

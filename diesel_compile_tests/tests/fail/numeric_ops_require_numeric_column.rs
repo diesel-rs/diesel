@@ -13,4 +13,5 @@ fn main() {
     use self::users::dsl::*;
 
     let _ = users.select(name + name);
+    //~^ ERROR: cannot add `columns::name` to `columns::name`
 }

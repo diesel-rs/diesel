@@ -12,6 +12,7 @@ table! {
 struct User {
     id: i32,
     #[diesel(embed = true)]
+    //~^ ERROR: expected `,`
     name: String,
 }
 

@@ -23,11 +23,31 @@ allow_tables_to_appear_in_same_query!(users, posts);
 fn main() {
     let mut conn = PgConnection::establish("").unwrap();
 
-    users::table.select(users::name).having(users::id.gt(1)).load(&mut conn);
+    users::table
+        .select(users::name)
+        .having(users::id.gt(1))
+        //~^ ERROR: the trait bound `SelectStatement<FromClause<table>, SelectClause<name>>: HavingDsl<_>` is not satisfied
+        .load(&mut conn);
 
-    users::table.into_boxed().having(users::id.gt(1)).load(&mut conn);
+    users::table
+        .into_boxed()
+        .having(users::id.gt(1))
+        //~^ ERROR: the trait bound `(): diesel::Expression` is not satisfied
+        .load(&mut conn);
+    //~^ ERROR: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text): SingleValue` is not satisfied
 
-    users::table.select(users::name).group_by(users::id).having(posts::id.eq(42)).load(&mut conn);
+    users::table
+        .select(users::name)
+        .group_by(users::id)
+        .having(posts::id.eq(42))
+        //~^ ERROR: ype mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        .load(&mut conn);
 
-    users::table.select(users::name).group_by(users::id).into_boxed().having(posts::id.eq(42)).load(&mut conn);
+    users::table
+        .select(users::name)
+        .group_by(users::id)
+        .into_boxed()
+        .having(posts::id.eq(42))
+        //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once
+        .load(&mut conn);
 }
