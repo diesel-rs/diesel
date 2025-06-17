@@ -6,7 +6,7 @@ error: Table contains more than 16 columns. Consider enabling the `32-column-tab
 5  | |         column_1 -> Integer,
 6  | |         column_2 -> Integer,
 ...  |
-23 | | }
+LL | | }
    | |_^
    |
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

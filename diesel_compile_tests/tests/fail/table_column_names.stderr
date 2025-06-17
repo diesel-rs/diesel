@@ -1,7 +1,7 @@
 error: Column `users` cannot be named the same as it's table.
-       You may use `#[sql_name = "users"]` to reference the table's `users` column
+       You may use `#[sql_name = "users"]` to reference the table's `users` column 
        Docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`
- --> tests/fail/table_column_names.rs:6:9
+ --> tests/fail/table_column_names.rs:7:9
   |
-6 |         users -> Integer,
+LL |         users -> Integer,
   |         ^^^^^

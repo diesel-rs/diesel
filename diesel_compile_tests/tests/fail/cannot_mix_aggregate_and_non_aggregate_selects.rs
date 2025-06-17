@@ -18,8 +18,11 @@ fn main() {
     use diesel::dsl::max;
 
     let source = users.select((id, count_star()));
+    //~^ ERROR: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
 
     let source = users.select(nullable_int_col + max(nullable_int_col));
+    //~^ ERROR: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
 
     let source = users.select(f(nullable_int_col, max(nullable_int_col)));
+    //~^ ERROR: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
 }

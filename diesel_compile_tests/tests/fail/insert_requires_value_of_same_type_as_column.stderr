@@ -1,8 +1,8 @@
 error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
-  --> tests/fail/insert_requires_value_of_same_type_as_column.rs:19:23
+  --> tests/fail/insert_requires_value_of_same_type_as_column.rs:18:37
    |
-19 |         .values(&name.eq(1));
-   |                       ^^ the trait `diesel::Expression` is not implemented for `{integer}`
+LL |     insert_into(users).values(&name.eq(1));
+   |                                     ^^ the trait `diesel::Expression` is not implemented for `{integer}`
    |
    = help: the following other types implement trait `diesel::Expression`:
              &T
@@ -13,5 +13,6 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
              (T0, T1, T2, T3, T4, T5)
              (T0, T1, T2, T3, T4, T5, T6)
              (T0, T1, T2, T3, T4, T5, T6, T7)
-           and $N others
+           and N others
    = note: required for `{integer}` to implement `AsExpression<diesel::sql_types::Text>`
+For more information about this error, try `rustc --explain E0277`.

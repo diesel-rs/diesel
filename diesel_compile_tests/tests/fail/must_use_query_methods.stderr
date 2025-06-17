@@ -1,7 +1,7 @@
 error: unused `SelectStatement` that must be used
   --> tests/fail/must_use_query_methods.rs:17:5
    |
-17 |     st.select(b);
+LL |     st.select(b);
    |     ^^^^^^^^^^^^
    |
    = note: Queries are only executed when calling `load`, `get_result` or similar.
@@ -12,137 +12,137 @@ note: the lint level is defined here
    |         ^^^^^^^^^^^^^^^
 help: use `let _ = ...` to ignore the resulting value
    |
-17 |     let _ = st.select(b);
-   |     +++++++
-
-error: unused `SelectStatement` that must be used
-  --> tests/fail/must_use_query_methods.rs:18:5
-   |
-18 |     st.select(b).distinct();
-   |     ^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: Queries are only executed when calling `load`, `get_result` or similar.
-help: use `let _ = ...` to ignore the resulting value
-   |
-18 |     let _ = st.select(b).distinct();
+LL |     let _ = st.select(b);
    |     +++++++
 
 error: unused `SelectStatement` that must be used
   --> tests/fail/must_use_query_methods.rs:19:5
    |
-19 |     st.count();
-   |     ^^^^^^^^^^
+LL |     st.select(b).distinct();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
    |
    = note: Queries are only executed when calling `load`, `get_result` or similar.
 help: use `let _ = ...` to ignore the resulting value
    |
-19 |     let _ = st.count();
-   |     +++++++
-
-error: unused `SelectStatement` that must be used
-  --> tests/fail/must_use_query_methods.rs:20:5
-   |
-20 |     st.order(b);
-   |     ^^^^^^^^^^^
-   |
-   = note: Queries are only executed when calling `load`, `get_result` or similar.
-help: use `let _ = ...` to ignore the resulting value
-   |
-20 |     let _ = st.order(b);
+LL |     let _ = st.select(b).distinct();
    |     +++++++
 
 error: unused `SelectStatement` that must be used
   --> tests/fail/must_use_query_methods.rs:21:5
    |
-21 |     st.limit(1);
-   |     ^^^^^^^^^^^
-   |
-   = note: Queries are only executed when calling `load`, `get_result` or similar.
-help: use `let _ = ...` to ignore the resulting value
-   |
-21 |     let _ = st.limit(1);
-   |     +++++++
-
-error: unused `SelectStatement` that must be used
-  --> tests/fail/must_use_query_methods.rs:22:5
-   |
-22 |     st.offset(1);
-   |     ^^^^^^^^^^^^
-   |
-   = note: Queries are only executed when calling `load`, `get_result` or similar.
-help: use `let _ = ...` to ignore the resulting value
-   |
-22 |     let _ = st.offset(1);
-   |     +++++++
-
-error: unused `SelectStatement` that must be used
-  --> tests/fail/must_use_query_methods.rs:24:5
-   |
-24 |     st.filter(b.eq(true));
-   |     ^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: Queries are only executed when calling `load`, `get_result` or similar.
-help: use `let _ = ...` to ignore the resulting value
-   |
-24 |     let _ = st.filter(b.eq(true));
-   |     +++++++
-
-error: unused `SelectStatement` that must be used
-  --> tests/fail/must_use_query_methods.rs:25:5
-   |
-25 |     st.filter(b.eq(true)).limit(1);
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: Queries are only executed when calling `load`, `get_result` or similar.
-help: use `let _ = ...` to ignore the resulting value
-   |
-25 |     let _ = st.filter(b.eq(true)).limit(1);
-   |     +++++++
-
-error: unused `IncompleteInsertStatement` that must be used
-  --> tests/fail/must_use_query_methods.rs:27:5
-   |
-27 |     insert_into(st);
-   |     ^^^^^^^^^^^^^^^
-   |
-   = note: Queries are only executed when calling `load`, `get_result` or similar.
-help: use `let _ = ...` to ignore the resulting value
-   |
-27 |     let _ = insert_into(st);
-   |     +++++++
-
-error: unused `InsertStatement` that must be used
-  --> tests/fail/must_use_query_methods.rs:28:5
-   |
-28 |     insert_into(st).values(&vec![b.eq(true), b.eq(false)]);
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: Queries are only executed when calling `load`, `get_result` or similar.
-help: use `let _ = ...` to ignore the resulting value
-   |
-28 |     let _ = insert_into(st).values(&vec![b.eq(true), b.eq(false)]);
-   |     +++++++
-
-error: unused `UpdateStatement` that must be used
-  --> tests/fail/must_use_query_methods.rs:30:5
-   |
-30 |     update(st).set(b.eq(true));
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: Queries are only executed when calling `load`, `get_result` or similar.
-help: use `let _ = ...` to ignore the resulting value
-   |
-30 |     let _ = update(st).set(b.eq(true));
-   |     +++++++
-
-error: unused `DeleteStatement` that must be used
-  --> tests/fail/must_use_query_methods.rs:32:5
-   |
-32 |     delete(st);
+LL |     st.count();
    |     ^^^^^^^^^^
    |
    = note: Queries are only executed when calling `load`, `get_result` or similar.
 help: use `let _ = ...` to ignore the resulting value
    |
-32 |     let _ = delete(st);
+LL |     let _ = st.count();
+   |     +++++++
+
+error: unused `SelectStatement` that must be used
+  --> tests/fail/must_use_query_methods.rs:23:5
+   |
+LL |     st.order(b);
+   |     ^^^^^^^^^^^
+   |
+   = note: Queries are only executed when calling `load`, `get_result` or similar.
+help: use `let _ = ...` to ignore the resulting value
+   |
+LL |     let _ = st.order(b);
+   |     +++++++
+
+error: unused `SelectStatement` that must be used
+  --> tests/fail/must_use_query_methods.rs:25:5
+   |
+LL |     st.limit(1);
+   |     ^^^^^^^^^^^
+   |
+   = note: Queries are only executed when calling `load`, `get_result` or similar.
+help: use `let _ = ...` to ignore the resulting value
+   |
+LL |     let _ = st.limit(1);
+   |     +++++++
+
+error: unused `SelectStatement` that must be used
+  --> tests/fail/must_use_query_methods.rs:27:5
+   |
+LL |     st.offset(1);
+   |     ^^^^^^^^^^^^
+   |
+   = note: Queries are only executed when calling `load`, `get_result` or similar.
+help: use `let _ = ...` to ignore the resulting value
+   |
+LL |     let _ = st.offset(1);
+   |     +++++++
+
+error: unused `SelectStatement` that must be used
+  --> tests/fail/must_use_query_methods.rs:30:5
+   |
+LL |     st.filter(b.eq(true));
+   |     ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: Queries are only executed when calling `load`, `get_result` or similar.
+help: use `let _ = ...` to ignore the resulting value
+   |
+LL |     let _ = st.filter(b.eq(true));
+   |     +++++++
+
+error: unused `SelectStatement` that must be used
+  --> tests/fail/must_use_query_methods.rs:32:5
+   |
+LL |     st.filter(b.eq(true)).limit(1);
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: Queries are only executed when calling `load`, `get_result` or similar.
+help: use `let _ = ...` to ignore the resulting value
+   |
+LL |     let _ = st.filter(b.eq(true)).limit(1);
+   |     +++++++
+
+error: unused `IncompleteInsertStatement` that must be used
+  --> tests/fail/must_use_query_methods.rs:35:5
+   |
+LL |     insert_into(st);
+   |     ^^^^^^^^^^^^^^^
+   |
+   = note: Queries are only executed when calling `load`, `get_result` or similar.
+help: use `let _ = ...` to ignore the resulting value
+   |
+LL |     let _ = insert_into(st);
+   |     +++++++
+
+error: unused `InsertStatement` that must be used
+  --> tests/fail/must_use_query_methods.rs:37:5
+   |
+LL |     insert_into(st).values(&vec![b.eq(true), b.eq(false)]);
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: Queries are only executed when calling `load`, `get_result` or similar.
+help: use `let _ = ...` to ignore the resulting value
+   |
+LL |     let _ = insert_into(st).values(&vec![b.eq(true), b.eq(false)]);
+   |     +++++++
+
+error: unused `UpdateStatement` that must be used
+  --> tests/fail/must_use_query_methods.rs:40:5
+   |
+LL |     update(st).set(b.eq(true));
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: Queries are only executed when calling `load`, `get_result` or similar.
+help: use `let _ = ...` to ignore the resulting value
+   |
+LL |     let _ = update(st).set(b.eq(true));
+   |     +++++++
+
+error: unused `DeleteStatement` that must be used
+  --> tests/fail/must_use_query_methods.rs:43:5
+   |
+LL |     delete(st);
+   |     ^^^^^^^^^^
+   |
+   = note: Queries are only executed when calling `load`, `get_result` or similar.
+help: use `let _ = ...` to ignore the resulting value
+   |
+LL |     let _ = delete(st);
    |     +++++++

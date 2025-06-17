@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/select_requires_valid_grouping.rs:85:53
    |
-85 |     let source = users::table.group_by(users::name).select(users::id);
+LL |     let source = users::table.group_by(users::name).select(users::id);
    |                                                     ^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
    |
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
@@ -15,12 +15,13 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
 7  |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>` to implement `SelectDsl<users::columns::id>`
+   = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
+   
 error[E0271]: type mismatch resolving `<(name, hair_color) as IsContainedInGroupBy<id>>::Output == Yes`
-  --> tests/fail/select_requires_valid_grouping.rs:88:10
+  --> tests/fail/select_requires_valid_grouping.rs:89:10
    |
-88 |         .select(users::id);
+LL |         .select(users::id);
    |          ^^^^^^ expected `Yes`, found `No`
    |
 note: required for `users::columns::id` to implement `ValidGrouping<(users::columns::name, users::columns::hair_color)>`
@@ -29,12 +30,13 @@ note: required for `users::columns::id` to implement `ValidGrouping<(users::colu
 7  |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<(users::columns::name, users::columns::hair_color)>>` to implement `SelectDsl<users::columns::id>`
+   = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
+   
 error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
-  --> tests/fail/select_requires_valid_grouping.rs:91:10
+  --> tests/fail/select_requires_valid_grouping.rs:93:10
    |
-91 |         .select((users::name, users::id));
+LL |         .select((users::name, users::id));
    |          ^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
    |
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
@@ -50,12 +52,13 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `(users::columns::name, users::columns::id)` to implement `ValidGrouping<users::columns::name>`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>` to implement `SelectDsl<(users::columns::name, users::columns::id)>`
+   = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(users::columns::name, users::columns::id)>`
 
+   
 error[E0271]: type mismatch resolving `<(name, hair_color) as IsContainedInGroupBy<id>>::Output == Yes`
-  --> tests/fail/select_requires_valid_grouping.rs:94:10
+  --> tests/fail/select_requires_valid_grouping.rs:97:10
    |
-94 |         .select(users::id);
+LL |         .select(users::id);
    |          ^^^^^^ expected `Yes`, found `No`
    |
 note: required for `users::columns::id` to implement `ValidGrouping<(users::columns::name, users::columns::hair_color)>`
@@ -64,28 +67,30 @@ note: required for `users::columns::id` to implement `ValidGrouping<(users::colu
 7  |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<(users::columns::name, users::columns::hair_color)>>` to implement `SelectDsl<users::columns::id>`
+   = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
+   
 error[E0271]: type mismatch resolving `<(id, title) as IsContainedInGroupBy<id>>::Output == Yes`
-  --> tests/fail/select_requires_valid_grouping.rs:98:10
-   |
-98 |         .select((users::all_columns, posts::id));
-   |          ^^^^^^ expected `Yes`, found `No`
-   |
-note: required for `posts::columns::id` to implement `ValidGrouping<(users::columns::id, posts::columns::title)>`
-  --> tests/fail/select_requires_valid_grouping.rs:15:9
-   |
-15 |         id -> Integer,
-   |         ^^
-   = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: 1 redundant requirement hidden
-   = note: required for `((users::columns::id, users::columns::name, users::columns::hair_color), posts::columns::id)` to implement `ValidGrouping<(users::columns::id, posts::columns::title)>`
-   = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<(users::columns::id, posts::columns::title)>>` to implement `SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), posts::columns::id)>`
-
-error[E0277]: the trait bound `users::columns::id: IsContainedInGroupBy<comments::columns::id>` is not satisfied
    --> tests/fail/select_requires_valid_grouping.rs:102:10
     |
-102 |         .select((users::all_columns, posts::all_columns, comments::id));
+LL |         .select((users::all_columns, posts::id));
+    |          ^^^^^^ expected `Yes`, found `No`
+    |
+note: required for `posts::columns::id` to implement `ValidGrouping<(users::columns::id, posts::columns::title)>`
+   --> tests/fail/select_requires_valid_grouping.rs:15:9
+    |
+15  |         id -> Integer,
+    |         ^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 1 redundant requirement hidden
+    = note: required for `((users::columns::id, users::columns::name, users::columns::hair_color), posts::columns::id)` to implement `ValidGrouping<(users::columns::id, posts::columns::title)>`
+    = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), posts::columns::id)>`
+ 
+    
+error[E0277]: the trait bound `users::columns::id: IsContainedInGroupBy<comments::columns::id>` is not satisfied
+   --> tests/fail/select_requires_valid_grouping.rs:107:10
+    |
+LL |         .select((users::all_columns, posts::all_columns, comments::id));
     |          ^^^^^^ the trait `IsContainedInGroupBy<comments::columns::id>` is not implemented for `users::columns::id`
     |
     = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
@@ -103,13 +108,14 @@ note: required for `comments::columns::id` to implement `ValidGrouping<(users::c
 23  |         id -> Integer,
     |         ^^
     = note: 2 redundant requirements hidden
-    = note: required for `((users::columns::id, users::columns::name, users::columns::hair_color), (posts::columns::id, posts::columns::title, posts::columns::user_id), comments::columns::id)` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
-    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<(users::columns::id, posts::columns::id)>>` to implement `SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), (posts::columns::id, posts::columns::title, posts::columns::user_id), comments::columns::id)>`
-
+    = note: required for `((id, name, hair_color), (id, title, user_id), id)` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
+    = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), (posts::columns::id, posts::columns::title, posts::columns::user_id), comments::columns::id)>`
+ 
+    
 error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<comments::columns::id>` is not satisfied
-   --> tests/fail/select_requires_valid_grouping.rs:102:10
+   --> tests/fail/select_requires_valid_grouping.rs:107:10
     |
-102 |         .select((users::all_columns, posts::all_columns, comments::id));
+LL |         .select((users::all_columns, posts::all_columns, comments::id));
     |          ^^^^^^ the trait `IsContainedInGroupBy<comments::columns::id>` is not implemented for `posts::columns::id`
     |
     = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
@@ -129,5 +135,5 @@ note: required for `comments::columns::id` to implement `ValidGrouping<(users::c
 23  |         id -> Integer,
     |         ^^
     = note: 2 redundant requirements hidden
-    = note: required for `((users::columns::id, users::columns::name, users::columns::hair_color), (posts::columns::id, posts::columns::title, posts::columns::user_id), comments::columns::id)` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
-    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<(users::columns::id, posts::columns::id)>>` to implement `SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), (posts::columns::id, posts::columns::title, posts::columns::user_id), comments::columns::id)>`
+    = note: required for `((id, name, hair_color), (id, title, user_id), id)` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
+    = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), (posts::columns::id, posts::columns::title, posts::columns::user_id), comments::columns::id)>`

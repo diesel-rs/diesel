@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `bool: SelectQuery` is not satisfied
-  --> tests/fail/exists_can_only_take_subselects.rs:23:18
+  --> tests/fail/exists_can_only_take_subselects.rs:26:18
    |
-23 |     users::table.filter(exists(true));
+LL |     users::table.filter(exists(true));
    |                  ^^^^^^ the trait `SelectQuery` is not implemented for `bool`
    |
    = help: the following other types implement trait `SelectQuery`:
@@ -14,9 +14,9 @@ error[E0277]: the trait bound `bool: SelectQuery` is not satisfied
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Exists<bool>>`
 
 error[E0277]: the trait bound `users::columns::id: SelectQuery` is not satisfied
-  --> tests/fail/exists_can_only_take_subselects.rs:24:18
+  --> tests/fail/exists_can_only_take_subselects.rs:28:18
    |
-24 |     users::table.filter(exists(users::id));
+LL |     users::table.filter(exists(users::id));
    |                  ^^^^^^ the trait `SelectQuery` is not implemented for `users::columns::id`
    |
    = help: the following other types implement trait `SelectQuery`:
@@ -27,3 +27,4 @@ error[E0277]: the trait bound `users::columns::id: SelectQuery` is not satisfied
    = note: 1 redundant requirement hidden
    = note: required for `Exists<users::columns::id>` to implement `diesel::Expression`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Exists<users::columns::id>>`
+For more information about this error, try `rustc --explain E0277`.

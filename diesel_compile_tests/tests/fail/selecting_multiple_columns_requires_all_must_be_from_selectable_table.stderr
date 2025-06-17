@@ -1,7 +1,7 @@
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
    |
-23 |     let stuff = users::table.select((posts::id, posts::user_id));
+LL |     let stuff = users::table.select((posts::id, posts::user_id));
    |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
@@ -19,7 +19,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
 error[E0277]: Cannot select `posts::columns::user_id` from `users::table`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
    |
-23 |     let stuff = users::table.select((posts::id, posts::user_id));
+LL |     let stuff = users::table.select((posts::id, posts::user_id));
    |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::user_id`
    |
    = note: `posts::columns::user_id` is no valid selection for `users::table`
@@ -37,13 +37,13 @@ error[E0277]: Cannot select `posts::columns::user_id` from `users::table`
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
    |
-23 |     let stuff = users::table.select((posts::id, posts::user_id));
+LL |     let stuff = users::table.select((posts::id, posts::user_id));
    |                              ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:14:9
    |
-14 |         id -> Integer,
+LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
@@ -52,9 +52,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:24:30
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:27:30
    |
-24 |     let stuff = users::table.select((posts::id, users::name));
+LL |     let stuff = users::table.select((posts::id, users::name));
    |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
@@ -70,15 +70,15 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, users::columns::name)>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:24:30
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:27:30
    |
-24 |     let stuff = users::table.select((posts::id, users::name));
+LL |     let stuff = users::table.select((posts::id, users::name));
    |                              ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:14:9
    |
-14 |         id -> Integer,
+LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden

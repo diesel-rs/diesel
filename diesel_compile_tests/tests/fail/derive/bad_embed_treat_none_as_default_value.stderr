@@ -1,5 +1,5 @@
 error: `embed` and `treat_none_as_default_value` are mutually exclusive
   --> tests/fail/derive/bad_embed_treat_none_as_default_value.rs:13:7
    |
-13 |     #[diesel(embed, treat_none_as_default_value = true)]
+LL |     #[diesel(embed, treat_none_as_default_value = true)]
    |       ^^^^^^

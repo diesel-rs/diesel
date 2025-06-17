@@ -18,5 +18,6 @@ fn main() {
     insert_into(users)
         .values(&name.eq(hair_color))
         .execute(&mut conn)
+        //~^ ERROR: type mismatch resolving `<NoFromClause as AppearsInFromClause<table>>::Count == Once`
         .unwrap();
 }

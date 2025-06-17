@@ -11,7 +11,6 @@ table! {
 }
 
 fn main() {
-
     // verify that we could use distinct on without order clause
     let _ = users::table.distinct_on(users::name);
 
@@ -19,16 +18,24 @@ fn main() {
     let _ = users::table.order_by(users::name).distinct_on(users::name);
 
     // verify that we could use distinct on with an order clause that contains also a different column
-    let _ = users::table.order_by((users::name, users::id)).distinct_on(users::name);
+    let _ = users::table
+        .order_by((users::name, users::id))
+        .distinct_on(users::name);
 
     // verify that we could use multiple columns for both order by and distinct on
-    let _ = users::table.order_by((users::name, users::id)).distinct_on((users::name, users::id));
+    let _ = users::table
+        .order_by((users::name, users::id))
+        .distinct_on((users::name, users::id));
 
     // verify that we could use multiple columns for both order by and distinct on and distinct on has more columns than order by
-    let _ = users::table.order_by((users::name, users::id)).distinct_on((users::name, users::id, users::hair_color));
+    let _ = users::table
+        .order_by((users::name, users::id))
+        .distinct_on((users::name, users::id, users::hair_color));
 
     // verify that we could use multiple columns for both order by and distinct on and distinct on has less columns than order by
-    let _ = users::table.order_by((users::name, users::id, users::hair_color)).distinct_on((users::name, users::id));
+    let _ = users::table
+        .order_by((users::name, users::id, users::hair_color))
+        .distinct_on((users::name, users::id));
 
     // verify that we could use distinct on with a select expression and an order clause that contains a different column
     let _ = users::table
@@ -111,29 +118,40 @@ fn main() {
     //
     // we do not allow queries with order clauses that does not contain the distinct value
     let _ = users::table.order_by(users::id).distinct_on(users::name);
+    //~^ ERROR: the trait bound `OrderClause<id>: ValidOrderingForDistinct<DistinctOnClause<name>>` is not satisfied
 
     // we do not allow queries where the distinct on expression is not the first expression
     // in our order clause
-    let _ = users::table.order_by((users::id, users::name)).distinct_on(users::name);
+    let _ = users::table
+        .order_by((users::id, users::name))
+        .distinct_on(users::name);
+    //~^ ERROR: the trait bound `OrderClause<(id, name)>: ValidOrderingForDistinct<...>` is not satisfied
 
     // we cannot workaround that with `then_order_by`
     let _ = users::table
         .order_by(users::id)
         .then_order_by(users::name)
         .distinct_on(users::name);
+    //~^ ERROR: the trait bound `OrderClause<(id, name)>: ValidOrderingForDistinct<...>` is not satisfied
 
     // it's not possible to set an invalid order clause after we set
     // the distinct on clause
     let _ = users::table.distinct_on(users::name).order_by(users::id);
+    //~^ ERROR: the trait bound `OrderClause<id>: ValidOrderingForDistinct<DistinctOnClause<name>>` is not satisfied
 
     // we cannot box invalid queries
-    let _ = users::table.order_by(users::id).distinct_on(users::name).into_boxed();
+    let _ = users::table
+        .order_by(users::id)
+        .distinct_on(users::name)
+        //~^ ERROR: the trait bound `OrderClause<id>: ValidOrderingForDistinct<DistinctOnClause<name>>` is not satisfied
+        .into_boxed();
 
     // it's not possible to set an invalid order clause after we set
     // for multiple order by and one distinct on
     let _ = users::table
         .order_by((users::id, users::name))
         .distinct_on(users::name)
+        //~^ ERROR: the trait bound `OrderClause<(id, name)>: ValidOrderingForDistinct<...>` is not satisfied
         .into_boxed();
 
     // it's not possible to set an invalid order clause after we set
@@ -141,6 +159,7 @@ fn main() {
     let _ = users::table
         .order_by((users::id, users::name))
         .distinct_on((users::name, users::id))
+        //~^ ERROR: the trait bound `OrderClause<(id, name)>: ValidOrderingForDistinct<...>` is not satisfied
         .into_boxed();
 
     // it's not possible to set an invalid order clause after we set
@@ -148,6 +167,7 @@ fn main() {
     let _ = users::table
         .order_by(users::id)
         .distinct_on((users::name, users::id))
+        //~^ ERROR: the trait bound `OrderClause<id>: ValidOrderingForDistinct<DistinctOnClause<...>>` is not satisfied
         .into_boxed();
 
     // we cannot workaround that with `then_order_by`
@@ -155,6 +175,7 @@ fn main() {
         .order_by(users::id)
         .then_order_by(users::name)
         .distinct_on(users::name)
+        //~^ ERROR: the trait bound `OrderClause<(id, name)>: ValidOrderingForDistinct<...>` is not satisfied
         .into_boxed();
 
     // it's not possible to set an invalid order clause after we set
@@ -162,5 +183,6 @@ fn main() {
     let _ = users::table
         .distinct_on(users::name)
         .order_by(users::id)
+        //~^ ERROR: the trait bound `OrderClause<id>: ValidOrderingForDistinct<DistinctOnClause<name>>` is not satisfied
         .into_boxed();
 }
