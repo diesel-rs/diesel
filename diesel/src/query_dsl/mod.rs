@@ -27,7 +27,7 @@ mod combine_dsl;
 mod distinct_dsl;
 #[doc(hidden)]
 pub mod filter_dsl;
-mod group_by_dsl;
+pub(crate) mod group_by_dsl;
 mod having_dsl;
 mod join_dsl;
 #[doc(hidden)]
