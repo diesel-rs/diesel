@@ -145,8 +145,13 @@ fn create_config_file(
     let path = Config::file_path(matches);
     if !path.exists() {
         let source_content = include_str!("default_files/diesel.toml").to_string();
+        let migrations_dir_relative =
+            convert_absolute_path_to_relative(migrations_dir, &find_project_root()?);
         // convert the path to a valid toml string (escaping backslashes on windows)
-        let migrations_dir_toml_string = migrations_dir.display().to_string().replace('\\', "\\\\");
+        let migrations_dir_toml_string = migrations_dir_relative
+            .display()
+            .to_string()
+            .replace('\\', "\\\\");
         let modified_content = source_content.replace(
             "dir = \"migrations\"",
             &format!("dir = \"{}\"", migrations_dir_toml_string),
