@@ -93,7 +93,8 @@ where
 }
 
 pub fn wrap_in_dummy_mod(item: TokenStream) -> TokenStream {
-    // #[allow(unused_qualifications)] can be removed if https://github.com/rust-lang/rust/issues/130277 gets done
+    // allow(unused_qualifications) is here as it hard to unsure the span is correctly set. Should stay until it is
+    // checked by CI. See https://github.com/rust-lang/rust/issues/130277 for more details.
     quote! {
         #[allow(unused_imports)]
         #[allow(unused_qualifications)]
@@ -154,12 +155,12 @@ pub fn ty_for_foreign_derive(item: &DeriveInput, model: &Model) -> Result<Type> 
             Data::Struct(ref body) => match body.fields.iter().next() {
                 Some(field) => Ok(field.ty.clone()),
                 None => Err(syn::Error::new(
-                    proc_macro2::Span::call_site(),
+                    proc_macro2::Span::mixed_site(),
                     "foreign_derive requires at least one field",
                 )),
             },
             _ => Err(syn::Error::new(
-                proc_macro2::Span::call_site(),
+                proc_macro2::Span::mixed_site(),
                 "foreign_derive can only be used with structs",
             )),
         }
