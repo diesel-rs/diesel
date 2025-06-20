@@ -26,7 +26,7 @@ LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
 
 error[E0277]: cannot select `users::columns::name` from `posts::table`
-  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:32:10
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:31:10
    |
 LL |         .distinct_on((posts::name, users::name))
    |          ^^^^^^^^^^^ the trait `SelectableExpression<posts::table>` is not implemented for `users::columns::name`
@@ -44,7 +44,7 @@ LL |         .distinct_on((posts::name, users::name))
    = note: required for `posts::table` to implement `DistinctOnDsl<(posts::columns::name, users::columns::name)>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:32:10
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:31:10
    |
 LL |         .distinct_on((posts::name, users::name))
    |          ^^^^^^^^^^^ expected `Once`, found `Never`
@@ -59,66 +59,3 @@ note: required for `users::columns::name` to implement `AppearsOnTable<posts::ta
    = note: required for `(posts::columns::name, users::columns::name)` to implement `AppearsOnTable<posts::table>`
    = note: required for `(posts::columns::name, users::columns::name)` to implement `SelectableExpression<posts::table>`
    = note: required for `posts::table` to implement `DistinctOnDsl<(posts::columns::name, users::columns::name)>`
-
-error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text): SingleValue` is not satisfied
-    --> tests/fail/distinct_on_allows_only_fields_of_table.rs:28:22
-     |
-28   |         .get_results(&mut connection);
-     |          ----------- ^^^^^^^^^^^^^^^ the trait `SingleValue` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text)`
-     |          |
-     |          required by a bound introduced by this call
-     |
-     = help: the following other types implement trait `SingleValue`:
-               Array<ST>
-               BigInt
-               Bool
-               CChar
-               Cidr
-               Citext
-               Datetime
-               Inet
-             and N others
-     = note: required for `{type error}` to implement `FromStaticSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Pg>`
-     = note: required for `{type error}` to implement `FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Pg>`
-     = note: required for `(diesel::sql_types::Integer, diesel::sql_types::Text)` to implement `load_dsl::private::CompatibleType<{type error}, Pg>`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `LoadQuery<'_, diesel::PgConnection, {type error}>`
-note: required by a bound in `get_results`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-     |
-LL |     fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ----------- required by a bound in this associated function
-LL |     where
-LL |         Self: LoadQuery<'query, Conn, U>,
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_results`
-  
-     
-error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Text): SingleValue` is not satisfied
-    --> tests/fail/distinct_on_allows_only_fields_of_table.rs:35:21
-     |
-35   |         .get_result(&mut connection);
-     |          ---------- ^^^^^^^^^^^^^^^ the trait `SingleValue` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Text)`
-     |          |
-     |          required by a bound introduced by this call
-     |
-     = help: the following other types implement trait `SingleValue`:
-               Array<ST>
-               BigInt
-               Bool
-               CChar
-               Cidr
-               Citext
-               Datetime
-               Inet
-             and N others
-     = note: required for `{type error}` to implement `FromStaticSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Text), Pg>`
-     = note: required for `{type error}` to implement `FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Text), Pg>`
-     = note: required for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Text)` to implement `load_dsl::private::CompatibleType<{type error}, Pg>`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `LoadQuery<'_, diesel::PgConnection, {type error}>`
-note: required by a bound in `get_result`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-     |
-LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
-     |        ---------- required by a bound in this associated function
-LL |     where
-LL |         Self: LoadQuery<'query, Conn, U>,
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`

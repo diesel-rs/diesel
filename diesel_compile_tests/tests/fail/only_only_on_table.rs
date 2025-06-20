@@ -21,7 +21,6 @@ fn main() {
     let mut conn = SqliteConnection::establish("").unwrap();
     foo::table.only().load(&mut conn).unwrap();
     //~^ ERROR: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::SqliteConnection, _>` is not satisfied
-    //~| ERROR: the trait bound `{type error}: FromSqlRow<(BigInt,), Sqlite>` is not satisfied
 
     // .only() is not supported for MySql
     let mut conn = MysqlConnection::establish("").unwrap();

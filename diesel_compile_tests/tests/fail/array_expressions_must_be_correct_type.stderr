@@ -210,13 +210,13 @@ error[E0277]: the trait bound `f64: diesel::Expression` is not satisfied
    |
    = help: the following other types implement trait `diesel::Expression`:
              &T
-             (T0, T1)
-             (T0, T1, T2)
-             (T0, T1, T2, T3)
-             (T0, T1, T2, T3, T4)
-             (T0, T1, T2, T3, T4, T5)
-             (T0, T1, T2, T3, T4, T5, T6)
-             (T0, T1, T2, T3, T4, T5, T6, T7)
+             AliasedField<S, C>
+             Box<T>
+             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
+             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
+             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
+             CountDistinct<T, E>
+             CountStar
            and N others
    = note: required for `f64` to implement `AsExpression<diesel::sql_types::Integer>`
    = note: required for `(f64, f64)` to implement `AsExpressionList<diesel::sql_types::Integer>`
