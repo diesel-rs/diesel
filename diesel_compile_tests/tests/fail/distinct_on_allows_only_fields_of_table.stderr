@@ -1,4 +1,4 @@
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
    --> tests/fail/distinct_on_allows_only_fields_of_table.rs:26:22
     |
 26  |         .distinct_on(posts::id)
@@ -25,7 +25,7 @@ LL |     where
 LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
 
-error[E0277]: Cannot select `users::columns::name` from `posts::table`
+error[E0277]: cannot select `users::columns::name` from `posts::table`
   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:32:10
    |
 LL |         .distinct_on((posts::name, users::name))

@@ -1,4 +1,4 @@
-error[E0277]: Cannot select `bad::columns::age` from `users::table`
+error[E0277]: cannot select `bad::columns::age` from `users::table`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:32:20
     |
 32  |         .returning(bad::age);
@@ -26,7 +26,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
  
     
-error[E0277]: Cannot select `bad::columns::age` from `users::table`
+error[E0277]: cannot select `bad::columns::age` from `users::table`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:40:20
     |
 40  |         .returning((name, bad::age));

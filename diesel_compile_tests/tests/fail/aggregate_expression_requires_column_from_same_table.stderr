@@ -1,4 +1,4 @@
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
    |
 LL |     let source = users::table.select(sum(posts::id));
@@ -35,7 +35,7 @@ LL |         id -> Integer,
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>>`
 
    
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:24:31
    |
 LL |     let source = users::table.select(avg(posts::id));
@@ -72,7 +72,7 @@ LL |         id -> Integer,
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>>`
 
    
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:27:31
    |
 LL |     let source = users::table.select(max(posts::id));
@@ -109,7 +109,7 @@ LL |         id -> Integer,
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>>`
 
    
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:30:31
    |
 LL |     let source = users::table.select(min(posts::id));

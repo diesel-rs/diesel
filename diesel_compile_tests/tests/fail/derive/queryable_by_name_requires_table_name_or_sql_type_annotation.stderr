@@ -1,4 +1,4 @@
-error: All fields of tuple structs must be annotated with `#[diesel(column_name)]`
+error: all fields of tuple structs must be annotated with `#[diesel(column_name)]`
   --> tests/fail/derive/queryable_by_name_requires_table_name_or_sql_type_annotation.rs:11:10
    |
 LL | #[derive(QueryableByName)]

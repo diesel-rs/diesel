@@ -1,9 +1,23 @@
-error: Invalid `table!` syntax. Please see the `table!` macro docs for more info.
-       Docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`
+error: macro expansion ignores `12` and any tokens following
+ --> tests/fail/table_invalid_syntax_1.rs:5:5
+  |
+LL | / table! {
+LL | |     12
+  | |     ^^
+LL | |
+LL | | }
+  | |_- caused by the macro expansion here
+  |
+  = note: the usage of `table!` is likely invalid in item context
+
+error: invalid `table!` syntax 
+       help: please see the `table!` macro docs for more info
+       help: docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`
  --> tests/fail/table_invalid_syntax_1.rs:4:1
   |
 LL | / table! {
 LL | |     12
+LL | |
 LL | | }
   | |_^
   |

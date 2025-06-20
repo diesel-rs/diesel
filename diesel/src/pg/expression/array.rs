@@ -67,7 +67,7 @@ pub type array<ST, T> = <T as IntoArrayExpression<ST>>::ArrayExpression;
 ///
 /// This includes tuples of expressions with the same SQL type, and subselects with a single column.
 #[diagnostic::on_unimplemented(
-    message = "Cannot convert `{Self}` into an expression of type `Array<{ST}>`",
+    message = "cannot convert `{Self}` into an expression of type `Array<{ST}>`",
     note = "`the trait bound `{Self}: IntoArrayExpression<{ST}>` is not satisfied. \
         (`AsExpressionList` is a deprecated trait alias for `IntoArrayExpression`)"
 )]

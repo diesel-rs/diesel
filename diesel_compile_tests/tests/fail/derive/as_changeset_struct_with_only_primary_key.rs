@@ -16,14 +16,14 @@ struct Foo1 {
 }
 
 #[derive(AsChangeset)]
-//~^ ERROR: Deriving `AsChangeset` on a structure that only contains primary keys isn't supported.
+//~^ ERROR: deriving `AsChangeset` on a structure that only contains primary keys isn't supported.
 #[diesel(table_name = foo)]
 struct Foo2 {
     id: i32,
 }
 
 #[derive(AsChangeset)]
-//~^ ERROR: Deriving `AsChangeset` on a structure that only contains primary keys isn't supported.
+//~^ ERROR: deriving `AsChangeset` on a structure that only contains primary keys isn't supported.
 #[diesel(table_name = foo, primary_key(id, bar))]
 struct Foo3 {
     id: i32,

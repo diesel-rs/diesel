@@ -1,22 +1,22 @@
-error: No field with column name bar_id
+error: no field with column name `bar_id`
  --> tests/fail/derive/belongs_to_missing_foreign_key_field.rs:7:21
   |
 LL | #[diesel(belongs_to(Bar))]
   |                     ^^^
 
-error: No field with column name bar_id
+error: no field with column name `bar_id`
   --> tests/fail/derive/belongs_to_missing_foreign_key_field.rs:12:40
    |
 LL | #[diesel(belongs_to(Bar, foreign_key = bar_id))]
    |                                        ^^^^^^
 
-error: No field with column name bar_id
+error: no field with column name `bar_id`
   --> tests/fail/derive/belongs_to_missing_foreign_key_field.rs:17:21
    |
 LL | #[diesel(belongs_to(Bar))]
    |                     ^^^
 
-error: No field with column name bar_id
+error: no field with column name `bar_id`
   --> tests/fail/derive/belongs_to_missing_foreign_key_field.rs:25:40
    |
 LL | #[diesel(belongs_to(Bar, foreign_key = bar_id))]

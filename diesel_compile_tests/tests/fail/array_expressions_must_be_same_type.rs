@@ -14,22 +14,22 @@ fn main() {
 
     select(array((1, 3f64)))
         //~^ ERROR: the trait bound `f64: diesel::Expression` is not satisfied
-        //~| ERROR: Cannot select `f64` from `NoFromClause`
+        //~| ERROR: cannot select `f64` from `NoFromClause`
         //~| ERROR: the trait bound `f64: ValidGrouping<()>` is not satisfied
-        //~| ERROR: Cannot convert `(i32, f64)` into an expression of type `Array<diesel::sql_types::Integer>`
+        //~| ERROR: cannot convert `(i32, f64)` into an expression of type `Array<diesel::sql_types::Integer>`
         .get_result::<Vec<i32>>(&mut connection)
-        //~^ ERROR: Cannot select `f64` from `NoFromClause`
+        //~^ ERROR: cannot select `f64` from `NoFromClause`
         //~| ERROR: the trait bound `f64: ValidGrouping<()>` is not satisfied
         //~| ERROR: the trait bound `f64: QueryId` is not satisfied
         //~| ERROR: `f64` is no valid SQL fragment for the `Pg` backend
         .unwrap();
     select(array((1, 3f64)))
         //~^ ERROR: the trait bound `{integer}: diesel::Expression` is not satisfied
-        //~| ERROR: Cannot select `{integer}` from `NoFromClause`
+        //~| ERROR: cannot select `{integer}` from `NoFromClause`
         //~| ERROR: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
-        //~| ERROR: Cannot convert `({integer}, f64)` into an expression of type `Array<diesel::sql_types::Double>`
+        //~| ERROR: cannot convert `({integer}, f64)` into an expression of type `Array<diesel::sql_types::Double>`
         .get_result::<Vec<f64>>(&mut connection)
-        //~^ ERROR: Cannot select `{integer}` from `NoFromClause`
+        //~^ ERROR: cannot select `{integer}` from `NoFromClause`
         //~| ERROR: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
         //~| ERROR: the trait bound `{integer}: QueryId` is not satisfied
         //~| ERROR: `{integer}` is no valid SQL fragment for the `Pg` backend

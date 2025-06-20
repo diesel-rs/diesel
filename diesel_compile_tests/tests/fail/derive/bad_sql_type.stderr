@@ -1,5 +1,5 @@
 error: unexpected end of input, expected `=`
-       help: The correct format looks like `#[diesel(sql_type = Foo)]`
+       help: the correct format looks like `#[diesel(sql_type = Foo)]`
  --> tests/fail/derive/bad_sql_type.rs:5:18
   |
 LL | #[diesel(sql_type)]

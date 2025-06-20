@@ -21,7 +21,7 @@ fn main() {
     //~| ERROR: the trait bound `SelectStatement<FromClause<...>>: LockingDsl<...>` is not satisfied
     users.for_update().distinct_on(id);
     //~^ ERROR: the trait bound `SelectStatement<FromClause<...>>: DistinctOnDsl<_>` is not satisfied
-    //~| ERROR: Cannot select `columns::id` from `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+    //~| ERROR: cannot select `columns::id` from `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
     //~| ERROR: type mismatch resolving `<SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...> as AsQuery>::Query == SelectStatement<...>`
     //~| ERROR: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>: Table` is not satisfied
     //~| ERROR: the trait bound `SelectStatement<FromClause<...>>: DistinctOnDsl<_>` is not satisfied
