@@ -28,13 +28,13 @@ allow_tables_to_appear_in_same_query!(comments, posts, users);
 
 fn main() {
     let _ = users::table.inner_join(posts::table);
-    //~^ ERROR: the trait bound `users::table: JoinTo<posts::table>` is not satisfied
+    //~^ ERROR:  cannot join `posts::table` to `users::table` due to missing relation
     let _ = users::table.left_outer_join(posts::table);
-    //~^ ERROR: the trait bound `users::table: JoinTo<posts::table>` is not satisfied
+    //~^ ERROR: cannot join `posts::table` to `users::table` due to missing relation
 
     // Sanity check to make sure the error is when users
     // become involved
     let join = posts::table.inner_join(comments::table);
     let _ = users::table.inner_join(join);
-    //~^ ERROR: the trait bound `posts::table: JoinTo<users::table>` is not satisfied
+    //~^ ERROR: cannot join `users::table` to `posts::table` due to missing relation
 }

@@ -58,7 +58,7 @@ pub fn check(conn: &mut PgConnection) {
     // don't allow joins to not joinable tables
     pets::table
         .inner_join(user_alias)
-        //~^ ERROR: the trait bound `users::table: JoinTo<pets::table>` is not satisfied
+        //~^ ERROR: cannot join `pets::table` to `Alias<users2>` due to missing relation
         .select(pets::id)
         .load::<i32>(conn)
         .unwrap();

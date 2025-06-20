@@ -332,6 +332,9 @@ where
 /// A trait used to construct type erased boxed variant of the current query node
 ///
 /// Mainly useful for implementing third party backends
+#[diagnostic::on_unimplemented(
+    note = "this usually means that `{Self}` is no valid SQL for `{DB}`"
+)]
 pub trait IntoBoxedClause<'a, DB> {
     /// Resulting type
     type BoxedClause;

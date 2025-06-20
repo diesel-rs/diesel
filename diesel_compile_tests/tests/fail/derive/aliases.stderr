@@ -160,22 +160,17 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: the trait bound `users::table: JoinTo<pets::table>` is not satisfied
+error[E0277]: cannot join `pets::table` to `Alias<users2>` due to missing relation
   --> tests/fail/derive/aliases.rs:60:10
    |
 LL |         .inner_join(user_alias)
-   |          ^^^^^^^^^^ the trait `JoinTo<pets::table>` is not implemented for `users::table`
+   |          ^^^^^^^^^^ the trait `JoinTo<pets::table>` is not implemented for `Alias<users2>`
    |
+   = note: joining tables directly either requires a `diesel::joinable!` definition or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`
    = help: the following other types implement trait `JoinTo<T>`:
-             `users::table` implements `JoinTo<Alias<S>>`
-             `users::table` implements `JoinTo<BoxedSelectStatement<'_, FromClause<QS>, ST, DB>>`
-             `users::table` implements `JoinTo<JoinOn<Join, On>>`
-             `users::table` implements `JoinTo<Only<S>>`
-             `users::table` implements `JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>`
-             `users::table` implements `JoinTo<Tablesample<S, TSM>>`
-             `users::table` implements `JoinTo<posts::table>`
-             `users::table` implements `JoinTo<query_source::joins::Join<Left, Right, Kind>>`
-   = note: required for `Alias<users2>` to implement `JoinTo<pets::table>`
+             `Alias<S>` implements `JoinTo<Alias<S2>>`
+             `Alias<S>` implements `JoinTo<SelectStatement<FromClause<F>, Select, D, W, O, L, Of, G>>`
+             `Alias<S>` implements `JoinTo<query_source::joins::OnClauseWrapper<Rhs, On>>`
    = note: required for `pets::table` to implement `JoinWithImplicitOnClause<Alias<users2>, Inner>`
 
 error[E0277]: the trait bound `Alias<posts3>: AppearsInFromClause<Alias<posts2>>` is not satisfied

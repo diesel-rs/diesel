@@ -22,7 +22,7 @@ fn main() {
     let stmt = update(users.filter(id.eq(1)))
         .set(name.eq("Bill"))
         .returning(count(id));
-    //~^ ERROR: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggregates<diesel::expression::is_aggregate::No>` is not satisfied
+    //~^ ERROR: mixing aggregate and not aggregate expressions is not allowed in SQL
 
     let new_user = NewUser {
         name: "Foobar".to_string(),
@@ -30,5 +30,5 @@ fn main() {
     let stmt = insert_into(users)
         .values(&new_user)
         .returning((name, count(name)));
-    //~^ ERROR: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
+    //~^ ERROR: mixing aggregate and not aggregate expressions is not allowed in SQL
 }

@@ -38,13 +38,13 @@ fn main() {
     let _ = posts::table
         .distinct_on(posts::user_id)
         .select(dsl::count(posts::id))
-        //~^ ERROR: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
+        //~^ ERROR: mixing aggregate and not aggregate expressions is not allowed in SQL
         .get_result::<i64>(&mut conn);
 
     let _ = posts::table
         .select(dsl::count(posts::id))
         .distinct_on(posts::user_id)
-        //~^ ERROR: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
+        //~^ ERROR: mixing aggregate and not aggregate expressions is not allowed in SQL
         .get_result::<i64>(&mut conn);
 
     let _ = posts::table
@@ -56,6 +56,6 @@ fn main() {
     let _ = posts::table
         .count()
         .distinct_on(posts::user_id)
-        //~^ ERROR: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
+        //~^ ERROR: mixing aggregate and not aggregate expressions is not allowed in SQL
         .get_result::<i64>(&mut conn);
 }

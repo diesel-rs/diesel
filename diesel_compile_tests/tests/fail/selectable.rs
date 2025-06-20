@@ -186,7 +186,7 @@ fn main() {
     let _ = users::table
         .inner_join(posts::table)
         .select(UserWithPostCount::as_select())
-        //~^ ERROR: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
+        //~^ ERROR: mixing aggregate and not aggregate expressions is not allowed in SQL
         .load(&mut conn)
         .unwrap();
 

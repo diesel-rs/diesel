@@ -108,12 +108,12 @@ fn main() {
     // but we cannot mix a aggregated expression with an non aggregate one
     users::table
         .select((
-            //~^ ERROR: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggregates<diesel::expression::is_aggregate::No>` is not satisfied
+            //~^ ERROR: mixing aggregate and not aggregate expressions is not allowed in SQL
             something_that_is_aggregate(),
             some_ungrouped_expression(false),
         ))
         .load::<(Option<i32>, i32)>(&mut conn);
-    //~^ ERROR: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggregates<diesel::expression::is_aggregate::No>` is not satisfied
+    //~^ ERROR: mixing aggregate and not aggregate expressions is not allowed in SQL
 
     // using two potential aggregated expressions works
     users::table

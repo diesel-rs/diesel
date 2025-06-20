@@ -1,4 +1,4 @@
-error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggregates<diesel::expression::is_aggregate::No>` is not satisfied
+error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/custom_returning_requires_nonaggregate.rs:24:20
     |
 24  |         .returning(count(id));
@@ -6,6 +6,9 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
     |          |
     |          required by a bound introduced by this call
     |
+    = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
+    = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
+    = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
     = help: the following other types implement trait `MixedAggregates<Other>`:
               `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
               `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Yes>`
@@ -20,7 +23,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
  
     
-error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
+error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/custom_returning_requires_nonaggregate.rs:32:20
     |
 32  |         .returning((name, count(name)));
@@ -28,6 +31,9 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
     |          |
     |          required by a bound introduced by this call
     |
+    = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
+    = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
+    = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
     = help: the following other types implement trait `MixedAggregates<Other>`:
               `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
               `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`

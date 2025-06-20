@@ -1,21 +1,14 @@
-error[E0277]: cannot select `posts::columns::id` from `users::table`
+error[E0277]: the trait bound `users::table: DistinctOnDsl<posts::columns::id>` is not satisfied
    --> tests/fail/distinct_on_allows_only_fields_of_table.rs:26:22
     |
 26  |         .distinct_on(posts::id)
-    |          ----------- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
-    |          |
-    |          required by a bound introduced by this call
+    |                      ^^^^^^^^^ the trait `DistinctOnDsl<posts::columns::id>` is not implemented for `users::table`
     |
-    = note: `posts::columns::id` is no valid selection for `users::table`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
-              `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::id` implements `SelectableExpression<posts::table>`
-              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-    = note: required for `users::table` to implement `DistinctOnDsl<posts::columns::id>`
+    = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
+    = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
+    = help: the following other types implement trait `DistinctOnDsl<Selection>`:
+              Alias<S>
+              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
 note: required by a bound in `diesel::QueryDsl::distinct_on`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
     |
@@ -25,37 +18,15 @@ LL |     where
 LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
 
-error[E0277]: cannot select `users::columns::name` from `posts::table`
+error[E0277]: the trait bound `posts::table: DistinctOnDsl<(posts::columns::name, users::columns::name)>` is not satisfied
   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:31:10
    |
 LL |         .distinct_on((posts::name, users::name))
-   |          ^^^^^^^^^^^ the trait `SelectableExpression<posts::table>` is not implemented for `users::columns::name`
+   |          ^^^^^^^^^^^ the trait `DistinctOnDsl<(posts::columns::name, users::columns::name)>` is not implemented for `posts::table`
    |
-   = note: `users::columns::name` is no valid selection for `posts::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `users::columns::name` implements `SelectableExpression<JoinOn<Join, On>>`
-             `users::columns::name` implements `SelectableExpression<Only<users::table>>`
-             `users::columns::name` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `users::columns::name` implements `SelectableExpression<Tablesample<users::table, TSM>>`
-             `users::columns::name` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `users::columns::name` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-             `users::columns::name` implements `SelectableExpression<users::table>`
-   = note: required for `(posts::columns::name, users::columns::name)` to implement `SelectableExpression<posts::table>`
-   = note: required for `posts::table` to implement `DistinctOnDsl<(posts::columns::name, users::columns::name)>`
-
-error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:31:10
-   |
-LL |         .distinct_on((posts::name, users::name))
-   |          ^^^^^^^^^^^ expected `Once`, found `Never`
-   |
-note: required for `users::columns::name` to implement `AppearsOnTable<posts::table>`
-  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:8:9
-   |
-8  |         name -> VarChar,
-   |         ^^^^
-   = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: 1 redundant requirement hidden
-   = note: required for `(posts::columns::name, users::columns::name)` to implement `AppearsOnTable<posts::table>`
-   = note: required for `(posts::columns::name, users::columns::name)` to implement `SelectableExpression<posts::table>`
-   = note: required for `posts::table` to implement `DistinctOnDsl<(posts::columns::name, users::columns::name)>`
+   = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
+   = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
+   = help: the following other types implement trait `DistinctOnDsl<Selection>`:
+             Alias<S>
+             SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
+For more information about this error, try `rustc --explain E0277`.
