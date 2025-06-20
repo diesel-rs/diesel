@@ -44,12 +44,14 @@ LL |         id -> Integer,
    = note: required for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, Pg>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
 
    
-error[E0277]: the trait bound `SelectStatement<FromClause<table>, ..., ..., ...>: BoxedDsl<'_, ...>` is not satisfied
+error[E0277]: cannot box `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` for backend `Pg`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:37:50
    |
 LL |     let _ = users::table.filter(posts::id.eq(1)).into_boxed::<Pg>();
    |                                                  ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
    |
+   = note: this either means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` is no valid SQL for `Pg`
+   = note: or this means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
    = help: the following other types implement trait `BoxedDsl<'a, DB>`:
              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
              SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>
@@ -101,12 +103,14 @@ LL |         title -> VarChar,
    = note: required for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, Pg>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>`
 
    
-error[E0277]: the trait bound `SelectStatement<FromClause<table>, ..., ..., ...>: BoxedDsl<'_, ...>` is not satisfied
+error[E0277]: cannot box `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` for backend `Pg`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:53:10
    |
 LL |         .into_boxed::<Pg>();
    |          ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
    |
+   = note: this either means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` is no valid SQL for `Pg`
+   = note: or this means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
    = help: the following other types implement trait `BoxedDsl<'a, DB>`:
              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
              SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>

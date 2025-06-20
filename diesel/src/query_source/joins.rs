@@ -223,6 +223,11 @@ where
 /// [`joinable!`]: crate::joinable!
 /// [`.on`]: crate::query_dsl::JoinOnDsl::on()
 /// [`inner_join`]: crate::query_dsl::QueryDsl::inner_join()
+#[diagnostic::on_unimplemented(
+    message = "cannot join `{T}` to `{Self}` due to missing relation",
+    note = "joining tables directly either requires a `diesel::joinable!` definition \
+            or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`"
+)]
 pub trait JoinTo<T> {
     #[doc(hidden)]
     type FromClause;

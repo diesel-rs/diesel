@@ -24,12 +24,11 @@ fn main() {
 
     users::table
         .distinct_on(posts::id)
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
+        //~^ ERROR: the trait bound `users::table: DistinctOnDsl<posts::columns::id>` is not satisfied
         .get_results(&mut connection);
 
     posts::table
         .distinct_on((posts::name, users::name))
-        //~^ ERROR: cannot select `users::columns::name` from `posts::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: the trait bound `posts::table: DistinctOnDsl<(posts::columns::name, users::columns::name)>` is not satisfied
         .get_result(&mut connection);
 }

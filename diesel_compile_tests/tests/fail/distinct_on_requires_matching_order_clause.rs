@@ -118,32 +118,32 @@ fn main() {
     //
     // we do not allow queries with order clauses that does not contain the distinct value
     let _ = users::table.order_by(users::id).distinct_on(users::name);
-    //~^ ERROR: the trait bound `OrderClause<id>: ValidOrderingForDistinct<DistinctOnClause<name>>` is not satisfied
+    //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
 
     // we do not allow queries where the distinct on expression is not the first expression
     // in our order clause
     let _ = users::table
         .order_by((users::id, users::name))
         .distinct_on(users::name);
-    //~^ ERROR: the trait bound `OrderClause<(id, name)>: ValidOrderingForDistinct<...>` is not satisfied
+    //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
 
     // we cannot workaround that with `then_order_by`
     let _ = users::table
         .order_by(users::id)
         .then_order_by(users::name)
         .distinct_on(users::name);
-    //~^ ERROR: the trait bound `OrderClause<(id, name)>: ValidOrderingForDistinct<...>` is not satisfied
+    //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
 
     // it's not possible to set an invalid order clause after we set
     // the distinct on clause
     let _ = users::table.distinct_on(users::name).order_by(users::id);
-    //~^ ERROR: the trait bound `OrderClause<id>: ValidOrderingForDistinct<DistinctOnClause<name>>` is not satisfied
+    //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
 
     // we cannot box invalid queries
     let _ = users::table
         .order_by(users::id)
         .distinct_on(users::name)
-        //~^ ERROR: the trait bound `OrderClause<id>: ValidOrderingForDistinct<DistinctOnClause<name>>` is not satisfied
+        //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
         .into_boxed();
 
     // it's not possible to set an invalid order clause after we set
@@ -151,7 +151,7 @@ fn main() {
     let _ = users::table
         .order_by((users::id, users::name))
         .distinct_on(users::name)
-        //~^ ERROR: the trait bound `OrderClause<(id, name)>: ValidOrderingForDistinct<...>` is not satisfied
+        //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
         .into_boxed();
 
     // it's not possible to set an invalid order clause after we set
@@ -159,7 +159,7 @@ fn main() {
     let _ = users::table
         .order_by((users::id, users::name))
         .distinct_on((users::name, users::id))
-        //~^ ERROR: the trait bound `OrderClause<(id, name)>: ValidOrderingForDistinct<...>` is not satisfied
+        //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
         .into_boxed();
 
     // it's not possible to set an invalid order clause after we set
@@ -167,7 +167,7 @@ fn main() {
     let _ = users::table
         .order_by(users::id)
         .distinct_on((users::name, users::id))
-        //~^ ERROR: the trait bound `OrderClause<id>: ValidOrderingForDistinct<DistinctOnClause<...>>` is not satisfied
+        //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
         .into_boxed();
 
     // we cannot workaround that with `then_order_by`
@@ -175,7 +175,7 @@ fn main() {
         .order_by(users::id)
         .then_order_by(users::name)
         .distinct_on(users::name)
-        //~^ ERROR: the trait bound `OrderClause<(id, name)>: ValidOrderingForDistinct<...>` is not satisfied
+        //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
         .into_boxed();
 
     // it's not possible to set an invalid order clause after we set
@@ -183,6 +183,6 @@ fn main() {
     let _ = users::table
         .distinct_on(users::name)
         .order_by(users::id)
-        //~^ ERROR: the trait bound `OrderClause<id>: ValidOrderingForDistinct<DistinctOnClause<name>>` is not satisfied
+        //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
         .into_boxed();
 }

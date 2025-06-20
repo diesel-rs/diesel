@@ -1,4 +1,4 @@
-error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisfied
+error[E0277]: cannot join `posts::table` to `users::table` due to missing relation
    --> tests/fail/cannot_join_to_non_joinable_table.rs:30:37
     |
 30  |     let _ = users::table.inner_join(posts::table);
@@ -6,6 +6,7 @@ error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisf
     |                          |
     |                          required by a bound introduced by this call
     |
+    = note: joining tables directly either requires a `diesel::joinable!` definition or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`
     = help: the following other types implement trait `JoinTo<T>`:
               `users::table` implements `JoinTo<Alias<S>>`
               `users::table` implements `JoinTo<BoxedSelectStatement<'_, FromClause<QS>, ST, DB>>`
@@ -24,7 +25,7 @@ LL |     where
 LL |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
 
-error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisfied
+error[E0277]: cannot join `posts::table` to `users::table` due to missing relation
    --> tests/fail/cannot_join_to_non_joinable_table.rs:32:42
     |
 32  |     let _ = users::table.left_outer_join(posts::table);
@@ -32,6 +33,7 @@ error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisf
     |                          |
     |                          required by a bound introduced by this call
     |
+    = note: joining tables directly either requires a `diesel::joinable!` definition or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`
     = help: the following other types implement trait `JoinTo<T>`:
               `users::table` implements `JoinTo<Alias<S>>`
               `users::table` implements `JoinTo<BoxedSelectStatement<'_, FromClause<QS>, ST, DB>>`
@@ -50,12 +52,13 @@ LL |     where
 LL |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::left_outer_join`
 
-error[E0277]: the trait bound `posts::table: JoinTo<users::table>` is not satisfied
+error[E0277]: cannot join `users::table` to `posts::table` due to missing relation
   --> tests/fail/cannot_join_to_non_joinable_table.rs:38:26
    |
 LL |     let _ = users::table.inner_join(join);
    |                          ^^^^^^^^^^ the trait `JoinTo<users::table>` is not implemented for `posts::table`
    |
+   = note: joining tables directly either requires a `diesel::joinable!` definition or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`
    = help: the following other types implement trait `JoinTo<T>`:
              `posts::table` implements `JoinTo<Alias<S>>`
              `posts::table` implements `JoinTo<BoxedSelectStatement<'_, FromClause<QS>, ST, DB>>`

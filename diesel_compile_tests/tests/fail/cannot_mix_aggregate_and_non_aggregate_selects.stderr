@@ -1,21 +1,27 @@
-error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
+error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:23:24
    |
 LL |     let source = users.select((id, count_star()));
    |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
    |
+   = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
+   = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
+   = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
    = help: the following other types implement trait `MixedAggregates<Other>`:
              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
    = note: required for `(columns::id, CountStar)` to implement `ValidGrouping<()>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(columns::id, CountStar)>`
 
-error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
+error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:26:24
    |
 LL |     let source = users.select(nullable_int_col + max(nullable_int_col));
    |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
    |
+   = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
+   = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
+   = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
    = help: the following other types implement trait `MixedAggregates<Other>`:
              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
@@ -23,12 +29,15 @@ LL |     let source = users.select(nullable_int_col + max(nullable_int_col));
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::ops::numeric::Add<columns::nullable_int_col, diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>>`
 
    
-error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
+error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:29:24
    |
 LL |     let source = users.select(f(nullable_int_col, max(nullable_int_col)));
    |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
    |
+   = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
+   = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
+   = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
    = help: the following other types implement trait `MixedAggregates<Other>`:
              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`

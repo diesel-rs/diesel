@@ -13,6 +13,7 @@ use crate::query_source::{
     AppearsInFromClause, FromClause, Never, Pick, QuerySource, SelectStatement, Table,
 };
 
+#[diagnostic::do_not_recommend]
 impl<T, S> JoinTo<T> for Alias<S>
 where
     T: Table,
