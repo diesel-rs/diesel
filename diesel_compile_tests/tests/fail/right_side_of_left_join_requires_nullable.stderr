@@ -19,7 +19,7 @@ LL |         title -> Text,
    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
    
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:40:18
    |
 LL |     let _ = join.select(posts::title);
@@ -65,7 +65,7 @@ LL |         title -> Text,
    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
    
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:48:18
    |
 LL |     let _ = join.select(lower(posts::title));
@@ -139,7 +139,7 @@ LL |         title -> Text,
    = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
    
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:63:18
    |
 LL |     let _ = join.select(posts::title);
@@ -185,7 +185,7 @@ LL |         title -> Text,
    = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
    
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:71:18
    |
 LL |     let _ = join.select(lower(posts::title));
@@ -259,7 +259,7 @@ LL |         title -> Text,
    = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
    
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:86:18
    |
 LL |     let _ = join.select(posts::title);
@@ -305,7 +305,7 @@ LL |         title -> Text,
    = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
    
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:94:18
    |
 LL |     let _ = join.select(lower(posts::title));
@@ -379,7 +379,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
  
     
-error[E0277]: Cannot select `posts::columns::title` from `pets::table`
+error[E0277]: cannot select `posts::columns::title` from `pets::table`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:107:18
     |
 LL |     let _ = join.select(posts::title);
@@ -425,7 +425,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
  
     
-error[E0277]: Cannot select `posts::columns::title` from `pets::table`
+error[E0277]: cannot select `posts::columns::title` from `pets::table`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:115:18
     |
 LL |     let _ = join.select(lower(posts::title));
@@ -499,7 +499,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
  
     
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:128:18
     |
 LL |     let _ = join.select(posts::title);
@@ -545,7 +545,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
  
     
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:136:18
     |
 LL |     let _ = join.select(lower(posts::title));

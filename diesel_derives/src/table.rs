@@ -8,18 +8,18 @@ const DEFAULT_PRIMARY_KEY_NAME: &str = "id";
 pub(crate) fn expand(input: TableDecl) -> TokenStream {
     if input.column_defs.len() > super::diesel_for_each_tuple::MAX_TUPLE_SIZE as usize {
         let txt = if input.column_defs.len() > 128 {
-            "You reached the end. Diesel does not support tables with \
-             more than 128 columns. Consider using less columns."
+            "you reached the end. \nhelp: diesel does not support tables with \
+             more than 128 columns.\nhelp: consider using less columns."
         } else if input.column_defs.len() > 64 {
-            "Table contains more than 64 columns. Consider enabling the \
+            "table contains more than 64 columns. \n consider enabling the \
              `128-column-tables` feature to enable diesels support for \
              tables with more than 64 columns."
         } else if input.column_defs.len() > 32 {
-            "Table contains more than 32 columns. Consider enabling the \
+            "table contains more than 32 columns. \nhelp: consider enabling the \
              `64-column-tables` feature to enable diesels support for \
              tables with more than 32 columns."
         } else {
-            "Table contains more than 16 columns. Consider enabling the \
+            "table contains more than 16 columns. \nhelp: consider enabling the \
              `32-column-tables` feature to enable diesels support for \
              tables with more than 16 columns."
         };
@@ -56,11 +56,13 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
         }
         None => {
             let mut message = format!(
-                "Neither an explicit primary key found nor does an `id` column exist.\n\
-                 Consider explicitly defining a primary key. \n\
-                 For example for specifying `{}` as primary key:\n\n\
-                 table! {{\n",
-                column_names[0],
+                "neither an explicit primary key found nor does an `id` column exist.\n\
+                 consider explicitly defining a primary key. \n\
+                 for example for specifying `{key}` as primary key:\n\n\
+                 table! {{\n
+                     {table}({key}){{\n",
+                key = column_names[0],
+                table = input.table_name,
             );
             message += &format!("\t{table_name} ({}) {{\n", &column_names[0]);
             for c in &input.column_defs {
@@ -131,10 +133,10 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
         if c.column_name == *table_name {
             let span = c.column_name.span();
             let message = format!(
-                "Column `{column_name}` cannot be named the same as it's table.\n\
-                 You may use `#[sql_name = \"{column_name}\"]` to reference the table's \
+                "column `{column_name}` cannot be named the same as it's table.\n\
+                 you may use `#[sql_name = \"{column_name}\"]` to reference the table's \
                  `{column_name}` column \n\
-                 Docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`\n"
+                 docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`\n"
             );
             quote::quote_spanned! { span =>
                 compile_error!(#message);

@@ -1,4 +1,4 @@
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
    --> tests/fail/select_requires_column_from_same_table.rs:20:41
     |
 20  |     let select_id = users::table.select(posts::id);

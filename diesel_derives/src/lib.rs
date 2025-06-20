@@ -1539,13 +1539,16 @@ pub fn __diesel_public_if(attrs: TokenStream, input: TokenStream) -> TokenStream
 /// ```
 #[proc_macro]
 pub fn table_proc(input: TokenStream) -> TokenStream {
+    // include the input in the error output so that rust-analyzer is happy
+    let tokenstream2 = proc_macro2::TokenStream::from(input.clone());
     match syn::parse(input) {
         Ok(input) => table::expand(input).into(),
         Err(_) => quote::quote! {
             compile_error!(
-                "Invalid `table!` syntax. Please see the `table!` macro docs for more info.\n\
-                 Docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`\n"
+                "invalid `table!` syntax \nhelp: please see the `table!` macro docs for more info\n\
+                 help: docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`\n"
             );
+            #tokenstream2
         }
         .into(),
     }

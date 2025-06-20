@@ -42,7 +42,7 @@ struct UserForm4 {
 }
 
 #[derive(AsChangeset)]
-//~^ ERROR: Deriving `AsChangeset` on a structure that only contains primary keys isn't supported.
+//~^ ERROR: deriving `AsChangeset` on a structure that only contains primary keys isn't supported.
 #[diesel(table_name = users)]
 #[primary_key(id, name)]
 struct UserForm5 {

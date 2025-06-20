@@ -1,4 +1,4 @@
-error: All fields of tuple structs must be annotated with `#[diesel(column_name)]`
+error: all fields of tuple structs must be annotated with `#[diesel(column_name)]`
   --> tests/fail/derive/tuple_struct.rs:12:10
    |
 LL | #[derive(AsChangeset)]

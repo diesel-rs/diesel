@@ -1,5 +1,5 @@
-error: References are not supported in `Queryable` types
-       Consider using `std::borrow::Cow<'a, str>` instead
+error: references are not supported in `Queryable` types
+       consider using `std::borrow::Cow<'a, str>` instead
   --> tests/fail/derive/selectable.rs:55:11
    |
 LL |     name: &'a str,

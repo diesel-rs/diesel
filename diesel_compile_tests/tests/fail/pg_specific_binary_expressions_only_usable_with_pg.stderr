@@ -1,4 +1,4 @@
-error[E0277]: Cannot use the `LIKE` operator with expressions of the type `diesel::sql_types::Binary` for the backend `Sqlite`
+error[E0277]: cannot use the `LIKE` operator with expressions of the type `diesel::sql_types::Binary` for the backend `Sqlite`
     --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:21:32
      |
 21   |         .get_result::<Vec<u8>>(&mut connection)
@@ -6,9 +6,9 @@ error[E0277]: Cannot use the `LIKE` operator with expressions of the type `diese
      |          |
      |          required by a bound introduced by this call
      |
-     = note: Expressions of the type `diesel::sql_types::Text` and `diesel::sql_types::Nullable<Text>` are 
+     = note: expressions of the type `diesel::sql_types::Text` and `diesel::sql_types::Nullable<Text>` are 
              allowed for all backends
-     = note: Expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are 
+     = note: expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are 
              allowed for the PostgreSQL backend
      = help: the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is implemented for `Pg`
      = note: required for `Like<name, Bound<Binary, Vec<u8>>>` to implement `QueryFragment<Sqlite>`
@@ -25,7 +25,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
   
      
-error[E0277]: Cannot use the `LIKE` operator with expressions of the type `diesel::sql_types::Binary` for the backend `Mysql`
+error[E0277]: cannot use the `LIKE` operator with expressions of the type `diesel::sql_types::Binary` for the backend `Mysql`
     --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:31:32
      |
 31   |         .get_result::<Vec<u8>>(&mut connection)
@@ -33,9 +33,9 @@ error[E0277]: Cannot use the `LIKE` operator with expressions of the type `diese
      |          |
      |          required by a bound introduced by this call
      |
-     = note: Expressions of the type `diesel::sql_types::Text` and `diesel::sql_types::Nullable<Text>` are 
+     = note: expressions of the type `diesel::sql_types::Text` and `diesel::sql_types::Nullable<Text>` are 
              allowed for all backends
-     = note: Expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are 
+     = note: expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are 
              allowed for the PostgreSQL backend
      = help: the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is implemented for `Pg`
      = note: required for `Like<name, Bound<Binary, Vec<u8>>>` to implement `QueryFragment<Mysql>`

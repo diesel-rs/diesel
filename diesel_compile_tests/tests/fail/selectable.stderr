@@ -48,7 +48,7 @@ note: required for `posts::columns::id` to implement `SelectableExpression<query
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
  
     
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
    --> tests/fail/selectable.rs:165:10
     |
 LL |         .select(UserWithEmbeddedPost::as_select())
@@ -73,7 +73,7 @@ note: required for `posts::columns::id` to implement `SelectableExpression<query
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
  
     
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
    --> tests/fail/selectable.rs:165:10
     |
 LL |         .select(UserWithEmbeddedPost::as_select())
@@ -131,7 +131,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:169:15
      |
 169  |         .load(&mut conn)
@@ -168,7 +168,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
     --> tests/fail/selectable.rs:169:15
      |
 169  |         .load(&mut conn)
@@ -262,7 +262,7 @@ LL |         .select(UserWithPostCount::as_select())
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, Inner>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>`
  
     
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
    --> tests/fail/selectable.rs:197:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -293,7 +293,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
  
     
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
    --> tests/fail/selectable.rs:197:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -354,7 +354,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
  
     
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:201:15
      |
 201  |         .load(&mut conn)
@@ -386,7 +386,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
     --> tests/fail/selectable.rs:201:15
      |
 201  |         .load(&mut conn)
@@ -449,7 +449,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
    --> tests/fail/selectable.rs:211:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -480,7 +480,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
  
     
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
    --> tests/fail/selectable.rs:211:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -541,7 +541,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
  
     
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:215:15
      |
 215  |         .load(&mut conn)
@@ -573,7 +573,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
     --> tests/fail/selectable.rs:215:15
      |
 215  |         .load(&mut conn)
@@ -636,7 +636,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
    --> tests/fail/selectable.rs:224:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -665,7 +665,7 @@ LL |     where
 LL |         E: SelectableExpression<T>,
     |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
 
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
    --> tests/fail/selectable.rs:224:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -722,7 +722,7 @@ LL |     where
 LL |         E: SelectableExpression<T>,
     |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
 
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:228:15
      |
 228  |         .load(&mut conn)
@@ -754,7 +754,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: Cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `users::table`
     --> tests/fail/selectable.rs:228:15
      |
 228  |         .load(&mut conn)

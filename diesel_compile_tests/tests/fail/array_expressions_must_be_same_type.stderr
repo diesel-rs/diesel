@@ -1,4 +1,4 @@
-error[E0277]: Cannot select `f64` from `NoFromClause`
+error[E0277]: cannot select `f64` from `NoFromClause`
    --> tests/fail/array_expressions_must_be_same_type.rs:15:12
     |
 15  |     select(array((1, 3f64)))
@@ -66,7 +66,7 @@ LL |     crate::dsl::select<T>: AsQuery,
     |                            ^^^^^^^ required by this bound in `select`
  
     
-error[E0277]: Cannot select `f64` from `NoFromClause`
+error[E0277]: cannot select `f64` from `NoFromClause`
     --> tests/fail/array_expressions_must_be_same_type.rs:19:33
      |
 19   |         .get_result::<Vec<i32>>(&mut connection)
@@ -229,7 +229,7 @@ LL | where
 LL |     T: AsExpressionList<ST>,
    |        ^^^^^^^^^^^^^^^^^^^^ required by this bound in `array`
 
-error[E0277]: Cannot select `{integer}` from `NoFromClause`
+error[E0277]: cannot select `{integer}` from `NoFromClause`
    --> tests/fail/array_expressions_must_be_same_type.rs:25:12
     |
 25  |     select(array((1, 3f64)))
@@ -297,7 +297,7 @@ LL |     crate::dsl::select<T>: AsQuery,
     |                            ^^^^^^^ required by this bound in `select`
  
     
-error[E0277]: Cannot select `{integer}` from `NoFromClause`
+error[E0277]: cannot select `{integer}` from `NoFromClause`
     --> tests/fail/array_expressions_must_be_same_type.rs:29:33
      |
 29   |         .get_result::<Vec<f64>>(&mut connection)

@@ -11,7 +11,7 @@ LL | #[diesel(primary_key(id, qux(id)))]
    |                             ^
 
 error: unexpected end of input, expected parentheses
-       help: The correct format looks like `#[diesel(key1, key2)]`
+       help: the correct format looks like `#[diesel(key1, key2)]`
   --> tests/fail/derive/bad_primary_key.rs:28:21
    |
 LL | #[diesel(primary_key)]

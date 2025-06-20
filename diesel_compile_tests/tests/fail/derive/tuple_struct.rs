@@ -10,7 +10,7 @@ table! {
 }
 
 #[derive(AsChangeset)]
-//~^ ERROR: All fields of tuple structs must be annotated with `#[diesel(column_name)]`
+//~^ ERROR: all fields of tuple structs must be annotated with `#[diesel(column_name)]`
 #[diesel(table_name = users)]
 struct User(i32, #[diesel(column_name = name)] String, String);
 

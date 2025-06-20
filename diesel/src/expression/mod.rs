@@ -319,7 +319,7 @@ where
 /// join. To select a column or expression using a column from the right side of
 /// a left join, you must call `.nullable()` on it.
 #[diagnostic::on_unimplemented(
-    message = "Cannot select `{Self}` from `{QS}`",
+    message = "cannot select `{Self}` from `{QS}`",
     note = "`{Self}` is no valid selection for `{QS}`"
 )]
 pub trait SelectableExpression<QS: ?Sized>: AppearsOnTable<QS> {}

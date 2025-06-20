@@ -50,8 +50,8 @@ pub fn check(conn: &mut PgConnection) {
 
     // Selecting the raw field on the aliased table
     user_alias.select(users::id).load::<i32>(conn).unwrap();
-    //~^ ERROR: Cannot select `users::columns::id` from `Alias<users2>`
-    //~| ERROR: Cannot select `users::columns::id` from `Alias<users2>`
+    //~^ ERROR: cannot select `users::columns::id` from `Alias<users2>`
+    //~| ERROR: cannot select `users::columns::id` from `Alias<users2>`
 
     let user2_alias = alias!(users as user3);
 

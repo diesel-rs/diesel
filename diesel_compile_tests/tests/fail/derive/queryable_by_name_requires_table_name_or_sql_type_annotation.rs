@@ -9,7 +9,7 @@ struct Foo {
 }
 
 #[derive(QueryableByName)]
-//~^ ERROR: All fields of tuple structs must be annotated with `#[diesel(column_name)]`
+//~^ ERROR: all fields of tuple structs must be annotated with `#[diesel(column_name)]`
 struct Bar(i32, String);
 
 fn main() {}

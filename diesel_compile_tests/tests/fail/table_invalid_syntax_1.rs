@@ -3,7 +3,8 @@ extern crate diesel;
 
 table! {
     12
+    //~^ ERROR: macro expansion ignores `12` and any tokens following
 }
-//~^^^ ERROR: Invalid `table!` syntax. Please see the `table!` macro docs for more info.
+//~^^^^ ERROR: invalid `table!` syntax
 
 fn main() {}

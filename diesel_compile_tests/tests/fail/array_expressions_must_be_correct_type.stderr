@@ -1,4 +1,4 @@
-error[E0277]: Cannot select `f64` from `NoFromClause`
+error[E0277]: cannot select `f64` from `NoFromClause`
    --> tests/fail/array_expressions_must_be_correct_type.rs:9:12
     |
 9   |     select(array((1f64, 3f64))).get_result::<Vec<i32>>(&mut connection);
@@ -66,7 +66,7 @@ LL |     crate::dsl::select<T>: AsQuery,
     |                            ^^^^^^^ required by this bound in `select`
  
     
-error[E0277]: Cannot select `f64` from `NoFromClause`
+error[E0277]: cannot select `f64` from `NoFromClause`
     --> tests/fail/array_expressions_must_be_correct_type.rs:9:56
      |
 9    |     select(array((1f64, 3f64))).get_result::<Vec<i32>>(&mut connection);

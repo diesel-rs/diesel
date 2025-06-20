@@ -1,4 +1,4 @@
-error[E0277]: Cannot select `non_users::columns::noname` from `users::table`
+error[E0277]: cannot select `non_users::columns::noname` from `users::table`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:27:20
     |
 27  |         .returning(non_users::columns::noname);
@@ -24,7 +24,7 @@ LL |     where
 LL |         E: SelectableExpression<T>,
     |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
 
-error[E0277]: Cannot select `non_users::columns::noname` from `users::table`
+error[E0277]: cannot select `non_users::columns::noname` from `users::table`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:32:20
     |
 32  |         .returning(non_users::columns::noname);
@@ -52,7 +52,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
  
     
-error[E0277]: Cannot select `non_users::columns::noname` from `users::table`
+error[E0277]: cannot select `non_users::columns::noname` from `users::table`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:37:20
     |
 37  |         .returning(non_users::columns::noname);
