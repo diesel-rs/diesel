@@ -34,7 +34,6 @@ fn main() {
         .having(users::id.gt(1))
         //~^ ERROR: the trait bound `(): diesel::Expression` is not satisfied
         .load(&mut conn);
-    //~^ ERROR: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text): SingleValue` is not satisfied
 
     users::table
         .select(users::name)

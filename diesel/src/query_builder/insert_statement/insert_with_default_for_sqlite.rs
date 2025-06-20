@@ -363,6 +363,7 @@ where
 {
 }
 
+#[diagnostic::do_not_recommend]
 impl<'query, V, T, QId, Op, U, B, const STATIC_QUERY_ID: bool>
     LoadQuery<'query, SqliteConnection, U, B>
     for (
@@ -407,6 +408,7 @@ where
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<'query, V, T, QId, Op, U, B, Target, ConflictOpt, const STATIC_QUERY_ID: bool>
     LoadQuery<'query, SqliteConnection, U, B>
     for (
@@ -600,6 +602,7 @@ where
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<'query, V, T, QId, Op, U, B, const STATIC_QUERY_ID: bool>
     LoadQuery<'query, SqliteConnection, U, B>
     for (
@@ -633,6 +636,7 @@ where
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<'query, V, T, QId, Op, U, B, Target, ConflictOpt, const STATIC_QUERY_ID: bool>
     LoadQuery<'query, SqliteConnection, U, B>
     for (

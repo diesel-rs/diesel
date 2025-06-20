@@ -11,14 +11,14 @@ error[E0277]: the trait bound `(Integer, Text): CompatibleType<User, _>` is not 
      = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
              on your struct `User` and in your query `.select(User::as_select())` to get a better error message
      = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
-               (ST0, ST1)
-               (ST0, ST1, ST2)
-               (ST0, ST1, ST2, ST3)
-               (ST0, ST1, ST2, ST3, ST4)
-               (ST0, ST1, ST2, ST3, ST4, ST5)
-               (ST0, ST1, ST2, ST3, ST4, ST5, ST6)
-               (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)
-               (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)
+               `Nullable<(ST0, ST1)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4, ST5)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4, ST5, ST6)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
              and N others
      = note: required for `users::table` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`

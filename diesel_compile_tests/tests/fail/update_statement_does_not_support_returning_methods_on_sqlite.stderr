@@ -27,9 +27,9 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
      
 error[E0277]: `ReturningClause<columns::name>` is no valid SQL fragment for the `Sqlite` backend
-    --> tests/fail/update_statement_does_not_support_returning_methods_on_sqlite.rs:25:21
+    --> tests/fail/update_statement_does_not_support_returning_methods_on_sqlite.rs:24:21
      |
-25   |         .get_result(&mut connection);
+24   |         .get_result(&mut connection);
      |          ---------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<columns::name>`
      |          |
      |          required by a bound introduced by this call
@@ -44,41 +44,6 @@ error[E0277]: `ReturningClause<columns::name>` is no valid SQL fragment for the 
      = note: 1 redundant requirement hidden
      = note: required for `UpdateStatement<table, WhereClause<Grouped<Eq<id, ...>>>, ..., ...>` to implement `QueryFragment<Sqlite>`
      = note: required for `UpdateStatement<table, WhereClause<Grouped<Eq<id, ...>>>, ..., ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
-note: required by a bound in `get_result`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-     |
-LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
-     |        ---------- required by a bound in this associated function
-LL |     where
-LL |         Self: LoadQuery<'query, Conn, U>,
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
-     
-error[E0277]: the trait bound `{type error}: FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Sqlite>` is not satisfied
-    --> tests/fail/update_statement_does_not_support_returning_methods_on_sqlite.rs:18:21
-     |
-18   |         .get_result(&mut connection);
-     |          ---------- ^^^^^^^^^^^^^^^ the trait `SingleValue` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text)`
-     |          |
-     |          required by a bound introduced by this call
-     |
-     = note: double check your type mappings via the documentation of `(diesel::sql_types::Integer, diesel::sql_types::Text)`
-     = note: `diesel::sql_query` requires the loading target to column names for loading values.
-             You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
-     = help: the following other types implement trait `SingleValue`:
-               Array<ST>
-               BigInt
-               Bool
-               CChar
-               Cidr
-               Citext
-               Datetime
-               Inet
-             and N others
-     = note: required for `{type error}` to implement `FromStaticSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Sqlite>`
-     = note: required for `{type error}` to implement `FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Sqlite>`
-     = note: required for `(diesel::sql_types::Integer, diesel::sql_types::Text)` to implement `load_dsl::private::CompatibleType<{type error}, Sqlite>`
-     = note: required for `UpdateStatement<table, WhereClause<Grouped<Eq<id, ...>>>, ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, {type error}>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

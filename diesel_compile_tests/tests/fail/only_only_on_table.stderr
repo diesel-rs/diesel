@@ -96,9 +96,9 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::MysqlConnection, _>` is not satisfied
-    --> tests/fail/only_only_on_table.rs:28:28
+    --> tests/fail/only_only_on_table.rs:27:28
      |
-28   |     foo::table.only().load(&mut conn).unwrap();
+27   |     foo::table.only().load(&mut conn).unwrap();
      |                       ---- ^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `Only<foo::table>`
      |                       |
      |                       required by a bound introduced by this call
@@ -110,40 +110,6 @@ error[E0277]: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::MysqlConn
      = note: 2 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<Only<foo::table>>>` to implement `QueryFragment<Mysql>`
      = note: required for `Only<foo::table>` to implement `LoadQuery<'_, diesel::MysqlConnection, _>`
-note: required by a bound in `diesel::RunQueryDsl::load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-     |
-LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
-LL |     where
-LL |         Self: LoadQuery<'query, Conn, U>,
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-
-error[E0277]: the trait bound `{type error}: FromSqlRow<(BigInt,), Sqlite>` is not satisfied
-    --> tests/fail/only_only_on_table.rs:22:28
-     |
-22   |     foo::table.only().load(&mut conn).unwrap();
-     |                       ---- ^^^^^^^^^ the trait `SingleValue` is not implemented for `(BigInt,)`
-     |                       |
-     |                       required by a bound introduced by this call
-     |
-     = note: double check your type mappings via the documentation of `(BigInt,)`
-     = note: `diesel::sql_query` requires the loading target to column names for loading values.
-             You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
-     = help: the following other types implement trait `SingleValue`:
-               Array<ST>
-               BigInt
-               Bool
-               CChar
-               Cidr
-               Citext
-               Datetime
-               Inet
-             and N others
-     = note: required for `{type error}` to implement `FromStaticSqlRow<(BigInt,), Sqlite>`
-     = note: required for `{type error}` to implement `FromSqlRow<(BigInt,), Sqlite>`
-     = note: required for `(BigInt,)` to implement `load_dsl::private::CompatibleType<{type error}, Sqlite>`
-     = note: required for `Only<foo::table>` to implement `LoadQuery<'_, diesel::SqliteConnection, {type error}>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
