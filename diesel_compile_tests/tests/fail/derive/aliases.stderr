@@ -101,7 +101,7 @@ LL | |         .select(users::id)
            `&mut SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>>>: Table`
            which is required by `&mut SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>, Alias<posts2>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<AliasedField<posts2, posts::columns::author>>, NullableExpression<users::columns::id>>>>>>: diesel::QueryDsl`
 
-error[E0277]: Cannot select `users::columns::id` from `Alias<users2>`
+error[E0277]: cannot select `users::columns::id` from `Alias<users2>`
    --> tests/fail/derive/aliases.rs:52:23
     |
 52  |     user_alias.select(users::id).load::<i32>(conn).unwrap();
@@ -130,7 +130,7 @@ LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Select
 LL |         Self: methods::SelectDsl<Selection>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
 
-error[E0277]: Cannot select `users::columns::id` from `Alias<users2>`
+error[E0277]: cannot select `users::columns::id` from `Alias<users2>`
     --> tests/fail/derive/aliases.rs:52:46
      |
 52   |     user_alias.select(users::id).load::<i32>(conn).unwrap();

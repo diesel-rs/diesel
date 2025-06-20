@@ -53,7 +53,7 @@ struct User {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 struct User1<'a> {
     name: &'a str,
-    //~^ ERROR: References are not supported in `Queryable` types
+    //~^ ERROR: references are not supported in `Queryable` types
 }
 
 fn main() {}

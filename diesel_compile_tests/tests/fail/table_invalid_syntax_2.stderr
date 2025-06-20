@@ -1,10 +1,5 @@
-error: Invalid `table!` syntax. Please see the `table!` macro docs for more info.
-       Docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`
- --> tests/fail/table_invalid_syntax_2.rs:4:1
+error: expected one of `!` or `::`, found `wrong`
+ --> tests/fail/table_invalid_syntax_2.rs:5:11
   |
-LL | / table! {
-LL | |      some wrong syntax
-LL | | }
-  | |_^
-  |
-  = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+LL |      some wrong syntax
+  |           ^^^^^ expected one of `!` or `::`

@@ -13,7 +13,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     if model.sql_types.is_empty() {
         return Err(syn::Error::new(
             proc_macro2::Span::call_site(),
-            "At least one `sql_type` is needed for deriving `AsExpression` on a structure.",
+            "at least one `sql_type` is needed for deriving `AsExpression` on a structure.",
         ));
     }
 

@@ -28,8 +28,8 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     if fields_for_update.is_empty() {
         return Err(syn::Error::new(
             proc_macro2::Span::call_site(),
-            "Deriving `AsChangeset` on a structure that only contains primary keys isn't supported.\n\
-             help: If you want to change the primary key of a row, you should do so with `.set(table::id.eq(new_id))`.\n\
+            "deriving `AsChangeset` on a structure that only contains primary keys isn't supported.\n\
+             help: if you want to change the primary key of a row, you should do so with `.set(table::id.eq(new_id))`.\n\
              note: `#[derive(AsChangeset)]` never changes the primary key of a row."
         ));
     }

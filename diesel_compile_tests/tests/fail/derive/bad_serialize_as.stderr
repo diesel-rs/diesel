@@ -1,5 +1,5 @@
 error: unexpected end of input, expected `=`
-       help: The correct format looks like `#[diesel(serialize_as = Foo)]`
+       help: the correct format looks like `#[diesel(serialize_as = Foo)]`
   --> tests/fail/derive/bad_serialize_as.rs:15:26
    |
 LL |     #[diesel(serialize_as)]

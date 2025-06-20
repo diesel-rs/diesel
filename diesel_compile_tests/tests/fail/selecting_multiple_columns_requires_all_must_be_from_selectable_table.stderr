@@ -1,4 +1,4 @@
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
    |
 LL |     let stuff = users::table.select((posts::id, posts::user_id));
@@ -16,7 +16,7 @@ LL |     let stuff = users::table.select((posts::id, posts::user_id));
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
 
-error[E0277]: Cannot select `posts::columns::user_id` from `users::table`
+error[E0277]: cannot select `posts::columns::user_id` from `users::table`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
    |
 LL |     let stuff = users::table.select((posts::id, posts::user_id));
@@ -51,7 +51,7 @@ LL |         id -> Integer,
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
 
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:27:30
    |
 LL |     let stuff = users::table.select((posts::id, users::name));

@@ -164,12 +164,12 @@ fn main() {
         .left_join(posts::table)
         .select(UserWithEmbeddedPost::as_select())
         //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
-        //~| ERROR: Cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: Cannot select `posts::columns::title` from `users::table`
+        //~| ERROR: cannot select `posts::columns::id` from `users::table`
+        //~| ERROR: cannot select `posts::columns::title` from `users::table`
         .load(&mut conn)
         //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
-        //~| ERROR: Cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: Cannot select `posts::columns::title` from `users::table`
+        //~| ERROR: cannot select `posts::columns::id` from `users::table`
+        //~| ERROR: cannot select `posts::columns::title` from `users::table`
         .unwrap();
 
     // group by clauses are considered
@@ -195,12 +195,12 @@ fn main() {
     let _ = diesel::insert_into(users::table)
         .values(users::name.eq(""))
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: Cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: Cannot select `posts::columns::title` from `users::table`
+        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
+        //~| ERROR: cannot select `posts::columns::title` from `users::table`
         //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
         .load(&mut conn)
-        //~^ ERROR: Cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: Cannot select `posts::columns::title` from `users::table`
+        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
+        //~| ERROR: cannot select `posts::columns::title` from `users::table`
         //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
         .unwrap();
 
@@ -209,12 +209,12 @@ fn main() {
     let _ = diesel::update(users::table)
         .set(users::name.eq(""))
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: Cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: Cannot select `posts::columns::title` from `users::table`
+        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
+        //~| ERROR: cannot select `posts::columns::title` from `users::table`
         //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
         .load(&mut conn)
-        //~^ ERROR: Cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: Cannot select `posts::columns::title` from `users::table`
+        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
+        //~| ERROR: cannot select `posts::columns::title` from `users::table`
         //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
         .unwrap();
 
@@ -222,12 +222,12 @@ fn main() {
     // returning clauses
     let _ = diesel::delete(users::table)
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: Cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: Cannot select `posts::columns::title` from `users::table`
+        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
+        //~| ERROR: cannot select `posts::columns::title` from `users::table`
         //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
         .load(&mut conn)
-        //~^ ERROR: Cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: Cannot select `posts::columns::title` from `users::table`
+        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
+        //~| ERROR: cannot select `posts::columns::title` from `users::table`
         //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
         .unwrap();
 

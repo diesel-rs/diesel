@@ -44,7 +44,7 @@ fn user_has_post_with_id_greater_than_2() -> _ {
     // (Literals must have type suffix for auto_type, e.g. 2i64), and that it's properly spanned
     // (on the `2`)
     let n = 2;
-    //~^ ERROR: Literals must have type suffix for auto_type, e.g. 2i64
+    //~^ ERROR: literals must have type suffix for auto_type, e.g. `2_i64`
     //~| ERROR: the placeholder `_` is not allowed within types on item signatures for type aliases
     let m = 3;
     dsl::exists(
@@ -57,7 +57,7 @@ fn user_has_post_with_id_greater_than_2() -> _ {
 #[dsl::auto_type]
 fn less_arguments_than_generics() -> _ {
     posts::user_id.eq::<_>()
-    //~^ ERROR: auto_type: Can't infer generic argument because there is no function argument to infer from (less function arguments than generic arguments)
+    //~^ ERROR: can't infer generic argument because there is no function argument to infer from (less function arguments than generic arguments)
     //~| ERROR: the placeholder `_` is not allowed within types on item signatures for type aliases
     //~| ERROR: this method takes 1 argument but 0 arguments were supplied
 }
@@ -70,7 +70,7 @@ struct User {
         posts::table
             .filter(posts::user_id.eq(users::id))
             .filter(posts::id.gt(2)),
-        //~^ ERROR: Literals must have type suffix for auto_type, e.g. 2i64
+        //~^ ERROR: literals must have type suffix for auto_type, e.g. `2_i64`
         //~| ERROR: the placeholder `_` is not allowed within types on item signatures for associated types
     ))]
     user_has_post_with_id_greater_than_2: bool,

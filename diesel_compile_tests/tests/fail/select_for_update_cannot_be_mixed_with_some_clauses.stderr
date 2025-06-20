@@ -125,7 +125,7 @@ LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
  
     
-error[E0277]: Cannot select `columns::id` from `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+error[E0277]: cannot select `columns::id` from `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
    --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:22:36
     |
 22  |     users.for_update().distinct_on(id);

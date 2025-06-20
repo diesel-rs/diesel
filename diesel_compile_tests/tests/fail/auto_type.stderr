@@ -1,16 +1,16 @@
-error: Literals must have type suffix for auto_type, e.g. 2i64
+error: literals must have type suffix for auto_type, e.g. `2_i64`
   --> tests/fail/auto_type.rs:46:13
    |
 LL |     let n = 2;
    |             ^
 
-error: auto_type: Can't infer generic argument because there is no function argument to infer from (less function arguments than generic arguments)
+error: can't infer generic argument because there is no function argument to infer from (less function arguments than generic arguments)
   --> tests/fail/auto_type.rs:59:25
    |
 LL |     posts::user_id.eq::<_>()
    |                         ^
 
-error: Literals must have type suffix for auto_type, e.g. 2i64
+error: literals must have type suffix for auto_type, e.g. `2_i64`
   --> tests/fail/auto_type.rs:72:34
    |
 LL |             .filter(posts::id.gt(2)),

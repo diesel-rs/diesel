@@ -3,7 +3,7 @@ extern crate diesel;
 
 table! {
      some wrong syntax
+     //~^ ERROR: expected one of `!` or `::`, found `wrong`
 }
-//~^^^ ERROR: Invalid `table!` syntax. Please see the `table!` macro docs for more info.
 
 fn main() {}

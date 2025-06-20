@@ -38,7 +38,7 @@ struct User3 {
 #[diesel(table_name = users)]
 struct User4 {
     #[diesel(column_name = "spa ce")]
-    //~^ ERROR:  Expected valid identifier, found `spa ce`. Diesel does not support column names with whitespaces yet
+    //~^ ERROR:  expected valid identifier, found `spa ce`. Diesel does not support column names with whitespaces yet
     space: String,
 }
 
@@ -46,7 +46,7 @@ struct User4 {
 #[diesel(table_name = users)]
 struct User5 {
     #[diesel(column_name = "spa ce")]
-    //~^ ERROR:  Expected valid identifier, found `spa ce`. Diesel does not support column names with whitespaces yet
+    //~^ ERROR:  expected valid identifier, found `spa ce`. Diesel does not support column names with whitespaces yet
     space: String,
 }
 
