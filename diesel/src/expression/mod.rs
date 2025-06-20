@@ -756,6 +756,12 @@ pub mod is_contained_in_group_by {
 /// themselves or [`is_aggregate::Never`]. [`is_aggregate::Never`] can appear
 /// with anything.
 ///
+#[diagnostic::on_unimplemented(
+    message = "mixing aggregate and not aggregate expressions is not allowed in SQL",
+    note = "you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column",
+    note = "try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause",
+    note = "also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all"
+)]
 pub trait MixedAggregates<Other> {
     /// What is the resulting `IsAggregate` type?
     type Output;

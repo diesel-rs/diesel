@@ -6,6 +6,7 @@ LL |     let command = update(users.select(id)).set(id.eq(1));
    |                   |
    |                   required by a bound introduced by this call
    |
+   = note: only tables or select statements with only the filter clause applied are valid update targets
    = help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<F>>, diesel::query_builder::distinct_clause::NoDistinctClause, W>`
    = note: required for `SelectStatement<FromClause<table>, SelectClause<id>>` to implement `IntoUpdateTarget`
 note: required by a bound in `diesel::update`
@@ -23,6 +24,7 @@ LL |     let command = update(users.order(id)).set(id.eq(1));
    |                   |
    |                   required by a bound introduced by this call
    |
+   = note: only tables or select statements with only the filter clause applied are valid update targets
    = help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<F>>, diesel::query_builder::distinct_clause::NoDistinctClause, W>`
    = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ...>` to implement `IntoUpdateTarget`
 note: required by a bound in `diesel::update`

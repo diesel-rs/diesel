@@ -57,4 +57,9 @@ where
     }
 }
 
+#[diagnostic::on_unimplemented(
+    message = "invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause",
+    note = "the elements in your `DISTINCT ON` clause needs to match the elements \
+            in your `ORDER BY` clause up to which clause contains less elements"
+)]
 pub trait ValidOrderingForDistinct<D> {}

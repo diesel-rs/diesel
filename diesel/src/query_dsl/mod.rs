@@ -1393,6 +1393,7 @@ pub trait QueryDsl: Sized {
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<T: Table> QueryDsl for T {}
 
 /// Methods used to execute queries.

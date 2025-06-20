@@ -36,7 +36,7 @@ LL | pub trait HasTable {
     |
    ::: DIESEL/diesel/diesel/src/query_builder/update_statement/target.rs
     |
-28  | pub trait IntoUpdateTarget: HasTable {
+31  | pub trait IntoUpdateTarget: HasTable {
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 help: consider annotating `User` with `#[derive(Clone, Copy)]`
     |

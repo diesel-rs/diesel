@@ -61,12 +61,15 @@ LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
 
-error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggregates<diesel::expression::is_aggregate::No>` is not satisfied
+error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/valid_grouping_and_boxed_expressions.rs:110:10
     |
 LL |         .select((
     |          ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
     |
+    = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
+    = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
+    = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
     = help: the following other types implement trait `MixedAggregates<Other>`:
               `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
               `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Yes>`
@@ -74,7 +77,7 @@ LL |         .select((
     = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(Box<dyn diesel::BoxableExpression<users::table, Pg, (), diesel::expression::is_aggregate::Yes, SqlType = Nullable<diesel::sql_types::Integer>>>, Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>)>`
  
     
-error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggregates<diesel::expression::is_aggregate::No>` is not satisfied
+error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
     --> tests/fail/valid_grouping_and_boxed_expressions.rs:115:37
      |
 115  |         .load::<(Option<i32>, i32)>(&mut conn);
@@ -82,6 +85,9 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
      |          |
      |          required by a bound introduced by this call
      |
+     = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
+     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
+     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
      = help: the following other types implement trait `MixedAggregates<Other>`:
                `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
                `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Yes>`

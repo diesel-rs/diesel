@@ -4,6 +4,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<table>, SelectClause<n
 LL |         .having(users::id.gt(1))
    |          ^^^^^^ the trait `HavingDsl<_>` is not implemented for `SelectStatement<FromClause<table>, SelectClause<name>>`
    |
+   = note: a `HAVING` clause requires setting a `GROUP BY` clause first
    = help: the trait `HavingDsl<_>` is not implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, _>`
            but it is implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::GroupByClause<_>, _, _>`
    = help: for that trait implementation, expected `diesel::query_builder::group_by_clause::GroupByClause<_>`, found `diesel::query_builder::group_by_clause::NoGroupByClause`
