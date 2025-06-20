@@ -58,6 +58,7 @@ macro_rules! valid_ordering {
         [distinct: $D:ident]
         [order: $($O: ty,)*]
     ) => {
+        #[diagnostic::do_not_recommend]
         impl<$($T,)*> ValidOrderingForDistinct<DistinctOnClause<$D>>
             for OrderClause<($($O,)*)>
         {}
@@ -68,6 +69,7 @@ macro_rules! valid_ordering {
         [distinct: $($D:ident)*]
         [order: $O: ty,]
     ) => {
+        #[diagnostic::do_not_recommend]
         impl<$($T,)*> ValidOrderingForDistinct<DistinctOnClause<($($D,)*)>>
             for OrderClause<$O>
         {}
@@ -99,6 +101,7 @@ macro_rules! valid_ordering {
      [other: $($O:ident)*]
      [$($Ty:ty, )*]
     ) => {
+        #[diagnostic::do_not_recommend]
         impl<$($T,)*> ValidOrderingForDistinct<DistinctOnClause<($($D, )*)>>
             for OrderClause<($($Ty, )* $($O,)*)>
         {}

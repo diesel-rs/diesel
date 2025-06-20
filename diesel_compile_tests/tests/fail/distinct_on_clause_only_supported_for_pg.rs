@@ -15,7 +15,6 @@ fn main() {
 
     users.distinct_on(name).get_results(&mut sqlite_connection);
     //~^ ERROR: `DistinctOnClause<columns::name>` is no valid SQL fragment for the `Sqlite` backend
-    //~| ERROR: the trait bound `{type error}: FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Sqlite>` is not satisfied
 
     let mut mysql_connection = MysqlConnection::establish("mysql://foo").unwrap();
 

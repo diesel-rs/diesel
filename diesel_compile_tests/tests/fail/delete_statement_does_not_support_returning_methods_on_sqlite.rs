@@ -15,7 +15,6 @@ fn main() {
 
     delete(users.filter(name.eq("Bill"))).get_result(&mut connection);
     //~^ ERROR: `ReturningClause<(columns::id, columns::name)>` is no valid SQL fragment for the `Sqlite` backend
-    //~| ERROR: the trait bound `{type error}: FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Sqlite>` is not satisfied
 
     delete(users.filter(name.eq("Bill")))
         .returning(name)

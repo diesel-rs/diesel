@@ -978,14 +978,14 @@ error[E0277]: the trait bound `(SelectBy<Post, _>, Text): CompatibleType<((i32, 
      = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
              on your struct `((i32, std::string::String), std::string::String)` and in your query `.select(((i32, std::string::String), std::string::String)::as_select())` to get a better error message
      = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
-               (ST0, ST1)
-               (ST0, ST1, ST2)
-               (ST0, ST1, ST2, ST3)
-               (ST0, ST1, ST2, ST3, ST4)
-               (ST0, ST1, ST2, ST3, ST4, ST5)
-               (ST0, ST1, ST2, ST3, ST4, ST5, ST6)
-               (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)
-               (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)
+               `Nullable<(ST0, ST1)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4, ST5)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4, ST5, ST6)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
              and N others
      = note: required for `SelectStatement<FromClause<table>, SelectClause<(..., ...)>>` to implement `LoadQuery<'_, _, ((i32, std::string::String), std::string::String)>`
 note: required by a bound in `diesel::RunQueryDsl::load`

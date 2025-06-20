@@ -51,39 +51,4 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
-error[E0277]: the trait bound `{type error}: FromSqlRow<(diesel::sql_types::Integer,), Sqlite>` is not satisfied
-    --> tests/fail/select_for_update_cannot_be_used_on_sqlite.rs:16:15
-     |
-16   |         .load(&mut conn)
-     |          ---- ^^^^^^^^^ the trait `SingleValue` is not implemented for `(diesel::sql_types::Integer,)`
-     |          |
-     |          required by a bound introduced by this call
-     |
-     = note: double check your type mappings via the documentation of `(diesel::sql_types::Integer,)`
-     = note: `diesel::sql_query` requires the loading target to column names for loading values.
-             You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
-     = help: the following other types implement trait `SingleValue`:
-               Array<ST>
-               BigInt
-               Bool
-               CChar
-               Cidr
-               Citext
-               Datetime
-               Inet
-             and N others
-     = note: required for `{type error}` to implement `FromStaticSqlRow<(diesel::sql_types::Integer,), Sqlite>`
-     = note: required for `{type error}` to implement `FromSqlRow<(diesel::sql_types::Integer,), Sqlite>`
-     = note: required for `(diesel::sql_types::Integer,)` to implement `load_dsl::private::CompatibleType<{type error}, Sqlite>`
-     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>` to implement `LoadQuery<'_, SqliteConnection, {type error}>`
-note: required by a bound in `diesel::RunQueryDsl::load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-     |
-LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
-LL |     where
-LL |         Self: LoadQuery<'query, Conn, U>,
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
      For more information about this error, try `rustc --explain E0277`.

@@ -26,12 +26,10 @@ fn main() {
         .distinct_on(posts::id)
         //~^ ERROR: cannot select `posts::columns::id` from `users::table`
         .get_results(&mut connection);
-    //~^ ERROR: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text): SingleValue` is not satisfied
 
     posts::table
         .distinct_on((posts::name, users::name))
         //~^ ERROR: cannot select `users::columns::name` from `posts::table`
         //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
         .get_result(&mut connection);
-    //~^ ERROR: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Text): SingleValue` is not satisfied
 }
