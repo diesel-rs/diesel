@@ -1,8 +1,6 @@
 use diesel::deserialize::{FromSql, FromSqlRow};
 use diesel::expression::AsExpression;
 use diesel::pg::{Pg, PgValue};
-use diesel::result::DatabaseErrorKind;
-use diesel::result::Error::DatabaseError;
 use diesel::serialize::{IsNull, Output, ToSql};
 use diesel::sql_types::SqlType;
 use diesel::{deserialize, serialize};
@@ -43,12 +41,9 @@ impl FromSql<PgProtocolType, Pg> for ProtocolType {
             b"GRPC" => Ok(ProtocolType::GRPC),
             b"HTTP" => Ok(ProtocolType::HTTP),
             b"UDP" => Ok(ProtocolType::UDP),
-            _ => Err(DatabaseError(
-                DatabaseErrorKind::SerializationFailure,
-                Box::new(format!(
-                    "Unrecognized enum variant: {:?}",
-                    String::from_utf8_lossy(bytes.as_bytes())
-                )),
+            _ => Err(format!(
+                "Unrecognized enum variant: {:?}",
+                String::from_utf8_lossy(bytes.as_bytes())
             )
             .into()),
         }
