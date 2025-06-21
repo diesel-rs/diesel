@@ -60,6 +60,11 @@ where
         Conn: 'conn;
 
     fn internal_load(self, conn: &mut Conn) -> QueryResult<Self::RowIter<'_>> {
+        const {
+            // that's required to force evaluating
+            // this constant
+            let _ = T::Query::IS_WINDOW_FUNCTION;
+        }
         Ok(LoadIter {
             cursor: conn.load(self.as_query())?,
             _marker: Default::default(),

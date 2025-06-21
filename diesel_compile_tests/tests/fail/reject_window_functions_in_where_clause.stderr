@@ -1,0 +1,47 @@
+error[E0080]: evaluation of `<diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Lt<diesel::expression::functions::aggregate_expressions::AggregateExpression<diesel::expression::count::count_utils::count<diesel::sql_types::Integer, users::columns::id>, diesel::expression::functions::aggregate_expressions::prefix::NoPrefix, diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder, diesel::expression::functions::aggregate_expressions::aggregate_filter::NoFilter, diesel::expression::functions::aggregate_expressions::over_clause::OverClause>, diesel::expression::bound::Bound<diesel::sql_types::BigInt, i64>>>> as diesel::query_builder::QueryId>::IS_WINDOW_FUNCTION::{constant#0}` failed
+  --> DIESEL/diesel/diesel/src/query_builder/where_clause.rs
+   |
+LL |             panic!("Using window functions in WHERE clauses is not supported");
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ evaluation panicked: Using window functions in WHERE clauses is not supported
+
+note: erroneous constant encountered
+  --> DIESEL/diesel/diesel/src/query_builder/where_clause.rs
+   |
+LL |       const IS_WINDOW_FUNCTION: bool = const {
+   |  ______________________________________^
+LL | |         if Expr::IS_WINDOW_FUNCTION {
+LL | |             panic!("Using window functions in WHERE clauses is not supported");
+...  |
+LL | |     };
+   | |_____^
+
+note: erroneous constant encountered
+  --> DIESEL/diesel/diesel/src/query_builder/select_statement/mod.rs
+   |
+LL | #[derive(Debug, Clone, Copy, QueryId)]
+   |                              ^^^^^^^
+   |
+   = note: this note originates in the derive macro `QueryId` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+note: erroneous constant encountered
+  --> DIESEL/diesel/diesel/src/query_dsl/load_dsl.rs
+   |
+LL |             let _ = T::Query::IS_WINDOW_FUNCTION;
+   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+note: erroneous constant encountered
+  --> DIESEL/diesel/diesel/src/query_dsl/load_dsl.rs
+   |
+LL | /         const {
+LL | |             // that's required to force evaluating
+LL | |             // this constant
+LL | |             let _ = T::Query::IS_WINDOW_FUNCTION;
+LL | |         }
+   | |_________^
+
+note: the above error was encountered while instantiating `fn <diesel::query_builder::select_statement::SelectStatement<diesel::query_builder::from_clause::FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<diesel::dsl::CountStar>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Lt<diesel::expression::functions::aggregate_expressions::AggregateExpression<diesel::expression::count::count_utils::count<diesel::sql_types::Integer, users::columns::id>, diesel::expression::functions::aggregate_expressions::prefix::NoPrefix, diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder, diesel::expression::functions::aggregate_expressions::aggregate_filter::NoFilter, diesel::expression::functions::aggregate_expressions::over_clause::OverClause>, diesel::expression::bound::Bound<diesel::sql_types::BigInt, i64>>>>> as diesel::query_dsl::LoadQuery<'_, diesel::PgConnection, i64>>::internal_load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |         self.internal_load(conn)?.collect()
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^
+For more information about this error, try `rustc --explain E0080`.

@@ -21,3 +21,6 @@ pub type avg<Expr> = super::aggregate_folding::avg<SqlTypeOf<Expr>, Expr>;
 
 /// The return type of [`exists(expr)`](crate::dsl::exists())
 pub type exists<Expr> = crate::expression::exists::Exists<Expr>;
+
+#[doc(inline)]
+pub use super::aggregate_expressions::dsl::*;

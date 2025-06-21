@@ -70,8 +70,21 @@ impl<DB> From<NoWhereClause> for BoxedWhereClause<'_, DB> {
 }
 
 /// The `WHERE` clause of a query.
-#[derive(Debug, Clone, Copy, QueryId)]
+#[derive(Debug, Clone, Copy)]
 pub struct WhereClause<Expr>(Expr);
+
+impl<Expr: diesel::query_builder::QueryId> diesel::query_builder::QueryId for WhereClause<Expr> {
+    type QueryId = WhereClause<<Expr as diesel::query_builder::QueryId>::QueryId>;
+    const HAS_STATIC_QUERY_ID: bool =
+        <Expr as diesel::query_builder::QueryId>::HAS_STATIC_QUERY_ID && true;
+
+    const IS_WINDOW_FUNCTION: bool = const {
+        if Expr::IS_WINDOW_FUNCTION {
+            panic!("Using window functions in WHERE clauses is not supported");
+        }
+        false
+    };
+}
 
 impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr>
 where
