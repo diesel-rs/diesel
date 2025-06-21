@@ -455,12 +455,9 @@ impl FromSql<PgProtocolType, Pg> for ProtocolType {
             b"GRPC" => Ok(ProtocolType::GRPC),
             b"HTTP" => Ok(ProtocolType::HTTP),
             b"UDP" => Ok(ProtocolType::UDP),
-            _ => Err(DatabaseError(
-                DatabaseErrorKind::SerializationFailure,
-                Box::new(format!(
-                    "Unrecognized enum variant: {:?}",
-                    String::from_utf8_lossy(bytes.as_bytes())
-                )),
+            _ => Err(format!(
+                "Unrecognized enum variant: {:?}",
+                String::from_utf8_lossy(bytes.as_bytes())
             )
             .into()),
         }
