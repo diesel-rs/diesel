@@ -28,6 +28,11 @@ pub enum Error {
         Box<dyn DatabaseErrorInformation + Send + Sync>,
     ),
 
+    /// A user-defined non-database error occured.
+    ApplicationError(
+        Box<dyn StdError + Send + Sync>,
+    ),
+
     /// No rows were returned by a query expected to return at least one row.
     ///
     /// This variant is only returned by [`get_result`] and [`first`]. [`load`]
@@ -337,6 +342,7 @@ impl Display for Error {
         match *self {
             Error::InvalidCString(ref nul_err) => write!(f, "{nul_err}"),
             Error::DatabaseError(_, ref e) => write!(f, "{}", e.message()),
+            Error::ApplicationError(ref e) => e.fmt(f),
             Error::NotFound => f.write_str("Record not found"),
             Error::QueryBuilderError(ref e) => e.fmt(f),
             Error::DeserializationError(ref e) => e.fmt(f),
