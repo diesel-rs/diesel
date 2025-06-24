@@ -6,6 +6,8 @@ on:
       - try_to_fix_metrics_job
 
 name: Metrics
+permissions:
+  contents: "read"
 
 env:
   CARGO_INCREMENTAL: 0
