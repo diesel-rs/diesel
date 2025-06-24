@@ -24,6 +24,7 @@ pub trait MySpanned {
     fn span(&self) -> Span;
 }
 
+#[derive(Clone)]
 pub struct AttributeSpanWrapper<T> {
     pub item: T,
     pub attribute_span: Span,

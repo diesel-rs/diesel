@@ -4,8 +4,35 @@ error: expected integer literal
 LL |     #[variadic(not_a_literal_number)]
   |                ^^^^^^^^^^^^^^^^^^^^
 
-error: invalid variadic argument count: not enough function arguments
-  --> tests/fail/derive/bad_variadic.rs:11:16
+error: cannot find attribute `variadic` in this scope
+ --> tests/fail/derive/bad_variadic.rs:7:7
+  |
+LL |     #[variadic(not_a_literal_number)]
+  |       ^^^^^^^^
+
+error: cannot find attribute `variadic` in this scope
+  --> tests/fail/derive/bad_variadic.rs:11:7
    |
 LL |     #[variadic(3)]
-   |                ^
+   |       ^^^^^^^^
+
+error[E0404]: expected trait, found derive macro `SqlType`
+  --> tests/fail/derive/bad_variadic.rs:13:13
+   |
+LL |     fn g<A: SqlType>(a: A);
+   |             ^^^^^^^ not a trait
+   |
+help: consider importing one of these traits instead
+   |
+3  + use crate::sql_types::SqlType;
+   |
+3  + use diesel::sql_types::SqlType;
+   |
+
+error[E0703]: invalid ABI: found `SQL`
+ --> tests/fail/derive/bad_variadic.rs:6:8
+  |
+LL | extern "SQL" {
+  |        ^^^^^ invalid ABI
+  |
+  = note: invoke `rustc --print=calling-conventions` for a full list of supported calling conventions

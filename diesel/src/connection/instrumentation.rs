@@ -356,6 +356,12 @@ impl DynInstrumentation {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
+    #[cfg(any(
+        feature = "postgres",
+        feature = "sqlite",
+        feature = "mysql",
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    ))]
     pub(crate) fn default_instrumentation() -> Self {
         Self {
             inner: get_default_instrumentation(),
@@ -367,6 +373,12 @@ impl DynInstrumentation {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
+    #[cfg(any(
+        feature = "postgres",
+        feature = "sqlite",
+        feature = "mysql",
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    ))]
     pub(crate) fn none() -> Self {
         Self {
             inner: None,
@@ -378,6 +390,12 @@ impl DynInstrumentation {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
+    #[cfg(any(
+        feature = "postgres",
+        feature = "sqlite",
+        feature = "mysql",
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    ))]
     pub(crate) fn on_connection_event(&mut self, event: InstrumentationEvent<'_>) {
         // This implementation is not necessary to be able to call this method on this object
         // because of the already existing Deref impl.
