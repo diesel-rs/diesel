@@ -5,6 +5,8 @@ on:
       - completed
 
 name: Track Benchmarks
+permissions:
+  contents: "read"
 
 jobs:
   track_benchmarks:

@@ -238,7 +238,7 @@ impl DieselMigrationName {
 }
 
 impl MigrationName for DieselMigrationName {
-    fn version(&self) -> MigrationVersion {
+    fn version(&self) -> MigrationVersion<'_> {
         self.version.as_owned()
     }
 }

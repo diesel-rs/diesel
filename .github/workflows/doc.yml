@@ -2,9 +2,13 @@ on:
   push:
     branches:
       - master
-      - '0.[0-9]+.x'
-      - '1.[0-9]+.x'
-      - '2.[0-9]+.x'
+      - "0.[0-9]+.x"
+      - "1.[0-9]+.x"
+      - "2.[0-9]+.x"
+
+permissions:
+  contents: "write"
+  pages: "write"
 
 name: Publish Docs
 jobs:
@@ -13,38 +17,37 @@ jobs:
     name: Publish Docs
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout sources
-      uses: actions/checkout@v4
-    - name: Cache cargo registry
-      uses: Swatinem/rust-cache@v2
-      with:
-        key: cargo-doc-cargo-${{ hashFiles('**/Cargo.toml') }}
-    - name: Get the branch name
-      id: current_branch
-      shell: bash
-      run: |
-        echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-    - uses: dtolnay/rust-toolchain@nightly
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install libmysqlclient-dev libsqlite3-dev libpq-dev libtirpc-dev
-    - name: Build documentation
-      env:
-        RUSTFLAGS: "--cfg docsrs"
-        RUSTDOCFLAGS: "--cfg docsrs"
-      run:
-        cargo +nightly doc --manifest-path diesel/Cargo.toml --features "postgres sqlite mysql extras i-implement-a-third-party-backend-and-opt-into-breaking-changes" --workspace
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Cache cargo registry
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: cargo-doc-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - name: Get the branch name
+        id: current_branch
+        shell: bash
+        run: |
+          echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libmysqlclient-dev libsqlite3-dev libpq-dev libtirpc-dev
+      - name: Build documentation
+        env:
+          RUSTFLAGS: "--cfg docsrs"
+          RUSTDOCFLAGS: "--cfg docsrs"
+        run: cargo +nightly doc --manifest-path diesel/Cargo.toml --features "postgres sqlite mysql extras i-implement-a-third-party-backend-and-opt-into-breaking-changes" --workspace
 
-    - name: Publish documentation
-      if: success()
-      uses: JamesIves/github-pages-deploy-action@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        branch: gh-pages # The branch the action should deploy to.
-        folder: target/doc # The folder the action should deploy.
-        # Store documentation for each branch in a different folder
-        # This allows us to differentiate between docs for master
-        # and docs for already released versions
-        target-folder: ${{ steps.current_branch.outputs.branch }}
-        single-commit: true
+      - name: Publish documentation
+        if: success()
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages # The branch the action should deploy to.
+          folder: target/doc # The folder the action should deploy.
+          # Store documentation for each branch in a different folder
+          # This allows us to differentiate between docs for master
+          # and docs for already released versions
+          target-folder: ${{ steps.current_branch.outputs.branch }}
+          single-commit: true

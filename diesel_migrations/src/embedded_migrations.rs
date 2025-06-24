@@ -71,7 +71,7 @@ impl EmbeddedName {
 }
 
 impl MigrationName for EmbeddedName {
-    fn version(&self) -> MigrationVersion {
+    fn version(&self) -> MigrationVersion<'_> {
         migrations_internals::version_from_string(self.name)
             .expect(
                 "This name contains a valid version. We checked this at compile time by our macro",

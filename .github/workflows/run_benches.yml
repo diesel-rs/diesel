@@ -3,6 +3,8 @@ on:
     types: [labeled, opened, reopened, synchronize]
 
 name: Run and Cache Benchmarks
+permissions:
+  contents: "read"
 
 jobs:
   run_benchmarks:

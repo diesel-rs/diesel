@@ -11,6 +11,9 @@ on:
       - "2.[0-9]+.x"
 
 name: CI Tests
+permissions:
+  contents: "read"
+  actions: "write"
 
 # See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency.
 # This will ensure that only one commit will be running tests at a time on each PR.
