@@ -49,7 +49,7 @@ pub mod sql_types {
     /// [`OID`]: https://www.postgresql.org/docs/current/datatype-oid.html
     #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[diesel(postgres_type(oid = 26, array_oid = 1018))]
+    #[diesel(postgres_type(oid = 26, array_oid = 1028))]
     pub struct Oid;
 
     /// The ["timestamp with time zone" SQL type][tz], which PostgreSQL abbreviates
