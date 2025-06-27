@@ -14,6 +14,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
+* Support for libsqlite3-sys 0.34.0 compatibility
+* Updated version constraints to allow latest SQLite library versions
 * Added `limit()` and `offset()` DSL to combination clauses such as `UNION`
 * Fixed `#[derive(Identifiable)]` ignoring attribute `#[diesel(serialize_as)]` on primary keys
 * Added embedded struct support for `AsChangeset` via `#[diesel(embed)]`
