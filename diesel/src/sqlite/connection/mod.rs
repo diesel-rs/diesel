@@ -2,7 +2,7 @@
 extern crate libsqlite3_sys as ffi;
 
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
-use sqlite_wasm_rs::export as ffi;
+use sqlite_wasm_rs as ffi;
 
 mod bind_collector;
 mod functions;
