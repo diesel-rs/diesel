@@ -6,7 +6,7 @@ use crate::QueryResult;
 #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 use libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
-use sqlite_wasm_rs::export as ffi;
+use sqlite_wasm_rs as ffi;
 
 #[derive(Debug, Default)]
 pub struct SqliteBindCollector<'a> {
