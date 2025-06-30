@@ -698,7 +698,7 @@ impl Display for ColumnDefinitions<'_> {
                     writeln!(out, r#"#[sql_name = "{}"]"#, column.sql_name)?;
                 }
                 if let Some(max_length) = column.ty.max_length {
-                    writeln!(out, r#"#[max_length = {}]"#, max_length)?;
+                    writeln!(out, r#"#[max_length = {max_length}]"#)?;
                 }
 
                 writeln!(out, "{} -> {},", column.rust_name, column_type)?;

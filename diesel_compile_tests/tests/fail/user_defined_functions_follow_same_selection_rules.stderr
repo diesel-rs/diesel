@@ -2,8 +2,13 @@ error[E0271]: type mismatch resolving `<foo<Bound<Integer, i32>> as Expression>:
   --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:37:38
    |
 LL |     let _ = users::table.filter(name.eq(foo(1)));
-   |                                      ^^ expected `Text`, found `Integer`
+   |                                      ^^ type mismatch resolving `<foo<Bound<Integer, i32>> as Expression>::SqlType == Text`
    |
+note: expected this to be `diesel::sql_types::Text`
+  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:28:44
+   |
+LL | define_sql_function!(fn foo(x: Integer) -> Integer);
+   |                                            ^^^^^^^
    = note: required for `foo_utils::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>` to implement `AsExpression<diesel::sql_types::Text>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`

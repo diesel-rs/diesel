@@ -50,16 +50,22 @@ LL |         .select(maybe_grouped(true))
    |                 ^^^^^^^^^^^^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
    |
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
-  --> tests/fail/valid_grouping_and_boxed_expressions.rs:12:9
+  --> tests/fail/valid_grouping_and_boxed_expressions.rs:9:1
    |
-LL |         name -> Text,
-   |         ^^^^
+9  | / table! {
+LL | |     users {
+LL | |         id -> Integer,
+LL | |         name -> Text,
+LL | |     }
+LL | | }
+   | |_^
 note: required for `columns::id` to implement `ValidGrouping<columns::name>`
   --> tests/fail/valid_grouping_and_boxed_expressions.rs:11:9
    |
 LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/valid_grouping_and_boxed_expressions.rs:110:10

@@ -6,7 +6,7 @@ LL | #[diesel(postgres_type)]
   |                       ^
 
 error: expected `oid` and `array_oid` attribute or `name` attribute
-       help: The correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
+       help: the correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
   --> tests/fail/derive/bad_postgres_type.rs:11:24
    |
 LL | #[diesel(postgres_type())]
@@ -38,21 +38,21 @@ LL | #[diesel(postgres_type(name = Foo))]
    |                               ^^^
 
 error: unexpected `oid` when `name` is present
-       help: The correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
+       help: the correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
   --> tests/fail/derive/bad_postgres_type.rs:36:38
    |
 LL | #[diesel(postgres_type(name = "foo", oid = 2, array_oid = 3))]
    |                                      ^^^
 
 error: unexpected `array_oid` when `name` is present
-       help: The correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
+       help: the correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
   --> tests/fail/derive/bad_postgres_type.rs:41:38
    |
 LL | #[diesel(postgres_type(name = "foo", array_oid = 3))]
    |                                      ^^^^^^^^^
 
 error: expected `oid` and `array_oid` attribute or `name` attribute
-       help: The correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
+       help: the correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
   --> tests/fail/derive/bad_postgres_type.rs:46:31
    |
 LL | #[diesel(postgres_type(oid = 2))]
