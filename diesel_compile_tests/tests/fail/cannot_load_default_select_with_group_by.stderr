@@ -7,10 +7,15 @@ error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Outpu
      |          required by a bound introduced by this call
      |
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
-    --> tests/fail/cannot_load_default_select_with_group_by.rs:8:9
+    --> tests/fail/cannot_load_default_select_with_group_by.rs:5:1
      |
-8    |         name -> Text,
-     |         ^^^^
+5    | / table! {
+6    | |     users {
+7    | |         id -> Integer,
+8    | |         name -> Text,
+9    | |     }
+10   | | }
+     | |_^
 note: required for `columns::id` to implement `ValidGrouping<columns::name>`
     --> tests/fail/cannot_load_default_select_with_group_by.rs:7:9
      |
@@ -30,4 +35,5 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     For more information about this error, try `rustc --explain E0271`.
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0271`.

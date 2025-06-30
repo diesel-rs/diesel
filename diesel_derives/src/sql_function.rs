@@ -303,7 +303,7 @@ fn add_variadic_doc_comments(attributes: &mut Vec<Attribute>, fn_name: &str) {
             })
             .unwrap_or(attributes.len());
 
-    let fn_family = format!("`{0}_0`, `{0}_1`, ... `{0}_n`", fn_name);
+    let fn_family = format!("`{fn_name}_0`, `{fn_name}_1`, ... `{fn_name}_n`");
 
     let doc_comments: Vec<Attribute> = parse_quote! {
         ///
@@ -788,7 +788,7 @@ fn expand_nonvariadic(
             let arg_names_iter: Vec<_> = args.iter().map(|arg| arg.name.clone()).collect();
 
             let return_type_module_name =
-                Ident::new(&format!("__{}_return_type", fn_name), fn_name.span());
+                Ident::new(&format!("__{fn_name}_return_type"), fn_name.span());
 
             let doc =
                 format!("Return type of the [`{fn_name}()`](fn@super::{fn_name}) SQL function.");

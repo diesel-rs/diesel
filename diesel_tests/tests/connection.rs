@@ -185,7 +185,7 @@ fn use_the_same_connection_multiple_times() {
                     {
                         panic!("The fix didn't solve the problem!?")
                     }
-                    Err(e) => panic!("Caused by: {}", e),
+                    Err(e) => panic!("Caused by: {e}"),
                 }
             }
             Err(DatabaseError(DatabaseErrorKind::UnableToSendCommand, message))
@@ -193,7 +193,7 @@ fn use_the_same_connection_multiple_times() {
             {
                 panic!("The fix didn't solve the problem!?")
             }
-            Err(e) => panic!("Caused by: {}", e),
+            Err(e) => panic!("Caused by: {e}"),
         }
     }
 

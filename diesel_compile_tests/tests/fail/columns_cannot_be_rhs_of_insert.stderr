@@ -2,10 +2,20 @@ error[E0271]: type mismatch resolving `<NoFromClause as AppearsInFromClause<tabl
     --> tests/fail/columns_cannot_be_rhs_of_insert.rs:20:18
      |
 20   |         .execute(&mut conn)
-     |          ------- ^^^^^^^^^ expected `Once`, found `Never`
+     |          ------- ^^^^^^^^^ type mismatch resolving `<NoFromClause as AppearsInFromClause<table>>::Count == Once`
      |          |
      |          required by a bound introduced by this call
      |
+note: expected this to be `diesel::query_source::Once`
+    --> tests/fail/columns_cannot_be_rhs_of_insert.rs:6:1
+     |
+6    | / table! {
+7    | |     users {
+8    | |         id -> Integer,
+9    | |         name -> Text,
+...    |
+12   | | }
+     | |_^
 note: required for `columns::hair_color` to implement `AppearsOnTable<NoFromClause>`
     --> tests/fail/columns_cannot_be_rhs_of_insert.rs:10:9
      |
@@ -28,4 +38,5 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
   
-     For more information about this error, try `rustc --explain E0271`.
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0271`.

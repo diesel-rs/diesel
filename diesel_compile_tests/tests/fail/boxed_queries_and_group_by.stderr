@@ -18,10 +18,15 @@ LL |         .select(users::id)
    |          ^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
    |
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
-  --> tests/fail/boxed_queries_and_group_by.rs:8:9
+  --> tests/fail/boxed_queries_and_group_by.rs:5:1
    |
-8  |         name -> Text,
-   |         ^^^^
+5  | / table! {
+6  | |     users {
+7  | |         id -> Integer,
+8  | |         name -> Text,
+9  | |     }
+LL | | }
+   | |_^
 note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
   --> tests/fail/boxed_queries_and_group_by.rs:7:9
    |
@@ -30,7 +35,8 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot box `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` for backend `_`
   --> tests/fail/boxed_queries_and_group_by.rs:62:10
    |
@@ -51,10 +57,15 @@ LL |         .select(users::id)
    |          ^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
    |
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
-  --> tests/fail/boxed_queries_and_group_by.rs:8:9
+  --> tests/fail/boxed_queries_and_group_by.rs:5:1
    |
-8  |         name -> Text,
-   |         ^^^^
+5  | / table! {
+6  | |     users {
+7  | |         id -> Integer,
+8  | |         name -> Text,
+9  | |     }
+LL | | }
+   | |_^
 note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
   --> tests/fail/boxed_queries_and_group_by.rs:7:9
    |
@@ -63,7 +74,8 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `BoxedSelectStatement<'_, Text, FromClause<table>, _, name>` to implement `SelectDsl<users::columns::id>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: the trait bound `BoxedSelectStatement<'_, Text, FromClause<table>, _, name>: Table` is not satisfied
   --> tests/fail/boxed_queries_and_group_by.rs:77:10
    |

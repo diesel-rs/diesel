@@ -284,10 +284,7 @@ fn filter_by_in_explicit_array() {
     if !debug_subselect
         .contains(r#"= ANY(ARRAY(SELECT "users_alias"."name" FROM "users" AS "users_alias"))"#)
     {
-        panic!(
-            "Generated query (subselect) does not contain expected SQL: {}",
-            debug_subselect
-        );
+        panic!("Generated query (subselect) does not contain expected SQL: {debug_subselect}");
     }
 
     assert_eq!(
@@ -312,8 +309,7 @@ fn filter_by_in_explicit_array() {
         debug_query::<diesel::pg::Pg, _>(&query_array_construct).to_string();
     if !debug_array_construct.contains("= ANY(ARRAY[(SELECT") {
         panic!(
-            "Generated query (array construct) does not contain expected SQL: {}",
-            debug_array_construct
+            "Generated query (array construct) does not contain expected SQL: {debug_array_construct}"
         );
     }
 

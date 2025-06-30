@@ -20,21 +20,42 @@ error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == V
   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:33:24
    |
 LL |     insert_into(posts).values((users, users));
-   |                        ^^^^^^ expected `ValuesClause<_, table>`, found `InsertFromSelect<..., ...>`
+   |                        ^^^^^^ type mismatch resolving `<table as Insertable<table>>::Values == ValuesClause<_, table>`
    |
+note: expected this to be `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
+  --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:6:1
+   |
+6  | / table! {
+7  | |     users {
+8  | |         id -> Integer,
+9  | |         name -> Text,
+...  |
+LL | | }
+   | |_^
    = note: expected struct `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
               found struct `InsertFromSelect<SelectStatement<FromClause<table>>, (..., ..., ...)>`
    = note: required for `(users::table, users::table)` to implement `diesel::Insertable<posts::table>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == ValuesClause<_, table>`
    --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:33:31
     |
 33  |     insert_into(posts).values((users, users));
-    |                        ------ ^^^^^^^^^^^^^^ expected `ValuesClause<_, table>`, found `InsertFromSelect<..., ...>`
+    |                        ------ ^^^^^^^^^^^^^^ type mismatch resolving `<table as Insertable<table>>::Values == ValuesClause<_, table>`
     |                        |
     |                        required by a bound introduced by this call
     |
+note: expected this to be `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
+   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:6:1
+    |
+6   | / table! {
+7   | |     users {
+8   | |         id -> Integer,
+9   | |         name -> Text,
+...   |
+12  | | }
+    | |_^
     = note: expected struct `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
                found struct `InsertFromSelect<SelectStatement<FromClause<table>>, (..., ..., ...)>`
     = note: required for `(users::table, users::table)` to implement `diesel::Insertable<posts::table>`
@@ -46,3 +67,5 @@ LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
 LL |     where
 LL |         U: Insertable<T>,
     |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

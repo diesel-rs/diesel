@@ -22,7 +22,7 @@ fn postgres_connection() -> PgConnection {
         .expect("PG_DATABASE_URL must be set");
 
     let mut conn = PgConnection::establish(&database_url)
-        .unwrap_or_else(|e| panic!("Failed to connect, error: {}", e));
+        .unwrap_or_else(|e| panic!("Failed to connect, error: {e}"));
     conn.begin_test_transaction()
         .expect("Failed to begin test transaction");
     run_db_migration(&mut conn);

@@ -35,8 +35,7 @@ impl Backend {
                 #[cfg(not(feature = "postgres"))]
                 {
                     panic!(
-                        "Database url `{}` requires the `postgres` feature but it's not enabled.",
-                        database_url
+                        "Database url `{database_url}` requires the `postgres` feature but it's not enabled."
                     );
                 }
             }
@@ -49,8 +48,7 @@ impl Backend {
                 #[cfg(not(feature = "mysql"))]
                 {
                     panic!(
-                        "Database url `{}` requires the `mysql` feature but it's not enabled.",
-                        database_url
+                        "Database url `{database_url}` requires the `mysql` feature but it's not enabled."
                     );
                 }
             }
@@ -60,8 +58,7 @@ impl Backend {
             _ => {
                 if database_url.starts_with("sqlite://") {
                     panic!(
-                        "Database url `{}` requires the `sqlite` feature but it's not enabled.",
-                        database_url
+                        "Database url `{database_url}` requires the `sqlite` feature but it's not enabled."
                     );
                 }
 
