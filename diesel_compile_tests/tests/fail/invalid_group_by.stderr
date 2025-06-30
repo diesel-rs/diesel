@@ -19,10 +19,10 @@ LL |         .select(users::id)
    |          ^^^^^^ type mismatch resolving `<id as IsContainedInGroupBy<id>>::Output == Yes`
    |
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
-  --> tests/fail/invalid_group_by.rs:15:9
+  --> tests/fail/invalid_group_by.rs:20:1
    |
-LL |         id -> Integer,
-   |         ^^
+LL | allow_columns_to_appear_in_same_group_by_clause!(users::id, posts::id);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 note: required for `users::columns::id` to implement `ValidGrouping<posts::columns::id>`
   --> tests/fail/invalid_group_by.rs:8:9
    |
@@ -31,7 +31,8 @@ note: required for `users::columns::id` to implement `ValidGrouping<posts::colum
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
-   
+      = note: this error originates in the macro `__static_cond` which comes from the expansion of the macro `allow_columns_to_appear_in_same_group_by_clause` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<FromClause<table> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:37:10
    |

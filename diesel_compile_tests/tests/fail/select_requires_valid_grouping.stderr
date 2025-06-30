@@ -5,10 +5,15 @@ LL |     let source = users::table.group_by(users::name).select(users::id);
    |                                                     ^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
    |
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
-  --> tests/fail/select_requires_valid_grouping.rs:8:9
+  --> tests/fail/select_requires_valid_grouping.rs:5:1
    |
-8  |         name -> Text,
-   |         ^^^^
+5  | / table! {
+6  | |     users {
+7  | |         id -> Integer,
+8  | |         name -> Text,
+...  |
+LL | | }
+   | |_^
 note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
   --> tests/fail/select_requires_valid_grouping.rs:7:9
    |
@@ -17,7 +22,8 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<(name, hair_color) as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/select_requires_valid_grouping.rs:89:10
    |
@@ -40,10 +46,15 @@ LL |         .select((users::name, users::id));
    |          ^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
    |
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
-  --> tests/fail/select_requires_valid_grouping.rs:8:9
+  --> tests/fail/select_requires_valid_grouping.rs:5:1
    |
-8  |         name -> Text,
-   |         ^^^^
+5  | / table! {
+6  | |     users {
+7  | |         id -> Integer,
+8  | |         name -> Text,
+...  |
+LL | | }
+   | |_^
 note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
   --> tests/fail/select_requires_valid_grouping.rs:7:9
    |
@@ -54,7 +65,8 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
    = note: required for `(users::columns::name, users::columns::id)` to implement `ValidGrouping<users::columns::name>`
    = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(users::columns::name, users::columns::id)>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<(name, hair_color) as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/select_requires_valid_grouping.rs:97:10
    |

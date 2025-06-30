@@ -31,8 +31,18 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
    --> tests/fail/selectable.rs:165:10
     |
 LL |         .select(UserWithEmbeddedPost::as_select())
-    |          ^^^^^^ expected `Never`, found `Once`
+    |          ^^^^^^ type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
     |
+note: expected this to be `diesel::query_source::Never`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+15  | |         title -> Text,
+...   |
+18  | | }
+    | |_^
 note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
    --> tests/fail/selectable.rs:14:9
     |
@@ -47,7 +57,8 @@ note: required for `posts::columns::id` to implement `SelectableExpression<query
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::id` from `users::table`
    --> tests/fail/selectable.rs:165:10
     |
@@ -102,10 +113,20 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
     --> tests/fail/selectable.rs:169:15
      |
 169  |         .load(&mut conn)
-     |          ---- ^^^^^^^^^ expected `Never`, found `Once`
+     |          ---- ^^^^^^^^^ type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
      |          |
      |          required by a bound introduced by this call
      |
+note: expected this to be `diesel::query_source::Never`
+    --> tests/fail/selectable.rs:12:1
+     |
+12   | / table! {
+13   | |     posts {
+14   | |         id -> Integer,
+15   | |         title -> Text,
+...    |
+18   | | }
+     | |_^
 note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
     --> tests/fail/selectable.rs:14:9
      |
@@ -130,7 +151,8 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:169:15
      |

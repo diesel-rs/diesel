@@ -317,7 +317,7 @@ pub fn format_schema(schema: &str) -> Result<String, crate::errors::Error> {
         .stdout(process::Stdio::piped())
         .stderr(process::Stdio::piped())
         .spawn()
-        .map_err(|err| Error::RustFmtFail(format!("Failed to launch child process ({})", err)))?;
+        .map_err(|err| Error::RustFmtFail(format!("Failed to launch child process ({err})")))?;
 
     {
         let mut stdin = child
@@ -326,21 +326,21 @@ pub fn format_schema(schema: &str) -> Result<String, crate::errors::Error> {
             .expect("we can always get the stdin from the child process");
 
         stdin.write_all(schema.as_bytes()).map_err(|err| {
-            Error::RustFmtFail(format!("Failed to send schema to rustfmt ({})", err))
+            Error::RustFmtFail(format!("Failed to send schema to rustfmt ({err})"))
         })?;
         // the inner scope makes it so stdin gets dropped here
     }
 
     let output = child
         .wait_with_output()
-        .map_err(|err| Error::RustFmtFail(format!("Couldn't wait for child ({})", err)))?;
+        .map_err(|err| Error::RustFmtFail(format!("Couldn't wait for child ({err})")))?;
 
     // in cases rustfmt isn't installed, it will fail with
     // 'error: 'rustfmt' is not installed for ...'
     // this catches that error
     if !output.status.success() {
         let stderr = String::from_utf8(output.stderr).expect("rustfmt output is valid utf-8");
-        return Err(Error::RustFmtFail(format!("rustfmt error ({})", stderr)));
+        return Err(Error::RustFmtFail(format!("rustfmt error ({stderr})")));
     }
 
     let out = String::from_utf8(output.stdout).expect("rustfmt output is valid utf-8");
@@ -838,7 +838,7 @@ impl Display for ColumnDefinitions<'_> {
                     writeln!(out, r#"#[sql_name = "{}"]"#, column.sql_name)?;
                 }
                 if let Some(max_length) = column.ty.max_length {
-                    writeln!(out, r#"#[max_length = {}]"#, max_length)?;
+                    writeln!(out, r#"#[max_length = {max_length}]"#)?;
                 }
 
                 writeln!(out, "{} -> {},", column.rust_name, column_type)?;

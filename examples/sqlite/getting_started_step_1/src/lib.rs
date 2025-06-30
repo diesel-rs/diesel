@@ -12,5 +12,5 @@ pub fn establish_connection() -> SqliteConnection {
         .or_else(|_| env::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set");
     SqliteConnection::establish(&database_url)
-        .unwrap_or_else(|e| panic!("Failed to connect, error: {}", e))
+        .unwrap_or_else(|e| panic!("Failed to connect, error: {e}"))
 }

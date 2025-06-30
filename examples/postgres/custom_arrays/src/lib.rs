@@ -31,7 +31,7 @@ pub fn run_db_migration(
     match conn.ping() {
         Ok(_) => {}
         Err(e) => {
-            eprint!("[run_db_migration]: Error connecting to database: {}", e);
+            eprint!("[run_db_migration]: Error connecting to database: {e}");
             return Err(Box::new(e));
         }
     }
@@ -40,7 +40,7 @@ pub fn run_db_migration(
     match conn.run_pending_migrations(MIGRATIONS) {
         Ok(_) => Ok(()),
         Err(e) => {
-            eprint!("[run_db_migration]: Error migrating database: {}", e);
+            eprint!("[run_db_migration]: Error migrating database: {e}");
             Err(e)
         }
     }
@@ -63,7 +63,7 @@ pub fn revert_db_migration(
     // Check DB connection!
     if conn.ping().is_ok() {
     } else if let Err(e) = conn.ping() {
-        eprint!("[pg_cmdb]: Error connecting to database: {}", e);
+        eprint!("[pg_cmdb]: Error connecting to database: {e}");
         return Err(Box::new(e));
     }
 
@@ -71,7 +71,7 @@ pub fn revert_db_migration(
     match conn.revert_all_migrations(MIGRATIONS) {
         Ok(_) => Ok(()),
         Err(e) => {
-            eprint!("[pg_cmdb]: Error reverting database migrations: {}", e);
+            eprint!("[pg_cmdb]: Error reverting database migrations: {e}");
             Err(e)
         }
     }

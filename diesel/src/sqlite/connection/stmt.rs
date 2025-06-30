@@ -248,7 +248,7 @@ impl Drop for Statement {
                 )
                 .expect("Error writing to `stderr`");
             } else {
-                panic!("Error finalizing SQLite prepared statement: {:?}", e);
+                panic!("Error finalizing SQLite prepared statement: {e:?}");
             }
         }
     }

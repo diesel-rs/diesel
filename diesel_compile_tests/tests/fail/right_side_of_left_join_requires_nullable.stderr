@@ -2,8 +2,18 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:44:18
    |
 LL |     let _ = join.select(posts::title);
-   |                  ^^^^^^ expected `Never`, found `Once`
+   |                  ^^^^^^ type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
    |
+note: expected this to be `diesel::query_source::Never`
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:13:1
+   |
+LL | / table! {
+LL | |     posts {
+LL | |         id -> Integer,
+LL | |         title -> Text,
+...  |
+LL | | }
+   | |_^
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -18,7 +28,8 @@ LL |         title -> Text,
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:44:18
    |
@@ -48,8 +59,18 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:52:18
    |
 LL |     let _ = join.select(lower(posts::title));
-   |                  ^^^^^^ expected `Never`, found `Once`
+   |                  ^^^^^^ type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
    |
+note: expected this to be `diesel::query_source::Never`
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:13:1
+   |
+LL | / table! {
+LL | |     posts {
+LL | |         id -> Integer,
+LL | |         title -> Text,
+...  |
+LL | | }
+   | |_^
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -64,7 +85,8 @@ LL |         title -> Text,
    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:52:18
    |
@@ -125,8 +147,18 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:67:18
    |
 LL |     let _ = join.select(posts::title);
-   |                  ^^^^^^ expected `Never`, found `Once`
+   |                  ^^^^^^ type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
    |
+note: expected this to be `diesel::query_source::Never`
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:13:1
+   |
+LL | / table! {
+LL | |     posts {
+LL | |         id -> Integer,
+LL | |         title -> Text,
+...  |
+LL | | }
+   | |_^
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -141,7 +173,8 @@ LL |         title -> Text,
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:67:18
    |
@@ -171,8 +204,18 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:75:18
    |
 LL |     let _ = join.select(lower(posts::title));
-   |                  ^^^^^^ expected `Never`, found `Once`
+   |                  ^^^^^^ type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
    |
+note: expected this to be `diesel::query_source::Never`
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:13:1
+   |
+LL | / table! {
+LL | |     posts {
+LL | |         id -> Integer,
+LL | |         title -> Text,
+...  |
+LL | | }
+   | |_^
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -187,7 +230,8 @@ LL |         title -> Text,
    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:75:18
    |
@@ -248,8 +292,18 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:90:18
    |
 LL |     let _ = join.select(posts::title);
-   |                  ^^^^^^ expected `Never`, found `Once`
+   |                  ^^^^^^ type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
    |
+note: expected this to be `diesel::query_source::Never`
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:13:1
+   |
+LL | / table! {
+LL | |     posts {
+LL | |         id -> Integer,
+LL | |         title -> Text,
+...  |
+LL | | }
+   | |_^
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -264,7 +318,8 @@ LL |         title -> Text,
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:90:18
    |
@@ -294,8 +349,18 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:98:18
    |
 LL |     let _ = join.select(lower(posts::title));
-   |                  ^^^^^^ expected `Never`, found `Once`
+   |                  ^^^^^^ type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
    |
+note: expected this to be `diesel::query_source::Never`
+  --> tests/fail/right_side_of_left_join_requires_nullable.rs:13:1
+   |
+LL | / table! {
+LL | |     posts {
+LL | |         id -> Integer,
+LL | |         title -> Text,
+...  |
+LL | | }
+   | |_^
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -310,7 +375,8 @@ LL |         title -> Text,
    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:98:18
    |
@@ -494,8 +560,18 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:132:18
     |
 LL |     let _ = join.select(posts::title);
-    |                  ^^^^^^ expected `Never`, found `Once`
+    |                  ^^^^^^ type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
     |
+note: expected this to be `diesel::query_source::Never`
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:13:1
+    |
+13  | / table! {
+14  | |     posts {
+15  | |         id -> Integer,
+16  | |         title -> Text,
+...   |
+19  | | }
+    | |_^
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
@@ -510,7 +586,8 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:132:18
     |
@@ -540,8 +617,18 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:140:18
     |
 LL |     let _ = join.select(lower(posts::title));
-    |                  ^^^^^^ expected `Never`, found `Once`
+    |                  ^^^^^^ type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
     |
+note: expected this to be `diesel::query_source::Never`
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:13:1
+    |
+13  | / table! {
+14  | |     posts {
+15  | |         id -> Integer,
+16  | |         title -> Text,
+...   |
+19  | | }
+    | |_^
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
@@ -556,7 +643,8 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:140:18
     |

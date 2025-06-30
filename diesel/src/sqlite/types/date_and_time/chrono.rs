@@ -323,9 +323,8 @@ mod tests {
         ];
 
         for s in valid_epoch_formats {
-            let epoch_from_sql =
-                select(sql::<Timestamp>(&format!("'{}'", s))).get_result(connection);
-            assert_eq!(Ok(time), epoch_from_sql, "format {} failed", s);
+            let epoch_from_sql = select(sql::<Timestamp>(&format!("'{s}'"))).get_result(connection);
+            assert_eq!(Ok(time), epoch_from_sql, "format {s} failed");
         }
     }
 
@@ -385,12 +384,11 @@ mod tests {
             "00:00:00.000000-01:00",
         ];
         for format in valid_midnight_formats {
-            let query = select(sql::<Time>(&format!("'{}'", format)));
+            let query = select(sql::<Time>(&format!("'{format}'")));
             assert_eq!(
                 Ok(midnight),
                 query.get_result::<NaiveTime>(connection),
-                "format {} failed",
-                format
+                "format {format} failed"
             );
         }
 
@@ -699,8 +697,8 @@ mod tests {
 
         for s in valid_epoch_formats {
             let epoch_from_sql =
-                select(sql::<TimestamptzSqlite>(&format!("'{}'", s))).get_result(connection);
-            assert_eq!(Ok(time), epoch_from_sql, "format {} failed", s);
+                select(sql::<TimestamptzSqlite>(&format!("'{s}'"))).get_result(connection);
+            assert_eq!(Ok(time), epoch_from_sql, "format {s} failed");
         }
     }
 }

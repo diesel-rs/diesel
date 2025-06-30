@@ -91,7 +91,7 @@ fn check_events_are_emitted_for_execute_returning_count() {
     conn.execute_returning_count(&users::table.as_query())
         .unwrap();
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 3, "{:?}", events);
+    assert_eq!(events.len(), 3, "{events:?}");
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::CacheQuery { .. });
     assert_matches!(events[2], Event::FinishQuery { .. });
@@ -102,7 +102,7 @@ fn check_events_are_emitted_for_load() {
     let (events_to_check, mut conn) = setup_test_case();
     LoadConnection::<DefaultLoadingMode>::load(&mut conn, users::table.as_query()).unwrap();
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 3, "{:?}", events);
+    assert_eq!(events.len(), 3, "{events:?}");
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::CacheQuery { .. });
     assert_matches!(events[2], Event::FinishQuery { .. });
@@ -115,7 +115,7 @@ fn check_events_are_emitted_for_execute_returning_count_does_not_contain_cache_f
     conn.execute_returning_count(&diesel::sql_query("select 1"))
         .unwrap();
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 2, "{:?}", events);
+    assert_eq!(events.len(), 2, "{events:?}");
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::FinishQuery { .. });
 }
@@ -125,7 +125,7 @@ fn check_events_are_emitted_for_load_does_not_contain_cache_for_uncached_queries
     let (events_to_check, mut conn) = setup_test_case();
     LoadConnection::<DefaultLoadingMode>::load(&mut conn, diesel::sql_query("select 1")).unwrap();
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 2, "{:?}", events);
+    assert_eq!(events.len(), 2, "{events:?}");
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::FinishQuery { .. });
 }
@@ -135,7 +135,7 @@ fn check_events_are_emitted_for_execute_returning_count_does_contain_error_for_f
     let (events_to_check, mut conn) = setup_test_case();
     let _ = conn.execute_returning_count(&diesel::sql_query("invalid"));
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 2, "{:?}", events);
+    assert_eq!(events.len(), 2, "{events:?}");
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::FinishQuery { error: Some(_), .. });
 }
@@ -145,7 +145,7 @@ fn check_events_are_emitted_for_load_does_contain_error_for_failures() {
     let (events_to_check, mut conn) = setup_test_case();
     let _ = LoadConnection::<DefaultLoadingMode>::load(&mut conn, diesel::sql_query("invalid"));
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 2, "{:?}", events);
+    assert_eq!(events.len(), 2, "{events:?}");
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::FinishQuery { error: Some(_), .. });
 }
@@ -158,7 +158,7 @@ fn check_events_are_emitted_for_execute_returning_count_repeat_does_not_repeat_c
     conn.execute_returning_count(&users::table.as_query())
         .unwrap();
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 5, "{:?}", events);
+    assert_eq!(events.len(), 5, "{events:?}");
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::CacheQuery { .. });
     assert_matches!(events[2], Event::FinishQuery { .. });
@@ -172,7 +172,7 @@ fn check_events_are_emitted_for_load_repeat_does_not_repeat_cache() {
     LoadConnection::<DefaultLoadingMode>::load(&mut conn, users::table.as_query()).unwrap();
     LoadConnection::<DefaultLoadingMode>::load(&mut conn, users::table.as_query()).unwrap();
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 5, "{:?}", events);
+    assert_eq!(events.len(), 5, "{events:?}");
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::CacheQuery { .. });
     assert_matches!(events[2], Event::FinishQuery { .. });
@@ -185,7 +185,7 @@ fn check_events_transaction() {
     let (events_to_check, mut conn) = setup_test_case();
     conn.transaction(|_conn| QueryResult::Ok(())).unwrap();
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 6, "{:?}", events);
+    assert_eq!(events.len(), 6, "{events:?}");
     assert_matches!(events[0], Event::BeginTransaction { .. });
     assert_matches!(events[1], Event::StartQuery { .. });
     assert_matches!(events[2], Event::FinishQuery { .. });
@@ -200,7 +200,7 @@ fn check_events_transaction_error() {
     let _ = conn
         .transaction(|_conn| QueryResult::<()>::Err(diesel::result::Error::RollbackTransaction));
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 6, "{:?}", events);
+    assert_eq!(events.len(), 6, "{events:?}");
     assert_matches!(events[0], Event::BeginTransaction { .. });
     assert_matches!(events[1], Event::StartQuery { .. });
     assert_matches!(events[2], Event::FinishQuery { .. });
@@ -215,7 +215,7 @@ fn check_events_transaction_nested() {
     conn.transaction(|conn| conn.transaction(|_conn| QueryResult::Ok(())))
         .unwrap();
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 12, "{:?}", events);
+    assert_eq!(events.len(), 12, "{events:?}");
     assert_matches!(events[0], Event::BeginTransaction { .. });
     assert_matches!(events[1], Event::StartQuery { .. });
     assert_matches!(events[2], Event::FinishQuery { .. });
@@ -238,7 +238,7 @@ fn check_events_are_emitted_for_load_pg_row_by_row() {
     let (events_to_check, mut conn) = setup_test_case();
     LoadConnection::<PgRowByRowLoadingMode>::load(&mut conn, users::table.as_query()).unwrap();
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 3, "{:?}", events);
+    assert_eq!(events.len(), 3, "{events:?}");
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::CacheQuery { .. });
     assert_matches!(events[2], Event::FinishQuery { .. });
@@ -253,7 +253,7 @@ fn check_events_are_emitted_for_load_does_not_contain_cache_for_uncached_queries
     LoadConnection::<PgRowByRowLoadingMode>::load(&mut conn, diesel::sql_query("select 1"))
         .unwrap();
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 2, "{:?}", events);
+    assert_eq!(events.len(), 2, "{events:?}");
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::FinishQuery { .. });
 }
@@ -266,7 +266,7 @@ fn check_events_are_emitted_for_load_does_contain_error_for_failures_pg_row_by_r
     let (events_to_check, mut conn) = setup_test_case();
     let _ = LoadConnection::<PgRowByRowLoadingMode>::load(&mut conn, diesel::sql_query("invalid"));
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 2, "{:?}", events);
+    assert_eq!(events.len(), 2, "{events:?}");
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::FinishQuery { error: Some(_), .. });
 }
@@ -289,7 +289,7 @@ fn check_events_are_emitted_for_copy_to() {
         .execute(&mut conn)
         .unwrap();
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 2, "{:?}", events);
+    assert_eq!(events.len(), 2, "{events:?}");
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::FinishQuery { error: None, .. });
 }
@@ -310,7 +310,7 @@ fn check_events_are_emitted_for_copy_to_with_error() {
         .execute(&mut conn);
     assert!(count.is_err());
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 2, "{:?}", events);
+    assert_eq!(events.len(), 2, "{events:?}");
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::FinishQuery { error: Some(_), .. });
 }
@@ -330,7 +330,7 @@ fn check_events_are_emitted_for_copy_from() {
         .unwrap();
     copy.read_to_string(&mut out).unwrap();
     let events = events_to_check.lock().unwrap();
-    assert_eq!(events.len(), 2, "{:?}", events);
+    assert_eq!(events.len(), 2, "{events:?}");
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::FinishQuery { error: None, .. });
 }
