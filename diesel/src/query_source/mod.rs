@@ -8,8 +8,11 @@ pub(crate) mod aliasing;
 pub(crate) mod joins;
 mod peano_numbers;
 
+use crate::associations::HasTable;
+use crate::backend::Backend;
 use crate::expression::{Expression, SelectableExpression, ValidGrouping};
-use crate::query_builder::*;
+use crate::query_dsl::methods::SelectDsl;
+use crate::{query_builder::*, Selectable, SelectableHelper};
 
 pub use self::aliasing::{Alias, AliasSource, AliasedField};
 pub use self::joins::JoinTo;
@@ -204,4 +207,65 @@ mod impls_which_are_only_here_to_improve_error_messages {
 pub trait SizeRestrictedColumn: Column {
     /// Max length of that column
     const MAX_LENGTH: usize;
+}
+
+/// A helper trait to construct new queries based on a struct
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// #
+/// use schema::users;
+/// use diesel::query_source::HasQuery;
+///
+/// // We need to derive `Queryable` + `Identifiable` + `Selectable`
+/// // to enable the `query` method
+/// #[derive(Queryable, PartialEq, Debug, Identifiable, Selectable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = &mut establish_connection();
+/// let all_users = User::query().load(connection)?;
+/// let expected = vec![
+///      User { id: 1, name: "Sean".into() },
+///      User { id: 2, name: "Tess".into() }
+/// ];
+/// assert_eq!(all_users, expected);
+/// // we can join any `QueryDsl` method here:
+/// let sean = User::query().find(1).first(connection)?;
+/// assert_eq!(&sean, &expected[0]);
+/// #     Ok(())
+/// # }
+/// ```
+pub trait HasQuery<DB> {
+    /// Returned query type
+    type Query: Query;
+
+    /// Construct a query based on the given type
+    ///
+    /// See the trait documentation for details and examples
+    fn query() -> Self::Query;
+}
+
+impl<T, DB> HasQuery<DB> for T
+where
+    DB: Backend,
+    T: HasTable + Selectable<DB> + SelectableHelper<DB>,
+    T::SelectExpression: QueryId,
+    T::Table: AsQuery,
+    <T::Table as AsQuery>::Query: SelectDsl<crate::dsl::AsSelect<T, DB>>,
+    crate::dsl::Select<<T::Table as AsQuery>::Query, crate::dsl::AsSelect<T, DB>>: Query,
+{
+    type Query = crate::dsl::Select<<T::Table as AsQuery>::Query, crate::dsl::AsSelect<T, DB>>;
+
+    fn query() -> Self::Query {
+        T::table().as_query().select(T::as_select())
+    }
 }
