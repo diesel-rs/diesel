@@ -14,6 +14,7 @@ mod with_return_type_helpers {
     use super::*;
 
     #[declare_sql_function(generate_return_type_helpers)]
+    //~^ ERROR: expected `=`, the correct format is `generate_return_type_helpers = true/false`
     extern "SQL" {
         fn f<A: SingleValue>(a: <A as TypeWrapper>::Type);
         //~^ ERROR: cannot find argument corresponding to the generic
