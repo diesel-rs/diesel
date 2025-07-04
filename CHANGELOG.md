@@ -10,11 +10,14 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
-## [2.2.12] 2025-07-xx
+## [2.2.12] 2025-07-11
 
 ## Fixed
 
 * Added support for libsqlite3-sys 0.34.0
+* Fixed a wrong oid for the `oid[]` type in the PostgreSQL backend
+* Worked around an issue with broken nullable detection with certain versions of libmysqlclient shipped by ubuntu
+* Improved compiler errors in many more cases
 
 ## [2.2.11] 2025-06-12
 
@@ -2222,3 +2225,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.2.9]: https://github.com/diesel-rs/diesel/compare/v2.2.8...v2.2.9
 [2.2.10]: https://github.com/diesel-rs/diesel/compare/v2.2.9...v2.2.10
 [2.2.11]: https://github.com/diesel-rs/diesel/compare/v2.2.10...v2.2.11
+[2.2.12]: https://github.com/diesel-rs/diesel/compare/v2.2.11...v2.2.12
