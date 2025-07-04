@@ -1,5 +1,5 @@
 error: unexpected end of input, expected parentheses
-       help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
+       help: the correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:29:3
    |
 LL | #[belongs_to]
@@ -24,7 +24,7 @@ LL | #[belongs_to("what")]
    |              ^^^^^^
 
 error: unexpected end of input, expected `=`
-       help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
+       help: the correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:62:14
    |
 LL | #[belongs_to(parent)]
@@ -58,7 +58,7 @@ LL | #[belongs_to(Bar, what)]
     |                   ^^^^
 
 error: unexpected end of input, expected `=`
-       help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
+       help: the correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
    --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:109:19
     |
 LL | #[belongs_to(Bar, foreign_key)]

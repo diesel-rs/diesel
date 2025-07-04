@@ -2,7 +2,7 @@ warning: #[sql_type] attribute form is deprecated
   = help: use `#[diesel(sql_type = foo)]` instead
 
 error: unexpected end of input, expected `=`
-       help: The correct format looks like `#[diesel(sql_type = Foo)]`
+       help: the correct format looks like `#[diesel(sql_type = Foo)]`
   --> tests/fail/derive_deprecated/deprecated_sql_type.rs:11:3
    |
 LL | #[sql_type]
@@ -33,7 +33,7 @@ warning: #[sql_type] attribute form is deprecated
   = help: use `#[diesel(sql_type = foo)]` instead
 
 error: unexpected end of input, expected `=`
-       help: The correct format looks like `#[diesel(sql_type = Foo)]`
+       help: the correct format looks like `#[diesel(sql_type = Foo)]`
   --> tests/fail/derive_deprecated/deprecated_sql_type.rs:39:7
    |
 LL |     #[sql_type]
