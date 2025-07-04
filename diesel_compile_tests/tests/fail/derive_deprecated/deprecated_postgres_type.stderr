@@ -1,12 +1,12 @@
 error: unexpected end of input, expected parentheses
-       help: The correct format looks like `#[diesel(postgres_type(name = "foo", schema = "public"))]`
+       help: the correct format looks like `#[diesel(postgres_type(name = "foo", schema = "public"))]`
  --> tests/fail/derive_deprecated/deprecated_postgres_type.rs:6:3
   |
 LL | #[postgres]
   |   ^^^^^^^^
 
 error: expected `oid` and `array_oid` attribute or `name` attribute
-       help: The correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
+       help: the correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
   --> tests/fail/derive_deprecated/deprecated_postgres_type.rs:11:11
    |
 LL | #[postgres()]
@@ -19,7 +19,7 @@ LL | #[postgres = "foo"]
    |            ^
 
 error: unexpected end of input, expected `=`
-       help: The correct format looks like `#[diesel(postgres_type(name = "foo", schema = "public"))]`
+       help: the correct format looks like `#[diesel(postgres_type(name = "foo", schema = "public"))]`
   --> tests/fail/derive_deprecated/deprecated_postgres_type.rs:21:12
    |
 LL | #[postgres(type_name)]
@@ -38,21 +38,21 @@ LL | #[postgres(type_name = 1)]
    |                        ^
 
 error: unexpected `oid` when `name` is present
-       help: The correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
+       help: the correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
   --> tests/fail/derive_deprecated/deprecated_postgres_type.rs:36:31
    |
 LL | #[postgres(type_name = "foo", oid = "2", array_oid = "3")]
    |                               ^^^
 
 error: unexpected `array_oid` when `name` is present
-       help: The correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
+       help: the correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
   --> tests/fail/derive_deprecated/deprecated_postgres_type.rs:41:31
    |
 LL | #[postgres(type_name = "foo", array_oid = "3")]
    |                               ^^^^^^^^^
 
 error: expected `oid` and `array_oid` attribute or `name` attribute
-       help: The correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
+       help: the correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
   --> tests/fail/derive_deprecated/deprecated_postgres_type.rs:46:11
    |
 LL | #[postgres(oid = "2")]

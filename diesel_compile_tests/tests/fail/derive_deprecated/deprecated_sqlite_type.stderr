@@ -1,5 +1,5 @@
 error: unexpected end of input, expected `=`
-       help: The correct format looks like `#[diesel(sqlite_type(name = "foo"))]`
+       help: the correct format looks like `#[diesel(sqlite_type(name = "foo"))]`
  --> tests/fail/derive_deprecated/deprecated_sqlite_type.rs:6:3
   |
 LL | #[sqlite_type]

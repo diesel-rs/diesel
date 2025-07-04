@@ -43,7 +43,7 @@ impl Parse for SqliteType {
                 input.span(),
                 format!(
                     "expected attribute `name`\n\
-                     help: the correct format looks like #[diesel({SQLITE_TYPE_NOTE})]",
+                     help: the correct format looks like #[diesel({SQLITE_TYPE_NOTE})]"
                 ),
             ))
         }
