@@ -22,7 +22,7 @@ fn main() {
                 .execute(connection)?;
             Ok(post)
         })
-        .unwrap_or_else(|_: diesel::result::Error| panic!("Unable to find post {id}"));
+        .unwrap_or_else(|_: diesel::result::Error| panic!("Unable to find post {id}", id = id));
 
     println!("Published post {}", post.title);
 }

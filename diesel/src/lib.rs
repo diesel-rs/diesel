@@ -231,7 +231,8 @@
     clippy::needless_doctest_main,
     clippy::map_unwrap_or,
     clippy::redundant_field_names,
-    clippy::type_complexity
+    clippy::type_complexity,
+    unknown_or_malformed_diagnostic_attributes
 )]
 #![warn(
     clippy::unwrap_used,

@@ -34,7 +34,7 @@ pub trait MigrationHarness<DB: Backend> {
     fn run_pending_migrations<S: MigrationSource<DB>>(
         &mut self,
         source: S,
-    ) -> Result<Vec<MigrationVersion>> {
+    ) -> Result<Vec<MigrationVersion<'_>>> {
         let pending = self.pending_migrations(source)?;
         self.run_migrations(&pending)
     }
@@ -46,7 +46,7 @@ pub trait MigrationHarness<DB: Backend> {
     fn run_migrations(
         &mut self,
         migrations: &[Box<dyn Migration<DB>>],
-    ) -> Result<Vec<MigrationVersion>> {
+    ) -> Result<Vec<MigrationVersion<'_>>> {
         migrations.iter().map(|m| self.run_migration(m)).collect()
     }
 
@@ -54,7 +54,7 @@ pub trait MigrationHarness<DB: Backend> {
     fn run_next_migration<S: MigrationSource<DB>>(
         &mut self,
         source: S,
-    ) -> Result<MigrationVersion> {
+    ) -> Result<MigrationVersion<'_>> {
         let pending_migrations = self.pending_migrations(source)?;
         let next_migration = pending_migrations
             .first()
@@ -66,7 +66,7 @@ pub trait MigrationHarness<DB: Backend> {
     fn revert_all_migrations<S: MigrationSource<DB>>(
         &mut self,
         source: S,
-    ) -> Result<Vec<MigrationVersion>> {
+    ) -> Result<Vec<MigrationVersion<'_>>> {
         let applied_versions = self.applied_migrations()?;
         let mut migrations = source
             .migrations()?

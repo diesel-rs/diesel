@@ -13,9 +13,7 @@ pub fn expand(path: String) -> proc_macro2::TokenStream {
     };
     let migrations_expr = migration_directory_from_given_path(migrations_path_opt.as_deref())
         .unwrap_or_else(|_| {
-            panic!(
-                "Failed to receive migrations dir from {migrations_path_opt:?}",
-            )
+            panic!("Failed to receive migrations dir from {migrations_path_opt:?}",)
         });
     let embedded_migrations =
         migration_literals_from_path(&migrations_expr).expect("Failed to read migration literals");

@@ -198,12 +198,14 @@ pub type TestConnection = MysqlConnection;
 pub type TestBackend = <TestConnection as Connection>::Backend;
 
 //Used to ensure cleanup of one-off tables, e.g. for a table created for a single test
+#[cfg(not(feature = "mysql"))]
 pub struct DropTable<'a> {
     pub connection: &'a mut TestConnection,
     pub table_name: &'static str,
     pub can_drop: bool,
 }
 
+#[cfg(not(feature = "mysql"))]
 impl Drop for DropTable<'_> {
     fn drop(&mut self) {
         if self.can_drop {
