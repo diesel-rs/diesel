@@ -24,4 +24,5 @@ fn main() {
         hair_color: "black".to_string(),
     };
     user.save_changes(&mut connection);
+    //~^ ERROR: the method `save_changes` exists for struct `User`, but its trait bounds were not satisfied
 }

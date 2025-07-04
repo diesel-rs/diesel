@@ -7,6 +7,9 @@ use crate::dsl;
 /// to call `having` from generic code.
 ///
 /// [`QueryDsl`]: crate::QueryDsl
+#[diagnostic::on_unimplemented(
+    note = "a `HAVING` clause requires setting a `GROUP BY` clause first"
+)]
 pub trait HavingDsl<Predicate> {
     /// The type returned by `.having`.
     type Output;

@@ -10,6 +10,7 @@ table! {
 
 #[derive(AsChangeset)]
 #[diesel(primary_key(id, bar = "baz"))]
+//~^ ERROR: expected `,`
 struct UserForm1 {
     id: i32,
     name: String,
@@ -17,6 +18,7 @@ struct UserForm1 {
 
 #[derive(AsChangeset)]
 #[diesel(primary_key(id, qux(id)))]
+//~^ ERROR: expected `,`
 struct UserForm2 {
     id: i32,
     name: String,
@@ -24,6 +26,7 @@ struct UserForm2 {
 
 #[derive(AsChangeset)]
 #[diesel(primary_key)]
+//~^ ERROR:  unexpected end of input, expected parentheses
 struct UserForm3 {
     id: i32,
     name: String,
@@ -31,6 +34,7 @@ struct UserForm3 {
 
 #[derive(AsChangeset)]
 #[diesel(primary_key = id)]
+//~^ ERROR: expected parentheses
 struct UserForm4 {
     id: i32,
     name: String,

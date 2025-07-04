@@ -21,5 +21,6 @@ table! {
         column_18 -> Integer,
     }
 }
+//~^^^^^^^^^^^^^^^^^^^^^ ERROR: table contains more than 16 columns.
 
 fn main() {}

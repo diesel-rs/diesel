@@ -1,5 +1,5 @@
 error: expected `,`
  --> tests/fail/derive/bad_aggregate.rs:6:20
   |
-6 | #[diesel(aggregate = true)]
+LL | #[diesel(aggregate = true)]
   |                    ^

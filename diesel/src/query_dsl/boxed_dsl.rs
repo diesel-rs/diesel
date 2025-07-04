@@ -14,6 +14,11 @@ use crate::Expression;
 /// to call `into_boxed` from generic code.
 ///
 /// [`QueryDsl`]: crate::QueryDsl
+#[diagnostic::on_unimplemented(
+    message = "cannot box `{Self}` for backend `{DB}`",
+    note = "this either means `{Self}` is no valid SQL for `{DB}`",
+    note = "or this means `{Self}` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause"
+)]
 pub trait BoxedDsl<'a, DB> {
     /// The return type of `internal_into_boxed`
     type Output;
@@ -22,6 +27,7 @@ pub trait BoxedDsl<'a, DB> {
     fn internal_into_boxed(self) -> dsl::IntoBoxed<'a, Self, DB>;
 }
 
+#[diagnostic::do_not_recommend]
 impl<'a, T, DB> BoxedDsl<'a, DB> for T
 where
     T: Table + AsQuery<Query = SelectStatement<FromClause<T>>>,

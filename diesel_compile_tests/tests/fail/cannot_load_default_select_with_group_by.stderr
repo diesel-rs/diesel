@@ -1,31 +1,39 @@
 error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
-  --> tests/fail/cannot_load_default_select_with_group_by.rs:16:32
-   |
-16 |         .load::<(i32, String)>(&mut conn);
-   |          ----                  ^^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
-   |          |
-   |          required by a bound introduced by this call
-   |
+    --> tests/fail/cannot_load_default_select_with_group_by.rs:16:32
+     |
+16   |         .load::<(i32, String)>(&mut conn);
+     |          ----                  ^^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+     |          |
+     |          required by a bound introduced by this call
+     |
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
-  --> tests/fail/cannot_load_default_select_with_group_by.rs:8:9
-   |
-8  |         name -> Text,
-   |         ^^^^
+    --> tests/fail/cannot_load_default_select_with_group_by.rs:5:1
+     |
+5    | / table! {
+6    | |     users {
+7    | |         id -> Integer,
+8    | |         name -> Text,
+9    | |     }
+10   | | }
+     | |_^
 note: required for `columns::id` to implement `ValidGrouping<columns::name>`
-  --> tests/fail/cannot_load_default_select_with_group_by.rs:7:9
-   |
-7  |         id -> Integer,
-   |         ^^
-   = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: 1 redundant requirement hidden
-   = note: required for `(columns::id, columns::name)` to implement `ValidGrouping<columns::name>`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::name>>` to implement `Query`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::name>>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
+    --> tests/fail/cannot_load_default_select_with_group_by.rs:7:9
+     |
+7    |         id -> Integer,
+     |         ^^
+     = note: associated types for the current `impl` cannot be restricted in `where` clauses
+     = note: 1 redundant requirement hidden
+     = note: required for `(columns::id, columns::name)` to implement `ValidGrouping<columns::name>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-   |        ---- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0271`.

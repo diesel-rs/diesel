@@ -1,14 +1,19 @@
 error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/alias_and_group_by.rs:34:10
    |
-34 |         .select(user_alias.field(users::id))
+LL |         .select(user_alias.field(users::id))
    |          ^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
    |
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
-  --> tests/fail/alias_and_group_by.rs:9:9
+  --> tests/fail/alias_and_group_by.rs:6:1
    |
-9  |         name -> VarChar,
-   |         ^^^^
+6  | / table! {
+7  | |     users {
+8  | |         id -> Integer,
+9  | |         name -> VarChar,
+LL | |     }
+LL | | }
+   | |_^
 note: required for `columns::id` to implement `ValidGrouping<columns::name>`
   --> tests/fail/alias_and_group_by.rs:8:9
    |
@@ -17,4 +22,7 @@ note: required for `columns::id` to implement `ValidGrouping<columns::name>`
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `AliasedField<user1, columns::id>` to implement `ValidGrouping<AliasedField<user1, columns::name>>`
-   = note: required for `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<Alias<user1>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<AliasedField<user1, columns::name>>>` to implement `SelectDsl<AliasedField<user1, columns::id>>`
+   = note: required for `SelectStatement<FromClause<Alias<...>>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, columns::id>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0271`.

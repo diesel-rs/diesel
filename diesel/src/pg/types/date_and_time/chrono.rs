@@ -400,7 +400,7 @@ mod tests {
         let connection = &mut connection();
         let (duration, literal_strings) = get_test_duration_and_literal_strings();
         for literal in literal_strings {
-            let query = select(sql::<Interval>(&format!("'{}'::interval", literal)).eq(duration));
+            let query = select(sql::<Interval>(&format!("'{literal}'::interval")).eq(duration));
             assert!(query.get_result::<bool>(connection).unwrap());
         }
     }
@@ -410,7 +410,7 @@ mod tests {
         let connection = &mut connection();
         let (duration, literal_strings) = get_test_duration_and_literal_strings();
         for literal in literal_strings {
-            let query = select(sql::<Interval>(&format!("'{}'::interval", literal)));
+            let query = select(sql::<Interval>(&format!("'{literal}'::interval")));
             assert_eq!(Ok(duration), query.get_result::<Duration>(connection));
         }
     }

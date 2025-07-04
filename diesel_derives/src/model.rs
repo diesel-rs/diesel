@@ -53,7 +53,7 @@ impl Model {
             _ if !allow_unit_structs => {
                 return Err(syn::Error::new(
                     proc_macro2::Span::call_site(),
-                    "This derive can only be used on non-unit structs",
+                    "this derive can only be used on non-unit structs",
                 ));
             }
             _ => None,
@@ -149,7 +149,7 @@ impl Model {
             .ok_or_else(|| {
                 syn::Error::new(
                     column_name.span(),
-                    format!("No field with column name {column_name}"),
+                    format!("no field with column name `{column_name}`"),
                 )
             })
     }

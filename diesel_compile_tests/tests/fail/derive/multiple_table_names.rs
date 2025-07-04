@@ -27,6 +27,7 @@ struct Group {
 
 #[derive(AsChangeset)]
 #[diesel(table_name = users, table_name = users_)]
+//~^ ERROR: expected a single table name attribute
 struct User1 {
     id: i32,
     group_id: i32,
@@ -35,6 +36,7 @@ struct User1 {
 #[derive(Associations)]
 #[diesel(belongs_to(Group))]
 #[diesel(table_name = users, table_name = users_)]
+//~^ ERROR: expected a single table name attribute
 struct User2 {
     id: i32,
     group_id: i32,
@@ -42,6 +44,7 @@ struct User2 {
 
 #[derive(Identifiable)]
 #[diesel(table_name = users, table_name = users_)]
+//~^ ERROR: expected a single table name attribute
 struct User3 {
     id: i32,
     group_id: i32,
@@ -50,6 +53,7 @@ struct User3 {
 #[derive(Selectable)]
 #[diesel(table_name = users)]
 #[diesel(table_name = users_)]
+//~^ ERROR: expected a single table name attribute
 struct User4 {
     id: i32,
     group_id: i32,

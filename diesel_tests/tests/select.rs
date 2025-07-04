@@ -359,7 +359,7 @@ fn select_for_update_modifiers() {
     // Make sure we errored in the correct way (without timing out)
     assert!(result.is_err());
     if !format!("{result:?}").contains("could not obtain lock on row") {
-        panic!("{:?}", result);
+        panic!("{result:?}");
     }
 
     // Try to access the "Sean" row with `SKIP LOCKED`
@@ -486,7 +486,7 @@ fn select_for_no_key_update_modifiers() {
     // Times out instead of inserting row
     assert!(result.is_err());
     if !format!("{result:?}").contains("canceling statement due to statement timeout") {
-        panic!("{:?}", result);
+        panic!("{result:?}");
     }
 }
 

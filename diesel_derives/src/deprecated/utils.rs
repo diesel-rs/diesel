@@ -8,7 +8,7 @@ pub fn parse_eq_and_lit_str(name: Ident, input: ParseStream, help: &str) -> Resu
             name.span(),
             format!(
                 "unexpected end of input, expected `=`\n\
-                     help: The correct format looks like `#[diesel({help})]`"
+                     help: the correct format looks like `#[diesel({help})]`"
             ),
         ));
     }

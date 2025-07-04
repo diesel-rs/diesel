@@ -25,6 +25,9 @@ pub struct UpdateTarget<Table, WhereClause> {
 /// [`update`]: crate::update()
 /// [`delete`]: crate::delete()
 /// [`filter`]: crate::query_builder::UpdateStatement::filter()
+#[diagnostic::on_unimplemented(
+    note = "only tables or select statements with only the filter clause applied are valid update targets"
+)]
 pub trait IntoUpdateTarget: HasTable {
     /// What is the `WHERE` clause of this target?
     type WhereClause;

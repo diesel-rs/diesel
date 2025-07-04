@@ -14,4 +14,5 @@ fn main() {
     let _ = users::table
         .group_by(users::name)
         .load::<(i32, String)>(&mut conn);
+    //~^ ERROR: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
 }

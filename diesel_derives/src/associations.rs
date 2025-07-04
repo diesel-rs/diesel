@@ -14,7 +14,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     if model.belongs_to.is_empty() {
         return Err(syn::Error::new(
             proc_macro2::Span::call_site(),
-            "At least one `belongs_to` is needed for deriving `Associations` on a structure.",
+            "at least one `belongs_to` is needed for deriving `Associations` on a structure.",
         ));
     }
 

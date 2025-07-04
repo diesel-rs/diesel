@@ -270,7 +270,7 @@ impl Drop for RawConnection {
                 write!(stderr(), "Error closing SQLite connection: {error_message}")
                     .expect("Error writing to `stderr`");
             } else {
-                panic!("Error closing SQLite connection: {}", error_message);
+                panic!("Error closing SQLite connection: {error_message}");
             }
         }
     }

@@ -19,4 +19,5 @@ fn main() {
     replace_into(users::table)
         .values(&User { id: 1 })
         .execute(&mut connection);
+    //~^ ERROR: `diesel::query_builder::insert_statement::private::Replace` is no valid SQL fragment for the `Pg` backend
 }

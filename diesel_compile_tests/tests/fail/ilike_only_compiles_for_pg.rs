@@ -18,8 +18,14 @@ struct User {
 
 fn main() {
     let mut connection = SqliteConnection::establish("").unwrap();
-    users::table.filter(users::name.ilike("%hey%")).execute(&mut connection);
+    users::table
+        .filter(users::name.ilike("%hey%"))
+        .execute(&mut connection);
+    //~^ ERROR: `ILike<name, Bound<Text, &str>>` is no valid SQL fragment for the `Sqlite` backend
 
     let mut connection = MysqlConnection::establish("").unwrap();
-    users::table.filter(users::name.ilike("%hey%")).execute(&mut connection);
+    users::table
+        .filter(users::name.ilike("%hey%"))
+        .execute(&mut connection);
+    //~^ ERROR: `ILike<name, Bound<Text, &str>>` is no valid SQL fragment for the `Mysql` backend
 }

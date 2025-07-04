@@ -1,19 +1,20 @@
 error[E0505]: cannot move out of `buf` because it is borrowed
-  --> tests/fail/ensure_sqlite_cannot_access_memory_of_dropped_bind.rs:17:24
+  --> tests/fail/ensure_sqlite_cannot_access_memory_of_dropped_bind.rs:18:24
    |
-9  |         let buf: Vec<u8> = vec![0, 1, 2];
+LL |         let buf: Vec<u8> = vec![0, 1, 2];
    |             --- binding `buf` declared here
-10 |
-11 |         let query = diesel::select((&buf as &[u8]).into_sql::<sql_types::Binary>());
+LL |
+LL |         let query = diesel::select((&buf as &[u8]).into_sql::<sql_types::Binary>());
    |                                     ---- borrow of `buf` occurs here
 ...
-17 |         std::mem::drop(buf);
+LL |         std::mem::drop(buf);
    |                        ^^^ move out of `buf` occurs here
-18 |
-19 |         assert_eq!(iter.next().is_some(), true);
+...
+LL |         assert_eq!(iter.next().is_some(), true);
    |                    ---- borrow later used here
    |
 help: consider cloning the value if the performance cost is acceptable
    |
-11 |         let query = diesel::select((&buf.clone() as &[u8]).into_sql::<sql_types::Binary>());
+LL |         let query = diesel::select((&buf.clone() as &[u8]).into_sql::<sql_types::Binary>());
    |                                         ++++++++
+For more information about this error, try `rustc --explain E0505`.

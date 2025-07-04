@@ -14,8 +14,7 @@ pub fn expand(path: String) -> proc_macro2::TokenStream {
     let migrations_expr = migration_directory_from_given_path(migrations_path_opt.as_deref())
         .unwrap_or_else(|_| {
             panic!(
-                "Failed to receive migrations dir from {:?}",
-                migrations_path_opt
+                "Failed to receive migrations dir from {migrations_path_opt:?}",
             )
         });
     let embedded_migrations =
@@ -42,7 +41,7 @@ fn migration_literals_from_path(
 fn migration_literal_from_path(path: &Path) -> proc_macro2::TokenStream {
     let name = path
         .file_name()
-        .unwrap_or_else(|| panic!("Can't get file name from path `{:?}`", path))
+        .unwrap_or_else(|| panic!("Can't get file name from path `{path:?}`"))
         .to_string_lossy();
     if version_from_string(&name).is_none() {
         panic!(

@@ -1,32 +1,33 @@
 error: unexpected end of input, expected `=`
-       help: The correct format looks like `#[diesel(table_name = foo)]`
+       help: the correct format looks like `#[diesel(table_name = foo)]`
   --> tests/fail/derive/bad_table_name.rs:12:20
    |
-12 | #[diesel(table_name)]
+LL | #[diesel(table_name)]
    |                    ^
 
 error: expected `=`
-  --> tests/fail/derive/bad_table_name.rs:18:20
+  --> tests/fail/derive/bad_table_name.rs:19:20
    |
-18 | #[diesel(table_name(users))]
+LL | #[diesel(table_name(users))]
    |                    ^
 
 error: expected identifier, found keyword `true`
-  --> tests/fail/derive/bad_table_name.rs:24:23
+  --> tests/fail/derive/bad_table_name.rs:26:23
    |
-24 | #[diesel(table_name = true)]
+LL | #[diesel(table_name = true)]
    |                       ^^^^
 
 error: expected identifier
-  --> tests/fail/derive/bad_table_name.rs:30:23
+  --> tests/fail/derive/bad_table_name.rs:33:23
    |
-30 | #[diesel(table_name = "not a path")]
+LL | #[diesel(table_name = "not a path")]
    |                       ^^^^^^^^^^^^
 
 error[E0433]: failed to resolve: use of unresolved module or unlinked crate `does`
-  --> tests/fail/derive/bad_table_name.rs:36:23
+  --> tests/fail/derive/bad_table_name.rs:40:23
    |
-36 | #[diesel(table_name = does::not::exist)]
+LL | #[diesel(table_name = does::not::exist)]
    |                       ^^^^ use of unresolved module or unlinked crate `does`
    |
-   = help: if you wanted to use a crate named `does`, use `cargo add does` to add it to your `Cargo.toml`
+   = help: you might be missing a crate named `does`
+For more information about this error, try `rustc --explain E0433`.

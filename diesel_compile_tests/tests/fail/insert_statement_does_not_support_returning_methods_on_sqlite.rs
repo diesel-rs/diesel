@@ -27,9 +27,11 @@ fn main() {
     insert_into(users::table)
         .values(&NewUser("Hello".into()))
         .get_result::<User>(&mut connection);
+    //~^ ERROR: `ReturningClause<(columns::id, columns::name)>` is no valid SQL fragment for the `Sqlite` backend
 
     insert_into(users::table)
         .values(&NewUser("Hello".into()))
         .returning(users::name)
         .get_result::<String>(&mut connection);
+    //~^ ERROR: `ReturningClause<columns::name>` is no valid SQL fragment for the `Sqlite` backend
 }

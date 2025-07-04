@@ -1,5 +1,6 @@
+//@no-rustfix
+use diesel::connection::{DefaultLoadingMode, LoadConnection};
 use diesel::prelude::*;
-use diesel::connection::{LoadConnection, DefaultLoadingMode};
 use diesel::sql_types;
 
 fn main() {
@@ -15,6 +16,7 @@ fn main() {
         // Sqlite borrows the buffer internally, so dropping it here is not allowed
         // while the statement is still alive.
         std::mem::drop(buf);
+        //~^ ERROR: cannot move out of `buf` because it is borrowed
 
         assert_eq!(iter.next().is_some(), true);
         assert_eq!(iter.next().is_none(), true);
@@ -66,5 +68,4 @@ fn main() {
         std::mem::drop(iter);
         std::mem::drop(buf);
     }
-
 }

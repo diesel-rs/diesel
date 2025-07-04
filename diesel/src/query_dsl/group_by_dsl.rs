@@ -21,6 +21,7 @@ pub trait GroupByDsl<Expr: Expression> {
     fn group_by(self, expr: Expr) -> dsl::GroupBy<Self, Expr>;
 }
 
+#[diagnostic::do_not_recommend]
 impl<T, Expr> GroupByDsl<Expr> for T
 where
     Expr: Expression,

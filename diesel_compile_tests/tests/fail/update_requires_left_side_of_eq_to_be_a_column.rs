@@ -14,4 +14,5 @@ fn main() {
 
     let foo = "foo".into_sql::<sql_types::VarChar>();
     let command = update(users).set(foo.eq(name));
+    //~^ ERROR: the trait bound `diesel::expression::bound::Bound<diesel::sql_types::Text, &str>: Column` is not satisfied
 }

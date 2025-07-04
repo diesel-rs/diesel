@@ -19,5 +19,6 @@ fn main() {
     insert_or_ignore_into(users::table)
         .values(users::id.eq(1))
         .execute(&mut connection)
+        //~^ ERROR: `diesel::query_builder::insert_statement::private::InsertOrIgnore` is no valid SQL fragment for the `Pg` backend
         .unwrap();
 }

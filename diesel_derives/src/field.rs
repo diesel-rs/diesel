@@ -150,7 +150,7 @@ impl Field {
                 FieldName::Named(ref x) => Ok(x.into()),
                 FieldName::Unnamed(ref x) => Err(syn::Error::new(
                     x.span(),
-                    "All fields of tuple structs must be annotated with `#[diesel(column_name)]`",
+                    "all fields of tuple structs must be annotated with `#[diesel(column_name)]`",
                 )),
             }
         }

@@ -1,61 +1,74 @@
+warning: #[sql_type] attribute form is deprecated
+  = help: use `#[diesel(sql_type = foo)]` instead
+
 error: unexpected end of input, expected `=`
        help: The correct format looks like `#[diesel(sql_type = Foo)]`
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:10:3
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:11:3
    |
-10 | #[sql_type]
+LL | #[sql_type]
    |   ^^^^^^^^
 
 error: expected `=`
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:14:11
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:16:11
    |
-14 | #[sql_type()]
+LL | #[sql_type()]
    |           ^^
 
 error: expected string literal
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:18:14
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:21:14
    |
-18 | #[sql_type = 1]
+LL | #[sql_type = 1]
    |              ^
 
+warning: #[sql_type] attribute form is deprecated
+  = help: use `#[diesel(sql_type = 1)]` instead
+
 error: expected identifier
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:22:14
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:26:14
    |
-22 | #[sql_type = "1"]
+LL | #[sql_type = "1"]
    |              ^^^
+
+warning: #[sql_type] attribute form is deprecated
+  = help: use `#[diesel(sql_type = foo)]` instead
 
 error: unexpected end of input, expected `=`
        help: The correct format looks like `#[diesel(sql_type = Foo)]`
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:33:7
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:39:7
    |
-33 |     #[sql_type]
+LL |     #[sql_type]
    |       ^^^^^^^^
 
 error: expected `=`
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:39:15
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:46:15
    |
-39 |     #[sql_type()]
+LL |     #[sql_type()]
    |               ^^
 
 error: expected string literal
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:45:18
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:53:18
    |
-45 |     #[sql_type = 1]
+LL |     #[sql_type = 1]
    |                  ^
 
+warning: #[sql_type] attribute form is deprecated
+  = help: use `#[diesel(sql_type = 1)]` instead
+
 error: expected identifier
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:51:18
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:60:18
    |
-51 |     #[sql_type = "1"]
+LL |     #[sql_type = "1"]
    |                  ^^^
 
 error[E0412]: cannot find type `foo` in this scope
  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:6:14
   |
-6 | #[sql_type = "foo"]
+LL | #[sql_type = "foo"]
   |              ^^^^^ not found in this scope
 
 error[E0412]: cannot find type `foo` in this scope
-  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:27:18
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:32:18
    |
-27 |     #[sql_type = "foo"]
+LL |     #[sql_type = "foo"]
    |                  ^^^^^ not found in this scope
+For more information about this error, try `rustc --explain E0412`.

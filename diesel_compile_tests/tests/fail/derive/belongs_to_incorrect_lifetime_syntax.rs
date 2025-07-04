@@ -23,6 +23,8 @@ struct Foo<'a> {
 
 #[derive(Associations)]
 #[diesel(belongs_to(Foo<'a>))]
+//~^ ERROR: use of undeclared lifetime name `'a`
+//~| ERROR: use of undeclared lifetime name `'a`
 struct Bar {
     foo_id: i32,
 }

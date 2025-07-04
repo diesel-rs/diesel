@@ -25,12 +25,15 @@ fn main() {
 
     delete(users::table.filter(users::columns::name.eq("Bill")))
         .returning(non_users::columns::noname);
+    //~^ ERROR: cannot select `non_users::columns::noname` from `users::table`
 
     insert_into(users::table)
         .values(&NewUser("Hello".into()))
         .returning(non_users::columns::noname);
+    //~^ ERROR: cannot select `non_users::columns::noname` from `users::table`
 
     update(users::table)
         .set(users::columns::name.eq("Bill"))
         .returning(non_users::columns::noname);
+    //~^ ERROR: cannot select `non_users::columns::noname` from `users::table`
 }

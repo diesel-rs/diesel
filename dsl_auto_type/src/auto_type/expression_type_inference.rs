@@ -397,7 +397,7 @@ impl TypeInferrer<'_> {
                                 ) => syn::GenericArgument::Type(self.register_error(
                                     syn::Error::new_spanned(
                                         generic_argument,
-                                        "auto_type: Can't infer generic argument because \
+                                        "can't infer generic argument because \
                                             there is no function argument to infer from \
                                             (less function arguments than generic arguments)",
                                     ),
@@ -431,9 +431,9 @@ fn literal_type(t: &proc_macro2::Literal) -> Result<syn::Type, syn::Error> {
         .ok_or_else(|| {
             syn::Error::new_spanned(
                 t,
-                format_args!("Literals must have type suffix for auto_type, e.g. {val}i64"),
+                format_args!("literals must have type suffix for auto_type, e.g. `{val}_i64`"),
             )
         })?..];
     syn::parse_str(type_suffix)
-        .map_err(|_| syn::Error::new_spanned(t, "Invalid type suffix for literal"))
+        .map_err(|_| syn::Error::new_spanned(t, "invalid type suffix for literal"))
 }

@@ -47,11 +47,13 @@ fn main() {
     diesel::copy_from(users::table)
         .from_insertable(vec![NewUser { name: "John" }])
         .with_format(CopyFormat::Csv)
+        //~^ ERROR: no method named `with_format` found for struct `CopyFromQuery<table, InsertableWrapper<Vec<NewUser>>>` in the current scope
         .execute(conn)
         .unwrap();
 
     diesel::copy_to(users::table)
         .with_format(CopyFormat::Csv)
         .load::<User, _>(conn)
+        //~^ ERROR: the method `load` exists for struct `CopyToQuery<table, CopyToOptions>`, but its trait bounds were not satisfied
         .unwrap();
 }

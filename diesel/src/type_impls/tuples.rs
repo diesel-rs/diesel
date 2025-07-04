@@ -43,6 +43,7 @@ macro_rules! tuple_impls {
             impl_from_sql_row!(($($T,)+), ($($ST,)+));
 
 
+            #[diagnostic::do_not_recommend]
             impl<$($T: Expression),+> Expression for ($($T,)+)
             where ($($T::SqlType, )*): TypedExpressionType
             {
@@ -91,6 +92,8 @@ macro_rules! tuple_impls {
                 }
             }
 
+            // cannot use `#[diagnostic::do_not_recommend]` here yet to hide tuple impls
+            // as this makes the error message worse (not saying which column is problematic)
             impl<$($T,)+ Tab> ColumnList for ($($T,)+)
             where
                 $($T: ColumnList<Table = Tab>,)+
@@ -190,6 +193,9 @@ macro_rules! tuple_impls {
                 }
             }
 
+            // not possible to use diagnostic::do_not_recommend to hide the tuple impls
+            // yet as it gives worse error messages
+            // (doesn't show anymore which tuple element doesn't implement the trait)
             impl<$($T,)+ QS> SelectableExpression<QS> for ($($T,)+) where
                 $($T: SelectableExpression<QS>,)+
                 ($($T,)+): AppearsOnTable<QS>,
@@ -339,6 +345,7 @@ macro_rules! tuple_impls {
                 }
             }
 
+            #[diagnostic::do_not_recommend]
             impl<__T, $($ST,)* __DB> CompatibleType<__T, __DB> for ($($ST,)*)
             where
                 __DB: Backend,
@@ -383,6 +390,7 @@ macro_rules! impl_from_sql_row {
         }
     };
     (($T1: ident, $($T: ident,)*), ($ST1: ident, $($ST: ident,)*)) => {
+        #[diagnostic::do_not_recommend]
         impl<$T1, $($T,)* $($ST,)* __DB> FromSqlRow<($($ST,)* crate::sql_types::Untyped), __DB> for ($($T,)* $T1)
         where __DB: Backend,
               $T1: FromSqlRow<crate::sql_types::Untyped, __DB>,

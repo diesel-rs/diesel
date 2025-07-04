@@ -1,9 +1,9 @@
 extern crate diesel;
 
-use diesel::prelude::*;
-use diesel::connection::{LoadConnection, DefaultLoadingMode};
-use diesel::sql_query;
+use diesel::connection::{DefaultLoadingMode, LoadConnection};
 use diesel::pg::PgRowByRowLoadingMode;
+use diesel::prelude::*;
+use diesel::sql_query;
 
 fn main() {
     let conn = &mut SqliteConnection::establish("foo").unwrap();
@@ -13,6 +13,7 @@ fn main() {
     // for the same connection
     let row_iter1 = LoadConnection::load(conn, sql_query("bar")).unwrap();
     let row_iter2 = LoadConnection::load(conn, sql_query("bar")).unwrap();
+    //~^ ERROR: cannot borrow `*conn` as mutable more than once at a time
 
     let _ = row_iter1.zip(row_iter2);
 
@@ -20,6 +21,7 @@ fn main() {
     // The same argument applies to mysql
     let row_iter1 = LoadConnection::load(conn, sql_query("bar")).unwrap();
     let row_iter2 = LoadConnection::load(conn, sql_query("bar")).unwrap();
+    //~^ ERROR: cannot borrow `*conn` as mutable more than once at a time
 
     let _ = row_iter1.zip(row_iter2);
 
@@ -34,6 +36,7 @@ fn main() {
     // It does not work for the libpq row by row mode
     let row_iter1 = LoadConnection::<PgRowByRowLoadingMode>::load(conn, sql_query("bar")).unwrap();
     let row_iter2 = LoadConnection::<PgRowByRowLoadingMode>::load(conn, sql_query("bar")).unwrap();
+    //~^ ERROR: cannot borrow `*conn` as mutable more than once at a time
 
     let _ = row_iter1.zip(row_iter2);
 }

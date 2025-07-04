@@ -36,12 +36,15 @@ fn main() {
     let column_from_other_table = insert_into(users)
         .values(&NewUser("Sean"))
         .on_conflict(posts::id);
+    //~^ ERROR: type mismatch resolving `<id as Column>::Table == table`
 
     let expression_using_column_from_other_table = insert_into(users)
         .values(&NewUser("Sean"))
         .on_conflict(lower(posts::title));
+    //~^ ERROR: the trait bound `lower_utils::lower<posts::columns::title>: Column` is not satisfied
 
     let random_non_expression = insert_into(users)
         .values(&NewUser("Sean"))
         .on_conflict("id");
+    //~^ ERROR: the trait bound `&str: Column` is not satisfied
 }

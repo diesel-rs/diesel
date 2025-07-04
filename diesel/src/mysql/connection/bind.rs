@@ -411,6 +411,12 @@ impl BindData {
         } else {
             let data = self.bytes?;
             let tpe = (self.tpe, self.flags).into();
+            // On some distributions, the mariadb client library returns length 0 for NULL fields of type DECIMAL
+            // instead of using is_null for unknown reasons
+            if self.tpe == self::ffi::enum_field_types::MYSQL_TYPE_LONGLONG && self.length == 0 {
+                return None;
+            }
+
             let slice = unsafe {
                 // We know that this points to a slice and the pointer is not null at this
                 // location

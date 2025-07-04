@@ -1,51 +1,54 @@
-error[E0277]: Cannot use the `LIKE` operator with expressions of the type `diesel::sql_types::Binary` for the backend `Sqlite`
-  --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:21:32
-   |
-21 |         .get_result::<Vec<u8>>(&mut connection).unwrap();
-   |          ----------            ^^^^^^^^^^^^^^^ the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is not implemented for `Sqlite`
-   |          |
-   |          required by a bound introduced by this call
-   |
-   = note: Expressions of the type `diesel::sql_types::Text` and `diesel::sql_types::Nullable<Text>` are
-           allowed for all backends
-   = note: Expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are
-           allowed for the PostgreSQL backend
-   = help: the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is implemented for `Pg`
-   = note: required for `diesel::expression::operators::Like<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>` to implement `QueryFragment<Sqlite>`
-   = note: 6 redundant requirements hidden
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Concat<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::And<diesel::expression::grouped::Grouped<diesel::expression::operators::Like<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::NotLike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>>>>>` to implement `QueryFragment<Sqlite>`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Concat<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::And<diesel::expression::grouped::Grouped<diesel::expression::operators::Like<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::NotLike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>>>>>` to implement `LoadQuery<'_, diesel::SqliteConnection, Vec<u8>>`
+error[E0277]: cannot use the `LIKE` operator with expressions of the type `diesel::sql_types::Binary` for the backend `Sqlite`
+    --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:21:32
+     |
+21   |         .get_result::<Vec<u8>>(&mut connection)
+     |          ----------            ^^^^^^^^^^^^^^^ the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is not implemented for `Sqlite`
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = note: expressions of the type `diesel::sql_types::Text` and `diesel::sql_types::Nullable<Text>` are 
+             allowed for all backends
+     = note: expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are 
+             allowed for the PostgreSQL backend
+     = help: the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is implemented for `Pg`
+     = note: required for `Like<name, Bound<Binary, Vec<u8>>>` to implement `QueryFragment<Sqlite>`
+     = note: 6 redundant requirements hidden
+     = note: required for `SelectStatement<FromClause<table>, SelectClause<...>, ..., ...>` to implement `QueryFragment<Sqlite>`
+     = note: required for `SelectStatement<FromClause<table>, SelectClause<...>, ..., ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, Vec<u8>>`
 note: required by a bound in `get_result`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
-   |        ---------- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-
-error[E0277]: Cannot use the `LIKE` operator with expressions of the type `diesel::sql_types::Binary` for the backend `Mysql`
-  --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:29:32
-   |
-29 |         .get_result::<Vec<u8>>(&mut connection).unwrap();
-   |          ----------            ^^^^^^^^^^^^^^^ the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is not implemented for `Mysql`
-   |          |
-   |          required by a bound introduced by this call
-   |
-   = note: Expressions of the type `diesel::sql_types::Text` and `diesel::sql_types::Nullable<Text>` are
-           allowed for all backends
-   = note: Expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are
-           allowed for the PostgreSQL backend
-   = help: the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is implemented for `Pg`
-   = note: required for `diesel::expression::operators::Like<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>` to implement `QueryFragment<Mysql>`
-   = note: 6 redundant requirements hidden
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Concat<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::And<diesel::expression::grouped::Grouped<diesel::expression::operators::Like<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::NotLike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>>>>>` to implement `QueryFragment<Mysql>`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Concat<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::And<diesel::expression::grouped::Grouped<diesel::expression::operators::Like<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::NotLike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>>>>>>` to implement `LoadQuery<'_, diesel::MysqlConnection, Vec<u8>>`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+     |        ---------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+  
+     
+error[E0277]: cannot use the `LIKE` operator with expressions of the type `diesel::sql_types::Binary` for the backend `Mysql`
+    --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:31:32
+     |
+31   |         .get_result::<Vec<u8>>(&mut connection)
+     |          ----------            ^^^^^^^^^^^^^^^ the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is not implemented for `Mysql`
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = note: expressions of the type `diesel::sql_types::Text` and `diesel::sql_types::Nullable<Text>` are 
+             allowed for all backends
+     = note: expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are 
+             allowed for the PostgreSQL backend
+     = help: the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is implemented for `Pg`
+     = note: required for `Like<name, Bound<Binary, Vec<u8>>>` to implement `QueryFragment<Mysql>`
+     = note: 6 redundant requirements hidden
+     = note: required for `SelectStatement<FromClause<table>, SelectClause<...>, ..., ...>` to implement `QueryFragment<Mysql>`
+     = note: required for `SelectStatement<FromClause<table>, SelectClause<...>, ..., ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, Vec<u8>>`
 note: required by a bound in `get_result`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
-   |        ---------- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+     |        ---------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+  
+     For more information about this error, try `rustc --explain E0277`.

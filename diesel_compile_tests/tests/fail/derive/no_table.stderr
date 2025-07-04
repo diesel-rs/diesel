@@ -1,15 +1,16 @@
 error[E0433]: failed to resolve: use of unresolved module or unlinked crate `users`
  --> tests/fail/derive/no_table.rs:5:8
   |
-5 | struct User {
+LL | struct User {
   |        ^^^^ use of unresolved module or unlinked crate `users`
   |
-  = help: if you wanted to use a crate named `users`, use `cargo add users` to add it to your `Cargo.toml`
+  = help: you might be missing a crate named `users`
 
 error[E0433]: failed to resolve: use of unresolved module or unlinked crate `users`
-  --> tests/fail/derive/no_table.rs:11:23
+  --> tests/fail/derive/no_table.rs:12:23
    |
-11 | #[diesel(table_name = users)]
+LL | #[diesel(table_name = users)]
    |                       ^^^^^ use of unresolved module or unlinked crate `users`
    |
-   = help: if you wanted to use a crate named `users`, use `cargo add users` to add it to your `Cargo.toml`
+   = help: you might be missing a crate named `users`
+For more information about this error, try `rustc --explain E0433`.

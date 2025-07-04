@@ -178,3 +178,9 @@ Check out [their README](https://github.com/rust-lang/rustfmt) for details.
 `Conn`: Connection
 
 Generally, we prefer to give our types meaningful names. `Lhs` and `Rhs` vs `T` and `U` for a binary expression, for example.
+
+### Compile Tests
+
+Diesel has an extensive suite of compile tests in the `diesel_compile_tests` crate. These test work by having a small test program for each test case and then verifying that the compilation of those tests fail with a specific error message. For that we use the [`ui_test`](https://docs.rs/ui_test/latest/ui_test/) also used by rustc.  
+Running these tests can done by simply running `cargo test` in the `diesel_compile_tests` directory. Adding new tests simply requires adding a new file to `diesel_compile_tests/tests/fail/` containing the source code you want to test.
+You can run these tests with the environment variable `BLESS` set to `1` to update the expected stderr output. You also need to update the inline error annotations in the source code to match on the error message. See the documentation of `ui_test` for how to do that. 

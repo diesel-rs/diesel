@@ -1,5 +1,6 @@
 error[E0412]: cannot find type `Bar` in this scope
-  --> $DIR/belongs_to_missing_parent_import.rs:12:21
+  --> tests/fail/derive/belongs_to_missing_parent_import.rs:12:21
    |
-12 | #[diesel(belongs_to(Bar))]
+LL | #[diesel(belongs_to(Bar))]
    |                     ^^^ not found in this scope
+For more information about this error, try `rustc --explain E0412`.

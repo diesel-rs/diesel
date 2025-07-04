@@ -43,8 +43,7 @@ impl Parse for MysqlType {
                 input.span(),
                 format!(
                     "expected attribute `name`\n\
-                     help: The correct format looks like #[diesel({})]",
-                    MYSQL_TYPE_NOTE
+                     help: the correct format looks like #[diesel({MYSQL_TYPE_NOTE})]"
                 ),
             ))
         }

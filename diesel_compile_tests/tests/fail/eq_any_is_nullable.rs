@@ -16,5 +16,6 @@ fn main() {
     let _: Vec<bool> = users::table
         .select(users::name.eq_any(["foo", "bar"]))
         .load(&mut conn)
+        //~^ ERROR: cannot deserialize a value of the database type `diesel::sql_types::Nullable<Bool>` as `bool`
         .unwrap();
 }

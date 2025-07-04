@@ -112,8 +112,8 @@ fn to_field_ty_bound(field_ty: &syn::Type) -> Result<TokenStream> {
             Err(syn::Error::new(
                 field_ty.span(),
                 format!(
-                    "References are not supported in `Queryable` types\n\
-                         Consider using `std::borrow::Cow<'{}, {}>` instead",
+                    "references are not supported in `Queryable` types\n\
+                         consider using `std::borrow::Cow<'{}, {}>` instead",
                     r.lifetime
                         .as_ref()
                         .expect("It's a struct field so it must have a named lifetime")

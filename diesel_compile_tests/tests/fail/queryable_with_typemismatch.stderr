@@ -1,31 +1,33 @@
-error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text): load_dsl::private::CompatibleType<User, _>` is not satisfied
-  --> tests/fail/queryable_with_typemismatch.rs:21:31
-   |
-21 |     users::table.load::<User>(&mut conn).unwrap();
-   |                  ----         ^^^^^^^^^ the trait `load_dsl::private::CompatibleType<User, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text)`
-   |                  |
-   |                  required by a bound introduced by this call
-   |
-   = note: this is a mismatch between what your query returns and what your type expects the query to return
-   = note: the fields in your struct need to match the fields returned by your query in count, order and type
-   = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]`
-           on your struct `User` and in your query `.select(User::as_select())` to get a better error message
-   = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
-             (ST0, ST1)
-             (ST0, ST1, ST2)
-             (ST0, ST1, ST2, ST3)
-             (ST0, ST1, ST2, ST3, ST4)
-             (ST0, ST1, ST2, ST3, ST4, ST5)
-             (ST0, ST1, ST2, ST3, ST4, ST5, ST6)
-             (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)
-             (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)
-           and $N others
-   = note: required for `users::table` to implement `LoadQuery<'_, _, User>`
+error[E0277]: the trait bound `(Integer, Text): CompatibleType<User, _>` is not satisfied
+    --> tests/fail/queryable_with_typemismatch.rs:21:31
+     |
+21   |     users::table.load::<User>(&mut conn).unwrap();
+     |                  ----         ^^^^^^^^^ the trait `load_dsl::private::CompatibleType<User, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text)`
+     |                  |
+     |                  required by a bound introduced by this call
+     |
+     = note: this is a mismatch between what your query returns and what your type expects the query to return
+     = note: the fields in your struct need to match the fields returned by your query in count, order and type
+     = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
+             on your struct `User` and in your query `.select(User::as_select())` to get a better error message
+     = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
+               `Nullable<(ST0, ST1)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4, ST5)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4, ST5, ST6)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+             and N others
+     = note: required for `users::table` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-   |        ---- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     For more information about this error, try `rustc --explain E0277`.
