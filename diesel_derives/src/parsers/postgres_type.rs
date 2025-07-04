@@ -68,7 +68,7 @@ impl PostgresType {
         schema: Option<(Ident, LitStr)>,
     ) -> Result<Self> {
         let help = format!(
-            "The correct format looks like either `#[diesel({POSTGRES_TYPE_NOTE})]` or `#[diesel({POSTGRES_TYPE_NOTE_ID})]`"
+            "the correct format looks like either `#[diesel({POSTGRES_TYPE_NOTE})]` or `#[diesel({POSTGRES_TYPE_NOTE_ID})]`"
         );
 
         if let Some((_, name)) = name {
