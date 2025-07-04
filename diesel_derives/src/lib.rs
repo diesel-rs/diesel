@@ -2172,24 +2172,28 @@ pub fn declare_sql_function(
 ) -> proc_macro::TokenStream {
     let input = proc_macro2::TokenStream::from(input);
 
-    let attr =
-        match crate::sql_function::DeclareSqlFunctionArgs::parse_from_macro_input(attr.into()) {
-            Err(e) => {
-                return e.into_compile_error().into();
-            }
-            Ok(attr) => attr,
-        };
+    let attr = crate::sql_function::DeclareSqlFunctionArgs::parse_from_macro_input(attr.into());
 
     let result = syn::parse2::<ExternSqlBlock>(input.clone()).map(|res| {
-        sql_function::expand(res.function_decls, false, attr.generate_return_type_helpers)
+        sql_function::expand(
+            res.function_decls,
+            false,
+            attr.as_ref()
+                .map(|attr| attr.generate_return_type_helpers)
+                .unwrap_or(true),
+        )
     });
 
-    match result {
-        Ok(token_stream) => token_stream.into(),
+    let mut output = match result {
+        Ok(token_stream) => token_stream,
         Err(e) => {
             let mut output = input;
             output.extend(e.into_compile_error());
-            output.into()
+            output
         }
+    };
+    if let Err(e) = attr {
+        output.extend(e.into_compile_error());
     }
+    output.into()
 }

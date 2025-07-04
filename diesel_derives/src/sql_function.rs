@@ -85,13 +85,13 @@ fn expand_one(
 
     let variadic_argument_count = attributes.iter().find_map(|attr| {
         if let SqlFunctionAttribute::Variadic(_, c) = &attr.item {
-            Some(c.base10_parse())
+            Some((c.base10_parse(), c.span()))
         } else {
             None
         }
     });
 
-    let Some(variadic_argument_count) = variadic_argument_count else {
+    let Some((variadic_argument_count, variadic_span)) = variadic_argument_count else {
         let sql_name = parse_sql_name_attr(&mut input);
 
         return expand_nonvariadic(
@@ -117,6 +117,7 @@ fn expand_one(
             generate_return_type_helpers,
             variadic_argument_count,
             variant_no,
+            variadic_span,
         )?;
 
         if let Some(return_type_helper_module_path) = expanded.return_type_helper_module_path {
@@ -166,6 +167,7 @@ fn expand_variadic(
     generate_return_type_helpers: bool,
     variadic_argument_count: usize,
     variant_no: usize,
+    variadic_span: Span,
 ) -> syn::Result<ExpandedSqlFunction> {
     add_variadic_doc_comments(&mut input.attributes, &input.fn_name.to_string());
 
@@ -173,7 +175,16 @@ fn expand_variadic(
 
     input.fn_name = format_ident!("{}_{}", input.fn_name, variant_no);
 
-    let nonvariadic_args_count = input.args.len() - variadic_argument_count;
+    let nonvariadic_args_count = input
+        .args
+        .len()
+        .checked_sub(variadic_argument_count)
+        .ok_or_else(|| {
+            syn::Error::new(
+                variadic_span,
+                "invalid variadic argument count: not enough function arguments",
+            )
+        })?;
 
     let mut variadic_generic_indexes = vec![];
     let mut arguments_with_generic_types = vec![];
@@ -969,6 +980,8 @@ pub(crate) struct ExternSqlBlock {
 
 impl Parse for ExternSqlBlock {
     fn parse(input: ParseStream) -> Result<Self> {
+        let mut error = None::<syn::Error>;
+
         let block = syn::ItemForeignMod::parse(input)?;
         if block.abi.name.as_ref().map(|n| n.value()) != Some("SQL".into()) {
             return Err(syn::Error::new(block.abi.span(), "expect `SQL` as ABI"));
@@ -979,13 +992,30 @@ impl Parse for ExternSqlBlock {
                 "expect `SQL` function blocks to be safe",
             ));
         }
-        let function_decls = block
-            .items
-            .into_iter()
-            .map(|i| syn::parse2(quote! { #i }))
-            .collect::<Result<Vec<_>>>()?;
+        let item_count = block.items.len();
+        let function_decls_input = block.items.into_iter().map(|i| syn::parse2(quote! { #i }));
 
-        Ok(ExternSqlBlock { function_decls })
+        let mut function_decls = Vec::with_capacity(item_count);
+        for decl in function_decls_input {
+            match decl {
+                Ok(decl) => function_decls.push(decl),
+                Err(e) => {
+                    error = Some(
+                        error
+                            .take()
+                            .map(|mut o| {
+                                o.combine(e.clone());
+                                o
+                            })
+                            .unwrap_or(e),
+                    );
+                }
+            }
+        }
+
+        error
+            .map(Err)
+            .unwrap_or(Ok(ExternSqlBlock { function_decls }))
     }
 }
 
@@ -1001,107 +1031,198 @@ pub(crate) struct SqlFunctionDecl {
 
 impl Parse for SqlFunctionDecl {
     fn parse(input: ParseStream) -> Result<Self> {
-        let attributes = Attribute::parse_outer(input)?;
-
-        let attributes = attributes
-            .into_iter()
-            .map(|attr| match &attr.meta {
-                syn::Meta::NameValue(syn::MetaNameValue {
-                    path,
-                    value:
-                        syn::Expr::Lit(syn::ExprLit {
-                            lit: syn::Lit::Str(sql_name),
-                            ..
-                        }),
-                    ..
-                }) if path.is_ident("sql_name") => Ok(AttributeSpanWrapper {
-                    attribute_span: attr.span(),
-                    ident_span: sql_name.span(),
-                    item: SqlFunctionAttribute::SqlName(
-                        path.require_ident()?.clone(),
-                        sql_name.clone(),
-                    ),
-                }),
-                syn::Meta::Path(path) if path.is_ident("aggregate") => Ok(AttributeSpanWrapper {
-                    attribute_span: attr.span(),
-                    ident_span: path.span(),
-                    item: SqlFunctionAttribute::Aggregate(path.require_ident()?.clone()),
-                }),
-                syn::Meta::Path(path) if path.is_ident("skip_return_type_helper") => {
-                    Ok(AttributeSpanWrapper {
-                        ident_span: attr.span(),
-                        attribute_span: path.span(),
-                        item: SqlFunctionAttribute::SkipReturnTypeHelper(
-                            path.require_ident()?.clone(),
-                        ),
+        let mut error = None::<syn::Error>;
+        let mut combine_error = |e: syn::Error| {
+            error = Some(
+                error
+                    .take()
+                    .map(|mut o| {
+                        o.combine(e.clone());
+                        o
                     })
-                }
-                syn::Meta::Path(path) if path.is_ident("window") => Ok(AttributeSpanWrapper {
-                    attribute_span: attr.span(),
-                    ident_span: path.span(),
-                    item: SqlFunctionAttribute::Window(
-                        path.require_ident()?.clone(),
-                        BackendRestriction::None,
+                    .unwrap_or(e),
+            )
+        };
+
+        let attributes = Attribute::parse_outer(input).unwrap_or_else(|e| {
+            combine_error(e);
+            Vec::new()
+        });
+        let attribute_count = attributes.len();
+
+        let attributes = attributes.into_iter().map(|attr| match &attr.meta {
+            syn::Meta::NameValue(syn::MetaNameValue {
+                path,
+                value:
+                    syn::Expr::Lit(syn::ExprLit {
+                        lit: syn::Lit::Str(sql_name),
+                        ..
+                    }),
+                ..
+            }) if path.is_ident("sql_name") => Ok(AttributeSpanWrapper {
+                attribute_span: attr.span(),
+                ident_span: sql_name.span(),
+                item: SqlFunctionAttribute::SqlName(
+                    path.require_ident()?.clone(),
+                    sql_name.clone(),
+                ),
+            }),
+            syn::Meta::Path(path) if path.is_ident("aggregate") => Ok(AttributeSpanWrapper {
+                attribute_span: attr.span(),
+                ident_span: path.span(),
+                item: SqlFunctionAttribute::Aggregate(
+                    path.require_ident()
+                        .map_err(|e| {
+                            syn::Error::new(
+                                e.span(),
+                                format!("{e}, the correct format is `#[aggregate]`"),
+                            )
+                        })?
+                        .clone(),
+                ),
+            }),
+            syn::Meta::Path(path) if path.is_ident("skip_return_type_helper") => {
+                Ok(AttributeSpanWrapper {
+                    ident_span: attr.span(),
+                    attribute_span: path.span(),
+                    item: SqlFunctionAttribute::SkipReturnTypeHelper(
+                        path.require_ident()
+                            .map_err(|e| {
+                                syn::Error::new(
+                                    e.span(),
+                                    format!(
+                                        "{e}, the correct format is `#[skip_return_type_helper]`"
+                                    ),
+                                )
+                            })?
+                            .clone(),
                     ),
-                }),
-                syn::Meta::NameValue(syn::MetaNameValue {
-                    path,
-                    value:
-                        syn::Expr::Lit(syn::ExprLit {
-                            lit: syn::Lit::Int(count),
-                            ..
-                        }),
-                    ..
-                }) if path.is_ident("variadic") => Ok(AttributeSpanWrapper {
+                })
+            }
+            syn::Meta::Path(path) if path.is_ident("window") => Ok(AttributeSpanWrapper {
+                attribute_span: attr.span(),
+                ident_span: path.span(),
+                item: SqlFunctionAttribute::Window(
+                    path.require_ident()
+                        .map_err(|e| {
+                            syn::Error::new(
+                                e.span(),
+                                format!("{e}, the correct format is `#[window]`"),
+                            )
+                        })?
+                        .clone(),
+                    BackendRestriction::None,
+                ),
+            }),
+            syn::Meta::List(syn::MetaList {
+                path,
+                delimiter: syn::MacroDelimiter::Paren(_),
+                tokens,
+            }) if path.is_ident("variadic") => {
+                let count: syn::LitInt = syn::parse2(tokens.clone()).map_err(|e| {
+                    syn::Error::new(
+                        e.span(),
+                        format!("{e}, the correct format is `#[variadic(3)]`"),
+                    )
+                })?;
+                Ok(AttributeSpanWrapper {
                     item: SqlFunctionAttribute::Variadic(
-                        path.require_ident()?.clone(),
+                        path.require_ident()
+                            .map_err(|e| {
+                                syn::Error::new(
+                                    e.span(),
+                                    format!("{e}, the correct format is `#[variadic(3)]`"),
+                                )
+                            })?
+                            .clone(),
                         count.clone(),
                     ),
                     attribute_span: attr.span(),
                     ident_span: path.require_ident()?.span(),
-                }),
-                syn::Meta::NameValue(_) | syn::Meta::Path(_) => Ok(AttributeSpanWrapper {
-                    attribute_span: attr.span(),
-                    ident_span: attr.span(),
-                    item: SqlFunctionAttribute::Other(attr),
-                }),
-                syn::Meta::List(_) => {
-                    let name = attr.meta.path().require_ident()?;
-                    let attribute_span = attr.meta.span();
-                    attr.clone()
-                        .parse_args_with(|input: &syn::parse::ParseBuffer| {
-                            SqlFunctionAttribute::parse_attr(
-                                name.clone(),
-                                input,
-                                attr.clone(),
-                                attribute_span,
-                            )
-                        })
-                }
-            })
-            .collect::<Result<Vec<_>>>()?;
+                })
+            }
+            syn::Meta::NameValue(_) | syn::Meta::Path(_) => Ok(AttributeSpanWrapper {
+                attribute_span: attr.span(),
+                ident_span: attr.span(),
+                item: SqlFunctionAttribute::Other(attr),
+            }),
+            syn::Meta::List(_) => {
+                let name = attr.meta.path().require_ident()?;
+                let attribute_span = attr.meta.span();
+                attr.clone()
+                    .parse_args_with(|input: &syn::parse::ParseBuffer| {
+                        SqlFunctionAttribute::parse_attr(
+                            name.clone(),
+                            input,
+                            attr.clone(),
+                            attribute_span,
+                        )
+                    })
+            }
+        });
 
-        let fn_token: Token![fn] = input.parse()?;
-        let fn_name = Ident::parse(input)?;
-        let generics = Generics::parse(input)?;
+        let mut attributes_collected = Vec::with_capacity(attribute_count);
+        for attr in attributes {
+            match attr {
+                Ok(attr) => attributes_collected.push(attr),
+                Err(e) => {
+                    combine_error(e);
+                }
+            }
+        }
+
+        let fn_token: Token![fn] = input.parse().unwrap_or_else(|e| {
+            combine_error(e);
+            Default::default()
+        });
+        let fn_name = Ident::parse(input).unwrap_or_else(|e| {
+            combine_error(e);
+            Ident::new("dummy", Span::call_site())
+        });
+        let generics = Generics::parse(input).unwrap_or_else(|e| {
+            combine_error(e);
+            Generics {
+                lt_token: None,
+                params: Punctuated::new(),
+                gt_token: None,
+                where_clause: None,
+            }
+        });
         let args;
         let _paren = parenthesized!(args in input);
-        let args = args.parse_terminated(StrictFnArg::parse, Token![,])?;
-        let return_type = if Option::<Token![->]>::parse(input)?.is_some() {
-            Type::parse(input)?
+        let args = args
+            .parse_terminated(StrictFnArg::parse, Token![,])
+            .unwrap_or_else(|e| {
+                combine_error(e);
+                Punctuated::new()
+            });
+        let rarrow = Option::<Token![->]>::parse(input).unwrap_or_else(|e| {
+            combine_error(e);
+            None
+        });
+        let return_type = if rarrow.is_some() {
+            Type::parse(input).unwrap_or_else(|e| {
+                combine_error(e);
+                Type::Never(syn::TypeNever {
+                    bang_token: Default::default(),
+                })
+            })
         } else {
             parse_quote!(diesel::expression::expression_types::NotSelectable)
         };
-        let _semi = Option::<Token![;]>::parse(input)?;
+        let _semi = Option::<Token![;]>::parse(input).unwrap_or_else(|e| {
+            combine_error(e);
+            None
+        });
 
-        Ok(Self {
-            attributes,
+        error.map(Err).unwrap_or(Ok(Self {
+            attributes: attributes_collected,
             fn_token,
             fn_name,
             generics,
             args,
             return_type,
-        })
+        }))
     }
 }
 
@@ -1525,7 +1646,13 @@ impl DeclareSqlFunctionArgs {
             return Ok(Self::default());
         }
         let input_span = input.span();
-        let parsed: syn::MetaNameValue = syn::parse2(input)?;
+        let parsed: syn::MetaNameValue = syn::parse2(input).map_err(|e| {
+            let span = e.span();
+            syn::Error::new(
+                span,
+                format!("{e}, the correct format is `generate_return_type_helpers = true/false`"),
+            )
+        })?;
         match parsed {
             syn::MetaNameValue {
                 path,
