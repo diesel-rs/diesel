@@ -1,7 +1,9 @@
 use self::private::LoadIter;
 use super::RunQueryDsl;
 use crate::backend::Backend;
-use crate::connection::{Connection, DefaultLoadingMode, LoadConnection};
+use crate::connection::{
+    Connection, ConnectionWithReturningId, DefaultLoadingMode, LoadConnection,
+};
 use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
@@ -91,6 +93,34 @@ where
 {
     fn execute(query: T, conn: &mut Conn) -> Result<usize, Error> {
         conn.execute_returning_count(&query)
+    }
+}
+
+/// The `execute_with_returning_id` method
+///
+/// This is currently only implemented for [`MySQL`], because MySQL provides a
+/// `last_insert_id` field as part of its response packet to `INSERT` queries, but
+/// it's in a trait to avoid a backwards-incompatible change in the future if such
+/// functionality becomes available in other back-ends.
+///
+/// [`MySQL`]: crate::mysql::Mysql
+pub trait ExecuteInsertWithReturningId<
+    Conn: ConnectionWithReturningId<Backend = DB>,
+    DB: Backend = <Conn as Connection>::Backend,
+>: Sized
+{
+    /// Execute this command
+    fn execute_with_returning_id(query: Self, conn: &mut Conn) -> QueryResult<Conn::ReturnedId>;
+}
+
+impl<Conn, DB, T> ExecuteInsertWithReturningId<Conn, DB> for T
+where
+    Conn: ConnectionWithReturningId<Backend = DB>,
+    DB: Backend,
+    T: QueryFragment<DB> + QueryId,
+{
+    fn execute_with_returning_id(query: Self, conn: &mut Conn) -> QueryResult<Conn::ReturnedId> {
+        conn.execute_returning_id(&query)
     }
 }
 
