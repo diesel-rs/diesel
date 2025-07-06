@@ -34,9 +34,7 @@ futures-util = { version = "0.3", optional = true }
 criterion-perf-events = { version = "0.4", optional = true }
 perfcnt = { version = "0.8", optional = true }
 wtx = { default-features = false, features = [
-  "mysql",
   "optimization",
-  "postgres",
   "rand_chacha",
   "std",
   "tokio",
