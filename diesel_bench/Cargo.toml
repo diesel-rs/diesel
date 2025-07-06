@@ -40,7 +40,7 @@ wtx = { default-features = false, features = [
   "rand_chacha",
   "std",
   "tokio",
-], optional = true, version = "0.35" }
+], optional = true, version = "0.34.0" }
 
 [dependencies.diesel-async]
 git = "https://github.com/weiznich/diesel_async"
