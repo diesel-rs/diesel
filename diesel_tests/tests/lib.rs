@@ -33,6 +33,7 @@ mod filter;
 mod filter_operators;
 mod find;
 mod group_by;
+mod has_query;
 mod having;
 mod index;
 mod insert;
