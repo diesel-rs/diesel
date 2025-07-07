@@ -45,6 +45,7 @@ mod identifiable;
 mod insertable;
 mod multiconnection;
 mod query_id;
+mod query_model;
 mod queryable;
 mod queryable_by_name;
 mod selectable;
@@ -908,7 +909,7 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 ///   `#[diesel(select_expression_type = dsl::IsNotNull<my_table::some_field>)]`
 #[proc_macro_derive(Selectable, attributes(diesel))]
 pub fn derive_selectable(input: TokenStream) -> TokenStream {
-    selectable::derive(parse_macro_input!(input))
+    selectable::derive(parse_macro_input!(input), None)
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }
@@ -2205,4 +2206,11 @@ impl DeclareSqlFunctionArgs {
         let args = NestedMeta::parse_meta_list(input.into())?;
         Ok(DeclareSqlFunctionArgs::from_list(&args)?)
     }
+}
+
+#[proc_macro_derive(QueryModel, attributes(diesel))]
+pub fn derive_query_model(input: TokenStream) -> TokenStream {
+    query_model::derive(parse_macro_input!(input))
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }
