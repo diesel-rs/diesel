@@ -24,7 +24,7 @@ extern crate syn;
 
 use proc_macro::TokenStream;
 use sql_function::ExternSqlBlock;
-use syn::{parse_macro_input, parse_quote};
+use syn::parse_quote;
 
 mod attrs;
 mod deprecated;
@@ -50,6 +50,8 @@ mod selectable;
 mod sql_function;
 mod sql_type;
 mod table;
+#[cfg(test)]
+mod tests;
 mod valid_grouping;
 
 /// Implements `AsChangeset`
@@ -126,9 +128,13 @@ mod valid_grouping;
     proc_macro_derive(AsChangeset, attributes(diesel))
 )]
 pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
-    as_changeset::derive(parse_macro_input!(input))
+    derive_as_changeset_inner(input.into()).into()
+}
+
+fn derive_as_changeset_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(as_changeset::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implements all required variants of `AsExpression`
@@ -169,9 +175,13 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     proc_macro_derive(AsExpression, attributes(diesel))
 )]
 pub fn derive_as_expression(input: TokenStream) -> TokenStream {
-    as_expression::derive(parse_macro_input!(input))
+    derive_as_expression_inner(input.into()).into()
+}
+
+fn derive_as_expression_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(as_expression::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implement required traits for the associations API
@@ -217,15 +227,25 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
     proc_macro_derive(Associations, attributes(diesel, belongs_to, column_name, table_name))
 )]
 pub fn derive_associations(input: TokenStream) -> TokenStream {
-    associations::derive(parse_macro_input!(input))
+    derive_associations_inner(input.into()).into()
+}
+
+fn derive_associations_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(associations::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implement numeric operators for the current query node
 #[proc_macro_derive(DieselNumericOps)]
 pub fn derive_diesel_numeric_ops(input: TokenStream) -> TokenStream {
-    diesel_numeric_ops::derive(parse_macro_input!(input)).into()
+    derive_diesel_numeric_ops_inner(input.into()).into()
+}
+
+fn derive_diesel_numeric_ops_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .map(diesel_numeric_ops::derive)
+        .unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// Implements `Queryable` for types that correspond to a single SQL type. The type must implement `FromSql`.
@@ -236,9 +256,13 @@ pub fn derive_diesel_numeric_ops(input: TokenStream) -> TokenStream {
 /// There are no options or special considerations needed for this derive.
 #[proc_macro_derive(FromSqlRow, attributes(diesel))]
 pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
-    from_sql_row::derive(parse_macro_input!(input))
+    derive_from_sql_row_inner(input.into()).into()
+}
+
+fn derive_from_sql_row_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(from_sql_row::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implements `Identifiable` for references of the current type
@@ -286,9 +310,13 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
     proc_macro_derive(Identifiable, attributes(diesel))
 )]
 pub fn derive_identifiable(input: TokenStream) -> TokenStream {
-    identifiable::derive(parse_macro_input!(input))
+    derive_identifiable_inner(input.into()).into()
+}
+
+fn derive_identifiable_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(identifiable::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implements `Insertable`
@@ -425,9 +453,13 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
     proc_macro_derive(Insertable, attributes(diesel))
 )]
 pub fn derive_insertable(input: TokenStream) -> TokenStream {
-    insertable::derive(parse_macro_input!(input))
+    derive_insertable_inner(input.into()).into()
+}
+
+fn derive_insertable_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(insertable::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implements `QueryId`
@@ -466,7 +498,13 @@ pub fn derive_insertable(input: TokenStream) -> TokenStream {
 /// In that case, you should implement it manually instead.
 #[proc_macro_derive(QueryId, attributes(diesel))]
 pub fn derive_query_id(input: TokenStream) -> TokenStream {
-    query_id::derive(parse_macro_input!(input)).into()
+    derive_query_id_inner(input.into()).into()
+}
+
+fn derive_query_id_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .map(query_id::derive)
+        .unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// Implements `Queryable` to load the result of statically typed queries
@@ -639,9 +677,13 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
     proc_macro_derive(Queryable, attributes(diesel))
 )]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
-    queryable::derive(parse_macro_input!(input))
+    derive_queryable_inner(input.into()).into()
+}
+
+fn derive_queryable_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(queryable::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implements `QueryableByName` for untyped sql queries, such as that one generated
@@ -841,9 +883,13 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
     proc_macro_derive(QueryableByName, attributes(diesel))
 )]
 pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
-    queryable_by_name::derive(parse_macro_input!(input))
+    derive_queryable_by_name_inner(input.into()).into()
+}
+
+fn derive_queryable_by_name_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(queryable_by_name::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implements `Selectable`
@@ -907,9 +953,13 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 ///   `#[diesel(select_expression_type = dsl::IsNotNull<my_table::some_field>)]`
 #[proc_macro_derive(Selectable, attributes(diesel))]
 pub fn derive_selectable(input: TokenStream) -> TokenStream {
-    selectable::derive(parse_macro_input!(input))
+    derive_selectable_inner(input.into()).into()
+}
+
+fn derive_selectable_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(selectable::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implement necessary traits for adding a new sql type
@@ -959,9 +1009,13 @@ pub fn derive_selectable(input: TokenStream) -> TokenStream {
     proc_macro_derive(SqlType, attributes(diesel))
 )]
 pub fn derive_sql_type(input: TokenStream) -> TokenStream {
-    sql_type::derive(parse_macro_input!(input))
+    derive_sql_type_inner(input.into()).into()
+}
+
+fn derive_sql_type_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(sql_type::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implements `ValidGrouping`
@@ -1005,9 +1059,13 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 ///   SQL expression
 #[proc_macro_derive(ValidGrouping, attributes(diesel))]
 pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
-    valid_grouping::derive(parse_macro_input!(input))
+    derive_valid_grouping_inner(input.into()).into()
+}
+
+fn derive_valid_grouping_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(valid_grouping::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Declare a sql function for use in your code.
@@ -1085,7 +1143,13 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///
 #[proc_macro]
 pub fn define_sql_function(input: TokenStream) -> TokenStream {
-    sql_function::expand(vec![parse_macro_input!(input)], false, false).into()
+    define_sql_function_inner(input.into()).into()
+}
+
+fn define_sql_function_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .map(|input| sql_function::expand(vec![input], false, false))
+        .unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// A legacy version of [`define_sql_function!`].
@@ -1118,7 +1182,14 @@ pub fn define_sql_function(input: TokenStream) -> TokenStream {
 #[proc_macro]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
-    sql_function::expand(vec![parse_macro_input!(input)], true, false).into()
+    sql_function_proc_inner(input.into()).into()
+}
+
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+fn sql_function_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .map(|i| sql_function::expand(vec![i], true, false))
+        .unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// This is an internal diesel macro that
@@ -1127,7 +1198,13 @@ pub fn sql_function_proc(input: TokenStream) -> TokenStream {
 #[doc(hidden)]
 #[proc_macro]
 pub fn __diesel_for_each_tuple(input: TokenStream) -> TokenStream {
-    diesel_for_each_tuple::expand(parse_macro_input!(input)).into()
+    __diesel_for_each_tuple_inner(input.into()).into()
+}
+
+fn __diesel_for_each_tuple_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .map(diesel_for_each_tuple::expand)
+        .unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// This is an internal diesel macro that
@@ -1136,7 +1213,17 @@ pub fn __diesel_for_each_tuple(input: TokenStream) -> TokenStream {
 #[doc(hidden)]
 #[proc_macro_attribute]
 pub fn __diesel_public_if(attrs: TokenStream, input: TokenStream) -> TokenStream {
-    diesel_public_if::expand(parse_macro_input!(attrs), parse_macro_input!(input)).into()
+    __diesel_public_if_inner(attrs.into(), input.into()).into()
+}
+
+fn __diesel_public_if_inner(
+    attrs: proc_macro2::TokenStream,
+    input: proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(|input| syn::parse2(attrs).map(|a| (a, input)))
+        .map(|(a, i)| diesel_public_if::expand(a, i))
+        .unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// Specifies that a table exists, and what columns it has. This will create a
@@ -1306,18 +1393,21 @@ pub fn __diesel_public_if(attrs: TokenStream, input: TokenStream) -> TokenStream
 /// ```
 #[proc_macro]
 pub fn table_proc(input: TokenStream) -> TokenStream {
+    table_proc_inner(input.into()).into()
+}
+
+fn table_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     // include the input in the error output so that rust-analyzer is happy
-    let tokenstream2 = proc_macro2::TokenStream::from(input.clone());
-    match syn::parse(input) {
-        Ok(input) => table::expand(input).into(),
+    let tokenstream2 = input.clone();
+    match syn::parse2(input) {
+        Ok(input) => table::expand(input),
         Err(_) => quote::quote! {
             compile_error!(
                 "invalid `table!` syntax \nhelp: please see the `table!` macro docs for more info\n\
                  help: docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`\n"
             );
             #tokenstream2
-        }
-        .into(),
+        },
     }
 }
 
@@ -1501,7 +1591,13 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro_derive(MultiConnection)]
 pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
-    multiconnection::derive(syn::parse_macro_input!(input)).into()
+    derive_multiconnection_inner(input.into()).into()
+}
+
+fn derive_multiconnection_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .map(multiconnection::derive)
+        .unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// Automatically annotates return type of a query fragment function
@@ -1660,9 +1756,16 @@ pub fn auto_type(
     attr: proc_macro::TokenStream,
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
+    auto_type_inner(attr.into(), input.into()).into()
+}
+
+fn auto_type_inner(
+    attr: proc_macro2::TokenStream,
+    input: proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
     dsl_auto_type::auto_type_proc_macro_attribute(
-        proc_macro2::TokenStream::from(attr),
-        proc_macro2::TokenStream::from(input),
+        attr,
+        input,
         dsl_auto_type::DeriveSettings::builder()
             .default_dsl_path(parse_quote!(diesel::dsl))
             .default_generate_type_alias(true)
@@ -1670,7 +1773,6 @@ pub fn auto_type(
             .default_function_type_case(AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE)
             .build(),
     )
-    .into()
 }
 
 const AUTO_TYPE_DEFAULT_METHOD_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type::Case::UpperCamel;
@@ -2170,9 +2272,14 @@ pub fn declare_sql_function(
     attr: proc_macro::TokenStream,
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-    let input = proc_macro2::TokenStream::from(input);
+    declare_sql_function_inner(attr.into(), input.into()).into()
+}
 
-    let attr = crate::sql_function::DeclareSqlFunctionArgs::parse_from_macro_input(attr.into());
+fn declare_sql_function_inner(
+    attr: proc_macro2::TokenStream,
+    input: proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
+    let attr = crate::sql_function::DeclareSqlFunctionArgs::parse_from_macro_input(attr);
 
     let result = syn::parse2::<ExternSqlBlock>(input.clone()).map(|res| {
         sql_function::expand(
@@ -2195,5 +2302,5 @@ pub fn declare_sql_function(
     if let Err(e) = attr {
         output.extend(e.into_compile_error());
     }
-    output.into()
+    output
 }

@@ -1,0 +1,157 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "define_sql_function! {\n    fn lower(input : Text) -> Text;\n}\n"
+---
+#[allow(non_camel_case_types)]
+pub fn lower<input>(input: input) -> lower<input>
+where
+    input: diesel::expression::AsExpression<Text>,
+{
+    lower_utils::lower {
+        input: input.as_expression(),
+    }
+}
+#[allow(non_camel_case_types, non_snake_case)]
+///The return type of [`lower()`](super::fn_name)
+pub type lower<input> = lower_utils::lower<
+    <input as diesel::expression::AsExpression<Text>>::Expression,
+>;
+#[doc(hidden)]
+#[allow(non_camel_case_types, non_snake_case, unused_imports)]
+pub(crate) mod lower_utils {
+    use diesel::{self, QueryResult};
+    use diesel::expression::{
+        AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping,
+    };
+    use diesel::query_builder::{QueryFragment, AstPass};
+    use diesel::sql_types::*;
+    use diesel::internal::sql_functions::*;
+    use super::*;
+    #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+    #[derive(diesel::sql_types::DieselNumericOps)]
+    pub struct lower<input> {
+        pub(super) input: input,
+    }
+    ///The return type of [`lower()`](super::fn_name)
+    pub type HelperType<input> = lower<<input as AsExpression<Text>>::Expression>;
+    impl<input> Expression for lower<input>
+    where
+        (input): Expression,
+    {
+        type SqlType = Text;
+    }
+    impl<input, __DieselInternal> SelectableExpression<__DieselInternal> for lower<input>
+    where
+        input: SelectableExpression<__DieselInternal>,
+        Self: AppearsOnTable<__DieselInternal>,
+    {}
+    impl<input, __DieselInternal> AppearsOnTable<__DieselInternal> for lower<input>
+    where
+        input: AppearsOnTable<__DieselInternal>,
+        Self: Expression,
+    {}
+    impl<input, __DieselInternal> FunctionFragment<__DieselInternal> for lower<input>
+    where
+        __DieselInternal: diesel::backend::Backend,
+        input: QueryFragment<__DieselInternal>,
+    {
+        const FUNCTION_NAME: &'static str = "lower";
+        #[allow(unused_assignments)]
+        fn walk_arguments<'__b>(
+            &'__b self,
+            mut out: AstPass<'_, '__b, __DieselInternal>,
+        ) -> QueryResult<()> {
+            let mut needs_comma = false;
+            if !self.input.is_noop(out.backend())? {
+                if needs_comma {
+                    out.push_sql(", ");
+                }
+                self.input.walk_ast(out.reborrow())?;
+                needs_comma = true;
+            }
+            Ok(())
+        }
+    }
+    impl<input, __DieselInternal> QueryFragment<__DieselInternal> for lower<input>
+    where
+        __DieselInternal: diesel::backend::Backend,
+        input: QueryFragment<__DieselInternal>,
+    {
+        fn walk_ast<'__b>(
+            &'__b self,
+            mut out: AstPass<'_, '__b, __DieselInternal>,
+        ) -> QueryResult<()> {
+            out.push_sql(<Self as FunctionFragment<__DieselInternal>>::FUNCTION_NAME);
+            out.push_sql("(");
+            self.walk_arguments(out.reborrow())?;
+            out.push_sql(")");
+            Ok(())
+        }
+    }
+    #[derive(ValidGrouping)]
+    pub struct __Derived<input>(input);
+    impl<input, __DieselInternal> ValidGrouping<__DieselInternal> for lower<input>
+    where
+        __Derived<input>: ValidGrouping<__DieselInternal>,
+    {
+        type IsAggregate = <__Derived<
+            input,
+        > as ValidGrouping<__DieselInternal>>::IsAggregate;
+    }
+    use diesel::sqlite::{Sqlite, SqliteConnection};
+    use diesel::serialize::ToSql;
+    use diesel::deserialize::{FromSqlRow, StaticallySizedRow};
+    #[allow(dead_code)]
+    /// Registers an implementation for this function on the given connection
+    ///
+    /// This function must be called for every `SqliteConnection` before
+    /// this SQL function can be used on SQLite. The implementation must be
+    /// deterministic (returns the same result given the same arguments). If
+    /// the function is nondeterministic, call
+    /// `register_nondeterministic_impl` instead.
+    pub fn register_impl<F, Ret, input>(
+        conn: &mut SqliteConnection,
+        f: F,
+    ) -> QueryResult<()>
+    where
+        F: Fn(input) -> Ret + std::panic::UnwindSafe + Send + 'static,
+        (input,): FromSqlRow<(Text,), Sqlite> + StaticallySizedRow<(Text,), Sqlite>,
+        Ret: ToSql<Text, Sqlite>,
+    {
+        conn.register_sql_function::<
+                (Text,),
+                Text,
+                _,
+                _,
+                _,
+            >("lower", true, move |(input,)| f(input))
+    }
+    #[allow(dead_code)]
+    /// Registers an implementation for this function on the given connection
+    ///
+    /// This function must be called for every `SqliteConnection` before
+    /// this SQL function can be used on SQLite.
+    /// `register_nondeterministic_impl` should only be used if your
+    /// function can return different results with the same arguments (e.g.
+    /// `random`). If your function is deterministic, you should call
+    /// `register_impl` instead.
+    pub fn register_nondeterministic_impl<F, Ret, input>(
+        conn: &mut SqliteConnection,
+        mut f: F,
+    ) -> QueryResult<()>
+    where
+        F: FnMut(input) -> Ret + std::panic::UnwindSafe + Send + 'static,
+        (input,): FromSqlRow<(Text,), Sqlite> + StaticallySizedRow<(Text,), Sqlite>,
+        Ret: ToSql<Text, Sqlite>,
+    {
+        conn.register_sql_function::<
+                (Text,),
+                Text,
+                _,
+                _,
+                _,
+            >("lower", false, move |(input,)| f(input))
+    }
+}
