@@ -1,0 +1,8 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+---
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) mod foo;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub mod foo;

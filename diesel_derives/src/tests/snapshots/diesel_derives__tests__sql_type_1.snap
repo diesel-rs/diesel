@@ -1,0 +1,14 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+---
+#[allow(unused_imports)]
+#[allow(unused_qualifications)]
+const _: () = {
+    use diesel;
+    impl diesel::sql_types::SqlType for Integer {
+        type IsNull = diesel::sql_types::is_nullable::NotNull;
+        const IS_ARRAY: bool = false;
+    }
+    impl diesel::sql_types::SingleValue for Integer {}
+};
