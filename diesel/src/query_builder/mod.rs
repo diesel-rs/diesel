@@ -438,3 +438,5 @@ mod private {
     #[allow(missing_debug_implementations, missing_copy_implementations)]
     pub struct NotSpecialized;
 }
+
+pub(crate) mod has_query;

@@ -27,8 +27,15 @@ pub struct Model {
     pub mysql_type: Option<MysqlType>,
     pub sqlite_type: Option<SqliteType>,
     pub postgres_type: Option<PostgresType>,
-    pub check_for_backend: Option<syn::punctuated::Punctuated<syn::TypePath, syn::Token![,]>>,
+    pub check_for_backend: Option<CheckForBackend>,
+    pub base_query: Option<syn::Expr>,
+    pub base_query_type: Option<syn::Type>,
     fields: Vec<Field>,
+}
+
+pub enum CheckForBackend {
+    Backends(syn::punctuated::Punctuated<syn::TypePath, syn::Token![,]>),
+    Disabled(LitBool),
 }
 
 impl Model {
@@ -72,6 +79,8 @@ impl Model {
         let mut sqlite_type = None;
         let mut postgres_type = None;
         let mut check_for_backend = None;
+        let mut base_query = None;
+        let mut base_query_type = None;
 
         for attr in parse_attributes(attrs)? {
             match attr.item {
@@ -103,6 +112,8 @@ impl Model {
                 StructAttr::CheckForBackend(_, b) => {
                     check_for_backend = Some(b);
                 }
+                StructAttr::BaseQuery(_, e) => base_query = Some(e),
+                StructAttr::BaseQueryType(_, t) => base_query_type = Some(t),
             }
         }
 
@@ -124,6 +135,8 @@ impl Model {
             postgres_type,
             fields: fields_from_item_data(fields)?,
             check_for_backend,
+            base_query,
+            base_query_type,
         })
     }
 

@@ -65,7 +65,7 @@ fn read_snapshot(snapshot_dir: &std::path::Path, file: &str) -> (String, String)
 }
 
 #[cfg(docsrs)]
-fn write_sql_type_part(
+fn write_multiple_part(
     snapshot_dir: &std::path::Path,
     file: &str,
     heading: &str,
@@ -78,6 +78,26 @@ fn write_sql_type_part(
     writeln!(out).expect("This doesn't fail");
     let doc = inner_format(input, content);
     writeln!(out, "{doc}").expect("This doesn't fail");
+}
+
+#[cfg(docsrs)]
+fn write_multiple(
+    snapshot_dir: &std::path::Path,
+    block: &[(&str, &str)],
+    name: &str,
+    out: &std::path::Path,
+) {
+    // sql_type is special as it depends on all feature flags
+    // so we have a custom block here:
+    let mut doc = String::new();
+    for (heading, file) in block {
+        write_multiple_part(&snapshot_dir, file, heading, &mut doc);
+    }
+    if !doc.is_empty() {
+        doc = write_detail_section(doc);
+    }
+    let out_path = out.join(format!("{name}.md"));
+    std::fs::write(out_path, doc).unwrap();
 }
 
 #[cfg(docsrs)]
@@ -145,40 +165,35 @@ fn main() {
         std::fs::write(out_path, doc).unwrap();
     }
 
-    // sql_type is special as it depends on all feature flags
-    // so we have a custom block here:
-    let mut doc = String::new();
+    let mut sql_type = vec![];
     if has_sqlite {
-        write_sql_type_part(
-            &snapshot_dir,
-            "diesel_derives__tests__sql_type_1 (sqlite).snap",
-            "SQLite",
-            &mut doc,
-        );
+        sql_type.push(("SQLite", "diesel_derives__tests__sql_type_1 (sqlite).snap"));
     }
-
     if has_postgres {
-        write_sql_type_part(
-            &snapshot_dir,
-            "diesel_derives__tests__sql_type_1 (postgres).snap",
+        sql_type.push((
             "PostgreSQL",
-            &mut doc,
-        );
+            "diesel_derives__tests__sql_type_1 (postgres).snap",
+        ));
     }
-
     if has_mysql {
-        write_sql_type_part(
-            &snapshot_dir,
-            "diesel_derives__tests__sql_type_1 (mysql).snap",
-            "MySQL",
-            &mut doc,
-        );
+        sql_type.push(("MySQL", "diesel_derives__tests__sql_type_1 (mysql).snap"));
     }
-    if !doc.is_empty() {
-        doc = write_detail_section(doc);
+    write_multiple(&snapshot_dir, &sql_type, "sql_type", &out);
+
+    let mut has_query = vec![];
+    if has_sqlite {
+        has_query.push(("SQLite", "diesel_derives__tests__has_query_1 (sqlite).snap"));
     }
-    let out_path = out.join(format!("sql_type.md"));
-    std::fs::write(out_path, doc).unwrap();
+    if has_postgres {
+        has_query.push((
+            "PostgreSQL",
+            "diesel_derives__tests__has_query_1 (postgres).snap",
+        ));
+    }
+    if has_mysql {
+        has_query.push(("MySQL", "diesel_derives__tests__has_query_1 (mysql).snap"));
+    }
+    write_multiple(&snapshot_dir, &has_query, "has_query", &out);
 }
 
 #[cfg(not(docsrs))]

@@ -23,6 +23,10 @@ pub const SELECT_EXPRESSION_NOTE: &str =
 pub const SELECT_EXPRESSION_TYPE_NOTE: &str =
     "select_expression_type = dsl::IsNotNull<schema::table_name::column_name>";
 pub const CHECK_FOR_BACKEND_NOTE: &str = "diesel::pg::Pg";
+pub const BASE_QUERY_NOTE: &str =
+    "base_query = schema::table_name::table.order_by(schema::table_name::id)";
+pub const BASE_QUERY_TYPE_NOTE: &str =
+    "base_query_type = dsl::OrderBy<schema::table_name::table, schema::table_name::id>";
 
 pub fn unknown_attribute(name: &Ident, valid: &[&str]) -> syn::Error {
     let prefix = if valid.len() == 1 { "" } else { " one of" };
