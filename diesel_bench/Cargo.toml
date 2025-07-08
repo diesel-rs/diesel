@@ -18,7 +18,7 @@ sqlx = { version = "0.8.3", features = [
   "runtime-tokio-rustls",
 ], optional = true }
 tokio = { version = "1", optional = true, features = ["rt-multi-thread"] }
-rusqlite = { version = "0.32", optional = true }
+rusqlite = { version = "0.37", optional = true }
 rust_postgres = { version = "0.19.7", optional = true, package = "postgres" }
 tokio_postgres = { version = "0.7.10", optional = true, package = "tokio-postgres" }
 rand_chacha = { features = ["os_rng"], optional = true, version = "0.9" }
