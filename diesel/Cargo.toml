@@ -50,7 +50,7 @@ version = "~2.2.0"
 path = "../diesel_derives"
 
 [target.'cfg(not(all(target_family = "wasm", target_os = "unknown")))'.dependencies]
-libsqlite3-sys = { version = ">=0.17.2, <0.35.0", optional = true, features = ["bundled_bindings"] }
+libsqlite3-sys = { version = ">=0.17.2, <0.36.0", optional = true, features = ["bundled_bindings"] }
 
 [target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
 sqlite-wasm-rs = { version = "0.4.0", optional = true, default-features = false }
