@@ -42,7 +42,7 @@ clap_complete = "4"
 dotenvy = "0.15"
 heck = "0.5.0"
 serde = { version = "1.0.193", features = ["derive", "std"] }
-toml = "0.8"
+toml = "0.9"
 url = "2.2.2"
 libsqlite3-sys = { workspace = true, optional = true }
 pq-sys = { workspace = true, optional = true }
