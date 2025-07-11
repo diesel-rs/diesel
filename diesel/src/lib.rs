@@ -716,7 +716,10 @@ pub mod helper_types {
 }
 
 pub mod prelude {
+
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
+
+    pub use crate::query_builder::query_model::QueryModel;
 
     #[doc(inline)]
     pub use crate::associations::{Associations, GroupedBy, Identifiable};

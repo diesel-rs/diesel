@@ -435,3 +435,26 @@ mod private {
     #[allow(missing_debug_implementations, missing_copy_implementations)]
     pub struct NotSpecialized;
 }
+
+pub(crate) mod query_model {
+    pub trait QueryModel<DB: Backend>:
+        Selectable<DB, SelectExpression: QueryId> + SelectableHelper<DB>
+    {
+        type BaseQuery: Query + SelectDsl<crate::dsl::AsSelect<Self, DB>>;
+
+        #[doc(hidden)] // that method is for internal use only
+        fn base_query() -> Self::BaseQuery;
+
+        fn query() -> crate::dsl::Select<Self::BaseQuery, crate::dsl::AsSelect<Self, DB>> {
+            Self::base_query().select(Self::as_select())
+        }
+    }
+
+    pub use diesel_derives::QueryModel;
+
+    use crate::backend::Backend;
+    use crate::query_dsl::methods::SelectDsl;
+    use crate::{Expression, Selectable, SelectableExpression, SelectableHelper};
+
+    use super::{Query, QueryId};
+}
