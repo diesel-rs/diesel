@@ -59,6 +59,7 @@ install-path = "CARGO_HOME"
 [workspace.metadata.dist.github-custom-runners]
 aarch64-apple-darwin = "macos-14"
 x86_64-unknown-linux-gnu = "ubuntu-22.04"
+x86_64-pc-windows-msvc = "windows-2022"
 global = "ubuntu-latest"
 
 [profile.dev.package.insta]
