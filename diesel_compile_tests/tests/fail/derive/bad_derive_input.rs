@@ -10,10 +10,12 @@ table! {
 }
 
 #[derive(AsChangeset)]
+//~^ ERROR: this derive can only be used on non-unit structs
 #[diesel(table_name = users)]
 enum UserEnum {}
 
 #[derive(AsChangeset)]
+//~^ ERROR: this derive can only be used on non-unit structs
 #[diesel(table_name = users)]
 struct UserStruct;
 

@@ -45,7 +45,7 @@ where
 {
     let debug_binds = DebugBinds::<DB>::new(query);
     let query = serialize_query(query)?;
-    write!(f, "{} -- binds: {:?}", query, debug_binds)
+    write!(f, "{query} -- binds: {debug_binds:?}")
 }
 
 fn debug<DB>(query: &dyn QueryFragment<DB>, f: &mut fmt::Formatter<'_>) -> fmt::Result

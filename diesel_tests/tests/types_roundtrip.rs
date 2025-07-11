@@ -47,7 +47,7 @@ where
             true
         }
         Err(e) => {
-            panic!("Query failed: {:?} -> value: {:?}", e, value)
+            panic!("Query failed: {e:?} -> value: {value:?}")
         }
     }
 }

@@ -40,10 +40,7 @@ fn unique_constraints_report_correct_constraint_name() {
             assert_eq!(None, e.column_name());
             assert_eq!(Some("users_name"), e.constraint_name());
         }
-        _ => panic!(
-            "{:?} did not match Err(DatabaseError(UniqueViolation, e))",
-            failure
-        ),
+        _ => panic!("{failure:?} did not match Err(DatabaseError(UniqueViolation, e))"),
     };
 }
 
@@ -97,10 +94,7 @@ fn foreign_key_violation_correct_constraint_name() {
             assert_eq!(None, e.column_name());
             assert_eq!(Some("fk_tests_fk_id_fkey"), e.constraint_name());
         }
-        _ => panic!(
-            "{:?} did not match Err(DatabaseError(ForeignKeyViolation, e))",
-            failure
-        ),
+        _ => panic!("{failure:?} did not match Err(DatabaseError(ForeignKeyViolation, e))"),
     }
 }
 
@@ -224,10 +218,7 @@ fn not_null_constraints_correct_column_name() {
             assert_eq!(Some("users"), e.table_name());
             assert_eq!(Some("name"), e.column_name());
         }
-        _ => panic!(
-            "{:?} did not match Err(DatabaseError(NotNullViolation, e))",
-            failure
-        ),
+        _ => panic!("{failure:?} did not match Err(DatabaseError(NotNullViolation, e))"),
     };
 }
 
@@ -275,9 +266,6 @@ fn check_constraints_correct_constraint_name() {
             assert_eq!(None, e.column_name());
             assert_eq!(Some("pokes_poke_count_check"), e.constraint_name());
         }
-        _ => panic!(
-            "{:?} did not match Err(DatabaseError(CheckViolation, e))",
-            failure
-        ),
+        _ => panic!("{failure:?} did not match Err(DatabaseError(CheckViolation, e))"),
     };
 }

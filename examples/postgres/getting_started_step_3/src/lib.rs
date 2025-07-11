@@ -12,7 +12,7 @@ pub fn establish_connection() -> PgConnection {
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     PgConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+        .unwrap_or_else(|e| panic!("Failed to connect, error: {e}", e = e))
 }
 
 pub fn create_post(conn: &mut PgConnection, title: &str, body: &str) -> Post {

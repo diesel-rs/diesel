@@ -19,5 +19,6 @@ fn main() {
         .set(users::id.eq(42))
         .filter(users::id.eq(45))
         .execute(&mut connection)
+        //~^ ERROR: the trait bound `sqlite::backend::SqliteOnConflictClause: SupportsOnConflictClauseWhere` is not satisfied
         .unwrap();
 }

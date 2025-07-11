@@ -24,18 +24,25 @@ struct User {
     )]
     name_and_id: (Option<String>, i32),
     non_existing: String,
+    //~^ ERROR: cannot find type `non_existing` in module `users`
+    //~| ERROR: cannot find value `non_existing` in module `users`
     #[diesel(
         select_expression = users::non_existing,
+        //~^ ERROR: cannot find value `non_existing` in module `users`
         select_expression_type = users::non_existing
+        //~^ ERROR: cannot find type `non_existing` in module `users`
     )]
     non_existing_with_annotation: String,
     #[diesel(
         select_expression = (users::id, users::non_existing),
+        //~^ ERROR: cannot find value `non_existing` in module `users`
         select_expression_type = (users::id, users::non_existing)
+        //~^ ERROR: cannot find type `non_existing` in module `users`
     )]
     non_existing_in_tuple: (i32, String),
     #[diesel(
         select_expression = (users::id + 45),
+        //~^ ERROR: mismatched types
         select_expression_type = users::id,
     )]
     no_tuple: i32,
@@ -46,6 +53,7 @@ struct User {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 struct User1<'a> {
     name: &'a str,
+    //~^ ERROR: references are not supported in `Queryable` types
 }
 
 fn main() {}

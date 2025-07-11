@@ -20,6 +20,7 @@ struct NameAndHairColor<'a> {
 struct User<'a> {
     id: i32,
     #[diesel(embed, serialize_as = SomeType)]
+    //~^ ERROR: `#[diesel(embed)]` cannot be combined with `#[diesel(serialize_as)]`
     // to test the compile error, this type doesn't need to exist
     name_and_hair_color: NameAndHairColor<'a>,
 }

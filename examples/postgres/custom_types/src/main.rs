@@ -15,7 +15,7 @@ pub struct Translation {
 fn main() {
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let conn = &mut PgConnection::establish(&database_url)
-        .unwrap_or_else(|e| panic!("Error connecting to {}: {}", database_url, e));
+        .unwrap_or_else(|e| panic!("Failed to connect, error: {e}", e = e));
 
     let _ = diesel::insert_into(translations::table)
         .values(&Translation {

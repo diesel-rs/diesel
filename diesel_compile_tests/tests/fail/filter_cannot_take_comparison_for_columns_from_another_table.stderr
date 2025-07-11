@@ -1,109 +1,116 @@
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:32:23
-   |
-32 |         .load::<User>(&mut conn);
-   |          ----         ^^^^^^^^^ expected `Once`, found `Never`
-   |          |
-   |          required by a bound introduced by this call
-   |
+    --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:31:63
+     |
+31   |     let _ = users::table.filter(posts::id.eq(1)).load::<User>(&mut conn);
+     |                                                  ----         ^^^^^^^^^ expected `Once`, found `Never`
+     |                                                  |
+     |                                                  required by a bound introduced by this call
+     |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:15:9
-   |
-15 |         id -> Integer,
-   |         ^^
-   = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: 2 redundant requirements hidden
-   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>` to implement `Query`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>` to implement `LoadQuery<'_, _, User>`
+    --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:15:9
+     |
+15   |         id -> Integer,
+     |         ^^
+     = note: associated types for the current `impl` cannot be restricted in `where` clauses
+     = note: 2 redundant requirements hidden
+     = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
+     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
+     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-   |        ---- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:36:10
+  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:34:45
    |
-36 |         .filter(posts::id.eq(1));
-   |          ^^^^^^ expected `Once`, found `Never`
+LL |     let _ = users::table.into_boxed::<Pg>().filter(posts::id.eq(1));
+   |                                             ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:15:9
    |
-15 |         id -> Integer,
+LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
-   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
+   = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
+   = note: required for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, Pg>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
 
-error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>: BoxedDsl<'_, Pg>` is not satisfied
-  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:39:10
+   
+error[E0277]: cannot box `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` for backend `Pg`
+  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:37:50
    |
-39 |         .into_boxed::<Pg>();
-   |          ^^^^^^^^^^ unsatisfied trait bound
+LL |     let _ = users::table.filter(posts::id.eq(1)).into_boxed::<Pg>();
+   |                                                  ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
    |
-   = help: the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
+   = note: this either means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` is no valid SQL for `Pg`
+   = note: or this means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
    = help: the following other types implement trait `BoxedDsl<'a, DB>`:
              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
              SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>
 
+   
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:43:23
-   |
-43 |         .load::<User>(&mut conn);
-   |          ----         ^^^^^^^^^ expected `Once`, found `Never`
-   |          |
-   |          required by a bound introduced by this call
-   |
+    --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:43:23
+     |
+43   |         .load::<User>(&mut conn);
+     |          ----         ^^^^^^^^^ expected `Once`, found `Never`
+     |          |
+     |          required by a bound introduced by this call
+     |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:16:9
-   |
-16 |         title -> VarChar,
-   |         ^^^^^
-   = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: 2 redundant requirements hidden
-   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>` to implement `Query`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>` to implement `LoadQuery<'_, _, User>`
+    --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:16:9
+     |
+16   |         title -> VarChar,
+     |         ^^^^^
+     = note: associated types for the current `impl` cannot be restricted in `where` clauses
+     = note: 2 redundant requirements hidden
+     = note: required for `Grouped<Eq<name, title>>` to implement `AppearsOnTable<users::table>`
+     = note: required for `WhereClause<Grouped<Eq<name, title>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
+     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-   |        ---- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:47:10
+  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:48:10
    |
-47 |         .filter(users::name.eq(posts::title));
+LL |         .filter(users::name.eq(posts::title));
    |          ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:16:9
    |
-16 |         title -> VarChar,
+LL |         title -> VarChar,
    |         ^^^^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
-   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>`
+   = note: required for `Grouped<Eq<name, title>>` to implement `AppearsOnTable<users::table>`
+   = note: required for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, Pg>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>`
 
-error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>: BoxedDsl<'_, Pg>` is not satisfied
-  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:51:10
+   
+error[E0277]: cannot box `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` for backend `Pg`
+  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:53:10
    |
-51 |         .into_boxed::<Pg>();
-   |          ^^^^^^^^^^ unsatisfied trait bound
+LL |         .into_boxed::<Pg>();
+   |          ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
    |
-   = help: the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>`
+   = note: this either means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` is no valid SQL for `Pg`
+   = note: or this means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
    = help: the following other types implement trait `BoxedDsl<'a, DB>`:
              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
              SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>

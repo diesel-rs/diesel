@@ -8,10 +8,12 @@ table! {
 }
 
 #[derive(Identifiable)]
+//~^ ERROR: no field with column name `id`
 #[diesel(table_name = foo)]
 struct Foo1 {}
 
 #[derive(Identifiable)]
+//~^ ERROR: no field with column name `id`
 #[diesel(table_name = foo)]
 struct Foo2 {
     #[diesel(column_name = foo)]
@@ -20,11 +22,13 @@ struct Foo2 {
 
 #[derive(Identifiable)]
 #[diesel(primary_key(bar))]
+//~^ ERROR: no field with column name `bar`
 #[diesel(table_name = foo)]
 struct Foo3 {}
 
 #[derive(Identifiable)]
 #[diesel(primary_key(baz))]
+//~^ ERROR: no field with column name `baz`
 #[diesel(table_name = foo)]
 struct Foo4 {
     #[diesel(column_name = bar)]
@@ -33,6 +37,7 @@ struct Foo4 {
 
 #[derive(Identifiable)]
 #[diesel(primary_key(foo, bar))]
+//~^ ERROR: no field with column name `bar`
 #[diesel(table_name = foo)]
 struct Foo5 {
     foo: i32,
@@ -40,6 +45,7 @@ struct Foo5 {
 
 #[derive(Identifiable)]
 #[diesel(primary_key(foo, bar))]
+//~^ ERROR: no field with column name `bar`
 #[diesel(table_name = foo)]
 struct Foo6 {
     foo: i32,

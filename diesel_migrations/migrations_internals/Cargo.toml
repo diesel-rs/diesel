@@ -1,6 +1,6 @@
 [package]
 name = "migrations_internals"
-version = "2.2.0"
+version = "2.2.1"
 license = "MIT OR Apache-2.0"
 description = "Internal implementation of diesels migration mechanism"
 homepage = "https://diesel.rs"
@@ -12,4 +12,4 @@ keywords = ["diesel", "internal"]
 
 [dependencies]
 serde = {version = "1.0.0", features = ["derive"]}
-toml = "0.8"
+toml = "0.9"

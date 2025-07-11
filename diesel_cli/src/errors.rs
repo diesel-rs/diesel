@@ -18,7 +18,7 @@ pub enum Error {
     ProjectRootNotFound(PathBuf),
     #[error("The --database-url argument must be passed, or the DATABASE_URL environment variable must be set.")]
     DatabaseUrlMissing,
-    #[error("Encountered an IO error: {0} {}", print_optional_path(.1))]
+    #[error("Encountered an IO error: {0} {n}", n=print_optional_path(.1))]
     IoError(#[source] std::io::Error, Option<PathBuf>),
     #[error("Failed to execute a database query: {0}")]
     QueryError(#[from] diesel::result::Error),
