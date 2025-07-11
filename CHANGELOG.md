@@ -34,6 +34,7 @@ in a way that makes the pools suitable for use in parallel tests.
 * Support `[print_schema] allow_tables_to_appear_in_same_query_config = "none"` to generate no `allow_tables_to_appear_in_same_query!` calls. (Default: `"all_tables"`.). ([#4333](https://github.com/diesel-rs/diesel/issues/4333))
 * Add `[print_schema] pg_domains_as_custom_types` parameter to generate custom types for [PostgreSQL domains](https://www.postgresql.org/docs/current/domains.html) that matches any of the regexes in the given list. (Default: `[]`.) This option allows an application to selectively give special meaning for the serialization/deserialization of these types, avoiding the default behavior of treating the domain as the underlying type. ([#4592](https://github.com/diesel-rs/diesel/discussions/4592))
 * Add support for batch insert and upsert statements with returning for SQLite
+* Add support for window functions and aggregate expressions. 
 
 ### Fixed 
 
