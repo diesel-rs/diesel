@@ -321,6 +321,36 @@ where
     }
 }
 
+impl<T, Tab, const N: usize> Insertable<Tab> for std::rc::Rc<[T; N]>
+where
+    T: Insertable<Tab> + std::clone::Clone,
+{
+    // We can reuse the query id for [T; N] here as this
+    // compiles down to the same query
+    type Values = BatchInsert<Vec<T::Values>, Tab, [T::Values; N], true>;
+
+    fn values(self) -> Self::Values {
+        let v = self.to_vec();
+        let values = v.into_iter().map(Insertable::values).collect::<Vec<_>>();
+        BatchInsert::new(values)
+    }
+}
+
+impl<T, Tab, const N: usize> Insertable<Tab> for std::sync::Arc<[T; N]>
+where
+    T: Insertable<Tab> + std::clone::Clone,
+{
+    // We can reuse the query id for [T; N] here as this
+    // compiles down to the same query
+    type Values = BatchInsert<Vec<T::Values>, Tab, [T::Values; N], true>;
+
+    fn values(self) -> Self::Values {
+        let v = self.to_vec();
+        let values = v.into_iter().map(Insertable::values).collect::<Vec<_>>();
+        BatchInsert::new(values)
+    }
+}
+
 mod private {
     // This helper exists to differentiate between
     // Insertable implementations for tuples and for single values
