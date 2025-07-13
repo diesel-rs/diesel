@@ -85,7 +85,7 @@ let downloads = version_downloads
 Executed SQL:
 
 ```sql
-SELECT version_downloads.*
+SELECT version_downloads.* FROM version_downloads
   WHERE date > (NOW() - '90 days')
     AND version_id = ANY(
       SELECT id FROM versions
