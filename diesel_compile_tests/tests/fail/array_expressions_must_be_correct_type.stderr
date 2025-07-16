@@ -215,8 +215,8 @@ error[E0277]: the trait bound `f64: diesel::Expression` is not satisfied
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
-             CountDistinct<T, E>
              CountStar
+             Exists<T>
            and N others
    = note: required for `f64` to implement `AsExpression<diesel::sql_types::Integer>`
    = note: required for `(f64, f64)` to implement `AsExpressionList<diesel::sql_types::Integer>`

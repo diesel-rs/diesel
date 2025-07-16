@@ -11,8 +11,8 @@ LL |     let pred = id.eq("string");
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
-             CountDistinct<T, E>
              CountStar
+             Exists<T>
            and N others
    = note: required for `&str` to implement `diesel::Expression`
    = note: required for `&str` to implement `AsExpression<diesel::sql_types::Integer>`
