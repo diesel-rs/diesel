@@ -84,7 +84,9 @@ pub(crate) mod dsl {
     /// The return type of [`count_star()`](crate::dsl::count_star())
     pub type count_star = super::count::CountStar;
 
-    /// The return type of [`count_distinct()`](crate::dsl::count_distinct())
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    #[deprecated]
+    #[doc(hidden)]
     pub type count_distinct<Expr> = super::count::CountDistinct<SqlTypeOf<Expr>, Expr>;
 
     /// The return type of [`date(expr)`](crate::dsl::date())

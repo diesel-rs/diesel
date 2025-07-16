@@ -11,6 +11,7 @@ use crate::sqlite::expression::expression_methods::TextOrNullableTextOrBinaryOrN
 
 #[cfg(feature = "sqlite")]
 #[declare_sql_function(generate_return_type_helpers = true)]
+#[backends(crate::sqlite::Sqlite)]
 extern "SQL" {
     /// Verifies that its argument is a valid JSON string or JSONB blob and returns a minified
     /// version of that JSON string with all unnecessary whitespace removed.

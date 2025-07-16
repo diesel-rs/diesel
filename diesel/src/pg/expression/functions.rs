@@ -16,6 +16,7 @@ use crate::pg::expression::expression_methods::TextArrayOrNullableTextArray;
 use crate::sql_types::*;
 
 #[declare_sql_function]
+#[backends(crate::pg::Pg)]
 extern "SQL" {
     /// Creates an abbreviated display format as text.
     #[cfg(feature = "postgres_backend")]
