@@ -800,3 +800,22 @@ impl BoolOrNullableBool for Nullable<Bool> {}
 
 #[doc(inline)]
 pub use crate::expression::expression_types::Untyped;
+
+pub(crate) mod helper {
+    use super::{MaybeNullableType, OneIsNullable, SingleValue};
+
+    pub trait CombinedNullableValue<O, Out>: SingleValue {
+        type Out: SingleValue;
+    }
+
+    impl<T, O, Out> CombinedNullableValue<O, Out> for T
+    where
+        T: SingleValue,
+        O: SingleValue,
+        T::IsNull: OneIsNullable<O::IsNull>,
+        <T::IsNull as OneIsNullable<O::IsNull>>::Out: MaybeNullableType<Out>,
+        <<T::IsNull as OneIsNullable<O::IsNull>>::Out as MaybeNullableType<Out>>::Out: SingleValue,
+    {
+        type Out = <<T::IsNull as OneIsNullable<O::IsNull>>::Out as MaybeNullableType<Out>>::Out;
+    }
+}

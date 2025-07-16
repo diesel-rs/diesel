@@ -66,6 +66,8 @@ pub(crate) mod dsl {
     #[doc(inline)]
     pub use super::functions::date_and_time::*;
     #[doc(inline)]
+    pub use super::functions::window_functions::*;
+    #[doc(inline)]
     pub use super::helper_types::{case_when, IntoSql, Otherwise, When};
     #[doc(inline)]
     pub use super::not::not;
@@ -723,6 +725,10 @@ impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for Box<T> {
 
 impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for &T {
     type IsAggregate = T::IsAggregate;
+}
+
+impl<GB> ValidGrouping<GB> for () {
+    type IsAggregate = is_aggregate::Never;
 }
 
 #[doc(inline)]

@@ -660,3 +660,24 @@ fn aggregate_function_expressions() -> _ {
         count(users::id).aggregate_order(users::id.desc()),
     )
 }
+
+#[auto_type]
+fn window_functions2() -> _ {
+    (
+        row_number().over(),
+        rank().over(),
+        dense_rank().over(),
+        percent_rank().over(),
+        cume_dist().over(),
+        ntile(users::id).over(),
+        lag(users::id).over(),
+        lag_with_offset(users::id, users::id).over(),
+        lag_with_offset_and_default(users::id, users::id, users::id).over(),
+        lead(users::id).over(),
+        lead_with_offset(users::id, users::id).over(),
+        lead_with_offset_and_default(users::id, users::id, users::id).over(),
+        first_value(users::id).over(),
+        last_value(users::id).over(),
+        nth_value(users::id, 1_i32).over(),
+    )
+}

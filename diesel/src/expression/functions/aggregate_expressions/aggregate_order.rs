@@ -14,6 +14,7 @@ use crate::{Expression, QueryResult};
 
 empty_clause!(NoOrder);
 
+/// A order clause for window and aggregate function expressions
 #[derive(QueryId, Copy, Clone, Debug)]
 pub struct Order<T, const WINDOW: bool>(OrderClause<T>);
 

@@ -185,7 +185,7 @@ simple_frame_expr_with_bound!(
 #[derive(Clone, Copy, Debug)]
 pub struct OffsetPreceding<T = u64>(T);
 
-// manual impl as the derive makes this dependent on a `T: QuerId` impl
+// manual impl as the derive makes this dependent on a `T: QueryId` impl
 // which is wrong
 impl QueryId for OffsetPreceding {
     type QueryId = ();
@@ -215,7 +215,7 @@ where
 #[derive(Clone, Copy, Debug)]
 pub struct OffsetFollowing<I = u64>(I);
 
-// manual impl as the derive makes this dependent on a `T: QuerId` impl
+// manual impl as the derive makes this dependent on a `T: QueryId` impl
 // which is wrong
 impl QueryId for OffsetFollowing {
     type QueryId = ();
@@ -415,7 +415,7 @@ impl FrameBoundDsl for u64 {
 // TODO: We might want to implement
 // it for datetime and date intervals?
 // The postgres documentation indicates that
-// something like `RANGE BETWEEN '1 day' PRECEDING AND '10 days' FOlLOWING`
+// something like `RANGE BETWEEN '1 day' PRECEDING AND '10 days' FOLLOWING`
 // is valid
 
 empty_clause!(NoExclusion);

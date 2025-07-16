@@ -147,6 +147,9 @@ impl SqlDialect for Pg {
         sql_dialect::window_frame_exclusion_support::FrameExclusionSupport;
     type AggregateFunctionExpressions =
         sql_dialect::aggregate_function_expressions::PostgresLikeAggregateFunctionExpressions;
+
+    type BuiltInWindowFunctionRequireOrder =
+        sql_dialect::built_in_window_function_require_order::NoOrderRequired;
 }
 
 impl DieselReserveSpecialization for Pg {}

@@ -338,6 +338,13 @@ pub trait SqlDialect: self::private::TrustedBackend {
         doc = "See [`sql_dialect::window_frame_clause_group_support`] for provided default implementations"
     )]
     type AggregateFunctionExpressions;
+
+    /// Configures whether built-in window functions require order clauses for this backend or not
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "See [`sql_dialect::built_in_window_function_require_order`] for provided default implementations"
+    )]
+    type BuiltInWindowFunctionRequireOrder;
 }
 
 /// This module contains all options provided by diesel to configure the [`SqlDialect`] trait.
@@ -603,6 +610,16 @@ pub(crate) mod sql_dialect {
         /// for window functions
         #[derive(Debug, Copy, Clone)]
         pub struct NoFrameFrameExclusionSupport;
+    }
+    /// This module contains all reusable options to configure [`SqlDialect::BuiltInWindowFunctionRequireOrder`]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub mod built_in_window_function_require_order {
+        /// Indicates that this backend doesn't require any order clause
+        /// for built-in window functions
+        #[derive(Debug, Copy, Clone)]
+        pub struct NoOrderRequired;
     }
 }
 

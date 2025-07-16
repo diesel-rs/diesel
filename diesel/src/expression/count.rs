@@ -1,3 +1,7 @@
+#[cfg(doc)]
+use super::functions::aggregate_expressions::{
+    AggregateExpressionMethods, WindowExpressionMethods,
+};
 use super::functions::declare_sql_function;
 use super::{Expression, ValidGrouping};
 use crate::backend::Backend;

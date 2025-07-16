@@ -9,12 +9,12 @@ use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Pair;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::Path;
 use syn::{
     parenthesized, parse_quote, Attribute, GenericArgument, Generics, Ident, ImplGenerics, LitStr,
     PathArguments, Token, Type, TypeGenerics,
 };
 use syn::{GenericParam, Meta};
+use syn::{LitBool, Path};
 use syn::{LitInt, MetaNameValue};
 
 use crate::attrs::{AttributeSpanWrapper, MySpanned};
@@ -385,10 +385,11 @@ fn expand_nonvariadic(
         .iter()
         .any(|attr| matches!(attr.item, SqlFunctionAttribute::SkipReturnTypeHelper(..)));
 
-    let window = attributes
+    let window_attrs = attributes
         .iter()
-        .find(|a| matches!(a.item, SqlFunctionAttribute::Window(..)))
-        .cloned();
+        .filter(|a| matches!(a.item, SqlFunctionAttribute::Window { .. }))
+        .cloned()
+        .collect::<Vec<_>>();
 
     let restrictions = attributes
         .iter()
@@ -542,16 +543,20 @@ fn expand_nonvariadic(
         && is_sqlite_type(&return_type)
         && arg_type.iter().all(|a| is_sqlite_type(a));
 
-    if let Some(ref window) = window {
-        tokens = generate_window_function_tokens(
+    for window in &window_attrs {
+        tokens.extend(generate_window_function_tokens(
             window,
-            &impl_generics,
             generics.clone(),
             &ty_generics,
             &fn_name,
-            arg_name,
-            tokens,
-        );
+        ));
+    }
+    if !window_attrs.is_empty() {
+        tokens.extend(quote::quote! {
+            impl #impl_generics IsWindowFunction for #fn_name #ty_generics {
+                type ArgTypes = (#(#arg_name,)*);
+            }
+        });
     }
 
     if is_aggregate {
@@ -564,11 +569,11 @@ fn expand_nonvariadic(
             arg_name,
             arg_type,
             is_supported_on_sqlite,
-            window.as_ref(),
+            !window_attrs.is_empty(),
             &return_type,
             &sql_name,
         );
-    } else if window.is_none() {
+    } else if window_attrs.is_empty() {
         tokens = generate_tokens_for_non_aggregate_functions(
             tokens,
             &impl_generics_internal,
@@ -692,25 +697,24 @@ fn expand_nonvariadic(
 
 fn generate_window_function_tokens(
     window: &AttributeSpanWrapper<SqlFunctionAttribute>,
-    impl_generics: &syn::ImplGenerics<'_>,
     generics: Generics,
     ty_generics: &TypeGenerics<'_>,
     fn_name: &Ident,
-    arg_name: &[&syn::Ident],
-    tokens: TokenStream,
 ) -> TokenStream {
-    let SqlFunctionAttribute::Window(_, ref restrictions) = window.item else {
+    let SqlFunctionAttribute::Window {
+        restrictions,
+        require_order,
+        ..
+    } = &window.item
+    else {
         unreachable!("We filtered for window attributes above")
     };
-    let window_function_impl =
-        restrictions.generate_all_window_fragment_impls(generics, ty_generics, fn_name);
-    quote::quote! {
-        #tokens
-        #window_function_impl
-        impl #impl_generics IsWindowFunction for #fn_name #ty_generics {
-            type ArgTypes = (#(#arg_name,)*);
-        }
-    }
+    restrictions.generate_all_window_fragment_impls(
+        generics,
+        ty_generics,
+        fn_name,
+        require_order.unwrap_or_default(),
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -869,7 +873,7 @@ fn generate_tokens_for_aggregate_functions(
     arg_name: &[&syn::Ident],
     arg_type: &[&syn::Type],
     is_supported_on_sqlite: bool,
-    window: Option<&AttributeSpanWrapper<SqlFunctionAttribute>>,
+    is_window: bool,
     return_type: &syn::Type,
     sql_name: &str,
 ) -> TokenStream {
@@ -885,7 +889,7 @@ fn generate_tokens_for_aggregate_functions(
         impl #impl_generics IsAggregateFunction for #fn_name #ty_generics {}
     };
     // we do not support custom window functions for sqlite yet
-    if is_supported_on_sqlite && window.is_none() {
+    if is_supported_on_sqlite && !is_window {
         tokens = quote! {
             #tokens
 
@@ -969,7 +973,7 @@ fn function_cannot_be_called_directly(
     let mut has_window = false;
     for attr in attributes {
         has_aggregate = has_aggregate || matches!(attr.item, SqlFunctionAttribute::Aggregate(..));
-        has_window = has_window || matches!(attr.item, SqlFunctionAttribute::Window(..));
+        has_window = has_window || matches!(attr.item, SqlFunctionAttribute::Window { .. });
     }
     has_window && !has_aggregate
 }
@@ -1047,7 +1051,7 @@ fn merge_attributes(
     for attr in parsed_block_attrs {
         if attributes.iter().all(|a| match (&a.item, &attr.item) {
             (SqlFunctionAttribute::Aggregate(_), SqlFunctionAttribute::Aggregate(_)) => todo!(),
-            (SqlFunctionAttribute::Window(_, _), SqlFunctionAttribute::Window(_, _))
+            (SqlFunctionAttribute::Window { .. }, SqlFunctionAttribute::Window { .. })
             | (SqlFunctionAttribute::SqlName(_, _), SqlFunctionAttribute::SqlName(_, _))
             | (SqlFunctionAttribute::Restriction(_), SqlFunctionAttribute::Restriction(_))
             | (SqlFunctionAttribute::Variadic(_, _), SqlFunctionAttribute::Variadic(_, _))
@@ -1149,13 +1153,10 @@ impl Parse for SqlFunctionDecl {
     }
 }
 
-fn parse_attributes(
-    combine_error: &mut impl FnMut(syn::Error),
-    attributes: Vec<Attribute>,
-) -> Vec<AttributeSpanWrapper<SqlFunctionAttribute>> {
-    let attribute_count = attributes.len();
-
-    let attributes = attributes.into_iter().map(|attr| match &attr.meta {
+fn parse_attribute(
+    attr: syn::Attribute,
+) -> Result<Option<AttributeSpanWrapper<SqlFunctionAttribute>>> {
+    match &attr.meta {
         syn::Meta::NameValue(syn::MetaNameValue {
             path,
             value:
@@ -1164,12 +1165,12 @@ fn parse_attributes(
                     ..
                 }),
             ..
-        }) if path.is_ident("sql_name") => Ok(AttributeSpanWrapper {
+        }) if path.is_ident("sql_name") => Ok(Some(AttributeSpanWrapper {
             attribute_span: attr.span(),
             ident_span: sql_name.span(),
             item: SqlFunctionAttribute::SqlName(path.require_ident()?.clone(), sql_name.clone()),
-        }),
-        syn::Meta::Path(path) if path.is_ident("aggregate") => Ok(AttributeSpanWrapper {
+        })),
+        syn::Meta::Path(path) if path.is_ident("aggregate") => Ok(Some(AttributeSpanWrapper {
             attribute_span: attr.span(),
             ident_span: path.span(),
             item: SqlFunctionAttribute::Aggregate(
@@ -1182,9 +1183,9 @@ fn parse_attributes(
                     })?
                     .clone(),
             ),
-        }),
+        })),
         syn::Meta::Path(path) if path.is_ident("skip_return_type_helper") => {
-            Ok(AttributeSpanWrapper {
+            Ok(Some(AttributeSpanWrapper {
                 ident_span: attr.span(),
                 attribute_span: path.span(),
                 item: SqlFunctionAttribute::SkipReturnTypeHelper(
@@ -1197,20 +1198,22 @@ fn parse_attributes(
                         })?
                         .clone(),
                 ),
-            })
+            }))
         }
-        syn::Meta::Path(path) if path.is_ident("window") => Ok(AttributeSpanWrapper {
+        syn::Meta::Path(path) if path.is_ident("window") => Ok(Some(AttributeSpanWrapper {
             attribute_span: attr.span(),
             ident_span: path.span(),
-            item: SqlFunctionAttribute::Window(
-                path.require_ident()
+            item: SqlFunctionAttribute::Window {
+                ident: path
+                    .require_ident()
                     .map_err(|e| {
                         syn::Error::new(e.span(), format!("{e}, the correct format is `#[window]`"))
                     })?
                     .clone(),
-                BackendRestriction::None,
-            ),
-        }),
+                restrictions: BackendRestriction::None,
+                require_order: None,
+            },
+        })),
         syn::Meta::List(syn::MetaList {
             path,
             delimiter: syn::MacroDelimiter::Paren(_),
@@ -1222,7 +1225,7 @@ fn parse_attributes(
                     format!("{e}, the correct format is `#[variadic(3)]`"),
                 )
             })?;
-            Ok(AttributeSpanWrapper {
+            Ok(Some(AttributeSpanWrapper {
                 item: SqlFunctionAttribute::Variadic(
                     path.require_ident()
                         .map_err(|e| {
@@ -1236,13 +1239,13 @@ fn parse_attributes(
                 ),
                 attribute_span: attr.span(),
                 ident_span: path.require_ident()?.span(),
-            })
+            }))
         }
-        syn::Meta::NameValue(_) | syn::Meta::Path(_) => Ok(AttributeSpanWrapper {
+        syn::Meta::NameValue(_) | syn::Meta::Path(_) => Ok(Some(AttributeSpanWrapper {
             attribute_span: attr.span(),
             ident_span: attr.span(),
             item: SqlFunctionAttribute::Other(attr),
-        }),
+        })),
         syn::Meta::List(_) => {
             let name = attr.meta.path().require_ident()?;
             let attribute_span = attr.meta.span();
@@ -1256,7 +1259,18 @@ fn parse_attributes(
                     )
                 })
         }
-    });
+    }
+}
+
+fn parse_attributes(
+    combine_error: &mut impl FnMut(syn::Error),
+    attributes: Vec<Attribute>,
+) -> Vec<AttributeSpanWrapper<SqlFunctionAttribute>> {
+    let attribute_count = attributes.len();
+
+    let attributes = attributes
+        .into_iter()
+        .filter_map(|attr| parse_attribute(attr).transpose());
 
     let mut attributes_collected = Vec::with_capacity(attribute_count);
     for attr in attributes {
@@ -1392,10 +1406,18 @@ impl BackendRestriction {
         mut generics: Generics,
         ty_generics: &TypeGenerics<'_>,
         fn_name: &syn::Ident,
+        require_order: bool,
     ) -> TokenStream {
         generics.params.push(parse_quote!(__P));
         generics.params.push(parse_quote!(__O));
         generics.params.push(parse_quote!(__F));
+        let order = if require_order {
+            quote::quote! {
+                diesel::internal::sql_functions::Order<__O, true>
+            }
+        } else {
+            quote::quote! {__O}
+        };
         match *self {
             BackendRestriction::None => {
                 generics.params.push(parse_quote!(__DieselInternal));
@@ -1407,11 +1429,22 @@ impl BackendRestriction {
                     ty_generics,
                     fn_name,
                     None,
+                    &order,
                 )
             }
             BackendRestriction::SqlDialect(_, ref dialect, ref dialect_type) => {
                 generics.params.push(parse_quote!(__DieselInternal));
                 let (impl_generics, _, _) = generics.split_for_impl();
+                let mut out = quote::quote! {
+                    impl #impl_generics WindowFunctionFragment<#fn_name #ty_generics, __DieselInternal>
+                        for OverClause<__P, #order, __F>
+                    where
+                        Self: WindowFunctionFragment<#fn_name #ty_generics, __DieselInternal, <__DieselInternal as diesel::backend::SqlDialect>::#dialect>,
+                        __DieselInternal: diesel::backend::Backend,
+                    {
+                    }
+
+                };
                 let specific_impl = Self::generate_window_fragment_impl(
                     parse_quote!(__DieselInternal),
                     Some(
@@ -1421,18 +1454,10 @@ impl BackendRestriction {
                     ty_generics,
                     fn_name,
                     Some(dialect_type),
+                    &order,
                 );
-                quote::quote! {
-                    impl #impl_generics WindowFunctionFragment<__DieselInternal>
-                        for #fn_name #ty_generics
-                    where
-                        Self: WindowFunctionFragment<__DieselInternal, <__DieselInternal as diesel::backend::SqlDialect>::#dialect>,
-                        __DieselInternal: diesel::backend::Backend,
-                    {
-                    }
-
-                    #specific_impl
-                }
+                out.extend(specific_impl);
+                out
             }
             BackendRestriction::BackendBound(_, ref restriction) => {
                 generics.params.push(parse_quote!(__DieselInternal));
@@ -1444,6 +1469,7 @@ impl BackendRestriction {
                     ty_generics,
                     fn_name,
                     None,
+                    &order,
                 )
             }
             BackendRestriction::Backends(_, ref backends) => {
@@ -1456,6 +1482,7 @@ impl BackendRestriction {
                         ty_generics,
                         fn_name,
                         None,
+                        &order,
                     )
                 });
 
@@ -1471,9 +1498,10 @@ impl BackendRestriction {
         ty_generics: &TypeGenerics<'_>,
         fn_name: &syn::Ident,
         dialect: Option<&syn::Path>,
+        order: &TokenStream,
     ) -> TokenStream {
         quote::quote! {
-            impl #impl_generics WindowFunctionFragment<#fn_name #ty_generics, #backend, #dialect> for OverClause<__P, __O, __F>
+            impl #impl_generics WindowFunctionFragment<#fn_name #ty_generics, #backend, #dialect> for OverClause<__P, #order, __F>
                 where #backend_bound
             {
 
@@ -1613,7 +1641,11 @@ impl Parse for BackendRestriction {
 #[derive(Debug, Clone)]
 enum SqlFunctionAttribute {
     Aggregate(Ident),
-    Window(Ident, BackendRestriction),
+    Window {
+        ident: Ident,
+        restrictions: BackendRestriction,
+        require_order: Option<bool>,
+    },
     SqlName(Ident, LitStr),
     Restriction(BackendRestriction),
     Variadic(Ident, LitInt),
@@ -1628,7 +1660,7 @@ impl MySpanned for SqlFunctionAttribute {
             | SqlFunctionAttribute::Restriction(BackendRestriction::SqlDialect(ref ident, ..))
             | SqlFunctionAttribute::Restriction(BackendRestriction::BackendBound(ref ident, ..))
             | SqlFunctionAttribute::Aggregate(ref ident, ..)
-            | SqlFunctionAttribute::Window(ref ident, ..)
+            | SqlFunctionAttribute::Window { ref ident, .. }
             | SqlFunctionAttribute::Variadic(ref ident, ..)
             | SqlFunctionAttribute::SkipReturnTypeHelper(ref ident)
             | SqlFunctionAttribute::SqlName(ref ident, ..) => ident.span(),
@@ -1640,42 +1672,126 @@ impl MySpanned for SqlFunctionAttribute {
     }
 }
 
+fn parse_require_order(input: &syn::parse::ParseBuffer<'_>) -> Result<bool> {
+    let ident = input.parse::<Ident>()?;
+    if ident == "require_order" {
+        let _ = input.parse::<Token![=]>()?;
+        let value = input.parse::<LitBool>()?;
+        Ok(value.value)
+    } else {
+        Err(syn::Error::new(
+            ident.span(),
+            format!("Expected `require_order` but got `{ident}`"),
+        ))
+    }
+}
+
 impl SqlFunctionAttribute {
     fn parse_attr(
         name: Ident,
         input: &syn::parse::ParseBuffer<'_>,
         attr: Attribute,
         attribute_span: proc_macro2::Span,
-    ) -> Result<AttributeSpanWrapper<Self>> {
-        let name_str = name.to_string();
-        let parsed_attr = match &*name_str {
-            "window" => BackendRestriction::parse_from(input).map(|r| Self::Window(name, r))?,
-            "sql_name" => parse_eq(input, "sql_name = \"SUM\"").map(|v| Self::SqlName(name, v))?,
-            "backends" => BackendRestriction::parse_backends(input, name).map(Self::Restriction)?,
-            "dialect" => {
-                BackendRestriction::parse_sql_dialect(input, name).map(Self::Restriction)?
+    ) -> Result<Option<AttributeSpanWrapper<Self>>> {
+        // rustc doesn't resolve cfg attrs for us :(
+        // This is hacky, but mostly for internal use
+        if name == "cfg_attr" {
+            let ident = input.parse::<Ident>()?;
+            if ident != "feature" {
+                return Err(syn::Error::new(
+                    ident.span(),
+                    format!(
+                        "only single feature `cfg_attr` attributes are supported. \
+                             Got `{ident}` but expected `feature = \"foo\"`"
+                    ),
+                ));
             }
-            "backend_bounds" => {
-                BackendRestriction::parse_backend_bounds(input, name).map(Self::Restriction)?
+            let _ = input.parse::<Token![=]>()?;
+            let feature = input.parse::<LitStr>()?;
+            let feature_value = feature.value();
+            let _ = input.parse::<Token![,]>()?;
+            let ignore = match feature_value.as_str() {
+                "postgres_backend" => !cfg!(feature = "postgres"),
+                "sqlite" => !cfg!(feature = "sqlite"),
+                "mysql_backend" => !cfg!(feature = "mysql"),
+                feature => {
+                    return Err(syn::Error::new(
+                        feature.span(),
+                        format!(
+                            "only `mysql_backend`, `postgres_backend` and `sqlite` \
+                                 are supported features, but got `{feature}`"
+                        ),
+                    ));
+                }
+            };
+            let name = input.parse::<Ident>()?;
+            let inner;
+            let _paren = parenthesized!(inner in input);
+            let ret = SqlFunctionAttribute::parse_attr(name, &inner, attr, attribute_span)?;
+            if ignore {
+                Ok(None)
+            } else {
+                Ok(ret)
             }
-            "variadic" => Self::Variadic(name, input.parse()?),
-            _ => {
-                // empty the parse buffer otherwise syn will return an error
-                let _ = input.step(|cursor| {
-                    let mut rest = *cursor;
-                    while let Some((_, next)) = rest.token_tree() {
-                        rest = next;
+        } else {
+            let name_str = name.to_string();
+            let parsed_attr = match &*name_str {
+                "window" => {
+                    let restrictions = if BackendRestriction::parse_from(&input.fork()).is_ok() {
+                        BackendRestriction::parse_from(input).map(Ok).ok()
+                    } else {
+                        None
+                    };
+                    if input.fork().parse::<Token![,]>().is_ok() {
+                        let _ = input.parse::<Token![,]>()?;
                     }
-                    Ok(((), rest))
-                });
-                SqlFunctionAttribute::Other(attr)
-            }
-        };
-        Ok(AttributeSpanWrapper {
-            ident_span: parsed_attr.span(),
-            item: parsed_attr,
-            attribute_span,
-        })
+                    let require_order = if parse_require_order(&input.fork()).is_ok() {
+                        Some(parse_require_order(input)?)
+                    } else {
+                        None
+                    };
+                    if input.fork().parse::<Token![,]>().is_ok() {
+                        let _ = input.parse::<Token![,]>()?;
+                    }
+                    let restrictions =
+                        restrictions.unwrap_or_else(|| BackendRestriction::parse_from(input))?;
+                    Self::Window {
+                        ident: name,
+                        restrictions,
+                        require_order,
+                    }
+                }
+                "sql_name" => {
+                    parse_eq(input, "sql_name = \"SUM\"").map(|v| Self::SqlName(name, v))?
+                }
+                "backends" => {
+                    BackendRestriction::parse_backends(input, name).map(Self::Restriction)?
+                }
+                "dialect" => {
+                    BackendRestriction::parse_sql_dialect(input, name).map(Self::Restriction)?
+                }
+                "backend_bounds" => {
+                    BackendRestriction::parse_backend_bounds(input, name).map(Self::Restriction)?
+                }
+                "variadic" => Self::Variadic(name, input.parse()?),
+                _ => {
+                    // empty the parse buffer otherwise syn will return an error
+                    let _ = input.step(|cursor| {
+                        let mut rest = *cursor;
+                        while let Some((_, next)) = rest.token_tree() {
+                            rest = next;
+                        }
+                        Ok(((), rest))
+                    });
+                    SqlFunctionAttribute::Other(attr)
+                }
+            };
+            Ok(Some(AttributeSpanWrapper {
+                ident_span: parsed_attr.span(),
+                item: parsed_attr,
+                attribute_span,
+            }))
+        }
     }
 }
 

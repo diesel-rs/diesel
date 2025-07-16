@@ -1,3 +1,5 @@
+#[cfg(doc)]
+use super::aggregate_expressions::AggregateExpressionMethods;
 use crate::expression::functions::declare_sql_function;
 use crate::sql_types::Foldable;
 

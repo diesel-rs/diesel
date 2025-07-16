@@ -22,6 +22,6 @@ fn main() {
     users::table
         .select(dsl::count(users::id).aggregate_order(users::name))
         .get_result::<i64>(&mut conn)
-        //~^ ERROR: `Order<name, false>` is no valid SQL fragment for the `Mysql` backend
+        //~^ ERROR: `Order<columns::name, false>` is no valid SQL fragment for the `Mysql` backend
         .unwrap();
 }

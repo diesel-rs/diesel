@@ -26,21 +26,21 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
   
      
-error[E0277]: `Order<name, false>` is no valid SQL fragment for the `Mysql` backend
+error[E0277]: `Order<columns::name, false>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/aggregate_expressions_disallow_unsupported_features_on_mysql.rs:24:28
      |
 24   |         .get_result::<i64>(&mut conn)
-     |          ----------        ^^^^^^^^^ the trait `QueryFragment<Mysql, NoAggregateFunctionExpressions>` is not implemented for `Order<name, false>`
+     |          ----------        ^^^^^^^^^ the trait `QueryFragment<Mysql, NoAggregateFunctionExpressions>` is not implemented for `Order<columns::name, false>`
      |          |
      |          required by a bound introduced by this call
      |
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
      = help: the following other types implement trait `QueryFragment<DB, SP>`:
-               `diesel::expression::functions::aggregate_expressions::aggregate_order::Order<E, false>` implements `QueryFragment<DB, PostgresLikeAggregateFunctionExpressions>`
-               `diesel::expression::functions::aggregate_expressions::aggregate_order::Order<E, false>` implements `QueryFragment<DB>`
-               `diesel::expression::functions::aggregate_expressions::aggregate_order::Order<E, true>` implements `QueryFragment<DB>`
-     = note: required for `Order<name, false>` to implement `QueryFragment<Mysql>`
+               `Order<E, false>` implements `QueryFragment<DB, PostgresLikeAggregateFunctionExpressions>`
+               `Order<E, false>` implements `QueryFragment<DB>`
+               `Order<E, true>` implements `QueryFragment<DB>`
+     = note: required for `Order<columns::name, false>` to implement `QueryFragment<Mysql>`
      = note: 4 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, SelectClause<...>>` to implement `QueryFragment<Mysql>`
      = note: required for `SelectStatement<FromClause<table>, SelectClause<...>>` to implement `LoadQuery<'_, diesel::MysqlConnection, i64>`

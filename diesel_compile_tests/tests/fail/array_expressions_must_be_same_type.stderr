@@ -43,13 +43,13 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
     |
     = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
               `&T` implements `ValidGrouping<GB>`
+              `()` implements `ValidGrouping<GB>`
               `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
               `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
               `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
               `(T0, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
               `(T0, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
               `(T0, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `ValidGrouping<__GroupByClause>`
             and N others
     = note: required for `(f64,)` to implement `ValidGrouping<()>`
     = note: 2 redundant requirements hidden
@@ -111,13 +111,13 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
      |
      = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
                `&T` implements `ValidGrouping<GB>`
+               `()` implements `ValidGrouping<GB>`
                `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
                `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
                `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
                `(T0, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
                `(T0, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
                `(T0, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
-               `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `ValidGrouping<__GroupByClause>`
              and N others
      = note: required for `(f64,)` to implement `ValidGrouping<()>`
      = note: 2 redundant requirements hidden
@@ -274,13 +274,13 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
     |
     = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
               `&T` implements `ValidGrouping<GB>`
+              `()` implements `ValidGrouping<GB>`
               `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
               `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
               `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
               `(T0, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
               `(T0, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
               `(T0, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `ValidGrouping<__GroupByClause>`
             and N others
     = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `ValidGrouping<()>`
     = note: 1 redundant requirement hidden
@@ -342,13 +342,13 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
      |
      = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
                `&T` implements `ValidGrouping<GB>`
+               `()` implements `ValidGrouping<GB>`
                `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
                `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
                `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
                `(T0, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
                `(T0, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
                `(T0, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
-               `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `ValidGrouping<__GroupByClause>`
              and N others
      = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `ValidGrouping<()>`
      = note: 1 redundant requirement hidden

@@ -1641,6 +1641,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         pub struct MultiWindowFrameClauseGroupSupport;
         pub struct MultiWindowFrameExclusionSupport;
         pub struct MultiAggregateFunctionExpressions;
+        pub struct MultiBuiltInWindowFunctionRequireOrder;
 
         impl diesel::backend::SqlDialect for MultiBackend {
             type ReturningClause = MultiReturningClause;
@@ -1658,6 +1659,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
             type WindowFrameClauseGroupSupport = MultiWindowFrameClauseGroupSupport;
             type WindowFrameExclusionSupport = MultiWindowFrameExclusionSupport;
             type AggregateFunctionExpressions = MultiAggregateFunctionExpressions;
+            type BuiltInWindowFunctionRequireOrder = MultiBuiltInWindowFunctionRequireOrder;
         }
 
         impl diesel::internal::derives::multiconnection::TrustedBackend for MultiBackend {}
