@@ -2103,7 +2103,6 @@ extern "SQL" {
     fn jsonb_array_length<E: JsonbOrNullableJsonb + MaybeNullableValue<Integer>>(
         jsonb: E,
     ) -> E::Out;
-
     /// Builds a JSON object out of a text array. The array must have an even number of members,
     /// in which case they are taken as alternating key/value pairs. This function also has a form that
     /// that takes keys and values as separate text array arguments.

@@ -22,7 +22,6 @@ extern crate proc_macro2;
 extern crate quote;
 extern crate syn;
 
-use darling::{ast::NestedMeta, FromMeta};
 use proc_macro::TokenStream;
 use sql_function::ExternSqlBlock;
 use syn::{parse_macro_input, parse_quote};
@@ -465,7 +464,7 @@ pub fn derive_insertable(input: TokenStream) -> TokenStream {
 /// meaning that `HAS_STATIC_QUERY_ID` should always be false,
 /// you shouldn't derive this trait.
 /// In that case, you should implement it manually instead.
-#[proc_macro_derive(QueryId)]
+#[proc_macro_derive(QueryId, attributes(diesel))]
 pub fn derive_query_id(input: TokenStream) -> TokenStream {
     query_id::derive(parse_macro_input!(input)).into()
 }
@@ -2173,36 +2172,28 @@ pub fn declare_sql_function(
 ) -> proc_macro::TokenStream {
     let input = proc_macro2::TokenStream::from(input);
 
-    let attr = match DeclareSqlFunctionArgs::parse_from_macro_input(attr) {
-        Err(e) => {
-            return e.into_compile_error().into();
-        }
-        Ok(attr) => attr,
-    };
+    let attr = crate::sql_function::DeclareSqlFunctionArgs::parse_from_macro_input(attr.into());
 
     let result = syn::parse2::<ExternSqlBlock>(input.clone()).map(|res| {
-        sql_function::expand(res.function_decls, false, attr.generate_return_type_helpers)
+        sql_function::expand(
+            res.function_decls,
+            false,
+            attr.as_ref()
+                .map(|attr| attr.generate_return_type_helpers)
+                .unwrap_or(true),
+        )
     });
 
-    match result {
-        Ok(token_stream) => token_stream.into(),
+    let mut output = match result {
+        Ok(token_stream) => token_stream,
         Err(e) => {
             let mut output = input;
             output.extend(e.into_compile_error());
-            output.into()
+            output
         }
+    };
+    if let Err(e) = attr {
+        output.extend(e.into_compile_error());
     }
-}
-
-#[derive(darling::FromMeta, Default)]
-#[darling(default)]
-struct DeclareSqlFunctionArgs {
-    generate_return_type_helpers: bool,
-}
-
-impl DeclareSqlFunctionArgs {
-    fn parse_from_macro_input(input: TokenStream) -> syn::Result<Self> {
-        let args = NestedMeta::parse_meta_list(input.into())?;
-        Ok(DeclareSqlFunctionArgs::from_list(&args)?)
-    }
+    output.into()
 }

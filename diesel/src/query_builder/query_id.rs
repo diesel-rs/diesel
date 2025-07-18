@@ -52,6 +52,9 @@ pub trait QueryId {
     /// cache is a boxed query.
     const HAS_STATIC_QUERY_ID: bool = true;
 
+    #[doc(hidden)]
+    const IS_WINDOW_FUNCTION: bool = false;
+
     /// Returns the type id of `Self::QueryId` if `Self::HAS_STATIC_QUERY_ID`.
     /// Returns `None` otherwise.
     ///
@@ -78,18 +81,22 @@ impl<T: QueryId + ?Sized> QueryId for Box<T> {
     type QueryId = T::QueryId;
 
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
+
+    const IS_WINDOW_FUNCTION: bool = T::IS_WINDOW_FUNCTION;
 }
 
 impl<T: QueryId + ?Sized> QueryId for &T {
     type QueryId = T::QueryId;
 
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
+    const IS_WINDOW_FUNCTION: bool = T::IS_WINDOW_FUNCTION;
 }
 
 impl<DB> QueryId for dyn QueryFragment<DB> {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
+    // todo: we need to deal with IS_WINDOW_FUNCTION here
 }
 
 #[cfg(test)]

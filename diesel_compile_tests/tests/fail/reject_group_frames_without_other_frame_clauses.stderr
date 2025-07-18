@@ -1,0 +1,14 @@
+error[E0277]: `Groups` frame clauses require a ordered window function
+  --> tests/fail/reject_group_frames_without_other_frame_clauses.rs:18:18
+   |
+LL |                 .frame_by(dsl::frame::Groups.frame_start_with(dsl::frame::UnboundedPreceding)),
+   |                  ^^^^^^^^ unsatisfied trait bound
+   |
+   = note: call `.window_order(some_column)` first
+   = help: the trait `ValidFrameClause<diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder>` is not implemented for `Groups`
+           but trait `ValidFrameClause<diesel::expression::functions::aggregate_expressions::aggregate_order::Order<_, true>>` is implemented for it
+   = help: for that trait implementation, expected `diesel::expression::functions::aggregate_expressions::aggregate_order::Order<_, true>`, found `diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder`
+   = note: required for `StartFrame<Groups, UnboundedPreceding>` to implement `diesel::expression::functions::aggregate_expressions::frame_clause::ValidFrameClause<diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder>`
+   = note: required for `diesel::expression::count::count_utils::count<diesel::sql_types::Integer, columns::id>` to implement `diesel::expression::functions::aggregate_expressions::frame_clause::FrameDsl<diesel::expression::functions::aggregate_expressions::frame_clause::StartFrame<Groups, UnboundedPreceding>>`
+
+   For more information about this error, try `rustc --explain E0277`.

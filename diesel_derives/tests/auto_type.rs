@@ -387,7 +387,6 @@ fn test_aggregate_functions() -> _ {
     users::table.select((
         avg(users::id),
         count(users::id),
-        count_distinct(users::id),
         count_star(),
         max(users::id),
         min(users::id),
@@ -623,3 +622,41 @@ fn test_cast() -> _ {
 // fn test_sql_query_2() -> _ {
 //     sql_query("bar").bind::<Integer, _>(1)
 // }
+
+#[auto_type]
+fn window_function() -> _ {
+    (
+        count(users::id).over(),
+        count(users::id).partition_by(users::name),
+        count(users::id).window_filter(users::name.eq(users::name)),
+        count(users::id).window_order(users::name.desc()),
+        count(users::id).over().partition_by(users::name),
+        count(users::id).frame_by(frame::Rows.frame_start_with(2_u64.preceding())),
+        count(users::id).frame_by(frame::Rows.frame_start_with(frame::UnboundedPreceding)),
+        count(users::id).frame_by(
+            frame::Rows.frame_between(frame::UnboundedPreceding, frame::UnboundedFollowing),
+        ),
+        count(users::id).window_order(users::name).frame_by(
+            frame::Groups.frame_start_with_exclusion(frame::CurrentRow, frame::ExcludeGroup),
+        ),
+        count(users::id).frame_by(frame::Range.frame_between_with_exclusion(
+            frame::CurrentRow,
+            7_u64.following(),
+            frame::ExcludeNoOthers,
+        )),
+        count(users::id)
+            .partition_by(users::name)
+            .window_order(users::name.desc())
+            .window_filter(users::name.eq(users::name)),
+    )
+}
+
+#[auto_type]
+fn aggregate_function_expressions() -> _ {
+    (
+        count(users::id).aggregate_distinct(),
+        count(users::id).aggregate_all(),
+        count(users::id).aggregate_filter(users::name.eq(users::name)),
+        count(users::id).aggregate_order(users::id.desc()),
+    )
+}
