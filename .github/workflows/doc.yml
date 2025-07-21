@@ -27,7 +27,7 @@ jobs:
         id: current_branch
         shell: bash
         run: |
-          echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+          echo "branch=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_OUTPUT
       - uses: dtolnay/rust-toolchain@nightly
       - name: Install dependencies
         run: |
