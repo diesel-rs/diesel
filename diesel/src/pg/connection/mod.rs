@@ -332,20 +332,30 @@ fn update_transaction_manager_status<T>(
             }
         }
     }
-    non_generic_inner(conn, query_result.is_err());
-    if let Err(ref e) = query_result {
-        conn.instrumentation
-            .on_connection_event(InstrumentationEvent::FinishQuery {
-                query: source,
-                error: Some(e),
-            });
-    } else if final_call {
-        conn.instrumentation
-            .on_connection_event(InstrumentationEvent::FinishQuery {
-                query: source,
-                error: None,
-            });
+
+    fn non_generic_instrumentation(
+        query_result: Result<(), &Error>,
+        conn: &mut ConnectionAndTransactionManager,
+        source: &dyn DebugQuery,
+        final_call: bool,
+    ) {
+        if let Err(e) = query_result {
+            conn.instrumentation
+                .on_connection_event(InstrumentationEvent::FinishQuery {
+                    query: source,
+                    error: Some(e),
+                });
+        } else if final_call {
+            conn.instrumentation
+                .on_connection_event(InstrumentationEvent::FinishQuery {
+                    query: source,
+                    error: None,
+                });
+        }
     }
+
+    non_generic_inner(conn, query_result.is_err());
+    non_generic_instrumentation(query_result.as_ref().map(|_| ()), conn, source, final_call);
     query_result
 }
 
