@@ -214,15 +214,8 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
     = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
     = help: the following other types implement trait `TableNotEqual<T>`:
-              `Only<pg::metadata_lookup::pg_namespace::table>` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `Only<pg::metadata_lookup::pg_type::table>` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
-              `Tablesample<pg::metadata_lookup::pg_namespace::table, TSM>` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `Tablesample<pg::metadata_lookup::pg_type::table, TSM>` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
-              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>`
-              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<Tablesample<pg::metadata_lookup::pg_type::table, TSM>>`
               `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>`
-            and N others
+              `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
     = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
    --> tests/fail/derive/has_query.rs:12:9
@@ -287,15 +280,8 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
     = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
     = help: the following other types implement trait `TableNotEqual<T>`:
-              `Only<pg::metadata_lookup::pg_namespace::table>` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `Only<pg::metadata_lookup::pg_type::table>` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
-              `Tablesample<pg::metadata_lookup::pg_namespace::table, TSM>` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `Tablesample<pg::metadata_lookup::pg_type::table, TSM>` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
-              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>`
-              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<Tablesample<pg::metadata_lookup::pg_type::table, TSM>>`
               `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>`
-            and N others
+              `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
     = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
    --> tests/fail/derive/has_query.rs:12:9

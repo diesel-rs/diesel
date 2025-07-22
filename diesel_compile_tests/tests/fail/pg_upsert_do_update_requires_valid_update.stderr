@@ -37,21 +37,13 @@ note: `posts::table` is defined in module `crate::posts` of the current crate
     |
  LL | / table! {
  LL | |     posts {
- LL | |         id -> Integer,
- LL | |         title -> VarChar,
- LL | |     }
- LL | | }
-    | |_^
+    | |_________^
 note: `users::table` is defined in module `crate::users` of the current crate
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:6:1
     |
   LL | / table! {
   LL | |     users {
-  LL | |         id -> Integer,
-  LL | |         name -> VarChar,
- LL | |     }
- LL | | }
-    | |_^
+    | |_________^
 note: the method call chain might not have had the expected associated types
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:52:27
     |
@@ -91,12 +83,6 @@ LL |         .set(name.eq(excluded(posts::title)));
    |          ^^^ type mismatch resolving `<title as Column>::Table == table`
    |
 note: expected this to be `users::table`
-  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:16:9
-   |
-LL |         title -> VarChar,
-   |         ^^^^^
-   = note: `posts::table` and `users::table` have similar names, but are actually distinct types
-note: `posts::table` is defined in module `crate::posts` of the current crate
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:13:1
    |
 LL | / table! {
@@ -106,16 +92,19 @@ LL | |         title -> VarChar,
 LL | |     }
 LL | | }
    | |_^
+   = note: `posts::table` and `users::table` have similar names, but are actually distinct types
+note: `posts::table` is defined in module `crate::posts` of the current crate
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:13:1
+   |
+LL | / table! {
+LL | |     posts {
+   | |_________^
 note: `users::table` is defined in module `crate::users` of the current crate
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:6:1
    |
  LL | / table! {
  LL | |     users {
- LL | |         id -> Integer,
- LL | |         name -> VarChar,
-LL | |     }
-LL | | }
-   | |_^
+   | |_________^
    = note: required for `Eq<name, Excluded<title>>` to implement `AsChangeset`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

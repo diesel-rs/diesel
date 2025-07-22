@@ -771,6 +771,8 @@ pub mod prelude {
     };
     #[doc(inline)]
     pub use diesel_derives::table_proc as table;
+    #[doc(inline)]
+    pub use diesel_derives::view_proc as view;
 
     #[cfg(feature = "mysql")]
     #[doc(inline)]

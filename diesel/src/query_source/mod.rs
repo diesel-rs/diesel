@@ -213,6 +213,10 @@ pub(crate) mod private {
     /// A helper trait to prevent down stream crates form implementing certain traits
     #[doc(hidden)]
     pub trait Sealed {}
+
+    /// A helper trait to mark "plain" tables/views as created by `diesel::table!`/`diesel::view!`
+    #[doc(hidden)]
+    pub trait PlainQuerySource: super::QueryRelation {}
 }
 
 #[doc(hidden)]

@@ -36,21 +36,13 @@ note: `comments::table` is defined in module `crate::comments` of the current cr
     |
  LL | / table! {
  LL | |     comments (post_id) {
- LL | |         post_id -> Integer,
- LL | |         body -> Nullable<Text>,
- LL | |     }
- LL | | }
-    | |_^
+    | |____________^
 note: `posts::table` is defined in module `crate::posts` of the current crate
    --> tests/fail/insert_from_select_requires_valid_column_list.rs:14:1
     |
  LL | / table! {
  LL | |     posts (user_id) {
- LL | |         user_id -> Integer,
- LL | |         title -> Text,
-...   |
- LL | | }
-    | |_^
+    | |_________^
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
     |
@@ -116,21 +108,13 @@ note: `comments::table` is defined in module `crate::comments` of the current cr
     |
  LL | / table! {
  LL | |     comments (post_id) {
- LL | |         post_id -> Integer,
- LL | |         body -> Nullable<Text>,
- LL | |     }
- LL | | }
-    | |_^
+    | |____________^
 note: `posts::table` is defined in module `crate::posts` of the current crate
    --> tests/fail/insert_from_select_requires_valid_column_list.rs:14:1
     |
  LL | / table! {
  LL | |     posts (user_id) {
- LL | |         user_id -> Integer,
- LL | |         title -> Text,
-...   |
- LL | | }
-    | |_^
+    | |_________^
     = note: required for `(comments::columns::post_id, comments::columns::body)` to implement `diesel::query_builder::insert_statement::column_list::ColumnList`
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
@@ -156,21 +140,13 @@ note: `comments::table` is defined in module `crate::comments` of the current cr
     |
  LL | / table! {
  LL | |     comments (post_id) {
- LL | |         post_id -> Integer,
- LL | |         body -> Nullable<Text>,
- LL | |     }
- LL | | }
-    | |_^
+    | |____________^
 note: `posts::table` is defined in module `crate::posts` of the current crate
    --> tests/fail/insert_from_select_requires_valid_column_list.rs:14:1
     |
  LL | / table! {
  LL | |     posts (user_id) {
- LL | |         user_id -> Integer,
- LL | |         title -> Text,
-...   |
- LL | | }
-    | |_^
+    | |_________^
     = note: required for `(comments::columns::post_id, comments::columns::body)` to implement `diesel::query_builder::insert_statement::column_list::ColumnList`
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs

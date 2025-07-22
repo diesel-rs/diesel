@@ -152,6 +152,7 @@ fn main() {
         ("query_id", "diesel_derives__tests__query_id_1.snap"),
         ("selectable", "diesel_derives__tests__selectable_1.snap"),
         ("table", "diesel_derives__tests__table_1.snap"),
+        ("view", "diesel_derives__tests__view_1.snap"),
         (
             "valid_grouping",
             "diesel_derives__tests__valid_grouping_1.snap",
