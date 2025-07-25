@@ -44,29 +44,29 @@ LL |     let source = stuff::table.select(max(stuff::b));
 
    
 error[E0277]: the trait bound `Bool: SqlOrdAggregate` is not satisfied
-  --> tests/fail/ordering_functions_require_ord.rs:16:38
-   |
-LL |     let source = stuff::table.select(min(stuff::b));
-   |                                      ^^^^^^^^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
-   |
-   = help: the following other types implement trait `SqlOrd`:
-             Array<T>
-             BigInt
-             Citext
-             Datetime
-             Interval
-             Nullable<T>
-             Unsigned<BigInt>
-             Unsigned<diesel::sql_types::Integer>
-           and N others
-   = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
+   --> tests/fail/ordering_functions_require_ord.rs:16:38
+    |
+16  |     let source = stuff::table.select(min(stuff::b));
+    |                                      ^^^^^^^^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
+    |
+    = help: the following other types implement trait `SqlOrd`:
+              Array<T>
+              BigInt
+              Citext
+              Datetime
+              Interval
+              Nullable<T>
+              Unsigned<BigInt>
+              Unsigned<diesel::sql_types::Integer>
+            and N others
+    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
 note: required by a bound in `diesel::dsl::min`
-  --> DIESEL/diesel/diesel/src/expression/functions/aggregate_ordering.rs
-   |
+   --> DIESEL/diesel/diesel/src/expression/functions/aggregate_ordering.rs
+    |
 LL |     fn min<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
-   |                ^^^^^^^^^^^^^^^ required by this bound in `min`
-
-   
+    |                ^^^^^^^^^^^^^^^ required by this bound in `min`
+ 
+    
 error[E0277]: expressions of the type `diesel::sql_types::Bool` cannot be ordered by the database
   --> tests/fail/ordering_functions_require_ord.rs:16:31
    |

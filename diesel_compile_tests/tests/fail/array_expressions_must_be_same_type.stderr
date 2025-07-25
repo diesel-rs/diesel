@@ -215,8 +215,8 @@ LL |     select(array((1, 3f64)))
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
-             CountDistinct<T, E>
              CountStar
+             Exists<T>
            and N others
    = note: required for `f64` to implement `AsExpression<diesel::sql_types::Integer>`
    = note: required for `(i32, f64)` to implement `AsExpressionList<diesel::sql_types::Integer>`
@@ -446,8 +446,8 @@ LL |     select(array((1, 3f64)))
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
-             CountDistinct<T, E>
              CountStar
+             Exists<T>
            and N others
    = note: required for `{integer}` to implement `AsExpression<diesel::sql_types::Double>`
    = note: required for `({integer}, f64)` to implement `AsExpressionList<diesel::sql_types::Double>`

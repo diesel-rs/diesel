@@ -1,13 +1,9 @@
-use std::marker::PhantomData;
-
 use super::functions::declare_sql_function;
-use super::is_aggregate;
 use super::{Expression, ValidGrouping};
 use crate::backend::Backend;
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types::{BigInt, DieselNumericOps, SingleValue, SqlType};
-use crate::{AppearsOnTable, SelectableExpression};
 
 #[declare_sql_function]
 extern "SQL" {
@@ -122,58 +118,11 @@ where
     T: SqlType + SingleValue,
     E: crate::expression::AsExpression<T>,
 {
-    CountDistinct {
-        expr: expr.as_expression(),
-        _marker: PhantomData,
-    }
+    use crate::AggregateExpressionMethods;
+
+    count(expr).aggregate_distinct()
 }
 
-#[derive(Debug, Clone, Copy, QueryId, DieselNumericOps)]
 #[doc(hidden)]
-pub struct CountDistinct<T, E> {
-    expr: E,
-    _marker: PhantomData<T>,
-}
-
-impl<T, E> Expression for CountDistinct<T, E>
-where
-    T: SqlType + SingleValue,
-    E: Expression,
-{
-    type SqlType = BigInt;
-}
-
-impl<T, E, GB> ValidGrouping<GB> for CountDistinct<T, E>
-where
-    T: SqlType + SingleValue,
-{
-    type IsAggregate = is_aggregate::Yes;
-}
-
-impl<T, E, QS> SelectableExpression<QS> for CountDistinct<T, E>
-where
-    Self: AppearsOnTable<QS>,
-    E: SelectableExpression<QS>,
-{
-}
-
-impl<T, E, QS> AppearsOnTable<QS> for CountDistinct<T, E>
-where
-    Self: Expression,
-    E: AppearsOnTable<QS>,
-{
-}
-
-impl<T, E, DB> QueryFragment<DB> for CountDistinct<T, E>
-where
-    T: SqlType + SingleValue,
-    DB: Backend,
-    E: QueryFragment<DB>,
-{
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        out.push_sql("COUNT(DISTINCT ");
-        self.expr.walk_ast(out.reborrow())?;
-        out.push_sql(")");
-        Ok(())
-    }
-}
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+pub type CountDistinct<T, E> = crate::dsl::AggregateDistinct<self::count<T, E>>;

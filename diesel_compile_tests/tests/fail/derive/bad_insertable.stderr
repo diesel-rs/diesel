@@ -11,8 +11,8 @@ LL | #[derive(Insertable)]
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
-             CountDistinct<T, E>
              CountStar
+             Exists<T>
            and N others
    = note: required for `std::string::String` to implement `AsExpression<diesel::sql_types::Integer>`
    = note: this error originates in the derive macro `Insertable` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -30,8 +30,8 @@ LL | #[derive(Insertable)]
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
-             CountDistinct<T, E>
              CountStar
+             Exists<T>
            and N others
    = note: required for `i32` to implement `AsExpression<diesel::sql_types::Text>`
    = note: this error originates in the derive macro `Insertable` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -49,8 +49,8 @@ LL | #[derive(Insertable)]
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
-             CountDistinct<T, E>
              CountStar
+             Exists<T>
            and N others
    = note: required for `&'insert std::string::String` to implement `diesel::Expression`
    = note: required for `&'insert std::string::String` to implement `AsExpression<diesel::sql_types::Integer>`
@@ -69,8 +69,8 @@ LL | #[derive(Insertable)]
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
-             CountDistinct<T, E>
              CountStar
+             Exists<T>
            and N others
    = note: required for `&'insert i32` to implement `diesel::Expression`
    = note: required for `&'insert i32` to implement `AsExpression<diesel::sql_types::Text>`
@@ -89,8 +89,8 @@ LL |     id: String,
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
-             CountDistinct<T, E>
              CountStar
+             Exists<T>
            and N others
    = note: required for `std::string::String` to implement `AsExpression<diesel::sql_types::Integer>`
 
@@ -107,8 +107,8 @@ LL |     name: i32,
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
-             CountDistinct<T, E>
              CountStar
+             Exists<T>
            and N others
    = note: required for `i32` to implement `AsExpression<diesel::sql_types::Text>`
 
@@ -125,8 +125,8 @@ LL |     id: String,
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
-             CountDistinct<T, E>
              CountStar
+             Exists<T>
            and N others
    = note: required for `&'insert std::string::String` to implement `diesel::Expression`
    = note: required for `&'insert std::string::String` to implement `AsExpression<diesel::sql_types::Integer>`
@@ -144,8 +144,8 @@ LL |     name: i32,
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
              CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
-             CountDistinct<T, E>
              CountStar
+             Exists<T>
            and N others
    = note: required for `&'insert i32` to implement `diesel::Expression`
    = note: required for `&'insert i32` to implement `AsExpression<diesel::sql_types::Text>`
