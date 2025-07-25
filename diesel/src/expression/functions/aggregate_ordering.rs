@@ -40,9 +40,14 @@ extern "SQL" {
     /// # fn main() {
     /// #     use schema::animals::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// let res = animals.select((name, max(legs).partition_by(id))).load::<(Option<String>, Option<i32>)>(connection);
+    /// let res = animals
+    ///     .select((name, max(legs).partition_by(id)))
+    ///     .load::<(Option<String>, Option<i32>)>(connection);
     ///
-    /// assert_eq!(Ok(vec![(Some("Jack".into()), Some(4)), (None, Some(8))]), res);
+    /// assert_eq!(
+    ///     Ok(vec![(Some("Jack".into()), Some(4)), (None, Some(8))]),
+    ///     res
+    /// );
     /// # }
     /// ```
     ///
@@ -57,7 +62,12 @@ extern "SQL" {
     /// #     use schema::animals::dsl::*;
     /// #     let connection = &mut establish_connection();
     /// #     #[cfg(not(feature = "mysql"))]
-    /// assert_eq!(Ok(Some(4)), animals.select(max(legs).aggregate_filter(legs.lt(8))).first(connection));
+    /// assert_eq!(
+    ///     Ok(Some(4)),
+    ///     animals
+    ///         .select(max(legs).aggregate_filter(legs.lt(8)))
+    ///         .first(connection)
+    /// );
     /// # }
     /// ```
     #[aggregate]
@@ -99,9 +109,14 @@ extern "SQL" {
     /// # fn main() {
     /// #     use schema::animals::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// let res = animals.select((name, min(legs).partition_by(id))).load::<(Option<String>, Option<i32>)>(connection);
+    /// let res = animals
+    ///     .select((name, min(legs).partition_by(id)))
+    ///     .load::<(Option<String>, Option<i32>)>(connection);
     ///
-    /// assert_eq!(Ok(vec![(Some("Jack".into()), Some(4)), (None, Some(8))]), res);
+    /// assert_eq!(
+    ///     Ok(vec![(Some("Jack".into()), Some(4)), (None, Some(8))]),
+    ///     res
+    /// );
     /// # }
     /// ```
     ///
@@ -115,7 +130,12 @@ extern "SQL" {
     /// #     use schema::animals::dsl::*;
     /// #     let connection = &mut establish_connection();
     /// #     #[cfg(not(feature = "mysql"))]
-    /// assert_eq!(Ok(Some(8)), animals.select(min(legs).aggregate_filter(legs.gt(4))).first(connection));
+    /// assert_eq!(
+    ///     Ok(Some(8)),
+    ///     animals
+    ///         .select(min(legs).aggregate_filter(legs.gt(4)))
+    ///         .first(connection)
+    /// );
     /// # }
     /// ```
     #[aggregate]

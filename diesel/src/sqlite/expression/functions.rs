@@ -283,8 +283,8 @@ extern "SQL" {
     ///         n: 42,
     ///     }
     /// "#;
-    /// let result = diesel::select(json_error_position::<Text, _>(json5))
-    ///     .get_result::<i32>(connection)?;
+    /// let result =
+    ///     diesel::select(json_error_position::<Text, _>(json5)).get_result::<i32>(connection)?;
     ///
     /// assert_eq!(0, result);
     ///
@@ -862,13 +862,19 @@ extern "SQL" {
     /// #
     /// #     let connection = &mut establish_connection();
     /// #
-    /// let result = animals.select(json_group_array(species)).get_result::<serde_json::Value>(connection)?;
+    /// let result = animals
+    ///     .select(json_group_array(species))
+    ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(result, json!(["dog", "spider"]));
     ///
-    /// let result = animals.select(json_group_array(legs)).get_result::<serde_json::Value>(connection)?;
+    /// let result = animals
+    ///     .select(json_group_array(legs))
+    ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(result, json!([4, 8]));
     ///
-    /// let result = animals.select(json_group_array(name)).get_result::<serde_json::Value>(connection)?;
+    /// let result = animals
+    ///     .select(json_group_array(name))
+    ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(result, json!(["Jack", null]));
     ///
     /// # Ok(())
@@ -892,7 +898,9 @@ extern "SQL" {
     /// #
     /// #     let connection = &mut establish_connection();
     /// #
-    /// let result = animals.select(json_group_array(species).aggregate_filter(legs.lt(8))).get_result::<serde_json::Value>(connection)?;
+    /// let result = animals
+    ///     .select(json_group_array(species).aggregate_filter(legs.lt(8)))
+    ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(result, json!(["dog"]));
     ///
     /// # Ok(())
@@ -933,13 +941,19 @@ extern "SQL" {
     /// #
     /// #     let connection = &mut establish_connection();
     /// #
-    /// let result = animals.select(json_group_array(species)).get_result::<serde_json::Value>(connection)?;
+    /// let result = animals
+    ///     .select(json_group_array(species))
+    ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(result, json!(["dog", "spider"]));
     ///
-    /// let result = animals.select(json_group_array(legs)).get_result::<serde_json::Value>(connection)?;
+    /// let result = animals
+    ///     .select(json_group_array(legs))
+    ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(result, json!([4, 8]));
     ///
-    /// let result = animals.select(json_group_array(name)).get_result::<serde_json::Value>(connection)?;
+    /// let result = animals
+    ///     .select(json_group_array(name))
+    ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(result, json!(["Jack", null]));
     ///
     /// # Ok(())
@@ -964,7 +978,9 @@ extern "SQL" {
     /// #
     /// #     let connection = &mut establish_connection();
     /// #
-    /// let result = animals.select(json_group_array(species).aggregate_filter(legs.lt(8))).get_result::<serde_json::Value>(connection)?;
+    /// let result = animals
+    ///     .select(json_group_array(species).aggregate_filter(legs.lt(8)))
+    ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(result, json!(["dog"]));
     ///
     /// # Ok(())
@@ -1194,8 +1210,7 @@ extern "SQL" {
     /// #     let connection = &mut establish_connection();
     /// #     assert_version!(connection, 3, 38, 0);
     /// #
-    /// let result = diesel::select(json_array_0())
-    ///     .get_result::<serde_json::Value>(connection)?;
+    /// let result = diesel::select(json_array_0()).get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(json!([]), result);
     ///
     /// let result = diesel::select(json_array_1::<Text, _>("abc"))
@@ -1247,8 +1262,7 @@ extern "SQL" {
     /// #     let connection = &mut establish_connection();
     /// #     assert_version!(connection, 3, 38, 0);
     /// #
-    /// let result = diesel::select(jsonb_array_0())
-    ///     .get_result::<serde_json::Value>(connection)?;
+    /// let result = diesel::select(jsonb_array_0()).get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(json!([]), result);
     ///
     /// let result = diesel::select(jsonb_array_1::<Text, _>("abc"))

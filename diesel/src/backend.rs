@@ -135,7 +135,6 @@ pub type BindCollector<'a, DB> = <DB as Backend>::BindCollector<'a>;
 /// implementations by providing
 /// a custom `QueryFragment<YourBackend, YourSpecialSyntaxType>` implementation
 /// to specialize on generic `QueryFragment<DB, DB::AssociatedType>` implementations.
-///
 #[cfg_attr(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
     doc = "See the [`sql_dialect`] module for options provided by diesel out of the box."
@@ -162,7 +161,6 @@ pub trait SqlDialect: self::private::TrustedBackend {
     /// Configures how this backend supports `ON CONFLICT` clauses
     ///
     /// This allows backends to opt in `ON CONFLICT` clause support
-    ///
     #[cfg_attr(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         doc = "See [`sql_dialect::on_conflict_clause`] for provided default implementations"
@@ -173,7 +171,6 @@ pub trait SqlDialect: self::private::TrustedBackend {
     ///
     /// This allows backends to opt in support for `DEFAULT` value expressions
     /// for insert statements
-    ///
     #[cfg_attr(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         doc = "See [`sql_dialect::default_keyword_for_insert`] for provided default implementations"
@@ -311,7 +308,6 @@ pub trait SqlDialect: self::private::TrustedBackend {
     ///
     /// This allows backends to provide custom [`QueryFragment`](crate::query_builder::QueryFragment)
     /// implementations for [`Alias<T>`](crate::query_source::Alias)
-    ///
     #[cfg_attr(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         doc = "See [`sql_dialect::alias_syntax`] for provided default implementations"

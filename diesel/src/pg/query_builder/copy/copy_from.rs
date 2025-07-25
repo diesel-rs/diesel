@@ -604,8 +604,12 @@ pub struct NotSet;
 /// # let connection = &mut establish_connection();
 ///
 /// let data = vec![
-///     NewUser { name: "Diva Plavalaguna" },
-///     NewUser { name: "Father Vito Cornelius" },
+///     NewUser {
+///         name: "Diva Plavalaguna",
+///     },
+///     NewUser {
+///         name: "Father Vito Cornelius",
+///     },
 /// ];
 ///
 /// let count = diesel::copy_from(users::table)

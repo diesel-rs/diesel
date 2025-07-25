@@ -524,7 +524,10 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut establish_connection();
 /// let first_user = users.first(connection)?;
-/// let expected = User { id: 1, name: "Sean".into() };
+/// let expected = User {
+///     id: 1,
+///     name: "Sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -554,9 +557,8 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// impl<DB> Queryable<Text, DB> for LowercaseString
 /// where
 ///     DB: Backend,
-///     String: FromSql<Text, DB>
+///     String: FromSql<Text, DB>,
 /// {
-///
 ///     type Row = String;
 ///
 ///     fn build(s: String) -> deserialize::Result<Self> {
@@ -579,7 +581,10 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut establish_connection();
 /// let first_user = users.first(connection)?;
-/// let expected = User { id: 1, name: "sean".into() };
+/// let expected = User {
+///     id: 1,
+///     name: "sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -592,14 +597,13 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// # extern crate dotenvy;
 /// # include!("../../diesel/src/doctest_setup.rs");
 /// #
-/// use schema::users;
-/// use diesel::deserialize::{self, Queryable, FromSqlRow};
+/// use diesel::deserialize::{self, FromSqlRow, Queryable};
 /// use diesel::row::Row;
+/// use schema::users;
 ///
 /// # /*
 /// type DB = diesel::sqlite::Sqlite;
 /// # */
-///
 /// #[derive(PartialEq, Debug)]
 /// struct User {
 ///     id: i32,
@@ -608,12 +612,15 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///
 /// impl Queryable<users::SqlType, DB> for User
 /// where
-///    (i32, String): FromSqlRow<users::SqlType, DB>,
+///     (i32, String): FromSqlRow<users::SqlType, DB>,
 /// {
 ///     type Row = (i32, String);
 ///
 ///     fn build((id, name): Self::Row) -> deserialize::Result<Self> {
-///         Ok(User { id, name: name.to_lowercase() })
+///         Ok(User {
+///             id,
+///             name: name.to_lowercase(),
+///         })
 ///     }
 /// }
 ///
@@ -625,7 +632,10 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut establish_connection();
 /// let first_user = users.first(connection)?;
-/// let expected = User { id: 1, name: "sean".into() };
+/// let expected = User {
+///     id: 1,
+///     name: "sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -727,9 +737,11 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     let connection = &mut establish_connection();
-/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(connection)?;
-/// let expected = User { id: 1, name: "Sean".into() };
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1").get_result(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "Sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -761,8 +773,7 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///     String: FromSql<ST, DB>,
 /// {
 ///     fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
-///         String::from_sql(bytes)
-///             .map(|s| LowercaseString(s.to_lowercase()))
+///         String::from_sql(bytes).map(|s| LowercaseString(s.to_lowercase()))
 ///     }
 /// }
 ///
@@ -779,9 +790,11 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     let connection = &mut establish_connection();
-/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(connection)?;
-/// let expected = User { id: 1, name: "sean".into() };
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1").get_result(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -825,9 +838,11 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     let connection = &mut establish_connection();
-/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(connection)?;
-/// let expected = User { id: 1, name: "Sean".into() };
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1").get_result(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "Sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -1082,7 +1097,6 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///   - The SQL to be generated is different from the Rust name of the function.
 ///     This can be used to represent functions which can take many argument
 ///     types, or to capitalize function names.
-///
 #[proc_macro]
 pub fn define_sql_function(input: TokenStream) -> TokenStream {
     sql_function::expand(vec![parse_macro_input!(input)], false, false).into()
@@ -1365,24 +1379,24 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
 /// }
 ///
 /// fn use_multi(conn: &mut AnyConnection) -> QueryResult<()> {
-///    // Use the connection enum as any other connection type
-///    // for inserting/updating/loading/…
-///    diesel::insert_into(users::table)
-///        .values(users::name.eq("Sean"))
-///        .execute(conn)?;
+///     // Use the connection enum as any other connection type
+///     // for inserting/updating/loading/…
+///     diesel::insert_into(users::table)
+///         .values(users::name.eq("Sean"))
+///         .execute(conn)?;
 ///
-///    let users = users::table.load::<(i32, String)>(conn)?;
+///     let users = users::table.load::<(i32, String)>(conn)?;
 ///
-///    // Match on the connection type to access
-///    // the inner connection. This allows us then to use
-///    // backend specific methods.
+///     // Match on the connection type to access
+///     // the inner connection. This allows us then to use
+///     // backend specific methods.
 /// #    #[cfg(feature = "postgres")]
-///    if let AnyConnection::Postgresql(ref mut conn) = conn {
-///        // perform a postgresql specific query here
-///        let users = users::table.load::<(i32, String)>(conn)?;
-///    }
+///     if let AnyConnection::Postgresql(ref mut conn) = conn {
+///         // perform a postgresql specific query here
+///         let users = users::table.load::<(i32, String)>(conn)?;
+///     }
 ///
-///    Ok(())
+///     Ok(())
 /// }
 ///
 /// # fn main() {}
@@ -1832,7 +1846,7 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// # fn main() {
 /// # }
 /// #
-/// use diesel::sql_types::{Integer, Double};
+/// use diesel::sql_types::{Double, Integer};
 ///
 /// #[declare_sql_function]
 /// extern "SQL" {
@@ -1843,12 +1857,9 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// # fn run_test() -> Result<(), Box<dyn std::error::Error>> {
 /// let connection = &mut SqliteConnection::establish(":memory:")?;
 ///
-/// add_mul_utils::register_impl(connection, |x: i32, y: i32, z: f64| {
-///     (x + y) as f64 * z
-/// })?;
+/// add_mul_utils::register_impl(connection, |x: i32, y: i32, z: f64| (x + y) as f64 * z)?;
 ///
-/// let result = select(add_mul(1, 2, 1.5))
-///     .get_result::<f64>(connection)?;
+/// let result = select(add_mul(1, 2, 1.5)).get_result::<f64>(connection)?;
 /// assert_eq!(4.5, result);
 /// #     Ok(())
 /// # }
@@ -2070,12 +2081,9 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///     fn json_array_1<V1: SqlType + SingleValue>(value_1: V1) -> Json;
 ///
 ///     #[sql_name = "json_array"]
-///     fn json_array_2<
-///         V1: SqlType + SingleValue,
-///         V2: SqlType + SingleValue
-///     >(
+///     fn json_array_2<V1: SqlType + SingleValue, V2: SqlType + SingleValue>(
 ///         value_1: V1,
-///         value_2: V2
+///         value_2: V2,
 ///     ) -> Json;
 ///
 ///     // ...

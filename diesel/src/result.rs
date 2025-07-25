@@ -274,7 +274,7 @@ pub trait OptionalExtension<T> {
     /// # Example
     ///
     /// ```rust
-    /// use diesel::{QueryResult, NotFound, OptionalExtension};
+    /// use diesel::{NotFound, OptionalExtension, QueryResult};
     ///
     /// let result: QueryResult<i32> = Ok(1);
     /// assert_eq!(Ok(Some(1)), result.optional());
@@ -303,7 +303,10 @@ pub trait OptionalEmptyChangesetExtension<T> {
     /// # Example
     ///
     /// ```rust
-    /// use diesel::{QueryResult, OptionalEmptyChangesetExtension, result::Error::QueryBuilderError, result::EmptyChangeset};
+    /// use diesel::{
+    ///     result::EmptyChangeset, result::Error::QueryBuilderError, OptionalEmptyChangesetExtension,
+    ///     QueryResult,
+    /// };
     /// let result: QueryResult<i32> = Err(QueryBuilderError(Box::new(EmptyChangeset)));
     /// assert_eq!(Ok(None), result.optional_empty_changeset());
     /// ```

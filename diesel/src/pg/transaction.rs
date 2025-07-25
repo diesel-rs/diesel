@@ -110,26 +110,24 @@ where
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let conn = &mut connection_no_transaction();
-    /// conn.build_transaction()
-    ///     .read_write()
-    ///     .run(|conn| {
+    /// conn.build_transaction().read_write().run(|conn| {
     /// #         sql_query("CREATE TABLE IF NOT EXISTS users (
     /// #             id SERIAL PRIMARY KEY,
     /// #             name TEXT NOT NULL
     /// #         )").execute(conn)?;
-    ///         let read_attempt = users.select(name).load::<String>(conn);
-    ///         assert!(read_attempt.is_ok());
+    ///     let read_attempt = users.select(name).load::<String>(conn);
+    ///     assert!(read_attempt.is_ok());
     ///
-    ///         let write_attempt = diesel::insert_into(users)
-    ///             .values(name.eq("Ruby"))
-    ///             .execute(conn);
-    ///         assert!(write_attempt.is_ok());
+    ///     let write_attempt = diesel::insert_into(users)
+    ///         .values(name.eq("Ruby"))
+    ///         .execute(conn);
+    ///     assert!(write_attempt.is_ok());
     ///
     /// #       Err(RollbackTransaction)
     /// #       /*
-    ///         Ok(())
+    ///     Ok(())
     /// #       */
-    ///     })
+    /// })
     /// # }
     /// ```
     pub fn read_write(mut self) -> Self {
@@ -151,9 +149,7 @@ where
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let conn = &mut connection_no_transaction();
-    /// conn.build_transaction()
-    ///     .deferrable()
-    ///     .run(|conn| Ok(()))
+    /// conn.build_transaction().deferrable().run(|conn| Ok(()))
     /// # }
     /// ```
     pub fn deferrable(mut self) -> Self {
@@ -178,9 +174,7 @@ where
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let conn = &mut connection_no_transaction();
-    /// conn.build_transaction()
-    ///     .not_deferrable()
-    ///     .run(|conn| Ok(()))
+    /// conn.build_transaction().not_deferrable().run(|conn| Ok(()))
     /// # }
     /// ```
     pub fn not_deferrable(mut self) -> Self {
@@ -205,9 +199,7 @@ where
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let conn = &mut connection_no_transaction();
-    /// conn.build_transaction()
-    ///     .read_committed()
-    ///     .run(|conn| Ok(()))
+    /// conn.build_transaction().read_committed().run(|conn| Ok(()))
     /// # }
     /// ```
     pub fn read_committed(mut self) -> Self {
@@ -253,9 +245,7 @@ where
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let conn = &mut connection_no_transaction();
-    /// conn.build_transaction()
-    ///     .serializable()
-    ///     .run(|conn| Ok(()))
+    /// conn.build_transaction().serializable().run(|conn| Ok(()))
     /// # }
     /// ```
     pub fn serializable(mut self) -> Self {

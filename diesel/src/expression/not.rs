@@ -16,8 +16,7 @@ use crate::sql_types::BoolOrNullableBool;
 /// use diesel::dsl::not;
 ///
 /// let users_with_name = users.select(id).filter(name.eq("Sean"));
-/// let users_not_with_name = users.select(id).filter(
-///     not(name.eq("Sean")));
+/// let users_not_with_name = users.select(id).filter(not(name.eq("Sean")));
 ///
 /// assert_eq!(Ok(1), users_with_name.first(connection));
 /// assert_eq!(Ok(2), users_not_with_name.first(connection));

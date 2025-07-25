@@ -34,7 +34,6 @@ pub trait BindCollector<'a, DB: TypeMetadata>: Sized {
         U: ToSql<T, DB> + ?Sized + 'a;
 
     /// Push a null value with the given type information onto the bind collector
-    ///
     // For backward compatibility reasons we provide a default implementation
     // but custom backends that want to support `#[derive(MultiConnection)]`
     // need to provide a customized implementation of this function

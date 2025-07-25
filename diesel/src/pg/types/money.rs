@@ -16,7 +16,7 @@ use crate::sql_types::{BigInt, Money};
 ///
 /// ```rust
 /// use diesel::data_types::PgMoney as Pence; // 1/100th unit of Pound
-/// use diesel::data_types::PgMoney as Fils;  // 1/1000th unit of Dinar
+/// use diesel::data_types::PgMoney as Fils; // 1/1000th unit of Dinar
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, AsExpression, FromSqlRow)]
 #[diesel(sql_type = Money)]

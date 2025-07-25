@@ -10,7 +10,6 @@ use crate::query_source::{Column, Table, TableNotEqual};
 /// Any column `Self` that does not belong to `S::Table` will be left untouched.
 ///
 /// This also works with tuples and some expressions.
-///
 // This first part is implemented by the `table!` macro.
 // The second part is useful to implement the joins, and may be useful to an end-user for
 // ergonomics.

@@ -217,7 +217,8 @@ macro_rules! __diesel_operator_to_sql {
 /// use diesel::expression::AsExpression;
 ///
 /// // Normally you would put this on a trait instead
-/// fn my_eq<T, U, ST>(left: T, right: U) -> MyEq<T, U::Expression> where
+/// fn my_eq<T, U, ST>(left: T, right: U) -> MyEq<T, U::Expression>
+/// where
 ///     T: Expression<SqlType = ST>,
 ///     U: AsExpression<ST>,
 ///     ST: SqlType + TypedExpressionType,
@@ -391,7 +392,6 @@ macro_rules! diesel_infix_operator {
 /// Similar to [`infix_operator!`], but the generated type will only take
 /// a single argument rather than two. The operator SQL will be placed after
 /// the single argument. See [`infix_operator!`] for example usage.
-///
 #[macro_export]
 macro_rules! postfix_operator {
     ($name:ident, $operator:expr) => {
@@ -519,7 +519,6 @@ macro_rules! diesel_postfix_operator {
 /// Similar to [`infix_operator!`], but the generated type will only take
 /// a single argument rather than two. The operator SQL will be placed before
 /// the single argument. See [`infix_operator!`] for example usage.
-///
 #[macro_export]
 macro_rules! prefix_operator {
     ($name:ident, $operator:expr) => {

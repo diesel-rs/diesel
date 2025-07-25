@@ -174,8 +174,7 @@ impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
     /// #     let connection = &mut establish_connection();
     /// #     let mut params = HashMap::new();
     /// #     params.insert("sean_has_been_a_jerk", true);
-    /// let mut query = diesel::delete(users)
-    ///     .into_boxed();
+    /// let mut query = diesel::delete(users).into_boxed();
     ///
     /// if params["sean_has_been_a_jerk"] {
     ///     query = query.filter(name.eq("Sean"));

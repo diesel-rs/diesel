@@ -56,7 +56,8 @@ use crate::RunQueryDsl;
 /// #     use schema::users;
 /// #     let connection = &mut establish_connection();
 /// use diesel::connection::DefaultLoadingMode;
-/// { // scope to restrict the lifetime of the iterator
+/// {
+///     // scope to restrict the lifetime of the iterator
 ///     let iter1 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
 ///
 ///     for r in iter1 {
