@@ -99,6 +99,8 @@ impl SqlDialect for Mysql {
 
     type AggregateFunctionExpressions =
         sql_dialect::aggregate_function_expressions::NoAggregateFunctionExpressions;
+
+    type BuiltInWindowFunctionRequireOrder = MysqlRequiresOrderForWindowFunctions;
 }
 
 impl DieselReserveSpecialization for Mysql {}
@@ -112,5 +114,8 @@ pub struct MysqlConcatClause;
 
 #[derive(Debug, Clone, Copy)]
 pub struct MysqlOnConflictClause;
+
+#[derive(Debug, Clone, Copy)]
+pub struct MysqlRequiresOrderForWindowFunctions;
 
 impl SupportsOnConflictClause for MysqlOnConflictClause {}

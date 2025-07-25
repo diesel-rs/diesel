@@ -1,4 +1,6 @@
 //! SQLite specific functions
+#[cfg(doc)]
+use crate::expression::functions::aggregate_expressions::AggregateExpressionMethods;
 use crate::expression::functions::declare_sql_function;
 use crate::sql_types::*;
 use crate::sqlite::expression::expression_methods::BinaryOrNullableBinary;
@@ -898,8 +900,8 @@ extern "SQL" {
     /// ```
     ///
     /// # See also
-    /// - [`jsonb_group_array`] will return data in JSONB format instead of JSON.
-    /// - [`json_group_object`] will return JSON object instead of array.
+    /// - [`jsonb_group_array`](jsonb_group_array()) will return data in JSONB format instead of JSON.
+    /// - [`json_group_object`](json_group_object()) will return JSON object instead of array.
     #[cfg(feature = "sqlite")]
     #[aggregate]
     fn json_group_array<E: SqlType + SingleValue>(elements: E) -> Json;
@@ -970,8 +972,8 @@ extern "SQL" {
     /// ```
     ///
     /// # See also
-    /// - [`json_group_array`] will return data in JSON format instead of JSONB.
-    /// - [`jsonb_group_object`] will return JSONB object instead of array.
+    /// - [`json_group_array`](json_group_array()) will return data in JSON format instead of JSONB.
+    /// - [`jsonb_group_object`](jsonb_group_object()) will return JSONB object instead of array.
     #[cfg(feature = "sqlite")]
     #[aggregate]
     fn jsonb_group_array<E: SqlType + SingleValue>(elements: E) -> Jsonb;
@@ -1057,8 +1059,8 @@ extern "SQL" {
     /// ```
     ///
     /// # See also
-    /// - [`jsonb_group_object`] will return data in JSONB format instead of JSON.
-    /// - [`json_group_array`] will return JSON array instead of object.
+    /// - [`jsonb_group_object`](jsonb_group_object()) will return data in JSONB format instead of JSON.
+    /// - [`json_group_array`](json_group_array()) will return JSON array instead of object.
     #[cfg(feature = "sqlite")]
     #[aggregate]
     fn json_group_object<
@@ -1150,8 +1152,8 @@ extern "SQL" {
     /// ```
     ///
     /// # See also
-    /// - [`json_group_object`] will return data in JSON format instead of JSONB.
-    /// - [`jsonb_group_array`] will return JSONB array instead of object.
+    /// - [`json_group_object`](jsonb_group_array()) will return data in JSON format instead of JSONB.
+    /// - [`jsonb_group_array`](jsonb_group_array()) will return JSONB array instead of object.
     #[cfg(feature = "sqlite")]
     #[aggregate]
     fn jsonb_group_object<

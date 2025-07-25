@@ -1,11 +1,11 @@
 //! PostgreSQL specific expression methods
 
 pub(in crate::pg) use self::private::{
-    ArrayOrNullableArray, CombinedAllNullableValue, CombinedNullableValue, InetOrCidr, JsonIndex,
-    JsonOrNullableJson, JsonOrNullableJsonOrJsonbOrNullableJsonb, JsonRemoveIndex,
-    JsonbOrNullableJsonb, MaybeNullableValue, MultirangeOrNullableMultirange,
-    MultirangeOrRangeMaybeNullable, RangeOrMultirange, RangeOrNullableRange,
-    RecordOrNullableRecord, TextArrayOrNullableTextArray, TextOrNullableText,
+    ArrayOrNullableArray, CombinedAllNullableValue, InetOrCidr, JsonIndex, JsonOrNullableJson,
+    JsonOrNullableJsonOrJsonbOrNullableJsonb, JsonRemoveIndex, JsonbOrNullableJsonb,
+    MaybeNullableValue, MultirangeOrNullableMultirange, MultirangeOrRangeMaybeNullable,
+    RangeOrMultirange, RangeOrNullableRange, RecordOrNullableRecord, TextArrayOrNullableTextArray,
+    TextOrNullableText,
 };
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
@@ -3621,7 +3621,7 @@ where
 pub(in crate::pg) mod private {
     use crate::sql_types::{
         AllAreNullable, Array, Binary, Cidr, Inet, Integer, Json, Jsonb, MaybeNullableType,
-        Multirange, Nullable, OneIsNullable, Range, Record, SingleValue, SqlType, Text,
+        Multirange, Nullable, Range, Record, SingleValue, SqlType, Text,
     };
     use crate::{Expression, IntoSql};
 
@@ -3931,21 +3931,6 @@ pub(in crate::pg) mod private {
         <T::IsNull as MaybeNullableType<O>>::Out: SingleValue,
     {
         type Out = <T::IsNull as MaybeNullableType<O>>::Out;
-    }
-
-    pub trait CombinedNullableValue<O, Out>: SingleValue {
-        type Out: SingleValue;
-    }
-
-    impl<T, O, Out> CombinedNullableValue<O, Out> for T
-    where
-        T: SingleValue,
-        O: SingleValue,
-        T::IsNull: OneIsNullable<O::IsNull>,
-        <T::IsNull as OneIsNullable<O::IsNull>>::Out: MaybeNullableType<Out>,
-        <<T::IsNull as OneIsNullable<O::IsNull>>::Out as MaybeNullableType<Out>>::Out: SingleValue,
-    {
-        type Out = <<T::IsNull as OneIsNullable<O::IsNull>>::Out as MaybeNullableType<Out>>::Out;
     }
 
     #[diagnostic::on_unimplemented(

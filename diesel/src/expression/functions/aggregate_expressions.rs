@@ -31,6 +31,7 @@ mod partition_by;
 mod prefix;
 
 use self::aggregate_filter::{FilterDsl, NoFilter};
+pub use self::aggregate_order::Order;
 use self::aggregate_order::{NoOrder, OrderAggregateDsl, OrderWindowDsl};
 use self::frame_clause::{FrameDsl, NoFrame};
 pub use self::over_clause::OverClause;
@@ -122,6 +123,11 @@ where
 /// trait onto, not to check if the construct is valid for a given backend
 /// This check is postponed to building the query via `QueryFragment`
 /// (We have access to the DB type there)
+#[diagnostic::on_unimplemented(
+    message = "{Self} is not a window function",
+    label = "remove this function call to use `{Self}` as normal SQL function",
+    note = "try removing any method call to `WindowExpressionMethods` and use it as normal SQL function"
+)]
 pub trait IsWindowFunction {
     /// A tuple of all arg types
     type ArgTypes;
@@ -414,10 +420,9 @@ pub trait WindowExpressionMethods: Sized {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;
     /// #     let connection = &mut establish_connection();
-    /// // TODO: replace with a better example as soon as we have a fiting example
-    /// let res = posts.select(dsl::count(user_id).window_order(title))
-    ///     .load::<i64>(connection)?;
-    /// assert_eq!(vec![1, 2, 3], res);
+    /// let res = posts.select(dsl::first_value(user_id).window_order(title))
+    ///     .load::<i32>(connection)?;
+    /// assert_eq!(vec![1, 1, 1], res);
     /// #     Ok(())
     /// # }
     /// ```
@@ -465,6 +470,8 @@ pub trait WindowExpressionMethods: Sized {
         <Self as FrameDsl<E>>::frame(self, expr)
     }
 }
+
+impl<T> WindowExpressionMethods for T {}
 
 pub(super) mod dsl {
     #[cfg(doc)]
@@ -517,5 +524,3 @@ pub(super) mod dsl {
     /// Return type of [`FrameBoundDsl::following`]
     pub type Following<I> = self::frame_clause::OffsetFollowing<I>;
 }
-
-impl<T> WindowExpressionMethods for T {}
