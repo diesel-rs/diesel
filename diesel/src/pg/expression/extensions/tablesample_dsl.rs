@@ -48,7 +48,8 @@ use crate::Table;
 /// # let connection = &mut establish_connection();
 /// # let _ =
 /// users::table
-///     .tablesample_system(10).with_seed(42.0)
+///     .tablesample_system(10)
+///     .with_seed(42.0)
 ///     .inner_join(posts::table)
 ///     .select((users::name, posts::title))
 ///     .load::<(String, String)>(connection);
@@ -56,7 +57,6 @@ use crate::Table;
 /// ```
 /// That query selects all of the posts for all of the users in a random 10 percent storage pages,
 /// returning the same results each time it is run due to the static seed of 42.0.
-///
 pub trait TablesampleDsl: Table {
     /// See the trait-level docs.
     fn tablesample_bernoulli(self, portion: i16) -> Tablesample<Self, BernoulliMethod> {

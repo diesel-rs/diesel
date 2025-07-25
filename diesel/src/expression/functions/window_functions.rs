@@ -22,7 +22,9 @@ extern "SQL" {
     /// # fn main() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// let res = posts.select((title, user_id, row_number().partition_by(user_id))).load::<(String, i32, i64)>(connection)?;
+    /// let res = posts
+    ///     .select((title, user_id, row_number().partition_by(user_id)))
+    ///     .load::<(String, i32, i64)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, 1),
     ///     ("About Rust".into(), 1, 2),
@@ -54,7 +56,11 @@ extern "SQL" {
     /// #     use schema::posts::dsl::*;
     /// #     let connection = &mut establish_connection();
     /// let res = posts
-    ///     .select((title, user_id, rank().partition_by(user_id).window_order(user_id)))
+    ///     .select((
+    ///         title,
+    ///         user_id,
+    ///         rank().partition_by(user_id).window_order(user_id),
+    ///     ))
     ///     .load::<(String, i32, i64)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, 1),
@@ -94,7 +100,11 @@ extern "SQL" {
     /// #     use schema::posts::dsl::*;
     /// #     let connection = &mut establish_connection();
     /// let res = posts
-    ///     .select((title, user_id, dense_rank().partition_by(user_id).window_order(user_id)))
+    ///     .select((
+    ///         title,
+    ///         user_id,
+    ///         dense_rank().partition_by(user_id).window_order(user_id),
+    ///     ))
     ///     .load::<(String, i32, i64)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, 1),
@@ -135,7 +145,11 @@ extern "SQL" {
     /// #     use schema::posts::dsl::*;
     /// #     let connection = &mut establish_connection();
     /// let res = posts
-    ///     .select((title, user_id, percent_rank().partition_by(user_id).window_order(user_id)))
+    ///     .select((
+    ///         title,
+    ///         user_id,
+    ///         percent_rank().partition_by(user_id).window_order(user_id),
+    ///     ))
     ///     .load::<(String, i32, f64)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, 0.0),
@@ -176,7 +190,11 @@ extern "SQL" {
     /// #     use schema::posts::dsl::*;
     /// #     let connection = &mut establish_connection();
     /// let res = posts
-    ///     .select((title, user_id, cume_dist().partition_by(user_id).window_order(user_id)))
+    ///     .select((
+    ///         title,
+    ///         user_id,
+    ///         cume_dist().partition_by(user_id).window_order(user_id),
+    ///     ))
     ///     .load::<(String, i32, f64)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, 1.0),
@@ -214,7 +232,9 @@ extern "SQL" {
     /// # fn main() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// let res = posts.select((title, user_id, ntile(2).partition_by(user_id))).load::<(String, i32, i32)>(connection)?;
+    /// let res = posts
+    ///     .select((title, user_id, ntile(2).partition_by(user_id)))
+    ///     .load::<(String, i32, i32)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, 1),
     ///     ("About Rust".into(), 1, 2),
@@ -249,7 +269,11 @@ extern "SQL" {
     /// #     use schema::posts::dsl::*;
     /// #     let connection = &mut establish_connection();
     /// let res = posts
-    ///     .select((title, user_id, lag(id).partition_by(user_id).window_order(user_id)))
+    ///     .select((
+    ///         title,
+    ///         user_id,
+    ///         lag(id).partition_by(user_id).window_order(user_id),
+    ///     ))
     ///     .load::<(String, i32, Option<i32>)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, None),
@@ -290,7 +314,13 @@ extern "SQL" {
     /// #     use schema::posts::dsl::*;
     /// #     let connection = &mut establish_connection();
     /// let res = posts
-    ///     .select((title, user_id, lag_with_offset(id, 1).partition_by(user_id).window_order(user_id)))
+    ///     .select((
+    ///         title,
+    ///         user_id,
+    ///         lag_with_offset(id, 1)
+    ///             .partition_by(user_id)
+    ///             .window_order(user_id),
+    ///     ))
     ///     .load::<(String, i32, Option<i32>)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, None),
@@ -343,7 +373,13 @@ extern "SQL" {
     /// #     use diesel::sql_types::{Integer, Nullable};
     /// #     let connection = &mut establish_connection();
     /// let res = posts
-    ///     .select((title, user_id, lag_with_offset_and_default(id, 1, user_id).partition_by(user_id).window_order(user_id)))
+    ///     .select((
+    ///         title,
+    ///         user_id,
+    ///         lag_with_offset_and_default(id, 1, user_id)
+    ///             .partition_by(user_id)
+    ///             .window_order(user_id),
+    ///     ))
     ///     .load::<(String, i32, i32)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, 1),
@@ -358,7 +394,7 @@ extern "SQL" {
     ///         user_id,
     ///         lag_with_offset_and_default(None::<i32>.into_sql::<Nullable<Integer>>(), 1, user_id)
     ///             .partition_by(user_id)
-    ///             .window_order(user_id)
+    ///             .window_order(user_id),
     ///     ))
     ///     .load::<(String, i32, Option<i32>)>(connection)?;
     /// let expected = vec![
@@ -374,7 +410,7 @@ extern "SQL" {
     ///         user_id,
     ///         lag_with_offset_and_default(id, 1, None::<i32>.into_sql::<Nullable<Integer>>())
     ///             .partition_by(user_id)
-    ///             .window_order(user_id)
+    ///             .window_order(user_id),
     ///     ))
     ///     .load::<(String, i32, Option<i32>)>(connection)?;
     /// let expected = vec![
@@ -433,7 +469,11 @@ extern "SQL" {
     /// #     use schema::posts::dsl::*;
     /// #     let connection = &mut establish_connection();
     /// let res = posts
-    ///     .select((title, user_id, lead(id).partition_by(user_id).window_order(user_id)))
+    ///     .select((
+    ///         title,
+    ///         user_id,
+    ///         lead(id).partition_by(user_id).window_order(user_id),
+    ///     ))
     ///     .load::<(String, i32, Option<i32>)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, Some(2)),
@@ -477,7 +517,13 @@ extern "SQL" {
     /// #     use schema::posts::dsl::*;
     /// #     let connection = &mut establish_connection();
     /// let res = posts
-    ///     .select((title, user_id, lead_with_offset(id, 1).partition_by(user_id).window_order(user_id)))
+    ///     .select((
+    ///         title,
+    ///         user_id,
+    ///         lead_with_offset(id, 1)
+    ///             .partition_by(user_id)
+    ///             .window_order(user_id),
+    ///     ))
     ///     .load::<(String, i32, Option<i32>)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, Some(2)),
@@ -530,7 +576,13 @@ extern "SQL" {
     /// #     use diesel::sql_types::{Integer, Nullable};
     /// #     let connection = &mut establish_connection();
     /// let res = posts
-    ///     .select((title, user_id, lead_with_offset_and_default(id, 1, user_id).partition_by(user_id).window_order(user_id)))
+    ///     .select((
+    ///         title,
+    ///         user_id,
+    ///         lead_with_offset_and_default(id, 1, user_id)
+    ///             .partition_by(user_id)
+    ///             .window_order(user_id),
+    ///     ))
     ///     .load::<(String, i32, i32)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, 2),
@@ -545,7 +597,7 @@ extern "SQL" {
     ///         user_id,
     ///         lead_with_offset_and_default(None::<i32>.into_sql::<Nullable<Integer>>(), 1, user_id)
     ///             .partition_by(user_id)
-    ///             .window_order(user_id)
+    ///             .window_order(user_id),
     ///     ))
     ///     .load::<(String, i32, Option<i32>)>(connection)?;
     /// let expected = vec![
@@ -561,7 +613,7 @@ extern "SQL" {
     ///         user_id,
     ///         lead_with_offset_and_default(id, 1, None::<i32>.into_sql::<Nullable<Integer>>())
     ///             .partition_by(user_id)
-    ///             .window_order(user_id)
+    ///             .window_order(user_id),
     ///     ))
     ///     .load::<(String, i32, Option<i32>)>(connection)?;
     /// let expected = vec![
@@ -613,7 +665,9 @@ extern "SQL" {
     /// # fn main() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// let res = posts.select((title, user_id, first_value(id).partition_by(user_id))).load::<(String, i32, i32)>(connection)?;
+    /// let res = posts
+    ///     .select((title, user_id, first_value(id).partition_by(user_id)))
+    ///     .load::<(String, i32, i32)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, 1),
     ///     ("About Rust".into(), 1, 1),
@@ -642,7 +696,9 @@ extern "SQL" {
     /// # fn main() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// let res = posts.select((title, user_id, last_value(id).partition_by(user_id))).load::<(String, i32, i32)>(connection)?;
+    /// let res = posts
+    ///     .select((title, user_id, last_value(id).partition_by(user_id)))
+    ///     .load::<(String, i32, i32)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, 2),
     ///     ("About Rust".into(), 1, 2),
@@ -672,7 +728,9 @@ extern "SQL" {
     /// # fn main() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// let res = posts.select((title, user_id, nth_value(id, 2).partition_by(user_id))).load::<(String, i32, Option<i32>)>(connection)?;
+    /// let res = posts
+    ///     .select((title, user_id, nth_value(id, 2).partition_by(user_id)))
+    ///     .load::<(String, i32, Option<i32>)>(connection)?;
     /// let expected = vec![
     ///     ("My first post".to_owned(), 1, Some(2)),
     ///     ("About Rust".into(), 1, Some(2)),

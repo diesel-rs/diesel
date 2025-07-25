@@ -106,10 +106,10 @@ where
 /// #
 /// #[derive(Queryable, Debug, PartialEq)]
 /// struct Animal {
-///    id: i32,
-///    species: String,
-///    legs: i32,
-///    name: Option<String>,
+///     id: i32,
+///     species: String,
+///     legs: i32,
+///     name: Option<String>,
 /// }
 ///
 /// #[derive(AsChangeset, Identifiable)]
@@ -126,7 +126,10 @@ where
 /// # fn run_test() -> QueryResult<()> {
 /// #     use self::animals::dsl::*;
 /// #     let connection = &mut establish_connection();
-/// let form = AnimalForm { id: 2, name: "Super scary" };
+/// let form = AnimalForm {
+///     id: 2,
+///     name: "Super scary",
+/// };
 /// let changed_animal = form.save_changes(connection)?;
 /// let expected_animal = Animal {
 ///     id: 2,

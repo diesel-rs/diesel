@@ -24,8 +24,13 @@ pub trait CombineDsl {
     /// #     use self::users::dsl::{users, name as user_name};
     /// #     use self::animals::dsl::{animals, name as animal_name};
     /// #     let connection = &mut establish_connection();
-    /// let data = users.select(user_name.nullable())
-    ///     .union(animals.select(animal_name).filter(animal_name.is_not_null()))
+    /// let data = users
+    ///     .select(user_name.nullable())
+    ///     .union(
+    ///         animals
+    ///             .select(animal_name)
+    ///             .filter(animal_name.is_not_null()),
+    ///     )
     /// #   .positional_order_by(1)
     ///     .load(connection);
     ///

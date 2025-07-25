@@ -24,7 +24,6 @@ use crate::sqlite::Sqlite;
 /// since there is no format option to forgo the dot.
 /// We always print as many subsecond as his given to us,
 /// this means the subsecond part can be between 1 and 9 digits.
-///
 // the non-deprecated variant does not exist in our minimal supported version
 #[allow(deprecated)]
 const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");

@@ -23,7 +23,6 @@ pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 /// * If the database connection is invalid
 /// * If checking for pending database migrations fails
 /// * If any of the database migrations fail
-///
 pub fn run_db_migration(
     conn: &mut Connection,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
@@ -56,7 +55,6 @@ pub fn run_db_migration(
 ///
 /// * If there is an error while connecting to the database.
 /// * If there is an error while reverting the database migrations.
-///
 pub fn revert_db_migration(
     conn: &mut Connection,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {

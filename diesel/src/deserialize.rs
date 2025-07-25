@@ -68,7 +68,10 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut establish_connection();
 /// let first_user = users.order_by(id).first(connection)?;
-/// let expected = User { id: 1, name: "Sean".into() };
+/// let expected = User {
+///     id: 1,
+///     name: "Sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -104,7 +107,13 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #     use schema::animals::dsl::*;
 /// #     let connection = &mut establish_connection();
 /// let all_animals = animals.select((id, name)).order_by(id).load(connection)?;
-/// let expected = vec![Animal { id: 1, name: Some("Jack".to_owned()) }, Animal { id: 2, name: None }];
+/// let expected = vec![
+///     Animal {
+///         id: 1,
+///         name: Some("Jack".to_owned()),
+///     },
+///     Animal { id: 2, name: None },
+/// ];
 /// assert_eq!(expected, all_animals);
 /// #     Ok(())
 /// # }
@@ -137,16 +146,31 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #         .execute(connection)?;
 /// let all_posts = users::table
 ///     .left_join(posts::table)
-///     .select((
-///         users::id,
-///         (posts::id, posts::title).nullable()
-///     ))
+///     .select((users::id, (posts::id, posts::title).nullable()))
 ///     .order_by((users::id, posts::id))
 ///     .load(connection)?;
 /// let expected = vec![
-///     UserWithPost { id: 1, post: Some(Post { id: 1, title: "My first post".to_owned() }) },
-///     UserWithPost { id: 1, post: Some(Post { id: 2, title: "About Rust".to_owned() }) },
-///     UserWithPost { id: 2, post: Some(Post { id: 3, title: "My first post too".to_owned() }) },
+///     UserWithPost {
+///         id: 1,
+///         post: Some(Post {
+///             id: 1,
+///             title: "My first post".to_owned(),
+///         }),
+///     },
+///     UserWithPost {
+///         id: 1,
+///         post: Some(Post {
+///             id: 2,
+///             title: "About Rust".to_owned(),
+///         }),
+///     },
+///     UserWithPost {
+///         id: 2,
+///         post: Some(Post {
+///             id: 3,
+///             title: "My first post too".to_owned(),
+///         }),
+///     },
 ///     UserWithPost { id: 3, post: None },
 /// ];
 /// assert_eq!(expected, all_posts);
@@ -202,7 +226,10 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut establish_connection();
 /// let first_user = users.first(connection)?;
-/// let expected = User { id: 1, name: "sean".into() };
+/// let expected = User {
+///     id: 1,
+///     name: "sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -215,13 +242,12 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// ```rust
 /// # include!("doctest_setup.rs");
 /// #
-/// use schema::users;
 /// use diesel::deserialize::{self, Queryable};
+/// use schema::users;
 ///
 /// # /*
 /// type DB = diesel::sqlite::Sqlite;
 /// # */
-///
 /// #[derive(PartialEq, Debug)]
 /// struct User {
 ///     id: i32,
@@ -247,7 +273,10 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut establish_connection();
 /// let first_user = users.first(connection)?;
-/// let expected = User { id: 1, name: "sean".into() };
+/// let expected = User {
+///     id: 1,
+///     name: "sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -295,9 +324,11 @@ pub use diesel_derives::Queryable;
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     let connection = &mut establish_connection();
-/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(connection)?;
-/// let expected = User { id: 1, name: "Sean".into() };
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1").get_result(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "Sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -327,8 +358,7 @@ pub use diesel_derives::Queryable;
 ///     String: FromSql<ST, DB>,
 /// {
 ///     fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
-///         String::from_sql(bytes)
-///             .map(|s| LowercaseString(s.to_lowercase()))
+///         String::from_sql(bytes).map(|s| LowercaseString(s.to_lowercase()))
 ///     }
 /// }
 ///
@@ -345,9 +375,11 @@ pub use diesel_derives::Queryable;
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     let connection = &mut establish_connection();
-/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(connection)?;
-/// let expected = User { id: 1, name: "sean".into() };
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1").get_result(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -491,7 +523,6 @@ where
 /// You should not need to implement this trait directly.
 /// Diesel provides wild card implementations for any supported tuple size
 /// and for any type that implements `FromSql<ST, DB>`.
-///
 // This is a distinct trait from `FromSqlRow` because otherwise we
 // are getting conflicting implementation errors for our `FromSqlRow`
 // implementation for tuples and our wild card impl for all types

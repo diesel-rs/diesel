@@ -543,7 +543,17 @@ where
 ///     .load::<User, _>(connection)?
 ///     .collect::<Result<Vec<_>, _>>()?;
 ///
-/// assert_eq!(out, vec![User{ name: "Sean".into() }, User{ name: "Tess".into() }]);
+/// assert_eq!(
+///     out,
+///     vec![
+///         User {
+///             name: "Sean".into()
+///         },
+///         User {
+///             name: "Tess".into()
+///         }
+///     ]
+/// );
 /// # Ok(())
 /// # }
 /// # fn main() {

@@ -126,9 +126,7 @@ impl<T: QuerySource, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// #     let connection = &mut establish_connection();
     /// #     let mut params = HashMap::new();
     /// #     params.insert("tess_has_been_a_jerk", false);
-    /// let mut query = diesel::update(users)
-    ///     .set(name.eq("Jerk"))
-    ///     .into_boxed();
+    /// let mut query = diesel::update(users).set(name.eq("Jerk")).into_boxed();
     ///
     /// if !params["tess_has_been_a_jerk"] {
     ///     query = query.filter(name.ne("Tess"));

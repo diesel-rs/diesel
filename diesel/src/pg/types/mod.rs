@@ -471,7 +471,10 @@ pub mod sql_types {
     ///     .values(macaddr.eq([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05]))
     ///     .returning(macaddr)
     ///     .get_result::<[u8; 8]>(connection)?;
-    /// assert_eq!([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05], inserted_macaddr);
+    /// assert_eq!(
+    ///     [0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05],
+    ///     inserted_macaddr
+    /// );
     /// #     Ok(())
     /// # }
     /// ```
@@ -486,7 +489,6 @@ pub mod sql_types {
     /// The [`INET`](https://www.postgresql.org/docs/current/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"` or `feature = "ipnet-address"`.
     ///
     /// ### [`ToSql`] impls
-    ///
     #[cfg_attr(
         feature = "network-address",
         doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
@@ -498,7 +500,6 @@ pub mod sql_types {
     )]
     ///
     /// ### [`FromSql`] impls
-    ///
     #[cfg_attr(
         feature = "network-address",
         doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
@@ -560,7 +561,6 @@ pub mod sql_types {
     /// The [`CIDR`](https://www.postgresql.org/docs/postgresql/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"` or `feature = "ipnet-address"`.
     ///
     /// ### [`ToSql`] impls
-    ///
     #[cfg_attr(
         feature = "network-address",
         doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
@@ -572,7 +572,6 @@ pub mod sql_types {
     )]
     ///
     /// ### [`FromSql`] impls
-    ///
     #[cfg_attr(
         feature = "network-address",
         doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"

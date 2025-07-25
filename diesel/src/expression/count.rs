@@ -49,7 +49,12 @@ extern "SQL" {
     /// # fn main() {
     /// #     use schema::animals::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// assert_eq!(Ok(1), animals.select(count(name).partition_by(id)).first(connection));
+    /// assert_eq!(
+    ///     Ok(1),
+    ///     animals
+    ///         .select(count(name).partition_by(id))
+    ///         .first(connection)
+    /// );
     /// # }
     /// ```
     ///
@@ -62,7 +67,12 @@ extern "SQL" {
     /// # fn main() {
     /// #     use schema::animals::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// assert_eq!(Ok(1), animals.select(count(name).aggregate_distinct()).first(connection));
+    /// assert_eq!(
+    ///     Ok(1),
+    ///     animals
+    ///         .select(count(name).aggregate_distinct())
+    ///         .first(connection)
+    /// );
     /// # }
     /// ```
     #[aggregate]

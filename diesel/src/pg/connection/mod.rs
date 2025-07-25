@@ -587,7 +587,7 @@ impl PgConnection {
     ///     println!(
     ///         "Notification received from server process with id {}.",
     ///         notification.process_id
-    ///    );
+    ///     );
     /// }
     /// # Ok(())
     /// # }

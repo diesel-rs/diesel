@@ -22,7 +22,6 @@ pub(crate) use self::private::{PartialRow, RowSealed};
 ///
 /// * Crates implementing custom backends need to provide `RowIndex<usize>` and
 ///   `RowIndex<&str>` impls for their [`Row`] type.
-///
 pub trait RowIndex<I> {
     /// Get the numeric index inside the current row for the provided index value
     fn idx(&self, idx: I) -> Option<usize>;

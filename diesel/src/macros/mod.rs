@@ -55,7 +55,6 @@ pub use diesel_derives::table_proc as table;
 ///
 /// assert_eq!(implicit_on_clause_sql, explicit_on_clause_sql);
 /// # }
-///
 /// ```
 ///
 /// In the example above, the line `joinable!(posts -> users (user_id));`
@@ -414,7 +413,9 @@ macro_rules! __diesel_impl_allow_in_same_group_by_clause {
 /// allow_columns_to_appear_in_same_group_by_clause!(users::name, posts::id, posts::title);
 /// # fn main() {
 /// // to do implement the following join
-/// users::table.inner_join(posts::table).group_by((users::name, posts::id, posts::title))
+/// users::table
+///     .inner_join(posts::table)
+///     .group_by((users::name, posts::id, posts::title))
 /// # ;
 /// # }
 /// ```

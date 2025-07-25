@@ -137,15 +137,20 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// #
     /// #     let conn = &mut establish_connection();
     /// #
-    ///       let my_range = int4range(1, 5, diesel::sql_types::RangeBound::LowerBoundInclusiveUpperBoundExclusive);
+    /// let my_range = int4range(
+    ///     1,
+    ///     5,
+    ///     diesel::sql_types::RangeBound::LowerBoundInclusiveUpperBoundExclusive,
+    /// );
     ///
-    ///       let (first, second) = diesel::select((
-    ///           4.into_sql::<Integer>().is_contained_by_range(my_range),
-    ///           10.into_sql::<Integer>().is_contained_by_range(my_range)
-    ///       )).get_result::<(bool, bool)>(conn)?;
+    /// let (first, second) = diesel::select((
+    ///     4.into_sql::<Integer>().is_contained_by_range(my_range),
+    ///     10.into_sql::<Integer>().is_contained_by_range(my_range),
+    /// ))
+    /// .get_result::<(bool, bool)>(conn)?;
     ///
-    ///       assert_eq!(first, true);
-    ///       assert_eq!(second, false);
+    /// assert_eq!(first, true);
+    /// assert_eq!(second, false);
     /// #
     /// #     Ok(())
     /// # }
@@ -197,8 +202,7 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
     /// #     let connection = &mut establish_connection();
     /// #     diesel::sql_query("CREATE TABLE timestamps (\"timestamp\"
     /// #         timestamp NOT NULL)").execute(connection)?;
-    /// let christmas_morning = NaiveDate::from_ymd(2017, 12, 25)
-    ///     .and_hms(8, 0, 0);
+    /// let christmas_morning = NaiveDate::from_ymd(2017, 12, 25).and_hms(8, 0, 0);
     /// diesel::insert_into(timestamps)
     ///     .values(timestamp.eq(christmas_morning))
     ///     .execute(connection)?;
@@ -494,7 +498,6 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// assert_eq!(expected_tags, res[0]);
     /// #     Ok(())
     /// # }
-    ///
     fn concat<T>(self, other: T) -> dsl::Concat<Self, T>
     where
         Self::SqlType: SqlType,
@@ -760,7 +763,8 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// assert_eq!(res, true);
     /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_json())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
     /// let res = diesel::select(("(1,2,3)".into_sql::<Text>().is_json())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
@@ -796,11 +800,14 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     ///
     /// let res = diesel::select(("1".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("(1,2,3)".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("(1,2,3)".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
     /// #
     /// #     Ok(())
@@ -832,15 +839,24 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     ///
-    /// let res = diesel::select(("123".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("123".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("abc".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("abc".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(
+    ///     ("{\"products\": [1,2,3]}"
+    ///         .into_sql::<Text>()
+    ///         .is_json_object()),
+    /// )
+    /// .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("[1,2,3]".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("\"abc\"".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
     /// #
     /// #     Ok(())
@@ -872,15 +888,24 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     ///
-    /// let res = diesel::select(("123".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("123".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("abc".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("abc".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(
+    ///     ("{\"products\": [1,2,3]}"
+    ///         .into_sql::<Text>()
+    ///         .is_not_json_object()),
+    /// )
+    /// .get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_object()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_object()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
     /// #
     /// #     Ok(())
@@ -912,15 +937,20 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     ///
-    /// let res = diesel::select(("123".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("123".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("abc".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("abc".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json_array()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("[1,2,3]".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("\"abc\"".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
     /// #
     /// #     Ok(())
@@ -952,15 +982,24 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     ///
-    /// let res = diesel::select(("123".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("123".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("abc".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("abc".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(
+    ///     ("{\"products\": [1,2,3]}"
+    ///         .into_sql::<Text>()
+    ///         .is_not_json_array()),
+    /// )
+    /// .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_array()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_array()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
     /// #
     /// #     Ok(())
@@ -993,17 +1032,27 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     ///
-    /// let res = diesel::select(("123".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("123".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("abc".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("abc".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(
+    ///     ("{\"products\": [1,2,3]}"
+    ///         .into_sql::<Text>()
+    ///         .is_json_scalar()),
+    /// )
+    /// .get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("[1,2,3]".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("\"abc\"".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(sql::<Nullable<Text>>("NULL").is_json_scalar()).get_result::<Option<bool>>(conn)?;
+    /// let res = diesel::select(sql::<Nullable<Text>>("NULL").is_json_scalar())
+    ///     .get_result::<Option<bool>>(conn)?;
     /// assert!(res.is_none());
     /// #     Ok(())
     /// # }
@@ -1034,15 +1083,24 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     ///
-    /// let res = diesel::select(("123".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("123".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("abc".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("abc".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(
+    ///     ("{\"products\": [1,2,3]}"
+    ///         .into_sql::<Text>()
+    ///         .is_not_json_scalar()),
+    /// )
+    /// .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_scalar()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_scalar()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
     /// #
     /// #     Ok(())
@@ -1159,11 +1217,27 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #
     /// #     let conn = &mut establish_connection();
-    /// assert!(diesel::select((1..5).into_sql::<Range<Integer>>().contains(4)).first::<bool>(conn).unwrap());
-    /// assert!(!diesel::select((1..5).into_sql::<Range<Integer>>().contains(8)).first::<bool>(conn).unwrap());
+    /// assert!(
+    ///     diesel::select((1..5).into_sql::<Range<Integer>>().contains(4))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
+    /// assert!(
+    ///     !diesel::select((1..5).into_sql::<Range<Integer>>().contains(8))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
     ///
-    /// assert!(diesel::select((vec![1..5]).into_sql::<Multirange<Integer>>().contains(4)).first::<bool>(conn).unwrap());
-    /// assert!(!diesel::select((vec![1..5]).into_sql::<Multirange<Integer>>().contains(8)).first::<bool>(conn).unwrap());
+    /// assert!(
+    ///     diesel::select((vec![1..5]).into_sql::<Multirange<Integer>>().contains(4))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
+    /// assert!(
+    ///     !diesel::select((vec![1..5]).into_sql::<Multirange<Integer>>().contains(8))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
     ///
     /// #     Ok(())
     /// # }
@@ -1222,19 +1296,31 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// assert!(diesel::select(
-    ///     (1..5).into_sql::<Range<Integer>>().contains_range(1..5)
-    ///     ).first::<bool>(conn).unwrap());
-    /// assert!(!diesel::select(
-    ///     (1..5).into_sql::<Range<Integer>>().contains_range(3..7)
-    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(
+    ///     diesel::select((1..5).into_sql::<Range<Integer>>().contains_range(1..5))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
+    /// assert!(
+    ///     !diesel::select((1..5).into_sql::<Range<Integer>>().contains_range(3..7))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
     ///
     /// assert!(diesel::select(
-    ///     vec![1..5].into_sql::<Multirange<Integer>>().contains_range(vec![1..5])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..5]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .contains_range(vec![1..5])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     vec![1..5].into_sql::<Multirange<Integer>>().contains_range(vec![3..7])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..5]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .contains_range(vec![3..7])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1291,19 +1377,31 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// assert!(diesel::select(
-    ///     (1..5).into_sql::<Range<Integer>>().is_contained_by(1..5)
-    ///     ).first::<bool>(conn).unwrap());
-    /// assert!(!diesel::select(
-    ///     (1..5).into_sql::<Range<Integer>>().is_contained_by(3..7)
-    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(
+    ///     diesel::select((1..5).into_sql::<Range<Integer>>().is_contained_by(1..5))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
+    /// assert!(
+    ///     !diesel::select((1..5).into_sql::<Range<Integer>>().is_contained_by(3..7))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
     ///
     /// assert!(diesel::select(
-    ///     vec![1..5].into_sql::<Multirange<Integer>>().is_contained_by(vec![1..5])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..5]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .is_contained_by(vec![1..5])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     vec![1..5].into_sql::<Multirange<Integer>>().is_contained_by(vec![3..7])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..5]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .is_contained_by(vec![3..7])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1371,19 +1469,31 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// assert!(diesel::select(
-    ///     (1..5).into_sql::<Range<Integer>>().overlaps_with(3..7)
-    ///     ).first::<bool>(conn).unwrap());
-    /// assert!(!diesel::select(
-    ///     (1..5).into_sql::<Range<Integer>>().overlaps_with(10..15)
-    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(
+    ///     diesel::select((1..5).into_sql::<Range<Integer>>().overlaps_with(3..7))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
+    /// assert!(
+    ///     !diesel::select((1..5).into_sql::<Range<Integer>>().overlaps_with(10..15))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
     ///
     /// assert!(diesel::select(
-    ///     vec![1..5].into_sql::<Multirange<Integer>>().overlaps_with(vec![3..7])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..5]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .overlaps_with(vec![3..7])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     vec![1..5].into_sql::<Multirange<Integer>>().overlaps_with(vec![10..15])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..5]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .overlaps_with(vec![10..15])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1450,24 +1560,48 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     /// assert!(diesel::select(
-    ///     (1..20).into_sql::<Range<Integer>>().range_extends_right_to(18..20)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..20)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .range_extends_right_to(18..20)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(diesel::select(
-    ///     (1..20).into_sql::<Range<Integer>>().range_extends_right_to(25..30)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..20)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .range_extends_right_to(25..30)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     (1..20).into_sql::<Range<Integer>>().range_extends_right_to(-10..0)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..20)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .range_extends_right_to(-10..0)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     ///
     /// assert!(diesel::select(
-    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_right_to(vec![18..20])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..20]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_extends_right_to(vec![18..20])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(diesel::select(
-    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_right_to(vec![25..30])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..20]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_extends_right_to(vec![25..30])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_right_to(vec![-10..0])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..20]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_extends_right_to(vec![-10..0])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1534,24 +1668,48 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     /// assert!(diesel::select(
-    ///     (1..20).into_sql::<Range<Integer>>().range_extends_left_to(-10..5)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..20)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .range_extends_left_to(-10..5)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(diesel::select(
-    ///     (1..20).into_sql::<Range<Integer>>().range_extends_left_to(-10..-5)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..20)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .range_extends_left_to(-10..-5)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     (1..20).into_sql::<Range<Integer>>().range_extends_left_to(25..30)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..20)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .range_extends_left_to(25..30)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     ///
     /// assert!(diesel::select(
-    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_left_to(vec![-10..5])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..20]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_extends_left_to(vec![-10..5])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(diesel::select(
-    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_left_to(vec![-10..-5])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..20]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_extends_left_to(vec![-10..-5])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_left_to(vec![25..30])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..20]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_extends_left_to(vec![25..30])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1788,19 +1946,31 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// assert!(diesel::select(
-    ///     (1..2).into_sql::<Range<Integer>>().range_adjacent(2..=6)
-    ///     ).first::<bool>(conn).unwrap());
-    /// assert!(!diesel::select(
-    ///     (4..7).into_sql::<Range<Integer>>().range_adjacent(2..=6)
-    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(
+    ///     diesel::select((1..2).into_sql::<Range<Integer>>().range_adjacent(2..=6))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
+    /// assert!(
+    ///     !diesel::select((4..7).into_sql::<Range<Integer>>().range_adjacent(2..=6))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
     ///
     /// assert!(diesel::select(
-    ///     vec![1..2].into_sql::<Multirange<Integer>>().range_adjacent(vec![2..=6])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..2]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_adjacent(vec![2..=6])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     vec![4..7].into_sql::<Multirange<Integer>>().range_adjacent(vec![2..=6])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![4..7]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_adjacent(vec![2..=6])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1847,12 +2017,22 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
     /// assert!(diesel::select(
-    ///     (1..=2).into_sql::<Range<Integer>>().union_range(2..=6).eq(1..=6)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..=2)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .union_range(2..=6)
+    ///         .eq(1..=6)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     ///
     /// assert!(diesel::select(
-    ///     vec![1..=2].into_sql::<Multirange<Integer>>().union_range(vec![1..=6]).eq(vec![1..=6])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..=2]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .union_range(vec![1..=6])
+    ///         .eq(vec![1..=6])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1902,12 +2082,22 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
     /// assert!(diesel::select(
-    ///     (1..=8).into_sql::<Range<Integer>>().difference_range(3..=8).eq(1..3)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..=8)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .difference_range(3..=8)
+    ///         .eq(1..3)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     ///
     /// assert!(diesel::select(
-    ///     vec![1..=8].into_sql::<Multirange<Integer>>().difference_range(vec![3..=8]).eq(vec![1..3])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..=8]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .difference_range(vec![3..=8])
+    ///         .eq(vec![1..3])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1960,12 +2150,22 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
     /// assert!(diesel::select(
-    ///     (1..=8).into_sql::<Range<Integer>>().intersection_range(3..=8).eq(3..=8)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..=8)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .intersection_range(3..=8)
+    ///         .eq(3..=8)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     ///
     /// assert!(diesel::select(
-    ///     vec![1..=8].into_sql::<Multirange<Integer>>().intersection_range(vec![3..=8]).eq(vec![3..=8])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..=8]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .intersection_range(vec![3..=8])
+    ///         .eq(vec![3..=8])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -2939,7 +3139,6 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }
-    ///
     fn remove<T>(
         self,
         other: T,
@@ -3059,7 +3258,6 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }
-    ///
     fn remove_by_path<T>(self, other: T) -> dsl::RemoveByPathFromJsonb<Self, T::Expression>
     where
         T: AsExpression<Array<Text>>,

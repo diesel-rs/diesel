@@ -50,17 +50,12 @@ pub trait Insertable<T> {
     /// #     let conn = &mut establish_connection();
     /// #     diesel::delete(posts::table).execute(conn)?;
     /// users::table
-    ///     .select((
-    ///         users::name.concat("'s First Post"),
-    ///         users::id,
-    ///     ))
+    ///     .select((users::name.concat("'s First Post"), users::id))
     ///     .insert_into(posts::table)
     ///     .into_columns((posts::title, posts::user_id))
     ///     .execute(conn)?;
     ///
-    /// let inserted_posts = posts::table
-    ///     .select(posts::title)
-    ///     .load::<String>(conn)?;
+    /// let inserted_posts = posts::table.select(posts::title).load::<String>(conn)?;
     /// let expected = vec!["Sean's First Post", "Tess's First Post"];
     /// assert_eq!(expected, inserted_posts);
     /// #     Ok(())

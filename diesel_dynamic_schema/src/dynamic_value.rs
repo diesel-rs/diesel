@@ -120,30 +120,30 @@
 //! #
 //! #[derive(PartialEq, Debug)]
 //! enum MyDynamicValue {
-//!    String(String),
-//!    Integer(i32),
+//!     String(String),
+//!     Integer(i32),
 //! }
 //!
 //! # #[cfg(feature = "postgres")]
 //! impl FromSql<Any, diesel::pg::Pg> for MyDynamicValue {
-//!    fn from_sql(value: diesel::pg::PgValue) -> deserialize::Result<Self> {
-//!        use diesel::pg::Pg;
-//!        use std::num::NonZeroU32;
+//!     fn from_sql(value: diesel::pg::PgValue) -> deserialize::Result<Self> {
+//!         use diesel::pg::Pg;
+//!         use std::num::NonZeroU32;
 //!
-//!        const VARCHAR_OID: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(1043) };
-//!        const TEXT_OID: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(25) };
-//!        const INTEGER_OID: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(23) };
+//!         const VARCHAR_OID: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(1043) };
+//!         const TEXT_OID: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(25) };
+//!         const INTEGER_OID: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(23) };
 //!
-//!        match value.get_oid() {
-//!            VARCHAR_OID | TEXT_OID => {
-//!                <String as FromSql<diesel::sql_types::Text, Pg>>::from_sql(value)
-//!                    .map(MyDynamicValue::String)
-//!            }
-//!            INTEGER_OID => <i32 as FromSql<diesel::sql_types::Integer, Pg>>::from_sql(value)
-//!                .map(MyDynamicValue::Integer),
-//!            e => Err(format!("Unknown type: {}", e).into()),
-//!        }
-//!    }
+//!         match value.get_oid() {
+//!             VARCHAR_OID | TEXT_OID => {
+//!                 <String as FromSql<diesel::sql_types::Text, Pg>>::from_sql(value)
+//!                     .map(MyDynamicValue::String)
+//!             }
+//!             INTEGER_OID => <i32 as FromSql<diesel::sql_types::Integer, Pg>>::from_sql(value)
+//!                 .map(MyDynamicValue::Integer),
+//!             e => Err(format!("Unknown type: {}", e).into()),
+//!         }
+//!     }
 //! }
 //! ```
 

@@ -107,7 +107,10 @@ pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::Wh
 /// #     let connection = &mut establish_connection();
 /// let old_count = users.count().first::<i64>(connection);
 /// diesel::delete(users.filter(id.eq(1))).execute(connection)?;
-/// assert_eq!(old_count.map(|count| count - 1), users.count().first(connection));
+/// assert_eq!(
+///     old_count.map(|count| count - 1),
+///     users.count().first(connection)
+/// );
 /// # Ok(())
 /// # }
 /// ```
@@ -162,10 +165,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// assert_eq!(Ok(1), rows_inserted);
 ///
-/// let new_users = vec![
-///     name.eq("Tess"),
-///     name.eq("Jim"),
-/// ];
+/// let new_users = vec![name.eq("Tess"), name.eq("Jim")];
 ///
 /// let rows_inserted = diesel::insert_into(users)
 ///     .values(&new_users)
@@ -191,10 +191,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// assert_eq!(Ok(1), rows_inserted);
 ///
-/// let new_users = vec![
-///     (id.eq(2), name.eq("Tess")),
-///     (id.eq(3), name.eq("Jim")),
-/// ];
+/// let new_users = vec![(id.eq(2), name.eq("Tess")), (id.eq(3), name.eq("Jim"))];
 ///
 /// let rows_inserted = diesel::insert_into(users)
 ///     .values(&new_users)
@@ -231,8 +228,12 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// // Insert many records
 ///
 /// let new_users = vec![
-///     NewUser { name: "Leeloo Multipass" },
-///     NewUser { name: "Korben Dallas" },
+///     NewUser {
+///         name: "Leeloo Multipass",
+///     },
+///     NewUser {
+///         name: "Korben Dallas",
+///     },
 /// ];
 ///
 /// let inserted_names = diesel::insert_into(users)
@@ -268,7 +269,9 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// #     use schema::brands::dsl::*;
 /// #     let connection = &mut establish_connection();
 /// // Insert `Red`
-/// let new_brand = NewBrand { color: Some("Red".into()) };
+/// let new_brand = NewBrand {
+///     color: Some("Red".into()),
+/// };
 ///
 /// diesel::insert_into(brands)
 ///     .values(&new_brand)
@@ -314,7 +317,9 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// #     use schema::brands::dsl::*;
 /// #     let connection = &mut establish_connection();
 /// // Insert `Red`
-/// let new_brand = NewBrand { accent: Some(Some("Red".into())) };
+/// let new_brand = NewBrand {
+///     accent: Some(Some("Red".into())),
+/// };
 ///
 /// diesel::insert_into(brands)
 ///     .values(&new_brand)
@@ -362,19 +367,13 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// #     use schema::{posts, users};
 /// #     let conn = &mut establish_connection();
 /// #     diesel::delete(posts::table).execute(conn)?;
-/// let new_posts = users::table
-///     .select((
-///         users::name.concat("'s First Post"),
-///         users::id,
-///     ));
+/// let new_posts = users::table.select((users::name.concat("'s First Post"), users::id));
 /// diesel::insert_into(posts::table)
 ///     .values(new_posts)
 ///     .into_columns((posts::title, posts::user_id))
 ///     .execute(conn)?;
 ///
-/// let inserted_posts = posts::table
-///     .select(posts::title)
-///     .load::<String>(conn)?;
+/// let inserted_posts = posts::table.select(posts::title).load::<String>(conn)?;
 /// let expected = vec!["Sean's First Post", "Tess's First Post"];
 /// assert_eq!(expected, inserted_posts);
 /// #     Ok(())
@@ -397,7 +396,13 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///     ])
 ///     .returning(name)
 ///     .get_results(connection);
-/// assert_eq!(Ok(vec!["Diva Plavalaguna".to_string(), "Father Vito Cornelius".to_string()]), inserted_names);
+/// assert_eq!(
+///     Ok(vec![
+///         "Diva Plavalaguna".to_string(),
+///         "Father Vito Cornelius".to_string()
+///     ]),
+///     inserted_names
+/// );
 /// # }
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {}
@@ -564,11 +569,16 @@ pub fn replace_into<T: Table>(target: T) -> IncompleteReplaceStatement<T> {
 /// #     use diesel::sql_types::{Integer, Text};
 /// #
 /// #     let connection = &mut establish_connection();
-/// let users = sql_query("SELECT * FROM users ORDER BY id")
-///     .load(connection);
+/// let users = sql_query("SELECT * FROM users ORDER BY id").load(connection);
 /// let expected_users = vec![
-///     User { id: 1, name: "Sean".into() },
-///     User { id: 2, name: "Tess".into() },
+///     User {
+///         id: 1,
+///         name: "Sean".into(),
+///     },
+///     User {
+///         id: 2,
+///         name: "Tess".into(),
+///     },
 /// ];
 /// assert_eq!(Ok(expected_users), users);
 /// #     Ok(())
@@ -592,9 +602,10 @@ pub fn replace_into<T: Table>(target: T) -> IncompleteReplaceStatement<T> {
 ///     .bind::<Integer, _>(1)
 ///     .bind::<Text, _>("Tess")
 ///     .get_results(connection);
-/// let expected_users = vec![
-///     User { id: 3, name: "Jim".into() },
-/// ];
+/// let expected_users = vec![User {
+///     id: 3,
+///     name: "Jim".into(),
+/// }];
 /// assert_eq!(Ok(expected_users), users);
 /// #     Ok(())
 /// # }

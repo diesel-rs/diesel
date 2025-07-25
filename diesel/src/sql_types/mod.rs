@@ -497,12 +497,14 @@ pub struct Json;
 /// #         name TEXT NOT NULL,
 /// #         address BLOB NOT NULL
 /// #     )").execute(connection)?;
-/// let santas_address: serde_json::Value = serde_json::from_str(r#"{
+/// let santas_address: serde_json::Value = serde_json::from_str(
+///     r#"{
 ///     "street": "Article Circle Expressway 1",
 ///     "city": "North Pole",
 ///     "postcode": "99705",
 ///     "state": "Alaska"
-/// }"#)?;
+/// }"#,
+/// )?;
 /// let inserted_address = insert_into(contacts)
 ///     .values((name.eq("Claus"), address.eq(&santas_address)))
 ///     .returning(address)
@@ -651,7 +653,6 @@ where
 /// # Deriving
 ///
 /// This trait is automatically implemented by [`#[derive(SqlType)]`](derive@SqlType)
-///
 pub trait SingleValue: SqlType {}
 
 impl<T: SqlType + SingleValue> SingleValue for Nullable<T> {}
@@ -667,7 +668,6 @@ pub use diesel_derives::SqlType;
 ///
 /// This trait is automatically implemented by [`#[derive(SqlType)]`](derive@SqlType)
 /// which sets `IsNull` to [`is_nullable::NotNull`]
-///
 pub trait SqlType: 'static {
     /// Is this type nullable?
     ///

@@ -36,7 +36,10 @@ where
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// #     #[cfg(any(feature = "sqlite", feature = "mysql"))]
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
-    /// let user = User { id: 1, name: "Sean" };
+    /// let user = User {
+    ///     id: 1,
+    ///     name: "Sean",
+    /// };
     ///
     /// let user_count = users.count().get_result::<i64>(conn)?;
     /// assert_eq!(user_count, 0);
@@ -75,7 +78,10 @@ where
     /// #     #[cfg(any(feature = "mysql", feature = "sqlite"))]
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
     /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
-    /// let user = User { id: 1, name: "Sean" };
+    /// let user = User {
+    ///     id: 1,
+    ///     name: "Sean",
+    /// };
     ///
     /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
     /// let inserted_row_count = diesel::insert_into(users)
@@ -385,10 +391,19 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// #     #[cfg(feature = "sqlite")]
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
-    /// let user = User { id: 1, name: "Pascal" };
-    /// let user2 = User { id: 1, name: "Sean" };
+    /// let user = User {
+    ///     id: 1,
+    ///     name: "Pascal",
+    /// };
+    /// let user2 = User {
+    ///     id: 1,
+    ///     name: "Sean",
+    /// };
     ///
-    /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
+    /// assert_eq!(
+    ///     Ok(1),
+    ///     diesel::insert_into(users).values(&user).execute(conn)
+    /// );
     ///
     /// let insert_count = diesel::insert_into(users)
     ///     .values(&user2)
@@ -402,7 +417,10 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// assert_eq!(Ok(2), insert_count);
     ///
     /// let users_in_db = users.load(conn);
-    /// assert_eq!(Ok(vec![(1, "I DONT KNOW ANYMORE".to_string())]), users_in_db);
+    /// assert_eq!(
+    ///     Ok(vec![(1, "I DONT KNOW ANYMORE".to_string())]),
+    ///     users_in_db
+    /// );
     /// # }
     /// # #[cfg(feature = "mysql")]
     /// # fn main() {}
@@ -418,10 +436,19 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
-    /// let user = User { id: 1, name: "Pascal" };
-    /// let user2 = User { id: 1, name: "Sean" };
+    /// let user = User {
+    ///     id: 1,
+    ///     name: "Pascal",
+    /// };
+    /// let user2 = User {
+    ///     id: 1,
+    ///     name: "Sean",
+    /// };
     ///
-    /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
+    /// assert_eq!(
+    ///     Ok(1),
+    ///     diesel::insert_into(users).values(&user).execute(conn)
+    /// );
     ///
     /// diesel::insert_into(users)
     ///     .values(&user2)
@@ -431,7 +458,10 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     ///     .execute(conn)?;
     ///
     /// let users_in_db = users.load(conn);
-    /// assert_eq!(Ok(vec![(1, "I DONT KNOW ANYMORE".to_string())]), users_in_db);
+    /// assert_eq!(
+    ///     Ok(vec![(1, "I DONT KNOW ANYMORE".to_string())]),
+    ///     users_in_db
+    /// );
     /// # Ok(())
     /// # }
     /// # #[cfg(not(feature = "mysql"))]
@@ -453,10 +483,19 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// #     #[cfg(feature = "sqlite")]
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
-    /// let user = User { id: 1, name: "Pascal" };
-    /// let user2 = User { id: 1, name: "Sean" };
+    /// let user = User {
+    ///     id: 1,
+    ///     name: "Pascal",
+    /// };
+    /// let user2 = User {
+    ///     id: 1,
+    ///     name: "Sean",
+    /// };
     ///
-    /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
+    /// assert_eq!(
+    ///     Ok(1),
+    ///     diesel::insert_into(users).values(&user).execute(conn)
+    /// );
     ///
     /// let insert_count = diesel::insert_into(users)
     ///     .values(&user2)
@@ -483,10 +522,19 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
-    /// let user = User { id: 1, name: "Pascal" };
-    /// let user2 = User { id: 1, name: "Sean" };
+    /// let user = User {
+    ///     id: 1,
+    ///     name: "Pascal",
+    /// };
+    /// let user2 = User {
+    ///     id: 1,
+    ///     name: "Sean",
+    /// };
     ///
-    /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
+    /// assert_eq!(
+    ///     Ok(1),
+    ///     diesel::insert_into(users).values(&user).execute(conn)
+    /// );
     ///
     /// diesel::insert_into(users)
     ///     .values(&user2)
@@ -517,12 +565,24 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// #     let conn = &mut establish_connection();
     /// #     #[cfg(feature = "postgres")]
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
-    /// let user = User { id: 1, name: "Pascal" };
-    /// let user2 = User { id: 1, name: "Sean" };
-    /// let user3 = User { id: 2, name: "Tess" };
+    /// let user = User {
+    ///     id: 1,
+    ///     name: "Pascal",
+    /// };
+    /// let user2 = User {
+    ///     id: 1,
+    ///     name: "Sean",
+    /// };
+    /// let user3 = User {
+    ///     id: 2,
+    ///     name: "Tess",
+    /// };
     ///
     /// # #[cfg(feature = "postgres")]
-    /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
+    /// assert_eq!(
+    ///     Ok(1),
+    ///     diesel::insert_into(users).values(&user).execute(conn)
+    /// );
     ///
     /// #[cfg(feature = "postgres")]
     /// let insert_count = diesel::insert_into(users)
@@ -537,7 +597,10 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// # #[cfg(feature = "postgres")]
     /// let users_in_db = users.load(conn);
     /// # #[cfg(feature = "postgres")]
-    /// assert_eq!(Ok(vec![(1, "Sean".to_string()), (2, "Tess".to_string())]), users_in_db);
+    /// assert_eq!(
+    ///     Ok(vec![(1, "Sean".to_string()), (2, "Tess".to_string())]),
+    ///     users_in_db
+    /// );
     /// # }
     /// # #[cfg(feature = "mysql")]
     /// # fn main() {}
@@ -558,10 +621,19 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// #     #[cfg(feature = "sqlite")]
     /// #     diesel::delete(users).execute(conn).unwrap();
-    /// let user = User { id: 1, name: "Pascal" };
-    /// let user2 = User { id: 1, name: "Sean" };
+    /// let user = User {
+    ///     id: 1,
+    ///     name: "Pascal",
+    /// };
+    /// let user2 = User {
+    ///     id: 1,
+    ///     name: "Sean",
+    /// };
     ///
-    /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
+    /// assert_eq!(
+    ///     Ok(1),
+    ///     diesel::insert_into(users).values(&user).execute(conn)
+    /// );
     ///
     /// let insert_count = diesel::insert_into(users)
     ///     .values(&user2)

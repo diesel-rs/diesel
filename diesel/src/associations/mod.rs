@@ -32,9 +32,12 @@
 //! #     let connection = &mut establish_connection();
 //! #     use self::users::dsl::*;
 //! let user = users.find(2).get_result::<User>(connection)?;
-//! let users_post = Post::belonging_to(&user)
-//!     .first(connection)?;
-//! let expected = Post { id: 3, user_id: 2, title: "My first post too".into() };
+//! let users_post = Post::belonging_to(&user).first(connection)?;
+//! let expected = Post {
+//!     id: 3,
+//!     user_id: 2,
+//!     title: "My first post too".into(),
+//! };
 //! assert_eq!(expected, users_post);
 //! #     Ok(())
 //! # }
@@ -117,13 +120,24 @@
 //! #   use self::users::dsl::*;
 //! #   let connection = &mut establish_connection();
 //! #
-//! let user = users.find(1).first::<User>(connection).expect("Error loading user");
+//! let user = users
+//!     .find(1)
+//!     .first::<User>(connection)
+//!     .expect("Error loading user");
 //! let post_list = Post::belonging_to(&user)
 //!     .load::<Post>(connection)
 //!     .expect("Error loading posts");
 //! let expected = vec![
-//!     Post { id: 1, user_id: 1, title: "My first post".to_string() },
-//!     Post { id: 2, user_id: 1, title: "About Rust".to_string() },
+//!     Post {
+//!         id: 1,
+//!         user_id: 1,
+//!         title: "My first post".to_string(),
+//!     },
+//!     Post {
+//!         id: 2,
+//!         user_id: 1,
+//!         title: "About Rust".to_string(),
+//!     },
 //! ];
 //!
 //! assert_eq!(post_list, expected);
@@ -187,7 +201,10 @@
 //! let more_posts = Post::belonging_to(&vec![sean, tess])
 //!     .select(title)
 //!     .load::<String>(connection)?;
-//! assert_eq!(vec!["My first post", "About Rust", "My first post too"], more_posts);
+//! assert_eq!(
+//!     vec!["My first post", "About Rust", "My first post too"],
+//!     more_posts
+//! );
 //! #     Ok(())
 //! # }
 //! ```
@@ -235,17 +252,33 @@
 //!
 //! let expected_data = vec![
 //!     (
-//!         User { id: 1, name: "Sean".into() },
+//!         User {
+//!             id: 1,
+//!             name: "Sean".into(),
+//!         },
 //!         vec![
-//!             Post { id: 1, user_id: 1, title: "My first post".into() },
-//!             Post { id: 2, user_id: 1, title: "About Rust".into() },
+//!             Post {
+//!                 id: 1,
+//!                 user_id: 1,
+//!                 title: "My first post".into(),
+//!             },
+//!             Post {
+//!                 id: 2,
+//!                 user_id: 1,
+//!                 title: "About Rust".into(),
+//!             },
 //!         ],
 //!     ),
 //!     (
-//!         User { id: 2, name: "Tess".into() },
-//!         vec![
-//!             Post { id: 3, user_id: 2, title: "My first post too".into() },
-//!         ],
+//!         User {
+//!             id: 2,
+//!             name: "Tess".into(),
+//!         },
+//!         vec![Post {
+//!             id: 3,
+//!             user_id: 2,
+//!             title: "My first post too".into(),
+//!         }],
 //!     ),
 //! ];
 //!
@@ -292,7 +325,8 @@
 //! # fn main() {
 //! #   let connection = &mut establish_connection();
 //! #
-//! let users: Vec<User> = users::table.load::<User>(connection)
+//! let users: Vec<User> = users::table
+//!     .load::<User>(connection)
 //!     .expect("error loading users");
 //! let posts: Vec<Post> = Post::belonging_to(&users)
 //!     .load::<Post>(connection)
@@ -301,40 +335,61 @@
 //!     .load::<Comment>(connection)
 //!     .expect("Error loading comments");
 //! let grouped_comments: Vec<Vec<Comment>> = comments.grouped_by(&posts);
-//! let posts_and_comments: Vec<Vec<(Post, Vec<Comment>)>> = posts
-//!     .into_iter()
-//!     .zip(grouped_comments)
-//!     .grouped_by(&users);
-//! let result: Vec<(User, Vec<(Post, Vec<Comment>)>)> = users
-//!     .into_iter()
-//!     .zip(posts_and_comments)
-//!     .collect();
+//! let posts_and_comments: Vec<Vec<(Post, Vec<Comment>)>> =
+//!     posts.into_iter().zip(grouped_comments).grouped_by(&users);
+//! let result: Vec<(User, Vec<(Post, Vec<Comment>)>)> =
+//!     users.into_iter().zip(posts_and_comments).collect();
 //! let expected = vec![
 //!     (
-//!         User { id: 1, name: "Sean".to_string() },
+//!         User {
+//!             id: 1,
+//!             name: "Sean".to_string(),
+//!         },
 //!         vec![
 //!             (
-//!                 Post { id: 1, user_id: 1, title: "My first post".to_string() },
-//!                 vec![ Comment { id: 1, post_id: 1, body: "Great post".to_string() } ]
+//!                 Post {
+//!                     id: 1,
+//!                     user_id: 1,
+//!                     title: "My first post".to_string(),
+//!                 },
+//!                 vec![Comment {
+//!                     id: 1,
+//!                     post_id: 1,
+//!                     body: "Great post".to_string(),
+//!                 }],
 //!             ),
 //!             (
-//!                 Post { id: 2, user_id: 1, title: "About Rust".to_string() },
-//!                 vec![
-//!                     Comment { id: 2, post_id: 2, body: "Yay! I am learning Rust".to_string() }
-//!                 ]
-//!
-//!             )
-//!         ]
+//!                 Post {
+//!                     id: 2,
+//!                     user_id: 1,
+//!                     title: "About Rust".to_string(),
+//!                 },
+//!                 vec![Comment {
+//!                     id: 2,
+//!                     post_id: 2,
+//!                     body: "Yay! I am learning Rust".to_string(),
+//!                 }],
+//!             ),
+//!         ],
 //!     ),
 //!     (
-//!         User { id: 2, name: "Tess".to_string() },
-//!         vec![
-//!             (
-//!                 Post { id: 3, user_id: 2, title: "My first post too".to_string() },
-//!                 vec![ Comment { id: 3, post_id: 3, body: "I enjoyed your post".to_string() } ]
-//!             )
-//!         ]
-//!     )
+//!         User {
+//!             id: 2,
+//!             name: "Tess".to_string(),
+//!         },
+//!         vec![(
+//!             Post {
+//!                 id: 3,
+//!                 user_id: 2,
+//!                 title: "My first post too".to_string(),
+//!             },
+//!             vec![Comment {
+//!                 id: 3,
+//!                 post_id: 3,
+//!                 body: "I enjoyed your post".to_string(),
+//!             }],
+//!         )],
+//!     ),
 //! ];
 //!
 //! assert_eq!(result, expected);
@@ -386,7 +441,6 @@ impl<T: HasTable> HasTable for &T {
 ///
 /// This trait is usually implemented on a reference to a struct,
 /// not on the struct itself. It can be [derived](derive@Identifiable).
-///
 pub trait Identifiable: HasTable {
     /// The type of this struct's identifier.
     ///

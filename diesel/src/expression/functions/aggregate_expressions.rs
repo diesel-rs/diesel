@@ -178,8 +178,12 @@ pub trait AggregateExpressionMethods: Sized {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;
     /// #     let connection = &mut establish_connection();
-    /// let without_distinct = posts.select(dsl::count(user_id)).get_result::<i64>(connection)?;
-    /// let with_distinct = posts.select(dsl::count(user_id).aggregate_distinct()).get_result::<i64>(connection)?;
+    /// let without_distinct = posts
+    ///     .select(dsl::count(user_id))
+    ///     .get_result::<i64>(connection)?;
+    /// let with_distinct = posts
+    ///     .select(dsl::count(user_id).aggregate_distinct())
+    ///     .get_result::<i64>(connection)?;
     ///
     /// assert_eq!(3, without_distinct);
     /// assert_eq!(2, with_distinct);
@@ -211,8 +215,12 @@ pub trait AggregateExpressionMethods: Sized {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;
     /// #     let connection = &mut establish_connection();
-    /// let without_all = posts.select(dsl::count(user_id)).get_result::<i64>(connection)?;
-    /// let with_all = posts.select(dsl::count(user_id).aggregate_all()).get_result::<i64>(connection)?;
+    /// let without_all = posts
+    ///     .select(dsl::count(user_id))
+    ///     .get_result::<i64>(connection)?;
+    /// let with_all = posts
+    ///     .select(dsl::count(user_id).aggregate_all())
+    ///     .get_result::<i64>(connection)?;
     ///
     /// assert_eq!(3, without_all);
     /// assert_eq!(3, with_all);
@@ -247,8 +255,11 @@ pub trait AggregateExpressionMethods: Sized {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;
     /// #     let connection = &mut establish_connection();
-    /// let without_filter = posts.select(dsl::count(user_id)).get_result::<i64>(connection)?;
-    /// let with_filter = posts.select(dsl::count(user_id).aggregate_filter(title.like("%first post%")))
+    /// let without_filter = posts
+    ///     .select(dsl::count(user_id))
+    ///     .get_result::<i64>(connection)?;
+    /// let with_filter = posts
+    ///     .select(dsl::count(user_id).aggregate_filter(title.like("%first post%")))
     ///     .get_result::<i64>(connection)?;
     ///
     /// assert_eq!(3, without_filter);
@@ -291,7 +302,8 @@ pub trait AggregateExpressionMethods: Sized {
     /// // This example is not meaningful yet,
     /// // modify it as soon as we support more
     /// // meaningful functions here
-    /// let res = posts.select(dsl::count(user_id).aggregate_order(title))
+    /// let res = posts
+    ///     .select(dsl::count(user_id).aggregate_order(title))
     ///     .get_result::<i64>(connection)?;
     /// assert_eq!(3, res);
     /// #     Ok(())
@@ -328,7 +340,8 @@ pub trait WindowExpressionMethods: Sized {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;
     /// #     let connection = &mut establish_connection();
-    /// let res = posts.select(dsl::count(user_id).over())
+    /// let res = posts
+    ///     .select(dsl::count(user_id).over())
     ///     .load::<i64>(connection)?;
     /// assert_eq!(vec![3, 3, 3], res);
     /// #     Ok(())
@@ -359,7 +372,8 @@ pub trait WindowExpressionMethods: Sized {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;
     /// #     let connection = &mut establish_connection();
-    /// let res = posts.select(dsl::count(user_id).window_filter(user_id.eq(1)))
+    /// let res = posts
+    ///     .select(dsl::count(user_id).window_filter(user_id.eq(1)))
     ///     .load::<i64>(connection)?;
     /// assert_eq!(vec![2], res);
     /// #     Ok(())
@@ -390,7 +404,8 @@ pub trait WindowExpressionMethods: Sized {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;
     /// #     let connection = &mut establish_connection();
-    /// let res = posts.select(dsl::count(user_id).partition_by(user_id))
+    /// let res = posts
+    ///     .select(dsl::count(user_id).partition_by(user_id))
     ///     .load::<i64>(connection)?;
     /// assert_eq!(vec![2, 2, 1], res);
     /// #     Ok(())
@@ -420,7 +435,8 @@ pub trait WindowExpressionMethods: Sized {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;
     /// #     let connection = &mut establish_connection();
-    /// let res = posts.select(dsl::first_value(user_id).window_order(title))
+    /// let res = posts
+    ///     .select(dsl::first_value(user_id).window_order(title))
     ///     .load::<i32>(connection)?;
     /// assert_eq!(vec![1, 1, 1], res);
     /// #     Ok(())
@@ -455,9 +471,10 @@ pub trait WindowExpressionMethods: Sized {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;
     /// #     let connection = &mut establish_connection();
-    /// let res = posts.select(dsl::count(user_id).frame_by(
-    ///          dsl::frame::Rows.frame_start_with(dsl::frame::CurrentRow))
-    ///      )
+    /// let res = posts
+    ///     .select(
+    ///         dsl::count(user_id).frame_by(dsl::frame::Rows.frame_start_with(dsl::frame::CurrentRow)),
+    ///     )
     ///     .load::<i64>(connection)?;
     /// assert_eq!(vec![1, 1, 1], res);
     /// #     Ok(())
