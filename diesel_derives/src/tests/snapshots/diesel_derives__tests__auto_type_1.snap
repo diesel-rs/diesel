@@ -1,0 +1,10 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+---
+#[allow(non_camel_case_types)]
+type foo = diesel::dsl::Select<users::table, users::id>;
+#[allow(clippy::needless_lifetimes)]
+fn foo() -> foo {
+    users::table.select(users::id)
+}
