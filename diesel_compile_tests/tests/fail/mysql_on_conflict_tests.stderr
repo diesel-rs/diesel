@@ -69,13 +69,13 @@ error[E0277]: the trait bound `ConflictTarget<(DuplicatedKeys, name)>: OnConflic
     = help: the trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>` is not implemented for `ConflictTarget<(DuplicatedKeys, name)>`
     = help: the following other types implement trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Table>`:
               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(T,)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5, T6)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4, T5)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4, T5, T6)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
             and N others
 note: required by a bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
    --> DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
@@ -214,13 +214,13 @@ error[E0277]: the trait bound `ConflictTarget<(name, DuplicatedKeys)>: OnConflic
     = help: the trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>` is not implemented for `ConflictTarget<(name, DuplicatedKeys)>`
     = help: the following other types implement trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Table>`:
               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(T,)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5, T6)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4, T5)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4, T5, T6)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
             and N others
 note: required by a bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
    --> DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
@@ -244,13 +244,13 @@ error[E0277]: `ConflictTarget<(name, DuplicatedKeys)>` is no valid SQL fragment 
              this SQL syntax
      = help: the following other types implement trait `QueryFragment<DB, SP>`:
                `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(T,)>` implements `QueryFragment<DB, SP>`
-               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0)>` implements `QueryFragment<_DB, _SP>`
-               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1)>` implements `QueryFragment<_DB, _SP>`
-               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2)>` implements `QueryFragment<_DB, _SP>`
-               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3)>` implements `QueryFragment<_DB, _SP>`
-               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4)>` implements `QueryFragment<_DB, _SP>`
-               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5)>` implements `QueryFragment<_DB, _SP>`
-               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5, T6)>` implements `QueryFragment<_DB, _SP>`
+               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T)>` implements `QueryFragment<_DB, _SP>`
+               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1)>` implements `QueryFragment<_DB, _SP>`
+               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2)>` implements `QueryFragment<_DB, _SP>`
+               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3)>` implements `QueryFragment<_DB, _SP>`
+               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4)>` implements `QueryFragment<_DB, _SP>`
+               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4, T5)>` implements `QueryFragment<_DB, _SP>`
+               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4, T5, T6)>` implements `QueryFragment<_DB, _SP>`
              and N others
      = note: required for `OnConflictValues<ValuesClause<(..., ...), ...>, ..., ...>` to implement `QueryFragment<Pg, pg::backend::PgOnConflictClause>`
      = note: 2 redundant requirements hidden
@@ -277,13 +277,13 @@ error[E0277]: the trait bound `ConflictTarget<(DuplicatedKeys, name)>: OnConflic
     = help: the trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>` is not implemented for `ConflictTarget<(DuplicatedKeys, name)>`
     = help: the following other types implement trait `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<Table>`:
               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(T,)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
-              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5, T6)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4, T5)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
+              `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4, T5, T6)>` implements `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<<_T as Column>::Table>`
             and N others
 note: required by a bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
    --> DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
@@ -307,13 +307,13 @@ error[E0277]: `ConflictTarget<(DuplicatedKeys, name)>` is no valid SQL fragment 
              this SQL syntax
      = help: the following other types implement trait `QueryFragment<DB, SP>`:
                `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(T,)>` implements `QueryFragment<DB, SP>`
-               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0)>` implements `QueryFragment<_DB, _SP>`
-               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1)>` implements `QueryFragment<_DB, _SP>`
-               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2)>` implements `QueryFragment<_DB, _SP>`
-               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3)>` implements `QueryFragment<_DB, _SP>`
-               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4)>` implements `QueryFragment<_DB, _SP>`
-               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5)>` implements `QueryFragment<_DB, _SP>`
-               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5, T6)>` implements `QueryFragment<_DB, _SP>`
+               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T)>` implements `QueryFragment<_DB, _SP>`
+               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1)>` implements `QueryFragment<_DB, _SP>`
+               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2)>` implements `QueryFragment<_DB, _SP>`
+               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3)>` implements `QueryFragment<_DB, _SP>`
+               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4)>` implements `QueryFragment<_DB, _SP>`
+               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4, T5)>` implements `QueryFragment<_DB, _SP>`
+               `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T, T1, T2, T3, T4, T5, T6)>` implements `QueryFragment<_DB, _SP>`
              and N others
      = note: required for `OnConflictValues<ValuesClause<(..., ...), ...>, ..., ...>` to implement `QueryFragment<Pg, pg::backend::PgOnConflictClause>`
      = note: 2 redundant requirements hidden

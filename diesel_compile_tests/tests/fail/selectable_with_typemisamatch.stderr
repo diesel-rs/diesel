@@ -41,14 +41,14 @@ LL |     embed_user: User,
    |                 ^^^^ the trait `FromStaticSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), Pg>` is not implemented for `(std::string::String, i32)`
    |
    = help: the following other types implement trait `FromStaticSqlRow<ST, DB>`:
-             `(T0,)` implements `FromStaticSqlRow<(ST0,), __DB>`
-             `(T1, T0)` implements `FromStaticSqlRow<(ST1, ST0), __DB>`
-             `(T1, T2, T0)` implements `FromStaticSqlRow<(ST1, ST2, ST0), __DB>`
-             `(T1, T2, T3, T0)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST0), __DB>`
-             `(T1, T2, T3, T4, T0)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST4, ST0), __DB>`
-             `(T1, T2, T3, T4, T5, T0)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST4, ST5, ST0), __DB>`
-             `(T1, T2, T3, T4, T5, T6, T0)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST4, ST5, ST6, ST0), __DB>`
-             `(T1, T2, T3, T4, T5, T6, T7, T0)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST0), __DB>`
+             `(T,)` implements `FromStaticSqlRow<(ST,), __DB>`
+             `(T1, T)` implements `FromStaticSqlRow<(ST1, ST), __DB>`
+             `(T1, T2, T)` implements `FromStaticSqlRow<(ST1, ST2, ST), __DB>`
+             `(T1, T2, T3, T)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST), __DB>`
+             `(T1, T2, T3, T4, T)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST4, ST), __DB>`
+             `(T1, T2, T3, T4, T5, T)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST4, ST5, ST), __DB>`
+             `(T1, T2, T3, T4, T5, T6, T)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST4, ST5, ST6, ST), __DB>`
+             `(T1, T2, T3, T4, T5, T6, T7, T)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST), __DB>`
            and N others
 note: required for `User` to implement `diesel::Queryable<(diesel::sql_types::Integer, diesel::sql_types::Text), Pg>`
   --> tests/fail/selectable_with_typemisamatch.rs:12:22

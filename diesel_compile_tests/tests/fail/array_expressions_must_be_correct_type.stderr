@@ -9,13 +9,13 @@ error[E0277]: cannot select `f64` from `NoFromClause`
     = note: `f64` is no valid selection for `NoFromClause`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `&'a T` implements `SelectableExpression<QS>`
-              `(T0, T1)` implements `SelectableExpression<QS>`
-              `(T0, T1, T2)` implements `SelectableExpression<QS>`
-              `(T0, T1, T2, T3)` implements `SelectableExpression<QS>`
-              `(T0, T1, T2, T3, T4)` implements `SelectableExpression<QS>`
-              `(T0, T1, T2, T3, T4, T5)` implements `SelectableExpression<QS>`
-              `(T0, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
-              `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
+              `(T, T1)` implements `SelectableExpression<QS>`
+              `(T, T1, T2)` implements `SelectableExpression<QS>`
+              `(T, T1, T2, T3)` implements `SelectableExpression<QS>`
+              `(T, T1, T2, T3, T4)` implements `SelectableExpression<QS>`
+              `(T, T1, T2, T3, T4, T5)` implements `SelectableExpression<QS>`
+              `(T, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
+              `(T, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
             and N others
     = note: required for `(f64, f64)` to implement `SelectableExpression<NoFromClause>`
     = note: 1 redundant requirement hidden
@@ -44,12 +44,12 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
     = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
               `&T` implements `ValidGrouping<GB>`
               `()` implements `ValidGrouping<GB>`
-              `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
             and N others
     = note: required for `(f64, f64)` to implement `ValidGrouping<()>`
     = note: 1 redundant requirement hidden
@@ -77,13 +77,13 @@ error[E0277]: cannot select `f64` from `NoFromClause`
      = note: `f64` is no valid selection for `NoFromClause`
      = help: the following other types implement trait `SelectableExpression<QS>`:
                `&'a T` implements `SelectableExpression<QS>`
-               `(T0, T1)` implements `SelectableExpression<QS>`
-               `(T0, T1, T2)` implements `SelectableExpression<QS>`
-               `(T0, T1, T2, T3)` implements `SelectableExpression<QS>`
-               `(T0, T1, T2, T3, T4)` implements `SelectableExpression<QS>`
-               `(T0, T1, T2, T3, T4, T5)` implements `SelectableExpression<QS>`
-               `(T0, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
-               `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
+               `(T, T1)` implements `SelectableExpression<QS>`
+               `(T, T1, T2)` implements `SelectableExpression<QS>`
+               `(T, T1, T2, T3)` implements `SelectableExpression<QS>`
+               `(T, T1, T2, T3, T4)` implements `SelectableExpression<QS>`
+               `(T, T1, T2, T3, T4, T5)` implements `SelectableExpression<QS>`
+               `(T, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
+               `(T, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
              and N others
      = note: required for `(f64, f64)` to implement `SelectableExpression<NoFromClause>`
      = note: 1 redundant requirement hidden
@@ -112,12 +112,12 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
      = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
                `&T` implements `ValidGrouping<GB>`
                `()` implements `ValidGrouping<GB>`
-               `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
-               `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
-               `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
-               `(T0, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
-               `(T0, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
-               `(T0, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
+               `(T, T1)` implements `ValidGrouping<__GroupByClause>`
+               `(T, T1, T2)` implements `ValidGrouping<__GroupByClause>`
+               `(T, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
+               `(T, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
+               `(T, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
+               `(T, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
              and N others
      = note: required for `(f64, f64)` to implement `ValidGrouping<()>`
      = note: 1 redundant requirement hidden
@@ -145,12 +145,12 @@ error[E0277]: the trait bound `f64: QueryId` is not satisfied
      = help: the following other types implement trait `QueryId`:
                &T
                ()
-               (T0, T1)
-               (T0, T1, T2)
-               (T0, T1, T2, T3)
-               (T0, T1, T2, T3, T4)
-               (T0, T1, T2, T3, T4, T5)
-               (T0, T1, T2, T3, T4, T5, T6)
+               (T, T1)
+               (T, T1, T2)
+               (T, T1, T2, T3)
+               (T, T1, T2, T3, T4)
+               (T, T1, T2, T3, T4, T5)
+               (T, T1, T2, T3, T4, T5, T6)
              and N others
      = note: required for `(f64, f64)` to implement `QueryId`
      = note: 3 redundant requirements hidden
@@ -179,12 +179,12 @@ error[E0277]: `f64` is no valid SQL fragment for the `Pg` backend
      = help: the following other types implement trait `QueryFragment<DB, SP>`:
                `&T` implements `QueryFragment<DB>`
                `()` implements `QueryFragment<DB>`
-               `(T0, T1)` implements `QueryFragment<__DB>`
-               `(T0, T1, T2)` implements `QueryFragment<__DB>`
-               `(T0, T1, T2, T3)` implements `QueryFragment<__DB>`
-               `(T0, T1, T2, T3, T4)` implements `QueryFragment<__DB>`
-               `(T0, T1, T2, T3, T4, T5)` implements `QueryFragment<__DB>`
-               `(T0, T1, T2, T3, T4, T5, T6)` implements `QueryFragment<__DB>`
+               `(T, T1)` implements `QueryFragment<__DB>`
+               `(T, T1, T2)` implements `QueryFragment<__DB>`
+               `(T, T1, T2, T3)` implements `QueryFragment<__DB>`
+               `(T, T1, T2, T3, T4)` implements `QueryFragment<__DB>`
+               `(T, T1, T2, T3, T4, T5)` implements `QueryFragment<__DB>`
+               `(T, T1, T2, T3, T4, T5, T6)` implements `QueryFragment<__DB>`
              and N others
      = note: required for `(f64, f64)` to implement `QueryFragment<Pg>`
      = note: 4 redundant requirements hidden
@@ -237,13 +237,13 @@ LL |     select(array((1f64, 3f64))).get_result::<Vec<i32>>(&mut connection);
   |
   = note: `the trait bound `(f64, f64): IntoArrayExpression<diesel::sql_types::Integer>` is not satisfied. (`AsExpressionList` is a deprecated trait alias for `IntoArrayExpression`)
   = help: the following other types implement trait `AsExpressionList<ST>`:
-            (T0, T1)
-            (T0, T1, T2)
-            (T0, T1, T2, T3)
-            (T0, T1, T2, T3, T4)
-            (T0, T1, T2, T3, T4, T5)
-            (T0, T1, T2, T3, T4, T5, T6)
-            (T0, T1, T2, T3, T4, T5, T6, T7)
-            (T0, T1, T2, T3, T4, T5, T6, T7, T8)
+            (T, T1)
+            (T, T1, T2)
+            (T, T1, T2, T3)
+            (T, T1, T2, T3, T4)
+            (T, T1, T2, T3, T4, T5)
+            (T, T1, T2, T3, T4, T5, T6)
+            (T, T1, T2, T3, T4, T5, T6, T7)
+            (T, T1, T2, T3, T4, T5, T6, T7, T8)
           and N others
 For more information about this error, try `rustc --explain E0277`.
