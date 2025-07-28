@@ -1,0 +1,914 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "table! {\n    users { id -> Integer, name -> Text, }\n}\n"
+---
+#[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
+pub mod users {
+    use ::diesel;
+    pub use self::columns::*;
+    use diesel::sql_types::*;
+    /// Re-exports all of the columns of this table, as well as the
+    /// table struct renamed to the module name. This is meant to be
+    /// glob imported for functions which only deal with one table.
+    pub mod dsl {
+        pub use super::columns::id;
+        pub use super::columns::name;
+        pub use super::table as users;
+    }
+    #[allow(non_upper_case_globals, dead_code)]
+    /// A tuple of all of the columns on this table
+    pub const all_columns: (id, name) = (id, name);
+    #[allow(non_camel_case_types)]
+    #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default)]
+    /// The actual table struct
+    ///
+    /// This is the type which provides the base methods of the query
+    /// builder, such as `.select` and `.filter`.
+    pub struct table;
+    impl table {
+        #[allow(dead_code)]
+        /// Represents `table_name.*`, which is sometimes necessary
+        /// for efficient count queries. It cannot be used in place of
+        /// `all_columns`
+        pub fn star(&self) -> star {
+            star
+        }
+    }
+    /// The SQL type of all of the columns on this table
+    pub type SqlType = (Integer, Text);
+    /// Helper type for representing a boxed query from this table
+    pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<
+        'a,
+        ST,
+        diesel::internal::table_macro::FromClause<table>,
+        DB,
+    >;
+    impl diesel::QuerySource for table {
+        type FromClause = diesel::internal::table_macro::StaticQueryFragmentInstance<
+            table,
+        >;
+        type DefaultSelection = <Self as diesel::Table>::AllColumns;
+        fn from_clause(&self) -> Self::FromClause {
+            diesel::internal::table_macro::StaticQueryFragmentInstance::new()
+        }
+        fn default_selection(&self) -> Self::DefaultSelection {
+            use diesel::Table;
+            Self::all_columns()
+        }
+    }
+    impl<DB> diesel::query_builder::QueryFragment<DB> for table
+    where
+        DB: diesel::backend::Backend,
+        <table as diesel::internal::table_macro::StaticQueryFragment>::Component: diesel::query_builder::QueryFragment<
+            DB,
+        >,
+    {
+        fn walk_ast<'b>(
+            &'b self,
+            __diesel_internal_pass: diesel::query_builder::AstPass<'_, 'b, DB>,
+        ) -> diesel::result::QueryResult<()> {
+            <table as diesel::internal::table_macro::StaticQueryFragment>::STATIC_COMPONENT
+                .walk_ast(__diesel_internal_pass)
+        }
+    }
+    impl diesel::internal::table_macro::StaticQueryFragment for table {
+        type Component = diesel::internal::table_macro::Identifier<'static>;
+        const STATIC_COMPONENT: &'static Self::Component = &diesel::internal::table_macro::Identifier(
+            "users",
+        );
+    }
+    impl diesel::query_builder::AsQuery for table {
+        type SqlType = SqlType;
+        type Query = diesel::internal::table_macro::SelectStatement<
+            diesel::internal::table_macro::FromClause<Self>,
+        >;
+        fn as_query(self) -> Self::Query {
+            diesel::internal::table_macro::SelectStatement::simple(self)
+        }
+    }
+    impl diesel::Table for table {
+        type PrimaryKey = id;
+        type AllColumns = (id, name);
+        fn primary_key(&self) -> Self::PrimaryKey {
+            id
+        }
+        fn all_columns() -> Self::AllColumns {
+            (id, name)
+        }
+    }
+    impl diesel::associations::HasTable for table {
+        type Table = Self;
+        fn table() -> Self::Table {
+            table
+        }
+    }
+    impl diesel::query_builder::IntoUpdateTarget for table {
+        type WhereClause = <<Self as diesel::query_builder::AsQuery>::Query as diesel::query_builder::IntoUpdateTarget>::WhereClause;
+        fn into_update_target(
+            self,
+        ) -> diesel::query_builder::UpdateTarget<Self::Table, Self::WhereClause> {
+            use diesel::query_builder::AsQuery;
+            let q: diesel::internal::table_macro::SelectStatement<
+                diesel::internal::table_macro::FromClause<table>,
+            > = self.as_query();
+            q.into_update_target()
+        }
+    }
+    impl diesel::query_source::AppearsInFromClause<table> for table {
+        type Count = diesel::query_source::Once;
+    }
+    impl<S> diesel::internal::table_macro::AliasAppearsInFromClause<S, table> for table
+    where
+        S: diesel::query_source::AliasSource<Target = table>,
+    {
+        type Count = diesel::query_source::Never;
+    }
+    impl<
+        S1,
+        S2,
+    > diesel::internal::table_macro::AliasAliasAppearsInFromClause<table, S2, S1>
+    for table
+    where
+        S1: diesel::query_source::AliasSource<Target = table>,
+        S2: diesel::query_source::AliasSource<Target = table>,
+        S1: diesel::internal::table_macro::AliasAliasAppearsInFromClauseSameTable<
+            S2,
+            table,
+        >,
+    {
+        type Count = <S1 as diesel::internal::table_macro::AliasAliasAppearsInFromClauseSameTable<
+            S2,
+            table,
+        >>::Count;
+    }
+    impl<S> diesel::query_source::AppearsInFromClause<diesel::query_source::Alias<S>>
+    for table
+    where
+        S: diesel::query_source::AliasSource,
+    {
+        type Count = diesel::query_source::Never;
+    }
+    impl<
+        S,
+        C,
+    > diesel::internal::table_macro::FieldAliasMapperAssociatedTypesDisjointnessTrick<
+        table,
+        S,
+        C,
+    > for table
+    where
+        S: diesel::query_source::AliasSource<Target = table> + ::std::clone::Clone,
+        C: diesel::query_source::Column<Table = table>,
+    {
+        type Out = diesel::query_source::AliasedField<S, C>;
+        fn map(
+            __diesel_internal_column: C,
+            __diesel_internal_alias: &diesel::query_source::Alias<S>,
+        ) -> Self::Out {
+            __diesel_internal_alias.field(__diesel_internal_column)
+        }
+    }
+    impl diesel::query_source::AppearsInFromClause<table>
+    for diesel::internal::table_macro::NoFromClause {
+        type Count = diesel::query_source::Never;
+    }
+    impl<
+        Left,
+        Right,
+        Kind,
+    > diesel::JoinTo<diesel::internal::table_macro::Join<Left, Right, Kind>> for table
+    where
+        diesel::internal::table_macro::Join<Left, Right, Kind>: diesel::JoinTo<table>,
+        Left: diesel::query_source::QuerySource,
+        Right: diesel::query_source::QuerySource,
+    {
+        type FromClause = diesel::internal::table_macro::Join<Left, Right, Kind>;
+        type OnClause = <diesel::internal::table_macro::Join<
+            Left,
+            Right,
+            Kind,
+        > as diesel::JoinTo<table>>::OnClause;
+        fn join_target(
+            __diesel_internal_rhs: diesel::internal::table_macro::Join<Left, Right, Kind>,
+        ) -> (Self::FromClause, Self::OnClause) {
+            let (_, __diesel_internal_on_clause) = diesel::internal::table_macro::Join::join_target(
+                table,
+            );
+            (__diesel_internal_rhs, __diesel_internal_on_clause)
+        }
+    }
+    impl<Join, On> diesel::JoinTo<diesel::internal::table_macro::JoinOn<Join, On>>
+    for table
+    where
+        diesel::internal::table_macro::JoinOn<Join, On>: diesel::JoinTo<table>,
+    {
+        type FromClause = diesel::internal::table_macro::JoinOn<Join, On>;
+        type OnClause = <diesel::internal::table_macro::JoinOn<
+            Join,
+            On,
+        > as diesel::JoinTo<table>>::OnClause;
+        fn join_target(
+            __diesel_internal_rhs: diesel::internal::table_macro::JoinOn<Join, On>,
+        ) -> (Self::FromClause, Self::OnClause) {
+            let (_, __diesel_internal_on_clause) = diesel::internal::table_macro::JoinOn::join_target(
+                table,
+            );
+            (__diesel_internal_rhs, __diesel_internal_on_clause)
+        }
+    }
+    impl<
+        F,
+        S,
+        D,
+        W,
+        O,
+        L,
+        Of,
+        G,
+    > diesel::JoinTo<
+        diesel::internal::table_macro::SelectStatement<
+            diesel::internal::table_macro::FromClause<F>,
+            S,
+            D,
+            W,
+            O,
+            L,
+            Of,
+            G,
+        >,
+    > for table
+    where
+        diesel::internal::table_macro::SelectStatement<
+            diesel::internal::table_macro::FromClause<F>,
+            S,
+            D,
+            W,
+            O,
+            L,
+            Of,
+            G,
+        >: diesel::JoinTo<table>,
+        F: diesel::query_source::QuerySource,
+    {
+        type FromClause = diesel::internal::table_macro::SelectStatement<
+            diesel::internal::table_macro::FromClause<F>,
+            S,
+            D,
+            W,
+            O,
+            L,
+            Of,
+            G,
+        >;
+        type OnClause = <diesel::internal::table_macro::SelectStatement<
+            diesel::internal::table_macro::FromClause<F>,
+            S,
+            D,
+            W,
+            O,
+            L,
+            Of,
+            G,
+        > as diesel::JoinTo<table>>::OnClause;
+        fn join_target(
+            __diesel_internal_rhs: diesel::internal::table_macro::SelectStatement<
+                diesel::internal::table_macro::FromClause<F>,
+                S,
+                D,
+                W,
+                O,
+                L,
+                Of,
+                G,
+            >,
+        ) -> (Self::FromClause, Self::OnClause) {
+            let (_, __diesel_internal_on_clause) = diesel::internal::table_macro::SelectStatement::join_target(
+                table,
+            );
+            (__diesel_internal_rhs, __diesel_internal_on_clause)
+        }
+    }
+    impl<
+        'a,
+        QS,
+        ST,
+        DB,
+    > diesel::JoinTo<
+        diesel::internal::table_macro::BoxedSelectStatement<
+            'a,
+            diesel::internal::table_macro::FromClause<QS>,
+            ST,
+            DB,
+        >,
+    > for table
+    where
+        diesel::internal::table_macro::BoxedSelectStatement<
+            'a,
+            diesel::internal::table_macro::FromClause<QS>,
+            ST,
+            DB,
+        >: diesel::JoinTo<table>,
+        QS: diesel::query_source::QuerySource,
+    {
+        type FromClause = diesel::internal::table_macro::BoxedSelectStatement<
+            'a,
+            diesel::internal::table_macro::FromClause<QS>,
+            ST,
+            DB,
+        >;
+        type OnClause = <diesel::internal::table_macro::BoxedSelectStatement<
+            'a,
+            diesel::internal::table_macro::FromClause<QS>,
+            ST,
+            DB,
+        > as diesel::JoinTo<table>>::OnClause;
+        fn join_target(
+            __diesel_internal_rhs: diesel::internal::table_macro::BoxedSelectStatement<
+                'a,
+                diesel::internal::table_macro::FromClause<QS>,
+                ST,
+                DB,
+            >,
+        ) -> (Self::FromClause, Self::OnClause) {
+            let (_, __diesel_internal_on_clause) = diesel::internal::table_macro::BoxedSelectStatement::join_target(
+                table,
+            );
+            (__diesel_internal_rhs, __diesel_internal_on_clause)
+        }
+    }
+    impl<S> diesel::JoinTo<diesel::query_source::Alias<S>> for table
+    where
+        diesel::query_source::Alias<S>: diesel::JoinTo<table>,
+    {
+        type FromClause = diesel::query_source::Alias<S>;
+        type OnClause = <diesel::query_source::Alias<
+            S,
+        > as diesel::JoinTo<table>>::OnClause;
+        fn join_target(
+            __diesel_internal_rhs: diesel::query_source::Alias<S>,
+        ) -> (Self::FromClause, Self::OnClause) {
+            let (_, __diesel_internal_on_clause) = diesel::query_source::Alias::<
+                S,
+            >::join_target(table);
+            (__diesel_internal_rhs, __diesel_internal_on_clause)
+        }
+    }
+    impl<T> diesel::insertable::Insertable<T> for table
+    where
+        <table as diesel::query_builder::AsQuery>::Query: diesel::insertable::Insertable<
+            T,
+        >,
+    {
+        type Values = <<table as diesel::query_builder::AsQuery>::Query as diesel::insertable::Insertable<
+            T,
+        >>::Values;
+        fn values(self) -> Self::Values {
+            use diesel::query_builder::AsQuery;
+            self.as_query().values()
+        }
+    }
+    impl<'a, T> diesel::insertable::Insertable<T> for &'a table
+    where
+        table: diesel::insertable::Insertable<T>,
+    {
+        type Values = <table as diesel::insertable::Insertable<T>>::Values;
+        fn values(self) -> Self::Values {
+            (*self).values()
+        }
+    }
+    impl<S> diesel::JoinTo<diesel::query_builder::Only<S>> for table
+    where
+        diesel::query_builder::Only<S>: diesel::JoinTo<table>,
+    {
+        type FromClause = diesel::query_builder::Only<S>;
+        type OnClause = <diesel::query_builder::Only<
+            S,
+        > as diesel::JoinTo<table>>::OnClause;
+        fn join_target(
+            __diesel_internal_rhs: diesel::query_builder::Only<S>,
+        ) -> (Self::FromClause, Self::OnClause) {
+            let (_, __diesel_internal_on_clause) = diesel::query_builder::Only::<
+                S,
+            >::join_target(table);
+            (__diesel_internal_rhs, __diesel_internal_on_clause)
+        }
+    }
+    impl diesel::query_source::AppearsInFromClause<diesel::query_builder::Only<table>>
+    for table {
+        type Count = diesel::query_source::Once;
+    }
+    impl diesel::query_source::AppearsInFromClause<table>
+    for diesel::query_builder::Only<table> {
+        type Count = diesel::query_source::Once;
+    }
+    impl<S, TSM> diesel::JoinTo<diesel::query_builder::Tablesample<S, TSM>> for table
+    where
+        diesel::query_builder::Tablesample<S, TSM>: diesel::JoinTo<table>,
+        TSM: diesel::internal::table_macro::TablesampleMethod,
+    {
+        type FromClause = diesel::query_builder::Tablesample<S, TSM>;
+        type OnClause = <diesel::query_builder::Tablesample<
+            S,
+            TSM,
+        > as diesel::JoinTo<table>>::OnClause;
+        fn join_target(
+            __diesel_internal_rhs: diesel::query_builder::Tablesample<S, TSM>,
+        ) -> (Self::FromClause, Self::OnClause) {
+            let (_, __diesel_internal_on_clause) = diesel::query_builder::Tablesample::<
+                S,
+                TSM,
+            >::join_target(table);
+            (__diesel_internal_rhs, __diesel_internal_on_clause)
+        }
+    }
+    impl<
+        TSM,
+    > diesel::query_source::AppearsInFromClause<
+        diesel::query_builder::Tablesample<table, TSM>,
+    > for table
+    where
+        TSM: diesel::internal::table_macro::TablesampleMethod,
+    {
+        type Count = diesel::query_source::Once;
+    }
+    impl<TSM> diesel::query_source::AppearsInFromClause<table>
+    for diesel::query_builder::Tablesample<table, TSM>
+    where
+        TSM: diesel::internal::table_macro::TablesampleMethod,
+    {
+        type Count = diesel::query_source::Once;
+    }
+    /// Contains all of the columns of this table
+    pub mod columns {
+        use ::diesel;
+        use super::table;
+        use diesel::sql_types::*;
+        #[allow(non_camel_case_types, dead_code)]
+        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+        /// Represents `table_name.*`, which is sometimes needed for
+        /// efficient count queries. It cannot be used in place of
+        /// `all_columns`, and has a `SqlType` of `()` to prevent it
+        /// being used that way
+        pub struct star;
+        impl<__GB> diesel::expression::ValidGrouping<__GB> for star
+        where
+            (id, name): diesel::expression::ValidGrouping<__GB>,
+        {
+            type IsAggregate = <(
+                id,
+                name,
+            ) as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
+        }
+        impl diesel::Expression for star {
+            type SqlType = diesel::expression::expression_types::NotSelectable;
+        }
+        impl<DB: diesel::backend::Backend> diesel::query_builder::QueryFragment<DB>
+        for star
+        where
+            <table as diesel::QuerySource>::FromClause: diesel::query_builder::QueryFragment<
+                DB,
+            >,
+        {
+            #[allow(non_snake_case)]
+            fn walk_ast<'b>(
+                &'b self,
+                mut __diesel_internal_out: diesel::query_builder::AstPass<'_, 'b, DB>,
+            ) -> diesel::result::QueryResult<()> {
+                use diesel::QuerySource;
+                if !__diesel_internal_out.should_skip_from() {
+                    const FROM_CLAUSE: diesel::internal::table_macro::StaticQueryFragmentInstance<
+                        table,
+                    > = diesel::internal::table_macro::StaticQueryFragmentInstance::new();
+                    FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())?;
+                    __diesel_internal_out.push_sql(".");
+                }
+                __diesel_internal_out.push_sql("*");
+                Ok(())
+            }
+        }
+        impl diesel::SelectableExpression<table> for star {}
+        impl diesel::AppearsOnTable<table> for star {}
+        #[allow(non_camel_case_types, dead_code)]
+        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default)]
+        pub struct id;
+        impl diesel::expression::Expression for id {
+            type SqlType = Integer;
+        }
+        impl<DB> diesel::query_builder::QueryFragment<DB> for id
+        where
+            DB: diesel::backend::Backend,
+            diesel::internal::table_macro::StaticQueryFragmentInstance<
+                table,
+            >: diesel::query_builder::QueryFragment<DB>,
+        {
+            #[allow(non_snake_case)]
+            fn walk_ast<'b>(
+                &'b self,
+                mut __diesel_internal_out: diesel::query_builder::AstPass<'_, 'b, DB>,
+            ) -> diesel::result::QueryResult<()> {
+                if !__diesel_internal_out.should_skip_from() {
+                    const FROM_CLAUSE: diesel::internal::table_macro::StaticQueryFragmentInstance<
+                        table,
+                    > = diesel::internal::table_macro::StaticQueryFragmentInstance::new();
+                    FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())?;
+                    __diesel_internal_out.push_sql(".");
+                }
+                __diesel_internal_out.push_identifier("id")
+            }
+        }
+        impl diesel::SelectableExpression<super::table> for id {}
+        impl<QS> diesel::AppearsOnTable<QS> for id
+        where
+            QS: diesel::query_source::AppearsInFromClause<
+                super::table,
+                Count = diesel::query_source::Once,
+            >,
+        {}
+        impl<
+            Left,
+            Right,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::Join<
+                Left,
+                Right,
+                diesel::internal::table_macro::LeftOuter,
+            >,
+        > for id
+        where
+            id: diesel::AppearsOnTable<
+                diesel::internal::table_macro::Join<
+                    Left,
+                    Right,
+                    diesel::internal::table_macro::LeftOuter,
+                >,
+            >,
+            Self: diesel::SelectableExpression<Left>,
+            Right: diesel::query_source::AppearsInFromClause<
+                    super::table,
+                    Count = diesel::query_source::Never,
+                > + diesel::query_source::QuerySource,
+            Left: diesel::query_source::QuerySource,
+        {}
+        impl<
+            Left,
+            Right,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::Join<
+                Left,
+                Right,
+                diesel::internal::table_macro::Inner,
+            >,
+        > for id
+        where
+            id: diesel::AppearsOnTable<
+                diesel::internal::table_macro::Join<
+                    Left,
+                    Right,
+                    diesel::internal::table_macro::Inner,
+                >,
+            >,
+            Left: diesel::query_source::AppearsInFromClause<super::table>
+                + diesel::query_source::QuerySource,
+            Right: diesel::query_source::AppearsInFromClause<super::table>
+                + diesel::query_source::QuerySource,
+            (
+                Left::Count,
+                Right::Count,
+            ): diesel::internal::table_macro::Pick<Left, Right>,
+            Self: diesel::SelectableExpression<
+                <(
+                    Left::Count,
+                    Right::Count,
+                ) as diesel::internal::table_macro::Pick<Left, Right>>::Selection,
+            >,
+        {}
+        impl<
+            Join,
+            On,
+        > diesel::SelectableExpression<diesel::internal::table_macro::JoinOn<Join, On>>
+        for id
+        where
+            id: diesel::SelectableExpression<Join>
+                + diesel::AppearsOnTable<
+                    diesel::internal::table_macro::JoinOn<Join, On>,
+                >,
+        {}
+        impl<
+            From,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::SelectStatement<
+                diesel::internal::table_macro::FromClause<From>,
+            >,
+        > for id
+        where
+            From: diesel::query_source::QuerySource,
+            id: diesel::SelectableExpression<From>
+                + diesel::AppearsOnTable<
+                    diesel::internal::table_macro::SelectStatement<
+                        diesel::internal::table_macro::FromClause<From>,
+                    >,
+                >,
+        {}
+        impl<__GB> diesel::expression::ValidGrouping<__GB> for id
+        where
+            __GB: diesel::expression::IsContainedInGroupBy<
+                id,
+                Output = diesel::expression::is_contained_in_group_by::Yes,
+            >,
+        {
+            type IsAggregate = diesel::expression::is_aggregate::Yes;
+        }
+        impl diesel::expression::ValidGrouping<()> for id {
+            type IsAggregate = diesel::expression::is_aggregate::No;
+        }
+        impl diesel::expression::IsContainedInGroupBy<id> for id {
+            type Output = diesel::expression::is_contained_in_group_by::Yes;
+        }
+        impl diesel::query_source::Column for id {
+            type Table = super::table;
+            const NAME: &'static str = "id";
+        }
+        impl<T> diesel::EqAll<T> for id
+        where
+            T: diesel::expression::AsExpression<Integer>,
+            diesel::dsl::Eq<
+                id,
+                T::Expression,
+            >: diesel::Expression<SqlType = diesel::sql_types::Bool>,
+        {
+            type Output = diesel::dsl::Eq<Self, T::Expression>;
+            fn eq_all(self, __diesel_internal_rhs: T) -> Self::Output {
+                use diesel::expression_methods::ExpressionMethods;
+                self.eq(__diesel_internal_rhs)
+            }
+        }
+        impl<Rhs> ::std::ops::Add<Rhs> for id
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Add>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Add<Self, Rhs::Expression>;
+            fn add(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Add::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        impl<Rhs> ::std::ops::Sub<Rhs> for id
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Sub>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Sub<Self, Rhs::Expression>;
+            fn sub(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Sub::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        impl<Rhs> ::std::ops::Div<Rhs> for id
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Div>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Div<Self, Rhs::Expression>;
+            fn div(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Div::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        impl<Rhs> ::std::ops::Mul<Rhs> for id
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Mul>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Mul<Self, Rhs::Expression>;
+            fn mul(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Mul::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        impl diesel::query_source::AppearsInFromClause<
+            diesel::query_builder::Only<super::table>,
+        > for id {
+            type Count = diesel::query_source::Once;
+        }
+        impl diesel::SelectableExpression<diesel::query_builder::Only<super::table>>
+        for id {}
+        impl<
+            TSM,
+        > diesel::query_source::AppearsInFromClause<
+            diesel::query_builder::Tablesample<super::table, TSM>,
+        > for id
+        where
+            TSM: diesel::internal::table_macro::TablesampleMethod,
+        {
+            type Count = diesel::query_source::Once;
+        }
+        impl<
+            TSM,
+        > diesel::SelectableExpression<
+            diesel::query_builder::Tablesample<super::table, TSM>,
+        > for id
+        where
+            TSM: diesel::internal::table_macro::TablesampleMethod,
+        {}
+        #[allow(non_camel_case_types, dead_code)]
+        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default)]
+        pub struct name;
+        impl diesel::expression::Expression for name {
+            type SqlType = Text;
+        }
+        impl<DB> diesel::query_builder::QueryFragment<DB> for name
+        where
+            DB: diesel::backend::Backend,
+            diesel::internal::table_macro::StaticQueryFragmentInstance<
+                table,
+            >: diesel::query_builder::QueryFragment<DB>,
+        {
+            #[allow(non_snake_case)]
+            fn walk_ast<'b>(
+                &'b self,
+                mut __diesel_internal_out: diesel::query_builder::AstPass<'_, 'b, DB>,
+            ) -> diesel::result::QueryResult<()> {
+                if !__diesel_internal_out.should_skip_from() {
+                    const FROM_CLAUSE: diesel::internal::table_macro::StaticQueryFragmentInstance<
+                        table,
+                    > = diesel::internal::table_macro::StaticQueryFragmentInstance::new();
+                    FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())?;
+                    __diesel_internal_out.push_sql(".");
+                }
+                __diesel_internal_out.push_identifier("name")
+            }
+        }
+        impl diesel::SelectableExpression<super::table> for name {}
+        impl<QS> diesel::AppearsOnTable<QS> for name
+        where
+            QS: diesel::query_source::AppearsInFromClause<
+                super::table,
+                Count = diesel::query_source::Once,
+            >,
+        {}
+        impl<
+            Left,
+            Right,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::Join<
+                Left,
+                Right,
+                diesel::internal::table_macro::LeftOuter,
+            >,
+        > for name
+        where
+            name: diesel::AppearsOnTable<
+                diesel::internal::table_macro::Join<
+                    Left,
+                    Right,
+                    diesel::internal::table_macro::LeftOuter,
+                >,
+            >,
+            Self: diesel::SelectableExpression<Left>,
+            Right: diesel::query_source::AppearsInFromClause<
+                    super::table,
+                    Count = diesel::query_source::Never,
+                > + diesel::query_source::QuerySource,
+            Left: diesel::query_source::QuerySource,
+        {}
+        impl<
+            Left,
+            Right,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::Join<
+                Left,
+                Right,
+                diesel::internal::table_macro::Inner,
+            >,
+        > for name
+        where
+            name: diesel::AppearsOnTable<
+                diesel::internal::table_macro::Join<
+                    Left,
+                    Right,
+                    diesel::internal::table_macro::Inner,
+                >,
+            >,
+            Left: diesel::query_source::AppearsInFromClause<super::table>
+                + diesel::query_source::QuerySource,
+            Right: diesel::query_source::AppearsInFromClause<super::table>
+                + diesel::query_source::QuerySource,
+            (
+                Left::Count,
+                Right::Count,
+            ): diesel::internal::table_macro::Pick<Left, Right>,
+            Self: diesel::SelectableExpression<
+                <(
+                    Left::Count,
+                    Right::Count,
+                ) as diesel::internal::table_macro::Pick<Left, Right>>::Selection,
+            >,
+        {}
+        impl<
+            Join,
+            On,
+        > diesel::SelectableExpression<diesel::internal::table_macro::JoinOn<Join, On>>
+        for name
+        where
+            name: diesel::SelectableExpression<Join>
+                + diesel::AppearsOnTable<
+                    diesel::internal::table_macro::JoinOn<Join, On>,
+                >,
+        {}
+        impl<
+            From,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::SelectStatement<
+                diesel::internal::table_macro::FromClause<From>,
+            >,
+        > for name
+        where
+            From: diesel::query_source::QuerySource,
+            name: diesel::SelectableExpression<From>
+                + diesel::AppearsOnTable<
+                    diesel::internal::table_macro::SelectStatement<
+                        diesel::internal::table_macro::FromClause<From>,
+                    >,
+                >,
+        {}
+        impl<__GB> diesel::expression::ValidGrouping<__GB> for name
+        where
+            __GB: diesel::expression::IsContainedInGroupBy<
+                name,
+                Output = diesel::expression::is_contained_in_group_by::Yes,
+            >,
+        {
+            type IsAggregate = diesel::expression::is_aggregate::Yes;
+        }
+        impl diesel::expression::ValidGrouping<()> for name {
+            type IsAggregate = diesel::expression::is_aggregate::No;
+        }
+        impl diesel::expression::IsContainedInGroupBy<name> for name {
+            type Output = diesel::expression::is_contained_in_group_by::Yes;
+        }
+        impl diesel::query_source::Column for name {
+            type Table = super::table;
+            const NAME: &'static str = "name";
+        }
+        impl<T> diesel::EqAll<T> for name
+        where
+            T: diesel::expression::AsExpression<Text>,
+            diesel::dsl::Eq<
+                name,
+                T::Expression,
+            >: diesel::Expression<SqlType = diesel::sql_types::Bool>,
+        {
+            type Output = diesel::dsl::Eq<Self, T::Expression>;
+            fn eq_all(self, __diesel_internal_rhs: T) -> Self::Output {
+                use diesel::expression_methods::ExpressionMethods;
+                self.eq(__diesel_internal_rhs)
+            }
+        }
+        impl diesel::query_source::AppearsInFromClause<
+            diesel::query_builder::Only<super::table>,
+        > for name {
+            type Count = diesel::query_source::Once;
+        }
+        impl diesel::SelectableExpression<diesel::query_builder::Only<super::table>>
+        for name {}
+        impl<
+            TSM,
+        > diesel::query_source::AppearsInFromClause<
+            diesel::query_builder::Tablesample<super::table, TSM>,
+        > for name
+        where
+            TSM: diesel::internal::table_macro::TablesampleMethod,
+        {
+            type Count = diesel::query_source::Once;
+        }
+        impl<
+            TSM,
+        > diesel::SelectableExpression<
+            diesel::query_builder::Tablesample<super::table, TSM>,
+        > for name
+        where
+            TSM: diesel::internal::table_macro::TablesampleMethod,
+        {}
+        impl diesel::expression::IsContainedInGroupBy<id> for name {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        impl diesel::expression::IsContainedInGroupBy<name> for id {
+            type Output = diesel::expression::is_contained_in_group_by::Yes;
+        }
+    }
+}

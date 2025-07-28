@@ -1,0 +1,59 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(Insertable)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
+---
+#[allow(unused_imports)]
+#[allow(unused_qualifications)]
+const _: () = {
+    use diesel;
+    impl diesel::insertable::Insertable<users::table> for User {
+        type Values = <(
+            std::option::Option<diesel::dsl::Eq<users::r#id, i32>>,
+            std::option::Option<diesel::dsl::Eq<users::r#name, String>>,
+        ) as diesel::insertable::Insertable<users::table>>::Values;
+        fn values(
+            self,
+        ) -> <(
+            std::option::Option<diesel::dsl::Eq<users::r#id, i32>>,
+            std::option::Option<diesel::dsl::Eq<users::r#name, String>>,
+        ) as diesel::insertable::Insertable<users::table>>::Values {
+            diesel::insertable::Insertable::<
+                users::table,
+            >::values((
+                std::option::Option::Some(
+                    diesel::ExpressionMethods::eq(users::r#id, self.id),
+                ),
+                std::option::Option::Some(
+                    diesel::ExpressionMethods::eq(users::r#name, self.name),
+                ),
+            ))
+        }
+    }
+    impl<'insert> diesel::insertable::Insertable<users::table> for &'insert User {
+        type Values = <(
+            std::option::Option<diesel::dsl::Eq<users::r#id, &'insert i32>>,
+            std::option::Option<diesel::dsl::Eq<users::r#name, &'insert String>>,
+        ) as diesel::insertable::Insertable<users::table>>::Values;
+        fn values(
+            self,
+        ) -> <(
+            std::option::Option<diesel::dsl::Eq<users::r#id, &'insert i32>>,
+            std::option::Option<diesel::dsl::Eq<users::r#name, &'insert String>>,
+        ) as diesel::insertable::Insertable<users::table>>::Values {
+            diesel::insertable::Insertable::<
+                users::table,
+            >::values((
+                std::option::Option::Some(
+                    diesel::ExpressionMethods::eq(users::r#id, &self.id),
+                ),
+                std::option::Option::Some(
+                    diesel::ExpressionMethods::eq(users::r#name, &self.name),
+                ),
+            ))
+        }
+    }
+    impl diesel::internal::derives::insertable::UndecoratedInsertRecord<users::table>
+    for User {}
+};

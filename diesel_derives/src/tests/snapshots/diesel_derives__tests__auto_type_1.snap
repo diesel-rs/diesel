@@ -1,0 +1,12 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[diesel::dsl::auto_type]\nfn foo() -> _ {\n    users::table.select(users::id)\n}\n"
+---
+#[allow(non_camel_case_types)]
+type foo = diesel::dsl::Select<users::table, users::id>;
+#[allow(clippy::needless_lifetimes)]
+fn foo() -> foo {
+    users::table.select(users::id)
+}
