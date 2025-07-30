@@ -617,14 +617,14 @@ where
     if let Some(max_length) = ty.max_length {
         query_builder.push_sql(&format!("({max_length})"));
     }
+    if ty.is_array {
+        query_builder.push_sql("[]");
+    }
     if !ty.is_nullable {
         query_builder.push_sql(" NOT NULL");
     }
     if ty.is_unsigned {
         query_builder.push_sql(" UNSIGNED");
-    }
-    if ty.is_array {
-        query_builder.push_sql("[]");
     }
 }
 
