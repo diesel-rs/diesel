@@ -7,7 +7,7 @@ edition.workspace = true
 publish = false
 
 [dependencies]
-diesel = { version = "2.2.0", path = "../../../diesel", features = ["sqlite"] }
+diesel = { version = "2.2.0", path = "../../../diesel",package = "juspay_diesel", features = ["sqlite"] }
 libsqlite3-sys = { workspace = true, features = ["bundled"] }
 dotenvy = "0.15"
 

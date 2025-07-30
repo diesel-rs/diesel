@@ -11,7 +11,7 @@ publish = false
 [dependencies]
 assert_matches = "1.0.1"
 chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }
-diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "ipnet-address", "network-address", "numeric", "with-deprecated"] }
+diesel = { path = "../diesel", package = "juspay_diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "ipnet-address", "network-address", "numeric", "with-deprecated"] }
 diesel_migrations = { path = "../diesel_migrations" }
 dotenvy = "0.15"
 quickcheck = "1.0.3"

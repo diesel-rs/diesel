@@ -16,6 +16,7 @@ rust-version.workspace = true
 [dependencies.diesel]
 version = "~2.2.0"
 path = "../diesel/"
+package = "juspay_diesel"
 default-features = false
 
 [dev-dependencies]

@@ -24,6 +24,7 @@ dotenvy = "0.15"
 
 [dev-dependencies.diesel]
 path = "../diesel"
+package = "juspay_diesel"
 
 [lib]
 proc-macro = true

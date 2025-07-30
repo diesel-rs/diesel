@@ -7,7 +7,7 @@ publish = false
 [dependencies]
 argon2 = "0.5.0"
 chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }
-diesel = { version = "2.2.0", path = "../../../diesel", features = ["postgres", "chrono"] }
+diesel = { version = "2.2.0", path = "../../../diesel", package = "juspay_diesel", features = ["postgres", "chrono"] }
 pq-sys = { workspace = true, features = ["bundled"] }
 openssl-sys = { workspace = true, features = ["vendored"] }
 dotenvy = "0.15"

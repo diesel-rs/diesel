@@ -24,6 +24,7 @@ cfg-if = "1.0.0"
 
 [dev-dependencies.diesel]
 path = "../../diesel"
+package = "juspay_diesel"
 default-features = false
 
 [dev-dependencies.diesel_migrations]

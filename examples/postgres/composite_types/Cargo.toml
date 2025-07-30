@@ -7,7 +7,7 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-diesel = { version = "2.2.0", path = "../../../diesel", features = ["postgres" ] }
+diesel = { version = "2.2.0", path = "../../../diesel",package = "juspay_diesel", features = ["postgres" ] }
 pq-sys = { workspace = true, features = ["bundled"] }
 openssl-sys = { workspace = true, features = ["vendored"] }
 dotenvy = "0.15"

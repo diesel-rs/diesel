@@ -18,4 +18,4 @@ quote = "1"
 syn = { version = "2", features = ["extra-traits", "full", "derive", "parsing", "visit"] }
 
 [dev-dependencies]
-diesel = { path = "../diesel" }
+diesel = { path = "../diesel", package = "juspay_diesel"}
