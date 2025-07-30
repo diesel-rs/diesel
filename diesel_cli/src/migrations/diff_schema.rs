@@ -614,11 +614,11 @@ where
 {
     // TODO: handle schema
     query_builder.push_sql(&format!(" {}", ty.sql_name.to_uppercase()));
-    if let Some(max_length) = ty.max_length {
-        query_builder.push_sql(&format!("({max_length})"));
-    }
     if ty.is_array {
         query_builder.push_sql("[]");
+    }
+    if let Some(max_length) = ty.max_length {
+        query_builder.push_sql(&format!("({max_length})"));
     }
     if !ty.is_nullable {
         query_builder.push_sql(" NOT NULL");
