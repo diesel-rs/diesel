@@ -44,6 +44,8 @@ mod save_changes_dsl;
 #[doc(hidden)]
 pub mod select_dsl;
 mod single_value_dsl;
+#[doc(hidden)]
+pub mod schema_name_dsl;
 
 pub use self::belonging_to_dsl::BelongingToDsl;
 pub use self::combine_dsl::CombineDsl;
@@ -75,6 +77,7 @@ pub mod methods {
     pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;
     pub use super::single_value_dsl::SingleValueDsl;
+    pub use super::schema_name_dsl::SchemaNameDsl;
 
     #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
     #[doc(hidden)]
@@ -1390,6 +1393,13 @@ pub trait QueryDsl: Sized {
         Self: methods::SelectNullableDsl,
     {
         methods::SelectNullableDsl::nullable(self)
+    }
+
+    fn schema_name(self, schema_name: &String) -> SchameName<Self>
+    where
+        Self: methods::SchemaNameDsl,
+    {
+        methods::SchemaNameDsl::schema_name(self, schema_name)
     }
 }
 

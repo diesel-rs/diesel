@@ -437,6 +437,9 @@ pub mod helper_types {
     pub type Limit<Source, DummyArgForAutoType = i64> =
         <Source as LimitDsl<DummyArgForAutoType>>::Output;
 
+    /// Represents the return type of [`.schema_name()`](crate::prelude::SchemaNameDsl::schema_name)
+    pub type SchameName<Source> = <Source as SchemaNameDsl>::Output;
+
     /// Represents the return type of [`.offset()`](crate::prelude::QueryDsl::offset)
     pub type Offset<Source, DummyArgForAutoType = i64> =
         <Source as OffsetDsl<DummyArgForAutoType>>::Output;
