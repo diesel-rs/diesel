@@ -19,9 +19,10 @@ const _: () = {
     {
         type Row = (i32, String);
         fn build(row: (i32, String)) -> diesel::deserialize::Result<Self> {
+            use std::convert::TryInto;
             Ok(Self {
-                id: std::convert::TryInto::try_into(row.0)?,
-                name: std::convert::TryInto::try_into(row.1)?,
+                id: row.0.try_into()?,
+                name: row.1.try_into()?,
             })
         }
     }
