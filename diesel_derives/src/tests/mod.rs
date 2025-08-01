@@ -119,6 +119,7 @@ mod diesel_for_each_tuple;
 mod diesel_numeric_ops;
 mod diesel_public_if;
 mod from_sql_row;
+mod has_query;
 mod identifiable;
 mod insertable;
 mod multiconnection;

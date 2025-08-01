@@ -10,12 +10,13 @@ use syn::token::Comma;
 use syn::{Attribute, Expr, Ident, LitBool, LitStr, Path, Type, TypePath};
 
 use crate::deprecated::ParseDeprecated;
+use crate::model::CheckForBackend;
 use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
 use crate::util::{
-    parse_eq, parse_paren, unknown_attribute, BELONGS_TO_NOTE, COLUMN_NAME_NOTE,
-    DESERIALIZE_AS_NOTE, MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE, SELECT_EXPRESSION_NOTE,
-    SELECT_EXPRESSION_TYPE_NOTE, SERIALIZE_AS_NOTE, SQLITE_TYPE_NOTE, SQL_TYPE_NOTE,
-    TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE,
+    parse_eq, parse_paren, unknown_attribute, BASE_QUERY_NOTE, BASE_QUERY_TYPE_NOTE,
+    BELONGS_TO_NOTE, COLUMN_NAME_NOTE, DESERIALIZE_AS_NOTE, MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE,
+    SELECT_EXPRESSION_NOTE, SELECT_EXPRESSION_TYPE_NOTE, SERIALIZE_AS_NOTE, SQLITE_TYPE_NOTE,
+    SQL_TYPE_NOTE, TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE,
 };
 
 use crate::util::{parse_paren_list, CHECK_FOR_BACKEND_NOTE};
@@ -231,7 +232,9 @@ pub enum StructAttr {
     SqliteType(Ident, SqliteType),
     PostgresType(Ident, PostgresType),
     PrimaryKey(Ident, Punctuated<Ident, Comma>),
-    CheckForBackend(Ident, syn::punctuated::Punctuated<TypePath, syn::Token![,]>),
+    CheckForBackend(Ident, CheckForBackend),
+    BaseQuery(Ident, Expr),
+    BaseQueryType(Ident, Type),
 }
 
 impl Parse for StructAttr {
@@ -278,11 +281,28 @@ impl Parse for StructAttr {
                 name,
                 parse_paren_list(input, "key1, key2", syn::Token![,])?,
             )),
-            "check_for_backend" => Ok(StructAttr::CheckForBackend(
+            "check_for_backend" => {
+                let value = if parse_paren::<DisabledCheckForBackend>(&input.fork(), "").is_ok() {
+                    CheckForBackend::Disabled(
+                        parse_paren::<DisabledCheckForBackend>(&input.fork(), "")?.value,
+                    )
+                } else {
+                    CheckForBackend::Backends(parse_paren_list(
+                        input,
+                        CHECK_FOR_BACKEND_NOTE,
+                        syn::Token![,],
+                    )?)
+                };
+                Ok(StructAttr::CheckForBackend(name, value))
+            }
+            "base_query" => Ok(StructAttr::BaseQuery(
                 name,
-                parse_paren_list(input, CHECK_FOR_BACKEND_NOTE, syn::Token![,])?,
+                parse_eq(input, BASE_QUERY_NOTE)?,
             )),
-
+            "base_query_type" => Ok(StructAttr::BaseQueryType(
+                name,
+                parse_eq(input, BASE_QUERY_TYPE_NOTE)?,
+            )),
             _ => Err(unknown_attribute(
                 &name,
                 &[
@@ -299,6 +319,8 @@ impl Parse for StructAttr {
                     "postgres_type",
                     "primary_key",
                     "check_for_backend",
+                    "base_query",
+                    "base_query_type",
                 ],
             )),
         }
@@ -320,6 +342,8 @@ impl MySpanned for StructAttr {
             | StructAttr::SqliteType(ident, _)
             | StructAttr::PostgresType(ident, _)
             | StructAttr::CheckForBackend(ident, _)
+            | StructAttr::BaseQuery(ident, _)
+            | StructAttr::BaseQueryType(ident, _)
             | StructAttr::PrimaryKey(ident, _) => ident.span(),
         }
     }
@@ -367,4 +391,29 @@ where
         }
     }
     Ok(out)
+}
+
+struct DisabledCheckForBackend {
+    value: LitBool,
+}
+
+impl syn::parse::Parse for DisabledCheckForBackend {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let ident = input.parse::<Ident>()?;
+        if ident != "disable" {
+            return Err(syn::Error::new(
+                ident.span(),
+                format!("expected `disable`, but got `{ident}`"),
+            ));
+        }
+        let lit = parse_eq::<LitBool>(input, "")?;
+        if !lit.value {
+            return Err(syn::Error::new(
+                lit.span(),
+                "only `true` is accepted in this position. \
+                 If you want to enable these checks, just skip the attribute entirely",
+            ));
+        }
+        Ok(Self { value: lit })
+    }
 }
