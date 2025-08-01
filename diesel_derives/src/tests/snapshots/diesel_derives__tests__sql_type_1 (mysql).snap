@@ -2,7 +2,7 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "#[derive(SqlType)]\n#[diesel(postgres_type(oid = 42, array_oid = 142))]\n#[diesel(mysql_type(name = \"Integer\"))]\n#[diesel(sqlite_type(name = \"Integer\"))]\nstruct Integer;\n"
+  input: "#[derive(SqlType)]\n#[diesel(mysql_type(name = \"Long\"))]\nstruct Integer;\n"
 ---
 const _: () = {
     use diesel;
@@ -13,7 +13,7 @@ const _: () = {
     impl diesel::sql_types::SingleValue for Integer {}
     impl diesel::sql_types::HasSqlType<Integer> for diesel::mysql::Mysql {
         fn metadata(_: &mut ()) -> diesel::mysql::MysqlType {
-            diesel::mysql::MysqlType::Integer
+            diesel::mysql::MysqlType::Long
         }
     }
 };

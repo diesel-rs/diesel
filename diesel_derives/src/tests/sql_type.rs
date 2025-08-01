@@ -4,10 +4,18 @@ use super::expand_with;
 
 #[test]
 pub(crate) fn sql_type_1() {
+    let input = if cfg!(feature = "postgres") {
+        quote::quote! {#[diesel(postgres_type(oid = 42, array_oid = 142))]}
+    } else if cfg!(feature = "sqlite") {
+        quote::quote! {#[diesel(sqlite_type(name = "Integer"))]}
+    } else if cfg!(feature = "mysql") {
+        quote::quote! {#[diesel(mysql_type(name = "Long"))]}
+    } else {
+        unreachable!("At least one featuer must be enabled");
+    };
+
     let input = quote::quote! {
-        #[diesel(postgres_type(oid = 42, array_oid = 142))]
-        #[diesel(mysql_type(name = "Integer"))]
-        #[diesel(sqlite_type(name = "Integer"))]
+        #input
         struct Integer;
     };
 
