@@ -536,8 +536,16 @@ fn derive_query_id_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenS
 /// * `#[diesel(deserialize_as = Type)]`, instead of deserializing directly
 ///   into the field type, the implementation will deserialize into `Type`.
 ///   Then `Type` is converted via
-///   [`.try_into`](https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html#tymethod.try_into)
-///   into the field type. By default, this derive will deserialize directly into the field type
+///   `.try_into()` call into the field type. By default, this derive will deserialize directly into the field type
+///   The `try_into()` method can be provided by:
+///   + Implementing any of the [`TryInto`]/[`TryFrom`]/[`Into`]/[`From`] traits
+///   + Using an method on the type directly (Useful if it's not possible to implement the traits mentioned above
+///     due to the orphan rule)
+///
+/// [`TryInto`]: https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html
+/// [`TryFrom`]: https://doc.rust-lang.org/stable/std/convert/trait.TryFrom.html
+/// [`Into`]: https://doc.rust-lang.org/stable/std/convert/trait.Into.html
+/// [`From`]: https://doc.rust-lang.org/stable/std/convert/trait.From.html
 ///
 /// # Examples
 ///

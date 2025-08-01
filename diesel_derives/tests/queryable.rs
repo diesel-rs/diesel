@@ -100,3 +100,45 @@ fn name_conflict() {
     let data = select(sql::<(Integer, Integer)>("1, 2")).get_result(conn);
     assert_eq!(Ok(MyStruct(1, 2)), data);
 }
+
+#[allow(dead_code)] // that's essentially a compile test
+#[test]
+fn check_can_also_use_an_associated_function_with_try_into() {
+    table! {
+        tests {
+            id -> Integer,
+            name -> Text,
+            r#type -> Text,
+        }
+    }
+
+    struct MyString(String);
+
+    impl<ST, DB> Queryable<ST, DB> for MyString
+    where
+        DB: diesel::backend::Backend,
+        String: diesel::deserialize::FromStaticSqlRow<ST, DB>,
+    {
+        type Row = String;
+
+        fn build(row: Self::Row) -> deserialize::Result<Self> {
+            Ok(Self(row))
+        }
+    }
+
+    impl MyString {
+        pub fn try_into(self) -> diesel::deserialize::Result<String> {
+            Ok(self.0)
+        }
+    }
+
+    #[derive(Queryable, Selectable)]
+    #[diesel(check_for_backend(crate::helpers::TestBackend))]
+    struct Test {
+        id: i32,
+        #[diesel(deserialize_as = MyString)]
+        name: String,
+        #[diesel(deserialize_as = MyString)]
+        r#type: String,
+    }
+}
