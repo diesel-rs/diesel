@@ -23,6 +23,17 @@ where
     const SIZE: usize = 1;
 }
 
+macro_rules! fake_variadic {
+    (1i32 -> $($tt: tt)*) => {
+        #[cfg_attr(docsrs, doc(fake_variadic))]
+        $($tt)*
+    };
+    ($idx:tt -> $($tt: tt)*) => {
+        #[cfg_attr(docsrs, doc(hidden))]
+        $($tt)*
+    };
+}
+
 macro_rules! tuple_impls {
     ($(
         $Tuple:tt {
@@ -30,64 +41,82 @@ macro_rules! tuple_impls {
         }
     )+) => {
         $(
-            impl<$($T),+, __DB> HasSqlType<($($T,)+)> for __DB where
-                $(__DB: HasSqlType<$T>),+,
-                __DB: Backend,
-            {
-                fn metadata(_: &mut __DB::MetadataLookup) -> __DB::TypeMetadata {
-                    unreachable!("Tuples should never implement `ToSql` directly");
+            fake_variadic!{
+                $Tuple ->
+                impl<$($T),+, __DB> HasSqlType<($($T,)+)> for __DB where
+                    $(__DB: HasSqlType<$T>),+,
+                    __DB: Backend,
+                {
+                    fn metadata(_: &mut __DB::MetadataLookup) -> __DB::TypeMetadata {
+                        unreachable!("Tuples should never implement `ToSql` directly");
+                    }
                 }
             }
 
             impl_from_sql_row!(($($T,)+), ($($ST,)+));
 
 
-            #[diagnostic::do_not_recommend]
-            impl<$($T: Expression),+> Expression for ($($T,)+)
-            where ($($T::SqlType, )*): TypedExpressionType
-            {
-                type SqlType = ($(<$T as Expression>::SqlType,)+);
+            fake_variadic! {
+                $Tuple ->
+                #[diagnostic::do_not_recommend]
+                impl<$($T: Expression),+> Expression for ($($T,)+)
+                where ($($T::SqlType, )*): TypedExpressionType
+                {
+                    type SqlType = ($(<$T as Expression>::SqlType,)+);
+                }
             }
-
-            impl<$($T: TypedExpressionType,)*> TypedExpressionType for ($($T,)*) {}
-            impl<$($T: SqlType + TypedExpressionType,)*> TypedExpressionType for Nullable<($($T,)*)>
-            where ($($T,)*): SqlType
-            {
+            fake_variadic! {
+                $Tuple -> impl<$($T: TypedExpressionType,)*> TypedExpressionType for ($($T,)*) {}
             }
-
-            impl<$($T: SqlType,)*> IntoNullable for ($($T,)*)
+            fake_variadic! {
+                $Tuple ->
+                impl<$($T: SqlType + TypedExpressionType,)*> TypedExpressionType for Nullable<($($T,)*)>
+                where ($($T,)*): SqlType
+                {
+                }
+            }
+            fake_variadic! {
+                $Tuple ->
+                impl<$($T: SqlType,)*> IntoNullable for ($($T,)*)
                 where Self: SqlType,
-            {
-                type Nullable = Nullable<($($T,)*)>;
-            }
-
-            impl<$($T,)+ __DB> Selectable<__DB> for ($($T,)+)
-            where
-                __DB: Backend,
-                $($T: Selectable<__DB>),+,
-            {
-                type SelectExpression = ($($T::SelectExpression,)+);
-
-                fn construct_selection() -> Self::SelectExpression {
-                    ($($T::construct_selection(),)+)
+                {
+                    type Nullable = Nullable<($($T,)*)>;
                 }
             }
 
-            impl<$($T: QueryFragment<__DB>),+, __DB: Backend> QueryFragment<__DB> for ($($T,)+) {
-                #[allow(unused_assignments)]
-                fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()>
+            fake_variadic! {
+                $Tuple ->
+                impl<$($T,)+ __DB> Selectable<__DB> for ($($T,)+)
+                where
+                    __DB: Backend,
+                $($T: Selectable<__DB>),+,
                 {
-                    let mut needs_comma = false;
-                    $(
-                        if !self.$idx.is_noop(out.backend())? {
-                            if needs_comma {
-                                out.push_sql(", ");
+                    type SelectExpression = ($($T::SelectExpression,)+);
+
+                    fn construct_selection() -> Self::SelectExpression {
+                        ($($T::construct_selection(),)+)
+                    }
+                }
+            }
+
+            fake_variadic! {
+                $Tuple ->
+                impl<$($T: QueryFragment<__DB>),+, __DB: Backend> QueryFragment<__DB> for ($($T,)+) {
+                    #[allow(unused_assignments)]
+                    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()>
+                    {
+                        let mut needs_comma = false;
+                        $(
+                            if !self.$idx.is_noop(out.backend())? {
+                                if needs_comma {
+                                    out.push_sql(", ");
+                                }
+                                self.$idx.walk_ast(out.reborrow())?;
+                                needs_comma = true;
                             }
-                            self.$idx.walk_ast(out.reborrow())?;
-                            needs_comma = true;
-                        }
-                    )+
-                    Ok(())
+                        )+
+                            Ok(())
+                    }
                 }
             }
 
@@ -110,10 +139,13 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T: QueryId),+> QueryId for ($($T,)+) {
-                type QueryId = ($($T::QueryId,)+);
+            fake_variadic! {
+                $Tuple ->
+                impl<$($T: QueryId),+> QueryId for ($($T,)+) {
+                    type QueryId = ($($T::QueryId,)+);
 
-                const HAS_STATIC_QUERY_ID: bool = $($T::HAS_STATIC_QUERY_ID &&)+ true;
+                    const HAS_STATIC_QUERY_ID: bool = $($T::HAS_STATIC_QUERY_ID &&)+ true;
+                }
             }
 
             impl_valid_grouping_for_tuple_of_columns!($($T,)*);
@@ -135,27 +167,34 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T,)+ $($ST,)+ Tab> Insertable<Tab> for ($($T,)+)
-            where
-                $($T: Insertable<Tab, Values = ValuesClause<$ST, Tab>>,)+
-            {
-                type Values = ValuesClause<($($ST,)+), Tab>;
+            fake_variadic! {
+                $Tuple ->
+                impl<$($T,)+ $($ST,)+ Tab> Insertable<Tab> for ($($T,)+)
+                where
+                    $($T: Insertable<Tab, Values = ValuesClause<$ST, Tab>>,)+
+                {
+                    type Values = ValuesClause<($($ST,)+), Tab>;
 
-                fn values(self) -> Self::Values {
-                    ValuesClause::new(($(self.$idx.values().values,)+))
+                    fn values(self) -> Self::Values {
+                        ValuesClause::new(($(self.$idx.values().values,)+))
+                    }
                 }
             }
 
-            impl<'a, $($T,)+ Tab> Insertable<Tab> for &'a ($($T,)+)
-            where
-                ($(&'a $T,)+): Insertable<Tab>,
-            {
-                type Values = <($(&'a $T,)+) as Insertable<Tab>>::Values;
+            // that isn't supported by the derive yet?
+            // fake_variadic! {
+            //     $Tuple ->
+                impl<'a, $($T,)+ Tab> Insertable<Tab> for &'a ($($T,)+)
+                where
+                    ($(&'a $T,)+): Insertable<Tab>,
+                {
+                    type Values = <($(&'a $T,)+) as Insertable<Tab>>::Values;
 
-                fn values(self) -> Self::Values {
-                    ($(&self.$idx,)+).values()
+                    fn values(self) -> Self::Values {
+                        ($(&self.$idx,)+).values()
+                    }
                 }
-            }
+//            }
 
             #[allow(unused_assignments)]
             impl<$($T,)+ Tab, __DB> InsertValues<__DB, Tab> for ($($T,)+)
@@ -201,36 +240,45 @@ macro_rules! tuple_impls {
             {
             }
 
-            impl<$($T,)+ QS> AppearsOnTable<QS> for ($($T,)+) where
-                $($T: AppearsOnTable<QS>,)+
-                ($($T,)+): Expression,
-            {
-            }
-
-            impl<Target, $($T,)+> AsChangeset for ($($T,)+) where
-                $($T: AsChangeset<Target=Target>,)+
-                Target: QuerySource,
-            {
-                type Target = Target;
-                type Changeset = ($($T::Changeset,)+);
-
-                fn as_changeset(self) -> Self::Changeset {
-                    ($(self.$idx.as_changeset(),)+)
+            fake_variadic! {
+                $Tuple ->
+                impl<$($T,)+ QS> AppearsOnTable<QS> for ($($T,)+) where
+                    $($T: AppearsOnTable<QS>,)+
+                    ($($T,)+): Expression,
+                {
                 }
             }
 
-            impl<$($T,)+ Parent> BelongsTo<Parent> for ($($T,)+) where
-                T0: BelongsTo<Parent>,
-            {
-                type ForeignKey = T0::ForeignKey;
-                type ForeignKeyColumn = T0::ForeignKeyColumn;
+            fake_variadic! {
+                $Tuple ->
+                impl<Target, $($T,)+> AsChangeset for ($($T,)+) where
+                    $($T: AsChangeset<Target=Target>,)+
+                    Target: QuerySource,
+                {
+                    type Target = Target;
+                    type Changeset = ($($T::Changeset,)+);
 
-                fn foreign_key(&self) -> Option<&Self::ForeignKey> {
-                    self.0.foreign_key()
+                    fn as_changeset(self) -> Self::Changeset {
+                        ($(self.$idx.as_changeset(),)+)
+                    }
                 }
+            }
 
-                fn foreign_key_column() -> Self::ForeignKeyColumn {
-                    T0::foreign_key_column()
+            fake_variadic! {
+                $Tuple ->
+                impl<$($T,)+ Parent> BelongsTo<Parent> for ($($T,)+) where
+                    T: BelongsTo<Parent>,
+                {
+                    type ForeignKey = T::ForeignKey;
+                    type ForeignKeyColumn = T::ForeignKeyColumn;
+
+                    fn foreign_key(&self) -> Option<&Self::ForeignKey> {
+                        self.0.foreign_key()
+                    }
+
+                    fn foreign_key_column() -> Self::ForeignKeyColumn {
+                        T::foreign_key_column()
+                    }
                 }
             }
 
@@ -246,46 +294,57 @@ macro_rules! tuple_impls {
 
             impl_sql_type!($($T,)*);
 
-            impl<$($T,)* __DB, $($ST,)*> Queryable<($($ST,)*), __DB> for ($($T,)*)
-            where __DB: Backend,
-                  Self: FromStaticSqlRow<($($ST,)*), __DB>,
-            {
-                type Row = Self;
-
-                fn build(row: Self::Row) -> deserialize::Result<Self> {
-                    Ok(row)
-                }
-            }
-
-            impl<__T, $($ST,)*  __DB> FromStaticSqlRow<Nullable<($($ST,)*)>, __DB> for Option<__T> where
-                __DB: Backend,
-                ($($ST,)*): SqlType,
-                __T: FromSqlRow<($($ST,)*), __DB>,
-            {
-
-                #[allow(non_snake_case, unused_variables, unused_mut)]
-                fn build_from_row<'a>(row: &impl Row<'a, __DB>)
-                                      -> deserialize::Result<Self>
+            fake_variadic! {
+                $Tuple ->
+                impl<$($T,)* __DB, $($ST,)*> Queryable<($($ST,)*), __DB> for ($($T,)*)
+                where __DB: Backend,
+                      Self: FromStaticSqlRow<($($ST,)*), __DB>,
                 {
-                    match <__T as FromSqlRow<($($ST,)*), __DB>>::build_from_row(row) {
-                        Ok(v) => Ok(Some(v)),
-                        Err(e) if e.is::<crate::result::UnexpectedNullError>() => Ok(None),
-                        Err(e) => Err(e)
+                    type Row = Self;
+
+                    fn build(row: Self::Row) -> deserialize::Result<Self> {
+                        Ok(row)
                     }
                 }
             }
 
-            impl<__T,  __DB, $($ST,)*> Queryable<Nullable<($($ST,)*)>, __DB> for Option<__T>
-            where __DB: Backend,
-                  Self: FromStaticSqlRow<Nullable<($($ST,)*)>, __DB>,
-                  ($($ST,)*): SqlType,
-            {
-                type Row = Self;
+            // That's unfortunally not supported yet
+            // fake_variadic! {
+            //     $Tuple ->
+                impl<__T, $($ST,)*  __DB> FromStaticSqlRow<Nullable<($($ST,)*)>, __DB> for Option<__T> where
+                    __DB: Backend,
+                ($($ST,)*): SqlType,
+                    __T: FromSqlRow<($($ST,)*), __DB>,
+                {
 
-                fn build(row: Self::Row) -> deserialize::Result<Self> {
-                    Ok(row)
+                    #[allow(non_snake_case, unused_variables, unused_mut)]
+                    fn build_from_row<'a>(row: &impl Row<'a, __DB>)
+                                          -> deserialize::Result<Self>
+                    {
+                        match <__T as FromSqlRow<($($ST,)*), __DB>>::build_from_row(row) {
+                            Ok(v) => Ok(Some(v)),
+                            Err(e) if e.is::<crate::result::UnexpectedNullError>() => Ok(None),
+                            Err(e) => Err(e)
+                        }
+                    }
                 }
-            }
+            //}
+
+            // That's unfortunally not supported yet
+            // fake_variadic! {
+            //     $Tuple ->
+                impl<__T,  __DB, $($ST,)*> Queryable<Nullable<($($ST,)*)>, __DB> for Option<__T>
+                where __DB: Backend,
+                      Self: FromStaticSqlRow<Nullable<($($ST,)*)>, __DB>,
+                ($($ST,)*): SqlType,
+                {
+                    type Row = Self;
+
+                    fn build(row: Self::Row) -> deserialize::Result<Self> {
+                        Ok(row)
+                    }
+                }
+            //}
 
             impl<$($T,)*> TupleSize for ($($T,)*)
                 where $($T: TupleSize,)*
@@ -300,36 +359,46 @@ macro_rules! tuple_impls {
                 const SIZE: usize = $($T::SIZE +)* 0;
             }
 
-            impl<$($T,)* __DB> QueryMetadata<($($T,)*)> for __DB
-            where __DB: Backend,
-                 $(__DB: QueryMetadata<$T>,)*
-            {
-                fn row_metadata(lookup: &mut Self::MetadataLookup, row: &mut Vec<Option<__DB::TypeMetadata>>) {
-                    $(
-                        <__DB as QueryMetadata<$T>>::row_metadata(lookup, row);
-                    )*
+            fake_variadic! {
+                $Tuple ->
+                impl<$($T,)* __DB> QueryMetadata<($($T,)*)> for __DB
+                where __DB: Backend,
+                $(__DB: QueryMetadata<$T>,)*
+                {
+                    fn row_metadata(lookup: &mut Self::MetadataLookup, row: &mut Vec<Option<__DB::TypeMetadata>>) {
+                        $(
+                            <__DB as QueryMetadata<$T>>::row_metadata(lookup, row);
+                        )*
+                    }
                 }
             }
 
-            impl<$($T,)* __DB> QueryMetadata<Nullable<($($T,)*)>> for __DB
-            where __DB: Backend,
-                  $(__DB: QueryMetadata<$T>,)*
-            {
-                fn row_metadata(lookup: &mut Self::MetadataLookup, row: &mut Vec<Option<__DB::TypeMetadata>>) {
-                    $(
-                        <__DB as QueryMetadata<$T>>::row_metadata(lookup, row);
-                    )*
+            // That's unfortunally not supported yet
+            // fake_variadic! {
+            //     $Tuple ->
+                impl<$($T,)* __DB> QueryMetadata<Nullable<($($T,)*)>> for __DB
+                where __DB: Backend,
+                $(__DB: QueryMetadata<$T>,)*
+                {
+                    fn row_metadata(lookup: &mut Self::MetadataLookup, row: &mut Vec<Option<__DB::TypeMetadata>>) {
+                        $(
+                            <__DB as QueryMetadata<$T>>::row_metadata(lookup, row);
+                        )*
+                    }
                 }
-            }
+            //}
 
-            impl<$($T,)* __DB> deserialize::QueryableByName< __DB> for ($($T,)*)
-            where __DB: Backend,
-            $($T: deserialize::QueryableByName<__DB>,)*
-            {
-                fn build<'a>(row: &impl NamedRow<'a, __DB>) -> deserialize::Result<Self> {
-                    Ok(($(
-                        <$T as deserialize::QueryableByName<__DB>>::build(row)?,
-                    )*))
+            fake_variadic! {
+                $Tuple ->
+                impl<$($T,)* __DB> deserialize::QueryableByName< __DB> for ($($T,)*)
+                where __DB: Backend,
+                $($T: deserialize::QueryableByName<__DB>,)*
+                {
+                    fn build<'a>(row: &impl NamedRow<'a, __DB>) -> deserialize::Result<Self> {
+                        Ok(($(
+                            <$T as deserialize::QueryableByName<__DB>>::build(row)?,
+                        )*))
+                    }
                 }
             }
 
@@ -363,6 +432,7 @@ macro_rules! tuple_impls {
 
 macro_rules! impl_from_sql_row {
     (($T1: ident,), ($ST1: ident,)) => {
+        #[cfg_attr(docsrs, doc(fake_variadic))]
         impl<$T1, $ST1, __DB> crate::deserialize::FromStaticSqlRow<($ST1,), __DB> for ($T1,) where
             __DB: Backend,
             $ST1: CompatibleType<$T1, __DB>,
@@ -378,6 +448,7 @@ macro_rules! impl_from_sql_row {
         }
     };
     (($T1: ident, $($T: ident,)*), ($ST1: ident, $($ST: ident,)*)) => {
+        #[cfg_attr(docsrs, doc(hidden))]
         #[diagnostic::do_not_recommend]
         impl<$T1, $($T,)* $($ST,)* __DB> FromSqlRow<($($ST,)* crate::sql_types::Untyped), __DB> for ($($T,)* $T1)
         where __DB: Backend,
@@ -405,6 +476,7 @@ macro_rules! impl_from_sql_row {
             }
         }
 
+        #[cfg_attr(docsrs, doc(hidden))]
         impl<$T1, $ST1, $($T,)* $($ST,)* __DB> FromStaticSqlRow<($($ST,)* $ST1,), __DB> for ($($T,)* $T1,) where
             __DB: Backend,
             $ST1: CompatibleType<$T1, __DB>,
@@ -439,6 +511,7 @@ macro_rules! impl_from_sql_row {
 
 macro_rules! impl_valid_grouping_for_tuple_of_columns {
     ($T1: ident, $($T: ident,)+) => {
+        #[cfg_attr(docsrs, doc(hidden))]
         impl<$T1, $($T,)* __GroupByClause> ValidGrouping<__GroupByClause> for ($T1, $($T,)*)
         where
             $T1: ValidGrouping<__GroupByClause>,
@@ -465,6 +538,7 @@ macro_rules! impl_valid_grouping_for_tuple_of_columns {
             type Output = <$T1 as IsContainedInGroupBy<Col>>::Output;
         }
 
+        #[cfg_attr(docsrs, doc(fake_variadic))]
         impl<$T1, __GroupByClause> ValidGrouping<__GroupByClause> for ($T1,)
             where $T1: ValidGrouping<__GroupByClause>
         {
@@ -481,6 +555,7 @@ macro_rules! impl_sql_type {
         bounds = [$($bounds: tt)*],
         is_null = [$($is_null: tt)*],
     )=> {
+        #[cfg_attr(docsrs, doc(hidden))]
         impl<$($ST,)*> SqlType for ($($ST,)*)
         where
             $($ST: SqlType,)*
@@ -516,6 +591,7 @@ macro_rules! impl_sql_type {
         }
     };
     ($T1: ident,) => {
+        #[cfg_attr(docsrs, doc(fake_variadic))]
         impl<$T1> SqlType for ($T1,)
         where $T1: SqlType,
         {

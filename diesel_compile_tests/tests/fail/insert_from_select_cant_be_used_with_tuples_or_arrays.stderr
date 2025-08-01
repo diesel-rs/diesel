@@ -6,13 +6,13 @@ LL |     insert_into(posts).values(vec![users, users]);
    |
    = help: the following other types implement trait `UndecoratedInsertRecord<Table>`:
              `&T` implements `UndecoratedInsertRecord<Tab>`
-             `(T0, T1)` implements `UndecoratedInsertRecord<Tab>`
-             `(T0, T1, T2)` implements `UndecoratedInsertRecord<Tab>`
-             `(T0, T1, T2, T3)` implements `UndecoratedInsertRecord<Tab>`
-             `(T0, T1, T2, T3, T4)` implements `UndecoratedInsertRecord<Tab>`
-             `(T0, T1, T2, T3, T4, T5)` implements `UndecoratedInsertRecord<Tab>`
-             `(T0, T1, T2, T3, T4, T5, T6)` implements `UndecoratedInsertRecord<Tab>`
-             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `UndecoratedInsertRecord<Tab>`
+             `(T, T1)` implements `UndecoratedInsertRecord<Tab>`
+             `(T, T1, T2)` implements `UndecoratedInsertRecord<Tab>`
+             `(T, T1, T2, T3)` implements `UndecoratedInsertRecord<Tab>`
+             `(T, T1, T2, T3, T4)` implements `UndecoratedInsertRecord<Tab>`
+             `(T, T1, T2, T3, T4, T5)` implements `UndecoratedInsertRecord<Tab>`
+             `(T, T1, T2, T3, T4, T5, T6)` implements `UndecoratedInsertRecord<Tab>`
+             `(T, T1, T2, T3, T4, T5, T6, T7)` implements `UndecoratedInsertRecord<Tab>`
            and N others
    = note: required for `Vec<users::table>` to implement `diesel::Insertable<posts::table>`
 

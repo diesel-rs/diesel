@@ -15,9 +15,20 @@ pub(crate) fn expand(input: ForEachTupleInput) -> TokenStream {
 
     let pairs = (0..input.max_size as usize)
         .map(|i| {
-            let t = Ident::new(&format!("T{i}"), call_side);
-            let st = Ident::new(&format!("ST{i}"), call_side);
-            let tt = Ident::new(&format!("TT{i}"), call_side);
+            let (t, st, tt) = if i == 0 {
+                // special case these, as #[doc(fake_variadic)]
+                // uses the first generic parameter as `T_n` and `T_n` looks
+                // much better than `T0_n`
+                let t = Ident::new("T", call_side);
+                let st = Ident::new("ST", call_side);
+                let tt = Ident::new("TT", call_side);
+                (t, st, tt)
+            } else {
+                let t = Ident::new(&format!("T{i}"), call_side);
+                let st = Ident::new(&format!("ST{i}"), call_side);
+                let tt = Ident::new(&format!("TT{i}"), call_side);
+                (t, st, tt)
+            };
             let i = syn::Index::from(i);
             quote!((#i) -> #t, #st, #tt,)
         })

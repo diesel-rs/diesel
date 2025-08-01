@@ -101,14 +101,14 @@ LL |         .select(users::id)
    |
    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
    = help: the following other types implement trait `IsContainedInGroupBy<T>`:
-             `(T0, T1)` implements `IsContainedInGroupBy<Col>`
-             `(T0, T1, T2)` implements `IsContainedInGroupBy<Col>`
-             `(T0, T1, T2, T3)` implements `IsContainedInGroupBy<Col>`
-             `(T0, T1, T2, T3, T4)` implements `IsContainedInGroupBy<Col>`
-             `(T0, T1, T2, T3, T4, T5)` implements `IsContainedInGroupBy<Col>`
-             `(T0, T1, T2, T3, T4, T5, T6)` implements `IsContainedInGroupBy<Col>`
-             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `IsContainedInGroupBy<Col>`
-             `(T0, T1, T2, T3, T4, T5, T6, T7, T8)` implements `IsContainedInGroupBy<Col>`
+             `(T, T1)` implements `IsContainedInGroupBy<Col>`
+             `(T, T1, T2)` implements `IsContainedInGroupBy<Col>`
+             `(T, T1, T2, T3)` implements `IsContainedInGroupBy<Col>`
+             `(T, T1, T2, T3, T4)` implements `IsContainedInGroupBy<Col>`
+             `(T, T1, T2, T3, T4, T5)` implements `IsContainedInGroupBy<Col>`
+             `(T, T1, T2, T3, T4, T5, T6)` implements `IsContainedInGroupBy<Col>`
+             `(T, T1, T2, T3, T4, T5, T6, T7)` implements `IsContainedInGroupBy<Col>`
+             `(T, T1, T2, T3, T4, T5, T6, T7, T8)` implements `IsContainedInGroupBy<Col>`
            and N others
 note: required for `users::columns::id` to implement `ValidGrouping<AliasedField<post1, posts::columns::id>>`
   --> tests/fail/invalid_group_by.rs:8:9

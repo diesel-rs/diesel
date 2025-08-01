@@ -9,12 +9,12 @@ error[E0277]: the trait bound `lag<Text, name>: ValidGrouping<()>` is not satisf
     = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
               `&T` implements `ValidGrouping<GB>`
               `()` implements `ValidGrouping<GB>`
-              `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
             and N others
     = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::window_functions::lag_utils::lag<diesel::sql_types::Text, columns::name>>`
     = note: 1 redundant requirement hidden
@@ -40,12 +40,12 @@ error[E0277]: the trait bound `diesel::expression::functions::window_functions::
     = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
               `&T` implements `ValidGrouping<GB>`
               `()` implements `ValidGrouping<GB>`
-              `(T0, T1)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
-              `(T0, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
             and N others
     = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::window_functions::rank_utils::rank>`
     = note: 1 redundant requirement hidden

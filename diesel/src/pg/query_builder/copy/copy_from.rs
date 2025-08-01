@@ -193,12 +193,12 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
         }
     )+) => {
         $(
-            impl<T, $($ST,)* $($T,)* $($TT,)*> CopyFromInsertableHelper for ValuesClause<
+            impl<__T, $($ST,)* $($T,)* $($TT,)*> CopyFromInsertableHelper for ValuesClause<
                 ($(ColumnInsertValue<$ST, Bound<$T, $TT>>,)*),
-            T>
+            __T>
                 where
-                T: Table,
-                $($ST: Column<Table = T>,)*
+                __T: Table,
+                $($ST: Column<Table = __T>,)*
                 ($($ST,)*): CopyTarget,
                 $($TT: ToSql<$T, Pg>,)*
             {
@@ -228,12 +228,12 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
                 }
             }
 
-            impl<'a, T, $($ST,)* $($T,)* $($TT,)*> CopyFromInsertableHelper for ValuesClause<
+            impl<'a, __T, $($ST,)* $($T,)* $($TT,)*> CopyFromInsertableHelper for ValuesClause<
                 ($(ColumnInsertValue<$ST, &'a Bound<$T, $TT>>,)*),
-            T>
+            __T>
                 where
-                T: Table,
-                $($ST: Column<Table = T>,)*
+                __T: Table,
+                $($ST: Column<Table = __T>,)*
                 ($($ST,)*): CopyTarget,
                 $($TT: ToSql<$T, Pg>,)*
             {

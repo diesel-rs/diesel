@@ -1,6 +1,6 @@
 use self::private::SqlOrdAggregate;
 #[cfg(doc)]
-use super::aggregate_expressions::AggregateExpressionMethods;
+use super::aggregate_expressions::{AggregateExpressionMethods, WindowExpressionMethods};
 use crate::expression::functions::declare_sql_function;
 
 #[declare_sql_function]
