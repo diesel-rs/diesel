@@ -50,6 +50,7 @@ LL |         id -> Integer,
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `AppearsOnTable<users::table>`
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::id` from `users::table`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:27:30
@@ -85,3 +86,4 @@ LL |         id -> Integer,
    = note: required for `(posts::columns::id, users::columns::name)` to implement `AppearsOnTable<users::table>`
    = note: required for `(posts::columns::id, users::columns::name)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, users::columns::name)>`
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

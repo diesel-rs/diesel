@@ -1,5 +1,5 @@
 error[E0412]: cannot find type `titel` in module `posts`
-  --> tests/fail/selectable.rs:53:5
+  --> tests/fail/selectable.rs:55:5
    |
 LL |         title -> Text,
    |         ----- similarly named struct `title` defined here
@@ -8,7 +8,7 @@ LL |     titel: String,
    |     ^^^^^ help: a struct with a similar name exists: `title`
 
 error[E0425]: cannot find value `titel` in module `posts`
-  --> tests/fail/selectable.rs:53:5
+  --> tests/fail/selectable.rs:55:5
    |
 LL |         title -> Text,
    |         ----- similarly named unit struct `title` defined here
@@ -83,7 +83,8 @@ note: required for `posts::columns::id` to implement `SelectableExpression<query
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
    --> tests/fail/selectable.rs:165:10
     |
@@ -108,7 +109,8 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
     --> tests/fail/selectable.rs:169:15
      |
@@ -189,7 +191,8 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
     --> tests/fail/selectable.rs:169:15
      |
@@ -226,7 +229,8 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::id>` is not satisfied
    --> tests/fail/selectable.rs:179:10
     |
@@ -247,7 +251,8 @@ note: required for `users::columns::id` to implement `ValidGrouping<posts::colum
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `ValidGrouping<posts::columns::id>`
     = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::name>` is not satisfied
    --> tests/fail/selectable.rs:179:10
     |
@@ -268,7 +273,8 @@ note: required for `users::columns::name` to implement `ValidGrouping<posts::col
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `ValidGrouping<posts::columns::id>`
     = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/selectable.rs:188:10
     |
@@ -378,7 +384,8 @@ LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:201:15
      |
@@ -473,7 +480,8 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::id` from `users::table`
    --> tests/fail/selectable.rs:211:20
     |
@@ -565,7 +573,8 @@ LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, Retur
 LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:215:15
      |
@@ -660,7 +669,8 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::id` from `users::table`
    --> tests/fail/selectable.rs:224:20
     |
@@ -746,6 +756,7 @@ LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, Returnin
 LL |     where
 LL |         E: SelectableExpression<T>,
     |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:228:15
@@ -841,7 +852,8 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0599]: the function or associated item `as_select` exists for struct `UserWithoutSelectable`, but its trait bounds were not satisfied
    --> tests/fail/selectable.rs:236:40
     |

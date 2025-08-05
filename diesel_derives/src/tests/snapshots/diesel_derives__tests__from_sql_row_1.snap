@@ -4,8 +4,6 @@ expression: out
 info:
   input: "#[derive(FromSqlRow)]\nenum Foo {\n    Bar,\n    Baz,\n}\n"
 ---
-#[allow(unused_imports)]
-#[allow(unused_qualifications)]
 const _: () = {
     use diesel;
     impl<__DB, __ST> diesel::deserialize::Queryable<__ST, __DB> for Foo

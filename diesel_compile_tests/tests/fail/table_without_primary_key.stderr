@@ -14,3 +14,5 @@ error: neither an explicit primary key found nor does an `id` column exist.
   |
 LL |     user {
   |     ^^^^
+  |
+  = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

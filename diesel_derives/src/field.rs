@@ -127,11 +127,11 @@ impl Field {
             Some(x) => FieldName::Named(x),
             None => FieldName::Unnamed(index.into()),
         };
-
         let span = match name {
             FieldName::Named(ref ident) => ident.span(),
             FieldName::Unnamed(_) => ty.span(),
         };
+        let span = Span::mixed_site().located_at(span);
 
         Ok(Self {
             ty: ty.clone(),

@@ -11,6 +11,7 @@ LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `GroupByDsl<posts::columns::id>`
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<id as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/invalid_group_by.rs:29:10
@@ -31,7 +32,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<posts::colum
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
-      = note: this error originates in the macro `__static_cond` which comes from the expansion of the macro `allow_columns_to_appear_in_same_group_by_clause` (in Nightly builds, run with -Z macro-backtrace for more info)
+      = note: this error originates in the macro `__static_cond` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<FromClause<table> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:37:10
@@ -47,7 +48,8 @@ LL |         id -> Integer,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `SelectStatement<FromClause<table>, SelectClause<id>>` to implement `GroupByDsl<posts::columns::id>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<FromClause<Alias<user1>> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:46:10
    |
@@ -61,6 +63,7 @@ LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `SelectStatement<FromClause<Alias<user1>>>` to implement `GroupByDsl<posts::columns::id>`
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `AliasedField<user1, users::columns::id>: ValidGrouping<posts::columns::id>` is not satisfied
    --> tests/fail/invalid_group_by.rs:48:17
@@ -117,7 +120,8 @@ note: required for `users::columns::id` to implement `ValidGrouping<AliasedField
    |         ^^
    = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<FromClause<Alias<user1>> as AppearsInFromClause<Alias<post1>>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:62:10
    |
@@ -163,7 +167,8 @@ LL |         id -> Integer,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `SelectStatement<FromClause<Alias<user1>>, SelectClause<...>>` to implement `GroupByDsl<posts::columns::id>`
 
-   
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<FromClause<table> as AppearsInFromClause<Alias<post1>>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:78:10
    |

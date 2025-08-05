@@ -81,3 +81,5 @@ LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, Retu
 LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
