@@ -54,6 +54,6 @@ fn main() {
     diesel::copy_to(users::table)
         .with_format(CopyFormat::Csv)
         .load::<User, _>(conn)
-        //~^ ERROR: the method `load` exists for struct `CopyToQuery<table, CopyToOptions>`, but its trait bounds were not satisfied
+        //~^ ERROR: the method `load` exists for struct `CopyToQuery<users::table, pg::query_builder::copy::copy_to::CopyToOptions>`, but its trait bounds were not satisfied
         .unwrap();
 }
