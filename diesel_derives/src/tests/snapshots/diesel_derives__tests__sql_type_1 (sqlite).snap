@@ -2,7 +2,7 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "#[derive(SqlType)]\n#[diesel(postgres_type(oid = 42, array_oid = 142))]\n#[diesel(mysql_type(name = \"Integer\"))]\n#[diesel(sqlite_type(name = \"Integer\"))]\nstruct Integer;\n"
+  input: "#[derive(SqlType)]\n#[diesel(sqlite_type(name = \"Integer\"))]\nstruct Integer;\n"
 ---
 const _: () = {
     use diesel;
