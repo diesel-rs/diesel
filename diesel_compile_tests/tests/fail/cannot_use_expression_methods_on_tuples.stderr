@@ -1,4 +1,4 @@
-error[E0599]: the method `is_not_null` exists for tuple `(id, name)`, but its trait bounds were not satisfied
+error[E0599]: the method `is_not_null` exists for tuple `(columns::id, columns::name)`, but its trait bounds were not satisfied
   --> tests/fail/cannot_use_expression_methods_on_tuples.rs:18:29
    |
 LL |     users.filter((id, name).is_not_null());
@@ -12,7 +12,7 @@ LL |     users.filter((id, name).is_not_null());
            `&mut (columns::id, columns::name): diesel::Expression`
            which is required by `&mut (columns::id, columns::name): diesel::ExpressionMethods`
 
-error[E0599]: the method `eq_any` exists for tuple `(id, name)`, but its trait bounds were not satisfied
+error[E0599]: the method `eq_any` exists for tuple `(columns::id, columns::name)`, but its trait bounds were not satisfied
   --> tests/fail/cannot_use_expression_methods_on_tuples.rs:20:29
    |
 LL |     users.filter((id, name).eq_any(users.find(1)));
