@@ -35,7 +35,7 @@ table! {
 pub fn load_table_names(
     connection: &mut SqliteConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<(SupportedColumnStructures, TableName)>, crate::errors::Error> {
+) -> Result<Vec<(SupportedQueryRelationStructures, TableName)>, crate::errors::Error> {
     use self::sqlite_master::dsl::*;
 
     if schema_name.is_some() {
@@ -51,7 +51,7 @@ pub fn load_table_names(
         .into_iter()
         .map(|table| {
             (
-                SupportedColumnStructures::Table,
+                SupportedQueryRelationStructures::Table,
                 TableName::from_name(table),
             )
         });
@@ -63,7 +63,12 @@ pub fn load_table_names(
         .order(name)
         .load::<String>(connection)?
         .into_iter()
-        .map(|table| (SupportedColumnStructures::View, TableName::from_name(table)));
+        .map(|table| {
+            (
+                SupportedQueryRelationStructures::View,
+                TableName::from_name(table),
+            )
+        });
 
     Ok(tables.chain(view).collect())
 }

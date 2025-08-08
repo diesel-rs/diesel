@@ -113,7 +113,7 @@ pub fn rust_name_for_sql_name(sql_name: &str) -> String {
 pub fn load_table_names(
     connection: &mut InferConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<(SupportedColumnStructures, TableName)>, crate::errors::Error> {
+) -> Result<Vec<(SupportedQueryRelationStructures, TableName)>, crate::errors::Error> {
     let tables = match connection {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref mut c) => super::sqlite::load_table_names(c, schema_name),
@@ -132,8 +132,8 @@ pub fn load_table_names(
 }
 
 pub fn filter_column_structure(
-    table_names: &[(SupportedColumnStructures, TableName)],
-    structure: SupportedColumnStructures,
+    table_names: &[(SupportedQueryRelationStructures, TableName)],
+    structure: SupportedQueryRelationStructures,
 ) -> Vec<TableName> {
     table_names
         .iter()
@@ -143,9 +143,9 @@ pub fn filter_column_structure(
 }
 
 pub fn filter_table_names(
-    table_names: Vec<(SupportedColumnStructures, TableName)>,
+    table_names: Vec<(SupportedQueryRelationStructures, TableName)>,
     table_filter: &Filtering,
-) -> Vec<(SupportedColumnStructures, TableName)> {
+) -> Vec<(SupportedQueryRelationStructures, TableName)> {
     table_names
         .into_iter()
         .filter(|(_, t)| !table_filter.should_ignore_table(t))

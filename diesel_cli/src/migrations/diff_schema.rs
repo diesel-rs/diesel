@@ -12,7 +12,7 @@ use crate::config::PrintSchema;
 use crate::database::InferConnection;
 use crate::infer_schema_internals::{
     filter_table_names, load_table_names, ColumnDefinition, ColumnType, ForeignKeyConstraint,
-    SupportedColumnStructures, TableData, TableName,
+    SupportedQueryRelationStructures, TableData, TableName,
 };
 use crate::print_schema::{ColumnSorting, DocConfig};
 
@@ -103,7 +103,7 @@ pub fn generate_sql_based_on_diff_schema(
     for (structure, table) in tables_from_database {
         tracing::info!(?table, "Diff for existing table");
         match structure {
-            SupportedColumnStructures::Table => {
+            SupportedQueryRelationStructures::Table => {
                 let columns = crate::infer_schema_internals::load_table_data(
                     &mut conn,
                     table.clone(),
@@ -152,9 +152,9 @@ pub fn generate_sql_based_on_diff_schema(
                     });
                 }
             }
-            SupportedColumnStructures::View => {
+            SupportedQueryRelationStructures::View => {
                 return Err(crate::errors::Error::UnsupportedFeature(
-                    "Views are not supported by --diff-schema yet".into(),
+                    "Views are not supported by `--diff-schema`".into(),
                 ));
             }
         }
@@ -167,7 +167,7 @@ pub fn generate_sql_based_on_diff_schema(
             .unwrap_or_default()
             .into_iter()
             .filter_map(|j| {
-                let referenced_table = table_pk_key_list.get(&t.view.table_name.to_string())?;
+                let referenced_table = table_pk_key_list.get(&j.parent_table.to_string())?;
                 match referenced_table {
                     None => Some((j, "id".into())),
                     Some(pks) if pks.len() == 1 => Some((j, pks.first()?.to_string())),

@@ -53,9 +53,6 @@ fn inner_main() -> Result<(), crate::errors::Error> {
     let filter = EnvFilter::from_env("DIESEL_LOG");
     let fmt = tracing_subscriber::fmt::layer();
 
-    // let stdout_log = tracing_subscriber::fmt::layer()
-    //     .pretty();
-
     tracing_subscriber::Registry::default()
         .with(filter)
         .with(fmt)

@@ -1,4 +1,6 @@
 use diesel_table_macro_syntax::ColumnDef;
+use std::fmt::{self, Display};
+use std::str::FromStr;
 
 use super::{table_data::TableName, TableData, ViewData};
 
@@ -132,11 +134,6 @@ impl ColumnType {
     }
 }
 
-use std::{
-    fmt::{self, Display},
-    str::FromStr,
-};
-
 impl fmt::Display for ColumnType {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         if self.is_nullable {
@@ -214,18 +211,18 @@ impl ForeignKeyConstraint {
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-pub enum SupportedColumnStructures {
+pub enum SupportedQueryRelationStructures {
     View,
     Table,
 }
 
 #[derive(Debug)]
-pub enum ColumnData {
+pub enum QueryRelationData {
     View(ViewData),
     Table(TableData),
 }
 
-impl ColumnData {
+impl QueryRelationData {
     pub fn table_name(&self) -> &TableName {
         match &self {
             Self::Table(table) => &table.name,
@@ -248,17 +245,14 @@ impl ColumnData {
     }
 }
 
-impl Display for SupportedColumnStructures {
+impl Display for SupportedQueryRelationStructures {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let format = match self {
-            Self::Table => "BASE TABLE",
-            Self::View => "VIEW",
-        };
+        let format = self.to_str();
         write!(f, "{format}")
     }
 }
 
-impl FromStr for SupportedColumnStructures {
+impl FromStr for SupportedQueryRelationStructures {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -269,14 +263,21 @@ impl FromStr for SupportedColumnStructures {
     }
 }
 
-impl SupportedColumnStructures {
-    pub fn display_all() -> Vec<String> {
-        SupportedColumnStructures::all()
-            .into_iter()
-            .map(|s| s.to_string())
-            .collect()
+impl SupportedQueryRelationStructures {
+    pub const fn to_str(&self) -> &'static str {
+        match self {
+            Self::Table => "BASE TABLE",
+            Self::View => "VIEW",
+        }
     }
-    pub fn all() -> Vec<SupportedColumnStructures> {
-        vec![Self::View, Self::Table]
+
+    #[cfg(feature = "uses_information_schema")]
+    const fn display_all() -> [&'static str; Self::VARIANT_COUNT] {
+        [Self::Table.to_str(), Self::View.to_str()]
     }
+
+    #[cfg(feature = "uses_information_schema")]
+    pub const ALL_NAMES: [&'static str; Self::VARIANT_COUNT] = Self::display_all();
+    #[cfg(feature = "uses_information_schema")]
+    const VARIANT_COUNT: usize = 2;
 }

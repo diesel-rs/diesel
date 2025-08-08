@@ -13,7 +13,7 @@ use diesel::pg::Pg;
 use diesel::query_builder::QueryFragment;
 use diesel::*;
 
-use crate::infer_schema_internals::SupportedColumnStructures;
+use crate::infer_schema_internals::SupportedQueryRelationStructures;
 
 use self::information_schema::{key_column_usage, table_constraints, tables};
 use super::inference;
@@ -146,7 +146,7 @@ where
 pub fn load_table_names<'a, Conn>(
     connection: &mut Conn,
     schema_name: Option<&'a str>,
-) -> Result<Vec<(SupportedColumnStructures, TableName)>, crate::errors::Error>
+) -> Result<Vec<(SupportedQueryRelationStructures, TableName)>, crate::errors::Error>
 where
     Conn: LoadConnection,
     Conn::Backend: DefaultSchema + 'static,
@@ -159,7 +159,7 @@ where
             >,
             NotLike<tables::table_name, &'static str>,
         >,
-        EqAny<tables::table_type, Vec<String>>,
+        EqAny<tables::table_type, &'static [&'static str]>,
     >: QueryFragment<Conn::Backend>,
     Conn::Backend: QueryMetadata<sql_types::Text>,
 {
@@ -174,13 +174,14 @@ where
         .select((table_name, table_type))
         .filter(table_schema.eq(db_schema_name))
         .filter(table_name.not_like("\\_\\_%"))
-        .filter(table_type.eq_any(SupportedColumnStructures::display_all()))
+        .filter(table_type.eq_any(&SupportedQueryRelationStructures::ALL_NAMES))
         .load::<(String, String)>(connection)?;
     table_names.sort_unstable();
     Ok(table_names
         .into_iter()
         .map(|(name, tpy)| {
-            let tpy = SupportedColumnStructures::from_str(&tpy).expect("This should never happen.");
+            let tpy = SupportedQueryRelationStructures::from_str(&tpy)
+                .expect("This should never happen.");
             let data = TableName {
                 rust_name: inference::rust_name_for_sql_name(&name),
                 sql_name: name,

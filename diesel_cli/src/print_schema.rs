@@ -172,7 +172,7 @@ pub fn output_schema(
     let foreign_keys = remove_unsafe_foreign_keys_for_codegen(
         connection,
         &foreign_keys,
-        &filter_column_structure(&table_names, SupportedColumnStructures::Table),
+        &filter_column_structure(&table_names, SupportedQueryRelationStructures::Table),
     );
 
     let mut out = String::new();
@@ -182,12 +182,12 @@ pub fn output_schema(
     let data = table_names
         .into_iter()
         .map(|(kind, t)| match kind {
-            SupportedColumnStructures::Table => {
-                Ok(ColumnData::Table(load_table_data(connection, t, config)?))
-            }
-            SupportedColumnStructures::View => {
-                Ok(ColumnData::View(load_view_data(connection, t, config)?))
-            }
+            SupportedQueryRelationStructures::Table => Ok(QueryRelationData::Table(
+                load_table_data(connection, t, config)?,
+            )),
+            SupportedQueryRelationStructures::View => Ok(QueryRelationData::View(load_view_data(
+                connection, t, config,
+            )?)),
         })
         .collect::<Result<Vec<_>, crate::errors::Error>>()?;
 
@@ -248,7 +248,7 @@ pub fn output_schema(
         None
     };
 
-    let definitions = ColumnStructureDefinitions {
+    let definitions = QueryRelationDefinitions {
         data,
         fk_constraints: foreign_keys,
         with_docs: config.with_docs,
@@ -371,7 +371,7 @@ struct CustomTypesForTables {
 
 pub struct CustomTypesForTablesForDisplay<'a> {
     custom_types: &'a CustomTypesForTables,
-    tables: &'a [ColumnData],
+    tables: &'a [QueryRelationData],
 }
 
 #[allow(clippy::print_in_format_impl)]
@@ -533,7 +533,7 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
     }
 }
 
-struct ModuleDefinition<'a>(&'a str, ColumnStructureDefinitions<'a>);
+struct ModuleDefinition<'a>(&'a str, QueryRelationDefinitions<'a>);
 
 impl Display for ModuleDefinition<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -557,8 +557,8 @@ impl Display for ModuleDefinition<'_> {
     }
 }
 
-struct ColumnStructureDefinitions<'a> {
-    data: Vec<ColumnData>,
+struct QueryRelationDefinitions<'a> {
+    data: Vec<QueryRelationData>,
     fk_constraints: Vec<ForeignKeyConstraint>,
     with_docs: DocConfig,
     allow_tables_to_appear_in_same_query_config: AllowTablesToAppearInSameQueryConfig,
@@ -566,7 +566,7 @@ struct ColumnStructureDefinitions<'a> {
     custom_types_for_tables: Option<CustomTypesForTables>,
 }
 
-impl<'a> Display for ColumnStructureDefinitions<'a> {
+impl<'a> Display for QueryRelationDefinitions<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let mut is_first = true;
         for (table_idx, table) in self.data.iter().enumerate() {
@@ -603,8 +603,8 @@ impl<'a> Display for ColumnStructureDefinitions<'a> {
                 self.data
                     .iter()
                     .filter_map(|t| match t {
-                        ColumnData::View(_) => None,
-                        ColumnData::Table(table_data) => Some(table_data),
+                        QueryRelationData::View(_) => None,
+                        QueryRelationData::Table(table_data) => Some(table_data),
                     })
                     .collect(),
                 &self.fk_constraints,
@@ -703,7 +703,7 @@ fn foreign_key_table_groups<'a>(
 }
 
 struct ColumnStructureDefinition<'a> {
-    table: &'a ColumnData,
+    table: &'a QueryRelationData,
     with_docs: DocConfig,
     import_types: Option<&'a [String]>,
     custom_type_overrides: Option<&'a [Option<ColumnType>]>,
@@ -720,8 +720,8 @@ fn write_doc_comments(out: &mut impl fmt::Write, doc: &str) -> fmt::Result {
 impl<'a> Display for ColumnStructureDefinition<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match &self.table {
-            ColumnData::Table(_) => write!(f, "diesel::table! {{")?,
-            ColumnData::View(_) => write!(f, "diesel::view! {{")?,
+            QueryRelationData::Table(_) => write!(f, "diesel::table! {{")?,
+            QueryRelationData::View(_) => write!(f, "diesel::view! {{")?,
         }
 
         {
@@ -794,7 +794,7 @@ impl<'a> Display for ColumnStructureDefinition<'a> {
 
             write!(out, "{}", self.table.table_name())?;
 
-            if let ColumnData::Table(t) = self.table {
+            if let QueryRelationData::Table(t) = self.table {
                 write!(out, " (")?;
                 for (i, pk) in t.primary_key.iter().enumerate() {
                     if i != 0 {
