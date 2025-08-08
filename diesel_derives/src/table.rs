@@ -130,7 +130,7 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
                 }
                 message += "\t}\n}";
 
-                let span = Span::mixed_site().located_at(input.table_name.span());
+                let span = Span::mixed_site().located_at(input.view.table_name.span());
                 return quote::quote_spanned! {span=>
                     compile_error!(#message);
                 };

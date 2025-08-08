@@ -279,6 +279,18 @@ fn determine_unsigned(sql_type_name: &str) -> bool {
     sql_type_name.to_lowercase().contains("unsigned")
 }
 
+pub(crate) fn load_view_sql_definition(
+    mysql_connection: &mut MysqlConnection,
+    name: &TableName,
+) -> Result<String, crate::errors::Error> {
+    diesel::dsl::sql::<diesel::sql_types::Text>(&format!(
+        "SHOW CREATE VIEW {}",
+        name.full_sql_name()
+    ))
+    .get_result::<String>(mysql_connection)
+    .map_err(crate::errors::Error::from)
+}
+
 #[test]
 fn values_which_already_map_to_type_are_returned_unchanged() {
     assert_eq!("text", determine_type_name("text").unwrap());

@@ -99,7 +99,8 @@ pub fn generate_sql_based_on_diff_schema(
 
     let mut schema_diff = Vec::new();
     let table_names = load_table_names(&mut conn, None)?;
-    let tables_from_database = filter_table_names(table_names.clone(), &config.filter);
+    let tables_from_database =
+        filter_table_names(table_names.clone(), &config.filter, config.include_views);
     for (structure, table) in tables_from_database {
         tracing::info!(?table, "Diff for existing table");
         match structure {
@@ -108,6 +109,7 @@ pub fn generate_sql_based_on_diff_schema(
                     &mut conn,
                     table.clone(),
                     &config,
+                    structure,
                 )?;
                 if let Some(TableDecl { primary_keys, view }) =
                     expected_schema_map.remove(&table.sql_name.to_lowercase())
@@ -468,6 +470,7 @@ impl SchemaDiff {
             SchemaDiff::CreateTable { to_create, .. } => {
                 generate_drop_table(query_builder, &to_create.view.sql_name.to_lowercase())?;
                 let for_record_types = to_create
+                    .view
                     .column_defs
                     .iter()
                     .map(|c| {

@@ -16,6 +16,9 @@ use crate::print_schema::ColumnSorting;
 table! {
     sqlite_master (name) {
         name -> VarChar,
+        sql -> VarChar,
+        #[sql_name = "type"]
+        tpe -> VarChar,
     }
 }
 
@@ -45,7 +48,7 @@ pub fn load_table_names(
         .select(name)
         .filter(name.not_like("\\_\\_%").escape('\\'))
         .filter(name.not_like("sqlite%"))
-        .filter(sql::<sql_types::Bool>("type='table'"))
+        .filter(tpe.eq("table"))
         .order(name)
         .load::<String>(connection)?
         .into_iter()
@@ -59,7 +62,7 @@ pub fn load_table_names(
         .select(name)
         .filter(name.not_like("\\_\\_%").escape('\\'))
         .filter(name.not_like("sqlite%"))
-        .filter(sql::<sql_types::Bool>("type='view'"))
+        .filter(tpe.eq("view"))
         .order(name)
         .load::<String>(connection)?
         .into_iter()
@@ -154,6 +157,7 @@ pub fn get_table_data(
     conn: &mut SqliteConnection,
     table: &TableName,
     column_sorting: &ColumnSorting,
+    kind: SupportedQueryRelationStructures,
 ) -> QueryResult<Vec<ColumnInformation>> {
     let sqlite_version = get_sqlite_version(conn)?;
     let query = if sqlite_version >= SqliteVersion::new(3, 26, 0) {
@@ -172,7 +176,10 @@ pub fn get_table_data(
     let mut result = sql_query(query).load::<ColumnInformation>(conn)?;
     // Add implicit rowid primary key column if the only primary key is rowid
     // and ensure that the rowid column uses the right type.
-    let primary_key = get_primary_keys(conn, table)?;
+    let primary_key = match kind {
+        SupportedQueryRelationStructures::Table => get_primary_keys(conn, table)?,
+        SupportedQueryRelationStructures::View => Vec::new(),
+    };
     if primary_key.len() == 1 {
         let primary_key = primary_key.first().expect("guaranteed to have one element");
         if !result.iter_mut().any(|x| &x.column_name == primary_key) {
@@ -250,7 +257,7 @@ impl QueryableByName<Sqlite> for WithoutRowIdInformation {
 pub fn column_is_row_id(
     conn: &mut SqliteConnection,
     table: &TableName,
-    primary_keys: &[String],
+    primary_keys: Option<&[String]>,
     column_name: &str,
     type_name: &str,
 ) -> Result<bool, crate::errors::Error> {
@@ -266,7 +273,7 @@ pub fn column_is_row_id(
         return Ok(false);
     }
 
-    if !matches!(primary_keys, [pk] if pk == column_name) {
+    if !matches!(primary_keys, Some([pk]) if pk == column_name) {
         return Ok(false);
     }
 
@@ -343,7 +350,7 @@ pub fn determine_column_type(
     conn: &mut SqliteConnection,
     attr: &ColumnInformation,
     table: &TableName,
-    primary_keys: &[String],
+    primary_keys: Option<&[String]>,
     foreign_keys: &HashMap<String, ForeignKeyConstraint>,
     config: &PrintSchema,
 ) -> Result<ColumnType, crate::errors::Error> {
@@ -411,7 +418,7 @@ fn column_references_row_id(
             column_is_row_id(
                 conn,
                 &foreign_constraint.parent_table,
-                &parent_primary_keys,
+                Some(&parent_primary_keys),
                 id,
                 "integer",
             )
@@ -451,6 +458,17 @@ fn is_float(type_name: &str) -> bool {
 
 fn is_double(type_name: &str) -> bool {
     type_name.contains("double") || type_name.contains("num") || type_name.contains("dec")
+}
+
+pub(crate) fn load_view_sql_definition(
+    sqlite_connection: &mut SqliteConnection,
+    name: &TableName,
+) -> Result<String, crate::errors::Error> {
+    sqlite_master::table
+        .filter(sqlite_master::name.eq(&name.sql_name))
+        .select(sqlite_master::sql)
+        .get_result::<String>(sqlite_connection)
+        .map_err(crate::errors::Error::from)
 }
 
 #[test]
@@ -676,7 +694,13 @@ fn integer_primary_key_sqlite_3_37() {
         diesel::sql_query(sql_query).execute(&mut conn).unwrap();
 
         let table = TableName::from_name(table_name);
-        let column_infos = get_table_data(&mut conn, &table, &Default::default()).unwrap();
+        let column_infos = get_table_data(
+            &mut conn,
+            &table,
+            &Default::default(),
+            SupportedQueryRelationStructures::Table,
+        )
+        .unwrap();
 
         let primary_keys = get_primary_keys(&mut conn, &table).unwrap();
 
@@ -689,7 +713,7 @@ fn integer_primary_key_sqlite_3_37() {
                         &mut conn,
                         column_info,
                         &table,
-                        &primary_keys,
+                        Some(&primary_keys),
                         &HashMap::new(),
                         &Default::default(),
                     )
@@ -708,7 +732,7 @@ fn integer_primary_key_sqlite_3_37() {
                         &mut conn,
                         column_info,
                         &table,
-                        &primary_keys,
+                        Some(&primary_keys),
                         &HashMap::new(),
                         &PrintSchema {
                             sqlite_integer_primary_key_is_bigint: Some(true),
