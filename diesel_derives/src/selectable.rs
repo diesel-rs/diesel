@@ -5,10 +5,13 @@ use syn::spanned::Spanned;
 use syn::{parse_quote, DeriveInput, Result};
 
 use crate::field::Field;
-use crate::model::Model;
+use crate::model::{CheckForBackend, Model};
 use crate::util::wrap_in_dummy_mod;
 
-pub fn derive(item: DeriveInput) -> Result<TokenStream> {
+pub fn derive(
+    item: DeriveInput,
+    check_for_backend: Option<CheckForBackend>,
+) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, false)?;
 
     let (original_impl_generics, ty_generics, original_where_clause) =
@@ -47,7 +50,14 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         .map(|f| field_column_inst(f, &model))
         .collect::<Result<Vec<_>>>()?;
 
-    let check_function = if let Some(ref backends) = model.check_for_backend {
+    let check_function = if let Some(backends) = model
+        .check_for_backend
+        .as_ref()
+        .or(check_for_backend.as_ref())
+        .and_then(|c| match c {
+            CheckForBackend::Backends(punctuated) => Some(punctuated),
+            CheckForBackend::Disabled(_lit_bool) => None,
+        }) {
         let field_check_bound = model
             .fields()
             .iter()
