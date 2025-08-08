@@ -145,9 +145,11 @@ pub fn filter_column_structure(
 pub fn filter_table_names(
     table_names: Vec<(SupportedQueryRelationStructures, TableName)>,
     table_filter: &Filtering,
+    include_views: bool,
 ) -> Vec<(SupportedQueryRelationStructures, TableName)> {
     table_names
         .into_iter()
+        .filter(|(a, _)| include_views || matches!(a, SupportedQueryRelationStructures::Table))
         .filter(|(_, t)| !table_filter.should_ignore_table(t))
         .collect::<_>()
 }
@@ -179,14 +181,17 @@ fn get_column_information(
     table: &TableName,
     column_sorting: &ColumnSorting,
     pg_domains_as_custom_types: &[&regex::Regex],
+    kind: SupportedQueryRelationStructures,
 ) -> Result<Vec<ColumnInformation>, crate::errors::Error> {
     #[cfg(not(feature = "postgres"))]
     let _ = pg_domains_as_custom_types;
+    #[cfg(not(feature = "sqlite"))]
+    let _ = kind;
 
     let column_info = match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref mut c) => {
-            super::sqlite::get_table_data(c, table, column_sorting)
+            super::sqlite::get_table_data(c, table, column_sorting, kind)
         }
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref mut c) => {
@@ -208,7 +213,7 @@ fn determine_column_type(
     attr: &ColumnInformation,
     conn: &mut InferConnection,
     #[allow(unused_variables)] table: &TableName,
-    #[allow(unused_variables)] primary_keys: &[String],
+    #[allow(unused_variables)] primary_keys: Option<&[String]>,
     #[allow(unused_variables)] foreign_keys: &HashMap<String, ForeignKeyConstraint>,
     #[allow(unused_variables)] config: &PrintSchema,
 ) -> Result<ColumnType, crate::errors::Error> {
@@ -294,6 +299,7 @@ fn load_column_structure_data(
     name: &TableName,
     config: &PrintSchema,
     primary_key: Option<&[String]>,
+    kind: SupportedQueryRelationStructures,
 ) -> Result<(Option<String>, Vec<ColumnDefinition>), crate::errors::Error> {
     // No point in loading table comments if they are not going to be displayed
     let table_comment = match config.with_docs {
@@ -304,11 +310,10 @@ fn load_column_structure_data(
         }
     };
 
-    let primary_key = get_primary_keys(connection, &name)?;
     let foreign_keys = load_foreign_key_constraints(connection, name.schema.as_deref())?
         .into_iter()
         .filter_map(|c| {
-            if c.child_table == name && c.foreign_key_columns.len() == 1 {
+            if c.child_table == *name && c.foreign_key_columns.len() == 1 {
                 Some((c.foreign_key_columns_rust[0].clone(), c))
             } else {
                 None
@@ -327,10 +332,11 @@ fn load_column_structure_data(
         name,
         &config.column_sorting,
         &pg_domains_as_custom_types,
+        kind,
     )?
     .into_iter()
     .map(|c| {
-        let ty = determine_column_type(&c, connection, &name, &primary_key, &foreign_keys, config)?;
+        let ty = determine_column_type(&c, connection, name, primary_key, &foreign_keys, config)?;
 
         let ColumnInformation {
             column_name,
@@ -355,10 +361,14 @@ pub fn load_table_data(
     connection: &mut InferConnection,
     name: TableName,
     config: &PrintSchema,
+    tpe: SupportedQueryRelationStructures,
 ) -> Result<TableData, crate::errors::Error> {
-    let primary_key = get_primary_keys(connection, &name)?;
+    let primary_key = match tpe {
+        SupportedQueryRelationStructures::Table => get_primary_keys(connection, &name)?,
+        SupportedQueryRelationStructures::View => Vec::new(),
+    };
     let (table_comment, column_data) =
-        load_column_structure_data(connection, &name, config, Some(&primary_key))?;
+        load_column_structure_data(connection, &name, config, Some(&primary_key), tpe)?;
     let primary_key = primary_key
         .iter()
         .map(|k| rust_name_for_sql_name(k))
@@ -377,10 +387,38 @@ pub fn load_view_data(
     name: TableName,
     config: &PrintSchema,
 ) -> Result<ViewData, crate::errors::Error> {
-    let (table_comment, column_data) = load_column_structure_data(connection, &name, config, None)?;
+    let (table_comment, column_data) = load_column_structure_data(
+        connection,
+        &name,
+        config,
+        None,
+        SupportedQueryRelationStructures::View,
+    )?;
+    let sql_definition = load_view_sql_definition(connection, &name)?;
     Ok(ViewData {
         name,
         column_data,
         comment: table_comment,
+        sql_definition,
     })
+}
+
+fn load_view_sql_definition(
+    connection: &mut InferConnection,
+    name: &TableName,
+) -> Result<String, crate::errors::Error> {
+    match connection {
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(pg_connection) => Ok(
+            super::information_schema::load_view_sql_definition(pg_connection, name)?,
+        ),
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(sqlite_connection) => {
+            super::sqlite::load_view_sql_definition(sqlite_connection, name)
+        }
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(mysql_connection) => Ok(
+            super::information_schema::load_view_sql_definition(mysql_connection, name)?,
+        ),
+    }
 }

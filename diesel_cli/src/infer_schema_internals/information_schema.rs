@@ -92,6 +92,14 @@ pub mod information_schema {
         }
     }
 
+    table! {
+        information_schema.views (table_schema, table_name) {
+            table_schema -> VarChar,
+            table_name -> VarChar,
+            view_definition -> VarChar,
+        }
+    }
+
     allow_tables_to_appear_in_same_query!(table_constraints, referential_constraints);
     allow_tables_to_appear_in_same_query!(key_column_usage, table_constraints);
 }
@@ -192,6 +200,41 @@ where
             (tpy, data)
         })
         .collect())
+}
+
+pub(super) fn load_view_sql_definition<'a, Conn>(
+    conn: &mut Conn,
+    view: &'a TableName,
+) -> QueryResult<String>
+where
+    Conn: LoadConnection,
+    Conn::Backend: DefaultSchema,
+    String: FromSql<sql_types::Text, Conn::Backend>,
+    Limit<
+        Select<
+            Filter<
+                Filter<
+                    information_schema::views::table,
+                    Eq<information_schema::views::table_name, &'a String>,
+                >,
+                Eq<information_schema::views::table_schema, Cow<'a, String>>,
+            >,
+            information_schema::views::view_definition,
+        >,
+    >: QueryFragment<Conn::Backend>,
+    Conn::Backend: QueryMetadata<sql_types::Text> + 'static,
+{
+    let schema_name = match view.schema {
+        Some(ref name) => Cow::Borrowed(name),
+        None => Cow::Owned(Conn::Backend::default_schema(conn)?),
+    };
+
+    information_schema::views::table
+        .filter(information_schema::views::table_name.eq(&view.sql_name))
+        .filter(information_schema::views::table_schema.eq(schema_name))
+        .select(information_schema::views::view_definition)
+        .limit(1)
+        .get_result(conn)
 }
 
 #[cfg(all(test, feature = "postgres"))]

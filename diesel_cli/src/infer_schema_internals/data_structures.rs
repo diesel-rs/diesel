@@ -243,11 +243,18 @@ impl QueryRelationData {
             Self::View(view) => &view.comment,
         }
     }
+
+    pub fn relation_type(&self) -> &'static str {
+        match self {
+            QueryRelationData::View(_view_data) => "view",
+            QueryRelationData::Table(_table_data) => "table",
+        }
+    }
 }
 
 impl Display for SupportedQueryRelationStructures {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let format = self.to_str();
+        let format = self.as_str();
         write!(f, "{format}")
     }
 }
@@ -264,7 +271,7 @@ impl FromStr for SupportedQueryRelationStructures {
 }
 
 impl SupportedQueryRelationStructures {
-    pub const fn to_str(&self) -> &'static str {
+    pub const fn as_str(&self) -> &'static str {
         match self {
             Self::Table => "BASE TABLE",
             Self::View => "VIEW",
@@ -273,7 +280,7 @@ impl SupportedQueryRelationStructures {
 
     #[cfg(feature = "uses_information_schema")]
     const fn display_all() -> [&'static str; Self::VARIANT_COUNT] {
-        [Self::Table.to_str(), Self::View.to_str()]
+        [Self::Table.as_str(), Self::View.as_str()]
     }
 
     #[cfg(feature = "uses_information_schema")]

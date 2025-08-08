@@ -450,6 +450,14 @@ fn print_schema_sqlite_primary_key_as_bigint() {
     );
 }
 
+#[test]
+fn print_schema_with_view() {
+    test_print_schema(
+        "print_schema_with_view",
+        vec!["--include-views", "--with-docs"],
+    );
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
