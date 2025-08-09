@@ -1529,6 +1529,7 @@ extern "SQL" {
     /// #     use serde_json::{json, Value};
     /// #     use diesel::sql_types::{Jsonb, Nullable};
     /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 45, 0);
     ///
     /// let result = diesel::select(jsonb_patch::<Jsonb, Jsonb, _, _>(
     ///     json!( {"a":1,"b":2} ),
