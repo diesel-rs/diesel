@@ -301,6 +301,13 @@ We would like to thank all of the sponsors supporting the work on Diesel. Notabl
 </p>
 
 <p align="center">
+    <a href="https://github.blog/open-source/maintainers/securing-the-supply-chain-at-scale-starting-with-71-important-open-source-projects/">
+        <img src="https://diesel.rs/assets/images/GitHub_Logo.png" width="50%"/>
+        GitHub Secure Open Source Fund
+    </a>
+</p>
+
+<p align="center">
     <a href="https://giga-infosystems.com/">
         <img src="https://diesel.rs/assets/images/logo_giga.svg" width="35%"/>
         <br/>
