@@ -1,0 +1,41 @@
+labels: [Ideas]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest a new feature for Diesel. We prepared a number of question to better understand how such a feature would look like and how it could be implemented.
+  - type: dropdown
+    attributes:
+      label: Backend
+      description:
+      options:
+        - "PostgreSQL"
+        - "MySQL"
+        - "SQLite"
+        - "Others"
+      multiple: true
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What do you want to add to diesel?
+      description: Describe the missing feature with as much details as possible. Link relevant upstream documentation if possible.
+    validations:
+      required: true
+  - type: textarea
+    id: implementation-notes
+    attributes:
+      label: Implementation notes
+      description: Describe how a possible implementation could look like. This does ideally cover both the provided public API and also the internal changes required to Diesel.
+  - type: textarea
+    attributes:
+      label: Additional details
+      description: Is there anything that doesn't fit any of the fields above? Or that might be relevant to understand the new feature?
+  - type: checkboxes
+    id: Checklist
+    attributes:
+      label: Checklist
+      description:
+      options:
+        - label: |
+            I have already looked over the [issue tracker](https://github.com/diesel-rs/diesel/issues) and the [discussion forum](https://github.com/diesel-rs/diesel/discussions) for similar possible closed issues.

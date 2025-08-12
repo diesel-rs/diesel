@@ -1,6 +1,6 @@
 [package]
 name = "diesel_table_macro_syntax"
-version = "0.2.0"
+version = "0.3.0"
 description = "Internal diesel crate"
 license = "MIT OR Apache-2.0"
 documentation = "https://diesel.rs/guides/"

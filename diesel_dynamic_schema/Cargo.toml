@@ -1,6 +1,6 @@
 [package]
 name = "diesel-dynamic-schema"
-version = "0.2.2"
+version = "0.2.4"
 license = "MIT OR Apache-2.0"
 edition = "2018"
 autotests = false
@@ -14,7 +14,7 @@ include.workspace = true
 rust-version.workspace = true
 
 [dependencies.diesel]
-version = "~2.2.0"
+version = "~2.3.0"
 path = "../diesel/"
 default-features = false
 

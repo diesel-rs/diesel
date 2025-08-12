@@ -1,0 +1,104 @@
+name: Bug Report
+description: File a bug report.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+        Any bugreport helps us to improve Diesel.
+  - type: input
+    id: rust-version
+    attributes:
+      label: Rust Version
+      description: The Rust version required to reproduce the bug. You can usually get that version by using `rustc --version` in your project directory.
+      placeholder: 1.89.0
+    validations:
+      required: true
+  - type: input
+    id: diesel-version
+    attributes:
+      label: Diesel Version
+      description: The Diesel version required to reproduce the bug. You can get that version from your `Cargo.lock` file.
+      placeholder: 2.3.0
+    validations:
+      required: true
+  - type: input
+    id: diesel-features
+    attributes:
+      label: Diesel Features
+      description: The Cargo features enabled for Diesel. You can get that information from your `Cargo.toml` file.
+      placeholder: sqlite extras
+    validations:
+      required: true
+  - type: input
+    id: database-version
+    attributes:
+      label: Database Version
+      description: Type and exact version of the database system required to reproduce the bug.
+      placeholder: PostgreSQL 17.4
+    validations:
+      required: true
+  - type: input
+    id: os-version
+    attributes:
+      label: Operating System Version
+      description: Information about your operating system
+      placeholder: Fedora Linux 42 (Workstation Edition) x86_64 GNU/Linux
+    validations:
+      required: true
+  
+    
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: What happened?
+      description: Describe the bug you encountered. The more details you add here, the easier it is for us to reproduce your problem and help you resolving it.
+      placeholder: Tell us what happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: Expected-behaviour
+    attributes:
+      label: What did you expect to happen?
+      description: Describe what would you expect to happen instead. Again more details make it easier for us to resolve this issue.
+      placeholder: Tell us what you expected to happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-details
+    attributes:
+      label: Additional details
+      description: Anything else that might be relevant and that we should know but that did not fit the template above?
+      placeholder: Additional details and information
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Steps to reproduce
+      description: |
+          Please include as much of your codebase as needed to reproduce the error.  If the relevant files are large, please consider linking to a public repository or a [Gist](https://gist.github.com/). This includes normally the following parts:
+          
+          * The exact code where your hit the problem
+          * Relevant parts your schema, so any `table!` macro calls required for
+          * Any other type definitions involved in the code, which produces your problem
+      render: rust
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Compile time error
+      description: The error you encountered while compiling your code. Please make sure to include the complete error emitted by **rustc** and not by your IDE
+      
+  - type: checkboxes
+    id: Checklist
+    attributes:
+      label: Checklist
+      description: 
+      options:
+        - label: |
+            I have already looked over the [issue tracker](https://github.com/diesel-rs/diesel/issues) and the [discussion forum](https://github.com/diesel-rs/diesel/discussions) for similar possible closed issues.
+        - label: This issue can be reproduced on Rust's stable channel. (Please submit the issue in the Rust issue tracker instead if that's not the case)
+        - label: This issue can be reproduced without requiring a third party crate
