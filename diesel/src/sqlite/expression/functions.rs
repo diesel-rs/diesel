@@ -10,6 +10,7 @@ use crate::sqlite::expression::expression_methods::MaybeNullableValue;
 use crate::sqlite::expression::expression_methods::NotBlob;
 use crate::sqlite::expression::expression_methods::TextOrNullableText;
 use crate::sqlite::expression::expression_methods::TextOrNullableTextOrBinaryOrNullableBinary;
+use crate::sqlite::expression::functions::helper::CombinedNullableValue;
 
 #[cfg(feature = "sqlite")]
 #[declare_sql_function(generate_return_type_helpers = true)]
@@ -1535,8 +1536,8 @@ extern "SQL" {
     ///     json!( {"a":1,"b":2} ),
     ///     json!( {"c":3,"d":4} ),
     /// ))
-    /// .get_result::<Option<Value>>(connection)?;
-    /// assert_eq!(Some(json!({"a":1,"b":2,"c":3,"d":4})), result);
+    /// .get_result::<Value>(connection)?;
+    /// assert_eq!(json!({"a":1,"b":2,"c":3,"d":4}), result);
     ///
     /// // Nullable input yields nullable output
     /// let result = diesel::select(jsonb_patch::<Nullable<Jsonb>, Jsonb, _, _>(
@@ -1552,11 +1553,11 @@ extern "SQL" {
     #[cfg(feature = "sqlite")]
     fn jsonb_patch<
         T: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue,
-        P: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue,
+        P: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue + CombinedNullableValue<T, Jsonb>,
     >(
         target: T,
         patch: P,
-    ) -> Nullable<Jsonb>;
+    ) -> P::Out;
 }
 
 pub(super) mod return_type_helpers_reexported {
