@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "2.2.4"
+version = "2.3.0"
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"
 readme = "README.md"
@@ -46,7 +46,7 @@ time = { version = "0.3.9", optional = true, features = ["macros"] }
 downcast-rs = "2.0.1"
 
 [dependencies.diesel_derives]
-version = "~2.2.0"
+version = "~2.3.0"
 path = "../diesel_derives"
 
 [target.'cfg(not(all(target_family = "wasm", target_os = "unknown")))'.dependencies]

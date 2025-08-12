@@ -1,6 +1,6 @@
 [package]
 name = "diesel_migrations"
-version = "2.2.0"
+version = "2.3.0"
 license = "MIT OR Apache-2.0"
 description = "Migration management for diesel"
 documentation = "https://docs.rs/crate/diesel_migrations"
@@ -12,11 +12,11 @@ rust-version.workspace = true
 categories = ["database"]
 
 [dependencies.migrations_internals]
-version = "~2.2.0"
+version = "~2.3.0"
 path = "migrations_internals"
 
 [dependencies.migrations_macros]
-version = "~2.2.0"
+version = "~2.3.0"
 path = "migrations_macros"
 
 [dev-dependencies]
@@ -25,7 +25,7 @@ cfg-if = "1.0.0"
 tempfile = "3.2"
 
 [dependencies.diesel]
-version = "~2.2.0"
+version = "~2.3.0"
 path = "../diesel"
 default-features = false
 

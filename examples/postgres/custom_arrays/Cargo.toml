@@ -5,8 +5,8 @@ edition.workspace = true
 publish = false
 
 [dependencies]
-diesel = { path = "../../../diesel", version = "2.2.0", default-features = false, features = ["postgres", "r2d2"] }
-diesel_migrations = { path = "../../../diesel_migrations", version = "2.2.0", default-features = false, features = ["postgres"] }
+diesel = { path = "../../../diesel", version = "2.3.0", default-features = false, features = ["postgres", "r2d2"] }
+diesel_migrations = { path = "../../../diesel_migrations", version = "2.3.0", default-features = false, features = ["postgres"] }
 pq-sys = { workspace = true, features = ["bundled"] }
 openssl-sys = { workspace = true, features = ["vendored"] }
 

@@ -6,14 +6,14 @@ edition.workspace = true
 publish = false
 
 [dependencies]
-diesel = { version = "2.2.0", path = "../../../diesel", features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
+diesel = { version = "2.3.0", path = "../../../diesel", features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
 libsqlite3-sys = { workspace = true, features = ["bundled"] }
 dotenvy = "0.15"
 
 [dev-dependencies]
 assert_cmd = "2.0.14"
 tempfile = "3"
-diesel_migrations = { version = "2.2.0", path = "../../../diesel_migrations" }
+diesel_migrations = { version = "2.3.0", path = "../../../diesel_migrations" }
 
 [[bin]]
 name = "show_posts"
