@@ -1455,37 +1455,37 @@ extern "SQL" {
     ///     json!( {"a":1,"b":2} ),
     ///     json!( {"c":3,"d":4} ),
     /// ))
-    /// .get_result::<Option<Value>>(connection)?;
-    /// assert_eq!(Some(json!({"a":1,"b":2,"c":3,"d":4})), result);
+    /// .get_result::<Value>(connection)?;
+    /// assert_eq!(json!({"a":1,"b":2,"c":3,"d":4}), result);
     ///
     /// let result = diesel::select(json_patch::<Json, Json, _, _>(
     ///     json!( {"a":[1,2],"b":2} ),
     ///     json!( {"a":9} ),
     /// ))
-    /// .get_result::<Option<Value>>(connection)?;
-    /// assert_eq!(Some(json!({"a":9,"b":2})), result);
+    /// .get_result::<Value>(connection)?;
+    /// assert_eq!(json!({"a":9,"b":2}), result);
     ///
     /// let result = diesel::select(json_patch::<Json, Json, _, _>(
     ///     json!( {"a":[1,2],"b":2} ),
     ///     json!( {"a":null} ),
     /// ))
-    /// .get_result::<Option<Value>>(connection)?;
-    /// assert_eq!(Some(json!({"b":2})), result);
+    /// .get_result::<Value>(connection)?;
+    /// assert_eq!(json!({"b":2}), result);
     ///
     /// let result = diesel::select(json_patch::<Json, Json, _, _>(
     ///     json!( {"a":1,"b":2} ),
     ///     json!( {"a":9,"b":null,"c":8} ),
     /// ))
-    /// .get_result::<Option<Value>>(connection)?;
-    /// assert_eq!(Some(json!({"a":9,"c":8})), result);
+    /// .get_result::<Value>(connection)?;
+    /// assert_eq!(json!({"a":9,"c":8}), result);
     ///
     /// let result = diesel::select(json_patch::<Json, Json, _, _>(
     ///     json!( {"a":{"x":1,"y":2},"b":3} ),
     ///     json!( {"a":{"y":9},"c":8} ),
     /// ))
-    /// .get_result::<Option<Value>>(connection)?;
+    /// .get_result::<Value>(connection)?;
     /// assert_eq!(
-    ///     Some(json!({"a":{"x":1,"y":9},"b":3,"c":8})),
+    ///     json!({"a":{"x":1,"y":9},"b":3,"c":8}),
     ///     result
     /// );
     ///
@@ -1503,11 +1503,11 @@ extern "SQL" {
     #[cfg(feature = "sqlite")]
     fn json_patch<
         T: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue,
-        P: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue,
+        P: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue + CombinedNullableValue<T, Json>,
     >(
         target: T,
         patch: P,
-    ) -> Nullable<Json>;
+    ) -> P::Out;
 
     /// Applies an RFC 7396 MergePatch `patch` to the input JSON `target` and
     /// returns the patched JSON value in SQLite's binary JSONB format.
