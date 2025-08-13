@@ -36,7 +36,7 @@ members = [
 ]
 
 [workspace.package]
-rust-version = "1.84.0"
+rust-version = "1.86.0"
 include = ["src/**/*.rs", "tests/**/*.rs", "LICENSE-*", "README.md"]
 edition = "2021"
 
