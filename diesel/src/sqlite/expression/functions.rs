@@ -10,6 +10,7 @@ use crate::sqlite::expression::expression_methods::MaybeNullableValue;
 use crate::sqlite::expression::expression_methods::NotBlob;
 use crate::sqlite::expression::expression_methods::TextOrNullableText;
 use crate::sqlite::expression::expression_methods::TextOrNullableTextOrBinaryOrNullableBinary;
+use crate::sqlite::expression::functions::helper::CombinedNullableValue;
 
 #[cfg(feature = "sqlite")]
 #[declare_sql_function(generate_return_type_helpers = true)]
@@ -1425,6 +1426,138 @@ extern "SQL" {
         json: J,
         path: Text,
     ) -> Nullable<Jsonb>;
+
+    /// Applies an RFC 7396 MergePatch `patch` to the input JSON `target` and
+    /// returns the patched JSON value.
+    ///
+    /// MergePatch can add, modify, or delete elements of a JSON object. Arrays are
+    /// treated as atomic values: they can only be inserted, replaced, or deleted as a
+    /// whole, not modified element-wise.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::json_patch;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Json, Nullable};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(json_patch::<Json, Json, _, _>(
+    ///     json!( {"a":1,"b":2} ),
+    ///     json!( {"c":3,"d":4} ),
+    /// ))
+    /// .get_result::<Value>(connection)?;
+    /// assert_eq!(json!({"a":1,"b":2,"c":3,"d":4}), result);
+    ///
+    /// let result = diesel::select(json_patch::<Json, Json, _, _>(
+    ///     json!( {"a":[1,2],"b":2} ),
+    ///     json!( {"a":9} ),
+    /// ))
+    /// .get_result::<Value>(connection)?;
+    /// assert_eq!(json!({"a":9,"b":2}), result);
+    ///
+    /// let result = diesel::select(json_patch::<Json, Json, _, _>(
+    ///     json!( {"a":[1,2],"b":2} ),
+    ///     json!( {"a":null} ),
+    /// ))
+    /// .get_result::<Value>(connection)?;
+    /// assert_eq!(json!({"b":2}), result);
+    ///
+    /// let result = diesel::select(json_patch::<Json, Json, _, _>(
+    ///     json!( {"a":1,"b":2} ),
+    ///     json!( {"a":9,"b":null,"c":8} ),
+    /// ))
+    /// .get_result::<Value>(connection)?;
+    /// assert_eq!(json!({"a":9,"c":8}), result);
+    ///
+    /// let result = diesel::select(json_patch::<Json, Json, _, _>(
+    ///     json!( {"a":{"x":1,"y":2},"b":3} ),
+    ///     json!( {"a":{"y":9},"c":8} ),
+    /// ))
+    /// .get_result::<Value>(connection)?;
+    /// assert_eq!(
+    ///     json!({"a":{"x":1,"y":9},"b":3,"c":8}),
+    ///     result
+    /// );
+    ///
+    /// // Nullable input yields nullable output
+    /// let result = diesel::select(json_patch::<Nullable<Json>, Json, _, _>(
+    ///     None::<Value>,
+    ///     json!({}),
+    /// ))
+    /// .get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "sqlite")]
+    fn json_patch<
+        T: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue,
+        P: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue + CombinedNullableValue<T, Json>,
+    >(
+        target: T,
+        patch: P,
+    ) -> P::Out;
+
+    /// Applies an RFC 7396 MergePatch `patch` to the input JSON `target` and
+    /// returns the patched JSON value in SQLite's binary JSONB format.
+    ///
+    /// See [`json_patch`](json_patch()) for details about the MergePatch semantics.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_patch;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 45, 0);
+    ///
+    /// let result = diesel::select(jsonb_patch::<Jsonb, Jsonb, _, _>(
+    ///     json!( {"a":1,"b":2} ),
+    ///     json!( {"c":3,"d":4} ),
+    /// ))
+    /// .get_result::<Value>(connection)?;
+    /// assert_eq!(json!({"a":1,"b":2,"c":3,"d":4}), result);
+    ///
+    /// // Nullable input yields nullable output
+    /// let result = diesel::select(jsonb_patch::<Nullable<Jsonb>, Jsonb, _, _>(
+    ///     None::<Value>,
+    ///     json!({}),
+    /// ))
+    /// .get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "sqlite")]
+    fn jsonb_patch<
+        T: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue,
+        P: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue + CombinedNullableValue<T, Jsonb>,
+    >(
+        target: T,
+        patch: P,
+    ) -> P::Out;
 }
 
 pub(super) mod return_type_helpers_reexported {
