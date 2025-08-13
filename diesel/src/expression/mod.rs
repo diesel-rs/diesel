@@ -1089,12 +1089,31 @@ impl<QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
     type IsAggregate = IsAggregate;
 }
 
-// Some amount of backwards-compat
-// We used to require `AsExpressionList` on the `array` function.
-// Now we require `IntoArrayExpression` instead, which means something very different.
-// However for most people just checking this bound to call `array`, this won't break.
-// Only people who directly implement `AsExpressionList` would break, but I expect that to be
-// nobody.
-#[doc(hidden)]
+/// Converts a tuple of values into a tuple of Diesel expressions.
+#[deprecated(note = "Use `IntoArrayExpression` instead")]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+pub trait AsExpressionList<ST> {
+    /// The final output expression
+    type Expression;
+
+    /// Perform the conversion
+    // That's public API, we cannot change
+    // that to appease clippy
+    #[allow(clippy::wrong_self_convention)]
+    fn as_expression_list(self) -> Self::Expression;
+}
+
 #[cfg(feature = "postgres_backend")]
-pub use crate::pg::expression::array::IntoArrayExpression as AsExpressionList;
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+#[allow(deprecated)]
+impl<T, ST> AsExpressionList<ST> for T
+where
+    T: crate::pg::expression::array::IntoArrayExpression<ST>,
+    ST: SqlType + TypedExpressionType,
+{
+    type Expression = <T as crate::pg::expression::array::IntoArrayExpression<ST>>::ArrayExpression;
+
+    fn as_expression_list(self) -> Self::Expression {
+        self.into_array_expression()
+    }
+}

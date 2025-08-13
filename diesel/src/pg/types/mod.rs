@@ -689,6 +689,9 @@ pub mod sql_types {
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 3220, array_oid = 3221))]
     pub struct PgLsn;
+
+    #[doc(inline)]
+    pub use crate::sql_types::Jsonb;
 }
 
 mod ops {
