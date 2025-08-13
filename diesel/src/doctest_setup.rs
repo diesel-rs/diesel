@@ -1,4 +1,5 @@
 use diesel::prelude::*;
+use diesel::sql_types::*;
 use dotenvy::dotenv;
 
 cfg_if::cfg_if! {
