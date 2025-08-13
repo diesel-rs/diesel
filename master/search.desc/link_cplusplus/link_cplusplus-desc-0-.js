@@ -1,0 +1,1 @@
+searchState.loadedDescShard("link_cplusplus", 0, "github crates-io docs-rs")
