@@ -115,7 +115,7 @@ in a way that makes the pools suitable for use in parallel tests.
 
 ## [2.1.3] 2023-10-05
 
-* Increased accidently decreased limit around element count in  `DISTINCT ON` and `ORDER BY` clauses again as that broke existing code
+* Increased accidentally decreased limit around element count in  `DISTINCT ON` and `ORDER BY` clauses again as that broke existing code
 
 ## [2.1.2] 2023-09-25
 
