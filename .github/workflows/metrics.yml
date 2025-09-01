@@ -61,8 +61,8 @@ jobs:
           sudo systemctl start mysql.service
           sudo apt-get update
           sudo apt-get -y install libmysqlclient-dev
-          mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
-          echo 'DATABASE_URL=mysql://root:root@localhost/diesel_test' >> $GITHUB_ENV
+          mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'127.0.0.1';" -uroot -proot
+          echo 'DATABASE_URL=mysql://root:root@127.0.0.1/diesel_test' >> $GITHUB_ENV
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Run Benchmarks (Postgres)
