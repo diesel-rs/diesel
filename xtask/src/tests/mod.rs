@@ -1,4 +1,5 @@
 use crate::Backend;
+use cargo_metadata::camino::Utf8PathBuf;
 use cargo_metadata::{Metadata, MetadataCommand};
 use std::process::Command;
 use std::process::Stdio;
@@ -88,31 +89,34 @@ impl TestArgs {
         let backend = &self.backend;
         if self.wasm {
             if matches!(backend, Backend::Sqlite) {
-                let mut command = Command::new("wasm-pack");
-                let out = command
-                    .args(["test", "--chrome", "--headless", "--features", "sqlite"])
-                    .current_dir(metadata.workspace_root.join("diesel"))
-                    .env("RUSTFLAGS", "--cfg getrandom_backend=\"wasm_js\"")
-                    .env("WASM_BINDGEN_TEST_TIMEOUT", "60")
-                    .stderr(Stdio::inherit())
-                    .stdout(Stdio::inherit())
-                    .status()
-                    .unwrap();
-                if !out.success() {
+                fn run_tests(path: Utf8PathBuf) -> bool {
+                    let mut command = Command::new("cargo");
+                    command
+                        .args([
+                            "test",
+                            "--features",
+                            "sqlite",
+                            "--target",
+                            "wasm32-unknown-unknown",
+                        ])
+                        .current_dir(path)
+                        .env("WASM_BINDGEN_TEST_TIMEOUT", "120")
+                        .env(
+                            "CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER",
+                            "wasm-bindgen-test-runner",
+                        )
+                        .env("RUSTFLAGS", "--cfg getrandom_backend=\"wasm_js\"")
+                        .stderr(Stdio::inherit())
+                        .stdout(Stdio::inherit())
+                        .status()
+                        .unwrap()
+                        .success()
+                }
+                if !run_tests(metadata.workspace_root.join("diesel")) {
                     eprintln!("Failed to run wasm diesel unit tests");
                     return false;
                 }
-                let mut command = Command::new("wasm-pack");
-                let out = command
-                    .args(["test", "--chrome", "--headless", "--features", "sqlite"])
-                    .current_dir(metadata.workspace_root.join("diesel_tests"))
-                    .env("RUSTFLAGS", "--cfg getrandom_backend=\"wasm_js\"")
-                    .env("WASM_BINDGEN_TEST_TIMEOUT", "60")
-                    .stderr(Stdio::inherit())
-                    .stdout(Stdio::inherit())
-                    .status()
-                    .unwrap();
-                if !out.success() {
+                if !run_tests(metadata.workspace_root.join("diesel_tests")) {
                     eprintln!("Failed to run wasm integration tests");
                     return false;
                 }

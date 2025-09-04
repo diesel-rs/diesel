@@ -324,14 +324,18 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: "rust-src"
-          targets: "wasm32-unknown-unknown"
+          # It seems not to work
+          # targets: "wasm32-unknown-unknown"
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@v2
         with:
           key: sqlite_wasm-cargo-${{ hashFiles('**/Cargo.toml') }}
 
-      - name: Install wasm-pack
-        run: cargo install wasm-pack
+      - name: Add wasm32-unknown-unknown target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli --locked
 
       - name: Install emscripten toolchains
         run: |
