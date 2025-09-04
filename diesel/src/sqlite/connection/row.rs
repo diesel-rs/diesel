@@ -357,6 +357,7 @@ mod tests {
         use crate::connection::SimpleConnection;
         use crate::expression_methods::ExpressionMethods;
         use crate::SqliteConnection;
+        use std::panic::AssertUnwindSafe;
         use std::sync::{Arc, Barrier};
         use std::time::Duration;
 
@@ -378,6 +379,8 @@ mod tests {
 
         let barrier = Arc::new(Barrier::new(2));
         let barrier2 = barrier.clone();
+
+        let barrier = AssertUnwindSafe(barrier);
 
         // we unblock the main thread from the sleep function
         sleep_utils::register_impl(&mut conn2, move |a: i32| {
