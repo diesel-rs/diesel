@@ -282,7 +282,7 @@ where
                 metadata_lookup: _,
             } => collector.append_bind_data(bind_collector_data),
             AstPassInternals::DebugBinds(ref mut f) => {
-                f.push(Box::new("Opaque bind collector data"))
+                DB::BindCollector::push_debug_binds(bind_collector_data, f);
             }
             _ => {}
         }
