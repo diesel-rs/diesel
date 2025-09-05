@@ -1,0 +1,9 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: postgres_add_record"
+---
+-- This file should undo anything in `up.sql`
+ALTER TABLE "users" DROP COLUMN "added_record";
+
+
+DROP TYPE IF EXISTS "ADDED_RECORD_RECORD";

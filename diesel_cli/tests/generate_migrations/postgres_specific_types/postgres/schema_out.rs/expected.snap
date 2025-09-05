@@ -1,0 +1,68 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: postgres_specific_types"
+---
+// @generated automatically by Diesel CLI.
+
+pub mod sql_types {
+    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "DEEP_NESTED_RECORD"))]
+    pub struct DeepNestedRecord;
+
+    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "NESTED_2_RECORD"))]
+    pub struct Nested2Record;
+
+    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "NESTED_3_RECORD"))]
+    pub struct Nested3Record;
+
+    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "NESTED_4_RECORD"))]
+    pub struct Nested4Record;
+
+    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "NESTED_5_RECORD"))]
+    pub struct Nested5Record;
+
+    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "NULLABLE_RECORD_RECORD"))]
+    pub struct NullableRecordRecord;
+
+    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "RECORD_RECORD"))]
+    pub struct RecordRecord;
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::RecordRecord;
+    use super::sql_types::NullableRecordRecord;
+    use super::sql_types::Nested2Record;
+    use super::sql_types::Nested3Record;
+    use super::sql_types::Nested4Record;
+    use super::sql_types::Nested5Record;
+    use super::sql_types::DeepNestedRecord;
+
+    users (id) {
+        id -> Int4,
+        array -> Array<Nullable<Int4>>,
+        record -> RecordRecord,
+        range -> Int4range,
+        multirange -> Int4multirange,
+        timestamp -> Timestamp,
+        timestamptz -> Timestamptz,
+        nullable_array -> Nullable<Array<Nullable<Int4>>>,
+        nullable_record -> Nullable<NullableRecordRecord>,
+        nullable_range -> Nullable<Int4range>,
+        nullable_multirange -> Nullable<Int4multirange>,
+        nullable_timestamp -> Nullable<Timestamp>,
+        nullable_timestamptz -> Nullable<Timestamptz>,
+        nested_1 -> Array<Nullable<Int4range>>,
+        nested_2 -> Array<Nullable<Nested2Record>>,
+        nested_3 -> Array<Nullable<Nested3Record>>,
+        nested_4 -> Nested4Record,
+        nested_5 -> Nullable<Array<Nullable<Nested5Record>>>,
+        deep_nested -> DeepNestedRecord,
+    }
+}
