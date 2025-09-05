@@ -5,14 +5,14 @@ edition.workspace = true
 publish = false
 
 [dependencies]
-diesel = { version = "2.2.0", path = "../../../diesel", features = ["mysql"] }
+diesel = { version = "2.3.0", path = "../../../diesel", features = ["mysql"] }
 mysqlclient-sys = { workspace = true, features = ["bundled"] }
 dotenvy = "0.15"
 
 [dev-dependencies]
 assert_cmd = "2.0.14"
 url = "2.2.2"
-diesel_migrations = { version = "2.2.0", path = "../../../diesel_migrations" }
+diesel_migrations = { version = "2.3.0", path = "../../../diesel_migrations" }
 
 [[bin]]
 name = "show_posts"
