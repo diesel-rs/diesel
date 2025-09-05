@@ -1,0 +1,4 @@
+[print_schema]
+file = "src/schema.rs"
+with_docs = false
+sqlite_integer_primary_key_is_bigint = true
