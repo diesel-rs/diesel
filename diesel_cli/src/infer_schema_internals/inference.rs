@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use diesel::result::Error::NotFound;
 
 use super::data_structures::*;
@@ -193,13 +195,19 @@ fn determine_column_type(
     conn: &mut InferConnection,
     #[allow(unused_variables)] table: &TableName,
     #[allow(unused_variables)] primary_keys: &[String],
+    #[allow(unused_variables)] foreign_keys: &HashMap<String, ForeignKeyConstraint>,
     #[allow(unused_variables)] config: &PrintSchema,
 ) -> Result<ColumnType, crate::errors::Error> {
     match *conn {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref mut conn) => {
-            super::sqlite::determine_column_type(conn, attr, table, primary_keys, config)
-        }
+        InferConnection::Sqlite(ref mut conn) => super::sqlite::determine_column_type(
+            conn,
+            attr,
+            table,
+            primary_keys,
+            foreign_keys,
+            config,
+        ),
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref mut conn) => {
             use crate::infer_schema_internals::information_schema::DefaultSchema;
@@ -282,6 +290,16 @@ pub fn load_table_data(
     };
 
     let primary_key = get_primary_keys(connection, &name)?;
+    let foreign_keys = load_foreign_key_constraints(connection, name.schema.as_deref())?
+        .into_iter()
+        .filter_map(|c| {
+            if c.child_table == name && c.foreign_key_columns.len() == 1 {
+                Some((c.foreign_key_columns_rust[0].clone(), c))
+            } else {
+                None
+            }
+        })
+        .collect();
 
     let pg_domains_as_custom_types = config
         .pg_domains_as_custom_types
@@ -297,7 +315,7 @@ pub fn load_table_data(
     )?
     .into_iter()
     .map(|c| {
-        let ty = determine_column_type(&c, connection, &name, &primary_key, config)?;
+        let ty = determine_column_type(&c, connection, &name, &primary_key, &foreign_keys, config)?;
 
         let ColumnInformation {
             column_name,
