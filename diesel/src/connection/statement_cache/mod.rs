@@ -205,6 +205,11 @@ where
     // This function takes explicitly a connection and a function pointer (and no generic callback)
     // as argument to ensure that we don't leak generic query types into the prepare function
     #[allow(unreachable_pub)]
+    #[cfg(any(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        feature = "sqlite",
+        feature = "mysql"
+    ))]
     pub fn cached_statement<'a, T, R, C>(
         &'a mut self,
         source: &T,
