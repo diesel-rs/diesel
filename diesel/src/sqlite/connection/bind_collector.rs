@@ -208,7 +208,7 @@ impl<'a> BindCollector<'a, Sqlite> for SqliteBindCollector<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum OwnedSqliteBindValue {
     String(Box<str>),
     Binary(Box<[u8]>),
@@ -277,6 +277,18 @@ impl MoveableBindCollector<Sqlite> for SqliteBindCollector<'_> {
             from.binds
                 .iter()
                 .map(|(bind, tpe)| (InternalSqliteBindValue::from(bind), *tpe)),
+        );
+    }
+
+    fn push_debug_binds<'a, 'b>(
+        bind_data: &Self::BindData,
+        f: &'a mut Vec<Box<dyn std::fmt::Debug + 'b>>,
+    ) {
+        f.extend(
+            bind_data
+                .binds
+                .iter()
+                .map(|(b, _)| Box::new(b.clone()) as Box<dyn std::fmt::Debug>),
         );
     }
 }
