@@ -280,6 +280,12 @@ mod multi_connection_impl {
                 Self::lookup_sql_type::<diesel::sql_types::Bool>(lookup)
             }
         }
+        impl diesel::sql_types::HasSqlType<diesel::sql_types::Numeric>
+        for super::MultiBackend {
+            fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+                Self::lookup_sql_type::<diesel::sql_types::Numeric>(lookup)
+            }
+        }
     }
     mod query_builder {
         use super::*;
@@ -1311,6 +1317,16 @@ mod multi_connection_impl {
                 Ok(diesel::serialize::IsNull::No)
             }
         }
+        impl diesel::serialize::ToSql<diesel::sql_types::Numeric, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::bigdecimal::BigDecimal {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Numeric, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
         impl diesel::serialize::ToSql<diesel::sql_types::Timestamp, super::MultiBackend>
         for diesel::internal::derives::multiconnection::chrono::NaiveDateTime {
             fn to_sql<'b>(
@@ -1437,6 +1453,16 @@ mod multi_connection_impl {
                 bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
             ) -> diesel::deserialize::Result<Self> {
                 bytes.from_sql::<Self, diesel::sql_types::Bool>()
+            }
+        }
+        impl diesel::deserialize::FromSql<
+            diesel::sql_types::Numeric,
+            super::MultiBackend,
+        > for diesel::internal::derives::multiconnection::bigdecimal::BigDecimal {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Numeric>()
             }
         }
         impl diesel::deserialize::FromSql<
