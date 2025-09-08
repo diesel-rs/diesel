@@ -645,6 +645,12 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         ),
         (quote::quote!(diesel::sql_types::Bool), quote::quote!(bool)),
     ];
+    if cfg!(feature = "numeric") {
+        to_sql_impls.push((
+            quote::quote!(diesel::sql_types::Numeric),
+            quote::quote!(diesel::internal::derives::multiconnection::bigdecimal::BigDecimal),
+        ));
+    }
     if cfg!(feature = "chrono") {
         to_sql_impls.push((
             quote::quote!(diesel::sql_types::Timestamp),
@@ -699,6 +705,12 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         ),
         (quote::quote!(diesel::sql_types::Bool), quote::quote!(bool)),
     ];
+    if cfg!(feature = "numeric") {
+        from_sql_impls.push((
+            quote::quote!(diesel::sql_types::Numeric),
+            quote::quote!(diesel::internal::derives::multiconnection::bigdecimal::BigDecimal),
+        ));
+    }
     if cfg!(feature = "chrono") {
         from_sql_impls.push((
             quote::quote!(diesel::sql_types::Timestamp),
@@ -1468,7 +1480,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         }
     });
 
-    let has_sql_type_impls = vec![
+    let mut has_sql_type_impls = vec![
         quote::quote!(diesel::sql_types::SmallInt),
         quote::quote!(diesel::sql_types::Integer),
         quote::quote!(diesel::sql_types::BigInt),
@@ -1480,9 +1492,13 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         quote::quote!(diesel::sql_types::Time),
         quote::quote!(diesel::sql_types::Timestamp),
         quote::quote!(diesel::sql_types::Bool),
-    ]
-    .into_iter()
-    .map(generate_has_sql_type_impls);
+    ];
+    if cfg!(feature = "numeric") {
+        has_sql_type_impls.push(quote::quote!(diesel::sql_types::Numeric))
+    }
+    let has_sql_type_impls = has_sql_type_impls
+        .into_iter()
+        .map(generate_has_sql_type_impls);
 
     let into_variant_functions = connection_types.iter().map(|c| {
         let ty = c.ty;
