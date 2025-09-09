@@ -363,6 +363,8 @@ pub fn determine_column_type(
         String::from("Date")
     } else if type_name == "time" {
         String::from("Time")
+    } else if type_name == "json" {
+        String::from("Json")
     } else {
         return Err(crate::errors::Error::UnsupportedType(type_name));
     };
