@@ -1738,11 +1738,8 @@ fn derive_multiconnection_inner(input: proc_macro2::TokenStream) -> proc_macro2:
 ///       pub use crate::your_extension::dsl::YourType;
 ///    }
 ///    ```
-/// - `#[auto_type(method_type_case = "snake_case")]` to change the case of the
+/// - `#[auto_type(type_case = "snake_case")]` to change the case of the
 ///   method type alias.
-/// - `#[auto_type(function_type_case = "snake_case")]` to change the case of
-///   the function type alias (if you don't want the exact same path but want to
-///   change the case of the last element of the path).
 ///
 /// The `dsl_path` attribute in particular may be used to declare an
 /// intermediate module where you would define the few additional needed type
