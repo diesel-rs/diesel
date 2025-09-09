@@ -1,19 +1,19 @@
-error[E0277]: cannot deserialize a value of the database type `BigInt` as `std::string::String`
+error[E0277]: cannot deserialize a value of the database type `diesel::sql_types::BigInt` as `std::string::String`
     --> tests/fail/select_sql_still_ensures_result_type.rs:16:51
      |
 16   |     let count = select_count.get_result::<String>(&mut connection).unwrap();
-     |                                                   ^^^^^^^^^^^^^^^ the trait `FromSql<BigInt, _>` is not implemented for `std::string::String`
+     |                                                   ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::BigInt, _>` is not implemented for `std::string::String`
      |
-     = note: double check your type mappings via the documentation of `BigInt`
+     = note: double check your type mappings via the documentation of `diesel::sql_types::BigInt`
      = help: the following other types implement trait `FromSql<A, DB>`:
                `std::string::String` implements `FromSql<Citext, Pg>`
                `std::string::String` implements `FromSql<TimestamptzSqlite, Sqlite>`
                `std::string::String` implements `FromSql<diesel::sql_types::Date, Sqlite>`
                `std::string::String` implements `FromSql<diesel::sql_types::Time, Sqlite>`
                `std::string::String` implements `FromSql<diesel::sql_types::Timestamp, Sqlite>`
-     = note: required for `std::string::String` to implement `Queryable<BigInt, _>`
-     = note: required for `std::string::String` to implement `FromSqlRow<BigInt, _>`
-     = note: required for `BigInt` to implement `load_dsl::private::CompatibleType<std::string::String, _>`
+     = note: required for `std::string::String` to implement `Queryable<diesel::sql_types::BigInt, _>`
+     = note: required for `std::string::String` to implement `FromSqlRow<diesel::sql_types::BigInt, _>`
+     = note: required for `diesel::sql_types::BigInt` to implement `load_dsl::private::CompatibleType<std::string::String, _>`
      = note: required for `SelectStatement<FromClause<table>, SelectClause<SqlLiteral<BigInt>>>` to implement `LoadQuery<'_, _, std::string::String>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs

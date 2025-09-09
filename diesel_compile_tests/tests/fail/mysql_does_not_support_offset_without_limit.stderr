@@ -1,12 +1,11 @@
-error[E0277]: `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>` is no valid SQL fragment for the `Mysql` backend
+error[E0277]: `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/mysql_does_not_support_offset_without_limit.rs:16:38
      |
 16   |         .get_result::<(i32, String)>(&mut connection);
-     |          ----------                  ^^^^^^^^^^^^^^^ unsatisfied trait bound
+     |          ----------                  ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>`
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `QueryFragment<Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
      = help: the following other types implement trait `QueryFragment<DB, SP>`:
@@ -36,10 +35,9 @@ error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, ...>: IntoBoxedC
   --> tests/fail/mysql_does_not_support_offset_without_limit.rs:21:10
    |
 LL |         .into_boxed()
-   |          ^^^^^^^^^^ unsatisfied trait bound
+   |          ^^^^^^^^^^ the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>`
    |
-   = help: the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>`
-   = note: this usually means that `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>` is no valid SQL for `Mysql`
+   = note: this usually means that `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>` is no valid SQL for `Mysql`
    = help: the following other types implement trait `IntoBoxedClause<'a, DB>`:
              `LimitOffsetClause<L, O>` implements `IntoBoxedClause<'_, Pg>`
              `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'_, Mysql>`
@@ -56,10 +54,9 @@ error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, ...>: IntoBoxedC
     --> tests/fail/mysql_does_not_support_offset_without_limit.rs:21:10
      |
 21   |         .into_boxed()
-     |          ^^^^^^^^^^ unsatisfied trait bound
+     |          ^^^^^^^^^^ the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>`
      |
-     = help: the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>`
-     = note: this usually means that `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>` is no valid SQL for `Mysql`
+     = note: this usually means that `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>` is no valid SQL for `Mysql`
      = help: the following other types implement trait `IntoBoxedClause<'a, DB>`:
                `LimitOffsetClause<L, O>` implements `IntoBoxedClause<'_, Pg>`
                `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'_, Mysql>`

@@ -889,13 +889,13 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
      |
      = help: the following other types implement trait `SingleValue`:
                Array<ST>
-               BigInt
                Bool
                CChar
                Cidr
                Citext
                Datetime
                Inet
+               Interval
              and N others
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `load_dsl::private::CompatibleType<(i32, std::string::String), _>`
      = note: required for `SelectStatement<FromClause<table>, SelectClause<SelectBy<Post, _>>>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
@@ -950,13 +950,13 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
      |
      = help: the following other types implement trait `SingleValue`:
                Array<ST>
-               BigInt
                Bool
                CChar
                Cidr
                Citext
                Datetime
                Inet
+               Interval
              and N others
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `load_dsl::private::CompatibleType<(i32, std::string::String), _>`
      = note: required for `BoxedSelectStatement<'_, SelectBy<Post, _>, FromClause<table>, _>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
@@ -1045,13 +1045,13 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
      |
      = help: the following other types implement trait `SingleValue`:
                Array<ST>
-               BigInt
                Bool
                CChar
                Cidr
                Citext
                Datetime
                Inet
+               Interval
              and N others
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `load_dsl::private::CompatibleType<(i32, std::string::String, i32), _>`
      = note: required for `InsertStatement<table, ValuesClause<..., ...>, ..., ...>` to implement `LoadQuery<'_, _, (i32, std::string::String, i32)>`

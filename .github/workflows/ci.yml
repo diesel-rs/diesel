@@ -220,11 +220,17 @@ jobs:
         run: |
           echo FLAGS="-F diesel/i-implement-a-third-party-backend-and-opt-into-breaking-changes -F diesel/unstable -F diesel/without-deprecated" >> $GITHUB_ENV
 
-      - name: Add Flags (beta)
+      - name: Add Flags (beta + Sqlite)
         if: matrix.rust == 'beta' && matrix.backend == 'sqlite'
         shell: bash
         run: |
           echo FLAGS="-F diesel/returning_clauses_for_sqlite_3_35 -F libsqlite3-sys/bundled" >> $GITHUB_ENV
+
+      - name: Add Flags (beta)
+        if: matrix.rust == 'beta'
+        shell: bash
+        run: |
+          echo FLAGS="${FLAGS} -F diesel/time -F diesel/chrono -F diesel/numeric -F diesel/extras -F diesel_derives/time -F diesel_derives/chrono -F diesel_derives/numeric"
 
       - name: Add Flags (stable)
         if: matrix.rust == 'stable'
