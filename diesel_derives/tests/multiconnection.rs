@@ -149,7 +149,8 @@ fn make_test_table(conn: &mut InferConnection) {
                      time1 TIME,\
                      timestamp2 TIMESTAMP,\
                      date2 DATE,\
-                     time2 TIME
+                     time2 TIME,\
+                     numeric NUMERIC
                  )",
             )
             .execute(conn)
@@ -171,7 +172,8 @@ fn make_test_table(conn: &mut InferConnection) {
                      time1 TIME,\
                      timestamp2 TIMESTAMP,\
                      date2 DATE,\
-                     time2 TIME
+                     time2 TIME,\
+                     numeric NUMERIC
                  )",
             )
             .execute(conn)
@@ -193,7 +195,8 @@ fn make_test_table(conn: &mut InferConnection) {
                      `time1` TIME,\
                      `timestamp2` DATETIME,
                      `date2` DATE,\
-                     `time2` TIME
+                     `time2` TIME,\
+                     `numeric` NUMERIC
                  )",
             )
             .execute(conn)
@@ -205,7 +208,8 @@ fn make_test_table(conn: &mut InferConnection) {
 #[cfg(all(feature = "chrono", feature = "time"))]
 #[test]
 fn type_checks() {
-    use diesel::internal::derives::multiconnection::{chrono, time};
+    use bigdecimal::FromPrimitive;
+    use diesel::internal::derives::multiconnection::{bigdecimal, chrono, time};
 
     table! {
         type_test(integer) {
@@ -222,6 +226,7 @@ fn type_checks() {
             timestamp2 -> Timestamp,
             time2 -> Time,
             date2 -> Date,
+            numeric -> Numeric,
         }
     }
 
@@ -235,12 +240,13 @@ fn type_checks() {
     let double = 5.0_f64;
     let string = String::from("bar");
     let blob = vec![1_u8, 2, 3, 4];
-    let date1 = chrono::NaiveDate::from_ymd_opt(2023, 08, 17).unwrap();
-    let time1 = chrono::NaiveTime::from_hms_opt(07, 50, 12).unwrap();
+    let date1 = chrono::NaiveDate::from_ymd_opt(2023, 8, 17).unwrap();
+    let time1 = chrono::NaiveTime::from_hms_opt(7, 50, 12).unwrap();
     let timestamp1 = chrono::NaiveDateTime::new(date1, time1);
     let time2 = time::Time::from_hms(12, 22, 23).unwrap();
     let date2 = time::Date::from_calendar_date(2023, time::Month::August, 26).unwrap();
     let timestamp2 = time::PrimitiveDateTime::new(date2, time2);
+    let numeric = bigdecimal::BigDecimal::from_f64(std::f64::consts::PI).unwrap();
 
     diesel::insert_into(type_test::table)
         .values((
@@ -257,6 +263,7 @@ fn type_checks() {
             type_test::timestamp2.eq(timestamp2),
             type_test::time2.eq(time2),
             type_test::date2.eq(date2),
+            type_test::numeric.eq(&numeric),
         ))
         .execute(&mut conn)
         .unwrap();
@@ -276,6 +283,7 @@ fn type_checks() {
             time::PrimitiveDateTime, //10
             time::Time,              //11
             time::Date,              //12
+            bigdecimal::BigDecimal,  //13
         )>(&mut conn)
         .unwrap();
 
@@ -292,12 +300,15 @@ fn type_checks() {
     assert_eq!(timestamp2, result.10);
     assert_eq!(time2, result.11);
     assert_eq!(date2, result.12);
+    assert_eq!(numeric, result.13);
 }
 
-#[cfg(all(feature = "chrono", feature = "time"))]
+#[cfg(all(feature = "chrono", feature = "time", feature = "numeric"))]
+#[allow(clippy::unnecessary_literal_unwrap)]
 #[test]
 fn nullable_type_checks() {
-    use diesel::internal::derives::multiconnection::{chrono, time};
+    use bigdecimal::FromPrimitive;
+    use diesel::internal::derives::multiconnection::{bigdecimal, chrono, time};
 
     table! {
         type_test(integer) {
@@ -314,6 +325,8 @@ fn nullable_type_checks() {
             timestamp2 -> Nullable<Timestamp>,
             time2 -> Nullable<Time>,
             date2 -> Nullable<Date>,
+            numeric -> Nullable<Numeric>,
+
         }
     }
 
@@ -328,12 +341,13 @@ fn nullable_type_checks() {
     let double = Some(5.0_f64);
     let string = Some(String::from("bar"));
     let blob = Some(vec![1_u8, 2, 3, 4]);
-    let date1 = Some(chrono::NaiveDate::from_ymd_opt(2023, 08, 17).unwrap());
-    let time1 = Some(chrono::NaiveTime::from_hms_opt(07, 50, 12).unwrap());
+    let date1 = Some(chrono::NaiveDate::from_ymd_opt(2023, 8, 17).unwrap());
+    let time1 = Some(chrono::NaiveTime::from_hms_opt(7, 50, 12).unwrap());
     let timestamp1 = Some(chrono::NaiveDateTime::new(date1.unwrap(), time1.unwrap()));
     let time2 = Some(time::Time::from_hms(12, 22, 23).unwrap());
     let date2 = Some(time::Date::from_calendar_date(2023, time::Month::August, 26).unwrap());
     let timestamp2 = Some(time::PrimitiveDateTime::new(date2.unwrap(), time2.unwrap()));
+    let numeric = Some(bigdecimal::BigDecimal::from_f64(std::f64::consts::PI).unwrap());
 
     diesel::insert_into(type_test::table)
         .values((
@@ -350,6 +364,7 @@ fn nullable_type_checks() {
             type_test::timestamp2.eq(timestamp2),
             type_test::time2.eq(time2),
             type_test::date2.eq(date2),
+            type_test::numeric.eq(&numeric),
         ))
         .execute(&mut conn)
         .unwrap();
@@ -369,6 +384,7 @@ fn nullable_type_checks() {
             Option<time::PrimitiveDateTime>,
             Option<time::Time>,
             Option<time::Date>,
+            Option<bigdecimal::BigDecimal>,
         )>(&mut conn)
         .unwrap();
 
@@ -385,6 +401,7 @@ fn nullable_type_checks() {
     assert_eq!(timestamp2, result.10);
     assert_eq!(time2, result.11);
     assert_eq!(date2, result.12);
+    assert_eq!(numeric, result.13);
 
     diesel::delete(type_test::table).execute(&mut conn).unwrap();
 
@@ -403,6 +420,7 @@ fn nullable_type_checks() {
             type_test::timestamp2.eq(None::<time::PrimitiveDateTime>),
             type_test::time2.eq(None::<time::Time>),
             type_test::date2.eq(None::<time::Date>),
+            type_test::numeric.eq(None::<bigdecimal::BigDecimal>),
         ))
         .execute(&mut conn)
         .unwrap();
@@ -421,6 +439,7 @@ fn nullable_type_checks() {
             Option<time::PrimitiveDateTime>,
             Option<time::Time>,
             Option<time::Date>,
+            Option<bigdecimal::BigDecimal>,
         )>(&mut conn)
         .unwrap();
     assert!(result.0.is_none());
@@ -436,4 +455,5 @@ fn nullable_type_checks() {
     assert!(result.10.is_none());
     assert!(result.11.is_none());
     assert!(result.12.is_none());
+    assert!(result.13.is_none());
 }

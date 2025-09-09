@@ -33,78 +33,11 @@ mod bigdecimal {
         use crate::prelude::*;
         use bigdecimal::{BigDecimal, ToPrimitive};
 
-        #[derive(diesel::MultiConnection)]
-        enum InferConnection {
-            Sqlite(diesel::SqliteConnection),
-        }
-
-        fn establish_connection() -> InferConnection {
-            InferConnection::establish(":memory:").unwrap()
-        }
-
         table! {
             bigdecimal_test {
                 id -> Integer,
                 value -> BigInt,
             }
-        }
-
-        #[test]
-        fn sum_bigdecimal_to_i64_multi_connection() {
-            use self::bigdecimal_test::dsl::*;
-
-            let connection = &mut establish_connection();
-            crate::sql_query(
-                "CREATE TABLE bigdecimal_test (id integer primary key autoincrement, value integer)",
-            )
-            .execute(connection)
-            .unwrap();
-            crate::sql_query("INSERT INTO bigdecimal_test (value) VALUES (14), (14), (14)")
-                .execute(connection)
-                .unwrap();
-
-            let result: Option<BigDecimal> = bigdecimal_test
-                .select(crate::dsl::sum(value))
-                .first(connection)
-                .expect("Summed result");
-
-            let result = match result.map(|r| r.to_i64()) {
-                Some(Some(r)) => r,
-                Some(None) => i64::MAX,
-                None => 0,
-            };
-
-            assert_eq!(42i64, result);
-        }
-
-        #[test]
-        fn sum_bigdecimal_to_f64_multi_connection() {
-            use self::bigdecimal_test::dsl::*;
-
-            let connection = &mut establish_connection();
-            crate::sql_query(
-                "CREATE TABLE bigdecimal_test (id integer primary key autoincrement, value numeric)",
-            )
-            .execute(connection)
-            .unwrap();
-            crate::sql_query(
-                "INSERT INTO bigdecimal_test (value) VALUES (14.14), (14.14), (14.14)",
-            )
-            .execute(connection)
-            .unwrap();
-
-            let result: Option<BigDecimal> = bigdecimal_test
-                .select(crate::dsl::sum(value))
-                .first(connection)
-                .expect("Summed result");
-
-            let result = match result.map(|r| r.to_f64()) {
-                Some(Some(r)) => r,
-                Some(None) => f64::MAX,
-                None => 0.0,
-            };
-
-            assert_eq!(42.42f64, result);
         }
 
         #[test]

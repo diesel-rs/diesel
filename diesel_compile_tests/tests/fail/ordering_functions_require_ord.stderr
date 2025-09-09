@@ -6,13 +6,13 @@ LL |     let source = stuff::table.select(max(stuff::b));
    |
    = help: the following other types implement trait `SqlOrd`:
              Array<T>
-             BigInt
              Citext
              Datetime
              Interval
              Nullable<T>
-             Unsigned<BigInt>
-             Unsigned<diesel::sql_types::Integer>
+             diesel::sql_types::BigInt
+             diesel::sql_types::Date
+             diesel::sql_types::Double
            and N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
 note: required by a bound in `diesel::dsl::max`
@@ -30,13 +30,13 @@ LL |     let source = stuff::table.select(max(stuff::b));
    |
    = help: the following other types implement trait `SqlOrd`:
              Array<T>
-             BigInt
              Citext
              Datetime
              Interval
              Nullable<T>
-             Unsigned<BigInt>
-             Unsigned<diesel::sql_types::Integer>
+             diesel::sql_types::BigInt
+             diesel::sql_types::Date
+             diesel::sql_types::Double
            and N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
    = note: required for `max<Bool, b>` to implement `diesel::Expression`
@@ -51,13 +51,13 @@ error[E0277]: the trait bound `Bool: SqlOrdAggregate` is not satisfied
     |
     = help: the following other types implement trait `SqlOrd`:
               Array<T>
-              BigInt
               Citext
               Datetime
               Interval
               Nullable<T>
-              Unsigned<BigInt>
-              Unsigned<diesel::sql_types::Integer>
+              diesel::sql_types::BigInt
+              diesel::sql_types::Date
+              diesel::sql_types::Double
             and N others
     = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
 note: required by a bound in `diesel::dsl::min`
@@ -75,13 +75,13 @@ LL |     let source = stuff::table.select(min(stuff::b));
    |
    = help: the following other types implement trait `SqlOrd`:
              Array<T>
-             BigInt
              Citext
              Datetime
              Interval
              Nullable<T>
-             Unsigned<BigInt>
-             Unsigned<diesel::sql_types::Integer>
+             diesel::sql_types::BigInt
+             diesel::sql_types::Date
+             diesel::sql_types::Double
            and N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
    = note: required for `min<Bool, b>` to implement `diesel::Expression`
