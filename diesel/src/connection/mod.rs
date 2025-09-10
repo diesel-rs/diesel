@@ -377,10 +377,12 @@ where
     {
         let mut user_result = None;
         let _ = self.transaction::<(), _, _>(|conn| {
-            user_result = f(conn).ok();
+            user_result = Some(f(conn));
             Err(Error::RollbackTransaction)
         });
-        user_result.expect("Transaction did not succeed")
+        user_result
+            .expect("Transaction never executed")
+            .unwrap_or_else(|e| panic!("Transaction did not succeed: {:?}", e))
     }
 
     /// Execute a single SQL statements given by a query and return
