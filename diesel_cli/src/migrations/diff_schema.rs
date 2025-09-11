@@ -3,6 +3,7 @@ use diesel::backend::Backend;
 use diesel::query_builder::QueryBuilder;
 use diesel::QueryResult;
 use diesel_table_macro_syntax::{ColumnDef, TableDecl};
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::path::Path;
 use syn::visit::Visit;
@@ -348,6 +349,7 @@ impl SchemaDiff {
                         })
                     })
                     .collect::<Result<Vec<_>, crate::errors::Error>>()?;
+
                 let foreign_keys = foreign_keys
                     .iter()
                     .map(|(f, pk)| {
@@ -362,7 +364,7 @@ impl SchemaDiff {
                 let sqlite_integer_primary_key_is_bigint = config
                     .sqlite_integer_primary_key_is_bigint
                     .unwrap_or_default();
-
+                collect_and_generate_record_types(query_builder, &column_data)?;
                 generate_create_table(
                     query_builder,
                     table,
@@ -385,6 +387,9 @@ impl SchemaDiff {
                     generate_drop_column(query_builder, &table.to_lowercase(), &c.sql_name)?;
                     query_builder.push_sql("\n");
                 }
+                let for_record_types =
+                    extract_record_types_from_changed_columns(added_columns, changed_columns)?;
+                collect_and_generate_record_types(query_builder, &for_record_types)?;
                 for c in added_columns
                     .iter()
                     .chain(changed_columns.iter().map(|(_, b)| b))
@@ -406,7 +411,7 @@ impl SchemaDiff {
         &self,
         query_builder: &mut impl QueryBuilder<DB>,
         config: &PrintSchema,
-    ) -> QueryResult<()>
+    ) -> Result<(), crate::errors::Error>
     where
         DB: Backend,
     {
@@ -442,6 +447,21 @@ impl SchemaDiff {
             }
             SchemaDiff::CreateTable { to_create, .. } => {
                 generate_drop_table(query_builder, &to_create.sql_name.to_lowercase())?;
+                let for_record_types = to_create
+                    .column_defs
+                    .iter()
+                    .map(|c| {
+                        let ty = ColumnType::for_column_def(c)?;
+                        Ok::<_, crate::errors::Error>(ColumnDefinition {
+                            sql_name: c.sql_name.to_lowercase(),
+                            rust_name: c.sql_name.clone(),
+                            ty,
+                            comment: None,
+                        })
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let record_types = collect_record_types(&for_record_types);
+                drop_record_types(record_types, query_builder)?;
             }
             SchemaDiff::ChangeTable {
                 table,
@@ -463,6 +483,10 @@ impl SchemaDiff {
                     )?;
                     query_builder.push_sql("\n");
                 }
+                let for_record_types =
+                    extract_record_types_from_changed_columns(added_columns, changed_columns)?;
+                let record_types = collect_record_types(&for_record_types);
+                drop_record_types(record_types, query_builder)?;
                 for c in removed_columns
                     .iter()
                     .chain(changed_columns.iter().map(|(a, _)| a))
@@ -481,6 +505,162 @@ impl SchemaDiff {
     }
 }
 
+fn extract_record_types_from_changed_columns(
+    added_columns: &[ColumnDef],
+    changed_columns: &[(ColumnDefinition, ColumnDef)],
+) -> Result<Vec<ColumnDefinition>, crate::errors::Error> {
+    let for_record_types = added_columns
+        .iter()
+        .map(|c| {
+            let ty = ColumnType::for_column_def(c)?;
+            Ok::<_, crate::errors::Error>(ColumnDefinition {
+                sql_name: c.sql_name.to_lowercase(),
+                rust_name: c.sql_name.clone(),
+                ty,
+                comment: None,
+            })
+        })
+        .chain(changed_columns.iter().map(|(c, _)| Ok(c.clone())))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(for_record_types)
+}
+
+fn drop_record_types<DB>(
+    record_types: Vec<(Cow<'_, str>, &[ColumnType])>,
+    query_builder: &mut impl QueryBuilder<DB>,
+) -> Result<(), crate::errors::Error>
+where
+    DB: Backend,
+{
+    if !record_types.is_empty() {
+        query_builder.push_sql("\n\n");
+    }
+    for (column, _) in record_types.into_iter().rev() {
+        drop_record_type(column, query_builder)?;
+    }
+    Ok(())
+}
+
+fn drop_record_type<DB>(
+    column: Cow<'_, str>,
+    query_builder: &mut impl QueryBuilder<DB>,
+) -> Result<(), crate::errors::Error>
+where
+    DB: Backend,
+{
+    query_builder.push_sql("DROP TYPE IF EXISTS ");
+    query_builder.push_identifier(&format!("{}_RECORD", column.to_uppercase()))?;
+    query_builder.push_sql(";\n\n");
+    Ok(())
+}
+
+fn collect_and_generate_record_types<DB>(
+    query_builder: &mut impl QueryBuilder<DB>,
+    column_data: &[ColumnDefinition],
+) -> Result<(), crate::errors::Error>
+where
+    DB: Backend,
+{
+    let record_types = collect_record_types(column_data);
+    for (column, record_types) in record_types {
+        generate_record_types(query_builder, record_types, column)?;
+    }
+    Ok(())
+}
+
+// We need to return a boxed iterator here and not a impl Iterator as
+// rustc otherwise returns a not very good error message that it cannot infer the type behind
+// the impl
+//
+// I believe that's reasonable as rustc likely struggles with the recursive type otherwise
+// Boxing just makes it much clearer what really happens here for the compiler
+#[expect(
+    clippy::type_complexity,
+    reason = "Its an internally only type and it's not that complex"
+)]
+fn recursive_record_types<'a>(
+    ty: &'a ColumnType,
+    prefix: Cow<'a, str>,
+) -> Box<dyn Iterator<Item = (Cow<'a, str>, Option<&'a [ColumnType]>)> + 'a> {
+    let prefix_2 = prefix.clone();
+    let iter = ty
+        .record
+        .as_deref()
+        .into_iter()
+        .flatten()
+        .enumerate()
+        .flat_map(move |(idx, c)| {
+            recursive_record_types(c, Cow::Owned(format!("{prefix_2}_RECORD_FIELD_{idx}")))
+        })
+        .chain(
+            ty.record
+                .as_deref()
+                .into_iter()
+                .flatten()
+                .enumerate()
+                .map(move |(idx, c)| {
+                    (
+                        Cow::Owned(format!("{prefix}_RECORD_FIELD_{idx}")),
+                        c.record.as_deref(),
+                    )
+                }),
+        );
+    Box::new(iter)
+}
+
+fn collect_record_types(column_data: &[ColumnDefinition]) -> Vec<(Cow<'_, str>, &[ColumnType])> {
+    column_data
+        .iter()
+        .flat_map(|c| {
+            recursive_record_types(&c.ty, Cow::Borrowed(c.sql_name.as_str())).chain(
+                std::iter::once((Cow::Borrowed(c.sql_name.as_str()), c.ty.record.as_deref())),
+            )
+        })
+        .filter_map(|(column_name, record)| Some((column_name, record?)))
+        .collect::<Vec<_>>()
+}
+
+fn generate_record_types<DB>(
+    query_builder: &mut impl QueryBuilder<DB>,
+    record_types: &[ColumnType],
+    column_name: Cow<'_, str>,
+) -> QueryResult<()>
+where
+    DB: Backend,
+{
+    query_builder.push_sql("CREATE TYPE ");
+    let record_type_name = format!("{}_RECORD", column_name.to_uppercase());
+    if dbg!(record_type_name.len()) > 64 {
+        return Err(diesel::result::Error::QueryBuilderError(
+            format!(
+                "Failed to construct a suitable name \
+             for a record type for `{column_name}` due to PostgreSQL limiting \
+             type names to 64 byte"
+            )
+            .into(),
+        ));
+    }
+    query_builder.push_identifier(&record_type_name)?;
+    query_builder.push_sql(" AS (\n");
+    for (idx, record_type) in record_types.iter().enumerate() {
+        query_builder.push_sql("\t");
+        query_builder.push_identifier(&format!("FIELD_{idx}"))?;
+        query_builder.push_sql(" ");
+        generate_column_type_name(
+            query_builder,
+            record_type,
+            &format!("{}_RECORD_FIELD_{idx}", column_name.to_uppercase()),
+            true,
+        )?;
+        if idx != record_types.len() - 1 {
+            query_builder.push_sql(",");
+        }
+        query_builder.push_sql("\n");
+    }
+    query_builder.push_sql(");\n\n");
+    Ok(())
+}
+
 fn generate_add_column<DB>(
     query_builder: &mut impl QueryBuilder<DB>,
     table: &str,
@@ -494,7 +674,7 @@ where
     query_builder.push_identifier(table)?;
     query_builder.push_sql(" ADD COLUMN ");
     query_builder.push_identifier(column)?;
-    generate_column_type_name(query_builder, ty);
+    generate_column_type_name(query_builder, ty, column, false)?;
     query_builder.push_sql(";");
     Ok(())
 }
@@ -559,9 +739,9 @@ where
                 sql_name: "Integer".into(),
                 ..column.ty.clone()
             };
-            generate_column_type_name(query_builder, &ty);
+            generate_column_type_name(query_builder, &ty, &column.sql_name, false)?;
         } else {
-            generate_column_type_name(query_builder, &column.ty);
+            generate_column_type_name(query_builder, &column.ty, &column.sql_name, false)?;
         }
 
         if is_only_primary_key {
@@ -608,24 +788,38 @@ where
     Ok(())
 }
 
-fn generate_column_type_name<DB>(query_builder: &mut impl QueryBuilder<DB>, ty: &ColumnType)
+fn generate_column_type_name<DB>(
+    query_builder: &mut impl QueryBuilder<DB>,
+    ty: &ColumnType,
+    column_name: &str,
+    for_record: bool,
+) -> QueryResult<()>
 where
     DB: Backend,
 {
     // TODO: handle schema
-    query_builder.push_sql(&format!(" {}", ty.sql_name.to_uppercase()));
-    if let Some(max_length) = ty.max_length {
-        query_builder.push_sql(&format!("({max_length})"));
-    }
-    if !ty.is_nullable {
-        query_builder.push_sql(" NOT NULL");
-    }
-    if ty.is_unsigned {
-        query_builder.push_sql(" UNSIGNED");
+    if ty.record.is_some() {
+        query_builder.push_sql(" ");
+        // need to quote the type name here as we quote it during creating which creates an upper case only type
+        query_builder.push_identifier(&format!("{}_RECORD", column_name.to_uppercase()))?;
+    } else {
+        query_builder.push_sql(&format!(" {}", ty.sql_name.to_uppercase()));
     }
     if ty.is_array {
         query_builder.push_sql("[]");
     }
+    if let Some(max_length) = ty.max_length {
+        query_builder.push_sql(&format!("({max_length})"));
+    }
+    if !for_record {
+        if !ty.is_nullable {
+            query_builder.push_sql(" NOT NULL");
+        }
+        if ty.is_unsigned {
+            query_builder.push_sql(" UNSIGNED");
+        }
+    }
+    Ok(())
 }
 
 fn generate_drop_table<DB>(

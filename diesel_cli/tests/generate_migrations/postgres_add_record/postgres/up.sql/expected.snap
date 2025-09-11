@@ -1,0 +1,11 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: postgres_add_record"
+---
+-- Your SQL goes here
+CREATE TYPE "ADDED_RECORD_RECORD" AS (
+	"FIELD_0"  INTEGER,
+	"FIELD_1"  TEXT
+);
+
+ALTER TABLE "users" ADD COLUMN "added_record" "ADDED_RECORD_RECORD" NOT NULL;

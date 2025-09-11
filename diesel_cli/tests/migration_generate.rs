@@ -279,6 +279,18 @@ fn migration_generate_from_diff_except_tables() {
     test_generate_migration("diff_except_tables", vec!["-e", "table_b", "table_c"]);
 }
 
+#[cfg(feature = "postgres")]
+#[test]
+fn migration_generate_postgres_specific_types() {
+    test_generate_migration("postgres_specific_types", Vec::new())
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn migration_generate_postgres_add_record() {
+    test_generate_migration("postgres_add_record", Vec::new())
+}
+
 #[test]
 fn migration_generate_with_duplicate_specified_version_fails() {
     const VERSION_ARG: &str = "--version=12345";
