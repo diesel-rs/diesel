@@ -1,7 +1,7 @@
 #![allow(unsafe_code)] // module uses ffi
 use mysqlclient_sys as ffi;
-use std::mem;
 use std::mem::MaybeUninit;
+use std::mem::{self, ManuallyDrop};
 use std::ops::Index;
 use std::os::raw as libc;
 use std::ptr::NonNull;
@@ -11,6 +11,15 @@ use crate::mysql::connection::stmt::StatementMetadata;
 use crate::mysql::types::date_and_time::MysqlTime;
 use crate::mysql::{MysqlType, MysqlValue};
 use crate::result::QueryResult;
+
+fn bind_buffer(data: Vec<u8>) -> (Option<NonNull<u8>>, libc::c_ulong, usize) {
+    let mut data = ManuallyDrop::new(data);
+    (
+        NonNull::new(data.as_mut_ptr()),
+        data.len() as libc::c_ulong,
+        data.capacity(),
+    )
+}
 
 pub(super) struct PreparedStatementBinds(Binds);
 
@@ -183,12 +192,7 @@ impl Clone for BindData {
                     self.length.try_into().expect("usize is at least 32bit"),
                 )
             };
-            let mut vec = slice.to_owned();
-            let ptr = NonNull::new(vec.as_mut_ptr());
-            let len = vec.len() as libc::c_ulong;
-            let capacity = vec.capacity();
-            mem::forget(vec);
-            (ptr, len, capacity)
+            bind_buffer(slice.to_owned())
         } else {
             (None, 0, 0)
         };
@@ -225,11 +229,7 @@ impl BindData {
     fn for_input((tpe, data): (MysqlType, Option<Vec<u8>>)) -> Self {
         let (tpe, flags) = tpe.into();
         let is_null = ffi::my_bool::from(data.is_none());
-        let mut bytes = data.unwrap_or_default();
-        let ptr = NonNull::new(bytes.as_mut_ptr());
-        let len = bytes.len() as libc::c_ulong;
-        let capacity = bytes.capacity();
-        mem::forget(bytes);
+        let (ptr, len, capacity) = bind_buffer(data.unwrap_or_default());
         Self {
             tpe,
             bytes: ptr,
@@ -379,11 +379,7 @@ impl BindData {
     fn from_tpe_and_flags((tpe, flags): (ffi::enum_field_types, Flags)) -> Self {
         // newer mysqlclient versions do not accept a zero sized buffer
         let len = known_buffer_size_for_ffi_type(tpe).unwrap_or(1);
-        let mut bytes = vec![0; len];
-        let length = bytes.len() as libc::c_ulong;
-        let capacity = bytes.capacity();
-        let ptr = NonNull::new(bytes.as_mut_ptr());
-        mem::forget(bytes);
+        let (ptr, length, capacity) = bind_buffer(vec![0; len]);
 
         Self {
             tpe,
@@ -504,9 +500,9 @@ impl BindData {
                 // reserve space for any missing byte
                 // we know the exact size here
                 bytes.reserve(truncated_amount);
-                self.capacity = bytes.capacity();
-                self.bytes = NonNull::new(bytes.as_mut_ptr());
-                mem::forget(bytes);
+                let (ptr, _length, capacity) = bind_buffer(bytes);
+                self.capacity = capacity;
+                self.bytes = ptr;
 
                 let mut bind = unsafe { self.mysql_bind() };
 
@@ -523,10 +519,14 @@ impl BindData {
                 // offset is zero here as we don't have a buffer yet
                 // we know the requested length here so we can just request
                 // the correct size
-                let mut vec = vec![0_u8; self.length.try_into().expect("usize is at least 32 bit")];
-                self.capacity = vec.capacity();
-                self.bytes = NonNull::new(vec.as_mut_ptr());
-                mem::forget(vec);
+                let (ptr, _length, capacity) = bind_buffer(vec![
+                    0_u8;
+                    self.length.try_into().expect(
+                        "usize is at least 32 bit"
+                    )
+                ]);
+                self.capacity = capacity;
+                self.bytes = ptr;
 
                 let bind = unsafe { self.mysql_bind() };
                 // As we did not have a buffer before
@@ -1276,7 +1276,7 @@ mod tests {
         query: &'static str,
         conn: &MysqlConnection,
         id: i32,
-        (mut field, tpe): (Vec<u8>, impl Into<(ffi::enum_field_types, Flags)>),
+        (field, tpe): (Vec<u8>, impl Into<(ffi::enum_field_types, Flags)>),
     ) {
         let mut stmt = conn
             .raw_connection
@@ -1284,9 +1284,7 @@ mod tests {
             .unwrap();
         let length = field.len() as _;
         let (tpe, flags) = tpe.into();
-        let capacity = field.capacity();
-        let ptr = NonNull::new(field.as_mut_ptr());
-        mem::forget(field);
+        let (ptr, _length, capacity) = bind_buffer(field);
 
         let field_bind = BindData {
             tpe,
@@ -1298,11 +1296,7 @@ mod tests {
             is_truncated: None,
         };
 
-        let mut bytes = id.to_be_bytes().to_vec();
-        let length = bytes.len() as _;
-        let capacity = bytes.capacity();
-        let ptr = NonNull::new(bytes.as_mut_ptr());
-        mem::forget(bytes);
+        let (ptr, length, capacity) = bind_buffer(id.to_be_bytes().to_vec());
 
         let id_bind = BindData {
             tpe: ffi::enum_field_types::MYSQL_TYPE_LONG,

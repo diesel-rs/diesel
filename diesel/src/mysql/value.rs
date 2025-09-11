@@ -43,6 +43,7 @@ impl<'a> MysqlValue<'a> {
     pub(crate) fn time_value(&self) -> deserialize::Result<MysqlTime> {
         match self.tpe {
             MysqlType::Time | MysqlType::Date | MysqlType::DateTime | MysqlType::Timestamp => {
+                self.too_short_buffer(std::mem::size_of::<MysqlTime>(), "Timestamp")?;
                 let ptr = self.raw.as_ptr() as *const MysqlTime;
                 let result = unsafe { ptr.read_unaligned() };
                 if result.neg {
@@ -63,18 +64,23 @@ impl<'a> MysqlValue<'a> {
                 NumericRepresentation::Tiny(self.raw[0].try_into()?)
             }
             MysqlType::UnsignedShort | MysqlType::Short => {
+                self.too_short_buffer(2, "Short")?;
                 NumericRepresentation::Small(i16::from_ne_bytes((&self.raw[..2]).try_into()?))
             }
             MysqlType::UnsignedLong | MysqlType::Long => {
+                self.too_short_buffer(4, "Long")?;
                 NumericRepresentation::Medium(i32::from_ne_bytes((&self.raw[..4]).try_into()?))
             }
             MysqlType::UnsignedLongLong | MysqlType::LongLong => {
+                self.too_short_buffer(8, "LongLong")?;
                 NumericRepresentation::Big(i64::from_ne_bytes(self.raw.try_into()?))
             }
             MysqlType::Float => {
+                self.too_short_buffer(4, "Float")?;
                 NumericRepresentation::Float(f32::from_ne_bytes(self.raw.try_into()?))
             }
             MysqlType::Double => {
+                self.too_short_buffer(8, "Double")?;
                 NumericRepresentation::Double(f64::from_ne_bytes(self.raw.try_into()?))
             }
 
@@ -89,6 +95,20 @@ impl<'a> MysqlValue<'a> {
             expected, self.tpe
         )
         .into()
+    }
+
+    fn too_short_buffer(&self, expected: usize, tpe: &'static str) -> deserialize::Result<()> {
+        if self.raw.len() < expected {
+            Err(format!(
+                "Received a buffer with an invalid size while trying \
+             to read a {tpe} value: Expected at least {expected} bytes \
+             but got {}",
+                self.raw.len()
+            )
+            .into())
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -110,4 +130,35 @@ pub enum NumericRepresentation<'a> {
     Double(f64),
     /// Corresponds to `MYSQL_TYPE_DECIMAL` and `MYSQL_TYPE_NEWDECIMAL`
     Decimal(&'a [u8]),
+}
+
+#[test]
+fn invalid_reads() {
+    assert!(MysqlValue::new_internal(&[1], MysqlType::Timestamp)
+        .time_value()
+        .is_err());
+
+    assert!(MysqlValue::new_internal(&[1, 2], MysqlType::Long)
+        .numeric_value()
+        .is_err());
+
+    assert!(MysqlValue::new_internal(&[1, 2, 3, 4], MysqlType::LongLong)
+        .numeric_value()
+        .is_err());
+
+    assert!(MysqlValue::new_internal(&[1], MysqlType::Short)
+        .numeric_value()
+        .is_err());
+
+    assert!(MysqlValue::new_internal(&[1, 2, 3, 4], MysqlType::Double)
+        .numeric_value()
+        .is_err());
+
+    assert!(MysqlValue::new_internal(&[1, 2], MysqlType::Float)
+        .numeric_value()
+        .is_err());
+
+    assert!(MysqlValue::new_internal(&[1], MysqlType::Tiny)
+        .numeric_value()
+        .is_ok());
 }
