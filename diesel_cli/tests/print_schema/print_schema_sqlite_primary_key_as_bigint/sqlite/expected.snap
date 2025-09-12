@@ -1,0 +1,22 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_sqlite_primary_key_as_bigint"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    posts (id) {
+        id -> BigInt,
+        user_id -> BigInt,
+    }
+}
+
+diesel::table! {
+    users (id) {
+        id -> BigInt,
+    }
+}
+
+diesel::joinable!(posts -> users (user_id));
+
+diesel::allow_tables_to_appear_in_same_query!(posts, users,);

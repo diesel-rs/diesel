@@ -441,6 +441,15 @@ fn print_schema_with_multiple_schema() {
     )
 }
 
+#[test]
+#[cfg(feature = "sqlite")]
+fn print_schema_sqlite_primary_key_as_bigint() {
+    test_print_schema(
+        "print_schema_sqlite_primary_key_as_bigint",
+        vec!["--sqlite-integer-primary-key-is-bigint"],
+    );
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]

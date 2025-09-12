@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt;
 
 use diesel::deserialize::Queryable;
@@ -324,6 +325,7 @@ pub fn determine_column_type(
     attr: &ColumnInformation,
     table: &TableName,
     primary_keys: &[String],
+    foreign_keys: &HashMap<String, ForeignKeyConstraint>,
     config: &PrintSchema,
 ) -> Result<ColumnType, crate::errors::Error> {
     let mut type_name = attr.type_name.to_lowercase();
@@ -343,7 +345,8 @@ pub fn determine_column_type(
             .unwrap_or_default();
 
         if sqlite_integer_primary_key_is_bigint
-            && column_is_row_id(conn, table, primary_keys, &attr.column_name, &type_name)?
+            && (column_is_row_id(conn, table, primary_keys, &attr.column_name, &type_name)?
+                || column_references_row_id(foreign_keys.get(&attr.column_name), conn)?)
         {
             String::from("BigInt")
         } else {
@@ -377,6 +380,28 @@ pub fn determine_column_type(
         record: None,
         max_length: attr.max_length,
     })
+}
+
+fn column_references_row_id(
+    foreign_constraint: Option<&ForeignKeyConstraint>,
+    conn: &mut SqliteConnection,
+) -> Result<bool, crate::errors::Error> {
+    if let Some(foreign_constraint) = foreign_constraint {
+        let parent_primary_keys = get_primary_keys(conn, &foreign_constraint.parent_table)?;
+        if let [id] = parent_primary_keys.as_slice() {
+            column_is_row_id(
+                conn,
+                &foreign_constraint.parent_table,
+                &parent_primary_keys,
+                id,
+                "integer",
+            )
+        } else {
+            Ok(false)
+        }
+    } else {
+        Ok(false)
+    }
 }
 
 fn is_text(type_name: &str) -> bool {
@@ -620,6 +645,7 @@ fn integer_primary_key_sqlite_3_37() {
                         column_info,
                         &table,
                         &primary_keys,
+                        &HashMap::new(),
                         &Default::default(),
                     )
                     .unwrap()
@@ -638,6 +664,7 @@ fn integer_primary_key_sqlite_3_37() {
                         column_info,
                         &table,
                         &primary_keys,
+                        &HashMap::new(),
                         &PrintSchema {
                             sqlite_integer_primary_key_is_bigint: Some(true),
                             ..Default::default()
