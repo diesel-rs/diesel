@@ -1,6 +1,6 @@
 [package]
 name = "diesel_derives"
-version = "2.3.0"
+version = "2.3.1"
 license = "MIT OR Apache-2.0"
 description = "You should not use this crate directly, it is internal to Diesel."
 documentation = "https://diesel.rs/guides/"
@@ -9,7 +9,7 @@ repository = "https://github.com/diesel-rs/diesel/"
 autotests = false
 rust-version.workspace = true
 edition = "2021"
-include = ["src/**/*.rs", "src/tests/snapshots/*", "LICENSE-*", "README.md"]
+include = ["src/**/*.rs", "src/tests/snapshots/*", "LICENSE-*", "README.md", "build.rs"]
 
 [dependencies]
 syn = { version = "2.0", features = ["derive", "fold", "full"] }
