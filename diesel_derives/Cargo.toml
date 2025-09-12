@@ -1,6 +1,6 @@
 [package]
 name = "diesel_derives"
-version = "2.3.1"
+version = "2.3.2"
 license = "MIT OR Apache-2.0"
 description = "You should not use this crate directly, it is internal to Diesel."
 documentation = "https://diesel.rs/guides/"
@@ -48,3 +48,10 @@ r2d2 = []
 chrono = []
 time = []
 numeric = []
+
+[package.metadata.docs.rs]
+features = ["postgres", "mysql", "sqlite", "chrono", "numeric", "time", "r2d2"]
+no-default-features = true
+rustc-args = ["--cfg", "docsrs"]
+rustdoc-args = ["--cfg", "docsrs", " -Z", "unstable-options", "--generate-link-to-definition"]
+
