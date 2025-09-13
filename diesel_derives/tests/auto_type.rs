@@ -544,6 +544,22 @@ fn sqlite_variadic_functions() -> _ {
         jsonb_array_0(),
         jsonb_array_1(sqlite_extras::text),
         jsonb_array_2(sqlite_extras::id, sqlite_extras::json),
+        json_object_0(),
+        json_object_1(sqlite_extras::text, sqlite_extras::id),
+        json_object_2(
+            sqlite_extras::text,
+            sqlite_extras::id,
+            sqlite_extras::text,
+            sqlite_extras::json,
+        ),
+        jsonb_object_0(),
+        jsonb_object_1(sqlite_extras::text, sqlite_extras::id),
+        jsonb_object_2(
+            sqlite_extras::text,
+            sqlite_extras::id,
+            sqlite_extras::text,
+            sqlite_extras::json,
+        ),
         json_remove_0(sqlite_extras::json),
         json_remove_1(sqlite_extras::jsonb, sqlite_extras::text),
         json_remove_2(
