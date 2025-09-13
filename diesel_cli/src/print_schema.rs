@@ -71,6 +71,7 @@ fn common_diesel_types(types: &mut HashSet<&str>) {
     types.insert("Timestamp");
     types.insert("Date");
     types.insert("Time");
+	types.insert("Json");
 
     // hidden type defs
     types.insert("Float4");
@@ -109,7 +110,6 @@ fn pg_diesel_types() -> HashSet<&'static str> {
     types.insert("Range");
     types.insert("Timestamptz");
     types.insert("Uuid");
-    types.insert("Json");
     types.insert("PgLsn");
     types.insert("Record");
     types.insert("Interval");
@@ -147,7 +147,6 @@ fn mysql_diesel_types() -> HashSet<&'static str> {
     types.insert("TinyInt");
     types.insert("Tinyint");
     types.insert("Datetime");
-    types.insert("Json");
     types
 }
 
