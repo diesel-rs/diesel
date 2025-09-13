@@ -96,7 +96,7 @@ pub enum Error {
     BrokenTransactionManager,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 /// The kind of database error that occurred.
 ///
 /// This is not meant to exhaustively cover all possible errors, but is used to
