@@ -162,7 +162,7 @@ where
 pub trait FallibleCastsTo<ST> {}
 
 impl<ST1, ST2> FallibleCastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where
-    ST1: CastsTo<ST2>
+    ST1: FallibleCastsTo<ST2>
 {
 }
 
