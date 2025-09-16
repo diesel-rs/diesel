@@ -184,7 +184,7 @@ pub type ContainsNetLoose<Lhs, Rhs> =
 #[doc(hidden)] // used by `#[auto_type]`
 pub type ContainsOrEq<Lhs, Rhs> = ContainsNetLoose<Lhs, Rhs>;
 
-/// The return type of [`lhs.is_contained_by(rhs)`]((super::expression_methods::PgNetExpressionMethods::is_contained_by)
+/// The return type of [`lhs.is_contained_by(rhs)`](super::expression_methods::PgNetExpressionMethods::is_contained_by)
 /// for network types
 #[cfg(feature = "postgres_backend")]
 pub type IsContainedByNet<Lhs, Rhs> =

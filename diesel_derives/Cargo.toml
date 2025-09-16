@@ -53,5 +53,4 @@ numeric = []
 features = ["postgres", "mysql", "sqlite", "chrono", "numeric", "time", "r2d2"]
 no-default-features = true
 rustc-args = ["--cfg", "docsrs"]
-rustdoc-args = ["--cfg", "docsrs", " -Z", "unstable-options", "--generate-link-to-definition"]
-
+rustdoc-args = ["--cfg", "docsrs", "-Z", "unstable-options", "--generate-link-to-definition"]
