@@ -275,6 +275,17 @@ pub fn output_schema(
         write!(out, "{definitions}")?;
     }
 
+    out = match format_schema(&out) {
+        Ok(schema) => schema,
+        Err(err) => {
+            tracing::warn!(
+                "Couldn't format schema. Exporting unformatted schema ({:?})",
+                err
+            );
+            out
+        }
+    };
+
     if let Some(ref patch_file) = config.patch_file {
         tracing::info!(
             ?patch_file,
@@ -297,16 +308,7 @@ pub fn output_schema(
         out = diffy::apply(&out, &patch)?;
     }
 
-    match format_schema(&out) {
-        Ok(schema) => Ok(schema),
-        Err(err) => {
-            tracing::warn!(
-                "Couldn't format schema. Exporting unformatted schema ({:?})",
-                err
-            );
-            Ok(out)
-        }
-    }
+    Ok(out)
 }
 
 pub fn format_schema(schema: &str) -> Result<String, crate::errors::Error> {
