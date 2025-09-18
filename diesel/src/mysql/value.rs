@@ -1,7 +1,9 @@
 use super::types::date_and_time::MysqlTime;
 use super::MysqlType;
+
 use crate::deserialize;
 use std::error::Error;
+use std::mem::MaybeUninit;
 
 /// Raw mysql value as received from the database
 #[derive(Clone, Debug)]
@@ -35,17 +37,56 @@ impl<'a> MysqlValue<'a> {
 
     /// Checks that the type code is valid, and interprets the data as a
     /// `MysqlTime` pointer
-    // We use `ptr.read_unaligned()` to read the potential unaligned ptr,
-    // so clippy is clearly wrong here
-    // https://github.com/rust-lang/rust-clippy/issues/2881
-    #[allow(dead_code, clippy::cast_ptr_alignment)]
-    #[allow(unsafe_code)] // pointer cast
+    // We use `ptr::copy` to read the actual data
+    // and copy it over to the returned `MysqlTime` instance
+    #[allow(unsafe_code)] // MaybeUninit + ptr copy
     pub(crate) fn time_value(&self) -> deserialize::Result<MysqlTime> {
         match self.tpe {
             MysqlType::Time | MysqlType::Date | MysqlType::DateTime | MysqlType::Timestamp => {
-                self.too_short_buffer(std::mem::size_of::<MysqlTime>(), "Timestamp")?;
-                let ptr = self.raw.as_ptr() as *const MysqlTime;
-                let result = unsafe { ptr.read_unaligned() };
+                // we check for the size of the `MYSQL_TIME` type from `mysqlclient_sys` here as
+                // certain older libmysqlclient and newer libmariadb versions do not have all the
+                // same fields (and size) as the `MysqlTime` type from diesel. The later one is modeled after
+                // the type from newer libmysqlclient
+                self.too_short_buffer(
+                    #[cfg(feature = "mysql")]
+                    std::mem::size_of::<mysqlclient_sys::MYSQL_TIME>(),
+                    #[cfg(not(feature = "mysql"))]
+                    std::mem::size_of::<MysqlTime>(),
+                    "timestamp",
+                )?;
+                // To ensure we copy the right number of bytes we need to make sure to copy not more bytes than needed
+                // for `MysqlTime` and not more bytes than inside of the buffer
+                let len = std::cmp::min(std::mem::size_of::<MysqlTime>(), self.raw.len());
+                // Zero is a valid pattern for this type so we are fine with initializing all fields to zero
+                // If the provided byte buffer is too short we just use 0 as default value
+                let mut out = MaybeUninit::<MysqlTime>::zeroed();
+                // Make sure to check that the boolean is an actual bool value, so 0 or 1
+                // as anything else is UB in rust
+                let neg_offset = std::mem::offset_of!(MysqlTime, neg);
+                if neg_offset < self.raw.len()
+                    && self.raw[neg_offset] != 0
+                    && self.raw[neg_offset] != 1
+                {
+                    return Err(
+                        "Received invalid value for `neg` in the `MysqlTime` datastructure".into(),
+                    );
+                }
+                let result = unsafe {
+                    // SAFETY: We copy over the bytes from our raw buffer to the `MysqlTime` instance
+                    // This type is correctly aligned and we ensure that we do not copy more bytes than are there
+                    // We are also sure that these ptr do not overlap as they are completely different
+                    // instances
+                    std::ptr::copy_nonoverlapping(
+                        self.raw.as_ptr(),
+                        out.as_mut_ptr() as *mut u8,
+                        len,
+                    );
+                    // SAFETY: all zero is a valid pattern for this type
+                    // Otherwise any other bit pattern is also valid, beside
+                    // neg being something other than 0 or 1
+                    // We check for that above by looking at the byte before copying
+                    out.assume_init()
+                };
                 if result.neg {
                     Err("Negative dates/times are not yet supported".into())
                 } else {
@@ -133,8 +174,38 @@ pub enum NumericRepresentation<'a> {
 }
 
 #[test]
+#[allow(unsafe_code, reason = "Test code")]
 fn invalid_reads() {
+    use crate::data_types::MysqlTimestampType;
+
     assert!(MysqlValue::new_internal(&[1], MysqlType::Timestamp)
+        .time_value()
+        .is_err());
+    let v = MysqlTime {
+        year: 2025,
+        month: 9,
+        day: 15,
+        hour: 22,
+        minute: 3,
+        second: 10,
+        second_part: 0,
+        neg: false,
+        time_type: MysqlTimestampType::MYSQL_TIMESTAMP_DATETIME,
+        time_zone_displacement: 0,
+    };
+    let mut bytes = [0; std::mem::size_of::<MysqlTime>()];
+    unsafe {
+        // SAFETY: Test code
+        // also the size matches and we want to get raw bytes
+        std::ptr::copy(
+            &v as *const MysqlTime as *const u8,
+            bytes.as_mut_ptr(),
+            bytes.len(),
+        );
+    }
+    let offset = std::mem::offset_of!(MysqlTime, neg);
+    bytes[offset] = 42;
+    assert!(MysqlValue::new_internal(&bytes, MysqlType::Timestamp)
         .time_value()
         .is_err());
 
