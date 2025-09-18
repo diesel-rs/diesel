@@ -12,6 +12,19 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.3.2] 2025-09-19
+
+### Fixed
+
+* Fixed an incompatibility with libmariadb versions shipped by debian
+* Fixed docs.rs builds
+* Fixed applying patch file schema.rs file with formatting
+* Allow to compare DatabaseErrorKind values
+
+## 2.3.1 2025-09-12
+
+This version did not contain any changes, but only a version bump to retrigger the docs.rs build
+
 ## [2.3.0] 2025-09-12
 
 ### Added
@@ -2268,3 +2281,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.2.11]: https://github.com/diesel-rs/diesel/compare/v2.2.10...v2.2.11
 [2.2.12]: https://github.com/diesel-rs/diesel/compare/v2.2.11...v2.2.12
 [2.3.0]: https://github.com/diesel-rs/diesel/compare/v2.2.0...v2.3.0
+[2.3.2]: https://github.com/diesel-rs/diesel/compare/v2.3.0...v2.3.2
