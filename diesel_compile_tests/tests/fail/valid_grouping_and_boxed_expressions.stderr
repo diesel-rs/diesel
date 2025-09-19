@@ -22,7 +22,7 @@ LL |         .select(some_ungrouped_expression(true))
 error[E0277]: the trait bound `dyn BoxableExpression<table, Pg, SqlType = Integer>: ValidGrouping<id>` is not satisfied
     --> tests/fail/valid_grouping_and_boxed_expressions.rs:74:22
      |
-74   |         .load::<i32>(&mut conn);
+  LL |         .load::<i32>(&mut conn);
      |          ----        ^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
@@ -52,7 +52,7 @@ LL |         .select(maybe_grouped(true))
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
   --> tests/fail/valid_grouping_and_boxed_expressions.rs:9:1
    |
-9  | / table! {
+ LL | / table! {
 LL | |     users {
 LL | |         id -> Integer,
 LL | |         name -> Text,
@@ -86,7 +86,7 @@ LL |         .select((
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
     --> tests/fail/valid_grouping_and_boxed_expressions.rs:115:37
      |
-115  |         .load::<(Option<i32>, i32)>(&mut conn);
+ LL |         .load::<(Option<i32>, i32)>(&mut conn);
      |          ----                       ^^^^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
      |          |
      |          required by a bound introduced by this call

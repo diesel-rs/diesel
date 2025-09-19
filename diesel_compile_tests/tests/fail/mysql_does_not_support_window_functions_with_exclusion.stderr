@@ -1,7 +1,7 @@
 error[E0277]: `ExcludeGroup` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/mysql_does_not_support_window_functions_with_exclusion.rs:22:22
      |
-22   |         .load::<i64>(&mut connection)
+  LL |         .load::<i64>(&mut connection)
      |          ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql, NoFrameFrameExclusionSupport>` is not implemented for `ExcludeGroup`
      |          |
      |          required by a bound introduced by this call
@@ -28,7 +28,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0277]: `ExcludeCurrentRow` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/mysql_does_not_support_window_functions_with_exclusion.rs:34:26
      |
-34   |             .load::<i64>(&mut connection)
+  LL |             .load::<i64>(&mut connection)
      |              ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql, NoFrameFrameExclusionSupport>` is not implemented for `ExcludeCurrentRow`
      |              |
      |              required by a bound introduced by this call
@@ -55,7 +55,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0277]: `ExcludeTies` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/mysql_does_not_support_window_functions_with_exclusion.rs:45:22
      |
-45   |         .load::<i64>(&mut connection)
+  LL |         .load::<i64>(&mut connection)
      |          ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql, NoFrameFrameExclusionSupport>` is not implemented for `ExcludeTies`
      |          |
      |          required by a bound introduced by this call
@@ -82,7 +82,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0277]: `ExcludeNoOthers` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/mysql_does_not_support_window_functions_with_exclusion.rs:57:26
      |
-57   |             .load::<i64>(&mut connection)
+  LL |             .load::<i64>(&mut connection)
      |              ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql, NoFrameFrameExclusionSupport>` is not implemented for `ExcludeNoOthers`
      |              |
      |              required by a bound introduced by this call

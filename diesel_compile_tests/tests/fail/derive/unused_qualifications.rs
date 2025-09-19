@@ -33,7 +33,7 @@ pub struct Post {
 }
 
 #[derive(diesel::MultiConnection)]
-enum DbConnection {
+pub enum DbConnection {
     Pg(PgConnection),
     Sqlite(SqliteConnection),
 }

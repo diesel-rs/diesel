@@ -15,7 +15,7 @@ LL |     use diesel::dsl::{any, exists};
 error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFromClause<table>>::Count == Once`
     --> tests/fail/subselect_cannot_reference_random_tables.rs:32:25
      |
-32   |         .load::<(i32,)>(&mut conn);
+  LL |         .load::<(i32,)>(&mut conn);
      |          ----           ^^^^^^^^^ expected `Once`, found `Never`
      |          |
      |          required by a bound introduced by this call
@@ -23,7 +23,7 @@ error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFr
 note: required for `comments::columns::id` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
     --> tests/fail/subselect_cannot_reference_random_tables.rs:19:9
      |
-19   |         id -> Integer,
+  LL |         id -> Integer,
      |         ^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 2 redundant requirements hidden
@@ -48,7 +48,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFromClause<table>>::Count == Once`
     --> tests/fail/subselect_cannot_reference_random_tables.rs:39:25
      |
-39   |         .load::<(i32,)>(&mut conn);
+  LL |         .load::<(i32,)>(&mut conn);
      |          ----           ^^^^^^^^^ expected `Once`, found `Never`
      |          |
      |          required by a bound introduced by this call
@@ -56,7 +56,7 @@ error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFr
 note: required for `comments::columns::id` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
     --> tests/fail/subselect_cannot_reference_random_tables.rs:19:9
      |
-19   |         id -> Integer,
+  LL |         id -> Integer,
      |         ^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 2 redundant requirements hidden
@@ -81,7 +81,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFromClause<table>>::Count == Once`
     --> tests/fail/subselect_cannot_reference_random_tables.rs:44:25
      |
-44   |         .load::<(i32,)>(&mut conn);
+  LL |         .load::<(i32,)>(&mut conn);
      |          ----           ^^^^^^^^^ expected `Once`, found `Never`
      |          |
      |          required by a bound introduced by this call
@@ -89,7 +89,7 @@ error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFr
 note: required for `comments::columns::id` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
     --> tests/fail/subselect_cannot_reference_random_tables.rs:19:9
      |
-19   |         id -> Integer,
+  LL |         id -> Integer,
      |         ^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 2 redundant requirements hidden
