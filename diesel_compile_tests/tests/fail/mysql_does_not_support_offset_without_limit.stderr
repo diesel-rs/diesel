@@ -1,7 +1,7 @@
 error[E0277]: `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/mysql_does_not_support_offset_without_limit.rs:16:38
      |
-16   |         .get_result::<(i32, String)>(&mut connection);
+  LL |         .get_result::<(i32, String)>(&mut connection);
      |          ----------                  ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>`
      |          |
      |          required by a bound introduced by this call
@@ -53,7 +53,7 @@ LL |         .into_boxed()
 error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, ...>: IntoBoxedClause<'_, ...>` is not satisfied
     --> tests/fail/mysql_does_not_support_offset_without_limit.rs:21:10
      |
-21   |         .into_boxed()
+  LL |         .into_boxed()
      |          ^^^^^^^^^^ the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>`
      |
      = note: this usually means that `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>` is no valid SQL for `Mysql`

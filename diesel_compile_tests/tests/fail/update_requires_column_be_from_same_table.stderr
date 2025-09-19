@@ -20,11 +20,11 @@ LL | | }
 note: `users::table` is defined in module `crate::users` of the current crate
   --> tests/fail/update_requires_column_be_from_same_table.rs:5:1
    |
-5  | / table! {
-6  | |     users {
-7  | |         id -> Integer,
-8  | |         name -> VarChar,
-9  | |     }
+ LL | / table! {
+ LL | |     users {
+ LL | |         id -> Integer,
+ LL | |         name -> VarChar,
+ LL | |     }
 LL | | }
    | |_^
 note: the method call chain might not have had the expected associated types

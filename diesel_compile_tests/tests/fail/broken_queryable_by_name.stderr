@@ -89,7 +89,7 @@ LL |     id: String,
 error[E0277]: the trait bound `Untyped: load_dsl::private::CompatibleType<User, _>` is not satisfied
     --> tests/fail/broken_queryable_by_name.rs:36:49
      |
-36   |     let s = diesel::sql_query("…").load::<User>(conn);
+  LL |     let s = diesel::sql_query("…").load::<User>(conn);
      |                                    ----         ^^^^ the trait `load_dsl::private::CompatibleType<User, _>` is not implemented for `Untyped`
      |                                    |
      |                                    required by a bound introduced by this call
@@ -112,7 +112,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0277]: the trait bound `User: FromSqlRow<_, _>` is not satisfied
     --> tests/fail/broken_queryable_by_name.rs:36:49
      |
-36   |     let s = diesel::sql_query("…").load::<User>(conn);
+  LL |     let s = diesel::sql_query("…").load::<User>(conn);
      |                                    ----         ^^^^ the trait `FromSqlRow<_, _>` is not implemented for `User`
      |                                    |
      |                                    required by a bound introduced by this call

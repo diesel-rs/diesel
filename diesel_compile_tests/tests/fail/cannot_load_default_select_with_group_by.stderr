@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
     --> tests/fail/cannot_load_default_select_with_group_by.rs:16:32
      |
-16   |         .load::<(i32, String)>(&mut conn);
+  LL |         .load::<(i32, String)>(&mut conn);
      |          ----                  ^^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
      |          |
      |          required by a bound introduced by this call
@@ -9,17 +9,17 @@ error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Outpu
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
     --> tests/fail/cannot_load_default_select_with_group_by.rs:5:1
      |
-5    | / table! {
-6    | |     users {
-7    | |         id -> Integer,
-8    | |         name -> Text,
-9    | |     }
-10   | | }
+   LL | / table! {
+   LL | |     users {
+   LL | |         id -> Integer,
+   LL | |         name -> Text,
+   LL | |     }
+  LL | | }
      | |_^
 note: required for `columns::id` to implement `ValidGrouping<columns::name>`
     --> tests/fail/cannot_load_default_select_with_group_by.rs:7:9
      |
-7    |         id -> Integer,
+   LL |         id -> Integer,
      |         ^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 1 redundant requirement hidden

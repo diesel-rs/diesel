@@ -40,10 +40,7 @@ error[E0121]: the placeholder `_` is not allowed within types on item signatures
   --> tests/fail/auto_type.rs:46:13
    |
 LL |     let n = 2;
-   |             ^
-   |             |
-   |             not allowed in type signatures
-   |             not allowed in type signatures
+   |             ^ not allowed in type signatures
 
 error[E0121]: the placeholder `_` is not allowed within types on item signatures for type aliases
   --> tests/fail/auto_type.rs:59:25

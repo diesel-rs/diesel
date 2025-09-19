@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `SelectStatement<FromClause<table>, ..., ..., ...>: AsInExpression<...>` is not satisfied
    --> tests/fail/subselect_requires_correct_type.rs:22:59
     |
-22  |     let query = posts::table.filter(posts::user_id.eq_any(subquery));
+ LL |     let query = posts::table.filter(posts::user_id.eq_any(subquery));
     |                                                    ------ ^^^^^^^^ unsatisfied trait bound
     |                                                    |
     |                                                    required by a bound introduced by this call

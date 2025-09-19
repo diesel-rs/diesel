@@ -77,7 +77,7 @@ LL | struct User {
 error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<User, _>: load_dsl::private::CompatibleType<_, _>` is not satisfied
     --> tests/fail/selectable_with_typemisamatch.rs:43:15
      |
-43   |         .load(&mut conn)
+  LL |         .load(&mut conn)
      |          ---- ^^^^^^^^^ the trait `load_dsl::private::CompatibleType<_, _>` is not implemented for `diesel::expression::select_by::SelectBy<User, _>`
      |          |
      |          required by a bound introduced by this call

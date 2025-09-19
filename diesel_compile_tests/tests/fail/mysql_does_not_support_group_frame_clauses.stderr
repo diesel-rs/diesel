@@ -1,7 +1,7 @@
 error[E0277]: `Groups` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/mysql_does_not_support_group_frame_clauses.rs:21:22
      |
-21   |         .load::<i64>(&mut connection)
+  LL |         .load::<i64>(&mut connection)
      |          ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql, NoGroupWindowFrameUnit>` is not implemented for `Groups`
      |          |
      |          required by a bound introduced by this call
