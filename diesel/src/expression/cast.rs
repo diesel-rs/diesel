@@ -162,7 +162,7 @@ where
 pub trait FallibleCastsTo<ST> {}
 
 impl<ST1, ST2> FallibleCastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where
-    ST1: CastsTo<ST2>
+    ST1: FallibleCastsTo<ST2>
 {
 }
 
@@ -190,16 +190,20 @@ macro_rules! casts_impl {
 
 casts_impl!(
     (Bool <- Int4),
+    (Int4 <- Bool),
+    (Int4 <- Float4),
+    (Int8 <- Int4),
+    (Int8 <- Float4),
+    (Int8 <- Float8),
     (Float4 <- Int4),
     (Float4 <- Int8),
     (Float8 <- Float4),
     (Float8 <- Int4),
     (Float8 <- Int8),
-    (Int8 <- Int4),
-    (Int8 <- Float4),
-    (Int8 <- Float8),
-    (Int4 <- Bool),
-    (Int4 <- Float4),
+    (Decimal <- Int4),
+    (Decimal <- Int8),
+    (Decimal <- Float4),
+    (Decimal <- Float8),
     (Text <- Bool),
     (Text <- Float4),
     (Text <- Float8),
@@ -213,6 +217,7 @@ casts_impl!(
     (Jsonb <- Json),
     "mysql_backend": (Text <- Datetime),
     "postgres_backend": (Text <- Uuid),
+
 );
 
 macro_rules! fallible_casts_impl {
@@ -232,15 +237,20 @@ fallible_casts_impl!(
     (Int4 <- Int8),
     (Int4 <- Float8),
     (Int4 <- Text),
+    (Int4 <- Decimal),
     (Int8 <- Text),
+    (Int8 <- Decimal),
     (Float4 <- Float8),
     (Float4 <- Text),
+    (Float4 <- Decimal),
     (Float8 <- Text),
+    (Float8 <- Decimal),
     (Json <- Text),
     (Jsonb <- Text),
     (Bool <- Text),
     (Date <- Text),
     (Time <- Text),
+    (Decimal <- Text),
     "mysql_backend": (Datetime <- Text),
     "postgres_backend": (Uuid <- Text),
 );

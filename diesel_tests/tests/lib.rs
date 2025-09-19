@@ -17,6 +17,7 @@ mod alias;
 mod annotations;
 mod associations;
 mod boxed_queries;
+mod cast;
 mod combination;
 mod connection;
 #[cfg(feature = "postgres")]
