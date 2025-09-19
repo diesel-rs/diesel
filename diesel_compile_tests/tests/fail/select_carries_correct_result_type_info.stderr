@@ -1,7 +1,7 @@
 error[E0277]: cannot deserialize a value of the database type `diesel::sql_types::Text` as `i32`
     --> tests/fail/select_carries_correct_result_type_info.rs:19:39
      |
-19   |     let ids = select_name.load::<i32>(&mut connection);
+  LL |     let ids = select_name.load::<i32>(&mut connection);
      |                           ----        ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, _>` is not implemented for `i32`
      |                           |
      |                           required by a bound introduced by this call
@@ -28,7 +28,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0277]: cannot deserialize a value of the database type `diesel::sql_types::Integer` as `std::string::String`
     --> tests/fail/select_carries_correct_result_type_info.rs:21:42
      |
-21   |     let names = select_id.load::<String>(&mut connection);
+  LL |     let names = select_id.load::<String>(&mut connection);
      |                                          ^^^^^^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, _>` is not implemented for `std::string::String`
      |
      = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`

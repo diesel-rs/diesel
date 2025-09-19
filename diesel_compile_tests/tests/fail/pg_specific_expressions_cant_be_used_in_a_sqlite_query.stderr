@@ -9,7 +9,7 @@ LL |         .filter(name.eq(any(Vec::<String>::new())))
 error[E0277]: `Any<Bound<Array<Text>, Vec<String>>>` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:32:22
      |
-32   |         .load::<i32>(&mut connection);
+  LL |         .load::<i32>(&mut connection);
      |          ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `Any<Bound<Array<Text>, Vec<String>>>`
      |          |
      |          required by a bound introduced by this call
@@ -36,7 +36,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0277]: `IsNotDistinctFrom<name, Bound<Text, &str>>` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:37:22
      |
-37   |         .load::<i32>(&mut connection);
+  LL |         .load::<i32>(&mut connection);
      |          ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `IsNotDistinctFrom<name, Bound<Text, &str>>`
      |          |
      |          required by a bound introduced by this call
@@ -63,7 +63,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0277]: `AtTimeZone<now, Bound<Text, &str>>` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:42:22
      |
-42   |         .load::<i32>(&mut connection);
+  LL |         .load::<i32>(&mut connection);
      |          ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `AtTimeZone<now, Bound<Text, &str>>`
      |          |
      |          required by a bound introduced by this call
@@ -90,10 +90,10 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0599]: the method `execute` exists for struct `IncompleteOnConflict<InsertStatement<table, ...>, ...>`, but its trait bounds were not satisfied
    --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:47:10
     |
-44  | /     insert_into(users)
-45  | |         .values(&NewUser("Sean"))
-46  | |         .on_conflict(on_constraint("name"))
-47  | |         .execute(&mut connection);
+ LL | /     insert_into(users)
+ LL | |         .values(&NewUser("Sean"))
+ LL | |         .on_conflict(on_constraint("name"))
+ LL | |         .execute(&mut connection);
     | |         -^^^^^^^ method cannot be called due to unsatisfied trait bounds
     | |_________|
     |

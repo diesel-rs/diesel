@@ -1,10 +1,10 @@
 error[E0599]: the method `save_changes` exists for struct `User`, but its trait bounds were not satisfied
    --> tests/fail/codegen_does_not_add_save_changes_method_on_structs_without_primary_key.rs:26:10
     |
-15  | pub struct User {
+ LL | pub struct User {
     | --------------- method `save_changes` not found for this struct because it doesn't satisfy `User: Copy`, `User: HasTable`, `User: IntoUpdateTarget` or `User: diesel::SaveChangesDsl<_>`
 ...
-26  |     user.save_changes(&mut connection);
+ LL |     user.save_changes(&mut connection);
     |          ^^^^^^^^^^^^ method cannot be called on `User` due to unsatisfied trait bounds
     |
     = note: the following trait bounds were not satisfied:
@@ -36,11 +36,11 @@ LL | pub trait HasTable {
     |
    ::: DIESEL/diesel/diesel/src/query_builder/update_statement/target.rs
     |
-31  | pub trait IntoUpdateTarget: HasTable {
+ LL | pub trait IntoUpdateTarget: HasTable {
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 help: consider annotating `User` with `#[derive(Clone, Copy)]`
     |
-15  + #[derive(Clone, Copy)]
-16  | pub struct User {
+ 15 + #[derive(Clone, Copy)]
+ LL | pub struct User {
     |
 For more information about this error, try `rustc --explain E0599`.

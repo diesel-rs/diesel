@@ -14,9 +14,9 @@ LL | |         .with_format(CopyFormat::Csv)
 error[E0599]: the method `load` exists for struct `CopyToQuery<users::table, pg::query_builder::copy::copy_to::CopyToOptions>`, but its trait bounds were not satisfied
    --> tests/fail/copy_can_only_use_options_with_raw_variant.rs:56:10
     |
-54  | /     diesel::copy_to(users::table)
-55  | |         .with_format(CopyFormat::Csv)
-56  | |         .load::<User, _>(conn)
+ LL | /     diesel::copy_to(users::table)
+ LL | |         .with_format(CopyFormat::Csv)
+ LL | |         .load::<User, _>(conn)
     | |_________-^^^^
     |
    ::: DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_to.rs

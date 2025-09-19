@@ -1,7 +1,7 @@
 error[E0277]: `diesel::query_builder::update_statement::SetNotCalled` is no valid SQL fragment for the `_` backend
     --> tests/fail/update_requires_set.rs:13:34
      |
-13   |     update(users::table).execute(&mut conn);
+  LL |     update(users::table).execute(&mut conn);
      |                          ------- ^^^^^^^^^ the trait `QueryFragment<_>` is not implemented for `diesel::query_builder::update_statement::SetNotCalled`
      |                          |
      |                          required by a bound introduced by this call

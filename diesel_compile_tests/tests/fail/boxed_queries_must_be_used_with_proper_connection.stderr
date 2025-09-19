@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
     --> tests/fail/boxed_queries_must_be_used_with_proper_connection.rs:16:25
      |
-16   |         .load::<(i32,)>(&mut connection);
+  LL |         .load::<(i32,)>(&mut connection);
      |          ----           ^^^^^^^^^^^^^^^ expected `Pg`, found `Sqlite`
      |          |
      |          required by a bound introduced by this call

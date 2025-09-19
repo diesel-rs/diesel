@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<MysqlConnection as Connection>::Backend == Pg`
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:52:18
     |
-52  |         .execute(conn)
+ LL |         .execute(conn)
     |          ------- ^^^^ expected `Pg`, found `Mysql`
     |          |
     |          required by a bound introduced by this call
@@ -32,7 +32,7 @@ LL |         .execute(conn)
 error[E0277]: the trait bound `diesel::MysqlConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:56:48
     |
-56  |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
+ LL |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
     |                                   ----         ^ the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::MysqlConnection`
     |                                   |
     |                                   required by a bound introduced by this call
@@ -52,7 +52,7 @@ LL |         C: ExecuteCopyToConnection,
 error[E0277]: the trait bound `diesel::MysqlConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:56:5
     |
-56  |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
+ LL |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::MysqlConnection`
     |
     = help: the following other types implement trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection`:
@@ -70,7 +70,7 @@ LL |         C: ExecuteCopyToConnection,
 error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:65:18
     |
-65  |         .execute(conn)
+ LL |         .execute(conn)
     |          ------- ^^^^ expected `Pg`, found `Sqlite`
     |          |
     |          required by a bound introduced by this call
@@ -101,7 +101,7 @@ LL |         .execute(conn)
 error[E0277]: the trait bound `diesel::SqliteConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:69:48
     |
-69  |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
+ LL |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
     |                                   ----         ^ the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::SqliteConnection`
     |                                   |
     |                                   required by a bound introduced by this call
@@ -121,7 +121,7 @@ LL |         C: ExecuteCopyToConnection,
 error[E0277]: the trait bound `diesel::SqliteConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:69:5
     |
-69  |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
+ LL |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::SqliteConnection`
     |
     = help: the following other types implement trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection`:
