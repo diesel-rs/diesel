@@ -27,6 +27,7 @@ cargo-cyclonedx = true
 
 [dist.dependencies.apt]
 libncurses5-dev = '*'
+libtirpc-dev = '*'
 
 # otherwise the builds fail for whatever reason
 [dist.github-custom-runners]
