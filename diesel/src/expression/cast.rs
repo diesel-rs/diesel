@@ -200,7 +200,6 @@ casts_impl!(
     (Float8 <- Float4),
     (Float8 <- Int4),
     (Float8 <- Int8),
-    (Decimal <- Bool),
     (Decimal <- Int4),
     (Decimal <- Int8),
     (Decimal <- Float4),
