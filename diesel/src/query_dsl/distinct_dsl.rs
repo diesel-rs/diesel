@@ -5,7 +5,7 @@ use crate::expression::TypedExpressionType;
 use crate::expression::ValidGrouping;
 use crate::query_builder::FromClause;
 use crate::query_builder::{AsQuery, SelectStatement};
-use crate::query_source::Table;
+use crate::query_source::QueryRelation;
 use crate::Expression;
 
 /// The `distinct` method
@@ -29,7 +29,7 @@ pub trait DistinctDsl {
 #[diagnostic::do_not_recommend]
 impl<T> DistinctDsl for T
 where
-    T: Table + AsQuery<Query = SelectStatement<FromClause<T>>>,
+    T: QueryRelation + AsQuery<Query = SelectStatement<FromClause<T>>>,
     T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
     T::SqlType: TypedExpressionType,
 {
@@ -65,7 +65,7 @@ pub trait DistinctOnDsl<Selection> {
 impl<T, Selection> DistinctOnDsl<Selection> for T
 where
     Selection: SelectableExpression<T>,
-    T: Table + AsQuery<Query = SelectStatement<FromClause<T>>>,
+    T: QueryRelation + AsQuery<Query = SelectStatement<FromClause<T>>>,
     SelectStatement<FromClause<T>>: DistinctOnDsl<Selection>,
     T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
     T::SqlType: TypedExpressionType,
