@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<id as Column>::Table == table`
    --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:21:39
     |
-21  |     insert_into(users::table).values(&posts::id.eq(1));
+ LL |     insert_into(users::table).values(&posts::id.eq(1));
     |                               ------  ^^^^^^^^^^^^^^^ type mismatch resolving `<id as Column>::Table == table`
     |                               |
     |                               required by a bound introduced by this call
@@ -9,26 +9,26 @@ error[E0271]: type mismatch resolving `<id as Column>::Table == table`
 note: expected this to be `users::table`
    --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:14:9
     |
-14  |         id -> Integer,
+ LL |         id -> Integer,
     |         ^^
     = note: `posts::table` and `users::table` have similar names, but are actually distinct types
 note: `posts::table` is defined in module `crate::posts` of the current crate
    --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
     |
-12  | / table! {
-13  | |     posts {
-14  | |         id -> Integer,
-15  | |     }
-16  | | }
+ LL | / table! {
+ LL | |     posts {
+ LL | |         id -> Integer,
+ LL | |     }
+ LL | | }
     | |_^
 note: `users::table` is defined in module `crate::users` of the current crate
    --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
     |
-6   | / table! {
-7   | |     users {
-8   | |         id -> Integer,
-9   | |     }
-10  | | }
+  LL | / table! {
+  LL | |     users {
+  LL | |         id -> Integer,
+  LL | |     }
+ LL | | }
     | |_^
     = note: required for `&Eq<id, Bound<Integer, i32>>` to implement `diesel::Insertable<users::table>`
     = note: 1 redundant requirement hidden
@@ -63,10 +63,10 @@ LL | | }
 note: `users::table` is defined in module `crate::users` of the current crate
   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
    |
-6  | / table! {
-7  | |     users {
-8  | |         id -> Integer,
-9  | |     }
+ LL | / table! {
+ LL | |     users {
+ LL | |         id -> Integer,
+ LL | |     }
 LL | | }
    | |_^
    = note: required for `(&Grouped<Eq<id, Bound<Integer, i32>>>, &Grouped<Eq<id, ...>>)` to implement `diesel::Insertable<users::table>`
@@ -76,7 +76,7 @@ LL | | }
 error[E0271]: type mismatch resolving `<&... as Insertable<...>>::Values == ValuesClause<..., ...>`
    --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:24:39
     |
-24  |     insert_into(users::table).values(&(posts::id.eq(1), users::id.eq(2)));
+ LL |     insert_into(users::table).values(&(posts::id.eq(1), users::id.eq(2)));
     |                               ------  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `users::table`, found `posts::table`
     |                               |
     |                               required by a bound introduced by this call
@@ -85,20 +85,20 @@ error[E0271]: type mismatch resolving `<&... as Insertable<...>>::Values == Valu
 note: `posts::table` is defined in module `crate::posts` of the current crate
    --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
     |
-12  | / table! {
-13  | |     posts {
-14  | |         id -> Integer,
-15  | |     }
-16  | | }
+ LL | / table! {
+ LL | |     posts {
+ LL | |         id -> Integer,
+ LL | |     }
+ LL | | }
     | |_^
 note: `users::table` is defined in module `crate::users` of the current crate
    --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
     |
-6   | / table! {
-7   | |     users {
-8   | |         id -> Integer,
-9   | |     }
-10  | | }
+  LL | / table! {
+  LL | |     users {
+  LL | |         id -> Integer,
+  LL | |     }
+ LL | | }
     | |_^
     = note: required for `(&Grouped<Eq<id, Bound<Integer, i32>>>, &Grouped<Eq<id, ...>>)` to implement `diesel::Insertable<users::table>`
     = note: 1 redundant requirement hidden
@@ -117,7 +117,7 @@ LL |         U: Insertable<T>,
 error[E0271]: type mismatch resolving `<id as Column>::Table == table`
    --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:24:39
     |
-24  |     insert_into(users::table).values(&(posts::id.eq(1), users::id.eq(2)));
+ LL |     insert_into(users::table).values(&(posts::id.eq(1), users::id.eq(2)));
     |                               ------  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ type mismatch resolving `<id as Column>::Table == table`
     |                               |
     |                               required by a bound introduced by this call
@@ -125,26 +125,26 @@ error[E0271]: type mismatch resolving `<id as Column>::Table == table`
 note: expected this to be `users::table`
    --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:14:9
     |
-14  |         id -> Integer,
+ LL |         id -> Integer,
     |         ^^
     = note: `posts::table` and `users::table` have similar names, but are actually distinct types
 note: `posts::table` is defined in module `crate::posts` of the current crate
    --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
     |
-12  | / table! {
-13  | |     posts {
-14  | |         id -> Integer,
-15  | |     }
-16  | | }
+ LL | / table! {
+ LL | |     posts {
+ LL | |         id -> Integer,
+ LL | |     }
+ LL | | }
     | |_^
 note: `users::table` is defined in module `crate::users` of the current crate
    --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
     |
-6   | / table! {
-7   | |     users {
-8   | |         id -> Integer,
-9   | |     }
-10  | | }
+  LL | / table! {
+  LL | |     users {
+  LL | |         id -> Integer,
+  LL | |     }
+ LL | | }
     | |_^
     = note: required for `&Eq<id, Bound<Integer, i32>>` to implement `diesel::Insertable<users::table>`
     = note: 3 redundant requirements hidden

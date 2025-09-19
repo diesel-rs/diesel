@@ -46,7 +46,7 @@ LL |     let source = stuff::table.select(max(stuff::b));
 error[E0277]: the trait bound `Bool: SqlOrdAggregate` is not satisfied
    --> tests/fail/ordering_functions_require_ord.rs:16:38
     |
-16  |     let source = stuff::table.select(min(stuff::b));
+ LL |     let source = stuff::table.select(min(stuff::b));
     |                                      ^^^^^^^^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
     |
     = help: the following other types implement trait `SqlOrd`:

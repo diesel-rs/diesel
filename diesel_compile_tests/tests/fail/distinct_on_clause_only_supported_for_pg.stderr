@@ -1,7 +1,7 @@
 error[E0277]: `DistinctOnClause<columns::name>` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/distinct_on_clause_only_supported_for_pg.rs:16:41
      |
-16   |     users.distinct_on(name).get_results(&mut sqlite_connection);
+  LL |     users.distinct_on(name).get_results(&mut sqlite_connection);
      |                             ----------- ^^^^^^^^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `DistinctOnClause<columns::name>`
      |                             |
      |                             required by a bound introduced by this call
@@ -28,7 +28,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0277]: `DistinctOnClause<columns::name>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/distinct_on_clause_only_supported_for_pg.rs:21:41
      |
-21   |     users.distinct_on(name).get_results(&mut mysql_connection);
+  LL |     users.distinct_on(name).get_results(&mut mysql_connection);
      |                             ----------- ^^^^^^^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `DistinctOnClause<columns::name>`
      |                             |
      |                             required by a bound introduced by this call

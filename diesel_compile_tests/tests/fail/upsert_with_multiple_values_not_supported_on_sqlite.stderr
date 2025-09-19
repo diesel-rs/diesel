@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<Sqlite as SqlDialect>::InsertWithDefaultKeyword == IsoSqlDefaultKeyword`
     --> tests/fail/upsert_with_multiple_values_not_supported_on_sqlite.rs:33:18
      |
-33   |         .execute(&mut connection)
+  LL |         .execute(&mut connection)
      |          ------- ^^^^^^^^^^^^^^^ expected `IsoSqlDefaultKeyword`, found `DoesNotSupportDefaultKeyword`
      |          |
      |          required by a bound introduced by this call
@@ -24,7 +24,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
 error[E0277]: `BatchInsert<Vec<ValuesClause<(...,), ...>>, ..., (), false>` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/upsert_with_multiple_values_not_supported_on_sqlite.rs:33:18
      |
-33   |         .execute(&mut connection)
+  LL |         .execute(&mut connection)
      |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call

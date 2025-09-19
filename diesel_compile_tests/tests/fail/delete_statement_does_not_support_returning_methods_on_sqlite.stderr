@@ -1,7 +1,7 @@
 error[E0277]: `ReturningClause<(columns::id, columns::name)>` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/delete_statement_does_not_support_returning_methods_on_sqlite.rs:16:54
      |
-16   |     delete(users.filter(name.eq("Bill"))).get_result(&mut connection);
+  LL |     delete(users.filter(name.eq("Bill"))).get_result(&mut connection);
      |                                           ---------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<(columns::id, columns::name)>`
      |                                           |
      |                                           required by a bound introduced by this call
@@ -29,7 +29,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0277]: `ReturningClause<columns::name>` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/delete_statement_does_not_support_returning_methods_on_sqlite.rs:21:21
      |
-21   |         .get_result(&mut connection);
+  LL |         .get_result(&mut connection);
      |          ---------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<columns::name>`
      |          |
      |          required by a bound introduced by this call

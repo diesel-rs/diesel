@@ -6,7 +6,7 @@ LL |     name: String,
    |
 help: consider importing this struct through its public re-export
    |
-1  + use crate::users::name;
+ 1 + use crate::users::name;
    |
 help: if you import `name`, refer to it directly
    |
@@ -25,7 +25,7 @@ LL |     name: String,
    |
 help: consider importing this unit struct through its public re-export
    |
-1  + use crate::users::name;
+ 1 + use crate::users::name;
    |
 help: if you import `name`, refer to it directly
    |
@@ -168,66 +168,6 @@ LL |     id: String,
    = help: see issue #48214
    = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-   --> tests/fail/derive/has_query.rs:47:10
-    |
-47  | #[derive(HasQuery)]
-    |          ^^^^^^^^ expected `Once`, found `Never`
-    |
-note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-   --> tests/fail/derive/has_query.rs:12:9
-    |
-12  |         id -> Integer,
-    |         ^^
-    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-    = note: 1 redundant requirement hidden
-    = note: required for `(posts::columns::id,)` to implement `AppearsOnTable<users::table>`
-note: required by a bound in `diesel::HasQuery`
-   --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
-    |
-96  | pub trait HasQuery<DB: Backend>:
-    |           -------- required by a bound in this trait
-...
-LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
-    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
-    = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-   --> tests/fail/derive/has_query.rs:47:10
-    |
-47  | #[derive(HasQuery)]
-    |          ^^^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
-    |
-    = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
-            call if both are tables
-    = help: the following other types implement trait `TableNotEqual<T>`:
-              `Only<pg::metadata_lookup::pg_namespace::table>` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `Only<pg::metadata_lookup::pg_type::table>` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
-              `Tablesample<pg::metadata_lookup::pg_namespace::table, TSM>` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `Tablesample<pg::metadata_lookup::pg_type::table, TSM>` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
-              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>`
-              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<Tablesample<pg::metadata_lookup::pg_type::table, TSM>>`
-              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>`
-            and N others
-    = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
-note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-   --> tests/fail/derive/has_query.rs:12:9
-    |
-12  |         id -> Integer,
-    |         ^^
-    = note: 1 redundant requirement hidden
-    = note: required for `(posts::columns::id,)` to implement `AppearsOnTable<users::table>`
-note: required by a bound in `diesel::HasQuery`
-   --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
-    |
-96  | pub trait HasQuery<DB: Backend>:
-    |           -------- required by a bound in this trait
-...
-LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
-    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
-    = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
-
 error[E0277]: the trait bound `SelectStatement<FromClause<table>>: SelectDsl<SelectBy<..., ...>>` is not satisfied
   --> tests/fail/derive/has_query.rs:47:10
    |
@@ -242,15 +182,15 @@ LL | #[derive(HasQuery)]
       = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-   --> tests/fail/derive/has_query.rs:57:10
+   --> tests/fail/derive/has_query.rs:47:10
     |
-57  | #[derive(HasQuery)]
+ LL | #[derive(HasQuery)]
     |          ^^^^^^^^ expected `Once`, found `Never`
     |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
    --> tests/fail/derive/has_query.rs:12:9
     |
-12  |         id -> Integer,
+ LL |         id -> Integer,
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 1 redundant requirement hidden
@@ -258,7 +198,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 note: required by a bound in `diesel::HasQuery`
    --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
     |
-96  | pub trait HasQuery<DB: Backend>:
+ LL | pub trait HasQuery<DB: Backend>:
     |           -------- required by a bound in this trait
 ...
 LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
@@ -266,9 +206,9 @@ LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQuer
     = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-   --> tests/fail/derive/has_query.rs:57:10
+   --> tests/fail/derive/has_query.rs:47:10
     |
-57  | #[derive(HasQuery)]
+ LL | #[derive(HasQuery)]
     |          ^^^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
     |
     = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
@@ -287,14 +227,14 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
    --> tests/fail/derive/has_query.rs:12:9
     |
-12  |         id -> Integer,
+ LL |         id -> Integer,
     |         ^^
     = note: 1 redundant requirement hidden
     = note: required for `(posts::columns::id,)` to implement `AppearsOnTable<users::table>`
 note: required by a bound in `diesel::HasQuery`
    --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
     |
-96  | pub trait HasQuery<DB: Backend>:
+ LL | pub trait HasQuery<DB: Backend>:
     |           -------- required by a bound in this trait
 ...
 LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
@@ -314,38 +254,64 @@ LL | #[derive(HasQuery)]
 
       = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
-   --> tests/fail/derive/has_query.rs:67:10
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+   --> tests/fail/derive/has_query.rs:57:10
     |
-67  | #[derive(HasQuery)]
-    |          ^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+ LL | #[derive(HasQuery)]
+    |          ^^^^^^^^ expected `Once`, found `Never`
     |
-note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
-   --> tests/fail/derive/has_query.rs:3:1
+note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
+   --> tests/fail/derive/has_query.rs:12:9
     |
-3   | / table! {
-4   | |     users {
-5   | |         id -> Integer,
-6   | |         name -> Text,
-7   | |     }
-8   | | }
-    | |_^
-note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
-   --> tests/fail/derive/has_query.rs:5:9
-    |
-5   |         id -> Integer,
+ LL |         id -> Integer,
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 1 redundant requirement hidden
-    = note: required for `(users::columns::id,)` to implement `ValidGrouping<users::columns::name>`
+    = note: required for `(posts::columns::id,)` to implement `AppearsOnTable<users::table>`
 note: required by a bound in `diesel::HasQuery`
    --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
     |
-96  | pub trait HasQuery<DB: Backend>:
+ LL | pub trait HasQuery<DB: Backend>:
     |           -------- required by a bound in this trait
 ...
-LL |                           + ValidGrouping<<Self::BaseQuery as AcceptedQueries>::GroupBy>,
-    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
+LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
+    = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
+   --> tests/fail/derive/has_query.rs:57:10
+    |
+ LL | #[derive(HasQuery)]
+    |          ^^^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+    |
+    = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
+            call if both are tables
+    = help: the following other types implement trait `TableNotEqual<T>`:
+              `Only<pg::metadata_lookup::pg_namespace::table>` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
+              `Only<pg::metadata_lookup::pg_type::table>` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
+              `Tablesample<pg::metadata_lookup::pg_namespace::table, TSM>` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
+              `Tablesample<pg::metadata_lookup::pg_type::table, TSM>` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
+              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>`
+              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<Tablesample<pg::metadata_lookup::pg_type::table, TSM>>`
+              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
+              `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>`
+            and N others
+    = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
+   --> tests/fail/derive/has_query.rs:12:9
+    |
+ LL |         id -> Integer,
+    |         ^^
+    = note: 1 redundant requirement hidden
+    = note: required for `(posts::columns::id,)` to implement `AppearsOnTable<users::table>`
+note: required by a bound in `diesel::HasQuery`
+   --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
+    |
+ LL | pub trait HasQuery<DB: Backend>:
+    |           -------- required by a bound in this trait
+...
+LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
     = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: SelectDsl<...>` is not satisfied
@@ -360,6 +326,40 @@ LL | #[derive(HasQuery)]
              SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
 
       = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+   --> tests/fail/derive/has_query.rs:67:10
+    |
+ LL | #[derive(HasQuery)]
+    |          ^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+    |
+note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
+   --> tests/fail/derive/has_query.rs:3:1
+    |
+  LL | / table! {
+  LL | |     users {
+  LL | |         id -> Integer,
+  LL | |         name -> Text,
+  LL | |     }
+  LL | | }
+    | |_^
+note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
+   --> tests/fail/derive/has_query.rs:5:9
+    |
+  LL |         id -> Integer,
+    |         ^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 1 redundant requirement hidden
+    = note: required for `(users::columns::id,)` to implement `ValidGrouping<users::columns::name>`
+note: required by a bound in `diesel::HasQuery`
+   --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
+    |
+ LL | pub trait HasQuery<DB: Backend>:
+    |           -------- required by a bound in this trait
+...
+LL |                           + ValidGrouping<<Self::BaseQuery as AcceptedQueries>::GroupBy>,
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
+    = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0433]: failed to resolve: use of unresolved module or unlinked crate `user1s`
   --> tests/fail/derive/has_query.rs:19:8
