@@ -12,7 +12,7 @@ edition = "2021"
 include = ["src/**/*.rs", "src/tests/snapshots/*", "LICENSE-*", "README.md", "build.rs"]
 
 [dependencies]
-syn = { version = "2.0", features = ["derive", "fold", "full"] }
+syn = { version = "2.0", features = ["derive", "fold", "full", "parsing"] }
 quote = "1.0.9"
 proc-macro2 = "1.0.27"
 diesel_table_macro_syntax = {version = "0.3", path = "../diesel_table_macro_syntax"}
