@@ -262,6 +262,9 @@ pub type ConnectionResult<T> = Result<T, ConnectionError>;
 
 /// See the [method documentation](OptionalExtension::optional).
 pub trait OptionalExtension<T> {
+    /// The associated error type.
+    type Error;
+
     /// Converts a `QueryResult<T>` into a `QueryResult<Option<T>>`.
     ///
     /// By default, Diesel treats 0 rows being returned from a query that is expected to return 1
@@ -282,15 +285,25 @@ pub trait OptionalExtension<T> {
     /// let result: QueryResult<i32> = Err(NotFound);
     /// assert_eq!(Ok(None), result.optional());
     /// ```
-    fn optional(self) -> Result<Option<T>, Error>;
+    fn optional(self) -> Result<Option<T>, Self::Error>;
 }
 
-impl<T> OptionalExtension<T> for QueryResult<T> {
-    fn optional(self) -> Result<Option<T>, Error> {
+impl<T, E> OptionalExtension<T> for Result<T, E>
+where
+    E: AsRef<Error>,
+{
+    type Error = E;
+
+    fn optional(self) -> Result<Option<T>, Self::Error> {
         match self {
             Ok(value) => Ok(Some(value)),
-            Err(Error::NotFound) => Ok(None),
-            Err(e) => Err(e),
+            Err(err) => {
+                if matches!(err.as_ref(), Error::NotFound) {
+                    Ok(None)
+                } else {
+                    Err(err)
+                }
+            }
         }
     }
 }
