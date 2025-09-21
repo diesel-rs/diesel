@@ -260,10 +260,25 @@ pub type QueryResult<T> = Result<T, Error>;
 /// is otherwise a direct mapping to `Result`.
 pub type ConnectionResult<T> = Result<T, ConnectionError>;
 
+/// A trait for error types that can be used with `OptionalExtension`
+/// and are characterized by having a variant that indicates "not found".
+pub trait IsOptionalVariant {
+    /// Returns `true` if the error is the variant that indicates "not found".
+    fn is_optional_variant(&self) -> bool;
+}
+
+impl IsOptionalVariant for Error {
+    fn is_optional_variant(&self) -> bool {
+        matches!(self, Error::NotFound)
+    }
+}
+
 /// See the [method documentation](OptionalExtension::optional).
-pub trait OptionalExtension<T> {
+pub trait OptionalExtension {
     /// The associated error type.
-    type Error;
+    type Error: IsOptionalVariant;
+    /// The item type to wrap in an `Option`.
+    type Item;
 
     /// Converts a `QueryResult<T>` into a `QueryResult<Option<T>>`.
     ///
@@ -285,20 +300,21 @@ pub trait OptionalExtension<T> {
     /// let result: QueryResult<i32> = Err(NotFound);
     /// assert_eq!(Ok(None), result.optional());
     /// ```
-    fn optional(self) -> Result<Option<T>, Self::Error>;
+    fn optional(self) -> Result<Option<Self::Item>, Self::Error>;
 }
 
-impl<T, E> OptionalExtension<T> for Result<T, E>
+impl<T, E> OptionalExtension for Result<T, E>
 where
-    E: AsRef<Error>,
+    E: IsOptionalVariant,
 {
     type Error = E;
+    type Item = T;
 
     fn optional(self) -> Result<Option<T>, Self::Error> {
         match self {
             Ok(value) => Ok(Some(value)),
             Err(err) => {
-                if matches!(err.as_ref(), Error::NotFound) {
+                if err.is_optional_variant() {
                     Ok(None)
                 } else {
                     Err(err)
