@@ -36,6 +36,7 @@ mod util;
 mod as_changeset;
 mod as_expression;
 mod associations;
+mod db_enum;
 mod diesel_for_each_tuple;
 mod diesel_numeric_ops;
 mod diesel_public_if;
@@ -1733,7 +1734,7 @@ fn derive_multiconnection_inner(input: proc_macro2::TokenStream) -> proc_macro2:
 ///   mod dsl {
 ///       /// export all of diesel dsl
 ///       pub use diesel::dsl::*;
-///    
+///
 ///       /// Export your extension types here
 ///       pub use crate::your_extension::dsl::YourType;
 ///    }

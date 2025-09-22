@@ -349,6 +349,36 @@ impl MySpanned for StructAttr {
     }
 }
 
+pub enum EnumAttr {
+    Backend(
+        Ident,
+        syn::punctuated::Punctuated<syn::TypePath, syn::Token![,]>,
+    ),
+}
+
+impl Parse for EnumAttr {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let name: Ident = input.parse()?;
+        let name_str = name.to_string();
+
+        match &*name_str {
+            "backend" => {
+                let value = parse_paren_list(input, CHECK_FOR_BACKEND_NOTE, syn::Token![,])?;
+                Ok(EnumAttr::Backend(name, value))
+            }
+            _ => Err(unknown_attribute(&name, &["backend"])),
+        }
+    }
+}
+
+impl MySpanned for EnumAttr {
+    fn span(&self) -> Span {
+        match self {
+            Self::Backend(ident, _) => ident.span(),
+        }
+    }
+}
+
 pub fn parse_attributes<T>(attrs: &[Attribute]) -> Result<Vec<AttributeSpanWrapper<T>>>
 where
     T: Parse + ParseDeprecated + MySpanned,
