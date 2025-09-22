@@ -283,6 +283,14 @@ fn database_url_from_env(backend_specific_env_var: &str) -> String {
 mod schema {
     use diesel::prelude::*;
 
+    #[cfg(any(feature = "postgres", feature = "mysql"))]
+    pub mod sql_types {
+        #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
+        #[cfg_attr(feature = "postgres", diesel(postgres_type(name = "color")))]
+        #[cfg_attr(feature = "mysql", diesel(mysql_type(name = "Enum")))]
+        pub struct Color;
+    }
+
     table! {
         animals {
             id -> Integer,

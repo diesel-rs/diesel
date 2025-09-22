@@ -40,6 +40,8 @@ mod associations;
 mod diesel_for_each_tuple;
 mod diesel_numeric_ops;
 mod diesel_public_if;
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+mod enum_;
 mod from_sql_row;
 mod has_query;
 mod identifiable;
@@ -2828,5 +2830,47 @@ pub fn derive_has_query(input: TokenStream) -> TokenStream {
 fn derive_has_query_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     syn::parse2(input)
         .and_then(has_query::derive)
+        .unwrap_or_else(syn::Error::into_compile_error)
+}
+
+/// Implements `FromSql` and `ToSql` for enum types
+///
+/// This derive enables an enum (with unit-variants only) to be serialized to the database as a byte-string and deserialized from the same representation from the database. It requires one or more backends to be supplied so as to implement the required traits, as well as an SQL type.
+///
+/// # Attributes
+///
+/// ## Required container attributes
+///
+/// * `#[diesel(sql_type = path::to::MyEnumType)]`, specifies the database type this enum represents
+///
+/// # Examples
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenvy;
+/// # include!("../../diesel/src/doctest_setup.rs");
+///
+/// # #[cfg(any(feature = "postgres", feature = "mysql"))]
+/// #[derive(Debug, diesel::sql_types::Enum)]
+/// #[diesel(sql_type = schema::sql_types::Color)]
+/// enum Color {
+///     Red,
+///     Green,
+///     Blue
+/// }
+///
+/// # fn main() {}
+/// ```
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg_attr(docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/enum.md")))]
+#[proc_macro_derive(Enum, attributes(diesel))]
+pub fn derive_enum(input: TokenStream) -> TokenStream {
+    derive_enum_inner(input.into()).into()
+}
+
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+fn derive_enum_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(enum_::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
 }
