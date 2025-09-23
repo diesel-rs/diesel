@@ -21,6 +21,8 @@ install-updater = false
 install-path = "CARGO_HOME"
 # Whether to use cargo-cyclonedx to generate an SBOM
 cargo-cyclonedx = true
+# Whether to enable GitHub Attestations
+github-attestations = true
 
 [dist.min-glibc-version]
 "*" = "2.17"

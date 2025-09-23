@@ -16,7 +16,7 @@ jobs:
         backend: ["postgres", "sqlite", "mysql"]
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install postgres (Linux)
         if: matrix.backend == 'postgres'
@@ -73,7 +73,7 @@ jobs:
           path: ./pr_${{ matrix.backend }}.txt
 
       - name: Checkout base branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           repository: ${{ github.event.pull_request.base.repo.full_name }}
