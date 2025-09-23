@@ -12,7 +12,7 @@ installers = ["shell", "powershell"]
 # Target platforms to build apps for (Rust target-triple syntax)
 targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
 # Which actions to run on pull requests
-pr-run-mode = "plan"
+pr-run-mode = "upload"
 # Whether dist should create a Github Release or use an existing draft
 create-release = false
 # Whether to install an updater program
@@ -21,6 +21,8 @@ install-updater = false
 install-path = "CARGO_HOME"
 # Whether to use cargo-cyclonedx to generate an SBOM
 cargo-cyclonedx = true
+# Whether to enable GitHub Attestations
+github-attestations = true
 
 [dist.min-glibc-version]
 "*" = "2.17"
