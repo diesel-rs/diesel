@@ -13,7 +13,7 @@ wasm-bindgen = "0.2.99"
 wasm-bindgen-futures = "0.4.49"
 
 [target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
-sqlite-wasm-rs = { version = "0.4.0", features = ["relaxed-idb"] }
+sqlite-wasm-rs = { version = "0.4.4", features = ["relaxed-idb"] }
 
 [lib]
 crate-type = ["cdylib"]

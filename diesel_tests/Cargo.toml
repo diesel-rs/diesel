@@ -33,7 +33,7 @@ diesel_test_helper = { path = "../diesel_test_helper" }
 getrandom = { version = "0.3", features = ["wasm_js"] }
 getrandom_02 = { version = "0.2", package = "getrandom", features = ["js"] }
 wasm-bindgen-test = "0.3.49"
-sqlite-wasm-rs = "0.4.0"
+sqlite-wasm-rs = "0.4.4"
 
 [features]
 default = []
