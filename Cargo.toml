@@ -32,7 +32,8 @@ members = [
     "examples/sqlite/getting_started_step_3",
     "examples/sqlite/relations",
     "examples/sqlite/wasm",
-    "xtask",
+    "xtask", 
+    "diesel_infer_query",
 ]
 
 [workspace.package]
