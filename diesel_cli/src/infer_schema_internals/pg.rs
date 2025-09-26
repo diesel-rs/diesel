@@ -25,8 +25,6 @@ extern "SQL" {
         oid: sql_types::Oid,
         catalog: sql_types::Text,
     ) -> sql_types::Nullable<sql_types::Text>;
-
-    fn pg_get_viewdef(name: sql_types::Text) -> sql_types::Text;
 }
 
 #[tracing::instrument]

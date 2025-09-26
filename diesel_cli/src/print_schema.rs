@@ -163,8 +163,10 @@ pub fn output_schema(
     connection: &mut InferConnection,
     config: &config::PrintSchema,
 ) -> Result<String, crate::errors::Error> {
+    let backend = Backend::for_connection(connection);
+    let unfiltered_table_names = load_table_names(connection, config.schema_name())?;
     let table_names = filter_table_names(
-        load_table_names(connection, config.schema_name())?,
+        &unfiltered_table_names,
         &config.filter,
         config.include_views,
     );
@@ -176,21 +178,8 @@ pub fn output_schema(
         &filter_column_structure(&table_names, SupportedQueryRelationStructures::Table),
     );
 
-    let mut out = String::new();
-    writeln!(out, "{SCHEMA_HEADER}")?;
-    let backend = Backend::for_connection(connection);
-
-    let data = table_names
-        .into_iter()
-        .map(|(kind, t)| match kind {
-            SupportedQueryRelationStructures::Table => Ok(QueryRelationData::Table(
-                load_table_data(connection, t, config, kind)?,
-            )),
-            SupportedQueryRelationStructures::View => Ok(QueryRelationData::View(load_view_data(
-                connection, t, config,
-            )?)),
-        })
-        .collect::<Result<Vec<_>, crate::errors::Error>>()?;
+    let resolver = SchemaResolverImpl::new(connection, table_names, config, unfiltered_table_names);
+    let data = resolver.resolve_query_relations()?;
 
     let columns_custom_types = if config.generate_missing_sql_type_definitions() {
         let diesel_provided_types = match backend {
@@ -270,6 +259,8 @@ pub fn output_schema(
         import_types: config.import_types(),
     };
 
+    let mut out = String::new();
+    writeln!(out, "{SCHEMA_HEADER}")?;
     if let Some(schema_name) = config.schema_name() {
         write!(out, "{}", ModuleDefinition(schema_name, definitions))?;
     } else {
