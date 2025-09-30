@@ -392,6 +392,12 @@ pub struct Timestamp;
 ///
 /// - [`serde_json::Value`]
 ///
+/// ## Using custom types for JSON deserialization
+///
+/// Using a custom type that can be serialized or deserialized to/from JSON should be done by using
+/// the `serialize_as` and `deserialize_as` attribute macros. For more information have a look at
+/// the [Queryable](crate::deserialize::Queryable) trait documentation.
+///
 /// [`ToSql`]: /serialize/trait.ToSql.html
 /// [`FromSql`]: /deserialize/trait.FromSql.html
 /// [`serde_json::Value`]: /../serde_json/value/enum.Value.html
