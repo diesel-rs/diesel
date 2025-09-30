@@ -30,7 +30,15 @@ jobs:
       matrix:
         rust: ["stable"]
         backend: ["postgres", "sqlite", "mysql"]
-        os: [ubuntu-latest, macos-13, macos-15, windows-2025, ubuntu-22.04-arm]
+        os:
+          [
+            ubuntu-latest,
+            macos-13,
+            macos-15,
+            windows-2025,
+            ubuntu-22.04-arm,
+            windows-11-arm,
+          ]
         include:
           - rust: "beta"
             backend: "postgres"
@@ -147,7 +155,7 @@ jobs:
           echo "MYSQLCLIENT_VERSION=8.4" >> $GITHUB_ENV
 
       - name: Install sqlite (Windows)
-        if: runner.os == 'Windows' && matrix.backend == 'sqlite'
+        if: matrix.os == 'windows-2025' && matrix.backend == 'sqlite'
         shell: cmd
         run: |
           choco install sqlite
@@ -156,21 +164,44 @@ jobs:
           lib /machine:x64 /def:sqlite3.def /out:sqlite3.lib
 
       - name: Set variables for sqlite (Windows)
-        if: runner.os == 'Windows' && matrix.backend == 'sqlite'
+        if: matrix.os == 'windows-2025' && matrix.backend == 'sqlite'
         shell: bash
         run: |
           echo "C:\ProgramData\chocolatey\lib\SQLite\tools" >> $GITHUB_PATH
           echo "SQLITE3_LIB_DIR=C:\ProgramData\chocolatey\lib\SQLite\tools" >> $GITHUB_ENV
           echo "SQLITE_DATABASE_URL=C:\test.db" >> $GITHUB_ENV
 
+      - name: Install sqlite (Windows ARM)
+        if: matrix.os == 'windows-11-arm' && matrix.backend == 'sqlite'
+        shell: bash
+        run: |
+          vcpkg install sqlite3
+          echo "SQLITE3_LIB_DIR=C:/vcpkg/packages/sqlite3_arm64-windows/lib" >> $GITHUB_ENV
+          echo "SQLITE3_LIB_DIR=C:/vcpkg/packages/sqlite3_arm64-windows/lib" >> $GITHUB_PATH
+          echo "SQLITE_DATABASE_URL=C:\test.db" >> $GITHUB_ENV
+
       - name: Install postgres (Windows)
-        if: runner.os == 'Windows' && matrix.backend == 'postgres'
+        if: matrix.os == 'windows-2025' && matrix.backend == 'postgres'
         shell: bash
         run: |
           choco install postgresql14 --force --params '/Password:root'
           echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
           echo OPENSSL_SRC_PERL=C:/Strawberry/perl/bin/perl >> $GITHUB_ENV
           echo "PQ_LIB_DIR=C:\Program Files\PostgreSQL\14\lib" >> $GITHUB_ENV
+          echo "PG_DATABASE_URL=postgres://postgres:root@localhost/" >> $GITHUB_ENV
+          echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres:root@localhost/diesel_example" >> $GITHUB_ENV
+
+      - name: Install postgres (Windows ARM)
+        if: matrix.os == 'windows-11-arm' && matrix.backend == 'postgres'
+        shell: bash
+        run: |
+          choco install postgresql14 --force --params '/Password:root'
+          vcpkg install libpq
+          dir "C:/vcpkg/packages/libpq_arm64-windows/lib"
+          dir "C:/vcpkg/packages/libpq_arm64-windows/bin"
+          echo "PQ_LIB_DIR=C:/vcpkg/packages/libpq_arm64-windows/lib" >> $GITHUB_ENV
+          echo "C:/vcpkg/packages/libpq_arm64-windows/lib" >> $GITHUB_PATH
+          echo "C:/vcpkg/packages/libpq_arm64-windows/bin" >> $GITHUB_PATH
           echo "PG_DATABASE_URL=postgres://postgres:root@localhost/" >> $GITHUB_ENV
           echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres:root@localhost/diesel_example" >> $GITHUB_ENV
 
@@ -185,8 +216,6 @@ jobs:
           "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e "create database diesel_test;" -u root
           "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e "create database diesel_unit_test;" -u root
           "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e 'grant all on `diesel_%`.* to 'root'@'localhost';' -uroot
-          # remove doxygen because mysqlclient build otherwise breaks?
-          rm "C:/Strawberry/c/bin/doxygen.exe"
           echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
           echo OPENSSL_SRC_PERL=C:/Strawberry/perl/bin/perl >> $GITHUB_ENV
           echo "MYSQL_DATABASE_URL=mysql://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
@@ -197,6 +226,28 @@ jobs:
           echo "C:\Program Files\MySQL\MySQL Server 8.0\lib" >> $GITHUB_PATH
           echo "C:\Program Files\MySQL\MySQL Server 8.0\bin" >> $GITHUB_PATH
           dir "C:\Program Files\MySQL\MySQL Server 8.0\lib"
+
+      - name: Install mysqlcient (Windows ARM)
+        if: matrix.os == 'windows-11-arm' && matrix.backend == 'mysql'
+        shell: bash
+        run: |
+          vcpkg install libmysql
+
+      - name: Remove doxygen (Windows)
+        if: matrix.os == 'windows-2025' && matrix.backend == 'mysql'
+        shell: bash
+        run: |
+          # remove doxygen because mysqlclient build otherwise breaks?
+          rm "C:/Strawberry/c/bin/doxygen.exe"
+
+      - name: Install rustup
+        if: matrix.os == 'windows-11-arm'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://static.rust-lang.org/rustup/dist/aarch64-pc-windows-msvc/rustup-init.exe" -OutFile rustup-init.exe
+          .\rustup-init.exe --default-toolchain none -y
+          "$env:USERPROFILE\.cargo\bin" | Out-File -Append -Encoding ascii $env:GITHUB_PATH
+          "CARGO_HOME=$env:USERPROFILE\.cargo" | Out-File -Append -Encoding ascii $env:GITHUB_ENV
 
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@master
