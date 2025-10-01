@@ -16,5 +16,5 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: |
-          cargo binstall cargo-deny
+          cargo install cargo-deny --locked
           cargo deny check
