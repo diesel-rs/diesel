@@ -212,7 +212,7 @@ in a way that makes the pools suitable for use in parallel tests.
 
 ## Fixed
 
-* Fixed another potential breaking chaneg around queries containing `DISTINCT ON` and `ORDER BY` clauses consisting of custom sql expressions (e.g. `.nullable()`)
+* Fixed another potential breaking change around queries containing `DISTINCT ON` and `ORDER BY` clauses consisting of custom sql expressions (e.g. `.nullable()`)
 * Fixed an issue where `#[derive(Selectable)]` and `#[diesel(check_for_backend)]` generates invalid rust code if the struct contains lifetimes/generic types
 
 ## [2.1.1] 2023-08-25
