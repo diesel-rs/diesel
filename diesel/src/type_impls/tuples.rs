@@ -522,7 +522,7 @@ macro_rules! impl_valid_grouping_for_tuple_of_columns {
         }
 
         impl<$T1, $($T,)* Col> IsContainedInGroupBy<Col> for ($T1, $($T,)*)
-        where Col: Column,
+        where Col: QueryRelationField,
               ($($T,)*): IsContainedInGroupBy<Col>,
               $T1: IsContainedInGroupBy<Col>,
               $T1::Output: is_contained_in_group_by::IsAny<<($($T,)*) as IsContainedInGroupBy<Col>>::Output>
@@ -532,7 +532,7 @@ macro_rules! impl_valid_grouping_for_tuple_of_columns {
     };
     ($T1: ident,) => {
         impl<$T1, Col> IsContainedInGroupBy<Col> for ($T1,)
-        where Col: Column,
+        where Col: QueryRelationField,
               $T1: IsContainedInGroupBy<Col>
         {
             type Output = <$T1 as IsContainedInGroupBy<Col>>::Output;
