@@ -26,6 +26,7 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    #[allow(clippy::pedantic)]
     use diesel::sql_types::*;
     use super::sql_types::Users1UserStateEnum;
     use super::sql_types::Users1EnabledFeaturesSet;
