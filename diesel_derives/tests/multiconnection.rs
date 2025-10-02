@@ -457,3 +457,24 @@ fn nullable_type_checks() {
     assert!(result.12.is_none());
     assert!(result.13.is_none());
 }
+
+#[test]
+#[cfg(not(feature = "mysql"))] // such binds are broken for mysql + multiconnection
+fn contains_binds() {
+    use diesel::connection::InstrumentationEvent;
+
+    let mut conn = establish_connection();
+    conn.set_instrumentation(|event: InstrumentationEvent<'_>| {
+        if let InstrumentationEvent::StartQuery { query, .. } = event {
+            #[cfg(any(feature = "sqlite", feature = "mysql"))]
+            assert_eq!(query.to_string(), "SELECT ? -- binds: [1]");
+            #[cfg(feature = "postgres")]
+            assert_eq!(query.to_string(), "SELECT $1 -- binds: [1]");
+        }
+    });
+
+    let res = diesel::select(1.into_sql::<diesel::sql_types::Integer>())
+        .get_result::<i32>(&mut conn)
+        .unwrap();
+    assert_eq!(res, 1);
+}
