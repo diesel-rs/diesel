@@ -41,11 +41,20 @@ impl Statement {
             .iter()
             .map(|data| data.as_ref().map(|d| d.len().try_into()).unwrap_or(Ok(0)))
             .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
-        let param_count: libc::c_int = params_pointer
-            .len()
-            .try_into()
-            .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
+            .map_err(|_: std::num::TryFromIntError| {
+                crate::result::Error::SerializationError(
+                    "A bind parameter's serialized size is bigger than fits on an i32".into(),
+                )
+            })?;
+        let param_count: libc::c_int =
+            params_pointer
+                .len()
+                .try_into()
+                .map_err(|_: std::num::TryFromIntError| {
+                    crate::result::Error::SerializationError(
+                        "There are more than i32::MAX bind parameters".into(),
+                    )
+                })?;
 
         match &self.kind {
             StatementKind::Named { name } => {
@@ -104,18 +113,22 @@ impl Statement {
                 // For named/cached statements, prepare as usual using a prepare phase and then
                 // an execute phase
                 let name_cstr = CString::new(format!("__diesel_stmt_{counter}"))?;
-                let internal_result = unsafe {
-                    let param_count: libc::c_int = param_types
-                        .len()
-                        .try_into()
-                        .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
-                    raw_connection.prepare(
-                        name_cstr.as_ptr(),
-                        sql_cstr.as_ptr(),
-                        param_count,
-                        param_types_vec.as_ptr(),
-                    )
-                };
+                let internal_result =
+                    unsafe {
+                        let param_count: libc::c_int = param_types.len().try_into().map_err(
+                            |_: std::num::TryFromIntError| {
+                                crate::result::Error::SerializationError(
+                                    "There are more than i32::MAX bind parameters".into(),
+                                )
+                            },
+                        )?;
+                        raw_connection.prepare(
+                            name_cstr.as_ptr(),
+                            sql_cstr.as_ptr(),
+                            param_count,
+                            param_types_vec.as_ptr(),
+                        )
+                    };
                 PgResult::new(internal_result?, raw_connection)?;
 
                 Ok(Statement {
