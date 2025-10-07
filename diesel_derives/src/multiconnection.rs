@@ -317,6 +317,10 @@ fn generate_connection_impl(
                 if let Some((outer_collector, lookup)) = pass.bind_collector() {
                     C::handle_inner_pass(outer_collector, lookup, &self.backend, &self.inner)?;
                 }
+                if let Some((formatter, _backend)) = pass.debug_binds() {
+                    let pass = diesel::query_builder::AstPass::<MultiBackend>::collect_debug_binds_pass(formatter, &self.backend);
+                    self.inner.walk_ast(pass)?;
+                }
                 Ok(())
             }
         }
