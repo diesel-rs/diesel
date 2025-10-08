@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
     spanned::Spanned, Data, DeriveInput, Ident, ImplGenerics, LitByteStr, Result, TypeGenerics,
-    TypePath, Variant, WhereClause,
+    Variant, WhereClause,
 };
 
 use crate::{
@@ -91,8 +91,8 @@ fn impl_from_sql(
 
 fn impl_to_sql(
     enum_name: &Ident,
-    (impl_generics, ty_generics, where_clause): (ImplGenerics, TypeGenerics, Option<&WhereClause>),
-    backend: TokenStream,
+    (impl_generics, ty_generics, where_clause): &(ImplGenerics, TypeGenerics, Option<&WhereClause>),
+    backend: &TokenStream,
 ) -> TokenStream {
     quote! {
         impl #impl_generics ::diesel::serialize::ToSql<::diesel::sql_types::Text, #backend> for #enum_name #ty_generics #where_clause {
@@ -116,8 +116,6 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             ));
         }
     };
-
-    let mut bytes_impls = Vec::with_capacity(2);
 
     let mut from_bytes_arms = Vec::with_capacity(enum_variants.len());
     let mut as_bytes_arms = Vec::with_capacity(enum_variants.len());
@@ -181,9 +179,6 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             }
         }
     };
-
-    // can remove type annotation once this Vec is filled
-    let mut impls: Vec<TokenStream> = Vec::with_capacity(2);
 
     Ok(wrap_in_dummy_mod(quote! {
         #impl_from_and_to_bytes
