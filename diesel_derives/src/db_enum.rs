@@ -1,8 +1,10 @@
+use std::collections::{HashMap, HashSet};
+
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
     spanned::Spanned, Data, DeriveInput, Ident, ImplGenerics, LitByteStr, Result, TypeGenerics,
-    Variant, WhereClause,
+    TypePath, Variant, WhereClause,
 };
 
 use crate::{
@@ -51,8 +53,8 @@ fn as_bytes_method_body(enum_variant: &Variant) -> Result<TokenStream> {
     Ok(quote! {Self::#variant_name => #variant_as_byte_string})
 }
 
-fn parse_backends(enum_attr: &AttributeSpanWrapper<EnumAttr>) -> Result<Vec<String>> {
-    let mut parsed_backends = Vec::new();
+fn parse_backends(enum_attr: &AttributeSpanWrapper<EnumAttr>) -> Result<HashSet<String>> {
+    let mut parsed_backends = HashSet::new();
 
     match &enum_attr.item {
         EnumAttr::Backend(_, backends) => {
@@ -64,7 +66,7 @@ fn parse_backends(enum_attr: &AttributeSpanWrapper<EnumAttr>) -> Result<Vec<Stri
                     ));
                 };
 
-                parsed_backends.push(backend.ident.to_string())
+                parsed_backends.insert(backend.ident.to_string());
             }
         }
     }
@@ -74,9 +76,9 @@ fn parse_backends(enum_attr: &AttributeSpanWrapper<EnumAttr>) -> Result<Vec<Stri
 
 fn impl_from_sql(
     enum_name: &Ident,
-    (impl_generics, ty_generics, where_clause): (ImplGenerics, TypeGenerics, Option<&WhereClause>),
-    backend: TokenStream,
-    value_type: TokenStream,
+    (impl_generics, ty_generics, where_clause): &(ImplGenerics, TypeGenerics, Option<&WhereClause>),
+    backend: &TokenStream,
+    value_type: &TokenStream,
 ) -> TokenStream {
     quote! {
         impl #impl_generics ::diesel::deserialize::FromSql<::diesel::sql_types::Text, #backend> for #enum_name #ty_generics #where_clause {
@@ -115,6 +117,8 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         }
     };
 
+    let mut bytes_impls = Vec::with_capacity(2);
+
     let mut from_bytes_arms = Vec::with_capacity(enum_variants.len());
     let mut as_bytes_arms = Vec::with_capacity(enum_variants.len());
     for v in enum_variants {
@@ -122,17 +126,39 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         as_bytes_arms.push(as_bytes_method_body(v)?)
     }
 
-    let mut postgres = false;
-    let mut mysql = false;
+    let backend_map: HashMap<_, _> = [
+        (
+            "Pg",
+            (
+                quote! { ::diesel::pg::Pg },
+                quote! { ::diesel::pg::PgValue<'_> },
+            ),
+        ),
+        (
+            "Mysql",
+            (
+                quote! { ::diesel::mysql::Mysql },
+                quote! { ::diesel::mysql::MysqlValue<'_> },
+            ),
+        ),
+    ]
+    .into_iter()
+    .collect();
 
+    let generics = item.generics.split_for_impl();
+
+    let mut impls = Vec::new();
     for attr in parse_attributes(&item.attrs)? {
         let backends = parse_backends(&attr)?;
-        if backends.contains(&"Pg".to_string()) {
-            postgres = true;
-        }
 
-        if backends.contains(&"Mysql".to_string()) {
-            mysql = true;
+        for b in backends {
+            let (backend, value_type) = backend_map.get(b.as_str()).ok_or(syn::Error::new(
+                proc_macro2::Span::mixed_site(),
+                "only the Postgres and Mysql backends are supported",
+            ))?;
+
+            impls.push(impl_from_sql(&item.ident, &generics, backend, value_type));
+            impls.push(impl_to_sql(&item.ident, &generics, backend));
         }
     }
 
