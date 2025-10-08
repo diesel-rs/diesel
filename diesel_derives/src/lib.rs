@@ -2528,3 +2528,14 @@ fn derive_has_query_inner(input: proc_macro2::TokenStream) -> proc_macro2::Token
         .and_then(has_query::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
 }
+
+#[proc_macro_derive(DbEnum, attributes(diesel))]
+pub fn derive_db_enum(input: TokenStream) -> TokenStream {
+    derive_db_enum_inner(input.into()).into()
+}
+
+fn derive_db_enum_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(db_enum::derive)
+        .unwrap_or_else(syn::Error::into_compile_error)
+}
