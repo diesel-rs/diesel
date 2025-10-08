@@ -218,8 +218,8 @@ mod impl_deprecated {
 
     #[cfg(all(not(feature = "without-deprecated"), feature = "with-deprecated"))]
     impl ParseDeprecated for EnumAttr {
-        fn parse_deprecated(input: ParseStream) -> Result<Option<Self>> {
-            todo!()
+        fn parse_deprecated(_: ParseStream) -> Result<Option<Self>> {
+            panic!("this proc-macro cannot be used with the deprecated style of diesel proc-macros")
         }
     }
 
