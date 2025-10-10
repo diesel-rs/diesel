@@ -22,7 +22,7 @@ pub struct PgValue<'a> {
 /// the implementation for `NonZeroU32` here instead
 /// of providing their own custom implementation
 #[cfg_attr(
-    docsrs,
+    diesel_docsrs,
     doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
 )]
 #[allow(unreachable_pub)]

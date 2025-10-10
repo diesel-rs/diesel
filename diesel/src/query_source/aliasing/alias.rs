@@ -48,7 +48,7 @@ impl<S: AliasSource> Alias<S> {
 
 impl<S> Alias<S> {
     #[doc(hidden)]
-    /// May be used to create an alias. Used by the [`alias!`] macro.
+    /// May be used to create an alias. Used by the [`alias!`](crate::alias) macro.
     pub const fn new(source: S) -> Self {
         Self { source }
     }
