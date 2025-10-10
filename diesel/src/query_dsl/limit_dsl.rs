@@ -1,4 +1,4 @@
-use crate::query_source::Table;
+use crate::query_source::QueryRelation;
 
 /// The `limit` method
 ///
@@ -17,7 +17,7 @@ pub trait LimitDsl<DummyArgForAutoType = i64> {
 
 impl<T> LimitDsl for T
 where
-    T: Table,
+    T: QueryRelation,
     T::Query: LimitDsl,
 {
     type Output = <T::Query as LimitDsl>::Output;

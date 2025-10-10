@@ -14,7 +14,7 @@ pub use diesel_derives::HasQuery;
 /// Consumers of this trait should use the `query()` associated function
 /// to construct a query including a matching select clause for their type
 ///
-/// This trait can be [derived](derive@HasTable)
+/// This trait can be [derived](derive@HasQuery)
 ///
 /// It's important to note that for Diesel mappings between the database and rust types always happen
 /// on query and not on table level. This enables you to write several queries related to the

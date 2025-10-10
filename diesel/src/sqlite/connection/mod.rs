@@ -215,7 +215,7 @@ impl Connection for SqliteConnection {
     ///
     /// * The database is stored in memory by default.
     /// * Persistent VFS (Virtual File Systems) is optional,
-    ///   see <https://github.com/Spxg/sqlite-wasm-rs/blob/master/sqlite-wasm-rs/src/vfs/README.md> for details
+    ///   see <https://github.com/Spxg/sqlite-wasm-rs> for details
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut instrumentation = DynInstrumentation::default_instrumentation();
         instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
@@ -941,7 +941,7 @@ mod tests {
 
     // regression test for https://github.com/diesel-rs/diesel/issues/3425
     #[diesel_test_helper::test]
-    fn test_correct_seralization_of_owned_strings() {
+    fn test_correct_serialization_of_owned_strings() {
         use crate::prelude::*;
 
         #[derive(Debug, crate::expression::AsExpression)]
@@ -971,7 +971,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
-    fn test_correct_seralization_of_owned_bytes() {
+    fn test_correct_serialization_of_owned_bytes() {
         use crate::prelude::*;
 
         #[derive(Debug, crate::expression::AsExpression)]

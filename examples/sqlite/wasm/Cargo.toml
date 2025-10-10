@@ -5,7 +5,7 @@ edition.workspace = true
 publish = false
 
 [dependencies]
-diesel = { path = "../../../diesel", features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
+diesel = { version = "2.3.0", path = "../../../diesel", features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
 diesel_migrations = { path = "../../../diesel_migrations", features = ["sqlite"] }
 serde = { version = "1.0.217", features = ["derive"] }
 serde-wasm-bindgen = "0.6.5"
@@ -17,3 +17,4 @@ sqlite-wasm-rs = { version = "0.4.0", features = ["relaxed-idb"] }
 
 [lib]
 crate-type = ["cdylib"]
+doc = false

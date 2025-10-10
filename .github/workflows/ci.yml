@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened]
   push:
     branches:
-      - master
+      - main
       - "0.[0-9]+.x"
       - "1.[0-9]+.x"
       - "2.[0-9]+.x"
@@ -30,7 +30,14 @@ jobs:
       matrix:
         rust: ["stable"]
         backend: ["postgres", "sqlite", "mysql"]
-        os: [ubuntu-latest, macos-13, macos-15, windows-2025, ubuntu-22.04-arm]
+        os:
+          [
+            ubuntu-latest,
+            macos-15-intel,
+            macos-15,
+            windows-2025,
+            ubuntu-24.04-arm,
+          ]
         include:
           - rust: "beta"
             backend: "postgres"
@@ -53,7 +60,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@v2
@@ -64,7 +71,6 @@ jobs:
         shell: bash
         if: matrix.rust == 'nightly'
         run: |
-          echo "RUSTFLAGS=--cfg doc_cfg" >> $GITHUB_ENV
           echo "RUSTDOCFLAGS=--cfg doc_cfg" >> $GITHUB_ENV
 
       - name: Set environment variables
@@ -104,7 +110,7 @@ jobs:
           echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root:root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
 
       - name: Install postgres (MacOS)
-        if: (matrix.os == 'macos-13' || matrix.os == 'macos-15') && matrix.backend == 'postgres'
+        if: runner.os == 'macOS' && matrix.backend == 'postgres'
         run: |
           brew update
           brew install postgresql@14
@@ -120,8 +126,8 @@ jobs:
           HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 brew install sqlite
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
-      - name: Install mysql (MacOS)
-        if: matrix.os == 'macos-13' && matrix.backend == 'mysql'
+      - name: Install mysql (MacOS Intel)
+        if: matrix.os == 'macos-15-intel' && matrix.backend == 'mysql'
         run: |
           brew install mysql@8.4
           /usr/local/opt/mysql@8.4/bin/mysql.server start
@@ -220,11 +226,17 @@ jobs:
         run: |
           echo FLAGS="-F diesel/i-implement-a-third-party-backend-and-opt-into-breaking-changes -F diesel/unstable -F diesel/without-deprecated" >> $GITHUB_ENV
 
-      - name: Add Flags (beta)
+      - name: Add Flags (beta + Sqlite)
         if: matrix.rust == 'beta' && matrix.backend == 'sqlite'
         shell: bash
         run: |
           echo FLAGS="-F diesel/returning_clauses_for_sqlite_3_35 -F libsqlite3-sys/bundled" >> $GITHUB_ENV
+
+      - name: Add Flags (beta)
+        if: matrix.rust == 'beta'
+        shell: bash
+        run: |
+          echo FLAGS="${FLAGS} -F diesel/time -F diesel/chrono -F diesel/numeric -F diesel/extras -F diesel_derives/time -F diesel_derives/chrono -F diesel_derives/numeric"
 
       - name: Add Flags (stable)
         if: matrix.rust == 'stable'
@@ -259,7 +271,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
@@ -281,7 +293,7 @@ jobs:
     name: Check rustfmt style && run clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
@@ -320,18 +332,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: "rust-src"
-          targets: "wasm32-unknown-unknown"
+          # It seems not to work
+          # targets: "wasm32-unknown-unknown"
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@v2
         with:
           key: sqlite_wasm-cargo-${{ hashFiles('**/Cargo.toml') }}
 
-      - name: Install wasm-pack
-        run: cargo install wasm-pack
+      - name: Add wasm32-unknown-unknown target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli --locked
 
       - name: Install emscripten toolchains
         run: |
@@ -350,10 +366,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: "rust-src"
+          components: "rust-src, rustfmt"
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@v2
         with:
@@ -382,10 +398,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: "rust-src"
+          components: "rust-src, rustfmt"
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@v2
         with:
@@ -425,10 +441,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: "rust-src"
+          components: "rust-src, rustfmt"
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@v2
         with:
@@ -475,12 +491,12 @@ jobs:
           cargo +stable -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "mysql extras __with_asan_tests" --target x86_64-unknown-linux-gnu
 
   minimal_rust_version:
-    name: Check Minimal supported rust version (1.84.0)
+    name: Check Minimal supported rust version (1.86.0)
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.84.0
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@1.86.0
       - uses: dtolnay/rust-toolchain@nightly
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@cargo-minimal-versions
@@ -493,22 +509,22 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       - name: Check diesel_derives
-        run: cargo +1.84.0 minimal-versions check -p diesel_derives --features "postgres sqlite mysql 32-column-tables 64-column-tables 128-column-tables without-deprecated with-deprecated r2d2"
+        run: cargo +1.86.0 minimal-versions check -p diesel_derives --features "postgres sqlite mysql 32-column-tables 64-column-tables 128-column-tables without-deprecated with-deprecated r2d2"
       - name: Check diesel
-        run: cargo +1.84.0 minimal-versions check -p diesel --features "postgres mysql sqlite extras"
+        run: cargo +1.86.0 minimal-versions check -p diesel --features "postgres mysql sqlite extras"
       - name: Check diesel_dynamic_schema
-        run: cargo +1.84.0 minimal-versions check -p diesel-dynamic-schema --all-features
+        run: cargo +1.86.0 minimal-versions check -p diesel-dynamic-schema --all-features
       - name: Check diesel_migrations
-        run: cargo +1.84.0 minimal-versions check -p diesel_migrations --all-features
+        run: cargo +1.86.0 minimal-versions check -p diesel_migrations --all-features
       - name: Check diesel_cli
-        run: cargo +1.84.0 minimal-versions check -p diesel_cli --features "default sqlite-bundled"
+        run: cargo +1.86.0 minimal-versions check -p diesel_cli --features "default sqlite-bundled"
 
   Semver-Checks:
     name: Run Cargo Semver-Checks
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@v2
         with:

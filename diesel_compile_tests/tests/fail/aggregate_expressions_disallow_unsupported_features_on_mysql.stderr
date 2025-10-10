@@ -1,7 +1,7 @@
 error[E0277]: `Filter<WhereClause<Grouped<Eq<name, Bound<Text, &str>>>>>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/aggregate_expressions_disallow_unsupported_features_on_mysql.rs:17:28
      |
-17   |         .get_result::<i64>(&mut conn)
+  LL |         .get_result::<i64>(&mut conn)
      |          ----------        ^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
@@ -29,7 +29,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0277]: `Order<columns::name, false>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/aggregate_expressions_disallow_unsupported_features_on_mysql.rs:24:28
      |
-24   |         .get_result::<i64>(&mut conn)
+  LL |         .get_result::<i64>(&mut conn)
      |          ----------        ^^^^^^^^^ the trait `QueryFragment<Mysql, NoAggregateFunctionExpressions>` is not implemented for `Order<columns::name, false>`
      |          |
      |          required by a bound introduced by this call

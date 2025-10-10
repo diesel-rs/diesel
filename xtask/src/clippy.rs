@@ -66,7 +66,18 @@ impl ClippyArgs {
             ])
             .args(exclude)
             .args(flags)
-            .args(["-F", "diesel/extras", "-F", "diesel/with-deprecated"])
+            .args([
+                "-F",
+                "diesel/extras",
+                "-F",
+                "diesel/with-deprecated",
+                "-F",
+                "diesel_derives/numeric",
+                "-F",
+                "diesel_derives/chrono",
+                "-F",
+                "diesel_derives/time",
+            ])
             .args(&self.flags)
             .current_dir(&metadata.workspace_root);
 

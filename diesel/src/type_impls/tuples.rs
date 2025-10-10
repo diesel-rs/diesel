@@ -25,11 +25,11 @@ where
 
 macro_rules! fake_variadic {
     (1i32 -> $($tt: tt)*) => {
-        #[cfg_attr(docsrs, doc(fake_variadic))]
+        #[cfg_attr(diesel_docsrs, doc(fake_variadic))]
         $($tt)*
     };
     ($idx:tt -> $($tt: tt)*) => {
-        #[cfg_attr(docsrs, doc(hidden))]
+        #[cfg_attr(diesel_docsrs, doc(hidden))]
         $($tt)*
     };
 }
@@ -432,7 +432,7 @@ macro_rules! tuple_impls {
 
 macro_rules! impl_from_sql_row {
     (($T1: ident,), ($ST1: ident,)) => {
-        #[cfg_attr(docsrs, doc(fake_variadic))]
+        #[cfg_attr(diesel_docsrs, doc(fake_variadic))]
         impl<$T1, $ST1, __DB> crate::deserialize::FromStaticSqlRow<($ST1,), __DB> for ($T1,) where
             __DB: Backend,
             $ST1: CompatibleType<$T1, __DB>,
@@ -448,7 +448,7 @@ macro_rules! impl_from_sql_row {
         }
     };
     (($T1: ident, $($T: ident,)*), ($ST1: ident, $($ST: ident,)*)) => {
-        #[cfg_attr(docsrs, doc(hidden))]
+        #[cfg_attr(diesel_docsrs, doc(hidden))]
         #[diagnostic::do_not_recommend]
         impl<$T1, $($T,)* $($ST,)* __DB> FromSqlRow<($($ST,)* crate::sql_types::Untyped), __DB> for ($($T,)* $T1)
         where __DB: Backend,
@@ -476,7 +476,7 @@ macro_rules! impl_from_sql_row {
             }
         }
 
-        #[cfg_attr(docsrs, doc(hidden))]
+        #[cfg_attr(diesel_docsrs, doc(hidden))]
         impl<$T1, $ST1, $($T,)* $($ST,)* __DB> FromStaticSqlRow<($($ST,)* $ST1,), __DB> for ($($T,)* $T1,) where
             __DB: Backend,
             $ST1: CompatibleType<$T1, __DB>,
@@ -511,7 +511,7 @@ macro_rules! impl_from_sql_row {
 
 macro_rules! impl_valid_grouping_for_tuple_of_columns {
     ($T1: ident, $($T: ident,)+) => {
-        #[cfg_attr(docsrs, doc(hidden))]
+        #[cfg_attr(diesel_docsrs, doc(hidden))]
         impl<$T1, $($T,)* __GroupByClause> ValidGrouping<__GroupByClause> for ($T1, $($T,)*)
         where
             $T1: ValidGrouping<__GroupByClause>,
@@ -522,7 +522,7 @@ macro_rules! impl_valid_grouping_for_tuple_of_columns {
         }
 
         impl<$T1, $($T,)* Col> IsContainedInGroupBy<Col> for ($T1, $($T,)*)
-        where Col: Column,
+        where Col: QueryRelationField,
               ($($T,)*): IsContainedInGroupBy<Col>,
               $T1: IsContainedInGroupBy<Col>,
               $T1::Output: is_contained_in_group_by::IsAny<<($($T,)*) as IsContainedInGroupBy<Col>>::Output>
@@ -532,13 +532,13 @@ macro_rules! impl_valid_grouping_for_tuple_of_columns {
     };
     ($T1: ident,) => {
         impl<$T1, Col> IsContainedInGroupBy<Col> for ($T1,)
-        where Col: Column,
+        where Col: QueryRelationField,
               $T1: IsContainedInGroupBy<Col>
         {
             type Output = <$T1 as IsContainedInGroupBy<Col>>::Output;
         }
 
-        #[cfg_attr(docsrs, doc(fake_variadic))]
+        #[cfg_attr(diesel_docsrs, doc(fake_variadic))]
         impl<$T1, __GroupByClause> ValidGrouping<__GroupByClause> for ($T1,)
             where $T1: ValidGrouping<__GroupByClause>
         {
@@ -555,7 +555,7 @@ macro_rules! impl_sql_type {
         bounds = [$($bounds: tt)*],
         is_null = [$($is_null: tt)*],
     )=> {
-        #[cfg_attr(docsrs, doc(hidden))]
+        #[cfg_attr(diesel_docsrs, doc(hidden))]
         impl<$($ST,)*> SqlType for ($($ST,)*)
         where
             $($ST: SqlType,)*
@@ -591,7 +591,7 @@ macro_rules! impl_sql_type {
         }
     };
     ($T1: ident,) => {
-        #[cfg_attr(docsrs, doc(fake_variadic))]
+        #[cfg_attr(diesel_docsrs, doc(fake_variadic))]
         impl<$T1> SqlType for ($T1,)
         where $T1: SqlType,
         {

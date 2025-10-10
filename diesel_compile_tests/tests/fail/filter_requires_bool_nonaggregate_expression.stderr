@@ -1,7 +1,7 @@
 error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Bool` nor `diesel::sql_types::Nullable<Bool>`
    --> tests/fail/filter_requires_bool_nonaggregate_expression.rs:15:33
     |
-15  |     let _ = users::table.filter(users::name);
+ LL |     let _ = users::table.filter(users::name);
     |                          ------ ^^^^^^^^^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Text`
     |                          |
     |                          required by a bound introduced by this call
@@ -35,6 +35,6 @@ LL |     let _ = users::table.filter(sum(users::id).eq(1));
              `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
              `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Yes>`
    = note: required for `Grouped<Eq<sum<Integer, id>, Bound<Nullable<BigInt>, i64>>>` to implement `NonAggregate`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<Nullable<BigInt>, i64>>>>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<Nullable<diesel::sql_types::BigInt>, i64>>>>`
 
    For more information about this error, try `rustc --explain E0277`.

@@ -46,7 +46,7 @@ extern "SQL" {
     /// of the methods [`WindowExpressionMethods`] from to use this function in your `SELECT`
     /// clause. It cannot be used outside of `SELECT` clauses.
     ///
-    /// For MySQL this function requires you to call [`.window_order()](WindowExpressionMethods::window_order())
+    /// For MySQL this function requires you to call [`.window_order()`](WindowExpressionMethods::window_order())
     ///
     /// ```
     /// # include!("../../doctest_setup.rs");
@@ -90,7 +90,7 @@ extern "SQL" {
     /// of the methods [`WindowExpressionMethods`] from to use this function in your `SELECT`
     /// clause. It cannot be used outside of `SELECT` clauses.
     ///
-    /// For MySQL this function requires you to call [`.window_order()](WindowExpressionMethods::window_order())
+    /// For MySQL this function requires you to call [`.window_order()`](WindowExpressionMethods::window_order())
     ///
     /// ```
     /// # include!("../../doctest_setup.rs");
@@ -135,7 +135,7 @@ extern "SQL" {
     /// of the methods [`WindowExpressionMethods`] from to use this function in your `SELECT`
     /// clause. It cannot be used outside of `SELECT` clauses.
     ///
-    /// For MySQL this function requires you to call [`.window_order()](WindowExpressionMethods::window_order())
+    /// For MySQL this function requires you to call [`.window_order()`](WindowExpressionMethods::window_order())
     ///
     /// ```
     /// # include!("../../doctest_setup.rs");
@@ -180,7 +180,7 @@ extern "SQL" {
     /// of the methods [`WindowExpressionMethods`] from to use this function in your `SELECT`
     /// clause. It cannot be used outside of `SELECT` clauses.
     ///
-    /// For MySQL this function requires you to call [`.window_order()](WindowExpressionMethods::window_order())
+    /// For MySQL this function requires you to call [`.window_order()`](WindowExpressionMethods::window_order())
     ///
     /// ```
     /// # include!("../../doctest_setup.rs");
@@ -259,7 +259,7 @@ extern "SQL" {
     /// of the methods [`WindowExpressionMethods`] from to use this function in your `SELECT`
     /// clause. It cannot be used outside of `SELECT` clauses.
     ///
-    /// For MySQL this function requires you to call [`.window_order()](WindowExpressionMethods::window_order())
+    /// For MySQL this function requires you to call [`.window_order()`](WindowExpressionMethods::window_order())
     ///
     /// ```
     /// # include!("../../doctest_setup.rs");
@@ -304,7 +304,7 @@ extern "SQL" {
     /// of the methods [`WindowExpressionMethods`] from to use this function in your `SELECT`
     /// clause. It cannot be used outside of `SELECT` clauses.
     ///
-    /// For MySQL this function requires you to call [`.window_order()](WindowExpressionMethods::window_order())
+    /// For MySQL this function requires you to call [`.window_order()`](WindowExpressionMethods::window_order())
     ///
     /// ```
     /// # include!("../../doctest_setup.rs");
@@ -361,7 +361,7 @@ extern "SQL" {
     /// of the methods [`WindowExpressionMethods`] from to use this function in your `SELECT`
     /// clause. It cannot be used outside of `SELECT` clauses.
     ///
-    /// For MySQL this function requires you to call [`.window_order()](WindowExpressionMethods::window_order())
+    /// For MySQL this function requires you to call [`.window_order()`](WindowExpressionMethods::window_order())
     ///
     /// ```
     /// # include!("../../doctest_setup.rs");
@@ -459,7 +459,7 @@ extern "SQL" {
     /// of the methods [`WindowExpressionMethods`] from to use this function in your `SELECT`
     /// clause. It cannot be used outside of `SELECT` clauses.
     ///
-    /// For MySQL this function requires you to call [`.window_order()](WindowExpressionMethods::window_order())
+    /// For MySQL this function requires you to call [`.window_order()`](WindowExpressionMethods::window_order())
     ///
     /// ```
     /// # include!("../../doctest_setup.rs");
@@ -507,7 +507,7 @@ extern "SQL" {
     /// of the methods [`WindowExpressionMethods`] from to use this function in your `SELECT`
     /// clause. It cannot be used outside of `SELECT` clauses.
     ///
-    /// For MySQL this function requires you to call [`.window_order()](WindowExpressionMethods::window_order())
+    /// For MySQL this function requires you to call [`.window_order()`](WindowExpressionMethods::window_order())
     ///
     /// ```
     /// # include!("../../doctest_setup.rs");
@@ -564,7 +564,7 @@ extern "SQL" {
     /// of the methods [`WindowExpressionMethods`] from to use this function in your `SELECT`
     /// clause. It cannot be used outside of `SELECT` clauses.
     ///
-    /// For MySQL this function requires you to call [`.window_order()](WindowExpressionMethods::window_order())
+    /// For MySQL this function requires you to call [`.window_order()`](WindowExpressionMethods::window_order())
     ///
     /// ```
     /// # include!("../../doctest_setup.rs");

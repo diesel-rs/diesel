@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "2.2.4"
+version = "2.3.1"
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"
 readme = "README.md"
@@ -46,7 +46,7 @@ time = { version = "0.3.9", optional = true, features = ["macros"] }
 downcast-rs = "2.0.1"
 
 [dependencies.diesel_derives]
-version = "~2.2.0"
+version = "~2.3.0"
 path = "../diesel_derives"
 
 [target.'cfg(not(all(target_family = "wasm", target_os = "unknown")))'.dependencies]
@@ -85,7 +85,7 @@ without-deprecated = ["diesel_derives/without-deprecated"]
 with-deprecated = ["diesel_derives/with-deprecated"]
 network-address = ["dep:ipnetwork", "dep:libc"]
 ipnet-address = ["dep:ipnet", "dep:libc"]
-numeric = ["dep:num-bigint", "dep:bigdecimal", "dep:num-traits", "dep:num-integer"]
+numeric = ["dep:num-bigint", "dep:bigdecimal", "dep:num-traits", "dep:num-integer", "diesel_derives/numeric"]
 postgres_backend = ["diesel_derives/postgres", "dep:bitflags", "dep:byteorder", "dep:itoa"]
 mysql_backend = ["diesel_derives/mysql", "dep:byteorder"]
 returning_clauses_for_sqlite_3_35 = []
@@ -107,5 +107,8 @@ __with_asan_tests = [
 [package.metadata.docs.rs]
 features = ["postgres", "mysql", "sqlite", "extras"]
 no-default-features = true
-rustc-args = ["--cfg", "docsrs"]
-rustdoc-args = ["--cfg", "docsrs", " -Z", "unstable-options", "--generate-link-to-definition"]
+rustc-args = ["--cfg", "diesel_docs"]
+rustdoc-args = ["--cfg", "diesel_docsrs", "-Z", "unstable-options", "--generate-link-to-definition", "--generate-macro-expansion"]
+
+[lints]
+workspace = true

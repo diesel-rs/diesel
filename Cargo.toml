@@ -36,7 +36,7 @@ members = [
 ]
 
 [workspace.package]
-rust-version = "1.84.0"
+rust-version = "1.86.0"
 include = ["src/**/*.rs", "tests/**/*.rs", "LICENSE-*", "README.md"]
 edition = "2021"
 
@@ -51,6 +51,9 @@ opt-level = 3
 
 [profile.dev.package.similar]
 opt-level = 3
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(diesel_docsrs)'] }
 
 # The profile that 'cargo dist' will build with
 [profile.dist]

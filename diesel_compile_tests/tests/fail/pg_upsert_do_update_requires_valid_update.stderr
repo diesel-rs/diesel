@@ -1,11 +1,11 @@
 error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertStatement<table, ...>, ...>`, but its trait bounds were not satisfied
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:44:10
     |
-40  | /     insert_into(users)
-41  | |         .values(&NewUser("Sean"))
-42  | |         .on_conflict(id)
-43  | |         .do_update()
-44  | |         .execute(&mut connection);
+ LL | /     insert_into(users)
+ LL | |         .values(&NewUser("Sean"))
+ LL | |         .on_conflict(id)
+ LL | |         .do_update()
+ LL | |         .execute(&mut connection);
     | |         -^^^^^^^ method cannot be called due to unsatisfied trait bounds
     | |_________|
     |
@@ -13,20 +13,20 @@ error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertS
    ::: DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
     |
 LL |   pub struct IncompleteDoUpdate<Stmt, Target> {
-    |   ------------------------------------------- doesn't satisfy `_: RunQueryDsl<_>` or `_: Table`
+    |   ------------------------------------------- doesn't satisfy `_: QueryRelation` or `_: RunQueryDsl<_>`
     |
     = note: the following trait bounds were not satisfied:
-            `IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: Table`
+            `IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: QueryRelation`
             which is required by `IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
-            `&IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: Table`
+            `&IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: QueryRelation`
             which is required by `&IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
-            `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: Table`
+            `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: QueryRelation`
             which is required by `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
 
 error[E0271]: type mismatch resolving `<Grouped<Eq<title, Bound<Text, &str>>> as AsChangeset>::Target == table`
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:52:14
     |
-52  |         .set(posts::title.eq("Sean"));
+ LL |         .set(posts::title.eq("Sean"));
     |          --- ^^^^^^^^^^^^^^^^^^^^^^^ expected `users::table`, found `posts::table`
     |          |
     |          required by a bound introduced by this call
@@ -35,27 +35,27 @@ error[E0271]: type mismatch resolving `<Grouped<Eq<title, Bound<Text, &str>>> as
 note: `posts::table` is defined in module `crate::posts` of the current crate
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:13:1
     |
-13  | / table! {
-14  | |     posts {
-15  | |         id -> Integer,
-16  | |         title -> VarChar,
-17  | |     }
-18  | | }
+ LL | / table! {
+ LL | |     posts {
+ LL | |         id -> Integer,
+ LL | |         title -> VarChar,
+ LL | |     }
+ LL | | }
     | |_^
 note: `users::table` is defined in module `crate::users` of the current crate
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:6:1
     |
-6   | / table! {
-7   | |     users {
-8   | |         id -> Integer,
-9   | |         name -> VarChar,
-10  | |     }
-11  | | }
+  LL | / table! {
+  LL | |     users {
+  LL | |         id -> Integer,
+  LL | |         name -> VarChar,
+ LL | |     }
+ LL | | }
     | |_^
 note: the method call chain might not have had the expected associated types
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:52:27
     |
-52  |         .set(posts::title.eq("Sean"));
+ LL |         .set(posts::title.eq("Sean"));
     |              ------------ ^^^^^^^^^^ `AsChangeset::Target` is `table` here
     |              |
     |              this expression has type `title`
@@ -109,10 +109,10 @@ LL | | }
 note: `users::table` is defined in module `crate::users` of the current crate
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:6:1
    |
-6  | / table! {
-7  | |     users {
-8  | |         id -> Integer,
-9  | |         name -> VarChar,
+ LL | / table! {
+ LL | |     users {
+ LL | |         id -> Integer,
+ LL | |         name -> VarChar,
 LL | |     }
 LL | | }
    | |_^

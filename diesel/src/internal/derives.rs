@@ -77,4 +77,8 @@ pub mod multiconnection {
     #[doc(hidden)]
     #[cfg(feature = "time")]
     pub use time;
+
+    #[doc(hidden)]
+    #[cfg(feature = "numeric")]
+    pub use bigdecimal;
 }

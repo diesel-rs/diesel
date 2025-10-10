@@ -19,7 +19,7 @@ pub use diesel_derives::table_proc as table;
 /// explicit `ON` clause.
 ///
 /// The generated `ON` clause will always join to the primary key of the parent
-/// table. This macro removes the need to call [`.on`] explicitly, you will
+/// table. This macro removes the need to call [`.on`](crate::query_dsl::JoinOnDsl::on) explicitly, you will
 /// still need to invoke
 /// [`allow_tables_to_appear_in_same_query!`](crate::allow_tables_to_appear_in_same_query)
 /// for these two tables to be able to use the resulting query, unless you are

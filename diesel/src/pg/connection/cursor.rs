@@ -1,8 +1,7 @@
+use super::private::QueryFragmentHelper;
 use super::raw::RawConnection;
 use super::result::PgResult;
 use super::row::PgRow;
-use crate::pg::Pg;
-use crate::query_builder::QueryFragment;
 use std::rc::Rc;
 
 #[allow(missing_debug_implementations)]
@@ -66,14 +65,14 @@ pub struct RowByRowCursor<'conn, 'query> {
     first_row: bool,
     db_result: Rc<PgResult>,
     conn: &'conn mut super::ConnectionAndTransactionManager,
-    query: Box<dyn QueryFragment<Pg> + 'query>,
+    query: Box<dyn QueryFragmentHelper<crate::result::Error> + 'query>,
 }
 
 impl<'conn, 'query> RowByRowCursor<'conn, 'query> {
     pub(super) fn new(
         db_result: PgResult,
         conn: &'conn mut super::ConnectionAndTransactionManager,
-        query: Box<dyn QueryFragment<Pg> + 'query>,
+        query: Box<dyn QueryFragmentHelper<crate::result::Error> + 'query>,
     ) -> Self {
         RowByRowCursor {
             first_row: true,
@@ -92,7 +91,7 @@ impl Iterator for RowByRowCursor<'_, '_> {
             let get_next_result = super::update_transaction_manager_status(
                 self.conn.raw_connection.get_next_result(),
                 self.conn,
-                &crate::debug_query(&self.query),
+                &|callback| self.query.instrumentation(callback),
                 false,
             );
             match get_next_result {
@@ -127,18 +126,20 @@ impl Drop for RowByRowCursor<'_, '_> {
             let res = super::update_transaction_manager_status(
                 self.conn.raw_connection.get_next_result(),
                 self.conn,
-                &crate::debug_query(&self.query),
+                &|callback| self.query.instrumentation(callback),
                 false,
             );
             if matches!(res, Err(_) | Ok(None)) {
                 // the error case is handled in update_transaction_manager_status
                 if res.is_ok() {
-                    self.conn.instrumentation.on_connection_event(
-                        crate::connection::InstrumentationEvent::FinishQuery {
-                            query: &crate::debug_query(&self.query),
-                            error: None,
-                        },
-                    );
+                    self.query.instrumentation(&mut |query| {
+                        self.conn.instrumentation.on_connection_event(
+                            crate::connection::InstrumentationEvent::FinishQuery {
+                                query,
+                                error: None,
+                            },
+                        );
+                    });
                 }
                 break;
             }
