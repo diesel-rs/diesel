@@ -12,3 +12,6 @@ openssl-sys = { workspace = true, features = ["vendored"] }
 
 [dev-dependencies]
 dotenvy = "0.15"
+
+[lib]
+doc = false
