@@ -52,6 +52,9 @@ opt-level = 3
 [profile.dev.package.similar]
 opt-level = 3
 
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(diesel_docsrs)'] }
+
 # The profile that 'cargo dist' will build with
 [profile.dist]
 inherits = "release"

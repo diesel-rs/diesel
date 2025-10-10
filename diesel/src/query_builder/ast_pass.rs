@@ -295,7 +295,7 @@ where
         doc(hidden)
     )] // This is used by the `define_sql_function` macro
     #[cfg_attr(
-        docsrs,
+        diesel_docsrs,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub fn backend(&self) -> &DB {
@@ -308,7 +308,7 @@ where
         doc(hidden)
     )] // This is used by the `__diesel_column` macro
     #[cfg_attr(
-        docsrs,
+        diesel_docsrs,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub fn should_skip_from(&self) -> bool {

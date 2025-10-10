@@ -52,5 +52,8 @@ numeric = []
 [package.metadata.docs.rs]
 features = ["postgres", "mysql", "sqlite", "chrono", "numeric", "time", "r2d2"]
 no-default-features = true
-rustc-args = ["--cfg", "docsrs"]
-rustdoc-args = ["--cfg", "docsrs", "-Z", "unstable-options", "--generate-link-to-definition"]
+rustc-args = ["--cfg", "diesel_docs"]
+rustdoc-args = ["--cfg", "diesel_docs", "-Z", "unstable-options", "--generate-link-to-definition", "--generate-macro-expansion"]
+
+[lints]
+workspace = true

@@ -232,8 +232,8 @@
     feature = "unstable",
     warn(fuzzy_provenance_casts, lossy_provenance_casts)
 )]
-#![cfg_attr(docsrs, feature(doc_cfg, rustdoc_internals))]
-#![cfg_attr(docsrs, expect(internal_features))]
+#![cfg_attr(diesel_docsrs, feature(doc_cfg, rustdoc_internals))]
+#![cfg_attr(diesel_docsrs, expect(internal_features))]
 #![cfg_attr(feature = "128-column-tables", recursion_limit = "256")]
 // Built-in Lints
 #![warn(
