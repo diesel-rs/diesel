@@ -1051,7 +1051,8 @@ extern "SQL" {
     /// ```
     #[cfg(feature = "sqlite")]
     #[variadic(2)]
-    fn json_object<K: NotBlob, V: NotBlob>(key: K, value: V) -> Json;
+    fn json_object<K: NotBlob<IsNull = is_nullable::NotNull>, V: NotBlob>(key: K, value: V)
+        -> Json;
 
     /// The `jsonb_object()` SQL function works just like the [`json_object()`](json_object_1())
     /// function except that the generated object is returned in SQLite's private binary JSONB
@@ -1096,7 +1097,10 @@ extern "SQL" {
     /// ```
     #[cfg(feature = "sqlite")]
     #[variadic(2)]
-    fn jsonb_object<K: NotBlob, V: NotBlob>(key: K, value: V) -> Jsonb;
+    fn jsonb_object<K: NotBlob<IsNull = is_nullable::NotNull>, V: NotBlob>(
+        key: K,
+        value: V,
+    ) -> Jsonb;
 
     /// The json_group_object(NAME,VALUE) function returns a JSON object comprised of all NAME/VALUE pairs in
     /// the aggregation.
