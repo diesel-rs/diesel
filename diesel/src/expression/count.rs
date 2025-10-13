@@ -5,6 +5,9 @@ use super::functions::aggregate_expressions::{
 use super::functions::declare_sql_function;
 use super::{Expression, ValidGrouping};
 use crate::backend::Backend;
+use crate::internal::sql_functions::{
+    FunctionFragment, IsWindowFunction, OverClause, WindowFunctionFragment,
+};
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types::{BigInt, DieselNumericOps, SingleValue, SqlType};
@@ -115,11 +118,29 @@ impl Expression for CountStar {
     type SqlType = BigInt;
 }
 
+impl<DB: Backend> FunctionFragment<DB> for CountStar {
+    const FUNCTION_NAME: &'static str = "COUNT";
+
+    fn walk_arguments<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_sql("*");
+        Ok(())
+    }
+}
+
 impl<DB: Backend> QueryFragment<DB> for CountStar {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("COUNT(*)");
         Ok(())
     }
+}
+
+impl<Partition, Order, Frame, DB: Backend> WindowFunctionFragment<CountStar, DB>
+    for OverClause<Partition, Order, Frame>
+{
+}
+
+impl IsWindowFunction for CountStar {
+    type ArgTypes = ();
 }
 
 impl_selectable_expression!(CountStar);
