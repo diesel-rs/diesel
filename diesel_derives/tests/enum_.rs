@@ -1,3 +1,5 @@
+use crate::helpers::*;
+use crate::schema::*;
 use diesel_derives::Enum;
 
 #[derive(Debug, Enum, PartialEq)]
@@ -17,5 +19,22 @@ fn as_bytes() {
 
 #[test]
 fn from_bytes() {
-    assert_eq!(Color::from_bytes(b"Blue").unwrap(), Color::Blue);
+    assert_eq!(Color::from_bytes(b"Red").unwrap(), Color::Red);
+}
+
+#[test]
+fn insert_color() {
+    #[derive(Insertable)]
+    struct Car {
+        paint_color: Color,
+    }
+
+    let conn = &mut connection();
+    let new_car = Car {
+        paint_color: Color::Blue,
+    };
+    diesel::insert_into(cars::table)
+        .values(new_car)
+        .execute(conn)
+        .unwrap();
 }
