@@ -40,6 +40,7 @@ chrono = { version = "0.4.20", default-features = false, features = [
 clap = { version = "4.4.14", features = ["cargo", "string"] }
 clap_complete = "4"
 dotenvy = "0.15"
+dunce = "1.0.5"
 heck = "0.5.0"
 serde = { version = "1.0.193", features = ["derive", "std"] }
 toml = { version = "0.9", default-features = false, features = ["parse", "serde"] }

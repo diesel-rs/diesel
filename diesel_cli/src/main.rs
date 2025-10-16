@@ -145,8 +145,13 @@ fn create_config_file(
     let path = Config::file_path(matches);
     if !path.exists() {
         let source_content = include_str!("default_files/diesel.toml").to_string();
+        let migrations_dir_relative =
+            convert_absolute_path_to_relative(migrations_dir, &find_project_root()?);
         // convert the path to a valid toml string (escaping backslashes on windows)
-        let migrations_dir_toml_string = migrations_dir.display().to_string().replace('\\', "\\\\");
+        let migrations_dir_toml_string = migrations_dir_relative
+            .display()
+            .to_string()
+            .replace('\\', "\\\\");
         let modified_content = source_content.replace(
             "dir = \"migrations\"",
             &format!("dir = \"{migrations_dir_toml_string}\""),
@@ -228,22 +233,43 @@ fn search_for_directory_containing_file(
 
 // Converts an absolute path to a relative path, with the restriction that the
 // target path must be in the same directory or above the current path.
-fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path) -> PathBuf {
-    let mut result = PathBuf::new();
+fn convert_absolute_path_to_relative(target_path: &Path, current_path: &Path) -> PathBuf {
+    use std::path::Component;
 
-    while !target_path.starts_with(current_path) {
-        result.push("..");
-        match current_path.parent() {
-            Some(parent) => current_path = parent,
-            None => return target_path.into(),
+    let abs_target = dunce::canonicalize(target_path).unwrap_or_else(|_| target_path.to_owned());
+    let abs_current = dunce::canonicalize(current_path).unwrap_or_else(|_| current_path.to_owned());
+
+    let mut target_components = abs_target.components();
+    let mut current_components = abs_current.components();
+    let mut components = Vec::new();
+    loop {
+        match (target_components.next(), current_components.next()) {
+            (None, None) => {
+                break;
+            }
+            (Some(target_component), None) => {
+                components.push(target_component);
+                components.extend(target_components);
+                break;
+            }
+            (None, _) => {
+                components.push(Component::ParentDir);
+            }
+            (Some(target_component), Some(current_component))
+                if components.is_empty() && target_component == current_component => {}
+            (Some(target_component), Some(Component::CurDir)) => {
+                components.push(target_component);
+            }
+            (Some(target_component), Some(_)) => {
+                components.push(Component::ParentDir);
+                components.extend(current_components.map(|_| Component::ParentDir));
+                components.push(target_component);
+                components.extend(target_components);
+                break;
+            }
         }
     }
-
-    result.join(
-        target_path
-            .strip_prefix(current_path)
-            .expect("Paths have the same base"),
-    )
+    components.iter().map(|c| c.as_os_str()).collect()
 }
 
 #[tracing::instrument]
