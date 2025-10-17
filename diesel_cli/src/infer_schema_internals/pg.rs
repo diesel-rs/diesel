@@ -25,6 +25,8 @@ extern "SQL" {
         oid: sql_types::Oid,
         catalog: sql_types::Text,
     ) -> sql_types::Nullable<sql_types::Text>;
+
+    fn pg_get_viewdef(name: sql_types::Text) -> sql_types::Text;
 }
 
 #[tracing::instrument]
@@ -241,6 +243,15 @@ pub fn load_foreign_key_constraints(
             })
         })
         .collect()
+}
+
+pub(crate) fn load_view_sql_definition(
+    pg_connection: &mut PgConnection,
+    name: &TableName,
+) -> Result<String, crate::errors::Error> {
+    diesel::select(pg_get_viewdef(name.full_sql_name()))
+        .get_result::<String>(pg_connection)
+        .map_err(crate::errors::Error::from)
 }
 
 #[cfg(test)]

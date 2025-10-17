@@ -98,6 +98,15 @@ pub struct TableData {
     pub comment: Option<String>,
 }
 
+#[derive(Debug)]
+pub struct ViewData {
+    pub name: TableName,
+    pub column_data: Vec<ColumnDefinition>,
+    pub comment: Option<String>,
+    #[expect(dead_code, reason = "Will be used later")]
+    pub sql_definition: String,
+}
+
 mod serde_impls {
     extern crate serde;
 

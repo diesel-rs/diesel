@@ -27,20 +27,21 @@ pub fn query_source_macro(
     // include the input in the error output so that rust-analyzer is happy
     let res = match syn::parse2::<TableDecl>(tokenstream2.clone()) {
         Ok(input) => {
-            if input.column_defs.len() > super::diesel_for_each_tuple::MAX_TUPLE_SIZE as usize {
+            if input.view.column_defs.len() > super::diesel_for_each_tuple::MAX_TUPLE_SIZE as usize
+            {
                 let kind = kind.macro_name();
-                let txt = if input.column_defs.len() > 128 {
+                let txt = if input.view.column_defs.len() > 128 {
                     format!(
                         "you reached the end. \nhelp: diesel does not support {kind}s with \
                      more than 128 columns.\nhelp: consider using less columns."
                     )
-                } else if input.column_defs.len() > 64 {
+                } else if input.view.column_defs.len() > 64 {
                     format!(
                         "{kind} contains more than 64 columns. \n consider enabling the \
                      `128-column-tables` feature to enable diesels support for \
                      tables with more than 64 columns."
                     )
-                } else if input.column_defs.len() > 32 {
+                } else if input.view.column_defs.len() > 32 {
                     format!(
                         "{kind} contains more than 32 columns. \nhelp: consider enabling the \
                      `64-column-tables` feature to enable diesels support for \
@@ -77,16 +78,17 @@ pub fn query_source_macro(
 fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
     let kind_name = kind.macro_name();
 
-    let meta = &input.meta;
-    let table_name = &input.table_name;
-    let imports = if input.use_statements.is_empty() {
+    let meta = &input.view.meta;
+    let table_name = &input.view.table_name;
+    let imports = if input.view.use_statements.is_empty() {
         vec![parse_quote!(
             use diesel::sql_types::*;
         )]
     } else {
-        input.use_statements.clone()
+        input.view.use_statements.clone()
     };
     let column_names = input
+        .view
         .column_defs
         .iter()
         .map(|c| &c.column_name)
@@ -112,10 +114,10 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
                  {kind_name}! {{\n
                      {table}({key}){{\n",
                     key = column_names[0],
-                    table = input.table_name,
+                    table = input.view.table_name,
                 );
                 message += &format!("\t{table_name} ({}) {{\n", &column_names[0]);
-                for c in &input.column_defs {
+                for c in &input.view.column_defs {
                     let tpe = c
                         .tpe
                         .path
@@ -128,7 +130,7 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
                 }
                 message += "\t}\n}";
 
-                let span = Span::mixed_site().located_at(input.table_name.span());
+                let span = Span::mixed_site().located_at(input.view.table_name.span());
                 return quote::quote_spanned! {span=>
                     compile_error!(#message);
                 };
@@ -153,19 +155,20 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
     };
 
     let query_source_ident = match kind {
-        QuerySourceMacroKind::Table => syn::Ident::new("table", input.table_name.span()),
-        QuerySourceMacroKind::View => syn::Ident::new("view", input.table_name.span()),
+        QuerySourceMacroKind::Table => syn::Ident::new("table", input.view.table_name.span()),
+        QuerySourceMacroKind::View => syn::Ident::new("view", input.view.table_name.span()),
     };
 
     let column_defs = input
+        .view
         .column_defs
         .iter()
         .map(|c| expand_column_def(c, &query_source_ident, kind));
-    let column_ty = input.column_defs.iter().map(|c| &c.tpe);
+    let column_ty = input.view.column_defs.iter().map(|c| &c.tpe);
     let valid_grouping_for_table_columns = generate_valid_grouping_for_table_columns(&input);
 
-    let sql_name = &input.sql_name;
-    let static_query_fragment_impl_for_table = if let Some(schema) = input.schema {
+    let sql_name = &input.view.sql_name;
+    let static_query_fragment_impl_for_table = if let Some(schema) = input.view.schema {
         let schema_name = schema.to_string();
         quote::quote! {
             impl diesel::internal::table_macro::StaticQueryFragment for #query_source_ident {
@@ -190,7 +193,7 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
         }
     };
 
-    let reexport_column_from_dsl = input.column_defs.iter().map(|c| {
+    let reexport_column_from_dsl = input.view.column_defs.iter().map(|c| {
         let column_name = &c.column_name;
         if c.column_name == *table_name {
             let span = Span::mixed_site().located_at(c.column_name.span());
@@ -599,7 +602,7 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
 }
 
 fn generate_valid_grouping_for_table_columns(table: &TableDecl) -> Vec<TokenStream> {
-    let mut ret = Vec::with_capacity(table.column_defs.len() * table.column_defs.len());
+    let mut ret = Vec::with_capacity(table.view.column_defs.len() * table.view.column_defs.len());
 
     let primary_key = if let Some(ref pk) = table.primary_keys {
         if pk.keys.len() == 1 {
@@ -611,8 +614,8 @@ fn generate_valid_grouping_for_table_columns(table: &TableDecl) -> Vec<TokenStre
         Some(DEFAULT_PRIMARY_KEY_NAME.into())
     };
 
-    for (id, right_col) in table.column_defs.iter().enumerate() {
-        for left_col in table.column_defs.iter().skip(id) {
+    for (id, right_col) in table.view.column_defs.iter().enumerate() {
+        for left_col in table.view.column_defs.iter().skip(id) {
             let right_to_left = if Some(left_col.column_name.to_string()) == primary_key {
                 Ident::new("Yes", proc_macro2::Span::mixed_site())
             } else {
