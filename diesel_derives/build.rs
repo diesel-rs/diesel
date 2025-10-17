@@ -1,4 +1,4 @@
-#[cfg(docsrs)]
+#[cfg(diesel_docsrs)]
 fn inner_format(input: String, expanded: String) -> String {
     format!(
         r#"
@@ -23,13 +23,13 @@ The macro expands the input to the following Rust code:
     )
 }
 
-#[cfg(docsrs)]
+#[cfg(diesel_docsrs)]
 fn normal_format(input: String, expanded: String) -> String {
     let doc = inner_format(input, expanded);
     write_detail_section(doc)
 }
 
-#[cfg(docsrs)]
+#[cfg(diesel_docsrs)]
 fn write_detail_section(content: String) -> String {
     format!(
         r#"
@@ -45,7 +45,7 @@ fn write_detail_section(content: String) -> String {
     )
 }
 
-#[cfg(docsrs)]
+#[cfg(diesel_docsrs)]
 fn read_snapshot(snapshot_dir: &std::path::Path, file: &str) -> (String, String) {
     let file = snapshot_dir.join(file);
     let content = std::fs::read_to_string(file).expect("Failed to read snapshot");
@@ -64,7 +64,7 @@ fn read_snapshot(snapshot_dir: &std::path::Path, file: &str) -> (String, String)
     (input, content)
 }
 
-#[cfg(docsrs)]
+#[cfg(diesel_docsrs)]
 fn write_multiple_part(
     snapshot_dir: &std::path::Path,
     file: &str,
@@ -80,7 +80,7 @@ fn write_multiple_part(
     writeln!(out, "{doc}").expect("This doesn't fail");
 }
 
-#[cfg(docsrs)]
+#[cfg(diesel_docsrs)]
 fn write_multiple(
     snapshot_dir: &std::path::Path,
     block: &[(&str, &str)],
@@ -100,7 +100,7 @@ fn write_multiple(
     std::fs::write(out_path, doc).unwrap();
 }
 
-#[cfg(docsrs)]
+#[cfg(diesel_docsrs)]
 fn main() {
     use std::path::PathBuf;
 
@@ -196,7 +196,7 @@ fn main() {
     write_multiple(&snapshot_dir, &has_query, "has_query", &out);
 }
 
-#[cfg(not(docsrs))]
+#[cfg(not(diesel_docsrs))]
 fn main() {
     // just do nothing
 }

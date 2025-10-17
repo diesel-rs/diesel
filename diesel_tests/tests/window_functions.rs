@@ -16,6 +16,18 @@ fn simple_window() {
 }
 
 #[diesel_test_helper::test]
+fn window_count_star() {
+    let mut conn = connection_with_sean_and_tess_in_users_table();
+
+    let res = users::table
+        .select(dsl::count_star().over())
+        .load::<i64>(&mut conn)
+        .unwrap();
+
+    assert_eq!(res, vec![2, 2]);
+}
+
+#[diesel_test_helper::test]
 fn partition_by() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
 

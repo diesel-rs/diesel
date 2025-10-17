@@ -26,6 +26,7 @@ LL |     users::table.select(lower(users::name).partition_by(users::id));
    = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
    = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
              diesel::expression::count::count_utils::count<T, expr>
              diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
              diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
@@ -33,7 +34,6 @@ LL |     users::table.select(lower(users::name).partition_by(users::id));
              diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
              diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
              diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
-             diesel::expression::functions::window_functions::first_value_utils::first_value<T, value>
            and N others
    = note: required for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` to implement `diesel::expression::functions::aggregate_expressions::partition_by::PartitionByDsl<_>`
 
@@ -46,6 +46,7 @@ LL |     users::table.select(lower(users::name).partition_by(users::id));
    = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
    = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
              diesel::expression::count::count_utils::count<T, expr>
              diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
              diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
@@ -53,7 +54,6 @@ LL |     users::table.select(lower(users::name).partition_by(users::id));
              diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
              diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
              diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
-             diesel::expression::functions::window_functions::first_value_utils::first_value<T, value>
            and N others
    = note: required for `AggregateExpression<lower<Text, name>, NoPrefix, NoOrder, ..., ...>` to implement `ValidGrouping<()>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_expressions::AggregateExpression<diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>, diesel::expression::functions::aggregate_expressions::prefix::NoPrefix, diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder, diesel::expression::functions::aggregate_expressions::aggregate_filter::NoFilter, OverClause<diesel::expression::functions::aggregate_expressions::partition_by::PartitionBy<columns::id>>>>`
@@ -106,6 +106,7 @@ LL |     users::table.select(lower(users::name).over());
    = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
    = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
              diesel::expression::count::count_utils::count<T, expr>
              diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
              diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
@@ -113,7 +114,6 @@ LL |     users::table.select(lower(users::name).over());
              diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
              diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
              diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
-             diesel::expression::functions::window_functions::first_value_utils::first_value<T, value>
            and N others
    = note: required for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` to implement `diesel::expression::functions::aggregate_expressions::over_clause::OverDsl`
 
@@ -126,6 +126,7 @@ LL |     users::table.select(lower(users::name).over());
    = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
    = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
              diesel::expression::count::count_utils::count<T, expr>
              diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
              diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
@@ -133,7 +134,6 @@ LL |     users::table.select(lower(users::name).over());
              diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
              diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
              diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
-             diesel::expression::functions::window_functions::first_value_utils::first_value<T, value>
            and N others
    = note: required for `AggregateExpression<lower<Text, name>, NoPrefix, NoOrder, ..., ...>` to implement `ValidGrouping<()>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_expressions::AggregateExpression<diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>, diesel::expression::functions::aggregate_expressions::prefix::NoPrefix, diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder, diesel::expression::functions::aggregate_expressions::aggregate_filter::NoFilter, OverClause>>`
@@ -244,6 +244,7 @@ LL |     users::table.select(lower(users::name).window_order(users::id));
    = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
    = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
              diesel::expression::count::count_utils::count<T, expr>
              diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
              diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
@@ -251,7 +252,6 @@ LL |     users::table.select(lower(users::name).window_order(users::id));
              diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
              diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
              diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
-             diesel::expression::functions::window_functions::first_value_utils::first_value<T, value>
            and N others
    = note: required for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` to implement `diesel::expression::functions::aggregate_expressions::aggregate_order::OrderWindowDsl<_>`
 
@@ -264,6 +264,7 @@ LL |     users::table.select(lower(users::name).window_order(users::id));
    = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
    = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
              diesel::expression::count::count_utils::count<T, expr>
              diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
              diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
@@ -271,7 +272,6 @@ LL |     users::table.select(lower(users::name).window_order(users::id));
              diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
              diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
              diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
-             diesel::expression::functions::window_functions::first_value_utils::first_value<T, value>
            and N others
    = note: required for `AggregateExpression<lower<Text, name>, NoPrefix, NoOrder, ..., ...>` to implement `ValidGrouping<()>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_expressions::AggregateExpression<diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>, diesel::expression::functions::aggregate_expressions::prefix::NoPrefix, diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder, diesel::expression::functions::aggregate_expressions::aggregate_filter::NoFilter, OverClause<diesel::expression::functions::aggregate_expressions::partition_by::NoPartition, Order<columns::id, true>>>>`
@@ -324,6 +324,7 @@ LL |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(fr
    = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
    = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
              diesel::expression::count::count_utils::count<T, expr>
              diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
              diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
@@ -331,7 +332,6 @@ LL |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(fr
              diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
              diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
              diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
-             diesel::expression::functions::window_functions::first_value_utils::first_value<T, value>
            and N others
    = note: required for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` to implement `diesel::expression::functions::aggregate_expressions::frame_clause::FrameDsl<_>`
 
@@ -344,6 +344,7 @@ LL |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(fr
    = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
    = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
              diesel::expression::count::count_utils::count<T, expr>
              diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
              diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
@@ -351,7 +352,6 @@ LL |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(fr
              diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
              diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
              diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
-             diesel::expression::functions::window_functions::first_value_utils::first_value<T, value>
            and N others
    = note: required for `AggregateExpression<lower<Text, name>, NoPrefix, NoOrder, ..., ...>` to implement `ValidGrouping<()>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_expressions::AggregateExpression<diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>, diesel::expression::functions::aggregate_expressions::prefix::NoPrefix, diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder, diesel::expression::functions::aggregate_expressions::aggregate_filter::NoFilter, OverClause<diesel::expression::functions::aggregate_expressions::partition_by::NoPartition, diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder, diesel::expression::functions::aggregate_expressions::frame_clause::FrameClause<diesel::expression::functions::aggregate_expressions::frame_clause::StartFrame<Rows, CurrentRow>>>>>`

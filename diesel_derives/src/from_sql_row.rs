@@ -35,7 +35,7 @@ pub fn derive(mut item: DeriveInput) -> Result<TokenStream> {
             type Row = Self;
 
             fn build(row: Self) -> diesel::deserialize::Result<Self> {
-                Ok(row)
+                diesel::deserialize::Result::Ok(row)
             }
         }
     }))

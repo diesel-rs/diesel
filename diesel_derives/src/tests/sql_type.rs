@@ -11,7 +11,7 @@ pub(crate) fn sql_type_1() {
     } else if cfg!(feature = "mysql") {
         quote::quote! {#[diesel(mysql_type(name = "Long"))]}
     } else {
-        unreachable!("At least one featuer must be enabled");
+        unreachable!("At least one feature must be enabled");
     };
 
     let input = quote::quote! {

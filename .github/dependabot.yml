@@ -1,5 +1,16 @@
 version: 2
 updates:
+  - package-ecosystem: "github-actions"
+    reviewers:
+      - "diesel/reviewers"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "rust-toolchain"
+    reviewers:
+      - "diesel/reviewers"
+    schedule:
+      interval: "weekly"
+      day: "friday" # rust releases are on thursdays
   - package-ecosystem: "cargo"
     directory: "/"
     allow:

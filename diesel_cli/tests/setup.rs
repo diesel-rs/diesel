@@ -308,3 +308,40 @@ fn setup_respects_migrations_dir_from_diesel_toml() {
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(p.has_file("custom_migrations"));
 }
+
+#[test]
+fn setup_writes_migration_dir_as_relative_path() {
+    let p = project("setup_writes_migration_dir_as_relative_path").build();
+
+    let result = p.command("setup").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(p
+        .file_contents("diesel.toml")
+        .contains("dir = \"migrations\""));
+}
+
+#[test]
+fn setup_writes_migration_dir_as_arg_as_relative_path() {
+    let p = project("setup_writes_migration_dir_as_arg_as_relative_path").build();
+
+    let migrations_dir_arg = dunce::canonicalize(p.directory_path())
+        .unwrap()
+        .join("foo")
+        .display()
+        .to_string();
+    let result = p
+        .command("setup")
+        .arg(format!("--migration-dir={}", migrations_dir_arg))
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    let file_contents = p.file_contents("diesel.toml");
+    assert!(
+        file_contents.contains("dir = \"foo\""),
+        "Migrations directory {:?} not relative in diesel.toml:\n{}",
+        migrations_dir_arg,
+        file_contents
+    );
+}

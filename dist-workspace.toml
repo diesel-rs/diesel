@@ -4,7 +4,7 @@ members = ["cargo:."]
 # Config for 'dist'
 [dist]
 # The preferred dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.29.0"
+cargo-dist-version = "0.30.0"
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
@@ -21,6 +21,8 @@ install-updater = false
 install-path = "CARGO_HOME"
 # Whether to use cargo-cyclonedx to generate an SBOM
 cargo-cyclonedx = true
+# Whether to enable GitHub Attestations
+github-attestations = true
 
 [dist.min-glibc-version]
 "*" = "2.17"

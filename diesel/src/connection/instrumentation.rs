@@ -327,7 +327,7 @@ where
 /// falling back to a no-op implementation if no instrumentation is set.
 ///
 /// The DynInstrumentation type is useful because without it we actually did tend to return
-/// (accidentally) &mut Option<Box> as &mut dyn Instrumentation from connection.instrumentation(),
+/// (accidentally) `&mut Option<Box> as &mut dyn Instrumentation` from `connection.instrumentation()`,
 /// so downcasting would have to be done in these two steps by the user, which is counter-intuitive.
 pub(crate) struct DynInstrumentation {
     /// zst

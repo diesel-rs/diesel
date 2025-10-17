@@ -58,7 +58,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
             fn build(row: (#(#field_ty,)*)) -> diesel::deserialize::Result<Self> {
                 use std::convert::TryInto;
-                Ok(Self {
+                diesel::deserialize::Result::Ok(Self {
                     #(#build_expr,)*
                 })
             }

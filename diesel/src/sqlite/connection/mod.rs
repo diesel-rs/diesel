@@ -941,7 +941,7 @@ mod tests {
 
     // regression test for https://github.com/diesel-rs/diesel/issues/3425
     #[diesel_test_helper::test]
-    fn test_correct_seralization_of_owned_strings() {
+    fn test_correct_serialization_of_owned_strings() {
         use crate::prelude::*;
 
         #[derive(Debug, crate::expression::AsExpression)]
@@ -971,7 +971,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
-    fn test_correct_seralization_of_owned_bytes() {
+    fn test_correct_serialization_of_owned_bytes() {
         use crate::prelude::*;
 
         #[derive(Debug, crate::expression::AsExpression)]
