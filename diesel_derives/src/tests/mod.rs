@@ -131,3 +131,4 @@ mod sql_function;
 mod sql_type;
 mod table;
 mod valid_grouping;
+mod view;

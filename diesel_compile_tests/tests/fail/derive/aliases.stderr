@@ -12,21 +12,13 @@ note: `posts::table` is defined in module `crate::posts` of the current crate
    |
 LL | / table! {
 LL | |     posts {
-LL | |         id -> Integer,
-LL | |         author -> Integer,
-...  |
-LL | | }
-   | |_^
+   | |_________^
 note: `users::table` is defined in module `crate::users` of the current crate
   --> tests/fail/derive/aliases.rs:6:1
    |
  LL | / table! {
  LL | |     users {
- LL | |         id -> Integer,
- LL | |         name -> Text,
-LL | |     }
-LL | | }
-   | |_^
+   | |_________^
 note: required by a bound in `Alias::<S>::field`
   --> DIESEL/diesel/diesel/src/query_source/aliasing/alias.rs
    |

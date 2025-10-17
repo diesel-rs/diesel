@@ -12,21 +12,13 @@ note: `posts::table` is defined in module `crate::posts` of the current crate
    |
 LL | / table! {
 LL | |     posts {
-LL | |         id -> Integer,
-LL | |         title -> VarChar,
-LL | |     }
-LL | | }
-   | |_^
+   | |_________^
 note: `users::table` is defined in module `crate::users` of the current crate
   --> tests/fail/update_requires_column_be_from_same_table.rs:5:1
    |
  LL | / table! {
  LL | |     users {
- LL | |         id -> Integer,
- LL | |         name -> VarChar,
- LL | |     }
-LL | | }
-   | |_^
+   | |_________^
 note: the method call chain might not have had the expected associated types
   --> tests/fail/update_requires_column_be_from_same_table.rs:24:50
    |

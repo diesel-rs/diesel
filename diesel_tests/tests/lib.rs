@@ -64,4 +64,5 @@ mod transactions;
 mod types;
 mod types_roundtrip;
 mod update;
+mod view_testing;
 mod window_functions;

@@ -1447,18 +1447,144 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
 }
 
 fn table_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
-    // include the input in the error output so that rust-analyzer is happy
-    let tokenstream2 = input.clone();
-    match syn::parse2(input) {
-        Ok(input) => table::expand(input),
-        Err(_) => quote::quote! {
-            compile_error!(
-                "invalid `table!` syntax \nhelp: please see the `table!` macro docs for more info\n\
-                 help: docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`\n"
-            );
-            #tokenstream2
-        },
-    }
+    self::table::query_source_macro(input, self::table::QuerySourceMacroKind::Table)
+}
+
+/// Specifies that a view exists, and what fields it has. This will create a
+/// new public module, with the same name, as the name of the view. In this
+/// module, you will find a unit struct named `view`, and a unit struct with the
+/// name of each field.
+///
+/// The macro and the generated code closely mirror the [`table!`](table_proc) macro.
+///
+/// By default, this allows a maximum of 32 columns per view.
+/// You can increase this limit to 64 by enabling the `64-column-tables` feature.
+/// You can increase it to 128 by enabling the `128-column-tables` feature.
+/// You can decrease it to 16 columns,
+/// which improves compilation time,
+/// by disabling the default features of Diesel.
+/// Note that enabling 64 column tables or larger will substantially increase
+/// the compile time of Diesel.
+///
+/// Example usage
+/// -------------
+///
+/// ```rust
+/// # extern crate diesel;
+///
+/// diesel::view! {
+///     users {
+///         name -> VarChar,
+///         favorite_color -> Nullable<VarChar>,
+///     }
+/// }
+/// ```
+///
+/// If you are using types that aren't from Diesel's core types, you can specify
+/// which types to import.
+///
+/// ```
+/// # extern crate diesel;
+/// # mod diesel_full_text_search {
+/// #     #[derive(diesel::sql_types::SqlType)]
+/// #     pub struct TsVector;
+/// # }
+///
+/// diesel::view! {
+///     use diesel::sql_types::*;
+/// #    use crate::diesel_full_text_search::*;
+/// # /*
+///     use diesel_full_text_search::*;
+/// # */
+///
+///     posts {
+///         title -> Text,
+///         keywords -> TsVector,
+///     }
+/// }
+/// # fn main() {}
+/// ```
+///
+/// If you want to add documentation to the generated code, you can use the
+/// following syntax:
+///
+/// ```
+/// # extern crate diesel;
+///
+/// diesel::view! {
+///     /// The table containing all blog posts
+///     posts {
+///         /// The post's title
+///         title -> Text,
+///     }
+/// }
+/// ```
+///
+/// If you have a column with the same name as a Rust reserved keyword, you can use
+/// the `sql_name` attribute like this:
+///
+/// ```
+/// # extern crate diesel;
+///
+/// diesel::view! {
+///     posts {
+///         /// This column is named `mytype` but references the table `type` column.
+///         #[sql_name = "type"]
+///         mytype -> Text,
+///     }
+/// }
+/// ```
+///
+/// This module will also contain several helper types:
+///
+/// dsl
+/// ---
+///
+/// This simply re-exports the view, renamed to the same name as the module,
+/// and each of the columns. This is useful to glob import when you're dealing
+/// primarily with one table, to allow writing `users.filter(name.eq("Sean"))`
+/// instead of `users::table.filter(users::name.eq("Sean"))`.
+///
+/// `all_columns`
+/// -----------
+///
+/// A constant will be assigned called `all_columns`. This is what will be
+/// selected if you don't otherwise specify a select clause. It's type will be
+/// `view::AllColumns`. You can also get this value from the
+/// `QueryRelation::all_columns` function.
+///
+/// star
+/// ----
+///
+/// This will be the qualified "star" expression for this view (e.g.
+/// `users.*`). Internally, we read columns by index, not by name, so this
+/// column is not safe to read data out of, and it has had its SQL type set to
+/// `()` to prevent accidentally using it as such. It is sometimes useful for
+/// counting statements, however. It can also be accessed through the `Table.star()`
+/// method.
+///
+/// `SqlType`
+/// -------
+///
+/// A type alias called `SqlType` will be created. It will be the SQL type of
+/// `all_columns`. The SQL type is needed for things like returning boxed
+/// queries.
+///
+/// `BoxedQuery`
+/// ----------
+///
+/// ```ignore
+/// pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, view, DB>;
+/// ```
+///
+#[cfg_attr(docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/view.md")))]
+#[proc_macro]
+pub fn view_proc(input: TokenStream) -> TokenStream {
+    view_proc_inner(input.into()).into()
+}
+
+fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    self::table::query_source_macro(input, self::table::QuerySourceMacroKind::View)
 }
 
 /// This derives implements `diesel::Connection` and related traits for an enum of
