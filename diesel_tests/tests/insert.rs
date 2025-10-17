@@ -1,5 +1,7 @@
 use super::schema::*;
 use diesel::*;
+use std::rc::Rc;
+use std::sync::Arc;
 
 #[diesel_test_helper::test]
 fn insert_records() {
@@ -25,6 +27,78 @@ fn insert_records() {
         User {
             id: actual_users[1].id,
             name: "Tess".to_string(),
+            hair_color: None,
+        },
+    ];
+    assert_eq!(expected_users, actual_users);
+}
+
+#[diesel_test_helper::test]
+fn insert_rc_string_records() {
+    use crate::schema::users::table as users;
+    let connection = &mut connection();
+    let new_users: &[_] = &[
+        NewUserRcString {
+            name: Rc::new("Sean".to_string()),
+            hair_color: Some(Rc::new("Black".to_string())),
+        },
+        NewUserRcString {
+            name: Rc::new("Tess".to_string()),
+            hair_color: None,
+        },
+    ];
+
+    insert_into(users)
+        .values(new_users)
+        .execute(connection)
+        .unwrap();
+    let actual_users = users.load::<UserRcString>(connection).unwrap();
+
+    let expected_users = vec![
+        UserRcString {
+            id: actual_users[0].id,
+            name: Rc::new("Sean".to_string()),
+            hair_color: Some(Rc::new("Black".to_string())),
+        },
+        UserRcString {
+            id: actual_users[1].id,
+            name: Rc::new("Tess".to_string()),
+            hair_color: None,
+        },
+    ];
+    assert_eq!(expected_users, actual_users);
+}
+
+#[diesel_test_helper::test]
+fn insert_arc_string_records() {
+    use crate::schema::users::table as users;
+    let connection = &mut connection();
+    let new_users: &[_] = &[
+        NewUserArcString {
+            name: Arc::new("Sean".to_string()),
+            hair_color: Some(Arc::new("Black".to_string())),
+        },
+        NewUserArcString {
+            name: Arc::new("Tess".to_string()),
+            hair_color: None,
+        },
+    ];
+
+    insert_into(users)
+        .values(new_users)
+        .execute(connection)
+        .unwrap();
+    let actual_users = users.load::<UserArcString>(connection).unwrap();
+
+    let expected_users = vec![
+        UserArcString {
+            id: actual_users[0].id,
+            name: Arc::new("Sean".to_string()),
+            hair_color: Some(Arc::new("Black".to_string())),
+        },
+        UserArcString {
+            id: actual_users[1].id,
+            name: Arc::new("Tess".to_string()),
             hair_color: None,
         },
     ];
