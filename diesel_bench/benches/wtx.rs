@@ -1,10 +1,10 @@
 use crate::Bencher;
-use rand_chacha::rand_core::SeedableRng;
 use std::{collections::HashMap, fmt::Write};
 use tokio::{net::TcpStream, runtime::Runtime};
 use wtx::{
     database::{Executor, Record},
     misc::{Either, UriRef, Wrapper},
+    rng::{ChaCha20, SeedableRng}
 };
 
 #[cfg(feature = "mysql")]
@@ -273,21 +273,17 @@ async fn connection() -> LocalExecutor<wtx::Error, ExecutorBuffer, TcpStream> {
         .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let uri = UriRef::new(url.as_str());
-    let mut rng = rand_chacha::ChaCha20Rng::try_from_os_rng().unwrap();
-    let stream = TcpStream::connect(uri.host()).await.unwrap();
+    let mut rng = ChaCha20::from_os().unwrap();
+    let stream = TcpStream::connect(uri.hostname_with_implied_port()).await.unwrap();
+    stream.set_nodelay(true).unwrap();
     #[cfg(feature = "postgres")]
-    let mut conn = LocalExecutor::connect(
-        &Config::from_uri(&uri).unwrap(),
-        ExecutorBuffer::with_capacity((512, 8192, 512, 32), 32, &mut rng).unwrap(),
-        &mut rng,
-        stream,
-    )
-    .await
-    .unwrap();
+    let buffer = ExecutorBuffer::with_capacity((512, 8192, 512, 32), 32, &mut rng).unwrap();
     #[cfg(feature = "mysql")]
+    let buffer = ExecutorBuffer::with_capacity((512, 512, 8192, 512, 32), 32, &mut rng).unwrap();
     let mut conn = LocalExecutor::connect(
         &Config::from_uri(&uri).unwrap(),
-        ExecutorBuffer::with_capacity((512, 512, 8192, 512, 32), 32, &mut rng).unwrap(),
+        buffer,
+        &mut rng,
         stream,
     )
     .await
