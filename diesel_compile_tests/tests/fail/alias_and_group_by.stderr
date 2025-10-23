@@ -7,17 +7,17 @@ LL |         .select(user_alias.field(users::id))
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
   --> tests/fail/alias_and_group_by.rs:6:1
    |
- LL | / table! {
- LL | |     users {
- LL | |         id -> Integer,
- LL | |         name -> VarChar,
+6  | / table! {
+7  | |     users {
+8  | |         id -> Integer,
+9  | |         name -> VarChar,
 LL | |     }
 LL | | }
    | |_^
 note: required for `columns::id` to implement `ValidGrouping<columns::name>`
   --> tests/fail/alias_and_group_by.rs:8:9
    |
- LL |         id -> Integer,
+8  |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden

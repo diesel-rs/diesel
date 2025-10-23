@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `lag<Text, name>: ValidGrouping<()>` is not satisfied
    --> tests/fail/window_function_can_only_be_called_with_window_expression_applied.rs:15:25
     |
- LL |     users::table.select(lag(users::name));
+15  |     users::table.select(lag(users::name));
     |                  ------ ^^^^^^^^^^^^^^^^ the trait `ValidGrouping<()>` is not implemented for `lag<Text, name>`
     |                  |
     |                  required by a bound introduced by this call
@@ -32,7 +32,7 @@ LL |         Self: methods::SelectDsl<Selection>,
 error[E0277]: the trait bound `diesel::expression::functions::window_functions::rank_utils::rank: ValidGrouping<()>` is not satisfied
    --> tests/fail/window_function_can_only_be_called_with_window_expression_applied.rs:18:25
     |
- LL |     users::table.select(rank());
+18  |     users::table.select(rank());
     |                  ------ ^^^^^^ the trait `ValidGrouping<()>` is not implemented for `diesel::expression::functions::window_functions::rank_utils::rank`
     |                  |
     |                  required by a bound introduced by this call

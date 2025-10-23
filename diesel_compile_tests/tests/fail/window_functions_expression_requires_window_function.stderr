@@ -1,7 +1,7 @@
 error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
    --> tests/fail/window_functions_expression_requires_window_function.rs:15:25
     |
- LL |     users::table.select(lower(users::name).partition_by(users::id));
+15  |     users::table.select(lower(users::name).partition_by(users::id));
     |                         ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
@@ -81,7 +81,7 @@ LL |     users::table.select(lower(users::name).partition_by(users::id));
 error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
    --> tests/fail/window_functions_expression_requires_window_function.rs:21:25
     |
- LL |     users::table.select(lower(users::name).over());
+21  |     users::table.select(lower(users::name).over());
     |                         ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
@@ -161,7 +161,7 @@ LL |     users::table.select(lower(users::name).over());
 error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
    --> tests/fail/window_functions_expression_requires_window_function.rs:27:25
     |
- LL |     users::table.select(lower(users::name).window_filter(users::id.eq(42)));
+27  |     users::table.select(lower(users::name).window_filter(users::id.eq(42)));
     |                         ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
@@ -219,7 +219,7 @@ LL |     users::table.select(lower(users::name).window_filter(users::id.eq(42)))
 error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
    --> tests/fail/window_functions_expression_requires_window_function.rs:32:25
     |
- LL |     users::table.select(lower(users::name).window_order(users::id));
+32  |     users::table.select(lower(users::name).window_order(users::id));
     |                         ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
@@ -299,7 +299,7 @@ LL |     users::table.select(lower(users::name).window_order(users::id));
 error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
    --> tests/fail/window_functions_expression_requires_window_function.rs:39:17
     |
- LL |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(frame::CurrentRow)));
+39  |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(frame::CurrentRow)));
     |                 ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`

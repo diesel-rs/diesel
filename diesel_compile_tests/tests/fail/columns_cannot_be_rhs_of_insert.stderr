@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<NoFromClause as AppearsInFromClause<table>>::Count == Once`
     --> tests/fail/columns_cannot_be_rhs_of_insert.rs:20:18
      |
-  LL |         .execute(&mut conn)
+20   |         .execute(&mut conn)
      |          ------- ^^^^^^^^^ type mismatch resolving `<NoFromClause as AppearsInFromClause<table>>::Count == Once`
      |          |
      |          required by a bound introduced by this call
@@ -9,17 +9,17 @@ error[E0271]: type mismatch resolving `<NoFromClause as AppearsInFromClause<tabl
 note: expected this to be `diesel::query_source::Once`
     --> tests/fail/columns_cannot_be_rhs_of_insert.rs:6:1
      |
-   LL | / table! {
-   LL | |     users {
-   LL | |         id -> Integer,
-   LL | |         name -> Text,
+6    | / table! {
+7    | |     users {
+8    | |         id -> Integer,
+9    | |         name -> Text,
 ...    |
-  LL | | }
+12   | | }
      | |_^
 note: required for `columns::hair_color` to implement `AppearsOnTable<NoFromClause>`
     --> tests/fail/columns_cannot_be_rhs_of_insert.rs:10:9
      |
-  LL |         hair_color -> Text,
+10   |         hair_color -> Text,
      |         ^^^^^^^^^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 1 redundant requirement hidden

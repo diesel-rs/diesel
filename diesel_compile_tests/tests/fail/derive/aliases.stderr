@@ -16,8 +16,8 @@ LL | |     posts {
 note: `users::table` is defined in module `crate::users` of the current crate
   --> tests/fail/derive/aliases.rs:6:1
    |
- LL | / table! {
- LL | |     users {
+6  | / table! {
+7  | |     users {
    | |_________^
 note: required by a bound in `Alias::<S>::field`
   --> DIESEL/diesel/diesel/src/query_source/aliasing/alias.rs
@@ -32,7 +32,7 @@ LL |         F: QueryRelationField<QueryRelation = S::Target>,
 error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
    --> tests/fail/derive/aliases.rs:43:21
     |
- LL |         .inner_join(post_alias)
+43  |         .inner_join(post_alias)
     |          ---------- ^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
     |          |
     |          required by a bound introduced by this call
@@ -91,7 +91,7 @@ LL | |         .select(users::id)
 error[E0277]: cannot select `users::columns::id` from `Alias<users2>`
    --> tests/fail/derive/aliases.rs:52:23
     |
- LL |     user_alias.select(users::id).load::<i32>(conn).unwrap();
+52  |     user_alias.select(users::id).load::<i32>(conn).unwrap();
     |                ------ ^^^^^^^^^ the trait `SelectableExpression<Alias<users2>>` is not implemented for `users::columns::id`
     |                |
     |                required by a bound introduced by this call
@@ -120,7 +120,7 @@ LL |         Self: methods::SelectDsl<Selection>,
 error[E0277]: cannot select `users::columns::id` from `Alias<users2>`
     --> tests/fail/derive/aliases.rs:52:46
      |
-  LL |     user_alias.select(users::id).load::<i32>(conn).unwrap();
+52   |     user_alias.select(users::id).load::<i32>(conn).unwrap();
      |                                  ----        ^^^^ the trait `SelectableExpression<Alias<users2>>` is not implemented for `users::columns::id`
      |                                  |
      |                                  required by a bound introduced by this call
@@ -163,12 +163,12 @@ LL |         .inner_join(user_alias)
 error[E0277]: the trait bound `Alias<posts3>: AppearsInFromClause<Alias<posts2>>` is not satisfied
    --> tests/fail/derive/aliases.rs:72:13
     |
- LL |           .inner_join(
+69  |           .inner_join(
     |            ---------- required by a bound introduced by this call
 ...
- LL | /             post_alias_2.on(post_alias
- LL | |                 .field(posts::author)
- LL | |                 .eq(post_alias_2.field(posts::author))),
+72  | /             post_alias_2.on(post_alias
+73  | |                 .field(posts::author)
+74  | |                 .eq(post_alias_2.field(posts::author))),
     | |_______________________________________________________^ the trait `AppearsInFromClause<Alias<posts2>>` is not implemented for `Alias<posts3>`
     |
     = note: double check that `Alias<posts2>` and `Alias<posts3>` appear in the same `allow_tables_to_appear_in_same_query!` 

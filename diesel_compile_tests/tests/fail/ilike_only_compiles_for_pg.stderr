@@ -1,7 +1,7 @@
 error[E0277]: `ILike<name, Bound<Text, &str>>` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/ilike_only_compiles_for_pg.rs:23:18
      |
-  LL |         .execute(&mut connection);
+23   |         .execute(&mut connection);
      |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `ILike<name, Bound<Text, &str>>`
      |          |
      |          required by a bound introduced by this call
@@ -28,7 +28,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
 error[E0277]: `ILike<name, Bound<Text, &str>>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/ilike_only_compiles_for_pg.rs:29:18
      |
-  LL |         .execute(&mut connection);
+29   |         .execute(&mut connection);
      |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `ILike<name, Bound<Text, &str>>`
      |          |
      |          required by a bound introduced by this call

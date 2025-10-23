@@ -25,10 +25,10 @@ LL |     insert_into(posts).values((users, users));
 note: expected this to be `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:6:1
    |
- LL | / table! {
- LL | |     users {
- LL | |         id -> Integer,
- LL | |         name -> Text,
+6  | / table! {
+7  | |     users {
+8  | |         id -> Integer,
+9  | |         name -> Text,
 ...  |
 LL | | }
    | |_^
@@ -41,7 +41,7 @@ LL | | }
 error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == ValuesClause<_, table>`
    --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:33:31
     |
- LL |     insert_into(posts).values((users, users));
+33  |     insert_into(posts).values((users, users));
     |                        ------ ^^^^^^^^^^^^^^ type mismatch resolving `<table as Insertable<table>>::Values == ValuesClause<_, table>`
     |                        |
     |                        required by a bound introduced by this call
@@ -49,12 +49,12 @@ error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == V
 note: expected this to be `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
    --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:6:1
     |
-  LL | / table! {
-  LL | |     users {
-  LL | |         id -> Integer,
-  LL | |         name -> Text,
+6   | / table! {
+7   | |     users {
+8   | |         id -> Integer,
+9   | |         name -> Text,
 ...   |
- LL | | }
+12  | | }
     | |_^
     = note: expected struct `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
                found struct `InsertFromSelect<SelectStatement<FromClause<table>>, (..., ..., ...)>`

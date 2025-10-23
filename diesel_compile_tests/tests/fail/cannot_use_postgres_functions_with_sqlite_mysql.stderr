@@ -1,7 +1,7 @@
 error[E0277]: `to_json<Text, name>` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/cannot_use_postgres_functions_with_sqlite_mysql.rs:20:27
      |
-  LL |     let _ = query.execute(sqlite_connection);
+20   |     let _ = query.execute(sqlite_connection);
      |                   ------- ^^^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `to_json<Text, name>`
      |                   |
      |                   required by a bound introduced by this call
@@ -28,7 +28,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
 error[E0277]: `to_json<Text, name>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/cannot_use_postgres_functions_with_sqlite_mysql.rs:22:27
      |
-  LL |     let _ = query.execute(mysql_connection);
+22   |     let _ = query.execute(mysql_connection);
      |                   ------- ^^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `to_json<Text, name>`
      |                   |
      |                   required by a bound introduced by this call

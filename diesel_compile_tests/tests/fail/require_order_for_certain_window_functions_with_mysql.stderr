@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `OverClause<PartitionBy<id>>: WindowFunctionFragment<rank, Mysql, ...>` is not satisfied
     --> tests/fail/require_order_for_certain_window_functions_with_mysql.rs:15:18
      |
-  LL |         .execute(conn);
+15   |         .execute(conn);
      |          ------- ^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
@@ -35,7 +35,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
 error[E0277]: the trait bound `OverClause<PartitionBy<id>>: WindowFunctionFragment<..., ..., ...>` is not satisfied
     --> tests/fail/require_order_for_certain_window_functions_with_mysql.rs:19:18
      |
-  LL |         .execute(conn);
+19   |         .execute(conn);
      |          ------- ^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
@@ -69,7 +69,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
 error[E0277]: the trait bound `OverClause<PartitionBy<id>>: WindowFunctionFragment<..., ..., ...>` is not satisfied
     --> tests/fail/require_order_for_certain_window_functions_with_mysql.rs:23:18
      |
-  LL |         .execute(conn);
+23   |         .execute(conn);
      |          ------- ^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
@@ -103,7 +103,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
 error[E0277]: the trait bound `OverClause<PartitionBy<id>>: WindowFunctionFragment<..., ..., ...>` is not satisfied
     --> tests/fail/require_order_for_certain_window_functions_with_mysql.rs:27:18
      |
-  LL |         .execute(conn);
+27   |         .execute(conn);
      |          ------- ^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
@@ -137,7 +137,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
 error[E0277]: the trait bound `OverClause<PartitionBy<id>>: WindowFunctionFragment<..., ..., ...>` is not satisfied
     --> tests/fail/require_order_for_certain_window_functions_with_mysql.rs:31:18
      |
-  LL |         .execute(conn);
+31   |         .execute(conn);
      |          ------- ^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
@@ -171,7 +171,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
 error[E0277]: the trait bound `OverClause<PartitionBy<id>>: WindowFunctionFragment<..., ..., ...>` is not satisfied
     --> tests/fail/require_order_for_certain_window_functions_with_mysql.rs:35:18
      |
-  LL |         .execute(conn);
+35   |         .execute(conn);
      |          ------- ^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
@@ -205,7 +205,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
 error[E0277]: the trait bound `OverClause<PartitionBy<id>>: WindowFunctionFragment<..., ..., ...>` is not satisfied
     --> tests/fail/require_order_for_certain_window_functions_with_mysql.rs:39:18
      |
-  LL |         .execute(conn);
+39   |         .execute(conn);
      |          ------- ^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
@@ -239,7 +239,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
 error[E0277]: the trait bound `OverClause<PartitionBy<id>>: WindowFunctionFragment<..., ..., ...>` is not satisfied
     --> tests/fail/require_order_for_certain_window_functions_with_mysql.rs:43:18
      |
-  LL |         .execute(conn);
+43   |         .execute(conn);
      |          ------- ^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
@@ -273,7 +273,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
 error[E0277]: the trait bound `OverClause<PartitionBy<id>>: WindowFunctionFragment<..., ..., ...>` is not satisfied
     --> tests/fail/require_order_for_certain_window_functions_with_mysql.rs:47:18
      |
-  LL |         .execute(conn);
+47   |         .execute(conn);
      |          ------- ^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
@@ -307,7 +307,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
 error[E0277]: the trait bound `OverClause<PartitionBy<id>>: WindowFunctionFragment<..., ..., ...>` is not satisfied
     --> tests/fail/require_order_for_certain_window_functions_with_mysql.rs:51:18
      |
-  LL |         .execute(conn);
+51   |         .execute(conn);
      |          ------- ^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call

@@ -1,7 +1,7 @@
 error[E0277]: cannot select `bad::columns::age` from `users::table`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:32:20
     |
- LL |         .returning(bad::age);
+32  |         .returning(bad::age);
     |          --------- ^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
     |          |
     |          required by a bound introduced by this call
@@ -29,7 +29,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
 error[E0277]: cannot select `bad::columns::age` from `users::table`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:40:20
     |
- LL |         .returning((name, bad::age));
+40  |         .returning((name, bad::age));
     |          --------- ^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
     |          |
     |          required by a bound introduced by this call
@@ -58,7 +58,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:40:20
     |
- LL |         .returning((name, bad::age));
+40  |         .returning((name, bad::age));
     |          --------- ^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
     |          |
     |          required by a bound introduced by this call
@@ -66,7 +66,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
 note: required for `bad::columns::age` to implement `AppearsOnTable<users::table>`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
     |
- LL |       age -> Integer,
+15  |       age -> Integer,
     |       ^^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 1 redundant requirement hidden

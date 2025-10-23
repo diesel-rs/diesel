@@ -1,7 +1,7 @@
 error[E0277]: `OnConflictSelectWrapper<SelectStatement<FromClause<table>, ...>>` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/insert_from_select_with_on_conflict_without_where_clause_not_supported_on_sqlite.rs:20:18
      |
-  LL |         .execute(&mut connection)
+20   |         .execute(&mut connection)
      |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `OnConflictSelectWrapper<SelectStatement<FromClause<table>, ...>>`
      |          |
      |          required by a bound introduced by this call

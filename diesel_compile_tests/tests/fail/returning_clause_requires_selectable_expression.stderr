@@ -1,7 +1,7 @@
 error[E0277]: cannot select `non_users::columns::noname` from `users::table`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:27:20
     |
- LL |         .returning(non_users::columns::noname);
+27  |         .returning(non_users::columns::noname);
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
     |          |
     |          required by a bound introduced by this call
@@ -27,7 +27,7 @@ LL |         E: SelectableExpression<T>,
 error[E0277]: cannot select `non_users::columns::noname` from `users::table`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:32:20
     |
- LL |         .returning(non_users::columns::noname);
+32  |         .returning(non_users::columns::noname);
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
     |          |
     |          required by a bound introduced by this call
@@ -55,7 +55,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
 error[E0277]: cannot select `non_users::columns::noname` from `users::table`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:37:20
     |
- LL |         .returning(non_users::columns::noname);
+37  |         .returning(non_users::columns::noname);
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
     |          |
     |          required by a bound introduced by this call

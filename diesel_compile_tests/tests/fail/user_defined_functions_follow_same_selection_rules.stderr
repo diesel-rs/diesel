@@ -14,7 +14,7 @@ LL |     fn foo(x: Integer) -> Integer;
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
     --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:45:23
      |
-  LL |         .load::<User>(&mut conn);
+45   |         .load::<User>(&mut conn);
      |          ----         ^^^^^^^^^ expected `Once`, found `Never`
      |          |
      |          required by a bound introduced by this call
@@ -22,7 +22,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
     --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:16:9
      |
-  LL |         title -> VarChar,
+16   |         title -> VarChar,
      |         ^^^^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 3 redundant requirements hidden

@@ -20,17 +20,17 @@ LL |         .select(users::id)
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
   --> tests/fail/boxed_queries_and_group_by.rs:5:1
    |
- LL | / table! {
- LL | |     users {
- LL | |         id -> Integer,
- LL | |         name -> Text,
- LL | |     }
+5  | / table! {
+6  | |     users {
+7  | |         id -> Integer,
+8  | |         name -> Text,
+9  | |     }
 LL | | }
    | |_^
 note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
   --> tests/fail/boxed_queries_and_group_by.rs:7:9
    |
- LL |         id -> Integer,
+7  |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
@@ -59,17 +59,17 @@ LL |         .select(users::id)
 note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
   --> tests/fail/boxed_queries_and_group_by.rs:5:1
    |
- LL | / table! {
- LL | |     users {
- LL | |         id -> Integer,
- LL | |         name -> Text,
- LL | |     }
+5  | / table! {
+6  | |     users {
+7  | |         id -> Integer,
+8  | |         name -> Text,
+9  | |     }
 LL | | }
    | |_^
 note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
   --> tests/fail/boxed_queries_and_group_by.rs:7:9
    |
- LL |         id -> Integer,
+7  |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `BoxedSelectStatement<'_, Text, FromClause<table>, _, name>` to implement `SelectDsl<users::columns::id>`
@@ -97,7 +97,7 @@ LL |         .inner_join(posts::table)
 error[E0308]: mismatched types
    --> tests/fail/boxed_queries_and_group_by.rs:77:21
     |
- LL |         .inner_join(posts::table)
+77  |         .inner_join(posts::table)
     |          ---------- ^^^^^^^^^^^^ expected `OnClauseWrapper<_, _>`, found `table`
     |          |
     |          arguments to this method are incorrect
@@ -107,11 +107,11 @@ error[E0308]: mismatched types
 help: the return type of this call is `posts::table` due to the type of the argument passed
    --> tests/fail/boxed_queries_and_group_by.rs:73:5
     |
- LL | /     users::table
- LL | |         .group_by(users::name)
- LL | |         .select(users::name)
- LL | |         .into_boxed()
- LL | |         .inner_join(posts::table)
+73  | /     users::table
+74  | |         .group_by(users::name)
+75  | |         .select(users::name)
+76  | |         .into_boxed()
+77  | |         .inner_join(posts::table)
     | |_____________________------------^
     |                       |
     |                       this argument influences the return type of `inner_join`

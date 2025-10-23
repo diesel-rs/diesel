@@ -15,7 +15,7 @@ LL |         .select((users::id, posts::user_id, diesel::dsl::count_star()));
 note: required for `users::columns::id` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:7:9
    |
- LL |         id -> Integer,
+7  |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
    = note: required for `(users::columns::id, posts::columns::user_id, CountStar)` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`

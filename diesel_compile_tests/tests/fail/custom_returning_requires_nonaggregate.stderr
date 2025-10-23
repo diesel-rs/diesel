@@ -1,7 +1,7 @@
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/custom_returning_requires_nonaggregate.rs:24:20
     |
- LL |         .returning(count(id));
+24  |         .returning(count(id));
     |          --------- ^^^^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
     |          |
     |          required by a bound introduced by this call
@@ -26,7 +26,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/custom_returning_requires_nonaggregate.rs:32:20
     |
- LL |         .returning((name, count(name)));
+32  |         .returning((name, count(name)));
     |          --------- ^^^^^^^^^^^^^^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
     |          |
     |          required by a bound introduced by this call

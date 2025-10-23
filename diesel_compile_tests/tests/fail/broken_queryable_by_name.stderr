@@ -33,6 +33,7 @@ LL |     id: String,
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
    = help: the following other types implement trait `FromSql<A, DB>`:
              `std::string::String` implements `FromSql<Citext, Pg>`
+             `std::string::String` implements `FromSql<Jsonpath, Pg>`
              `std::string::String` implements `FromSql<TimestamptzSqlite, Sqlite>`
              `std::string::String` implements `FromSql<diesel::sql_types::Date, Sqlite>`
              `std::string::String` implements `FromSql<diesel::sql_types::Time, Sqlite>`
@@ -77,6 +78,7 @@ LL |     id: String,
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
    = help: the following other types implement trait `FromSql<A, DB>`:
              `std::string::String` implements `FromSql<Citext, Pg>`
+             `std::string::String` implements `FromSql<Jsonpath, Pg>`
              `std::string::String` implements `FromSql<TimestamptzSqlite, Sqlite>`
              `std::string::String` implements `FromSql<diesel::sql_types::Date, Sqlite>`
              `std::string::String` implements `FromSql<diesel::sql_types::Time, Sqlite>`
@@ -89,7 +91,7 @@ LL |     id: String,
 error[E0277]: the trait bound `Untyped: load_dsl::private::CompatibleType<User, _>` is not satisfied
     --> tests/fail/broken_queryable_by_name.rs:36:49
      |
-  LL |     let s = diesel::sql_query("…").load::<User>(conn);
+36   |     let s = diesel::sql_query("…").load::<User>(conn);
      |                                    ----         ^^^^ the trait `load_dsl::private::CompatibleType<User, _>` is not implemented for `Untyped`
      |                                    |
      |                                    required by a bound introduced by this call
@@ -112,7 +114,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0277]: the trait bound `User: FromSqlRow<_, _>` is not satisfied
     --> tests/fail/broken_queryable_by_name.rs:36:49
      |
-  LL |     let s = diesel::sql_query("…").load::<User>(conn);
+36   |     let s = diesel::sql_query("…").load::<User>(conn);
      |                                    ----         ^^^^ the trait `FromSqlRow<_, _>` is not implemented for `User`
      |                                    |
      |                                    required by a bound introduced by this call

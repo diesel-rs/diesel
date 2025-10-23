@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
     --> tests/fail/array_only_usable_with_pg.rs:8:48
      |
-   LL |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
+8    |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
      |                         ----------             ^^^^^^^^^^^^^^^ expected `Pg`, found `Sqlite`
      |                         |
      |                         required by a bound introduced by this call
@@ -20,7 +20,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0271]: type mismatch resolving `<MysqlConnection as Connection>::Backend == Pg`
     --> tests/fail/array_only_usable_with_pg.rs:12:48
      |
-  LL |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
+12   |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
      |                         ----------             ^^^^^^^^^^^^^^^ expected `Pg`, found `Mysql`
      |                         |
      |                         required by a bound introduced by this call

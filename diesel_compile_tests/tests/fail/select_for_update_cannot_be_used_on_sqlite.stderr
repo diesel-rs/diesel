@@ -1,7 +1,7 @@
 error[E0277]: `diesel::query_builder::locking_clause::ForUpdate` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/select_for_update_cannot_be_used_on_sqlite.rs:16:15
      |
-  LL |         .load(&mut conn)
+16   |         .load(&mut conn)
      |          ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::ForUpdate`
      |          |
      |          required by a bound introduced by this call
@@ -28,7 +28,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0277]: `diesel::query_builder::locking_clause::NoModifier` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/select_for_update_cannot_be_used_on_sqlite.rs:16:15
      |
-  LL |         .load(&mut conn)
+16   |         .load(&mut conn)
      |          ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::NoModifier`
      |          |
      |          required by a bound introduced by this call

@@ -49,7 +49,7 @@ LL | | )]
 error[E0599]: the method `only` exists for struct `columns::id`, but its trait bounds were not satisfied
   --> tests/fail/only_only_on_table.rs:17:31
    |
- LL |         id -> Int8,
+8  |         id -> Int8,
    |         -- method `only` not found for this struct because it doesn't satisfy `columns::id: Table` or `columns::id: diesel::dsl::OnlyDsl`
 ...
 LL |     foo::table.select(foo::id.only());
@@ -74,7 +74,7 @@ LL | pub trait Table: QuerySource + AsQuery + Sized {
 error[E0277]: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::SqliteConnection, _>` is not satisfied
     --> tests/fail/only_only_on_table.rs:22:28
      |
-  LL |     foo::table.only().load(&mut conn).unwrap();
+22   |     foo::table.only().load(&mut conn).unwrap();
      |                       ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `Only<foo::table>`
      |                       |
      |                       required by a bound introduced by this call
@@ -98,7 +98,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
 error[E0277]: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::MysqlConnection, _>` is not satisfied
     --> tests/fail/only_only_on_table.rs:27:28
      |
-  LL |     foo::table.only().load(&mut conn).unwrap();
+27   |     foo::table.only().load(&mut conn).unwrap();
      |                       ---- ^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `Only<foo::table>`
      |                       |
      |                       required by a bound introduced by this call

@@ -16,8 +16,8 @@ LL | |     posts {
 note: `users::table` is defined in module `crate::users` of the current crate
   --> tests/fail/update_requires_column_be_from_same_table.rs:5:1
    |
- LL | / table! {
- LL | |     users {
+5  | / table! {
+6  | |     users {
    | |_________^
 note: the method call chain might not have had the expected associated types
   --> tests/fail/update_requires_column_be_from_same_table.rs:24:50

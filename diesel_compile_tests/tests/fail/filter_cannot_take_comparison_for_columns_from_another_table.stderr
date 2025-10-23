@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
     --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:31:63
      |
-  LL |     let _ = users::table.filter(posts::id.eq(1)).load::<User>(&mut conn);
+31   |     let _ = users::table.filter(posts::id.eq(1)).load::<User>(&mut conn);
      |                                                  ----         ^^^^^^^^^ expected `Once`, found `Never`
      |                                                  |
      |                                                  required by a bound introduced by this call
@@ -9,7 +9,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
     --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:15:9
      |
-  LL |         id -> Integer,
+15   |         id -> Integer,
      |         ^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 2 redundant requirements hidden
@@ -62,7 +62,7 @@ LL |     let _ = users::table.filter(posts::id.eq(1)).into_boxed::<Pg>();
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
     --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:43:23
      |
-  LL |         .load::<User>(&mut conn);
+43   |         .load::<User>(&mut conn);
      |          ----         ^^^^^^^^^ expected `Once`, found `Never`
      |          |
      |          required by a bound introduced by this call
@@ -70,7 +70,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
     --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:16:9
      |
-  LL |         title -> VarChar,
+16   |         title -> VarChar,
      |         ^^^^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 2 redundant requirements hidden

@@ -26,6 +26,6 @@ LL |     let pred = id.eq(name);
 note: expected this to be `diesel::sql_types::Integer`
   --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:8:17
    |
- LL |         name -> VarChar,
+8  |         name -> VarChar,
    |                 ^^^^^^^
    = note: required for `columns::name` to implement `AsExpression<diesel::sql_types::Integer>`

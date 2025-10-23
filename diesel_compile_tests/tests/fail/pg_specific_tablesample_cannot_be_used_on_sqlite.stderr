@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `Tablesample<table, SystemMethod>: LoadQuery<'_, SqliteConnection, ...>` is not satisfied
     --> tests/fail/pg_specific_tablesample_cannot_be_used_on_sqlite.rs:20:32
      |
-  LL |         .load::<(i32, String)>(&mut connection);
+20   |         .load::<(i32, String)>(&mut connection);
      |          ----                  ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `Tablesample<users::table, pg::query_builder::tablesample::SystemMethod>`
      |          |
      |          required by a bound introduced by this call

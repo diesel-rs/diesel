@@ -88,7 +88,7 @@ LL |     users.for_update().distinct_on(id);
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>: DistinctOnDsl<_>` is not satisfied
    --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:22:36
     |
- LL |     users.for_update().distinct_on(id);
+22  |     users.for_update().distinct_on(id);
     |                                    ^^ the trait `DistinctOnDsl<_>` is not implemented for `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
     |
     = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
@@ -109,7 +109,7 @@ LL |         Self: methods::DistinctOnDsl<Expr>,
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>: DistinctOnDsl<...>` is not satisfied
    --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:22:36
     |
- LL |     users.for_update().distinct_on(id);
+22  |     users.for_update().distinct_on(id);
     |                                    ^^ the trait `DistinctOnDsl<columns::id>` is not implemented for `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
     |
     = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
@@ -288,7 +288,7 @@ LL |     users.for_update().into_boxed();
 error[E0277]: cannot box `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>` for backend `_`
     --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:43:5
      |
-  LL |     users.for_update().into_boxed();
+43   |     users.for_update().into_boxed();
      |     ^^^^^^^^^^^^^^^^^^ the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
      |
      = note: this either means `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>` is no valid SQL for `_`

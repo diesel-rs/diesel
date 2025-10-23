@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
    --> tests/fail/invalid_joins.rs:41:37
     |
- LL |     let _ = users::table.inner_join(posts::table.inner_join(users::table));
+41  |     let _ = users::table.inner_join(posts::table.inner_join(users::table));
     |                          ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
     |                          |
     |                          required by a bound introduced by this call
@@ -9,7 +9,7 @@ error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>>`
    --> tests/fail/invalid_joins.rs:7:9
     |
-  LL |         id -> Integer,
+7   |         id -> Integer,
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 2 redundant requirements hidden
@@ -41,7 +41,7 @@ LL |     let _ = users::table.inner_join(posts::table.inner_join(users::table));
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>>`
   --> tests/fail/invalid_joins.rs:7:9
    |
- LL |         id -> Integer,
+7  |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 3 redundant requirements hidden
@@ -54,7 +54,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<query_sourc
 error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
    --> tests/fail/invalid_joins.rs:47:21
     |
- LL |         .inner_join(posts::table.inner_join(users::table.on(posts::user_id.eq(users::id))));
+47  |         .inner_join(posts::table.inner_join(users::table.on(posts::user_id.eq(users::id))));
     |          ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
     |          |
     |          required by a bound introduced by this call
@@ -62,7 +62,7 @@ error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, Inner>>`
    --> tests/fail/invalid_joins.rs:7:9
     |
-  LL |         id -> Integer,
+7   |         id -> Integer,
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 2 redundant requirements hidden
@@ -94,7 +94,7 @@ LL |         .inner_join(posts::table.inner_join(users::table.on(posts::user_id.
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, Inner>>`
   --> tests/fail/invalid_joins.rs:7:9
    |
- LL |         id -> Integer,
+7  |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 3 redundant requirements hidden
@@ -107,18 +107,18 @@ note: required for `users::columns::id` to implement `AppearsOnTable<query_sourc
 error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
    --> tests/fail/invalid_joins.rs:54:9
     |
- LL |       let _ = users::table.inner_join(
+52  |       let _ = users::table.inner_join(
     |                            ---------- required by a bound introduced by this call
- LL |
- LL | /         posts::table
- LL | |             .on(users::id.eq(posts::user_id))
- LL | |             .inner_join(users::table),
+53  |
+54  | /         posts::table
+55  | |             .on(users::id.eq(posts::user_id))
+56  | |             .inner_join(users::table),
     | |_____________________________________^ expected `Once`, found `MoreThanOnce`
     |
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>>`
    --> tests/fail/invalid_joins.rs:7:9
     |
-  LL |         id -> Integer,
+7   |         id -> Integer,
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 2 redundant requirements hidden
@@ -150,7 +150,7 @@ LL |     let _ = users::table.inner_join(
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>>`
   --> tests/fail/invalid_joins.rs:7:9
    |
- LL |         id -> Integer,
+7  |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
@@ -163,7 +163,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<query_sourc
 error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
    --> tests/fail/invalid_joins.rs:63:21
     |
- LL |         .inner_join(posts::table.inner_join(comments::table));
+63  |         .inner_join(posts::table.inner_join(comments::table));
     |          ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
     |          |
     |          required by a bound introduced by this call
@@ -171,7 +171,7 @@ error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
 note: required for `comments::columns::id` to implement `AppearsOnTable<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::user_id>, NullableExpression<users::columns::id>>>>, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>>`
    --> tests/fail/invalid_joins.rs:22:9
     |
- LL |         id -> Integer,
+22  |         id -> Integer,
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 2 redundant requirements hidden
@@ -195,7 +195,7 @@ LL |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
 error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
    --> tests/fail/invalid_joins.rs:72:36
     |
- LL |     let _ = users::table.left_join(posts::table.left_join(users::table));
+72  |     let _ = users::table.left_join(posts::table.left_join(users::table));
     |                          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
     |                          |
     |                          required by a bound introduced by this call
@@ -203,7 +203,7 @@ error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
    --> tests/fail/invalid_joins.rs:7:9
     |
-  LL |         id -> Integer,
+7   |         id -> Integer,
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 2 redundant requirements hidden
@@ -235,7 +235,7 @@ LL |     let _ = users::table.left_join(posts::table.left_join(users::table));
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
   --> tests/fail/invalid_joins.rs:7:9
    |
- LL |         id -> Integer,
+7  |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 3 redundant requirements hidden
@@ -248,7 +248,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<query_sourc
 error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
    --> tests/fail/invalid_joins.rs:78:20
     |
- LL |         .left_join(posts::table.left_join(users::table.on(posts::user_id.eq(users::id))));
+78  |         .left_join(posts::table.left_join(users::table.on(posts::user_id.eq(users::id))));
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
     |          |
     |          required by a bound introduced by this call
@@ -256,7 +256,7 @@ error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, LeftOuter>>`
    --> tests/fail/invalid_joins.rs:7:9
     |
-  LL |         id -> Integer,
+7   |         id -> Integer,
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 2 redundant requirements hidden
@@ -288,7 +288,7 @@ LL |         .left_join(posts::table.left_join(users::table.on(posts::user_id.eq
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, LeftOuter>>`
   --> tests/fail/invalid_joins.rs:7:9
    |
- LL |         id -> Integer,
+7  |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 3 redundant requirements hidden
@@ -301,18 +301,18 @@ note: required for `users::columns::id` to implement `AppearsOnTable<query_sourc
 error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
    --> tests/fail/invalid_joins.rs:85:9
     |
- LL |       let _ = users::table.left_join(
+83  |       let _ = users::table.left_join(
     |                            --------- required by a bound introduced by this call
- LL |
- LL | /         posts::table
- LL | |             .on(users::id.eq(posts::user_id))
- LL | |             .left_join(users::table),
+84  |
+85  | /         posts::table
+86  | |             .on(users::id.eq(posts::user_id))
+87  | |             .left_join(users::table),
     | |____________________________________^ expected `Once`, found `MoreThanOnce`
     |
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
    --> tests/fail/invalid_joins.rs:7:9
     |
-  LL |         id -> Integer,
+7   |         id -> Integer,
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 2 redundant requirements hidden
@@ -344,7 +344,7 @@ LL |     let _ = users::table.left_join(
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
   --> tests/fail/invalid_joins.rs:7:9
    |
- LL |         id -> Integer,
+7  |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
@@ -357,7 +357,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<query_sourc
 error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
    --> tests/fail/invalid_joins.rs:94:20
     |
- LL |         .left_join(posts::table.left_join(comments::table));
+94  |         .left_join(posts::table.left_join(comments::table));
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
     |          |
     |          required by a bound introduced by this call
@@ -365,7 +365,7 @@ error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
 note: required for `comments::columns::id` to implement `AppearsOnTable<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, comments::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::user_id>, NullableExpression<users::columns::id>>>>, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, LeftOuter>>`
    --> tests/fail/invalid_joins.rs:22:9
     |
- LL |         id -> Integer,
+22  |         id -> Integer,
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 3 redundant requirements hidden

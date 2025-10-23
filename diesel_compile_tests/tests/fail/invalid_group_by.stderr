@@ -27,7 +27,7 @@ LL | allow_columns_to_appear_in_same_group_by_clause!(users::id, posts::id);
 note: required for `users::columns::id` to implement `ValidGrouping<posts::columns::id>`
   --> tests/fail/invalid_group_by.rs:8:9
    |
- LL |         id -> Integer,
+8  |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
@@ -68,7 +68,7 @@ LL |         id -> Integer,
 error[E0277]: the trait bound `AliasedField<user1, users::columns::id>: ValidGrouping<posts::columns::id>` is not satisfied
    --> tests/fail/invalid_group_by.rs:48:17
     |
- LL |         .select(user_alias.field(users::id))
+48  |         .select(user_alias.field(users::id))
     |          ------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `ValidGrouping<posts::columns::id>` is not implemented for `AliasedField<user1, users::columns::id>`
     |          |
     |          required by a bound introduced by this call
@@ -116,7 +116,7 @@ LL |         .select(users::id)
 note: required for `users::columns::id` to implement `ValidGrouping<AliasedField<post1, posts::columns::id>>`
   --> tests/fail/invalid_group_by.rs:8:9
    |
- LL |         id -> Integer,
+8  |         id -> Integer,
    |         ^^
    = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
@@ -134,7 +134,7 @@ LL |         .group_by(post_alias.field(posts::id))
 error[E0277]: the trait bound `AliasedField<user1, id>: ValidGrouping<AliasedField<post1, id>>` is not satisfied
    --> tests/fail/invalid_group_by.rs:64:17
     |
- LL |         .select(user_alias.field(users::id))
+64  |         .select(user_alias.field(users::id))
     |          ------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `ValidGrouping<AliasedField<post1, posts::columns::id>>` is not implemented for `AliasedField<user1, users::columns::id>`
     |          |
     |          required by a bound introduced by this call

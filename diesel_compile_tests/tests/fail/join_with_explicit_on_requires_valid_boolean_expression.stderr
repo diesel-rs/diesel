@@ -20,7 +20,7 @@ LL |         id -> Integer,
 error[E0277]: `diesel::sql_types::Integer` is neither `diesel::sql_types::Bool` nor `diesel::sql_types::Nullable<Bool>`
    --> tests/fail/join_with_explicit_on_requires_valid_boolean_expression.rs:34:37
     |
- LL |     let _ = users::table.inner_join(posts::table.on(users::id));
+34  |     let _ = users::table.inner_join(posts::table.on(users::id));
     |                          ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Integer`
     |                          |
     |                          required by a bound introduced by this call

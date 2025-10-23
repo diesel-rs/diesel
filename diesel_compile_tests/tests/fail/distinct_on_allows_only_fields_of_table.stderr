@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `users::table: DistinctOnDsl<posts::columns::id>` is not satisfied
    --> tests/fail/distinct_on_allows_only_fields_of_table.rs:26:22
     |
- LL |         .distinct_on(posts::id)
+26  |         .distinct_on(posts::id)
     |                      ^^^^^^^^^ the trait `DistinctOnDsl<posts::columns::id>` is not implemented for `users::table`
     |
     = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses

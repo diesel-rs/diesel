@@ -1,11 +1,11 @@
 error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertStatement<table, ...>, ...>`, but its trait bounds were not satisfied
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:44:10
     |
- LL | /     insert_into(users)
- LL | |         .values(&NewUser("Sean"))
- LL | |         .on_conflict(id)
- LL | |         .do_update()
- LL | |         .execute(&mut connection);
+40  | /     insert_into(users)
+41  | |         .values(&NewUser("Sean"))
+42  | |         .on_conflict(id)
+43  | |         .do_update()
+44  | |         .execute(&mut connection);
     | |         -^^^^^^^ method cannot be called due to unsatisfied trait bounds
     | |_________|
     |
@@ -26,7 +26,7 @@ LL |   pub struct IncompleteDoUpdate<Stmt, Target> {
 error[E0271]: type mismatch resolving `<Grouped<Eq<title, Bound<Text, &str>>> as AsChangeset>::Target == table`
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:52:14
     |
- LL |         .set(posts::title.eq("Sean"));
+52  |         .set(posts::title.eq("Sean"));
     |          --- ^^^^^^^^^^^^^^^^^^^^^^^ expected `users::table`, found `posts::table`
     |          |
     |          required by a bound introduced by this call
@@ -35,19 +35,19 @@ error[E0271]: type mismatch resolving `<Grouped<Eq<title, Bound<Text, &str>>> as
 note: `posts::table` is defined in module `crate::posts` of the current crate
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:13:1
     |
- LL | / table! {
- LL | |     posts {
+13  | / table! {
+14  | |     posts {
     | |_________^
 note: `users::table` is defined in module `crate::users` of the current crate
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:6:1
     |
-  LL | / table! {
-  LL | |     users {
+6   | / table! {
+7   | |     users {
     | |_________^
 note: the method call chain might not have had the expected associated types
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:52:27
     |
- LL |         .set(posts::title.eq("Sean"));
+52  |         .set(posts::title.eq("Sean"));
     |              ------------ ^^^^^^^^^^ `AsChangeset::Target` is `table` here
     |              |
     |              this expression has type `title`
@@ -102,8 +102,8 @@ LL | |     posts {
 note: `users::table` is defined in module `crate::users` of the current crate
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:6:1
    |
- LL | / table! {
- LL | |     users {
+6  | / table! {
+7  | |     users {
    | |_________^
    = note: required for `Eq<name, Excluded<title>>` to implement `AsChangeset`
 

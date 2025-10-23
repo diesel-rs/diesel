@@ -2,10 +2,10 @@ error: table contains more than 16 columns.
        help: consider enabling the `32-column-tables` feature to enable diesels support for tables with more than 16 columns.
   --> tests/fail/check_message_for_to_many_columns.rs:3:1
    |
- LL | / table! {
- LL | |     test_table(column_1) {
- LL | |         column_1 -> Integer,
- LL | |         column_2 -> Integer,
+3  | / table! {
+4  | |     test_table(column_1) {
+5  | |         column_1 -> Integer,
+6  | |         column_2 -> Integer,
 ...  |
 LL | | }
    | |_^
