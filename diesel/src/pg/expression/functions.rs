@@ -2872,4 +2872,168 @@ extern "SQL" {
         new_value: E,
         insert_after: Bool,
     ) -> Arr::Out;
+
+    /// Returns the result of a JSON path predicate check for the specified JSON value.
+    /// Only the first item of the result is taken into account.
+    /// If the result is not a Boolean value, then NULL is returned.
+    ///
+    /// The optional `vars` and `silent` arguments act the same as for `jsonb_path_exists`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_match;
+    /// #     use diesel::sql_types::Jsonb;
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_match::<Jsonb, Jsonpath, _, _>(
+    ///         json!({"x": 10}),
+    ///         "$.x > 5"
+    ///     )).get_result::<bool>(connection)?;
+    /// assert_eq!(result, true);
+    ///
+    /// let result = diesel::select(jsonb_path_match::<Jsonb, Jsonpath, _, _>(
+    ///         json!({"x": 10}),
+    ///         "$.x < 5"
+    ///     )).get_result::<bool>(connection)?;
+    /// assert_eq!(result, false);
+    ///
+    /// let result = diesel::select(jsonb_path_match::<Jsonb, Jsonpath, _, _>(
+    ///         json!({"name": "Alice"}),
+    ///         "$.name == \"Alice\""
+    ///     )).get_result::<bool>(connection)?;
+    /// assert_eq!(result, true);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn jsonb_path_match<J: JsonbOrNullableJsonb + SingleValue, P: SingleValue>(
+        target: J,
+        path: P,
+    ) -> Bool;
+
+    /// Returns the result of a JSON path predicate check for the specified JSON value.
+    /// Only the first item of the result is taken into account.
+    /// If the result is not a Boolean value, then NULL is returned.
+    ///
+    /// The optional `vars` argument can be used to pass variables to the path expression.
+    /// The optional `silent` argument suppresses structural errors and returns NULL instead.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_match_with_vars;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_match_with_vars::<Jsonb, Jsonpath, Jsonb, _, _, _>(
+    ///         json!({"x": 10}),
+    ///         "$.x > $min",
+    ///         json!({"min": 5})
+    ///     )).get_result::<bool>(connection)?;
+    /// assert_eq!(result, true);
+    ///
+    /// let result = diesel::select(jsonb_path_match_with_vars::<Jsonb, Jsonpath, Jsonb, _, _, _>(
+    ///         json!({"x": 10}),
+    ///         "$.x > 5",
+    ///         json!({})
+    ///     )).get_result::<bool>(connection)?;
+    /// assert_eq!(result, true);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "jsonb_path_match"]
+    #[cfg(feature = "postgres_backend")]
+    fn jsonb_path_match_with_vars<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+    ) -> Bool;
+
+    /// Returns the result of a JSON path predicate check for the specified JSON value.
+    /// Only the first item of the result is taken into account.
+    /// If the result is not a Boolean value, then NULL is returned.
+    ///
+    /// The optional `vars` argument can be used to pass variables to the path expression.
+    /// The optional `silent` argument suppresses structural errors and returns NULL instead.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_match_with_vars_and_silent;
+    /// #     use diesel::sql_types::{Jsonb, Nullable, Bool};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_match_with_vars_and_silent::<Jsonb, Jsonpath, Jsonb, Bool, _, _, _, _>(
+    ///         json!({"x": 10}),
+    ///         "$.x > $min",
+    ///         json!({"min": 5}),
+    ///         false
+    ///     )).get_result::<bool>(connection)?;
+    /// assert_eq!(result, true);
+    ///
+    /// // When silent mode is enabled, errors are suppressed
+    /// let result = diesel::select(jsonb_path_match_with_vars_and_silent::<Jsonb, Jsonpath, Jsonb, Bool, _, _, _, _>(
+    ///         json!({"x": 10}),
+    ///         "exists($.x)",
+    ///         json!({}),
+    ///         true
+    ///     )).get_result::<bool>(connection)?;
+    /// assert_eq!(result, true);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "jsonb_path_match"]
+    #[cfg(feature = "postgres_backend")]
+    fn jsonb_path_match_with_vars_and_silent<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+        S: SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+        silent: S,
+    ) -> Bool;
 }

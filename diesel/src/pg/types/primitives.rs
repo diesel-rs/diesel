@@ -105,6 +105,68 @@ impl Queryable<sql_types::Binary, Pg> for *const [u8] {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
+impl ToSql<crate::pg::sql_types::Jsonpath, Pg> for String {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        // PostgreSQL jsonpath is stored as a version byte followed by the path string
+        const VERSION_NUMBER: u8 = 1;
+        out.write_all(&[VERSION_NUMBER])?;
+        out.write_all(self.as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl ToSql<crate::pg::sql_types::Jsonpath, Pg> for str {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        // PostgreSQL jsonpath is stored as a version byte followed by the path string
+        const VERSION_NUMBER: u8 = 1;
+        out.write_all(&[VERSION_NUMBER])?;
+        out.write_all(self.as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl FromSql<crate::pg::sql_types::Jsonpath, Pg> for String {
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+        let bytes = value.as_bytes();
+        if bytes.is_empty() {
+            return Err("Unexpected empty jsonpath value".into());
+        }
+        // Skip the version byte (first byte)
+        let string = String::from_utf8(bytes[1..].to_vec())?;
+        Ok(string)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl crate::expression::AsExpression<crate::pg::sql_types::Jsonpath> for String {
+    type Expression = crate::expression::bound::Bound<crate::pg::sql_types::Jsonpath, Self>;
+
+    fn as_expression(self) -> Self::Expression {
+        crate::expression::bound::Bound::new(self)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl<'a> crate::expression::AsExpression<crate::pg::sql_types::Jsonpath> for &'a str {
+    type Expression = crate::expression::bound::Bound<crate::pg::sql_types::Jsonpath, &'a str>;
+
+    fn as_expression(self) -> Self::Expression {
+        crate::expression::bound::Bound::new(self)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl<'a> crate::expression::AsExpression<crate::pg::sql_types::Jsonpath> for &'a String {
+    type Expression = crate::expression::bound::Bound<crate::pg::sql_types::Jsonpath, &'a str>;
+
+    fn as_expression(self) -> Self::Expression {
+        crate::expression::bound::Bound::new(self.as_str())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

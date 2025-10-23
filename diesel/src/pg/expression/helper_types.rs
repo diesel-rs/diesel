@@ -621,3 +621,30 @@ pub type jsonb_insert<B, J, R> =
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_insert_with_insert_after<B, J, R, I> =
     super::functions::jsonb_insert_with_insert_after<SqlTypeOf<B>, SqlTypeOf<J>, B, J, R, I>;
+
+/// Return type of [`jsonb_path_match(target, path)`](super::functions::jsonb_path_match())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_path_match<J, P> =
+    super::functions::jsonb_path_match<SqlTypeOf<J>, SqlTypeOf<P>, J, P>;
+
+/// Return type of [`jsonb_path_match_with_vars(target, path, vars)`](super::functions::jsonb_path_match_with_vars())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_path_match_with_vars<J, P, V> =
+    super::functions::jsonb_path_match_with_vars<SqlTypeOf<J>, SqlTypeOf<P>, SqlTypeOf<V>, J, P, V>;
+
+/// Return type of [`jsonb_path_match_with_vars_and_silent(target, path, vars, silent)`](super::functions::jsonb_path_match_with_vars_and_silent())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_path_match_with_vars_and_silent<J, P, V, S> =
+    super::functions::jsonb_path_match_with_vars_and_silent<
+        SqlTypeOf<J>,
+        SqlTypeOf<P>,
+        SqlTypeOf<V>,
+        SqlTypeOf<S>,
+        J,
+        P,
+        V,
+        S,
+    >;

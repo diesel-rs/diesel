@@ -55,6 +55,7 @@ table! {
         text_array -> Array<Text>,
         record -> Record<(Integer, Text, Date)>,
         boolean -> Bool,
+        jsonpath -> Jsonpath,
     }
 }
 
@@ -492,6 +493,14 @@ fn postgres_functions() -> _ {
         jsonb_insert_with_insert_after(
             pg_extras::jsonb,
             pg_extras::text_array,
+            pg_extras::jsonb,
+            pg_extras::boolean,
+        ),
+        jsonb_path_match(pg_extras::jsonb, pg_extras::jsonpath),
+        jsonb_path_match_with_vars(pg_extras::jsonb, pg_extras::jsonpath, pg_extras::jsonb),
+        jsonb_path_match_with_vars_and_silent(
+            pg_extras::jsonb,
+            pg_extras::jsonpath,
             pg_extras::jsonb,
             pg_extras::boolean,
         ),
