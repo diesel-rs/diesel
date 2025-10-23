@@ -621,3 +621,6 @@ pub type jsonb_insert<B, J, R> =
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_insert_with_insert_after<B, J, R, I> =
     super::functions::jsonb_insert_with_insert_after<SqlTypeOf<B>, SqlTypeOf<J>, B, J, R, I>;
+
+#[doc(inline)]
+pub use super::return_type_helpers::*;
