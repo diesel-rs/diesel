@@ -1,6 +1,8 @@
 use diesel_table_macro_syntax::ColumnDef;
+use std::fmt::{self, Display};
+use std::str::FromStr;
 
-use super::table_data::TableName;
+use super::{table_data::TableName, TableData, ViewData};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ColumnInformation {
@@ -132,8 +134,6 @@ impl ColumnType {
     }
 }
 
-use std::fmt;
-
 impl fmt::Display for ColumnType {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         if self.is_nullable {
@@ -208,4 +208,83 @@ impl ForeignKeyConstraint {
             max(&self.parent_table, &self.child_table),
         )
     }
+}
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub enum SupportedQueryRelationStructures {
+    View,
+    Table,
+}
+
+#[derive(Debug)]
+pub enum QueryRelationData {
+    View(ViewData),
+    Table(TableData),
+}
+
+impl QueryRelationData {
+    pub fn table_name(&self) -> &TableName {
+        match &self {
+            Self::Table(table) => &table.name,
+            Self::View(view) => &view.name,
+        }
+    }
+
+    pub fn columns(&self) -> &Vec<ColumnDefinition> {
+        match self {
+            Self::Table(table) => &table.column_data,
+            Self::View(view) => &view.column_data,
+        }
+    }
+
+    pub fn comment(&self) -> &Option<String> {
+        match self {
+            Self::Table(table) => &table.comment,
+            Self::View(view) => &view.comment,
+        }
+    }
+
+    pub fn relation_type(&self) -> &'static str {
+        match self {
+            QueryRelationData::View(_view_data) => "view",
+            QueryRelationData::Table(_table_data) => "table",
+        }
+    }
+}
+
+impl Display for SupportedQueryRelationStructures {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let format = self.as_str();
+        write!(f, "{format}")
+    }
+}
+
+impl FromStr for SupportedQueryRelationStructures {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "BASE TABLE" => Ok(Self::Table),
+            "VIEW" => Ok(Self::View),
+            _ => unreachable!("This should never happen. Read {s}"),
+        }
+    }
+}
+
+impl SupportedQueryRelationStructures {
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Table => "BASE TABLE",
+            Self::View => "VIEW",
+        }
+    }
+
+    #[cfg(feature = "uses_information_schema")]
+    const fn display_all() -> [&'static str; Self::VARIANT_COUNT] {
+        [Self::Table.as_str(), Self::View.as_str()]
+    }
+
+    #[cfg(feature = "uses_information_schema")]
+    pub const ALL_NAMES: [&'static str; Self::VARIANT_COUNT] = Self::display_all();
+    #[cfg(feature = "uses_information_schema")]
+    const VARIANT_COUNT: usize = 2;
 }
