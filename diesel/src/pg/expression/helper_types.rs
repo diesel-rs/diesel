@@ -621,3 +621,25 @@ pub type jsonb_insert<B, J, R> =
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_insert_with_insert_after<B, J, R, I> =
     super::functions::jsonb_insert_with_insert_after<SqlTypeOf<B>, SqlTypeOf<J>, B, J, R, I>;
+
+/// Return type of [`json_build_array_1(value)`](super::functions::json_build_array_1)
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_build_array_1<V1> = super::functions::json_build_array_1<SqlTypeOf<V1>, V1>;
+
+/// Return type of [`json_build_array_1(value1, value2)`](super::functions::json_build_array_2)
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_build_array_2<V1, V2> =
+    super::functions::json_build_array_2<SqlTypeOf<V1>, SqlTypeOf<V2>, V1, V2>;
+
+/// Return type of [`jsonb_build_array_1(value1)`](super::functions::jsonb_build_array_2)
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_build_array_1<V1> = super::functions::jsonb_build_array_1<SqlTypeOf<V1>, V1>;
+
+/// Return type of [`jsonb_build_array_1(value1, value2)`](super::functions::jsonb_build_array_2)
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_build_array_2<V1, V2> =
+    super::functions::jsonb_build_array_2<SqlTypeOf<V1>, SqlTypeOf<V2>, V1, V2>;
