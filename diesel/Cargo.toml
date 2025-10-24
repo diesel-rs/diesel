@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "2.3.2"
+version = "2.3.3"
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"
 readme = "README.md"
@@ -107,5 +107,8 @@ __with_asan_tests = [
 [package.metadata.docs.rs]
 features = ["postgres", "mysql", "sqlite", "extras"]
 no-default-features = true
-rustc-args = ["--cfg", "docsrs"]
-rustdoc-args = ["--cfg", "docsrs", "-Z", "unstable-options", "--generate-link-to-definition"]
+rustc-args = ["--cfg", "diesel_docs"]
+rustdoc-args = ["--cfg", "diesel_docsrs", "-Z", "unstable-options", "--generate-link-to-definition", "--generate-macro-expansion"]
+
+[lints]
+workspace = true

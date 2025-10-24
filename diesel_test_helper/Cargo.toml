@@ -5,6 +5,7 @@ edition.workspace = true
 
 [lib]
 proc-macro = true
+doc = false
 
 [dependencies]
 proc-macro2 = "1.0.92"

@@ -21,7 +21,7 @@ jobs:
         backend: ["postgres", "sqlite", "mysql"]
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: cache
         uses: Swatinem/rust-cache@v2
         with:

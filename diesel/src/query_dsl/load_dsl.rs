@@ -184,7 +184,7 @@ mod private {
     }
 
     #[cfg_attr(
-        docsrs,
+        diesel_docsrs,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     #[diagnostic::on_unimplemented(

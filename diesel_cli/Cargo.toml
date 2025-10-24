@@ -1,6 +1,6 @@
 [package]
 name = "diesel_cli"
-version = "2.3.2"
+version = "2.3.3"
 license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
 readme = "README.md"
@@ -40,6 +40,7 @@ chrono = { version = "0.4.20", default-features = false, features = [
 clap = { version = "4.4.14", features = ["cargo", "string"] }
 clap_complete = "4"
 dotenvy = "0.15"
+dunce = "1.0.5"
 heck = "0.5.0"
 serde = { version = "1.0.193", features = ["derive", "std"] }
 toml = { version = "0.9", default-features = false, features = ["parse", "serde"] }
