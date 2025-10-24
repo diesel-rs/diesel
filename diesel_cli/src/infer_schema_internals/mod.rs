@@ -9,10 +9,12 @@ mod information_schema;
 mod mysql;
 #[cfg(feature = "postgres")]
 mod pg;
+mod schema_resolver;
 #[cfg(feature = "sqlite")]
 mod sqlite;
 
 pub use self::data_structures::*;
 pub use self::foreign_keys::*;
 pub use self::inference::*;
+pub use self::schema_resolver::SchemaResolverImpl;
 pub use self::table_data::*;

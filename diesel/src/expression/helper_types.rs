@@ -199,6 +199,13 @@ pub use super::functions::helper_types::*;
 #[doc(inline)]
 #[cfg(feature = "postgres_backend")]
 #[allow(unreachable_pub)]
+#[cfg_attr(
+    all(feature = "sqlite", feature = "postgres_backend"),
+    expect(
+        ambiguous_glob_reexports,
+        reason = "we cannot do much about this anymore"
+    )
+)]
 pub use crate::pg::expression::helper_types::*;
 
 #[doc(inline)]

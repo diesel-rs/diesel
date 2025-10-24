@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use diesel::result::Error::NotFound;
 
-use super::data_structures::*;
 use super::table_data::*;
+use super::{data_structures::*, SchemaResolverImpl};
 
 use crate::config::{Filtering, PrintSchema};
 
@@ -143,14 +143,15 @@ pub fn filter_column_structure(
 }
 
 pub fn filter_table_names(
-    table_names: Vec<(SupportedQueryRelationStructures, TableName)>,
+    table_names: &[(SupportedQueryRelationStructures, TableName)],
     table_filter: &Filtering,
     include_views: bool,
 ) -> Vec<(SupportedQueryRelationStructures, TableName)> {
     table_names
-        .into_iter()
+        .iter()
         .filter(|(a, _)| include_views || matches!(a, SupportedQueryRelationStructures::Table))
         .filter(|(_, t)| !table_filter.should_ignore_table(t))
+        .cloned()
         .collect::<_>()
 }
 
@@ -381,20 +382,43 @@ pub fn load_table_data(
     })
 }
 
-#[tracing::instrument(skip(connection))]
+#[tracing::instrument(skip(resolver))]
 pub fn load_view_data(
-    connection: &mut InferConnection,
+    resolver: &mut SchemaResolverImpl,
     name: TableName,
-    config: &PrintSchema,
 ) -> Result<ViewData, crate::errors::Error> {
-    let (table_comment, column_data) = load_column_structure_data(
-        connection,
+    let (table_comment, mut column_data) = load_column_structure_data(
+        resolver.connection,
         &name,
-        config,
+        resolver.config,
         None,
         SupportedQueryRelationStructures::View,
     )?;
-    let sql_definition = load_view_sql_definition(connection, &name)?;
+    let sql_definition = load_view_sql_definition(resolver.connection, &name)?;
+    if resolver.config.experimental_infer_nullable_for_views {
+        tracing::debug!("Infer nullability for view fields");
+        match diesel_infer_query::parse_view_def(&sql_definition) {
+            Ok(data) => {
+                tracing::debug!(view = %name, ?data, "Inferred data");
+                if data.field_count() == column_data.len() {
+                    for (column_data, is_nullable) in column_data
+                        .iter_mut()
+                        .zip(data.infer_nullability(resolver)?)
+                    {
+                        tracing::debug!(view = %name, field = %column_data.rust_name, ?is_nullable, "Correct field nullablility");
+                        if let Some(is_nullable) = is_nullable {
+                            column_data.ty.is_nullable = is_nullable;
+                        }
+                    }
+                } else {
+                    tracing::warn!(view = %name, ?data, ?column_data, "Field count mismatch between what the database returned and what we inferred");
+                }
+            }
+            Err(e) => {
+                tracing::warn!(view = %name, error = %e, "Failed to infer nullablity for view fields")
+            }
+        }
+    }
     Ok(ViewData {
         name,
         column_data,

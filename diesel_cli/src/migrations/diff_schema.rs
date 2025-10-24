@@ -100,7 +100,7 @@ pub fn generate_sql_based_on_diff_schema(
     let mut schema_diff = Vec::new();
     let table_names = load_table_names(&mut conn, None)?;
     let tables_from_database =
-        filter_table_names(table_names.clone(), &config.filter, config.include_views);
+        filter_table_names(&table_names, &config.filter, config.include_views);
     for (structure, table) in tables_from_database {
         tracing::info!(?table, "Diff for existing table");
         match structure {

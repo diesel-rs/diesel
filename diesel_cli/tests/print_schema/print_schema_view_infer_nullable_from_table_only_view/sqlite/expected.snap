@@ -1,0 +1,13 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_view_infer_nullable_from_table_only_view"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::view! {
+    test {
+        id -> Nullable<Integer>,
+        name -> Nullable<Text>,
+        hair_color -> Nullable<Text>,
+    }
+}
