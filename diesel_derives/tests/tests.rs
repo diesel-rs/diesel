@@ -10,6 +10,7 @@ mod as_changeset;
 mod as_expression;
 mod associations;
 mod auto_type;
+mod enum_;
 mod identifiable;
 mod insertable;
 mod multiconnection;
