@@ -701,33 +701,34 @@ extern "SQL" {
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::{sql, json_valid_with_flags};
+    /// #     use diesel::sqlite::JsonValidFlag;
     /// #     use serde_json::{json, Value};
-    /// #     use diesel::sql_types::{Text, Json, Jsonb, Nullable, Integer};
+    /// #     use diesel::sql_types::{Text, Json, Jsonb, Nullable};
     /// #     let connection = &mut establish_connection();
     /// #     assert_version!(connection, 3, 46, 0);
     ///
-    /// // Standard RFC-8259 JSON (flag = 1)
-    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{"x":35}"#, 1))
+    /// // Standard RFC-8259 JSON
+    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{"x":35}"#, JsonValidFlag::Rfc8259Json))
     ///     .get_result::<Option<bool>>(connection)?;
     /// assert_eq!(Some(true), result);
     ///
-    /// // JSON5 not valid as RFC-8259 (flag = 1)
-    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{x:35}"#, 1))
+    /// // JSON5 not valid as RFC-8259
+    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{x:35}"#, JsonValidFlag::Rfc8259Json))
     ///     .get_result::<Option<bool>>(connection)?;
     /// assert_eq!(Some(false), result);
     ///
-    /// // JSON5 valid with JSON5 flag (flag = 6)
-    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{x:35}"#, 6))
+    /// // JSON5 valid with JSON5 flag
+    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{x:35}"#, JsonValidFlag::Json5OrJsonb))
     ///     .get_result::<Option<bool>>(connection)?;
     /// assert_eq!(Some(true), result);
     ///
     /// // Invalid JSON
-    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{"x":35"#, 1))
+    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{"x":35"#, JsonValidFlag::Rfc8259Json))
     ///     .get_result::<Option<bool>>(connection)?;
     /// assert_eq!(Some(false), result);
     ///
     /// // NULL input returns NULL
-    /// let result = diesel::select(json_valid_with_flags::<Nullable<Text>, _, _>(None::<&str>, 1))
+    /// let result = diesel::select(json_valid_with_flags::<Nullable<Text>, _, _>(None::<&str>, JsonValidFlag::Rfc8259Json))
     ///     .get_result::<Option<bool>>(connection)?;
     /// assert_eq!(None, result);
     ///
@@ -738,7 +739,7 @@ extern "SQL" {
     #[cfg(feature = "sqlite")]
     fn json_valid_with_flags<X: TextOrNullableTextOrBinaryOrNullableBinary + SingleValue>(
         x: X,
-        flags: Integer,
+        flags: crate::sqlite::types::JsonValidFlags,
     ) -> Nullable<Bool>;
 
     /// The json_type(X) function returns the "type" of the outermost element of X.
