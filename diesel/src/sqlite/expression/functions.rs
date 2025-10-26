@@ -709,23 +709,23 @@ extern "SQL" {
     ///
     /// // Standard RFC-8259 JSON
     /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{"x":35}"#, JsonValidFlag::Rfc8259Json))
-    ///     .get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(true), result);
+    ///     .get_result::<bool>(connection)?;
+    /// assert_eq!(true, result);
     ///
     /// // JSON5 not valid as RFC-8259
     /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{x:35}"#, JsonValidFlag::Rfc8259Json))
-    ///     .get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), result);
+    ///     .get_result::<bool>(connection)?;
+    /// assert_eq!(false, result);
     ///
     /// // JSON5 valid with JSON5 flag
     /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{x:35}"#, JsonValidFlag::Json5OrJsonb))
-    ///     .get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(true), result);
+    ///     .get_result::<bool>(connection)?;
+    /// assert_eq!(true, result);
     ///
     /// // Invalid JSON
     /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{"x":35"#, JsonValidFlag::Rfc8259Json))
-    ///     .get_result::<Option<bool>>(connection)?;
-    /// assert_eq!(Some(false), result);
+    ///     .get_result::<bool>(connection)?;
+    /// assert_eq!(false, result);
     ///
     /// // NULL input returns NULL
     /// let result = diesel::select(json_valid_with_flags::<Nullable<Text>, _, _>(None::<&str>, JsonValidFlag::Rfc8259Json))
@@ -737,10 +737,12 @@ extern "SQL" {
     /// ```
     #[sql_name = "json_valid"]
     #[cfg(feature = "sqlite")]
-    fn json_valid_with_flags<X: TextOrNullableTextOrBinaryOrNullableBinary + SingleValue>(
+    fn json_valid_with_flags<
+        X: TextOrNullableTextOrBinaryOrNullableBinary + SingleValue + MaybeNullableValue<Bool>,
+    >(
         x: X,
         flags: crate::sqlite::types::JsonValidFlags,
-    ) -> Nullable<Bool>;
+    ) -> X::Out;
 
     /// The json_type(X) function returns the "type" of the outermost element of X.
     /// The "type" returned by json_type() is one of the following SQL text values:
