@@ -663,6 +663,87 @@ extern "SQL" {
     #[cfg(feature = "sqlite")]
     fn json_valid<J: JsonOrNullableJson + MaybeNullableValue<Bool>>(j: J) -> J::Out;
 
+    /// The json_valid(X,Y) function returns 1 if the argument X is well-formed JSON, or returns 0 if X is not well-formed.
+    /// The Y parameter is an integer bitmask that defines what is meant by "well-formed".
+    ///
+    /// The following bits of Y are currently defined:
+    /// - 0x01 → The input is text that strictly complies with canonical RFC-8259 JSON, without any extensions.
+    /// - 0x02 → The input is text that is JSON with JSON5 extensions.
+    /// - 0x04 → The input is a BLOB that superficially appears to be JSONB.
+    /// - 0x08 → The input is a BLOB that strictly conforms to the internal JSONB format.
+    ///
+    /// By combining bits, the following useful values of Y can be derived:
+    /// - 1 → X is RFC-8259 JSON text
+    /// - 2 → X is JSON5 text
+    /// - 4 → X is probably JSONB
+    /// - 5 → X is RFC-8259 JSON text or JSONB
+    /// - 6 → X is JSON5 text or JSONB (recommended for most use cases)
+    /// - 8 → X is strictly conforming JSONB
+    /// - 9 → X is RFC-8259 or strictly conforming JSONB
+    /// - 10 → X is JSON5 or strictly conforming JSONB
+    ///
+    /// The Y parameter must be between 1 and 15 (inclusive), or an error is raised.
+    ///
+    /// If either X or Y inputs are NULL, then the function returns NULL.
+    ///
+    /// This function requires at least SQLite 3.46 or newer
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{sql, json_valid_with_flags};
+    /// #     use diesel::sqlite::JsonValidFlag;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Text, Json, Jsonb, Nullable};
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 46, 0);
+    ///
+    /// // Standard RFC-8259 JSON
+    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{"x":35}"#, JsonValidFlag::Rfc8259Json))
+    ///     .get_result::<bool>(connection)?;
+    /// assert_eq!(true, result);
+    ///
+    /// // JSON5 not valid as RFC-8259
+    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{x:35}"#, JsonValidFlag::Rfc8259Json))
+    ///     .get_result::<bool>(connection)?;
+    /// assert_eq!(false, result);
+    ///
+    /// // JSON5 valid with JSON5 flag
+    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{x:35}"#, JsonValidFlag::Json5OrJsonb))
+    ///     .get_result::<bool>(connection)?;
+    /// assert_eq!(true, result);
+    ///
+    /// // Invalid JSON
+    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{"x":35"#, JsonValidFlag::Rfc8259Json))
+    ///     .get_result::<bool>(connection)?;
+    /// assert_eq!(false, result);
+    ///
+    /// // NULL input returns NULL
+    /// let result = diesel::select(json_valid_with_flags::<Nullable<Text>, _, _>(None::<&str>, JsonValidFlag::Rfc8259Json))
+    ///     .get_result::<Option<bool>>(connection)?;
+    /// assert_eq!(None, result);
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "json_valid"]
+    #[cfg(feature = "sqlite")]
+    fn json_valid_with_flags<
+        X: TextOrNullableTextOrBinaryOrNullableBinary + SingleValue + MaybeNullableValue<Bool>,
+    >(
+        x: X,
+        flags: crate::sqlite::types::JsonValidFlags,
+    ) -> X::Out;
+
     /// The json_type(X) function returns the "type" of the outermost element of X.
     /// The "type" returned by json_type() is one of the following SQL text values:
     /// 'null', 'true', 'false', 'integer', 'real', 'text', 'array', or 'object'.
