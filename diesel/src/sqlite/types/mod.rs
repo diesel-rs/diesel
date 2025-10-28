@@ -279,31 +279,3 @@ impl ToSql<JsonValidFlags, Sqlite> for JsonValidFlag {
         Ok(IsNull::No)
     }
 }
-
-// Allow i32 for backward compatibility
-#[cfg(feature = "sqlite")]
-impl ToSql<JsonValidFlags, Sqlite> for i32 {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        <i32 as ToSql<sql_types::Integer, Sqlite>>::to_sql(self, out)
-    }
-}
-
-// Allow i32 for backward compatibility
-#[cfg(feature = "sqlite")]
-impl AsExpression<JsonValidFlags> for i32 {
-    type Expression = crate::expression::bound::Bound<JsonValidFlags, i32>;
-
-    fn as_expression(self) -> Self::Expression {
-        crate::expression::bound::Bound::new(self)
-    }
-}
-
-// Allow &i32 for backward compatibility
-#[cfg(feature = "sqlite")]
-impl<'a> AsExpression<JsonValidFlags> for &'a i32 {
-    type Expression = crate::expression::bound::Bound<JsonValidFlags, &'a i32>;
-
-    fn as_expression(self) -> Self::Expression {
-        crate::expression::bound::Bound::new(self)
-    }
-}

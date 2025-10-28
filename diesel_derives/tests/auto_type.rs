@@ -3,6 +3,8 @@ use diesel::dsl::*;
 use diesel::helper_types::*;
 use diesel::prelude::*;
 use diesel::sql_types;
+#[cfg(feature = "sqlite")]
+use diesel::sqlite::JsonValidFlag;
 #[cfg(feature = "postgres")]
 use std::ops::Bound;
 
@@ -501,6 +503,7 @@ fn postgres_functions() -> _ {
 #[cfg(feature = "sqlite")]
 #[auto_type]
 fn sqlite_functions() -> _ {
+    let flag: JsonValidFlag = JsonValidFlag::Json5;
     (
         json(sqlite_extras::text),
         jsonb(sqlite_extras::blob),
@@ -513,7 +516,7 @@ fn sqlite_functions() -> _ {
         json_pretty_with_indentation(sqlite_extras::json, "  "),
         json_pretty_with_indentation(sqlite_extras::jsonb, "  "),
         json_valid(sqlite_extras::json),
-        json_valid_with_flags(sqlite_extras::text, 6_i32),
+        json_valid_with_flags(sqlite_extras::text, flag),
         json_type(sqlite_extras::json),
         json_type_with_path(sqlite_extras::json, sqlite_extras::text),
         json_quote(sqlite_extras::json),
