@@ -13,10 +13,20 @@ pub trait SchemaResolver {
         query_relation: &str,
         field_name: &str,
     ) -> Result<&'s dyn SchemaField, Box<dyn std::error::Error + Send + Sync + 'static>>;
+
+    /// Get a list of fields for a specific database relation
+    /// in the order returned by the database
+    fn list_fields<'s>(
+        &'s mut self,
+        relation_schema: Option<&str>,
+        query_relation: &str,
+    ) -> Result<Vec<&'s dyn SchemaField>, Box<dyn std::error::Error + Send + Sync + 'static>>;
 }
 
 /// A generic representation of a database field
 pub trait SchemaField {
     /// Is this field nullable
     fn is_nullable(&self) -> bool;
+    /// The database side name of the field
+    fn name(&self) -> &str;
 }

@@ -70,6 +70,7 @@ version = "~2.3.0"
 path = "../diesel_migrations/"
 
 [dependencies.diesel_infer_query]
+version = "0.1.0"
 path = "../diesel_infer_query"
 
 [dev-dependencies]
