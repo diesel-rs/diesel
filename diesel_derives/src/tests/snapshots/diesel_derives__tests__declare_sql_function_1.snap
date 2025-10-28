@@ -14,7 +14,7 @@ where
     }
 }
 #[allow(non_camel_case_types, non_snake_case)]
-///The return type of [`lower()`](super::fn_name)
+///The return type of [`lower()`](fn@lower)
 pub type lower<input> = lower_utils::lower<
     <input as diesel::expression::AsExpression<Text>>::Expression,
 >;
@@ -34,7 +34,7 @@ pub(crate) mod lower_utils {
     pub struct lower<input> {
         pub(super) input: input,
     }
-    ///The return type of [`lower()`](super::fn_name)
+    ///The return type of [`lower()`](fn@lower)
     pub type HelperType<input> = lower<<input as AsExpression<Text>>::Expression>;
     impl<input> Expression for lower<input>
     where
