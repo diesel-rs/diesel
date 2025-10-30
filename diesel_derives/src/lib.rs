@@ -2385,11 +2385,44 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// }
 /// ```
 ///
+/// Optionally, a second boolean can be provided to control whether the 0-variadic-argument variant
+/// is generated. By default (omitted or `false`), the 0-argument variant is included. Set it to
+/// `true` to skip generating the 0-argument variant for functions that require at least one
+/// variadic argument.
+///
+/// Example:
+///
+/// ```ignore
+/// #[declare_sql_function]
+/// extern "SQL" {
+///     #[variadic(2, true)]
+///     fn foo<A, B, C>(a: A, b: B, c: C) -> Text;
+/// }
+/// ```
+///
+/// Which will be equivalent to
+///
+/// ```ignore
+/// #[declare_sql_function]
+/// extern "SQL" {
+///     #[sql_name = "foo"]
+///     fn foo_1<A, B1, C1>(a: A, b_1: B1, c_1: C1) -> Text;
+///
+///     #[sql_name = "foo"]
+///     fn foo_2<A, B1, C1, B2, C2>(a: A, b_1: B1, c_1: C1, b_2: B2, c_2: C2) -> Text;
+///
+///     ...
+/// }
+/// ```
+///
 /// ### Controlling the generation of variadic function variants
 ///
 /// By default, only variants with 0, 1, and 2 repetitions of variadic arguments are generated. To
 /// generate more variants, set the `DIESEL_VARIADIC_FUNCTION_ARGS` environment variable to the
 /// desired number of variants.
+///
+/// • The boolean only affects whether the 0 variant is generated; the total number of variants
+/// (e.g., up to N) still follows DIESEL_VARIADIC_FUNCTION_ARGS or the default.
 ///
 /// For a greater convenience this environment variable can also be set in a `.cargo/config.toml`
 /// file as described in the [cargo documentation](https://doc.rust-lang.org/cargo/reference/config.html#env).

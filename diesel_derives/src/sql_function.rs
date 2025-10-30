@@ -84,14 +84,15 @@ fn expand_one(
     let attributes = &mut input.attributes;
 
     let variadic_argument_count = attributes.iter().find_map(|attr| {
-        if let SqlFunctionAttribute::Variadic(_, c) = &attr.item {
-            Some((c.base10_parse(), c.span()))
+        if let SqlFunctionAttribute::Variadic(_, c, flag) = &attr.item {
+            Some((c.base10_parse(), c.span(), flag.value))
         } else {
             None
         }
     });
 
-    let Some((variadic_argument_count, variadic_span)) = variadic_argument_count else {
+    let Some((variadic_argument_count, variadic_span, non_zero_variadic)) = variadic_argument_count
+    else {
         let sql_name = parse_sql_name_attr(&mut input);
 
         return expand_nonvariadic(
@@ -103,6 +104,7 @@ fn expand_one(
     };
 
     let variadic_argument_count = variadic_argument_count?;
+    let start_idx = if non_zero_variadic { 1 } else { 0 };
 
     let variadic_variants = VARIADIC_ARG_COUNT_ENV
         .and_then(|arg_count| arg_count.parse::<usize>().ok())
@@ -110,7 +112,7 @@ fn expand_one(
 
     let mut result = TokenStream::new();
     let mut helper_type_modules = vec![];
-    for variant_no in 0..=variadic_variants {
+    for variant_no in start_idx..=variadic_variants {
         let expanded = expand_variadic(
             input.clone(),
             legacy_helper_type_and_module,
@@ -1054,7 +1056,7 @@ fn merge_attributes(
             (SqlFunctionAttribute::Window { .. }, SqlFunctionAttribute::Window { .. })
             | (SqlFunctionAttribute::SqlName(_, _), SqlFunctionAttribute::SqlName(_, _))
             | (SqlFunctionAttribute::Restriction(_), SqlFunctionAttribute::Restriction(_))
-            | (SqlFunctionAttribute::Variadic(_, _), SqlFunctionAttribute::Variadic(_, _))
+            | (SqlFunctionAttribute::Variadic(_, _, _), SqlFunctionAttribute::Variadic(_, _, _))
             | (
                 SqlFunctionAttribute::SkipReturnTypeHelper(_),
                 SqlFunctionAttribute::SkipReturnTypeHelper(_),
@@ -1217,14 +1219,27 @@ fn parse_attribute(
         syn::Meta::List(syn::MetaList {
             path,
             delimiter: syn::MacroDelimiter::Paren(_),
-            tokens,
+            tokens: _,
         }) if path.is_ident("variadic") => {
-            let count: syn::LitInt = syn::parse2(tokens.clone()).map_err(|e| {
-                syn::Error::new(
-                    e.span(),
-                    format!("{e}, the correct format is `#[variadic(3)]`"),
-                )
-            })?;
+            let (count, flag) = attr
+                .parse_args_with(|input: syn::parse::ParseStream| {
+                    let count: syn::LitInt = input.parse()?;
+                    let non_zero_variadic = if input.peek(Token![,]) {
+                        let _: Token![,] = input.parse()?;
+                        input.parse::<syn::LitBool>()?
+                    } else {
+                        LitBool::new(false, Span::call_site())
+                    };
+                    Ok((count, non_zero_variadic))
+                })
+                .map_err(|e| {
+                    syn::Error::new(
+                        e.span(),
+                        format!(
+                            "{e}, the correct format is `#[variadic(3)]` or `#[variadic(3, true)]`"
+                        ),
+                    )
+                })?;
             Ok(Some(AttributeSpanWrapper {
                 item: SqlFunctionAttribute::Variadic(
                     path.require_ident()
@@ -1236,6 +1251,7 @@ fn parse_attribute(
                         })?
                         .clone(),
                     count.clone(),
+                    flag,
                 ),
                 attribute_span: attr.span(),
                 ident_span: path.require_ident()?.span(),
@@ -1648,7 +1664,7 @@ enum SqlFunctionAttribute {
     },
     SqlName(Ident, LitStr),
     Restriction(BackendRestriction),
-    Variadic(Ident, LitInt),
+    Variadic(Ident, LitInt, LitBool),
     SkipReturnTypeHelper(Ident),
     Other(Attribute),
 }
@@ -1773,7 +1789,16 @@ impl SqlFunctionAttribute {
                 "backend_bounds" => {
                     BackendRestriction::parse_backend_bounds(input, name).map(Self::Restriction)?
                 }
-                "variadic" => Self::Variadic(name, input.parse()?),
+                "variadic" => {
+                    let count = input.parse::<LitInt>()?;
+                    let flag = if input.peek(Token![,]) {
+                        let _ = input.parse::<Token![,]>()?;
+                        input.parse::<LitBool>()?
+                    } else {
+                        LitBool::new(false, Span::call_site())
+                    };
+                    Self::Variadic(name, count, flag)
+                }
                 _ => {
                     // empty the parse buffer otherwise syn will return an error
                     let _ = input.step(|cursor| {
