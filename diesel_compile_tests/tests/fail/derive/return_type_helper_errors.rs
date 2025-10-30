@@ -19,7 +19,7 @@ mod with_return_type_helpers {
         fn f<A: SingleValue>(a: <A as TypeWrapper>::Type);
         //~^ ERROR: cannot find argument corresponding to the generic
 
-        #[variadic(1)]
+        #[variadic(last_arguments = 1)]
         fn g<A: SingleValue>(a: <A as TypeWrapper>::Type);
         //~^ ERROR: cannot find argument corresponding to the generic
 
@@ -27,7 +27,7 @@ mod with_return_type_helpers {
         fn h<A: SingleValue>(a: <A as TypeWrapper>::Type);
 
         #[skip_return_type_helper]
-        #[variadic(1)]
+        #[variadic(last_arguments = 1)]
         fn i<A: SingleValue>(a: <A as TypeWrapper>::Type);
     }
 }
@@ -39,7 +39,7 @@ mod without_return_type_helpers {
     extern "SQL" {
         fn f<A: SingleValue>(a: <A as TypeWrapper>::Type);
 
-        #[variadic(1)]
+        #[variadic(last_arguments = 1)]
         fn g<A: SingleValue>(a: <A as TypeWrapper>::Type);
     }
 }

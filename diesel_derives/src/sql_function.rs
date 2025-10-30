@@ -1223,20 +1223,43 @@ fn parse_attribute(
         }) if path.is_ident("variadic") => {
             let (count, flag) = attr
                 .parse_args_with(|input: syn::parse::ParseStream| {
-                    let count: syn::LitInt = input.parse()?;
-                    let non_zero_variadic = if input.peek(Token![,]) {
-                        let _: Token![,] = input.parse()?;
-                        input.parse::<syn::LitBool>()?
-                    } else {
-                        LitBool::new(false, Span::call_site())
-                    };
-                    Ok((count, non_zero_variadic))
+                    if input.peek(LitInt){
+                        let count = input.parse::<LitInt>()?;
+                        if !input.is_empty(){
+                            return Err(syn::Error::new(input.span(), "unexpected token after positional `#[variadic(..)]`"));
+                        }
+                        Ok((count, LitBool::new(false, Span::call_site())))
+                    }
+                    else {
+                        let key: Ident = input.parse()?;
+                        if key != "last_arguments" {
+                            return Err(syn::Error::new(key.span(), "expect `last_arguments`"));
+                        }
+                        let _eq: Token![=] = input.parse()?;
+                        let count: LitInt = input.parse()?;
+                        let skip_zero: LitBool = if input.peek(Token![,]) {
+                            let _: Token![,] = input.parse()?;
+                            let key: Ident = input.parse()?;
+                            if key != "skip_zero_argument_variant" {
+                                return Err(
+                                    syn::Error::new(
+                                        key.span(), "expect `skip_zero_argument_variant`"
+                                    )
+                                );
+                            }
+                            let _eq: Token![=] = input.parse()?;
+                            input.parse()?
+                        } else {
+                            LitBool::new(false, Span::call_site())
+                        };
+                        Ok((count, skip_zero))
+                    }
                 })
                 .map_err(|e| {
                     syn::Error::new(
                         e.span(),
                         format!(
-                            "{e}, the correct format is `#[variadic(3)]` or `#[variadic(3, true)]`"
+                            "{e}, the correct format is `#[variadic(last_arguments = 3)]` or `#[variadic(last_arguments = 3, skip_zero_argument_variant = true)]`"
                         ),
                     )
                 })?;
@@ -1790,14 +1813,38 @@ impl SqlFunctionAttribute {
                     BackendRestriction::parse_backend_bounds(input, name).map(Self::Restriction)?
                 }
                 "variadic" => {
-                    let count = input.parse::<LitInt>()?;
-                    let flag = if input.peek(Token![,]) {
-                        let _ = input.parse::<Token![,]>()?;
-                        input.parse::<LitBool>()?
+                    if input.peek(LitInt) {
+                        let count = input.parse::<LitInt>()?;
+                        if !input.is_empty() {
+                            return Err(syn::Error::new(
+                                input.span(),
+                                "unexpected token after positional `#[variadic(..)]`",
+                            ));
+                        }
+                        Self::Variadic(name, count, LitBool::new(false, Span::call_site()))
                     } else {
-                        LitBool::new(false, Span::call_site())
-                    };
-                    Self::Variadic(name, count, flag)
+                        let key: Ident = input.parse()?;
+                        if key != "last_arguments" {
+                            return Err(syn::Error::new(key.span(), "expect `last_arguments`"));
+                        }
+                        let _eq: Token![=] = input.parse()?;
+                        let count: LitInt = input.parse()?;
+                        let skip_zero: LitBool = if input.peek(Token![,]) {
+                            let _: Token![,] = input.parse()?;
+                            let key: Ident = input.parse()?;
+                            if key != "skip_zero_argument_variant" {
+                                return Err(syn::Error::new(
+                                    key.span(),
+                                    "expect `skip_zero_argument_variant`",
+                                ));
+                            }
+                            let _eq: Token![=] = input.parse()?;
+                            input.parse()?
+                        } else {
+                            LitBool::new(false, Span::call_site())
+                        };
+                        Self::Variadic(name, count, skip_zero)
+                    }
                 }
                 _ => {
                     // empty the parse buffer otherwise syn will return an error

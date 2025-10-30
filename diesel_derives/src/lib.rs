@@ -2385,17 +2385,18 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// }
 /// ```
 ///
-/// Optionally, a second boolean can be provided to control whether the 0-variadic-argument variant
-/// is generated. By default (omitted or `false`), the 0-argument variant is included. Set it to
-/// `true` to skip generating the 0-argument variant for functions that require at least one
-/// variadic argument.
+/// Optionally, a second named boolean argument `skip_zero_argument_variant` can be provided to
+/// control whether the 0-argument variant is generated. By default, (omitted or `false`),
+/// the 0-argument variant is included. Set it to `true` to skip generating the 0-argument
+/// variant for functions that require at least one variadic argument. If you specify the boolean
+/// argument, the first argument has to be named `last_arguments` for clarity.
 ///
 /// Example:
 ///
 /// ```ignore
 /// #[declare_sql_function]
 /// extern "SQL" {
-///     #[variadic(2, true)]
+///     #[variadic(last_arguments = 2, skip_zero_argument_variant = true)]
 ///     fn foo<A, B, C>(a: A, b: B, c: C) -> Text;
 /// }
 /// ```
