@@ -2,10 +2,15 @@ error[E0277]: cannot select `bad::columns::age` from `users::table`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:32:20
     |
  LL |         .returning(bad::age);
-    |          --------- ^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
+    |          --------- ^^^^^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
+help: the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+    |
+ LL |       age -> Integer,
+    |       ^^^
     = note: `bad::columns::age` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `bad::columns::age` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -25,15 +30,21 @@ LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, Retur
 LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `bad::columns::age` from `users::table`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:40:20
     |
  LL |         .returning((name, bad::age));
-    |          --------- ^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
+    |          --------- ^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
+help: the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+    |
+ LL |       age -> Integer,
+    |       ^^^
     = note: `bad::columns::age` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `bad::columns::age` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -54,7 +65,8 @@ LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:40:20
     |

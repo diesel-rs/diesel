@@ -43,10 +43,15 @@ error[E0277]: the trait bound `lower_utils::lower<posts::columns::title>: Column
    --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:46:22
     |
  LL |         .on_conflict(lower(posts::title));
-    |          ----------- ^^^^^^^^^^^^^^^^^^^ the trait `Column` is not implemented for `lower_utils::lower<posts::columns::title>`
+    |          ----------- ^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
+help: the trait `Column` is not implemented for `lower_utils::lower<posts::columns::title>`
+   --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:23:1
+    |
+ LL | #[declare_sql_function]
+    | ^^^^^^^^^^^^^^^^^^^^^^^
     = help: the following other types implement trait `Column`:
               pg::metadata_lookup::pg_namespace::columns::nspname
               pg::metadata_lookup::pg_namespace::columns::oid
@@ -67,7 +72,8 @@ LL |     pub fn on_conflict<Target>(
 LL |         ConflictTarget<Target>: OnConflictTarget<T>,
     |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
  
-    
+        = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: the trait bound `&str: Column` is not satisfied
    --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:51:22
     |

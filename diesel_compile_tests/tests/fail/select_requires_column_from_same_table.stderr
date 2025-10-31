@@ -2,10 +2,15 @@ error[E0277]: cannot select `posts::columns::id` from `users::table`
    --> tests/fail/select_requires_column_from_same_table.rs:20:41
     |
  LL |     let select_id = users::table.select(posts::id);
-    |                                  ------ ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+    |                                  ------ ^^^^^^^^^ unsatisfied trait bound
     |                                  |
     |                                  required by a bound introduced by this call
     |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   --> tests/fail/select_requires_column_from_same_table.rs:14:9
+    |
+ LL |         id -> Integer,
+    |         ^^
     = note: `posts::columns::id` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -26,4 +31,5 @@ LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Select
 ...
 LL |         Self: methods::SelectDsl<Selection>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.
