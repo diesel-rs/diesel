@@ -8,15 +8,16 @@ LL |     let pred = id.eq("string");
              &T
              AliasedField<S, C>
              Box<T>
-             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
-             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
-             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
+             CaseWhen<CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, ElseExpression<E>>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, NoElseExpression>
              CountStar
              Exists<T>
            and N others
    = note: required for `&str` to implement `diesel::Expression`
    = note: required for `&str` to implement `AsExpression<diesel::sql_types::Integer>`
 
+   
 error[E0271]: type mismatch resolving `<name as Expression>::SqlType == Integer`
   --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:17:19
    |

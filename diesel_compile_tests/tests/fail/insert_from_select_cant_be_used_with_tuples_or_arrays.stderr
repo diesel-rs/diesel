@@ -2,8 +2,14 @@ error[E0277]: the trait bound `users::table: UndecoratedInsertRecord<posts::tabl
   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:30:24
    |
 LL |     insert_into(posts).values(vec![users, users]);
-   |                        ^^^^^^ the trait `UndecoratedInsertRecord<posts::table>` is not implemented for `users::table`
+   |                        ^^^^^^ unsatisfied trait bound
    |
+help: the trait `UndecoratedInsertRecord<posts::table>` is not implemented for `users::table`
+  --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:6:1
+   |
+ LL | / table! {
+ LL | |     users {
+   | |_________^
    = help: the following other types implement trait `UndecoratedInsertRecord<Table>`:
              `&T` implements `UndecoratedInsertRecord<Tab>`
              `(T, T1)` implements `UndecoratedInsertRecord<Tab>`
@@ -15,6 +21,8 @@ LL |     insert_into(posts).values(vec![users, users]);
              `(T, T1, T2, T3, T4, T5, T6, T7)` implements `UndecoratedInsertRecord<Tab>`
            and N others
    = note: required for `Vec<users::table>` to implement `diesel::Insertable<posts::table>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == ValuesClause<_, table>`
   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:33:24

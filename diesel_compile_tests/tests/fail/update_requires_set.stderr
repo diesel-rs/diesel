@@ -28,4 +28,5 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-For more information about this error, try `rustc --explain E0277`.
+  
+     For more information about this error, try `rustc --explain E0277`.

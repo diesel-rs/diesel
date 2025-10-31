@@ -2,10 +2,16 @@ error[E0277]: cannot join `posts::table` to `users::table` due to missing relati
    --> tests/fail/cannot_join_to_non_joinable_table.rs:30:37
     |
  LL |     let _ = users::table.inner_join(posts::table);
-    |                          ---------- ^^^^^^^^^^^^ the trait `JoinTo<posts::table>` is not implemented for `users::table`
+    |                          ---------- ^^^^^^^^^^^^ unsatisfied trait bound
     |                          |
     |                          required by a bound introduced by this call
     |
+help: the trait `JoinTo<posts::table>` is not implemented for `users::table`
+   --> tests/fail/cannot_join_to_non_joinable_table.rs:5:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
     = note: joining tables directly either requires a `diesel::joinable!` definition or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`
     = help: the following other types implement trait `JoinTo<T>`:
               `users::table` implements `JoinTo<Alias<S>>`
@@ -24,15 +30,22 @@ LL |     fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
 LL |     where
 LL |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot join `posts::table` to `users::table` due to missing relation
    --> tests/fail/cannot_join_to_non_joinable_table.rs:32:42
     |
  LL |     let _ = users::table.left_outer_join(posts::table);
-    |                          --------------- ^^^^^^^^^^^^ the trait `JoinTo<posts::table>` is not implemented for `users::table`
+    |                          --------------- ^^^^^^^^^^^^ unsatisfied trait bound
     |                          |
     |                          required by a bound introduced by this call
     |
+help: the trait `JoinTo<posts::table>` is not implemented for `users::table`
+   --> tests/fail/cannot_join_to_non_joinable_table.rs:5:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
     = note: joining tables directly either requires a `diesel::joinable!` definition or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`
     = help: the following other types implement trait `JoinTo<T>`:
               `users::table` implements `JoinTo<Alias<S>>`
@@ -51,13 +64,20 @@ LL |     fn left_outer_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
 LL |     where
 LL |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::left_outer_join`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot join `users::table` to `posts::table` due to missing relation
   --> tests/fail/cannot_join_to_non_joinable_table.rs:38:26
    |
 LL |     let _ = users::table.inner_join(join);
-   |                          ^^^^^^^^^^ the trait `JoinTo<users::table>` is not implemented for `posts::table`
+   |                          ^^^^^^^^^^ unsatisfied trait bound
    |
+help: the trait `JoinTo<users::table>` is not implemented for `posts::table`
+  --> tests/fail/cannot_join_to_non_joinable_table.rs:12:1
+   |
+LL | / table! {
+LL | |     posts {
+   | |_________^
    = note: joining tables directly either requires a `diesel::joinable!` definition or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`
    = help: the following other types implement trait `JoinTo<T>`:
              `posts::table` implements `JoinTo<Alias<S>>`
@@ -69,5 +89,7 @@ LL |     let _ = users::table.inner_join(join);
              `posts::table` implements `JoinTo<comments::table>`
              `posts::table` implements `JoinTo<query_source::joins::Join<Left, Right, Kind>>`
    = note: required for `query_source::joins::Join<posts::table, comments::table, Inner>` to implement `JoinTo<users::table>`
-   = note: required for `users::table` to implement `JoinWithImplicitOnClause<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>`
+   = note: required for `users::table` to implement `JoinWithImplicitOnClause<SelectStatement<FromClause<...>>, ...>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

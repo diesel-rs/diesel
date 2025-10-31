@@ -8,7 +8,7 @@ LL |                 .frame_by(dsl::frame::Groups.frame_start_with(dsl::frame::U
    = help: the trait `ValidFrameClause<diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder>` is not implemented for `Groups`
            but trait `ValidFrameClause<Order<_, true>>` is implemented for it
    = help: for that trait implementation, expected `Order<_, true>`, found `diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder`
-   = note: required for `StartFrame<Groups, UnboundedPreceding>` to implement `diesel::expression::functions::aggregate_expressions::frame_clause::ValidFrameClause<diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder>`
-   = note: required for `diesel::expression::count::count_utils::count<diesel::sql_types::Integer, columns::id>` to implement `diesel::expression::functions::aggregate_expressions::frame_clause::FrameDsl<diesel::expression::functions::aggregate_expressions::frame_clause::StartFrame<Groups, UnboundedPreceding>>`
+   = note: required for `StartFrame<Groups, UnboundedPreceding>` to implement `ValidFrameClause<NoOrder>`
+   = note: required for `diesel::expression::count::count_utils::count<diesel::sql_types::Integer, columns::id>` to implement `FrameDsl<StartFrame<Groups, UnboundedPreceding>>`
 
    For more information about this error, try `rustc --explain E0277`.

@@ -209,8 +209,14 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
    --> tests/fail/derive/has_query.rs:47:10
     |
  LL | #[derive(HasQuery)]
-    |          ^^^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+    |          ^^^^^^^^ unsatisfied trait bound
     |
+help: the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+   --> tests/fail/derive/has_query.rs:3:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
     = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
     = help: the following other types implement trait `TableNotEqual<T>`:
@@ -282,8 +288,14 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
    --> tests/fail/derive/has_query.rs:57:10
     |
  LL | #[derive(HasQuery)]
-    |          ^^^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+    |          ^^^^^^^^ unsatisfied trait bound
     |
+help: the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+   --> tests/fail/derive/has_query.rs:3:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
     = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
     = help: the following other types implement trait `TableNotEqual<T>`:

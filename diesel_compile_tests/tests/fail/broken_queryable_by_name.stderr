@@ -113,16 +113,21 @@ error[E0277]: the trait bound `User: FromSqlRow<_, _>` is not satisfied
     --> tests/fail/broken_queryable_by_name.rs:36:49
      |
   LL |     let s = diesel::sql_query("…").load::<User>(conn);
-     |                                    ----         ^^^^ the trait `FromSqlRow<_, _>` is not implemented for `User`
+     |                                    ----         ^^^^ unsatisfied trait bound
      |                                    |
      |                                    required by a bound introduced by this call
      |
+help: the trait `FromSqlRow<_, _>` is not implemented for `User`
+    --> tests/fail/broken_queryable_by_name.rs:15:1
+     |
+  LL | struct User {
+     | ^^^^^^^^^^^
      = note: double check your type mappings via the documentation of `_`
      = note: `diesel::sql_query` requires the loading target to column names for loading values.
              You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
      = help: the following other types implement trait `LoadQuery<'query, Conn, U, B>`:
-               InsertStatement<T, BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>
-               InsertStatement<T, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Target, ConflictOpt>, Op>
+               InsertStatement<T, BatchInsert<..., ..., ..., STATIC_QUERY_ID>, ...>
+               InsertStatement<T, OnConflictValues<..., ..., ...>, ...>
      = note: required for `SqlQuery` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
@@ -132,4 +137,5 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-For more information about this error, try `rustc --explain E0277`.
+  
+     For more information about this error, try `rustc --explain E0277`.
