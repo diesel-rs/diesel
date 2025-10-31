@@ -34,6 +34,7 @@ fn publish_post() {
     let migrations = diesel_migrations::FileBasedMigrations::find_migrations_directory().unwrap();
     conn.run_pending_migrations(migrations).unwrap();
 
+    #[expect(deprecated, reason = "The suggested method doesn't work in this case")]
     let _ = Command::cargo_bin("show_posts")
         .unwrap()
         .env("MYSQL_DATABASE_URL", db_url.to_string())
@@ -41,6 +42,7 @@ fn publish_post() {
         .append_context("show_posts", "")
         .stdout("Displaying 0 posts\n");
 
+    #[expect(deprecated, reason = "The suggested method doesn't work in this case")]
     let _ = Command::cargo_bin("write_post")
         .unwrap()
         .env("MYSQL_DATABASE_URL", db_url.to_string())
@@ -54,6 +56,7 @@ fn publish_post() {
                 + " when finished)\n\n\nSaved draft Test Title with id 1\n",
         );
 
+    #[expect(deprecated, reason = "The suggested method doesn't work in this case")]
     let _ = Command::cargo_bin("publish_post")
         .unwrap()
         .env("MYSQL_DATABASE_URL", db_url.to_string())
@@ -62,6 +65,7 @@ fn publish_post() {
         .append_context("publish_post", "")
         .stdout("Published post Test Title\n");
 
+    #[expect(deprecated, reason = "The suggested method doesn't work in this case")]
     let _ = Command::cargo_bin("show_posts")
         .unwrap()
         .env("MYSQL_DATABASE_URL", db_url.to_string())
@@ -69,6 +73,7 @@ fn publish_post() {
         .append_context("show_posts", "")
         .stdout("Displaying 1 posts\nTest Title\n-----------\n\ntest text\n1 2 3\n");
 
+    #[expect(deprecated, reason = "The suggested method doesn't work in this case")]
     let _ = Command::cargo_bin("delete_post")
         .unwrap()
         .env("MYSQL_DATABASE_URL", db_url.to_string())
@@ -77,6 +82,7 @@ fn publish_post() {
         .append_context("delete_post", "")
         .stdout("Deleted 1 posts\n");
 
+    #[expect(deprecated, reason = "The suggested method doesn't work in this case")]
     let _ = Command::cargo_bin("show_posts")
         .unwrap()
         .env("MYSQL_DATABASE_URL", db_url.to_string())

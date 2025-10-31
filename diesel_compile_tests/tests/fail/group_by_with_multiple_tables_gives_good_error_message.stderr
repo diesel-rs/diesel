@@ -2,8 +2,13 @@ error[E0277]: the trait bound `posts::columns::user_id: IsContainedInGroupBy<use
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:29:10
    |
 LL |         .select((users::id, posts::user_id, diesel::dsl::count_star()));
-   |          ^^^^^^ the trait `IsContainedInGroupBy<users::columns::id>` is not implemented for `posts::columns::user_id`
+   |          ^^^^^^ unsatisfied trait bound
    |
+help: the trait `IsContainedInGroupBy<users::columns::id>` is not implemented for `posts::columns::user_id`
+  --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:16:9
+   |
+LL |         user_id -> Integer,
+   |         ^^^^^^^
    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
    = help: the following other types implement trait `IsContainedInGroupBy<T>`:
              `posts::columns::user_id` implements `IsContainedInGroupBy<posts::columns::id>`
@@ -27,8 +32,13 @@ error[E0277]: the trait bound `users::columns::id: IsContainedInGroupBy<posts::c
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:29:10
    |
 LL |         .select((users::id, posts::user_id, diesel::dsl::count_star()));
-   |          ^^^^^^ the trait `IsContainedInGroupBy<posts::columns::user_id>` is not implemented for `users::columns::id`
+   |          ^^^^^^ unsatisfied trait bound
    |
+help: the trait `IsContainedInGroupBy<posts::columns::user_id>` is not implemented for `users::columns::id`
+  --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:7:9
+   |
+ LL |         id -> Integer,
+   |         ^^
    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
    = help: the following other types implement trait `IsContainedInGroupBy<T>`:
              `users::columns::id` implements `IsContainedInGroupBy<users::columns::id>`

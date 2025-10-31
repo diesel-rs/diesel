@@ -35,6 +35,6 @@ LL |     let _ = users::table.filter(sum(users::id).eq(1));
              `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
              `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Yes>`
    = note: required for `Grouped<Eq<sum<Integer, id>, Bound<Nullable<BigInt>, i64>>>` to implement `NonAggregate`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<Nullable<diesel::sql_types::BigInt>, i64>>>>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Grouped<Eq<sum<Integer, id>, Bound<Nullable<BigInt>, i64>>>>`
 
    For more information about this error, try `rustc --explain E0277`.
