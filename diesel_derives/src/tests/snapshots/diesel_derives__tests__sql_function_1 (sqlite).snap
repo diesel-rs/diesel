@@ -29,7 +29,7 @@ pub(crate) mod lower {
     pub struct lower<input> {
         pub(super) input: input,
     }
-    ///The return type of [`lower()`](super::fn_name)
+    ///The return type of [`lower()`](fn@lower)
     pub type HelperType<input> = lower<<input as AsExpression<Text>>::Expression>;
     impl<input> Expression for lower<input>
     where
