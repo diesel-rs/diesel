@@ -454,7 +454,7 @@ fn expand_nonvariadic(
         numeric_derive = Some(quote!(#[derive(diesel::sql_types::DieselNumericOps)]));
     }
 
-    let helper_type_doc = format!("The return type of [`{fn_name}()`](super::fn_name)");
+    let helper_type_doc = format!("The return type of [`{fn_name}()`](fn@{fn_name})");
     let query_fragment_impl =
         can_be_called_directly.then_some(restrictions.generate_all_queryfragment_impls(
             generics.clone(),
