@@ -495,6 +495,14 @@ fn postgres_functions() -> _ {
             pg_extras::jsonb,
             pg_extras::boolean,
         ),
+        jsonb_path_exits(
+            pg_extras::jsonb, 
+            pg_extras::name
+        ),
+        jsonb_path_match(
+            pg_extras::jsonb, 
+            pg_extras::name
+        ),
     )
 }
 

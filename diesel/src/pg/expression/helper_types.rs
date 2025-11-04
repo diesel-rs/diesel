@@ -621,3 +621,13 @@ pub type jsonb_insert<B, J, R> =
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_insert_with_insert_after<B, J, R, I> =
     super::functions::jsonb_insert_with_insert_after<SqlTypeOf<B>, SqlTypeOf<J>, B, J, R, I>;
+
+/// Return type of [`jsonb_path_exists(target, path) `] (super::functions::jsonb_path_exists())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_path_exists<E, P> = super::functions::jsonb_path_exists<SqlTypeOf<E>, E, P>;
+
+/// Return type of [`jsonb_path_match(target, path) `] (super::functions::jsonb_path_match())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_path_match<E, P> = super::functions::jsonb_path_match<SqlTypeOf<E>, E, P>;
