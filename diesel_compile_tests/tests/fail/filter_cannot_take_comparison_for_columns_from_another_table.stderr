@@ -42,7 +42,7 @@ LL |         id -> Integer,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, Pg>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
+   = note: required for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, Pg>` to implement `FilterDsl<Grouped<Eq<id, Bound<Integer, i32>>>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -103,7 +103,7 @@ LL |         title -> VarChar,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<name, title>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, Pg>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>`
+   = note: required for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, Pg>` to implement `FilterDsl<Grouped<Eq<name, title>>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 

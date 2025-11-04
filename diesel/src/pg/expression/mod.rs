@@ -15,6 +15,12 @@ pub(crate) mod operators;
 
 mod date_and_time;
 
+mod return_type_helpers {
+    #[allow(unused_imports)]
+    #[doc(inline)]
+    pub use super::functions::return_type_helpers_reexported::*;
+}
+
 /// PostgreSQL specific expression DSL methods.
 ///
 /// This module will be glob imported by

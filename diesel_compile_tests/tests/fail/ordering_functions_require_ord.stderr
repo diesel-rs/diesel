@@ -40,7 +40,7 @@ LL |     let source = stuff::table.select(max(stuff::b));
            and N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
    = note: required for `max<Bool, b>` to implement `diesel::Expression`
-   = note: required for `stuff::table` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Bool, columns::b>>`
+   = note: required for `stuff::table` to implement `SelectDsl<max<Bool, b>>`
 
    
 error[E0277]: the trait bound `Bool: SqlOrdAggregate` is not satisfied
@@ -85,6 +85,6 @@ LL |     let source = stuff::table.select(min(stuff::b));
            and N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
    = note: required for `min<Bool, b>` to implement `diesel::Expression`
-   = note: required for `stuff::table` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Bool, columns::b>>`
+   = note: required for `stuff::table` to implement `SelectDsl<min<Bool, b>>`
 
    For more information about this error, try `rustc --explain E0277`.

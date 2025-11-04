@@ -631,3 +631,5 @@ pub type jsonb_path_exists<E, P> = super::functions::jsonb_path_exists<SqlTypeOf
 #[allow(non_camel_case_types)]
 #[cfg(feature = "postgres_backend")]
 pub type jsonb_path_match<E, P> = super::functions::jsonb_path_match<SqlTypeOf<E>, E, P>;
+#[doc(inline)]
+pub use super::return_type_helpers::*;

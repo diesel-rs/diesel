@@ -2,8 +2,14 @@ error[E0277]: the trait bound `users::table: DistinctOnDsl<posts::columns::id>` 
    --> tests/fail/distinct_on_allows_only_fields_of_table.rs:26:22
     |
  LL |         .distinct_on(posts::id)
-    |                      ^^^^^^^^^ the trait `DistinctOnDsl<posts::columns::id>` is not implemented for `users::table`
+    |                      ^^^^^^^^^ unsatisfied trait bound
     |
+help: the trait `DistinctOnDsl<posts::columns::id>` is not implemented for `users::table`
+   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:5:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
     = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
     = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
     = help: the following other types implement trait `DistinctOnDsl<Selection>`:
@@ -17,16 +23,24 @@ LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
 LL |     where
 LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `posts::table: DistinctOnDsl<(posts::columns::name, users::columns::name)>` is not satisfied
   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:31:10
    |
 LL |         .distinct_on((posts::name, users::name))
-   |          ^^^^^^^^^^^ the trait `DistinctOnDsl<(posts::columns::name, users::columns::name)>` is not implemented for `posts::table`
+   |          ^^^^^^^^^^^ unsatisfied trait bound
    |
+help: the trait `DistinctOnDsl<(posts::columns::name, users::columns::name)>` is not implemented for `posts::table`
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:12:1
+   |
+LL | / table! {
+LL | |     posts {
+   | |_________^
    = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
    = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
    = help: the following other types implement trait `DistinctOnDsl<Selection>`:
              Alias<S>
              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

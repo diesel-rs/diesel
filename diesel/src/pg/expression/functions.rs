@@ -15,7 +15,7 @@ use crate::pg::expression::expression_methods::TextArrayOrNullableTextArray;
 use crate::sql_types::helper::CombinedNullableValue;
 use crate::sql_types::*;
 
-#[declare_sql_function]
+#[declare_sql_function(generate_return_type_helpers = true)]
 #[backends(crate::pg::Pg)]
 extern "SQL" {
     /// Creates an abbreviated display format as text.
@@ -2874,6 +2874,8 @@ extern "SQL" {
     ) -> Arr::Out;
 
     /// Checks whether the JSON path returns any item for the specified JSON value.
+    /// Builds a possibly-heterogeneously-typed JSON array out of a variadic argument list. Each argument is converted as per to_json.
+    ///
     ///
     /// # Example
     ///
@@ -2912,6 +2914,49 @@ extern "SQL" {
     /// ))
     /// .get_result::<Option<bool>>(connection)?;
     /// assert_eq!(None, result);
+    /// #     use diesel::dsl::{json_build_array_1, json_build_array_2, json_build_array_0};
+    /// #     use diesel::sql_types::{Jsonb, Array, Json, Nullable, Text, Integer, Record, Double};
+    /// #     use serde_json::{json,Value};
+    /// #     use diesel::dsl::sql;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(json_build_array_0()).get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([]), result);
+    ///
+    /// let result = diesel::select(json_build_array_1::<Text, _>("abc"))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(["abc"]), result);
+    ///
+    /// let result = diesel::select(json_build_array_2::<Text, Double, _, _>("abc", 3.1415))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(["abc", 3.1415]), result);
+    ///
+    /// let result = diesel::select(json_build_array_1::<Record<(Text, Double)>, _>(sql::<Record<(Text, Double)>>("ROW('abc',3.1415)")))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([
+    ///     {
+    ///         "f1":"abc",
+    ///         "f2":3.1415
+    ///     }
+    ///  ]), result);
+    ///
+    /// let result = diesel::select(json_build_array_1::<Array<Integer>, _>(vec![1, 2, 3]))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([ [1, 2, 3] ]), result);
+    ///
+    /// let result = diesel::select(json_build_array_2::<Nullable<Text>, Double, _, _>(None::<String>, 3.1415))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([None::<String>, 3.1415]), result);
+    ///
+    /// let result = diesel::select(json_build_array_1::<Record<(Nullable<Text>, Double)>, _>(sql::<Record<(Nullable<Text>, Double)>>("ROW(null,3.1415)")))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    ///
+    /// assert_eq!(json!([
+    ///     {
+    ///         "f1":None::<String>,
+    ///         "f2":3.1415
+    ///     }
+    ///  ]), result);
     ///
     /// #     Ok(())
     /// # }
@@ -2924,6 +2969,13 @@ extern "SQL" {
     /// Returns the result of a JSON path predicate check for the specified JSON value.
     /// Only the first item of the result is taken into account.
     /// If the result is not Boolean, then NULL is returned.
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "json_build_array"]
+    #[variadic(1)]
+    fn json_build_array<V: SingleValue>(value: V) -> Json;
+
+    /// Builds a possibly-heterogeneously-typed JSON array out of a variadic argument list. Each argument is converted as per to_jsonb.
+    ///
     ///
     /// # Example
     ///
@@ -2973,6 +3025,49 @@ extern "SQL" {
     /// ))
     /// .get_result::<Option<bool>>(connection)?;
     /// assert_eq!(None, result);
+    /// #     use diesel::dsl::{jsonb_build_array_1, jsonb_build_array_2, jsonb_build_array_0};
+    /// #     use diesel::sql_types::{Jsonb, Array, Json, Nullable, Text, Integer, Record, Double};
+    /// #     use serde_json::{json,Value};
+    /// #     use diesel::dsl::sql;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_build_array_0()).get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([]), result);
+    ///
+    /// let result = diesel::select(jsonb_build_array_1::<Text, _>("abc"))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(["abc"]), result);
+    ///
+    /// let result = diesel::select(jsonb_build_array_2::<Text, Double, _, _>("abc", 3.1415))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(["abc", 3.1415]), result);
+    ///
+    /// let result = diesel::select(jsonb_build_array_1::<Record<(Text, Double)>, _>(sql::<Record<(Text, Double)>>("ROW('abc',3.1415)")))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([
+    ///     {
+    ///         "f1":"abc",
+    ///         "f2":3.1415
+    ///     }
+    ///  ]), result);
+    ///
+    /// let result = diesel::select(jsonb_build_array_1::<Array<Integer>, _>(vec![1, 2, 3]))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([ [1, 2, 3] ]), result);
+    ///
+    /// let result = diesel::select(jsonb_build_array_2::<Nullable<Text>, Double, _, _>(None::<String>, 3.1415))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([None::<String>, 3.1415]), result);
+    ///
+    /// let result = diesel::select(jsonb_build_array_1::<Record<(Nullable<Text>, Double)>, _>(sql::<Record<(Nullable<Text>, Double)>>("ROW(null,3.1415)")))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    ///
+    /// assert_eq!(json!([
+    ///     {
+    ///         "f1":None::<String>,
+    ///         "f2":3.1415
+    ///     }
+    ///  ]), result);
     ///
     /// #     Ok(())
     /// # }
@@ -2982,4 +3077,13 @@ extern "SQL" {
         target: E,
         path: Text,
     ) -> Nullable<Bool>;
+    #[sql_name = "jsonb_build_array"]
+    #[variadic(1)]
+    fn jsonb_build_array<V: SingleValue>(value: V) -> Jsonb;
+}
+
+pub(super) mod return_type_helpers_reexported {
+    #[allow(unused_imports)]
+    #[doc(inline)]
+    pub use super::return_type_helpers::*;
 }

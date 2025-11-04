@@ -9,10 +9,10 @@ error[E0277]: `OnConflictSelectWrapper<SelectStatement<FromClause<table>, ...>>`
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
      = help: the following other types implement trait `QueryFragment<DB, SP>`:
-               `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<BoxedSelectStatement<'_, ST, QS, Sqlite, GB>>` implements `QueryFragment<Sqlite>`
+               `OnConflictSelectWrapper<BoxedSelectStatement<'_, ST, QS, Sqlite, GB>>` implements `QueryFragment<Sqlite>`
                `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S>` implements `QueryFragment<Mysql>`
                `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S>` implements `QueryFragment<Pg>`
-               `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<SelectStatement<F, S, D, diesel::query_builder::where_clause::WhereClause<W>, O, LOf, G, H, LC>>` implements `QueryFragment<Sqlite>`
+               `OnConflictSelectWrapper<...>` implements `QueryFragment<Sqlite>`
      = note: required for `InsertFromSelect<OnConflictSelectWrapper<...>, ...>` to implement `QueryFragment<Sqlite>`
      = note: 3 redundant requirements hidden
      = note: required for `InsertStatement<table, OnConflictValues<..., ..., ...>>` to implement `QueryFragment<Sqlite>`
