@@ -11,7 +11,9 @@ use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
-use crate::expression::operators::{Asc, Concat, Desc, Like, NotLike, RetrieveAsObjectJson, RetrieveAsTextJson};
+use crate::expression::operators::{
+    Asc, Concat, Desc, Like, NotLike, RetrieveAsObjectJson, RetrieveAsTextJson,
+};
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
 use crate::pg::expression::expression_methods::private::BinaryOrNullableBinary;
 use crate::sql_types::{Array, Inet, Integer, Range, SqlType, Text, VarChar};
