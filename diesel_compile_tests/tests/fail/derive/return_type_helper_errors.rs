@@ -44,4 +44,16 @@ mod without_return_type_helpers {
     }
 }
 
+mod backward_compatibility_test {
+    use super::*;
+
+    #[declare_sql_function]
+    extern "SQL" {
+        // this should not generate any error to stay backward compatible with
+        // diesel 2.3
+        #[variadic(1)]
+        fn f<A: SingleValue>(a: <A as TypeWrapper>::Type);
+    }
+}
+
 fn main() {}
