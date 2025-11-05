@@ -279,7 +279,7 @@ pub type Remove<Lhs, Rhs> = RemoveFromJsonb<
 /// The return type of [`lhs.retrieve_as_object(rhs)`](super::expression_methods::PgAnyJsonExpressionMethods::retrieve_as_object)
 #[cfg(feature = "postgres_backend")]
 pub type RetrieveAsObjectJson<Lhs, Rhs, ST> =
-    Grouped<super::operators::RetrieveAsObjectJson<Lhs, AsExprOf<Rhs, ST>>>;
+    Grouped<crate::expression::operators::RetrieveAsObjectJson<Lhs, AsExprOf<Rhs, ST>>>;
 
 #[doc(hidden)] // needed for `#[auto_type]`
 pub type RetrieveAsObject<Lhs, Rhs> = RetrieveAsObjectJson<
@@ -291,7 +291,7 @@ pub type RetrieveAsObject<Lhs, Rhs> = RetrieveAsObjectJson<
 /// The return type of [`lhs.retrieve_as_text(rhs)`](super::expression_methods::PgAnyJsonExpressionMethods::retrieve_as_text)
 #[cfg(feature = "postgres_backend")]
 pub type RetrieveAsTextJson<Lhs, Rhs, ST> =
-    Grouped<super::operators::RetrieveAsTextJson<Lhs, AsExprOf<Rhs, ST>>>;
+    Grouped<crate::expression::operators::RetrieveAsTextJson<Lhs, AsExprOf<Rhs, ST>>>;
 
 #[doc(hidden)] // needed for `#[auto_type]`
 pub type RetrieveAsText<Lhs, Rhs> = RetrieveAsTextJson<

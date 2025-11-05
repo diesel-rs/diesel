@@ -8,6 +8,7 @@ pub(in crate::sqlite) use self::private::{
 use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
+use crate::expression::operators::{RetrieveAsObjectJson, RetrieveAsTextJson};
 use crate::expression::{AsExpression, Expression};
 use crate::sql_types::SqlType;
 
@@ -160,7 +161,7 @@ pub trait SqliteAnyJsonExpressionMethods: Expression + Sized {
         T: JsonIndex,
         <T::Expression as Expression>::SqlType: SqlType,
     {
-        Grouped(super::operators::RetrieveAsObjectJson::new(
+        Grouped(RetrieveAsObjectJson::new(
             self,
             other.into_json_index_expression(),
         ))
@@ -232,7 +233,7 @@ pub trait SqliteAnyJsonExpressionMethods: Expression + Sized {
         T: JsonIndex,
         <T::Expression as Expression>::SqlType: SqlType,
     {
-        Grouped(super::operators::RetrieveAsTextJson::new(
+        Grouped(RetrieveAsTextJson::new(
             self,
             other.into_json_index_expression(),
         ))
