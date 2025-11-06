@@ -115,6 +115,15 @@ fn cast_runs() {
     )
     .get_result::<String>(connection)
     .unwrap();
+
+    // (Int4 <- Int2)
+    diesel::select(4.into_sql::<SmallInt>().cast::<Integer>())
+        .get_result::<i32>(connection)
+        .unwrap();
+    // (Int8 <- Int2)
+    diesel::select(4.into_sql::<SmallInt>().cast::<BigInt>())
+        .get_result::<i64>(connection)
+        .unwrap();
 }
 
 #[diesel_test_helper::test]
@@ -159,6 +168,19 @@ fn cast_runs_postgres() {
     )
     .get_result::<serde_json::Value>(connection)
     .unwrap();
+
+    // (Numeric <- Int2)
+    diesel::select(1.into_sql::<SmallInt>().cast::<Decimal>())
+        .get_result::<BigDecimal>(connection)
+        .unwrap();
+    // (Numeric <- Int4)
+    diesel::select(1.into_sql::<Integer>().cast::<Decimal>())
+        .get_result::<BigDecimal>(connection)
+        .unwrap();
+    // (Numeric <- Int8)
+    diesel::select(1.into_sql::<BigInt>().cast::<Decimal>())
+        .get_result::<BigDecimal>(connection)
+        .unwrap();
 
     // (Text <- Uuid)
     diesel::select(uuid::uuid!("00000000-0000-0000-0000-000000000000").into_sql::<Uuid>().cast::<Text>())

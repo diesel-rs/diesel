@@ -211,6 +211,11 @@ casts_impl!(
     (Text <- Time),
     (Json <- Jsonb),
     (Jsonb <- Json),
+    (Int4 <- Int2),
+    (Int8 <- Int2),
+    (Numeric <- Int2),
+    (Numeric <- Int4),
+    (Numeric <- Int8),
     "mysql_backend": (Text <- Datetime),
     "postgres_backend": (Text <- Uuid),
 );
