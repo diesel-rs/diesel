@@ -156,7 +156,11 @@ pub trait SqliteAnyJsonExpressionMethods: Expression + Sized {
     fn retrieve_as_object<T>(
         self,
         other: T,
-    ) -> dsl::RetrieveAsObjectJson<Self, T::Expression, <T::Expression as Expression>::SqlType>
+    ) -> crate::sqlite::expression::helper_types::RetrieveAsObjectJson<
+        Self,
+        T::Expression,
+        <T::Expression as Expression>::SqlType,
+    >
     where
         T: JsonIndex,
         <T::Expression as Expression>::SqlType: SqlType,
@@ -228,7 +232,11 @@ pub trait SqliteAnyJsonExpressionMethods: Expression + Sized {
     fn retrieve_as_text<T>(
         self,
         other: T,
-    ) -> dsl::RetrieveAsTextJson<Self, T::Expression, <T::Expression as Expression>::SqlType>
+    ) -> crate::sqlite::expression::helper_types::RetrieveAsTextJson<
+        Self,
+        T::Expression,
+        <T::Expression as Expression>::SqlType,
+    >
     where
         T: JsonIndex,
         <T::Expression as Expression>::SqlType: SqlType,

@@ -197,7 +197,7 @@ pub type Div<L, R> = <L as ::core::ops::Div<R>>::Output;
 pub use super::functions::helper_types::*;
 
 #[doc(inline)]
-#[cfg(feature = "postgres_backend")]
+#[cfg(all(feature = "postgres_backend", not(feature = "sqlite")))]
 #[allow(unreachable_pub)]
 #[cfg_attr(
     all(feature = "sqlite", feature = "postgres_backend"),
@@ -209,6 +209,16 @@ pub use super::functions::helper_types::*;
 pub use crate::pg::expression::helper_types::*;
 
 #[doc(inline)]
-#[cfg(feature = "sqlite")]
+#[cfg(all(feature = "postgres_backend", feature = "sqlite"))]
+#[allow(unreachable_pub, ambiguous_glob_reexports)]
+pub use crate::pg::expression::helper_types::*;
+
+#[doc(inline)]
+#[cfg(all(feature = "sqlite", not(feature = "postgres_backend")))]
 #[allow(unreachable_pub)]
+pub use crate::sqlite::expression::helper_types::*;
+
+#[doc(inline)]
+#[cfg(all(feature = "sqlite", feature = "postgres_backend"))]
+#[allow(unreachable_pub, ambiguous_glob_reexports)]
 pub use crate::sqlite::expression::helper_types::*;
