@@ -406,6 +406,11 @@ impl BindData {
         } else {
             let data = self.bytes?;
             let tpe = (self.tpe, self.flags).into();
+
+            // FIXME: Could be unsafe. Need to make sure the buffer is large enough.
+            let length = known_buffer_size_for_ffi_type(self.tpe)
+                .unwrap_or(self.length.try_into().expect("Usize is at least 32 bit"));
+
             let slice = unsafe {
                 // We know that this points to a slice and the pointer is not null at this
                 // location
@@ -414,10 +419,7 @@ impl BindData {
                 // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
                 // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
-                std::slice::from_raw_parts(
-                    data.as_ptr(),
-                    self.length.try_into().expect("Usize is at least 32 bit"),
-                )
+                std::slice::from_raw_parts(data.as_ptr(), length)
             };
             Some(MysqlValue::new_internal(slice, tpe))
         }
