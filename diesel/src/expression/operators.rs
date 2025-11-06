@@ -70,11 +70,13 @@ macro_rules! __diesel_operator_body {
             $crate::expression::ValidGrouping
         )]
         #[doc(hidden)]
+        #[allow(unreachable_pub)]
         pub struct $name<$($ty_param,)+> {
             $(pub(crate) $field_name: $ty_param,)+
         }
 
         impl<$($ty_param,)+> $name<$($ty_param,)+> {
+            #[allow(dead_code)]
             pub(crate) fn new($($field_name: $ty_param,)+) -> Self {
                 $name { $($field_name,)+ }
             }
