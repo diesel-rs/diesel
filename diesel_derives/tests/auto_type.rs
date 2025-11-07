@@ -501,6 +501,10 @@ fn postgres_functions() -> _ {
         json_build_array_2(pg_extras::name, pg_extras::id),
         jsonb_build_array_1(pg_extras::jsonb),
         jsonb_build_array_2(pg_extras::text_array, pg_extras::jsonb),
+        json_extract_path_1(pg_extras::json, pg_extras::name),
+        json_extract_path_2(pg_extras::json, pg_extras::name, pg_extras::name),
+        jsonb_extract_path_1(pg_extras::jsonb, pg_extras::name),
+        jsonb_extract_path_2(pg_extras::jsonb, pg_extras::name, pg_extras::name),
     )
 }
 
