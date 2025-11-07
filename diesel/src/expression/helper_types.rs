@@ -6,6 +6,8 @@ use super::grouped::Grouped;
 use super::select_by::SelectBy;
 use super::{AsExpression, Expression};
 use crate::expression;
+#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
+use crate::expression_methods::JsonIndex;
 use crate::expression_methods::PreferredBoolSqlType;
 use crate::sql_types;
 
@@ -222,3 +224,15 @@ pub use crate::sqlite::expression::helper_types::*;
 #[cfg(all(feature = "sqlite", feature = "postgres_backend"))]
 #[allow(unreachable_pub, ambiguous_glob_reexports)]
 pub use crate::sqlite::expression::helper_types::*;
+
+/// The return type of [`lhs.retrieve_as_text(rhs)`](crate::expression_methods::AnyJsonExpressionMethods::retrieve_as_text)
+#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
+pub type RetrieveAsText<Lhs, Rhs> = Grouped<
+    crate::expression::operators::RetrieveAsTextJson<
+        Lhs,
+        AsExprOf<
+            <Rhs as JsonIndex>::Expression,
+            <<Rhs as JsonIndex>::Expression as Expression>::SqlType,
+        >,
+    >,
+>;

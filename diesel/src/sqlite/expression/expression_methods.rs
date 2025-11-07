@@ -1,15 +1,15 @@
 //! Sqlite specific expression methods.
 
 pub(in crate::sqlite) use self::private::{
-    BinaryOrNullableBinary, JsonIndex, JsonOrNullableJson,
-    JsonOrNullableJsonOrJsonbOrNullableJsonb, MaybeNullableValue, NotBlob, TextOrNullableText,
+    BinaryOrNullableBinary, JsonOrNullableJson, MaybeNullableValue, NotBlob, TextOrNullableText,
     TextOrNullableTextOrBinaryOrNullableBinary,
 };
 use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
-use crate::expression::operators::{RetrieveAsObjectJson, RetrieveAsTextJson};
 use crate::expression::{AsExpression, Expression};
+use crate::expression_methods::json_expression_methods::private::JsonOrNullableJsonOrJsonbOrNullableJsonb;
+use crate::expression_methods::json_expression_methods::{AnyJsonExpressionMethods, JsonIndex};
 use crate::sql_types::SqlType;
 
 /// Sqlite specific methods which are present on all expressions.
@@ -91,7 +91,7 @@ impl<T: Expression> SqliteExpressionMethods for T {}
 
 /// SQLite specific methods present on JSON and JSONB expressions.
 #[cfg(feature = "sqlite")]
-pub trait SqliteAnyJsonExpressionMethods: Expression + Sized {
+pub trait SqliteAnyJsonExpressionMethods: AnyJsonExpressionMethods + Expression + Sized {
     /// Creates a SQLite `->` expression.
     ///
     /// This operator extracts the value associated with the given path or key from a JSON value.
@@ -141,107 +141,27 @@ pub trait SqliteAnyJsonExpressionMethods: Expression + Sized {
     /// });
     ///
     /// let result = diesel::select(sql::<Json>(r#"json('{"a": {"b": [1, 2, 3]}}')"#)
-    ///     .retrieve_as_object("$.a.b[0]"))
+    ///     .retrieve_as_object_sqlite("$.a.b[0]"))
     ///     .get_result::<serde_json::Value>(conn)?;
     /// assert_eq!(serde_json::json!(1), result);
     ///
-    /// let result = diesel::select(sql::<Json>(r#"json('{"a": [1, 2, 3]}')"#)
-    ///     .retrieve_as_object("$.a[1]"))
+    /// let result = diesel::select(sql::<Jsonb>(r#"json('{"a": [1, 2, 3]}')"#)
+    ///     .retrieve_as_object_sqlite("$.a[1]"))
     ///     .get_result::<serde_json::Value>(conn)?;
     /// assert_eq!(serde_json::json!(2), result);
     ///
     /// #     Ok(())
     /// # }
     /// ```
-    fn retrieve_as_object<T>(
+    fn retrieve_as_object_sqlite<T>(
         self,
         other: T,
-    ) -> crate::sqlite::expression::helper_types::RetrieveAsObjectJson<
-        Self,
-        T::Expression,
-        <T::Expression as Expression>::SqlType,
-    >
+    ) -> crate::sqlite::expression::helper_types::RetrieveAsObjectSqlite<Self, T>
     where
         T: JsonIndex,
         <T::Expression as Expression>::SqlType: SqlType,
     {
-        Grouped(RetrieveAsObjectJson::new(
-            self,
-            other.into_json_index_expression(),
-        ))
-    }
-
-    /// Creates a SQLite `->>` expression.
-    ///
-    /// This operator extracts the value associated with the given path or key from a JSON value
-    /// and **returns an SQL value as TEXT** (or INTEGER/REAL/NULL in some cases, but typed as TEXT).
-    ///
-    /// The right-hand side can be:
-    /// - A string path expression (e.g., `"$.key"`, `"$.c"`, or `"c"` which is interpreted as `"$.c"`)
-    /// - An integer for array indexing (e.g., `0` for the first element, or `-1` for the last element on SQLite 3.47+)
-    ///
-    /// Unlike `->`, this operator returns an SQL representation:
-    /// - JSON strings are returned without quotes (e.g., `'{"a":"xyz"}' ->> '$.a'` returns `'xyz'`, not `'"xyz"'`)
-    /// - JSON null becomes SQL NULL
-    /// - Numbers and booleans are returned as text representations
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # include!("../../doctest_setup.rs");
-    /// #
-    /// # table! {
-    /// #    contacts {
-    /// #        id -> Integer,
-    /// #        name -> Text,
-    /// #        address -> Json,
-    /// #    }
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #     #[cfg(feature = "serde_json")]
-    /// #     run_test().unwrap();
-    /// # }
-    /// #
-    /// # #[cfg(feature = "serde_json")]
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::contacts::dsl::*;
-    /// #     use diesel::dsl::sql;
-    /// #     use diesel::sql_types::Json;
-    /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE contacts (
-    /// #         id INTEGER PRIMARY KEY,
-    /// #         name TEXT NOT NULL,
-    /// #         address TEXT NOT NULL
-    /// #     )").execute(conn).unwrap();
-    /// #
-    /// let result = diesel::select(sql::<Json>(r#"json('{"a": {"b": "test"}}')"#)
-    ///     .retrieve_as_text("$.a.b"))
-    ///     .get_result::<String>(conn)?;
-    /// assert_eq!("test", result);
-    ///
-    /// let result = diesel::select(sql::<Json>(r#"json('{"a": [1, 2, 3]}')"#)
-    ///     .retrieve_as_text("$.a[0]"))
-    ///     .get_result::<String>(conn)?;
-    /// assert_eq!("1", result);
-    ///
-    /// #     Ok(())
-    /// # }
-    /// ```
-    fn retrieve_as_text<T>(
-        self,
-        other: T,
-    ) -> crate::sqlite::expression::helper_types::RetrieveAsTextJson<
-        Self,
-        T::Expression,
-        <T::Expression as Expression>::SqlType,
-    >
-    where
-        T: JsonIndex,
-        <T::Expression as Expression>::SqlType: SqlType,
-    {
-        Grouped(RetrieveAsTextJson::new(
+        Grouped(RetrieveAsObjectSqlite::new(
             self,
             other.into_json_index_expression(),
         ))
@@ -257,11 +177,9 @@ where
 }
 
 pub(in crate::sqlite) mod private {
-    use crate::expression::{Expression, IntoSql};
     use crate::sql_types::{
-        BigInt, Binary, Bool, Date, Double, Float, Integer, Json, Jsonb, MaybeNullableType,
-        Nullable, Numeric, SingleValue, SmallInt, SqlType, Text, Time, Timestamp,
-        TimestamptzSqlite,
+        BigInt, Binary, Bool, Date, Double, Float, Integer, Json, MaybeNullableType, Nullable,
+        Numeric, SingleValue, SmallInt, SqlType, Text, Time, Timestamp, TimestamptzSqlite,
     };
 
     #[diagnostic::on_unimplemented(
@@ -294,16 +212,6 @@ pub(in crate::sqlite) mod private {
     impl TextOrNullableTextOrBinaryOrNullableBinary for Nullable<Binary> {}
 
     #[diagnostic::on_unimplemented(
-        message = "`{Self}` is neither `diesel::sql_types::Json`, `diesel::sql_types::Jsonb`, `diesel::sql_types::Nullable<Json>` nor `diesel::sql_types::Nullable<Jsonb>`",
-        note = "try to provide an expression that produces one of the expected sql types"
-    )]
-    pub trait JsonOrNullableJsonOrJsonbOrNullableJsonb {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Json {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Json> {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Jsonb {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Jsonb> {}
-
-    #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Json` nor `diesel::sql_types::Nullable<Json>`",
         note = "try to provide an expression that produces one of the expected sql types"
     )]
@@ -326,7 +234,7 @@ pub(in crate::sqlite) mod private {
 
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither any of `diesel::sql_types::{{
-            Text, Float, Double, Numeric,  Bool, Integer, SmallInt, BigInt, 
+            Text, Float, Double, Numeric,  Bool, Integer, SmallInt, BigInt,
             Date, Time, Timestamp, TimestamptzSqlite, Json
          }}`  nor `diesel::sql_types::Nullable<Any of the above>`",
         note = "try to provide an expression that produces one of the expected sql types"
@@ -347,57 +255,4 @@ pub(in crate::sqlite) mod private {
     impl NotBlob for Timestamp {}
     impl NotBlob for TimestamptzSqlite {}
     impl NotBlob for Json {}
-
-    #[diagnostic::on_unimplemented(
-        message = "`{Self}` is neither `diesel::sql_types::Text` nor `diesel::sql_types::Integer`",
-        note = "try to provide an expression that produces one of the expected sql types"
-    )]
-    pub trait TextOrInteger {}
-    impl TextOrInteger for Text {}
-    impl TextOrInteger for Integer {}
-
-    /// A trait that describes valid json indices used by SQLite
-    pub trait JsonIndex {
-        /// The Expression node created by this index type
-        type Expression: Expression;
-
-        /// Convert a index value into the corresponding index expression
-        fn into_json_index_expression(self) -> Self::Expression;
-    }
-
-    impl<'a> JsonIndex for &'a str {
-        type Expression = crate::dsl::AsExprOf<&'a str, Text>;
-
-        fn into_json_index_expression(self) -> Self::Expression {
-            self.into_sql::<Text>()
-        }
-    }
-
-    impl JsonIndex for String {
-        type Expression = crate::dsl::AsExprOf<String, Text>;
-
-        fn into_json_index_expression(self) -> Self::Expression {
-            self.into_sql::<Text>()
-        }
-    }
-
-    impl JsonIndex for i32 {
-        type Expression = crate::dsl::AsExprOf<i32, Integer>;
-
-        fn into_json_index_expression(self) -> Self::Expression {
-            self.into_sql::<Integer>()
-        }
-    }
-
-    impl<T> JsonIndex for T
-    where
-        T: Expression,
-        T::SqlType: TextOrInteger,
-    {
-        type Expression = Self;
-
-        fn into_json_index_expression(self) -> Self::Expression {
-            self
-        }
-    }
 }

@@ -2,10 +2,10 @@
 #[cfg(doc)]
 use crate::expression::functions::aggregate_expressions::AggregateExpressionMethods;
 use crate::expression::functions::declare_sql_function;
+use crate::expression_methods::json_expression_methods::private::JsonOrNullableJsonOrJsonbOrNullableJsonb;
 use crate::sql_types::*;
 use crate::sqlite::expression::expression_methods::BinaryOrNullableBinary;
 use crate::sqlite::expression::expression_methods::JsonOrNullableJson;
-use crate::sqlite::expression::expression_methods::JsonOrNullableJsonOrJsonbOrNullableJsonb;
 use crate::sqlite::expression::expression_methods::MaybeNullableValue;
 use crate::sqlite::expression::expression_methods::NotBlob;
 use crate::sqlite::expression::expression_methods::TextOrNullableText;

@@ -1,7 +1,8 @@
 use crate::dsl::{AsExpr, AsExprOf, SqlTypeOf};
 use crate::expression::grouped::Grouped;
 use crate::expression::Expression;
-use crate::pg::expression::expression_methods::private::{JsonIndex, JsonRemoveIndex};
+use crate::expression_methods::JsonIndex;
+use crate::pg::expression::expression_methods::private::JsonRemoveIndex;
 use crate::pg::types::sql_types::Array;
 use crate::sql_types::{Inet, Integer, VarChar};
 
@@ -276,29 +277,25 @@ pub type Remove<Lhs, Rhs> = RemoveFromJsonb<
     <<Rhs as JsonRemoveIndex>::Expression as Expression>::SqlType,
 >;
 
+#[doc(hidden)] // deprecated
+pub type RetrieveAsObjectJson<Lhs, Rhs, ST> =
+    Grouped<crate::pg::expression::operators::RetrieveAsObjectJson<Lhs, AsExprOf<Rhs, ST>>>;
+
 /// The return type of [`lhs.retrieve_as_object(rhs)`](super::expression_methods::PgAnyJsonExpressionMethods::retrieve_as_object)
 #[cfg(feature = "postgres_backend")]
-pub type RetrieveAsObjectJson<Lhs, Rhs, ST> =
-    Grouped<crate::expression::operators::RetrieveAsObjectJson<Lhs, AsExprOf<Rhs, ST>>>;
-
-#[doc(hidden)] // needed for `#[auto_type]`
-pub type RetrieveAsObject<Lhs, Rhs> = RetrieveAsObjectJson<
-    Lhs,
-    <Rhs as JsonIndex>::Expression,
-    <<Rhs as JsonIndex>::Expression as Expression>::SqlType,
+pub type RetrieveAsObject<Lhs, Rhs> = Grouped<
+    crate::pg::expression::operators::RetrieveAsObjectJson<
+        Lhs,
+        AsExprOf<
+            <Rhs as JsonIndex>::Expression,
+            <<Rhs as JsonIndex>::Expression as Expression>::SqlType,
+        >,
+    >,
 >;
 
-/// The return type of [`lhs.retrieve_as_text(rhs)`](super::expression_methods::PgAnyJsonExpressionMethods::retrieve_as_text)
-#[cfg(feature = "postgres_backend")]
+#[doc(hidden)] // deprecated
 pub type RetrieveAsTextJson<Lhs, Rhs, ST> =
     Grouped<crate::expression::operators::RetrieveAsTextJson<Lhs, AsExprOf<Rhs, ST>>>;
-
-#[doc(hidden)] // needed for `#[auto_type]`
-pub type RetrieveAsText<Lhs, Rhs> = RetrieveAsTextJson<
-    Lhs,
-    <Rhs as JsonIndex>::Expression,
-    <<Rhs as JsonIndex>::Expression as Expression>::SqlType,
->;
 
 /// The return type of [`lhs.retrieve_by_path_as_object(rhs)`](super::expression_methods::PgAnyJsonExpressionMethods::retrieve_by_path_as_object)
 #[cfg(feature = "postgres_backend")]

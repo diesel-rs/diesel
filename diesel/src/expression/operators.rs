@@ -620,12 +620,6 @@ infix_operator!(NotLike, " NOT LIKE ");
 infix_operator!(Between, " BETWEEN ");
 infix_operator!(NotBetween, " NOT BETWEEN ");
 
-// JSON operators (PostgreSQL and SQLite)
-__diesel_infix_operator!(
-    RetrieveAsObjectJson,
-    " -> ",
-    __diesel_internal_SameResultAsInput
-);
 infix_operator!(RetrieveAsTextJson, " ->> ", crate::sql_types::Text);
 
 postfix_operator!(IsNull, " IS NULL");
