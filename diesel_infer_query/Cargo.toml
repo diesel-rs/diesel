@@ -1,0 +1,19 @@
+[package]
+name = "diesel_infer_query"
+version = "0.1.0"
+rust-version.workspace = true
+include.workspace = true
+edition = "2024"
+license = "MPL-2.0"
+autotests = false
+
+[dependencies]
+sqlparser = { version = "0.59.0", features = ["visitor"] }
+thiserror = "2"
+
+[dev-dependencies]
+insta = "1.43"
+
+[[test]]
+path = "tests/lib.rs"
+name = "integration_tests"
