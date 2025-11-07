@@ -928,3 +928,76 @@ fn skip_update() {
     assert_eq!(res.2, Some("green".into()));
     assert_eq!(res.3, Some("admin".into()));
 }
+
+#[test]
+fn optional_embedded_struct() {
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    struct UserAttributes<'a> {
+        hair_color: &'a str,
+        r#type: &'a str,
+    }
+
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    struct UserForm<'a> {
+        name: &'a str,
+        #[diesel(embed)]
+        attribute: Option<UserAttributes<'a>>,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    update(users::table.find(1))
+        .set(&UserForm {
+            name: "Jim",
+            attribute: Some(UserAttributes {
+                hair_color: "blue",
+                r#type: "super",
+            }),
+        })
+        .execute(connection)
+        .unwrap();
+
+    let expected = vec![
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
+    ];
+    let actual = users::table.order(users::id).load(connection);
+    assert_eq!(Ok(expected), actual);
+
+    update(users::table.find(2))
+        .set(&UserForm {
+            name: "Tess",
+            attribute: None,
+        })
+        .execute(connection)
+        .unwrap();
+
+    let expected = vec![
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("brown")),
+            Some(String::from("admin")),
+        ),
+    ];
+    let actual = users::table.order(users::id).load(connection);
+    assert_eq!(Ok(expected), actual);
+}
