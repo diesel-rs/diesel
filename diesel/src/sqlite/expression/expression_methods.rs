@@ -1,13 +1,15 @@
 //! Sqlite specific expression methods.
 
 pub(in crate::sqlite) use self::private::{
-    BinaryOrNullableBinary, JsonOrNullableJson, JsonOrNullableJsonOrJsonbOrNullableJsonb,
-    MaybeNullableValue, NotBlob, TextOrNullableText, TextOrNullableTextOrBinaryOrNullableBinary,
+    BinaryOrNullableBinary, JsonOrNullableJson, MaybeNullableValue, NotBlob, TextOrNullableText,
+    TextOrNullableTextOrBinaryOrNullableBinary,
 };
 use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::{AsExpression, Expression};
+use crate::expression_methods::json_expression_methods::private::JsonOrNullableJsonOrJsonbOrNullableJsonb;
+use crate::expression_methods::json_expression_methods::{AnyJsonExpressionMethods, JsonIndex};
 use crate::sql_types::SqlType;
 
 /// Sqlite specific methods which are present on all expressions.
@@ -87,11 +89,97 @@ pub trait SqliteExpressionMethods: Expression + Sized {
 
 impl<T: Expression> SqliteExpressionMethods for T {}
 
+/// SQLite specific methods present on JSON and JSONB expressions.
+#[cfg(feature = "sqlite")]
+pub trait SqliteAnyJsonExpressionMethods: AnyJsonExpressionMethods + Expression + Sized {
+    /// Creates a SQLite `->` expression.
+    ///
+    /// This operator extracts the value associated with the given path or key from a JSON value.
+    /// The right-hand side can be:
+    /// - A string path expression (e.g., `"$.key"`, `"$.c"`, or `"c"` which is interpreted as `"$.c"`)
+    /// - An integer for array indexing (e.g., `0` for the first element, or `-1` for the last element on SQLite 3.47+)
+    ///
+    /// **Always returns a TEXT JSON representation** (SQL type `Json`), even when the input is JSONB.
+    /// To get JSONB output, use `jsonb_extract()` function instead.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #    contacts {
+    /// #        id -> Integer,
+    /// #        name -> Text,
+    /// #        address -> Json,
+    /// #    }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::contacts::dsl::*;
+    /// #     use diesel::dsl::sql;
+    /// #     use diesel::sql_types::Json;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
+    /// #         id INTEGER PRIMARY KEY,
+    /// #         name TEXT NOT NULL,
+    /// #         address TEXT NOT NULL
+    /// #     )").execute(conn).unwrap();
+    /// #
+    /// let json_value = serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "postcode": "99705",
+    ///     "state": "Alaska"
+    /// });
+    ///
+    /// let result = diesel::select(sql::<Json>(r#"json('{"a": {"b": [1, 2, 3]}}')"#)
+    ///     .retrieve_as_object_sqlite("$.a.b[0]"))
+    ///     .get_result::<serde_json::Value>(conn)?;
+    /// assert_eq!(serde_json::json!(1), result);
+    ///
+    /// let result = diesel::select(sql::<Jsonb>(r#"json('{"a": [1, 2, 3]}')"#)
+    ///     .retrieve_as_object_sqlite("$.a[1]"))
+    ///     .get_result::<serde_json::Value>(conn)?;
+    /// assert_eq!(serde_json::json!(2), result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn retrieve_as_object_sqlite<T>(
+        self,
+        other: T,
+    ) -> crate::sqlite::expression::helper_types::RetrieveAsObjectSqlite<Self, T>
+    where
+        T: JsonIndex,
+        <T::Expression as Expression>::SqlType: SqlType,
+    {
+        Grouped(RetrieveAsObjectSqlite::new(
+            self,
+            other.into_json_index_expression(),
+        ))
+    }
+}
+
+#[doc(hidden)]
+impl<T> SqliteAnyJsonExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: JsonOrNullableJsonOrJsonbOrNullableJsonb,
+{
+}
+
 pub(in crate::sqlite) mod private {
     use crate::sql_types::{
-        BigInt, Binary, Bool, Date, Double, Float, Integer, Json, Jsonb, MaybeNullableType,
-        Nullable, Numeric, SingleValue, SmallInt, SqlType, Text, Time, Timestamp,
-        TimestamptzSqlite,
+        BigInt, Binary, Bool, Date, Double, Float, Integer, Json, MaybeNullableType, Nullable,
+        Numeric, SingleValue, SmallInt, SqlType, Text, Time, Timestamp, TimestamptzSqlite,
     };
 
     #[diagnostic::on_unimplemented(
@@ -124,16 +212,6 @@ pub(in crate::sqlite) mod private {
     impl TextOrNullableTextOrBinaryOrNullableBinary for Nullable<Binary> {}
 
     #[diagnostic::on_unimplemented(
-        message = "`{Self}` is neither `diesel::sql_types::Json`, `diesel::sql_types::Jsonb`, `diesel::sql_types::Nullable<Json>` nor `diesel::sql_types::Nullable<Jsonb>`",
-        note = "try to provide an expression that produces one of the expected sql types"
-    )]
-    pub trait JsonOrNullableJsonOrJsonbOrNullableJsonb {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Json {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Json> {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Jsonb {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Jsonb> {}
-
-    #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Json` nor `diesel::sql_types::Nullable<Json>`",
         note = "try to provide an expression that produces one of the expected sql types"
     )]
@@ -156,7 +234,7 @@ pub(in crate::sqlite) mod private {
 
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither any of `diesel::sql_types::{{
-            Text, Float, Double, Numeric,  Bool, Integer, SmallInt, BigInt, 
+            Text, Float, Double, Numeric,  Bool, Integer, SmallInt, BigInt,
             Date, Time, Timestamp, TimestamptzSqlite, Json
          }}`  nor `diesel::sql_types::Nullable<Any of the above>`",
         note = "try to provide an expression that produces one of the expected sql types"
