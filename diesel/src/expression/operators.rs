@@ -70,11 +70,13 @@ macro_rules! __diesel_operator_body {
             $crate::expression::ValidGrouping
         )]
         #[doc(hidden)]
+        #[allow(unreachable_pub)]
         pub struct $name<$($ty_param,)+> {
             $(pub(crate) $field_name: $ty_param,)+
         }
 
         impl<$($ty_param,)+> $name<$($ty_param,)+> {
+            #[allow(dead_code)]
             pub(crate) fn new($($field_name: $ty_param,)+) -> Self {
                 $name { $($field_name,)+ }
             }
@@ -270,6 +272,15 @@ macro_rules! __diesel_infix_operator {
             name = $name,
             operator = $operator,
             return_ty = ($($return_ty)::*),
+            backend_ty_params = (DB,),
+            backend_ty = DB,
+        );
+    };
+    ($name:ident, $operator:expr, __diesel_internal_SameResultAsInput) => {
+        $crate::__diesel_infix_operator!(
+            name = $name,
+            operator = $operator,
+            return_ty = (<T as $crate::expression::Expression>::SqlType),
             backend_ty_params = (DB,),
             backend_ty = DB,
         );
@@ -608,6 +619,8 @@ infix_operator!(NotEq, " != ");
 infix_operator!(NotLike, " NOT LIKE ");
 infix_operator!(Between, " BETWEEN ");
 infix_operator!(NotBetween, " NOT BETWEEN ");
+
+infix_operator!(RetrieveAsTextJson, " ->> ", crate::sql_types::Text);
 
 postfix_operator!(IsNull, " IS NULL");
 postfix_operator!(IsNotNull, " IS NOT NULL");

@@ -6,7 +6,7 @@ use std::str::FromStr;
 use super::data_structures::ColumnDefinition;
 use super::inference;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TableName {
     pub sql_name: String,
     pub rust_name: String,

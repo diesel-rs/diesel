@@ -38,6 +38,18 @@ impl<T: AsChangeset> AsChangeset for Option<T> {
     }
 }
 
+impl<'update, T> AsChangeset for &'update Option<T>
+where
+    &'update T: AsChangeset,
+{
+    type Target = <&'update T as AsChangeset>::Target;
+    type Changeset = Option<<&'update T as AsChangeset>::Changeset>;
+
+    fn as_changeset(self) -> Self::Changeset {
+        self.as_ref().map(AsChangeset::as_changeset)
+    }
+}
+
 impl<Left, Right> AsChangeset for Eq<Left, Right>
 where
     Left: AssignmentTarget,

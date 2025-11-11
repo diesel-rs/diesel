@@ -371,6 +371,13 @@ fn test_pg_any_json_expression_methods() -> _ {
         .and(pg_extras::name.is_not_json_scalar())
 }
 
+#[cfg(feature = "sqlite")]
+#[auto_type]
+fn test_sqlite_any_json_expression_methods() -> _ {
+    let s: &'static str = "";
+    sqlite_extras::json.retrieve_as_object_sqlite(s)
+}
+
 #[cfg(feature = "postgres")]
 #[auto_type]
 fn test_pg_timestamp_expression_methods() -> _ {
@@ -501,6 +508,10 @@ fn postgres_functions() -> _ {
         json_build_array_2(pg_extras::name, pg_extras::id),
         jsonb_build_array_1(pg_extras::jsonb),
         jsonb_build_array_2(pg_extras::text_array, pg_extras::jsonb),
+        json_extract_path_1(pg_extras::json, pg_extras::name),
+        json_extract_path_2(pg_extras::json, pg_extras::name, pg_extras::name),
+        jsonb_extract_path_1(pg_extras::jsonb, pg_extras::name),
+        jsonb_extract_path_2(pg_extras::jsonb, pg_extras::name, pg_extras::name),
     )
 }
 
