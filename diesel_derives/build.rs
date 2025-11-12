@@ -115,6 +115,7 @@ fn main() {
 
     let mapping = [
         ("as_changeset", "diesel_derives__tests__as_changeset_1.snap"),
+        ("as_changeset_treat_none_as_null", "diesel_derives__tests__as_changeset_treat_none_as_null_1.snap"),
         (
             "as_expression",
             "diesel_derives__tests__as_expression_1.snap",
