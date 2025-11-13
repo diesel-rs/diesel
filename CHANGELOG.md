@@ -12,6 +12,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.3.4] 2025-11-xx
+
+* Fixed an issue with breaking changes in libmariadb
+* Fixed documentation links for helper types
+* Fixing using `#[diesel(embed)]` with options
+
 ## [2.3.3] 2025-10-24
 
 ### Fixed 
@@ -2291,4 +2297,5 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.2.12]: https://github.com/diesel-rs/diesel/compare/v2.2.11...v2.2.12
 [2.3.0]: https://github.com/diesel-rs/diesel/compare/v2.2.0...v2.3.0
 [2.3.2]: https://github.com/diesel-rs/diesel/compare/v2.3.0...v2.3.2
-[2.3.3]: https://github.com/diesel-rs/diesel/compare/v2.3.3...v2.3.3
+[2.3.3]: https://github.com/diesel-rs/diesel/compare/v2.3.2...v2.3.3
+[2.3.4]: https://github.com/diesel-rs/diesel/compare/v2.3.3...v2.3.4
