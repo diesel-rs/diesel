@@ -95,12 +95,12 @@ fn format_multiple(snapshot_dir: &std::path::Path, block: &[Example]) -> String 
     }
     doc
 }
-
+#[cfg(diesel_docsrs)]
 struct Example {
     snapshot: &'static str,
     heading: &'static str,
 }
-
+#[cfg(diesel_docsrs)]
 impl Example {
     const fn new(snapshot: &'static str) -> Self {
         Self {
@@ -136,7 +136,15 @@ fn main() {
                 ),
                 Example::with_heading(
                     "diesel_derives__tests__as_changeset_treat_none_as_null_1.snap",
-                    "With `#[diesel(treat_none_as_null = false)]`",
+                    "With `#[diesel(treat_none_as_null = true)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__as_changeset_primary_key_1.snap",
+                    "With `#[diesel(primary_key(id, short_code))]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__as_changeset_table_name_1.snap",
+                    "With `#[diesel(table_name = crate::schema::users)]`",
                 ),
             ],
         ),
