@@ -225,6 +225,30 @@ where
     }
 }
 
+#[cfg(feature = "tracing")]
+#[derive(Clone, Copy)]
+pub struct TracingOutput(TracingOutputLevel);
+
+#[cfg(feature = "tracing")]
+#[derive(Clone, Copy)]
+enum TracingOutputLevel {
+    Info,
+    Debug,
+    Trace,
+}
+
+#[cfg(feature = "tracing")]
+impl TracingOutput {
+    fn write(self, line: String) {
+        // https://github.com/tokio-rs/tracing/issues/2730
+        match self.0 {
+            TracingOutputLevel::Info => tracing::info!("{line}"),
+            TracingOutputLevel::Debug => tracing::debug!("{line}"),
+            TracingOutputLevel::Trace => tracing::trace!("{line}"),
+        }
+    }
+}
+
 /// A migration harness that writes messages
 /// into some output for each applied/reverted migration
 pub struct HarnessWithOutput<'a, C, W> {
@@ -261,6 +285,43 @@ impl<'a, C> HarnessWithOutput<'a, C, std::io::Stdout> {
     }
 }
 
+#[cfg(feature = "tracing")]
+impl<'a, C> HarnessWithOutput<'a, C, TracingOutput> {
+    fn write_to_tracing(harness: &'a mut C, level: TracingOutputLevel) -> Self {
+        Self {
+            connection: harness,
+            output: RefCell::new(TracingOutput(level)),
+        }
+    }
+
+    /// Create a new `HarnessWithOutput` that writes to [`tracing::info`]
+    pub fn write_to_tracing_info<DB>(harness: &'a mut C) -> Self
+    where
+        C: MigrationHarness<DB>,
+        DB: Backend,
+    {
+        Self::write_to_tracing(harness, TracingOutputLevel::Info)
+    }
+
+    /// Create a new `HarnessWithOutput` that writes to [`tracing::debug`]
+    pub fn write_to_tracing_debug<DB>(harness: &'a mut C) -> Self
+    where
+        C: MigrationHarness<DB>,
+        DB: Backend,
+    {
+        Self::write_to_tracing(harness, TracingOutputLevel::Debug)
+    }
+
+    /// Create a new `HarnessWithOutput` that writes to [`tracing::trace`]
+    pub fn write_to_tracing_trace<DB>(harness: &'a mut C) -> Self
+    where
+        C: MigrationHarness<DB>,
+        DB: Backend,
+    {
+        Self::write_to_tracing(harness, TracingOutputLevel::Trace)
+    }
+}
+
 impl<C, W, DB> MigrationHarness<DB> for HarnessWithOutput<'_, C, W>
 where
     W: Write,
@@ -271,9 +332,9 @@ where
         &mut self,
         migration: &dyn Migration<DB>,
     ) -> Result<MigrationVersion<'static>> {
-        if migration.name().version() != MigrationVersion::from("00000000000000") {
+        if migration_is_included_in_output(migration) {
             let mut output = self.output.try_borrow_mut()?;
-            writeln!(output, "Running migration {}", migration.name())?;
+            writeln!(output, "{}", message_before_run_migration(migration))?;
         }
         self.connection.run_migration(migration)
     }
@@ -282,9 +343,9 @@ where
         &mut self,
         migration: &dyn Migration<DB>,
     ) -> Result<MigrationVersion<'static>> {
-        if migration.name().version() != MigrationVersion::from("00000000000000") {
+        if migration_is_included_in_output(migration) {
             let mut output = self.output.try_borrow_mut()?;
-            writeln!(output, "Rolling back migration {}", migration.name())?;
+            writeln!(output, "{}", message_before_revert_migration(migration))?;
         }
         self.connection.revert_migration(migration)
     }
@@ -292,6 +353,51 @@ where
     fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>> {
         self.connection.applied_migrations()
     }
+}
+
+#[cfg(feature = "tracing")]
+impl<C, DB> MigrationHarness<DB> for HarnessWithOutput<'_, C, TracingOutput>
+where
+    C: MigrationHarness<DB>,
+    DB: Backend,
+{
+    fn run_migration(
+        &mut self,
+        migration: &dyn Migration<DB>,
+    ) -> Result<MigrationVersion<'static>> {
+        if migration_is_included_in_output(migration) {
+            let output = self.output.try_borrow()?;
+            output.write(message_before_run_migration(migration));
+        }
+        self.connection.run_migration(migration)
+    }
+
+    fn revert_migration(
+        &mut self,
+        migration: &dyn Migration<DB>,
+    ) -> Result<MigrationVersion<'static>> {
+        if migration_is_included_in_output(migration) {
+            let output = self.output.try_borrow()?;
+            output.write(message_before_revert_migration(migration));
+        }
+        self.connection.revert_migration(migration)
+    }
+
+    fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>> {
+        self.connection.applied_migrations()
+    }
+}
+
+fn migration_is_included_in_output<DB: Backend>(migration: &dyn Migration<DB>) -> bool {
+    migration.name().version() != MigrationVersion::from("00000000000000")
+}
+
+fn message_before_run_migration<DB: Backend>(migration: &dyn Migration<DB>) -> String {
+    format!("Running migration {}", migration.name())
+}
+
+fn message_before_revert_migration<DB: Backend>(migration: &dyn Migration<DB>) -> String {
+    format!("Rolling back migration {}", migration.name())
 }
 
 fn setup_database<Conn: MigrationConnection>(conn: &mut Conn) -> QueryResult<usize> {
