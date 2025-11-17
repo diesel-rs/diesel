@@ -41,8 +41,9 @@ pub(super) use self::result::PgResult;
 /// * [`PgRowByRowLoadingMode`]
 ///
 /// If you are unsure which loading mode is the correct one for your application,
-/// you likely want to use the `DefaultLoadingMode` as that one offers
-/// generally better performance.
+/// you likely want to use the `DefaultLoadingMode` as it's simpler and more intuitive.
+/// However, if you plan to process each row on its own, you should use the `PgRowByRowLoadingMode` and
+/// you can also expect a performance boost.
 ///
 /// Due to the fact that `PgConnection` supports multiple loading modes
 /// it is **required** to always specify the used loading mode
@@ -52,7 +53,6 @@ pub(super) use self::result::PgResult;
 ///
 /// By using this mode `PgConnection` defaults to loading all response values at **once**
 /// and only performs deserialization afterward for the `DefaultLoadingMode`.
-/// Generally this mode will be more performant as it.
 ///
 /// This loading mode allows users to perform hold more than one iterator at once using
 /// the same connection:
