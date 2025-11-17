@@ -11,6 +11,7 @@ LL | |         .with_format(CopyFormat::Csv)
    = note: the method was found for
            - `CopyFromQuery<T, pg::query_builder::copy::copy_from::CopyFrom<C, F>>`
 
+   
 error[E0599]: the method `load` exists for struct `CopyToQuery<users::table, pg::query_builder::copy::copy_to::CopyToOptions>`, but its trait bounds were not satisfied
    --> tests/fail/copy_can_only_use_options_with_raw_variant.rs:56:10
     |

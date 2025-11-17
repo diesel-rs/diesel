@@ -98,7 +98,7 @@ note: required for `posts::columns::id` to implement `ValidGrouping<(users::colu
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 1 redundant requirement hidden
     = note: required for `((users::columns::id, users::columns::name, users::columns::hair_color), posts::columns::id)` to implement `ValidGrouping<(users::columns::id, posts::columns::title)>`
-    = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), posts::columns::id)>`
+    = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((id, name, hair_color), id)>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -106,8 +106,13 @@ error[E0277]: the trait bound `users::columns::id: IsContainedInGroupBy<comments
    --> tests/fail/select_requires_valid_grouping.rs:107:10
     |
 LL |         .select((users::all_columns, posts::all_columns, comments::id));
-    |          ^^^^^^ the trait `IsContainedInGroupBy<comments::columns::id>` is not implemented for `users::columns::id`
+    |          ^^^^^^ unsatisfied trait bound
     |
+help: the trait `IsContainedInGroupBy<comments::columns::id>` is not implemented for `users::columns::id`
+   --> tests/fail/select_requires_valid_grouping.rs:7:9
+    |
+  LL |         id -> Integer,
+    |         ^^
     = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
     = help: the following other types implement trait `IsContainedInGroupBy<T>`:
               `users::columns::id` implements `IsContainedInGroupBy<posts::columns::id>`
@@ -124,7 +129,7 @@ note: required for `comments::columns::id` to implement `ValidGrouping<(users::c
     |         ^^
     = note: 2 redundant requirements hidden
     = note: required for `((id, name, hair_color), (id, title, user_id), id)` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
-    = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), (posts::columns::id, posts::columns::title, posts::columns::user_id), comments::columns::id)>`
+    = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((id, name, hair_color), (id, title, user_id), id)>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -132,8 +137,13 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<comments
    --> tests/fail/select_requires_valid_grouping.rs:107:10
     |
 LL |         .select((users::all_columns, posts::all_columns, comments::id));
-    |          ^^^^^^ the trait `IsContainedInGroupBy<comments::columns::id>` is not implemented for `posts::columns::id`
+    |          ^^^^^^ unsatisfied trait bound
     |
+help: the trait `IsContainedInGroupBy<comments::columns::id>` is not implemented for `posts::columns::id`
+   --> tests/fail/select_requires_valid_grouping.rs:15:9
+    |
+ LL |         id -> Integer,
+    |         ^^
     = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
     = help: the following other types implement trait `IsContainedInGroupBy<T>`:
               `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::id>`
@@ -152,6 +162,6 @@ note: required for `comments::columns::id` to implement `ValidGrouping<(users::c
     |         ^^
     = note: 2 redundant requirements hidden
     = note: required for `((id, name, hair_color), (id, title, user_id), id)` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
-    = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), (posts::columns::id, posts::columns::title, posts::columns::user_id), comments::columns::id)>`
+    = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((id, name, hair_color), (id, title, user_id), id)>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

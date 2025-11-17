@@ -267,7 +267,7 @@
     clippy::cast_sign_loss
 )]
 #![deny(unsafe_code)]
-#![cfg_attr(test, allow(clippy::map_unwrap_or, clippy::unwrap_used))]
+#![cfg_attr(test, allow(clippy::unwrap_used))]
 
 // Running wasm tests on dedicated_worker
 #[cfg(test)]

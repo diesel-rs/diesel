@@ -2,8 +2,13 @@ error[E0277]: cannot select `posts::columns::id` from `users::table`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
    |
 LL |     let stuff = users::table.select((posts::id, posts::user_id));
-   |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   |                              ^^^^^^ unsatisfied trait bound
    |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:14:9
+   |
+LL |         id -> Integer,
+   |         ^^
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -15,13 +20,19 @@ LL |     let stuff = users::table.select((posts::id, posts::user_id));
              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::user_id` from `users::table`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
    |
 LL |     let stuff = users::table.select((posts::id, posts::user_id));
-   |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::user_id`
+   |                              ^^^^^^ unsatisfied trait bound
    |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::user_id`
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:16:9
+   |
+LL |         user_id -> Integer,
+   |         ^^^^^^^
    = note: `posts::columns::user_id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              `posts::columns::user_id` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -33,6 +44,7 @@ LL |     let stuff = users::table.select((posts::id, posts::user_id));
              `posts::columns::user_id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
@@ -56,8 +68,13 @@ error[E0277]: cannot select `posts::columns::id` from `users::table`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:27:30
    |
 LL |     let stuff = users::table.select((posts::id, users::name));
-   |                              ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   |                              ^^^^^^ unsatisfied trait bound
    |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:14:9
+   |
+LL |         id -> Integer,
+   |         ^^
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -69,6 +86,7 @@ LL |     let stuff = users::table.select((posts::id, users::name));
              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
    = note: required for `(posts::columns::id, users::columns::name)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, users::columns::name)>`
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:27:30

@@ -11,6 +11,7 @@ fn write_post() {
     let migrations = diesel_migrations::FileBasedMigrations::find_migrations_directory().unwrap();
     conn.run_pending_migrations(migrations).unwrap();
 
+    #[expect(deprecated, reason = "The suggested method doesn't work in this case")]
     let _ = Command::cargo_bin("write_post")
         .unwrap()
         .env("SQLITE_DATABASE_URL", &db_url)
@@ -23,6 +24,8 @@ fn write_post() {
                 + EOF
                 + " when finished)\n\n\nSaved draft Test Title\n",
         );
+
+    #[expect(deprecated, reason = "The suggested method doesn't work in this case")]
     let _ = Command::cargo_bin("show_posts")
         .unwrap()
         .env("SQLITE_DATABASE_URL", &db_url)

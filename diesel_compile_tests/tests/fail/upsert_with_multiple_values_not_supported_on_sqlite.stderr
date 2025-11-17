@@ -34,7 +34,7 @@ error[E0277]: `BatchInsert<Vec<ValuesClause<(...,), ...>>, ..., (), false>` is n
              this SQL syntax
      = help: the following other types implement trait `QueryFragment<DB, SP>`:
                `BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>` implements `QueryFragment<DB>`
-               `BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<V, Tab>>, Tab, QId, HAS_STATIC_QUERY_ID>` implements `QueryFragment<DB, PostgresLikeBatchInsertSupport>`
+               `BatchInsert<Vec<ValuesClause<V, Tab>>, Tab, QId, HAS_STATIC_QUERY_ID>` implements `QueryFragment<DB, PostgresLikeBatchInsertSupport>`
      = note: required for `BatchInsert<Vec<ValuesClause<(...,), ...>>, ..., (), false>` to implement `QueryFragment<Sqlite>`
      = note: 3 redundant requirements hidden
      = note: required for `InsertStatement<table, OnConflictValues<..., ..., ...>>` to implement `QueryFragment<Sqlite>`

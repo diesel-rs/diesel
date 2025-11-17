@@ -12,6 +12,6 @@ note: an implementation of `std::ops::Add` might be missing for `columns::name`
  LL |         name -> VarChar,
    |         ^^^^ must implement `std::ops::Add`
 note: the trait `std::ops::Add` must be implemented
-  --> /rustc/0000000000000000000000000000000000000000/library/core/src/ops/arith.rs:78:1
+  --> /rustc/0000000000000000000000000000000000000000/library/core/src/ops/arith.rs:77:1
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0369`.

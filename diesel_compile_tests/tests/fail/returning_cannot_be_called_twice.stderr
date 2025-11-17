@@ -3,16 +3,22 @@ error[E0599]: no method named `returning` found for struct `DeleteStatement<tabl
    |
 LL |     query.returning(name);
    |           ^^^^^^^^^ private field, not a method
+   |
 
+   
 error[E0599]: no method named `returning` found for struct `InsertStatement<table, ValuesClause<(...,), ...>, ..., ...>` in the current scope
   --> tests/fail/returning_cannot_be_called_twice.rs:28:11
    |
 LL |     query.returning(name);
    |           ^^^^^^^^^ private field, not a method
+   |
 
+   
 error[E0599]: no method named `returning` found for struct `UpdateStatement<table, NoWhereClause, Assign<..., ...>, ...>` in the current scope
   --> tests/fail/returning_cannot_be_called_twice.rs:32:11
    |
 LL |     query.returning(name);
    |           ^^^^^^^^^ private field, not a method
-For more information about this error, try `rustc --explain E0599`.
+   |
+
+   For more information about this error, try `rustc --explain E0599`.

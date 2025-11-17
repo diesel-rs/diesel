@@ -28,7 +28,7 @@ note: required for `comments::columns::id` to implement `AppearsOnTable<query_so
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 2 redundant requirements hidden
      = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
-     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<query_source::joins::Join<posts::table, users::table, Inner>>>`
+     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `ValidWhereClause<FromClause<Join<table, table, Inner>>>`
      = note: required for `SelectStatement<FromClause<table>, SelectClause<id>, ..., ...>` to implement `diesel::expression::subselect::ValidSubselect<users::table>`
      = note: 4 redundant requirements hidden
      = note: required for `WhereClause<Grouped<In<id, Subselect<..., ...>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
@@ -61,7 +61,7 @@ note: required for `comments::columns::id` to implement `AppearsOnTable<query_so
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 2 redundant requirements hidden
      = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
-     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<query_source::joins::Join<posts::table, users::table, Inner>>>`
+     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `ValidWhereClause<FromClause<Join<table, table, Inner>>>`
      = note: required for `SelectStatement<FromClause<table>, SelectClause<id>, ..., ...>` to implement `diesel::expression::subselect::ValidSubselect<users::table>`
      = note: 5 redundant requirements hidden
      = note: required for `WhereClause<Grouped<Eq<id, Any<Subselect<..., ...>>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
@@ -94,7 +94,7 @@ note: required for `comments::columns::id` to implement `AppearsOnTable<query_so
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 2 redundant requirements hidden
      = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
-     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<query_source::joins::Join<posts::table, users::table, Inner>>>`
+     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `ValidWhereClause<FromClause<Join<table, table, Inner>>>`
      = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `diesel::expression::subselect::ValidSubselect<users::table>`
      = note: 3 redundant requirements hidden
      = note: required for `WhereClause<Exists<SelectStatement<FromClause<table>, ..., ..., ...>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`

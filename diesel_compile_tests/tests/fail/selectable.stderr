@@ -54,7 +54,7 @@ note: required for `posts::columns::id` to implement `SelectableExpression<query
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 4 redundant requirements hidden
-    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -63,8 +63,13 @@ error[E0277]: cannot select `posts::columns::id` from `users::table`
    --> tests/fail/selectable.rs:165:10
     |
 LL |         .select(UserWithEmbeddedPost::as_select())
-    |          ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+    |          ^^^^^^ unsatisfied trait bound
     |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   --> tests/fail/selectable.rs:14:9
+    |
+ LL |         id -> Integer,
+    |         ^^
     = note: `posts::columns::id` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -80,7 +85,7 @@ note: required for `posts::columns::id` to implement `SelectableExpression<query
  LL |         id -> Integer,
     |         ^^
     = note: 4 redundant requirements hidden
-    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -89,8 +94,13 @@ error[E0277]: cannot select `posts::columns::title` from `users::table`
    --> tests/fail/selectable.rs:165:10
     |
 LL |         .select(UserWithEmbeddedPost::as_select())
-    |          ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+    |          ^^^^^^ unsatisfied trait bound
     |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+   --> tests/fail/selectable.rs:15:9
+    |
+ LL |         title -> Text,
+    |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -106,7 +116,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
  LL |         title -> Text,
     |         ^^^^^
     = note: 4 redundant requirements hidden
-    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
+    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -140,8 +150,8 @@ note: required for `posts::columns::id` to implement `SelectableExpression<query
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 4 redundant requirements hidden
-     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
-     = note: required for `SelectClause<SelectBy<UserWithEmbeddedPost, _>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
+     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
+     = note: required for `SelectClause<SelectBy<UserWithEmbeddedPost, _>>` to implement `SelectClauseExpression<FromClause<JoinOn<Join<table, ..., ...>, ...>>>`
      = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>, ...>` to implement `Query`
      = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>, ...>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `diesel::RunQueryDsl::load`
@@ -159,10 +169,15 @@ error[E0277]: cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:169:15
      |
  LL |         .load(&mut conn)
-     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+     |          ---- ^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
      |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+    --> tests/fail/selectable.rs:14:9
+     |
+  LL |         id -> Integer,
+     |         ^^
      = note: `posts::columns::id` is no valid selection for `users::table`
      = help: the following other types implement trait `SelectableExpression<QS>`:
                `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -178,8 +193,8 @@ note: required for `posts::columns::id` to implement `SelectableExpression<query
   LL |         id -> Integer,
      |         ^^
      = note: 4 redundant requirements hidden
-     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
-     = note: required for `SelectClause<SelectBy<UserWithEmbeddedPost, _>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
+     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
+     = note: required for `SelectClause<SelectBy<UserWithEmbeddedPost, _>>` to implement `SelectClauseExpression<FromClause<JoinOn<Join<table, ..., ...>, ...>>>`
      = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>, ...>` to implement `Query`
      = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>, ...>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `diesel::RunQueryDsl::load`
@@ -197,10 +212,15 @@ error[E0277]: cannot select `posts::columns::title` from `users::table`
     --> tests/fail/selectable.rs:169:15
      |
  LL |         .load(&mut conn)
-     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+     |          ---- ^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
      |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+    --> tests/fail/selectable.rs:15:9
+     |
+  LL |         title -> Text,
+     |         ^^^^^
      = note: `posts::columns::title` is no valid selection for `users::table`
      = help: the following other types implement trait `SelectableExpression<QS>`:
                `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -216,8 +236,8 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
   LL |         title -> Text,
      |         ^^^^^
      = note: 4 redundant requirements hidden
-     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
-     = note: required for `SelectClause<SelectBy<UserWithEmbeddedPost, _>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
+     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
+     = note: required for `SelectClause<SelectBy<UserWithEmbeddedPost, _>>` to implement `SelectClauseExpression<FromClause<JoinOn<Join<table, ..., ...>, ...>>>`
      = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>, ...>` to implement `Query`
      = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>, ...>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `diesel::RunQueryDsl::load`
@@ -235,8 +255,13 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::c
    --> tests/fail/selectable.rs:179:10
     |
 LL |         .select(UserWithEmbeddedPost::as_select())
-    |          ^^^^^^ the trait `IsContainedInGroupBy<users::columns::id>` is not implemented for `posts::columns::id`
+    |          ^^^^^^ unsatisfied trait bound
     |
+help: the trait `IsContainedInGroupBy<users::columns::id>` is not implemented for `posts::columns::id`
+   --> tests/fail/selectable.rs:14:9
+    |
+ LL |         id -> Integer,
+    |         ^^
     = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
     = help: the following other types implement trait `IsContainedInGroupBy<T>`:
               `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::id>`
@@ -257,8 +282,13 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::c
    --> tests/fail/selectable.rs:179:10
     |
 LL |         .select(UserWithEmbeddedPost::as_select())
-    |          ^^^^^^ the trait `IsContainedInGroupBy<users::columns::name>` is not implemented for `posts::columns::id`
+    |          ^^^^^^ unsatisfied trait bound
     |
+help: the trait `IsContainedInGroupBy<users::columns::name>` is not implemented for `posts::columns::id`
+   --> tests/fail/selectable.rs:14:9
+    |
+ LL |         id -> Integer,
+    |         ^^
     = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
     = help: the following other types implement trait `IsContainedInGroupBy<T>`:
               `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::id>`
@@ -297,10 +327,15 @@ error[E0277]: cannot select `posts::columns::id` from `users::table`
    --> tests/fail/selectable.rs:197:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
-    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   --> tests/fail/selectable.rs:14:9
+    |
+ LL |         id -> Integer,
+    |         ^^
     = note: `posts::columns::id` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -323,15 +358,21 @@ LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
    --> tests/fail/selectable.rs:197:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
-    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+   --> tests/fail/selectable.rs:15:9
+    |
+ LL |         title -> Text,
+    |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -354,7 +395,8 @@ LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
    --> tests/fail/selectable.rs:197:20
     |
@@ -390,10 +432,15 @@ error[E0277]: cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:201:15
      |
  LL |         .load(&mut conn)
-     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+     |          ---- ^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
      |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+    --> tests/fail/selectable.rs:14:9
+     |
+  LL |         id -> Integer,
+     |         ^^
      = note: `posts::columns::id` is no valid selection for `users::table`
      = help: the following other types implement trait `SelectableExpression<QS>`:
                `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -417,15 +464,21 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
     --> tests/fail/selectable.rs:201:15
      |
  LL |         .load(&mut conn)
-     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+     |          ---- ^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
      |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+    --> tests/fail/selectable.rs:15:9
+     |
+  LL |         title -> Text,
+     |         ^^^^^
      = note: `posts::columns::title` is no valid selection for `users::table`
      = help: the following other types implement trait `SelectableExpression<QS>`:
                `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -449,7 +502,8 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
     --> tests/fail/selectable.rs:201:15
      |
@@ -486,10 +540,15 @@ error[E0277]: cannot select `posts::columns::id` from `users::table`
    --> tests/fail/selectable.rs:211:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
-    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   --> tests/fail/selectable.rs:14:9
+    |
+ LL |         id -> Integer,
+    |         ^^
     = note: `posts::columns::id` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -512,15 +571,21 @@ LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, Retur
 LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
    --> tests/fail/selectable.rs:211:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
-    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+   --> tests/fail/selectable.rs:15:9
+    |
+ LL |         title -> Text,
+    |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -543,7 +608,8 @@ LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, Retur
 LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
  
-    
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
    --> tests/fail/selectable.rs:211:20
     |
@@ -579,10 +645,15 @@ error[E0277]: cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:215:15
      |
  LL |         .load(&mut conn)
-     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+     |          ---- ^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
      |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+    --> tests/fail/selectable.rs:14:9
+     |
+  LL |         id -> Integer,
+     |         ^^
      = note: `posts::columns::id` is no valid selection for `users::table`
      = help: the following other types implement trait `SelectableExpression<QS>`:
                `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -606,15 +677,21 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
     --> tests/fail/selectable.rs:215:15
      |
  LL |         .load(&mut conn)
-     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+     |          ---- ^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
      |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+    --> tests/fail/selectable.rs:15:9
+     |
+  LL |         title -> Text,
+     |         ^^^^^
      = note: `posts::columns::title` is no valid selection for `users::table`
      = help: the following other types implement trait `SelectableExpression<QS>`:
                `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -638,7 +715,8 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
     --> tests/fail/selectable.rs:215:15
      |
@@ -675,10 +753,15 @@ error[E0277]: cannot select `posts::columns::id` from `users::table`
    --> tests/fail/selectable.rs:224:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
-    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   --> tests/fail/selectable.rs:14:9
+    |
+ LL |         id -> Integer,
+    |         ^^
     = note: `posts::columns::id` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -699,15 +782,21 @@ LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, Returnin
 LL |     where
 LL |         E: SelectableExpression<T>,
     |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::title` from `users::table`
    --> tests/fail/selectable.rs:224:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
-    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+   --> tests/fail/selectable.rs:15:9
+    |
+ LL |         title -> Text,
+    |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -728,6 +817,7 @@ LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, Returnin
 LL |     where
 LL |         E: SelectableExpression<T>,
     |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
    --> tests/fail/selectable.rs:224:20
@@ -762,10 +852,15 @@ error[E0277]: cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:228:15
      |
  LL |         .load(&mut conn)
-     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+     |          ---- ^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
      |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+    --> tests/fail/selectable.rs:14:9
+     |
+  LL |         id -> Integer,
+     |         ^^
      = note: `posts::columns::id` is no valid selection for `users::table`
      = help: the following other types implement trait `SelectableExpression<QS>`:
                `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -789,15 +884,21 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: cannot select `posts::columns::title` from `users::table`
     --> tests/fail/selectable.rs:228:15
      |
  LL |         .load(&mut conn)
-     |          ---- ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+     |          ---- ^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
      |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+    --> tests/fail/selectable.rs:15:9
+     |
+  LL |         title -> Text,
+     |         ^^^^^
      = note: `posts::columns::title` is no valid selection for `users::table`
      = help: the following other types implement trait `SelectableExpression<QS>`:
                `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -821,7 +922,8 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
     --> tests/fail/selectable.rs:228:15
      |

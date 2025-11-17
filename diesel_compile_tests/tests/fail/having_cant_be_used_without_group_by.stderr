@@ -20,9 +20,9 @@ LL |         .having(users::id.gt(1))
              &T
              AliasedField<S, C>
              Box<T>
-             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
-             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
-             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
+             CaseWhen<CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, ElseExpression<E>>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, NoElseExpression>
              CountStar
              Exists<T>
            and N others
@@ -43,7 +43,7 @@ LL |         id -> Integer,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
+   = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `HavingDsl<Grouped<Eq<id, Bound<Integer, i32>>>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -61,6 +61,6 @@ LL |         id -> Integer,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `BoxedSelectStatement<'_, Text, FromClause<table>, _, id>` to implement `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
+   = note: required for `BoxedSelectStatement<'_, Text, FromClause<table>, _, id>` to implement `HavingDsl<Grouped<Eq<id, Bound<Integer, i32>>>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

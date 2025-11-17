@@ -212,9 +212,9 @@ LL |     select(array((1, 3f64)))
              &T
              AliasedField<S, C>
              Box<T>
-             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
-             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
-             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
+             CaseWhen<CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, ElseExpression<E>>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, NoElseExpression>
              CountStar
              Exists<T>
            and N others
@@ -229,6 +229,7 @@ LL | where
 LL |     T: IntoArrayExpression<ST>,
    |        ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `array`
 
+   
 error[E0277]: cannot select `{integer}` from `NoFromClause`
    --> tests/fail/array_expressions_must_be_same_type.rs:26:12
     |
@@ -443,9 +444,9 @@ LL |     select(array((1, 3f64)))
              &T
              AliasedField<S, C>
              Box<T>
-             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
-             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::ElseExpression<E>>
-             CaseWhen<diesel::expression::case_when::non_public_types::CaseWhenConditionsLeaf<W, T>, diesel::expression::case_when::non_public_types::NoElseExpression>
+             CaseWhen<CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, ElseExpression<E>>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, NoElseExpression>
              CountStar
              Exists<T>
            and N others
@@ -460,6 +461,7 @@ LL | where
 LL |     T: IntoArrayExpression<ST>,
    |        ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `array`
 
+   
 error[E0277]: cannot convert `(i32, f64)` into an expression of type `Array<diesel::sql_types::Integer>`
   --> tests/fail/array_expressions_must_be_same_type.rs:15:12
    |

@@ -7,7 +7,7 @@ LL |     let command = update(users.select(id)).set(id.eq(1));
    |                   required by a bound introduced by this call
    |
    = note: only tables or select statements with only the filter clause applied are valid update targets
-   = help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<F>>, diesel::query_builder::distinct_clause::NoDistinctClause, W>`
+   = help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, DefaultSelectClause<...>, ..., ...>`
    = note: required for `SelectStatement<FromClause<table>, SelectClause<id>>` to implement `IntoUpdateTarget`
 note: required by a bound in `diesel::update`
   --> DIESEL/diesel/diesel/src/query_builder/functions.rs
@@ -25,7 +25,7 @@ LL |     let command = update(users.order(id)).set(id.eq(1));
    |                   required by a bound introduced by this call
    |
    = note: only tables or select statements with only the filter clause applied are valid update targets
-   = help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<F>>, diesel::query_builder::distinct_clause::NoDistinctClause, W>`
+   = help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, DefaultSelectClause<...>, ..., ...>`
    = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ...>` to implement `IntoUpdateTarget`
 note: required by a bound in `diesel::update`
   --> DIESEL/diesel/diesel/src/query_builder/functions.rs
@@ -40,7 +40,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<table>, SelectClause<i
 LL |     let command = update(users.select(id)).set(id.eq(1));
    |                   ^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Identifiable` is not implemented for `SelectStatement<FromClause<table>, SelectClause<id>>`
    |
-   = help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<F>>, diesel::query_builder::distinct_clause::NoDistinctClause, W>`
+   = help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, DefaultSelectClause<...>, ..., ...>`
    = note: required for `SelectStatement<FromClause<table>, SelectClause<id>>` to implement `IntoUpdateTarget`
 
    
@@ -50,7 +50,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<table>, ..., ..., ...,
 LL |     let command = update(users.order(id)).set(id.eq(1));
    |                   ^^^^^^^^^^^^^^^^^^^^^^^ the trait `Identifiable` is not implemented for `SelectStatement<FromClause<table>, ..., ..., ..., ...>`
    |
-   = help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<F>>, diesel::query_builder::distinct_clause::NoDistinctClause, W>`
+   = help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, DefaultSelectClause<...>, ..., ...>`
    = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ...>` to implement `IntoUpdateTarget`
 
    For more information about this error, try `rustc --explain E0277`.

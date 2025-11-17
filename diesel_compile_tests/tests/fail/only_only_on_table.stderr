@@ -22,6 +22,7 @@ LL | | )]
            `&mut SelectStatement<FromClause<foo::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>: Table`
            which is required by `&mut SelectStatement<FromClause<foo::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>: diesel::dsl::OnlyDsl`
 
+   
 error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<table>, SelectClause<id>, ..., ...>`, but its trait bounds were not satisfied
   --> tests/fail/only_only_on_table.rs:15:54
    |
@@ -46,6 +47,7 @@ LL | | )]
            `&mut SelectStatement<FromClause<foo::table>, diesel::query_builder::select_clause::SelectClause<columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::expression::bound::Bound<diesel::sql_types::BigInt, i64>>>>>: Table`
            which is required by `&mut SelectStatement<FromClause<foo::table>, diesel::query_builder::select_clause::SelectClause<columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::expression::bound::Bound<diesel::sql_types::BigInt, i64>>>>>: diesel::dsl::OnlyDsl`
 
+   
 error[E0599]: the method `only` exists for struct `columns::id`, but its trait bounds were not satisfied
   --> tests/fail/only_only_on_table.rs:17:31
    |
