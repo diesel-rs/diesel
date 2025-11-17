@@ -216,7 +216,11 @@ help: the trait `TableNotEqual<posts::table>` is not implemented for `users::tab
     |
   LL | / table! {
   LL | |     users {
-    | |_________^
+  LL | |         id -> Integer,
+  LL | |         name -> Text,
+  LL | |     }
+  LL | | }
+    | |_^
     = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
     = help: the following other types implement trait `TableNotEqual<T>`:
@@ -295,7 +299,11 @@ help: the trait `TableNotEqual<posts::table>` is not implemented for `users::tab
     |
   LL | / table! {
   LL | |     users {
-    | |_________^
+  LL | |         id -> Integer,
+  LL | |         name -> Text,
+  LL | |     }
+  LL | | }
+    | |_^
     = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
     = help: the following other types implement trait `TableNotEqual<T>`:
