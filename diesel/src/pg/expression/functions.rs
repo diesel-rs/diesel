@@ -12,6 +12,7 @@ use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
 use crate::pg::expression::expression_methods::RangeOrNullableRange;
 use crate::pg::expression::expression_methods::RecordOrNullableRecord;
 use crate::pg::expression::expression_methods::TextArrayOrNullableTextArray;
+use crate::pg::expression::expression_methods::TextOrNullableText;
 use crate::sql_types::helper::CombinedNullableValue;
 use crate::sql_types::*;
 
@@ -3127,6 +3128,132 @@ extern "SQL" {
         json: J,
         text: T,
     ) -> Nullable<Jsonb>;
+
+    /// Extracts JSON sub-object at the specified path as text. (This is functionally equivalent to the #>> operator.)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{json_extract_path_text_1, json_extract_path_text_2};
+    /// #     use diesel::sql_types::{Json, Nullable, Text};
+    /// #     use serde_json::{json,Value};
+    /// #     use diesel::dsl::sql;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let expected = Some(String::from("{\"f5\":99,\"f6\":\"foo\"}"));
+    /// let result = diesel::select(json_extract_path_text_1::<Json, Text, _, _>(
+    ///     json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}),
+    ///     "f4",
+    /// ))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(expected, result);
+    ///
+    /// let expected = Some(String::from("foo"));
+    /// let result = diesel::select(json_extract_path_text_2::<Json, Text, Text, _, _, _>(
+    ///     json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}),
+    ///     "f4",
+    ///     "f6"
+    /// ))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(expected, result);
+    ///
+    /// let result = diesel::select(json_extract_path_text_1::<Nullable<Json>, Text, _, _>(None::<serde_json::Value>, "f4"))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(None::<String>, result);
+    ///
+    /// let result = diesel::select(json_extract_path_text_2::<Json, Nullable<Text>, Text, _, _, _>(json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}), None::<String>, "f6"))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(None::<String>, result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "json_extract_path_text"]
+    #[variadic(last_arguments = 1, skip_zero_argument_variant = true)]
+    fn json_extract_path_text<
+        J: JsonOrNullableJson + SingleValue,
+        T: SingleValue + TextOrNullableText,
+    >(
+        json: J,
+        text: T,
+    ) -> Nullable<Text>;
+
+    /// Extracts JSON sub-object at the specified path as text. (This is functionally equivalent to the #>> operator.)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{jsonb_extract_path_text_1, jsonb_extract_path_text_2};
+    /// #     use diesel::sql_types::{Jsonb, Nullable, Text};
+    /// #     use serde_json::{json,Value};
+    /// #     use diesel::dsl::sql;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let expected = Some(String::from("{\"f5\": 99, \"f6\": \"foo\"}"));
+    /// let result = diesel::select(jsonb_extract_path_text_1::<Jsonb, Text, _, _>(
+    ///     json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}),
+    ///     "f4",
+    /// ))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(expected, result);
+    ///
+    /// let expected = Some(String::from("foo"));
+    /// let result = diesel::select(jsonb_extract_path_text_2::<Jsonb, Text, Text, _, _, _>(
+    ///     json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}),
+    ///     "f4",
+    ///     "f6"
+    /// ))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(expected, result);
+    ///
+    /// let result = diesel::select(jsonb_extract_path_text_1::<Nullable<Jsonb>, Text, _, _>(None::<serde_json::Value>, "f4"))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(None::<String>, result);
+    ///
+    /// let result = diesel::select(jsonb_extract_path_text_2::<Jsonb, Nullable<Text>, Text, _, _, _>(json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}), None::<String>, "f6"))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(None::<String>, result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_extract_path_text"]
+    #[variadic(last_arguments = 1, skip_zero_argument_variant = true)]
+    fn jsonb_extract_path_text<
+        J: JsonbOrNullableJsonb + SingleValue,
+        T: SingleValue + TextOrNullableText,
+    >(
+        json: J,
+        text: T,
+    ) -> Nullable<Text>;
 }
 
 pub(super) mod return_type_helpers_reexported {
