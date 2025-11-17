@@ -512,6 +512,10 @@ fn postgres_functions() -> _ {
         json_extract_path_2(pg_extras::json, pg_extras::name, pg_extras::name),
         jsonb_extract_path_1(pg_extras::jsonb, pg_extras::name),
         jsonb_extract_path_2(pg_extras::jsonb, pg_extras::name, pg_extras::name),
+        json_extract_path_text_1(pg_extras::json, pg_extras::name),
+        json_extract_path_text_2(pg_extras::json, pg_extras::name, pg_extras::name),
+        jsonb_extract_path_text_1(pg_extras::jsonb, pg_extras::name),
+        jsonb_extract_path_text_2(pg_extras::jsonb, pg_extras::name, pg_extras::name),
     )
 }
 
