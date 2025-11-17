@@ -372,3 +372,18 @@ fn custom_foreign_key() {
         Ok(vec![(sean.clone(), post1), (tess, post2), (sean, post3)])
     );
 }
+
+#[diesel_test_helper::test]
+/// Verify that tuples of columns implement HasTable
+fn tuples_of_columns_implement_has_table() {
+    use diesel::associations::HasTable;
+
+    // Composite tuple case
+    let _users: users::table = <(users::id, users::name)>::table();
+
+    // Triple element tuple case
+    let _users: users::table = <(users::id, users::name, users::hair_color)>::table();
+
+    // Single element tuple case
+    let _users: users::table = <(users::id,)>::table();
+}

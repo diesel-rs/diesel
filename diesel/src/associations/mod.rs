@@ -405,7 +405,7 @@ mod belongs_to;
 
 use std::hash::Hash;
 
-use crate::query_source::Table;
+use crate::query_source::{Column, Table};
 
 pub use self::belongs_to::{BelongsTo, GroupedBy, TryGroupedByError};
 
@@ -431,6 +431,53 @@ impl<T: HasTable> HasTable for &T {
         T::table()
     }
 }
+
+// Implement HasTable for tuples of columns from the same table.
+// This is useful for multi-column constraints like composite foreign keys.
+//
+// For example:
+// ```rust,ignore
+// // Given a table with columns (id, name)
+// type UserTable = <(users::id, users::name) as HasTable>::Table;
+// let table = <(users::id, users::name)>::table();
+// ```
+
+impl<T> HasTable for (T,)
+where
+    T: Column,
+    T::Table: Default,
+{
+    type Table = T::Table;
+
+    fn table() -> Self::Table {
+        Default::default()
+    }
+}
+
+macro_rules! has_table_tuples {
+    ($(
+        $Tuple:tt {
+            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)*
+        }
+    )+) => {
+        $(
+            impl<_T, $($T),*> HasTable for (_T, $($T),*)
+            where
+                _T: Column,
+                $($T: Column<Table = _T::Table>,)*
+                _T::Table: Default,
+            {
+                type Table = _T::Table;
+
+                fn table() -> Self::Table {
+                    _T::Table::default()
+                }
+            }
+        )+
+    };
+}
+
+diesel_derives::__diesel_for_each_tuple!(has_table_tuples);
 
 /// This trait indicates that a struct represents a single row in a database table.
 ///
