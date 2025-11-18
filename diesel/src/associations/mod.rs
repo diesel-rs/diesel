@@ -405,7 +405,7 @@ mod belongs_to;
 
 use std::hash::Hash;
 
-use crate::query_source::{Column, Table};
+use crate::query_source::Table;
 
 pub use self::belongs_to::{BelongsTo, GroupedBy, TryGroupedByError};
 
@@ -432,7 +432,8 @@ impl<T: HasTable> HasTable for &T {
     }
 }
 
-// Implement HasTable for tuples of columns from the same table.
+// Implement HasTable for tuples of types which implement `HasTable` for
+// the same table.
 // This is useful for multi-column constraints like composite foreign keys.
 //
 // For example:
@@ -444,7 +445,7 @@ impl<T: HasTable> HasTable for &T {
 
 impl<T> HasTable for (T,)
 where
-    T: Column,
+    T: HasTable,
     T::Table: Default,
 {
     type Table = T::Table;
@@ -463,8 +464,8 @@ macro_rules! has_table_tuples {
         $(
             impl<_T, $($T),*> HasTable for (_T, $($T),*)
             where
-                _T: Column,
-                $($T: Column<Table = _T::Table>,)*
+                _T: HasTable,
+                $($T: HasTable<Table = _T::Table>,)*
                 _T::Table: Default,
             {
                 type Table = _T::Table;
