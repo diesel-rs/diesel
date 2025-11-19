@@ -146,6 +146,26 @@ fn main() {
                     "diesel_derives__tests__as_changeset_table_name_1.snap",
                     "With `#[diesel(table_name = crate::schema::users)]`",
                 ),
+                Example::with_heading(
+                    "diesel_derives__tests__as_changeset_change_field_to_type_1.snap",
+                    "With `#[serialize_as = String]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__as_changeset_embed_1.snap",
+                    "With `#[diesel(embed)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__as_changeset_column_name_1.snap",
+                    "With `#[diesel(column_name = username)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__as_changeset_treat_none_field_as_null_1.snap",
+                    "With `#[diesel(treat_none_as_null = true)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__as_changeset_treat_skip_update_1.snap",
+                    "With `#[diesel(skip_update)]`",
+                ),
             ],
         ),
         (
