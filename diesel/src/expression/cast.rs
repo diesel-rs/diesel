@@ -125,6 +125,8 @@ type_name! {
         Uuid => "uuid",
         Json => "json",
         Jsonb => "jsonb",
+        Inet => "inet",
+        Cidr => "cidr",
     }
     diesel::mysql::Mysql: "mysql_backend" {
         Int8 => "signed",
@@ -217,7 +219,10 @@ casts_impl!(
     (Jsonb <- Json),
     "mysql_backend": (Text <- Datetime),
     "postgres_backend": (Text <- Uuid),
-
+    "postgres_backend": (Text <- Inet),
+    "postgres_backend": (Text <- Cidr),
+    "postgres_backend": (Inet <- Cidr),
+    "postgres_backend": (Cidr <- Inet),
 );
 
 macro_rules! fallible_casts_impl {
@@ -253,4 +258,6 @@ fallible_casts_impl!(
     (Decimal <- Text),
     "mysql_backend": (Datetime <- Text),
     "postgres_backend": (Uuid <- Text),
+    "postgres_backend": (Inet <- Text),
+    "postgres_backend": (Cidr <- Text),
 );
