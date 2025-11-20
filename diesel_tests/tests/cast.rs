@@ -88,6 +88,42 @@ mod fallible_cast {
     test_fallible_cast!(text_to_uuid, "9d755438-5ad5-42b8-bc6a-a15ace143975" => &str, Text => Uuid, "9d755438-5ad5-42b8-bc6a-a15ace143975".parse().unwrap() => uuid::Uuid);
     #[cfg(feature = "mysql")]
     test_fallible_cast!(text_to_datetime, "2025-09-19 10:21:42" => &str, Text => Datetime, chrono::NaiveDateTime::from_str("2025-09-19T10:21:42").unwrap() => chrono::NaiveDateTime);
+
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_inet_ipnetv4_without_prefix, String::from("1.1.1.1") => String, Text => Inet, "1.1.1.1/32".parse().unwrap() => ipnet::IpNet);
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_inet_ipnetv4, String::from("1.1.1.1/32") => String, Text => Inet, "1.1.1.1/32".parse().unwrap() => ipnet::IpNet);
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_inet_ipnetv6_without_prefix, String::from("1::1") => String, Text => Inet, "1::1/128".parse().unwrap() => ipnet::IpNet);
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_inet_ipnetv6, String::from("1::1/128") => String, Text => Inet, "1::1/128".parse().unwrap() => ipnet::IpNet);
+
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_cidr_ipnetv4_without_prefix, String::from("1.1.1.1") => String, Text => Cidr, "1.1.1.1/32".parse().unwrap() => ipnet::IpNet);
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_cidr_ipnetv4, String::from("1.1.1.1/32") => String, Text => Cidr, "1.1.1.1/32".parse().unwrap() => ipnet::IpNet);
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_cidr_ipnetv6_without_prefix, String::from("1::1") => String, Text => Cidr, "1::1/128".parse().unwrap() => ipnet::IpNet);
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_cidr_ipnetv6, String::from("1::1/128") => String, Text => Cidr, "1::1/128".parse().unwrap() => ipnet::IpNet);
+
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_inet_ipnetworkv4_without_prefix, String::from("1.1.1.1") => String, Text => Inet, "1.1.1.1/32".parse().unwrap() => ipnetwork::IpNetwork);
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_inet_ipnetworkv4, String::from("1.1.1.1/32") => String, Text => Inet, "1.1.1.1/32".parse().unwrap() => ipnetwork::IpNetwork);
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_inet_ipnetworkv6_without_prefix, String::from("1::1") => String, Text => Inet, "1::1/128".parse().unwrap() => ipnetwork::IpNetwork);
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_inet_ipnetworkv6, String::from("1::1/128") => String, Text => Inet, "1::1/128".parse().unwrap() => ipnetwork::IpNetwork);
+
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_cidr_ipnetworkv4_without_prefix, String::from("1.1.1.1") => String, Text => Cidr, "1.1.1.1/32".parse().unwrap() => ipnetwork::IpNetwork);
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_cidr_ipnetworkv4, String::from("1.1.1.1/32") => String, Text => Cidr, "1.1.1.1/32".parse().unwrap() => ipnetwork::IpNetwork);
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_cidr_ipnetworkv6_without_prefix, String::from("1::1") => String, Text => Cidr, "1::1/128".parse().unwrap() => ipnetwork::IpNetwork);
+    #[cfg(feature = "postgres")]
+    test_fallible_cast!(text_to_cidr_ipnetworkv6, String::from("1::1/128") => String, Text => Cidr, "1::1/128".parse().unwrap() => ipnetwork::IpNetwork);
 }
 
 mod infallible_cast {
@@ -151,4 +187,22 @@ mod infallible_cast {
     test_infallible_cast!(float4_to_decimal, 1.1 => f32, Float4 => Decimal, "1.1".parse().unwrap() => bigdecimal::BigDecimal);
     #[cfg(feature = "postgres")]
     test_infallible_cast!(float8_to_decimal, 1.1 => f64, Float8 => Decimal, "1.1".parse().unwrap() => bigdecimal::BigDecimal);
+
+    #[cfg(feature = "postgres")]
+    test_infallible_cast!(inet_ipnet_to_text, "1.1.1.1/32".parse().unwrap() => ipnet::IpNet, Inet => Text, String::from("1.1.1.1/32") => String);
+    #[cfg(feature = "postgres")]
+    test_infallible_cast!(cidr_ipnet_to_text, "1.1.1.1/32".parse().unwrap() => ipnet::IpNet, Cidr => Text, String::from("1.1.1.1/32") => String);
+    #[cfg(feature = "postgres")]
+    test_infallible_cast!(cidr_ipnet_to_inet_ipnet, "192.168.1.0/24".parse().unwrap() => ipnet::IpNet, Cidr => Inet, "192.168.1.0/24".parse().unwrap() => ipnet::IpNet);
+    #[cfg(feature = "postgres")]
+    test_infallible_cast!(inet_ipnet_to_cidr_ipnet, "192.168.1.1/24".parse().unwrap() => ipnet::IpNet, Inet => Cidr, "192.168.1.0/24".parse().unwrap() => ipnet::IpNet);
+
+    #[cfg(feature = "postgres")]
+    test_infallible_cast!(inet_ipnetwork_to_text, "1.1.1.1/32".parse().unwrap() => ipnetwork::IpNetwork, Inet => Text, String::from("1.1.1.1/32") => String);
+    #[cfg(feature = "postgres")]
+    test_infallible_cast!(cidr_ipnetwork_to_text, "1.1.1.1/32".parse().unwrap() => ipnetwork::IpNetwork, Cidr => Text, String::from("1.1.1.1/32") => String);
+    #[cfg(feature = "postgres")]
+    test_infallible_cast!(cidr_ipnetwork_to_inet_ipnetwork, "192.168.1.0/24".parse().unwrap() => ipnetwork::IpNetwork, Cidr => Inet, "192.168.1.0/24".parse().unwrap() => ipnetwork::IpNetwork);
+    #[cfg(feature = "postgres")]
+    test_infallible_cast!(inet_ipnetwork_to_cidr_ipnetwork, "192.168.1.1/24".parse().unwrap() => ipnetwork::IpNetwork, Inet => Cidr, "192.168.1.0/24".parse().unwrap() => ipnetwork::IpNetwork);
 }
