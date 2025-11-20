@@ -379,6 +379,9 @@ impl BindData {
     fn from_tpe_and_flags((tpe, flags): (ffi::enum_field_types, Flags)) -> Self {
         // newer mysqlclient versions do not accept a zero sized buffer
         let len = known_buffer_size_for_ffi_type(tpe).unwrap_or(1);
+        // it's important to initialize the data with zeros here
+        // to make sure we don't expose any uninitialized memory if the underlying library
+        // (again…) skrews up something
         let (ptr, length, capacity) = bind_buffer(vec![0; len]);
 
         Self {
@@ -406,6 +409,42 @@ impl BindData {
         } else {
             let data = self.bytes?;
             let tpe = (self.tpe, self.flags).into();
+
+            // Newer libmariadbclient versions overwrite the length field with zero values
+            // in some cases (mostly when we load a zero value). As we don't reset the length value
+            // and also reuse the underlying buffers for more than one row this is problematic
+            // for diesel. To workaround that issue we instead reset the length value
+            // for known statically sized types here.
+            //
+            // This is "safe" for all statically sized types as they are only "numeric" values
+            // that consider every possible byte pattern as valid. This also includes timestamps,
+            // but the MYSQL_TIME type consists only of numbers as well.
+            //
+            // To prevent a potential memory exposure we always initialize the buffer with
+            // zeros, so the worst thing that could happen is that you get the value from a previous
+            // row if the underlying library fails to reset the bytes
+            //
+            // We assert that we don't read more than capacity bytes below as that's
+            // the most important invariant to uphold here
+            let length = if let Some(length) = known_buffer_size_for_ffi_type(self.tpe) {
+                debug_assert!(length <= self.length.try_into().expect("Usize is at least 32 bit"),
+                    "Libmysqlclient reported a larger size for a fixed size buffer without setting the truncated flag. \n\
+                     This is a bug somewhere. Please open an issue with reproduction steps at \
+                     https://github.com/diesel-rs/diesel/issues/new \n\
+                     Length: {length}, Capacity: {}, Type: {:?}", self.capacity, self.tpe
+                );
+                length
+            } else {
+                self.length.try_into().expect("Usize is at least 32 bit")
+            };
+            assert!(
+                length <= self.capacity,
+                "Got a buffer size larger than the underlying allocation. \n\
+                 If you see this message, please open an issue at https://github.com/diesel-rs/diesel/issues/new.\n\
+                 Such an issue should contain exact reproduction steps how to trigger this message\n\
+                 Length: {length}, Capacity: {}, Type: {:?}", self.capacity, self.tpe
+            );
+
             let slice = unsafe {
                 // We know that this points to a slice and the pointer is not null at this
                 // location
@@ -414,10 +453,7 @@ impl BindData {
                 // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
                 // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
-                std::slice::from_raw_parts(
-                    data.as_ptr(),
-                    self.length.try_into().expect("Usize is at least 32 bit"),
-                )
+                std::slice::from_raw_parts(data.as_ptr(), length)
             };
             Some(MysqlValue::new_internal(slice, tpe))
         }
@@ -482,8 +518,8 @@ impl BindData {
                 self.bytes = None;
 
                 let offset = self.capacity;
-                let truncated_amount =
-                    usize::try_from(self.length).expect("Usize is at least 32 bit") - offset;
+                let length = usize::try_from(self.length).expect("Usize is at least 32 bit");
+                let truncated_amount = length - offset;
 
                 debug_assert!(
                     truncated_amount > 0,
@@ -493,7 +529,10 @@ impl BindData {
 
                 // reserve space for any missing byte
                 // we know the exact size here
-                bytes.reserve(truncated_amount);
+                // We use resize instead reserve to initialize the whole memory
+                // to prevent exposing memory if libmariadb/libmysqlclient (again)
+                // returns a wrong size here
+                bytes.resize(length, 0);
                 let (ptr, _length, capacity) = bind_buffer(bytes);
                 self.capacity = capacity;
                 self.bytes = ptr;
