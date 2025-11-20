@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["from_slice","from_str"],"struct":["Deserializer","Error"]};
