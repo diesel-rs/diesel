@@ -40,6 +40,10 @@ fn derive_into_single_table(
     let mut ref_field_ty = Vec::with_capacity(model.fields().len());
     let mut ref_field_assign = Vec::with_capacity(model.fields().len());
 
+    // Collect explicit trait bounds with field spans to preserve error locations
+    // when #[diagnostic::do_not_recommend] is used
+    let mut field_ty_bounds = Vec::with_capacity(model.fields().len());
+
     for field in model.fields() {
         // skip this field while generating the insertion
         if field.skip_insertion() {
@@ -99,6 +103,22 @@ fn derive_into_single_table(
                     Some(quote!(&)),
                     treat_none_as_default_value,
                 )?);
+
+                // Generate explicit trait bound with field span to preserve error location
+                // This ensures errors point to the specific field when using #[diagnostic::do_not_recommend]
+                let column_name = field.column_name()?.to_ident()?;
+                let span = Span::mixed_site().located_at(field.span);
+                let ty_to_check = if treat_none_as_default_value {
+                    inner_of_option_ty(&field.ty)
+                } else {
+                    &field.ty
+                };
+
+                field_ty_bounds.push(quote_spanned! {span=>
+                    #ty_to_check: diesel::expression::AsExpression<
+                        <#table_name::#column_name as diesel::Expression>::SqlType
+                    >
+                });
             }
             (Some(AttributeSpanWrapper { item: ty, .. }), false) => {
                 direct_field_ty.push(field_ty_serialize_as(
@@ -114,6 +134,22 @@ fn derive_into_single_table(
                     treat_none_as_default_value,
                 )?);
 
+                // Generate explicit trait bound for serialize_as fields with field span
+                // This ensures errors point to the specific field when using #[diagnostic::do_not_recommend]
+                let column_name = field.column_name()?.to_ident()?;
+                let span = Span::mixed_site().located_at(field.span);
+                let ty_to_check = if treat_none_as_default_value {
+                    inner_of_option_ty(ty)
+                } else {
+                    ty
+                };
+
+                field_ty_bounds.push(quote_spanned! {span=>
+                    #ty_to_check: diesel::expression::AsExpression<
+                        <#table_name::#column_name as diesel::Expression>::SqlType
+                    >
+                });
+
                 generate_borrowed_insert = false; // as soon as we hit one field with #[diesel(serialize_as)] there is no point in generating the impl of Insertable for borrowed structs
             }
             (Some(AttributeSpanWrapper { attribute_span, .. }), true) => {
@@ -127,7 +163,9 @@ fn derive_into_single_table(
 
     let insert_owned = quote! {
         impl #impl_generics diesel::insertable::Insertable<#table_name::table> for #struct_name #ty_generics
+        where
             #where_clause
+            #(#field_ty_bounds,)*
         {
             type Values = <(#(#direct_field_ty,)*) as diesel::insertable::Insertable<#table_name::table>>::Values;
 
@@ -145,7 +183,9 @@ fn derive_into_single_table(
         quote! {
             impl #impl_generics diesel::insertable::Insertable<#table_name::table>
                 for &'insert #struct_name #ty_generics
-            #where_clause
+            where
+                #where_clause
+                #(#field_ty_bounds,)*
             {
                 type Values = <(#(#ref_field_ty,)*) as diesel::insertable::Insertable<#table_name::table>>::Values;
 
