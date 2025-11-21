@@ -69,6 +69,24 @@ where
     }
 }
 
+impl<T, DB, const N: usize> CanInsertInSingleQuery<DB> for std::rc::Rc<[T; N]>
+where
+    DB: Backend+ SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>
+{
+    fn rows_to_insert(&self) -> Option<usize> {
+        Some(N)
+    }
+}
+
+impl<T, DB, const N: usize> CanInsertInSingleQuery<DB> for std::sync::Arc<[T; N]>
+where
+    DB: Backend+ SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>
+{
+    fn rows_to_insert(&self) -> Option<usize> {
+        Some(N)
+    }
+}
+
 impl<T, DB> CanInsertInSingleQuery<DB> for [T]
 where
     DB: Backend+ SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>
