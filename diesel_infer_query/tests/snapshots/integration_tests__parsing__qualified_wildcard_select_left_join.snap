@@ -1,0 +1,25 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT users.*, posts.* FROM users LEFT JOIN posts ON users.id = posts.user_id"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: Wildcard {
+                schema: None,
+                relation: "users",
+                is_left_joined: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: Wildcard {
+                schema: None,
+                relation: "posts",
+                is_left_joined: true,
+            },
+        },
+    ],
+}

@@ -85,7 +85,7 @@ impl<'a> QuerySource<'a> {
     /// used to include this query source is joined via a `LEFT JOIN`
     pub(crate) fn contains_left_join(
         &self,
-        query_source_lookup: &&HashMap<&str, QuerySource<'_>>,
+        query_source_lookup: &HashMap<&str, QuerySource<'_>>,
     ) -> Result<bool> {
         if let Some(join) = &self.join {
             match join.kind {

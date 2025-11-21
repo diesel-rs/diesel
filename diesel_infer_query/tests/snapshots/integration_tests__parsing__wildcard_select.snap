@@ -1,0 +1,17 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: CREATE VIEW test AS SELECT * FROM users
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: Wildcard {
+                schema: None,
+                relation: "users",
+                is_left_joined: false,
+            },
+        },
+    ],
+}

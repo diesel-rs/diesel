@@ -3,6 +3,7 @@ use super::select::SelectField;
 use super::select::infer_from_select;
 use crate::error::Error;
 use crate::error::Result;
+use crate::select::Expression;
 use sqlparser::parser::ParserOptions;
 
 /// An opaque representation of information
@@ -41,6 +42,40 @@ impl ViewData {
             .iter()
             .map(|f| f.infer_nullability(resolver))
             .collect()
+    }
+
+    /// Resolve references to wildcard expressions given the provided schema resolver
+    ///
+    /// This needs to be called before any other operation is performed with this view definition
+    pub fn resolve_references(&mut self, resolver: &mut dyn SchemaResolver) -> Result<()> {
+        let fields = std::mem::take(&mut self.fields);
+        self.fields.reserve(fields.len());
+        for f in fields {
+            if let Expression::Wildcard {
+                schema,
+                relation,
+                is_left_joined,
+            } = &f.kind
+            {
+                let resolved_fields = resolver
+                    .list_fields(schema.as_deref(), relation)
+                    .map_err(|e| Error::ResolverFailure { inner: e })?;
+                for f in resolved_fields {
+                    self.fields.push(SelectField {
+                        ident: None,
+                        kind: Expression::Field {
+                            schema: schema.clone(),
+                            query_source: relation.clone(),
+                            field_name: f.name().to_owned(),
+                            via_left_join: *is_left_joined,
+                        },
+                    });
+                }
+            } else {
+                self.fields.push(f);
+            }
+        }
+        Ok(())
     }
 }
 

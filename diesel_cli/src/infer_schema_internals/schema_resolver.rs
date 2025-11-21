@@ -116,6 +116,40 @@ impl<'a> SchemaResolver for SchemaResolverImpl<'a, '_> {
         &dyn diesel_infer_query::SchemaField,
         Box<dyn std::error::Error + Send + Sync + 'static>,
     > {
+        let (table_name, relation) = self.load_relation_data(schema, query_relation)?;
+        Ok(relation
+            .columns()
+            .iter()
+            .find_map(|c| (c.sql_name == field_name).then_some(c as &dyn SchemaField))
+            .ok_or_else(|| {
+                tracing::info!(table = ?table_name, field = %field_name, "Field not found");
+                crate::errors::Error::FieldNotFoundForView(table_name, field_name.to_owned())
+            })?)
+    }
+
+    fn list_fields<'s>(
+        &'s mut self,
+        relation_schema: Option<&str>,
+        query_relation: &str,
+    ) -> Result<Vec<&'s dyn SchemaField>, Box<dyn std::error::Error + Send + Sync + 'static>> {
+        let (_table_name, relation) = self.load_relation_data(relation_schema, query_relation)?;
+        let ret = relation
+            .columns()
+            .iter()
+            .map(|c| c as &dyn SchemaField)
+            .collect();
+
+        Ok(ret)
+    }
+}
+
+impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
+    fn load_relation_data(
+        &mut self,
+        schema: Option<&str>,
+        query_relation: &str,
+    ) -> Result<(TableName, &QueryRelationData), Box<dyn std::error::Error + Send + Sync + 'static>>
+    {
         let schema = schema.or_else(|| {
             self.recursive_resolve_chain
                 .iter()
@@ -127,19 +161,16 @@ impl<'a> SchemaResolver for SchemaResolverImpl<'a, '_> {
             Some(schema) => TableName::new(query_relation, schema),
         };
         let relation = self.load_query_relation_data(None, table_name.clone())?;
-        Ok(relation
-            .columns()
-            .iter()
-            .find_map(|c| (c.sql_name == field_name).then_some(c as &dyn SchemaField))
-            .ok_or_else(|| {
-                tracing::info!(table = ?table_name, field = %field_name, "Field not found");
-                crate::errors::Error::FieldNotFoundForView(table_name, field_name.to_owned())
-            })?)
+        Ok((table_name, relation))
     }
 }
 
 impl SchemaField for ColumnDefinition {
     fn is_nullable(&self) -> bool {
         self.ty.is_nullable
+    }
+
+    fn name(&self) -> &str {
+        &self.sql_name
     }
 }
