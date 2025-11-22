@@ -145,3 +145,161 @@ fn case_when() {
               CASE WHEN 1 = 1 THEN NULL WHEN NULL THEN 1 ELSE 1 END",
     );
 }
+
+#[test]
+fn in_list() {
+    check_parse_view(
+        "in_list",
+        "CREATE VIEW test AS SELECT name IN (1, 2, 4) FROM users",
+    );
+}
+
+#[test]
+fn not_in_list() {
+    check_parse_view(
+        "not_in_list",
+        "CREATE VIEW test AS SELECT name NOT IN (1, 2, 4) FROM users",
+    );
+}
+
+#[test]
+fn in_subquery() {
+    check_parse_view(
+        "in_subquery",
+        "CREATE VIEW test AS SELECT name IN (SELECT posts.name FROM posts) FROM users",
+    );
+}
+
+#[test]
+fn not_in_subquery() {
+    check_parse_view(
+        "not_in_subquery",
+        "CREATE VIEW test AS SELECT name NOT IN (SELECT posts.name FROM posts) FROM users",
+    );
+}
+
+#[test]
+fn nested() {
+    check_parse_view("nested", "CREATE VIEW test AS SELECT (1 + 2) - 3");
+}
+
+#[test]
+fn subquery() {
+    check_parse_view(
+        "subquery",
+        "CREATE VIEW test AS SELECT \
+                  (SELECT users.name FROM users WHERE users.id = posts.user_id), \
+                  (SELECT users.hair_color FROM users WHERE users.id = posts.user_id), \
+                  (SELECT posts.body FROM users WHERE users.id = posts.user_id)
+              FROM posts",
+    );
+}
+
+#[test]
+fn with_cte() {
+    check_parse_view(
+        "with_cte",
+        "CREATE VIEW test AS WITH source AS (\
+             SELECT a, b FROM table1 WHERE c > 1\
+         ) SELECT t1.col1, s.b, count(*) FROM users t1 \
+         INNER JOIN source s ON t1.id = s.a GROUP BY t1.col1, s.b",
+    );
+}
+
+#[test]
+fn with_multi_level_cte() {
+    check_parse_view(
+        "with_multi_level_cte",
+        "CREATE VIEW test AS WITH source AS (\
+             SELECT a, b FROM table1 WHERE c > 1\
+             ), \
+             intermediate AS (SELECT a + b AS one, a, b, count(*) as c FROM source) \
+         SELECT t1.col1, s.a, s.b, count(*), s.one, s.c FROM users t1 \
+         INNER JOIN intermediate s ON t1.id = s.a GROUP BY t1.col1, s.b",
+    )
+}
+
+#[test]
+fn from_subquery() {
+    check_parse_view(
+        "from_subquery",
+        "CREATE VIEW test AS SELECT t1.some_col, users.name FROM (\
+         SELECT some_col FROM posts WHERE posts.id < 10) AS t1 \
+         INNER JOIN users ON users.id = t1.some_col",
+    );
+}
+
+#[test]
+fn window_functions() {
+    check_parse_view(
+        "window_functions",
+        "CREATE VIEW test AS SELECT user_id, name, \
+         row_number() OVER (PARTITION BY department ORDER BY salary DESC) as rn \
+         FROM employees",
+    );
+}
+
+#[test]
+fn casting() {
+    check_parse_view(
+        "casting",
+        "CREATE VIEW test AS SELECT '123'::integer AS id, CAST(price AS text), name::varchar AS v_name FROM items",
+    );
+}
+
+#[test]
+fn recursive_cte() {
+    check_parse_view(
+        "recursive_cte",
+        "CREATE VIEW test AS WITH RECURSIVE cte (id, name, parent_id) AS (\
+               SELECT employee_id, employee_name, parent_id FROM employees WHERE parent_id IS NULL \
+               UNION ALL \
+               SELECT e.employee_id, e.employee_name, e.parent_id FROM employees e JOIN cte ON e.parent_id = cte.id \
+           ) SELECT id, name, parent_id FROM cte",
+    );
+}
+
+#[test]
+fn complex_cte_subquery_set_ops() {
+    check_parse_view(
+           "complex_cte_subquery_set_ops",
+           "CREATE VIEW test AS WITH \
+               stage1 AS (SELECT a, b, c, d FROM sources WHERE c > 1), \
+               stage2 AS (SELECT a, b, c, d FROM other_sources WHERE c > 1), \
+               union_set AS (SELECT a, b, c, d FROM stage1 UNION SELECT a, b, c, d FROM stage2), \
+               cte_nested AS (
+                   SELECT t.a, t.b, t.c, t.d, s.col1, s.col2 FROM union_set t JOIN (SELECT col1, col2 FROM small_table LIMIT 1) s ON t.a = s.col
+               ) \
+           SELECT a, b, c, d, col1, col2 FROM cte_nested",
+       );
+}
+
+#[test]
+fn union() {
+    check_parse_view(
+        "union",
+        "CREATE VIEW test AS SELECT id, name FROM old_users WHERE is_active = TRUE \
+         UNION \
+         SELECT user_id, display_name FROM new_members",
+    );
+}
+
+#[test]
+fn intersect() {
+    check_parse_view(
+        "intersect",
+        "CREATE VIEW test AS SELECT project_id, user_id FROM assigned_tasks WHERE status = 'COMPLETED' \
+            INTERSECT \
+            SELECT product_id, associated_user FROM purchases WHERE purchased = TRUE",
+    );
+}
+
+#[test]
+fn except() {
+    check_parse_view(
+        "except",
+        "CREATE VIEW test AS SELECT owner_id, file_hash FROM content_vault WHERE created < '2026-08-07' \
+         EXCEPT \
+         SELECT creator_id, sha256 FROM recent_uploads",
+    );
+}
