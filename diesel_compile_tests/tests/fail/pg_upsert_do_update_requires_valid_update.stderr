@@ -110,10 +110,20 @@ note: `users::table` is defined in module `crate::users` of the current crate
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<Excluded<id> as Expression>::SqlType == Text`
+error[E0277]: the trait bound `Excluded<id>: AsExpression<Text>` is not satisfied
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:76:19
    |
 LL |         .set(name.eq(excluded(id)));
-   |                   ^^ expected `Text`, found `Integer`
+   |                   ^^ unsatisfied trait bound
    |
-   = note: required for `diesel::query_builder::upsert::on_conflict_actions::Excluded<users::columns::id>` to implement `AsExpression<diesel::sql_types::Text>`
+   = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::query_builder::upsert::on_conflict_actions::Excluded<users::columns::id>`
+   = help: the following other types implement trait `AsExpression<T>`:
+             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+             `&'__expr Cents` implements `AsExpression<Money>`
+             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+             `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+           and N others

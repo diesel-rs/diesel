@@ -249,6 +249,7 @@ where
 #[doc(inline)]
 pub use diesel_derives::AsExpression;
 
+#[diagnostic::do_not_recommend]
 impl<T, ST> AsExpression<ST> for T
 where
     T: Expression<SqlType = ST>,
