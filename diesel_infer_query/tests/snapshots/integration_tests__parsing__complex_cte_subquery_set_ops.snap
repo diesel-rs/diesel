@@ -1,0 +1,368 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS WITH stage1 AS (SELECT a, b, c, d FROM sources WHERE c > 1), stage2 AS (SELECT a, b, c, d FROM other_sources WHERE c > 1), union_set AS (SELECT a, b, c, d FROM stage1 UNION SELECT a, b, c, d FROM stage2), cte_nested AS (\n                   SELECT t.a, t.b, t.c, t.d, s.col1, s.col2 FROM union_set t JOIN (SELECT col1, col2 FROM small_table LIMIT 1) s ON t.a = s.col\n               ) SELECT a, b, c, d, col1, col2 FROM cte_nested"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: Some(
+                "a",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "cte_nested",
+                field_name: "a",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "b",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "cte_nested",
+                field_name: "b",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "c",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "cte_nested",
+                field_name: "c",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "d",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "cte_nested",
+                field_name: "d",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "col1",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "cte_nested",
+                field_name: "col1",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "col2",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "cte_nested",
+                field_name: "col2",
+                via_left_join: false,
+            },
+        },
+    ],
+    subqueries: [
+        (
+            "stage1",
+            SubQuery {
+                fields: [
+                    SelectField {
+                        ident: Some(
+                            "a",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "sources",
+                            field_name: "a",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "b",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "sources",
+                            field_name: "b",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "c",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "sources",
+                            field_name: "c",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "d",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "sources",
+                            field_name: "d",
+                            via_left_join: false,
+                        },
+                    },
+                ],
+            },
+        ),
+        (
+            "stage2",
+            SubQuery {
+                fields: [
+                    SelectField {
+                        ident: Some(
+                            "a",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "other_sources",
+                            field_name: "a",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "b",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "other_sources",
+                            field_name: "b",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "c",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "other_sources",
+                            field_name: "c",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "d",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "other_sources",
+                            field_name: "d",
+                            via_left_join: false,
+                        },
+                    },
+                ],
+            },
+        ),
+        (
+            "union_set",
+            SubQuery {
+                fields: [
+                    SelectField {
+                        ident: Some(
+                            "a",
+                        ),
+                        kind: Combined {
+                            left: Field {
+                                schema: None,
+                                query_source: "stage1",
+                                field_name: "a",
+                                via_left_join: false,
+                            },
+                            right: Field {
+                                schema: None,
+                                query_source: "stage2",
+                                field_name: "a",
+                                via_left_join: false,
+                            },
+                            set_operator: Union,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "b",
+                        ),
+                        kind: Combined {
+                            left: Field {
+                                schema: None,
+                                query_source: "stage1",
+                                field_name: "b",
+                                via_left_join: false,
+                            },
+                            right: Field {
+                                schema: None,
+                                query_source: "stage2",
+                                field_name: "b",
+                                via_left_join: false,
+                            },
+                            set_operator: Union,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "c",
+                        ),
+                        kind: Combined {
+                            left: Field {
+                                schema: None,
+                                query_source: "stage1",
+                                field_name: "c",
+                                via_left_join: false,
+                            },
+                            right: Field {
+                                schema: None,
+                                query_source: "stage2",
+                                field_name: "c",
+                                via_left_join: false,
+                            },
+                            set_operator: Union,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "d",
+                        ),
+                        kind: Combined {
+                            left: Field {
+                                schema: None,
+                                query_source: "stage1",
+                                field_name: "d",
+                                via_left_join: false,
+                            },
+                            right: Field {
+                                schema: None,
+                                query_source: "stage2",
+                                field_name: "d",
+                                via_left_join: false,
+                            },
+                            set_operator: Union,
+                        },
+                    },
+                ],
+            },
+        ),
+        (
+            "s",
+            SubQuery {
+                fields: [
+                    SelectField {
+                        ident: Some(
+                            "col1",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "small_table",
+                            field_name: "col1",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "col2",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "small_table",
+                            field_name: "col2",
+                            via_left_join: false,
+                        },
+                    },
+                ],
+            },
+        ),
+        (
+            "cte_nested",
+            SubQuery {
+                fields: [
+                    SelectField {
+                        ident: Some(
+                            "a",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "union_set",
+                            field_name: "a",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "b",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "union_set",
+                            field_name: "b",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "c",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "union_set",
+                            field_name: "c",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "d",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "union_set",
+                            field_name: "d",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "col1",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "s",
+                            field_name: "col1",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "col2",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "s",
+                            field_name: "col2",
+                            via_left_join: false,
+                        },
+                    },
+                ],
+            },
+        ),
+    ],
+}

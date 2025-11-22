@@ -1,0 +1,111 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS WITH RECURSIVE cte (id, name, parent_id) AS (SELECT employee_id, employee_name, parent_id FROM employees WHERE parent_id IS NULL UNION ALL SELECT e.employee_id, e.employee_name, e.parent_id FROM employees e JOIN cte ON e.parent_id = cte.id ) SELECT id, name, parent_id FROM cte"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: Some(
+                "id",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "cte",
+                field_name: "id",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "name",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "cte",
+                field_name: "name",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "parent_id",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "cte",
+                field_name: "parent_id",
+                via_left_join: false,
+            },
+        },
+    ],
+    subqueries: [
+        (
+            "cte",
+            SubQuery {
+                fields: [
+                    SelectField {
+                        ident: Some(
+                            "id",
+                        ),
+                        kind: Combined {
+                            left: Field {
+                                schema: None,
+                                query_source: "employees",
+                                field_name: "employee_id",
+                                via_left_join: false,
+                            },
+                            right: Field {
+                                schema: None,
+                                query_source: "employees",
+                                field_name: "employee_id",
+                                via_left_join: false,
+                            },
+                            set_operator: Union,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "name",
+                        ),
+                        kind: Combined {
+                            left: Field {
+                                schema: None,
+                                query_source: "employees",
+                                field_name: "employee_name",
+                                via_left_join: false,
+                            },
+                            right: Field {
+                                schema: None,
+                                query_source: "employees",
+                                field_name: "employee_name",
+                                via_left_join: false,
+                            },
+                            set_operator: Union,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "parent_id",
+                        ),
+                        kind: Combined {
+                            left: Field {
+                                schema: None,
+                                query_source: "employees",
+                                field_name: "parent_id",
+                                via_left_join: false,
+                            },
+                            right: Field {
+                                schema: None,
+                                query_source: "employees",
+                                field_name: "parent_id",
+                                via_left_join: false,
+                            },
+                            set_operator: Union,
+                        },
+                    },
+                ],
+            },
+        ),
+    ],
+}

@@ -22,4 +22,5 @@ ViewData {
             },
         },
     ],
+    subqueries: [],
 }

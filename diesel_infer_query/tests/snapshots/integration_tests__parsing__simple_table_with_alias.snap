@@ -6,7 +6,9 @@ info: "CREATE VIEW test AS SELECT u.id, name, u.hair_color AS hair_colour FROM u
 ViewData {
     fields: [
         SelectField {
-            ident: None,
+            ident: Some(
+                "id",
+            ),
             kind: Field {
                 schema: None,
                 query_source: "users",
@@ -15,7 +17,9 @@ ViewData {
             },
         },
         SelectField {
-            ident: None,
+            ident: Some(
+                "name",
+            ),
             kind: Field {
                 schema: None,
                 query_source: "users",
@@ -35,4 +39,5 @@ ViewData {
             },
         },
     ],
+    subqueries: [],
 }

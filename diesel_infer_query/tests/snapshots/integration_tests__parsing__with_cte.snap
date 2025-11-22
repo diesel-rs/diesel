@@ -1,0 +1,72 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS WITH source AS (SELECT a, b FROM table1 WHERE c > 1) SELECT t1.col1, s.b, count(*) FROM users t1 INNER JOIN source s ON t1.id = s.a GROUP BY t1.col1, s.b"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: Some(
+                "col1",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "users",
+                field_name: "col1",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "b",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "source",
+                field_name: "b",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: Function {
+                name: "count",
+                schema: None,
+                arguments: [
+                    Unknown,
+                ],
+            },
+        },
+    ],
+    subqueries: [
+        (
+            "source",
+            SubQuery {
+                fields: [
+                    SelectField {
+                        ident: Some(
+                            "a",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "table1",
+                            field_name: "a",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "b",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "table1",
+                            field_name: "b",
+                            via_left_join: false,
+                        },
+                    },
+                ],
+            },
+        ),
+    ],
+}

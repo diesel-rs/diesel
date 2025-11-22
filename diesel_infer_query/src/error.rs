@@ -30,6 +30,22 @@ pub enum Error {
         /// The inner resolver failure
         inner: Box<dyn std::error::Error + Send + Sync + 'static>,
     },
+    /// The query contained an unnamed field that need to be resolved
+    #[error("Could not get a field name for an expression")]
+    UnnamedField,
+    #[error(
+        "Could not find a field with the following name: `{relation_schema:?}.{query_relation}.{field_name}`"
+    )]
+    /// The query referenced an unknown field
+    #[non_exhaustive]
+    UnknownField {
+        /// The schema of the referenced field
+        relation_schema: Option<String>,
+        /// The query relation of the referenced field
+        query_relation: String,
+        /// The field name of the referenced field
+        field_name: String,
+    },
 }
 
 /// A result type using the error provided by this crate as default

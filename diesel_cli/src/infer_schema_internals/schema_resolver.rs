@@ -4,7 +4,7 @@ use super::{
 };
 use crate::config::PrintSchema;
 use crate::database::InferConnection;
-use diesel_infer_query::{SchemaField, SchemaResolver};
+use diesel_infer_query::{IsNull, SchemaField, SchemaResolver};
 use std::collections::HashMap;
 
 pub struct SchemaResolverImpl<'a, 'b> {
@@ -166,11 +166,15 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
 }
 
 impl SchemaField for ColumnDefinition {
-    fn is_nullable(&self) -> bool {
-        self.ty.is_nullable
+    fn is_nullable(&self) -> IsNull {
+        if self.ty.is_nullable {
+            IsNull::IsNullable
+        } else {
+            IsNull::NotNullable
+        }
     }
 
-    fn name(&self) -> &str {
-        &self.sql_name
+    fn name(&self) -> Option<&str> {
+        Some(&self.sql_name)
     }
 }
