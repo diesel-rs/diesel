@@ -54,8 +54,8 @@ fn direct_joins() {
     //~| ERROR: annot select `posts::columns::title` from `users::table`
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
-    //~^ ERROR: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-    //~| ERROR: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+    //~^ ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+    //~| ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
 }
 
 fn nested_outer_joins_left_associative() {
@@ -77,8 +77,8 @@ fn nested_outer_joins_left_associative() {
     //~| ERROR: cannot select `posts::columns::title` from `users::table`
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
-    //~^ ERROR: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-    //~| ERROR: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+    //~^ ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+    //~| ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
 }
 
 fn nested_mixed_joins_left_associative() {
@@ -100,8 +100,8 @@ fn nested_mixed_joins_left_associative() {
     //~| ERROR: cannot select `posts::columns::title` from `users::table`
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
-    //~^ ERROR: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-    //~| ERROR: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+    //~^ ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+    //~| ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
 }
 
 fn nested_outer_joins_right_associative() {
@@ -121,8 +121,8 @@ fn nested_outer_joins_right_associative() {
     //~| ERROR: cannot select `posts::columns::title` from `pets::table`
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
-    //~^ ERROR: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-    //~| ERROR: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+    //~^ ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+    //~| ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
 }
 
 fn nested_mixed_joins_right_associative() {
@@ -142,6 +142,6 @@ fn nested_mixed_joins_right_associative() {
     //~| ERROR: cannot select `posts::columns::title` from `users::table`
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
-    //~^ ERROR: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
-    //~| ERROR: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+    //~^ ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+    //~| ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
 }
