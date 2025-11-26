@@ -12,11 +12,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
-## [2.3.4] 2025-11-xx
+## [2.3.4] 2025-11-26
 
-* Fixed an issue with breaking changes in libmariadb
-* Fixed documentation links for helper types
-* Fixing using `#[diesel(embed)]` with options
+* Fix an issue with breaking changes in libmariadb
+* Fix documentation links for helper types
+* Fix using `#[diesel(embed)]` with `Option<Inner>` types
+* Fix documentation for concurrent migration runs
 
 ## [2.3.3] 2025-10-24
 
