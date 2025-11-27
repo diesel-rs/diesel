@@ -8,17 +8,11 @@ table! {
 }
 
 #[derive(Insertable)]
-//~^ ERROR: the trait bound `std::string::String: diesel::Expression` is not satisfied
-//~| ERROR: the trait bound `i32: diesel::Expression` is not satisfied
-//~| ERROR: the trait bound `std::string::String: diesel::Expression` is not satisfied
-//~| ERROR: the trait bound `i32: diesel::Expression` is not satisfied
 struct User {
     id: String,
-    //~^ ERROR: the trait bound `std::string::String: diesel::Expression` is not satisfied
-    //~| ERROR: the trait bound `std::string::String: diesel::Expression` is not satisfied
+    //~^ ERROR: the trait bound `std::string::String: AsExpression<diesel::sql_types::Integer>` is not satisfied
     name: i32,
-    //~^ ERROR: the trait bound `i32: diesel::Expression` is not satisfied
-    //~| ERROR: the trait bound `i32: diesel::Expression` is not satisfied
+    //~^ ERROR: the trait bound `i32: AsExpression<diesel::sql_types::Text>` is not satisfied
 }
 
 fn main() {}

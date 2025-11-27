@@ -124,17 +124,22 @@ LL |         title -> Text,
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:56:31
    |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-   |                         ----- ^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
-   |                         |
-   |                         required by a bound introduced by this call
+   |                               ^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
    |
-   = note: expected struct `diesel::sql_types::Text`
-              found struct `Nullable<diesel::sql_types::Text>`
-   = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
+   = help: the following other types implement trait `AsExpression<T>`:
+             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+             `&'__expr Cents` implements `AsExpression<Money>`
+             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+             `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+           and N others
 note: required by a bound in `lower`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
    |
@@ -143,18 +148,27 @@ LL | #[declare_sql_function]
 LL | extern "SQL" {
 LL |     fn lower(x: Text) -> Text;
    |        ----- required by a bound in this function
-   = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+      = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:56:25
    |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
+   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
    |
-   = note: expected struct `diesel::sql_types::Text`
-              found struct `Nullable<diesel::sql_types::Text>`
-   = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
+   = help: the following other types implement trait `AsExpression<T>`:
+             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+             `&'__expr Cents` implements `AsExpression<Money>`
+             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+             `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+           and N others
 
+   
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:67:18
    |
@@ -281,17 +295,22 @@ LL |         title -> Text,
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:79:31
    |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-   |                         ----- ^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
-   |                         |
-   |                         required by a bound introduced by this call
+   |                               ^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
    |
-   = note: expected struct `diesel::sql_types::Text`
-              found struct `Nullable<diesel::sql_types::Text>`
-   = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
+   = help: the following other types implement trait `AsExpression<T>`:
+             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+             `&'__expr Cents` implements `AsExpression<Money>`
+             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+             `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+           and N others
 note: required by a bound in `lower`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
    |
@@ -300,18 +319,27 @@ LL | #[declare_sql_function]
 LL | extern "SQL" {
 LL |     fn lower(x: Text) -> Text;
    |        ----- required by a bound in this function
-   = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+      = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:79:25
    |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
+   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
    |
-   = note: expected struct `diesel::sql_types::Text`
-              found struct `Nullable<diesel::sql_types::Text>`
-   = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
+   = help: the following other types implement trait `AsExpression<T>`:
+             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+             `&'__expr Cents` implements `AsExpression<Money>`
+             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+             `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+           and N others
 
+   
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:90:18
    |
@@ -438,17 +466,22 @@ LL |         title -> Text,
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:102:31
     |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-    |                         ----- ^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
-    |                         |
-    |                         required by a bound introduced by this call
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
     |
-    = note: expected struct `diesel::sql_types::Text`
-               found struct `Nullable<diesel::sql_types::Text>`
-    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
+    = help: the following other types implement trait `AsExpression<T>`:
+              `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+              `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+              `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
+              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+            and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
     |
@@ -457,18 +490,27 @@ note: required by a bound in `lower`
  LL | extern "SQL" {
  LL |     fn lower(x: Text) -> Text;
     |        ----- required by a bound in this function
-    = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+ 
+        = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:102:25
     |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
     |
-    = note: expected struct `diesel::sql_types::Text`
-               found struct `Nullable<diesel::sql_types::Text>`
-    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
-
+    = help: the following other types implement trait `AsExpression<T>`:
+              `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+              `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+              `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
+              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+            and N others
+ 
+    
 error[E0271]: type mismatch resolving `<SelectStatement<...> as AppearsInFromClause<...>>::Count == Never`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:111:18
     |
@@ -575,17 +617,22 @@ note: required for `posts::columns::title` to implement `SelectableExpression<Jo
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:123:31
     |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-    |                         ----- ^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
-    |                         |
-    |                         required by a bound introduced by this call
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
     |
-    = note: expected struct `diesel::sql_types::Text`
-               found struct `Nullable<diesel::sql_types::Text>`
-    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
+    = help: the following other types implement trait `AsExpression<T>`:
+              `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+              `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+              `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
+              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+            and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
     |
@@ -594,18 +641,27 @@ note: required by a bound in `lower`
  LL | extern "SQL" {
  LL |     fn lower(x: Text) -> Text;
     |        ----- required by a bound in this function
-    = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+ 
+        = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:123:25
     |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
     |
-    = note: expected struct `diesel::sql_types::Text`
-               found struct `Nullable<diesel::sql_types::Text>`
-    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
-
+    = help: the following other types implement trait `AsExpression<T>`:
+              `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+              `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+              `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
+              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+            and N others
+ 
+    
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:132:18
     |
@@ -732,17 +788,22 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:144:31
     |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-    |                         ----- ^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
-    |                         |
-    |                         required by a bound introduced by this call
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
     |
-    = note: expected struct `diesel::sql_types::Text`
-               found struct `Nullable<diesel::sql_types::Text>`
-    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
+    = help: the following other types implement trait `AsExpression<T>`:
+              `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+              `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+              `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
+              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+            and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
     |
@@ -751,14 +812,22 @@ note: required by a bound in `lower`
  LL | extern "SQL" {
  LL |     fn lower(x: Text) -> Text;
     |        ----- required by a bound in this function
-    = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+ 
+        = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
+error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:144:25
     |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Text`, found `Nullable<Text>`
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
     |
-    = note: expected struct `diesel::sql_types::Text`
-               found struct `Nullable<diesel::sql_types::Text>`
-    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
+    = help: the following other types implement trait `AsExpression<T>`:
+              `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+              `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+              `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
+              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+            and N others
