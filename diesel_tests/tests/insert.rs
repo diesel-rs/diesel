@@ -219,10 +219,7 @@ fn insert_record_attached_database_using_returning_clause() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(
-    not(feature = "returning_clauses_for_sqlite_3_35"),
-    feature = "mysql"
-)))]
+#[cfg(not(any(not(feature = "returning_clauses_for_sqlite_3_35"), feature = "mysql")))]
 fn insert_records_using_returning_clause() {
     use crate::schema::users::table as users;
     let connection = &mut connection();
@@ -566,10 +563,7 @@ fn upsert_empty_slice() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(any(
-    feature = "postgres",
-    feature = "returning_clauses_for_sqlite_3_35"
-))]
+#[cfg(any(feature = "postgres", feature = "returning_clauses_for_sqlite_3_35"))]
 fn insert_only_default_values_with_returning() {
     use crate::schema::users::id;
     use crate::schema::users::table as users;
@@ -1020,10 +1014,7 @@ fn batch_upsert_non_default_values() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(any(
-    feature = "postgres",
-    feature = "returning_clauses_for_sqlite_3_35"
-))]
+#[cfg(any(feature = "postgres", feature = "returning_clauses_for_sqlite_3_35"))]
 fn batch_upsert_with_returning() {
     use crate::schema::users;
     let conn = &mut connection_with_sean_and_tess_in_users_table();
