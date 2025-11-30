@@ -2,15 +2,19 @@ name: Security audit
 on:
   push:
     paths:
-      - '**/Cargo.toml'
-      - '**/Cargo.lock'
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
   schedule:
-    - cron: '0 0 */7 * *'
+    - cron: "0 0 */7 * *"
+
+permissions:
+  contents: "read"
+
 jobs:
   security_audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions-rust-lang/audit@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v5
+      - run: |
+          cargo install cargo-deny --locked
+          cargo deny check

@@ -1,4 +1,4 @@
-use super::{AppearsInFromClause, Plus};
+use super::{AppearsInFromClause, Plus, QueryRelation};
 use crate::backend::Backend;
 use crate::backend::DieselReserveSpecialization;
 use crate::expression::grouped::Grouped;
@@ -223,6 +223,11 @@ where
 /// [`joinable!`]: crate::joinable!
 /// [`.on`]: crate::query_dsl::JoinOnDsl::on()
 /// [`inner_join`]: crate::query_dsl::QueryDsl::inner_join()
+#[diagnostic::on_unimplemented(
+    message = "cannot join `{T}` to `{Self}` due to missing relation",
+    note = "joining tables directly either requires a `diesel::joinable!` definition \
+            or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`"
+)]
 pub trait JoinTo<T> {
     #[doc(hidden)]
     type FromClause;
@@ -243,7 +248,10 @@ pub trait AppendSelection<Selection> {
     fn append_selection(&self, selection: Selection) -> Self::Output;
 }
 
-impl<T: Table, Selection> AppendSelection<Selection> for T {
+impl<T, Selection> AppendSelection<Selection> for T
+where
+    T: QueryRelation,
+{
     type Output = (T::AllColumns, Selection);
 
     fn append_selection(&self, selection: Selection) -> Self::Output {
@@ -360,7 +368,7 @@ impl<Source, On> OnClauseWrapper<Source, On> {
 
 impl<Lhs, Rhs, On> JoinTo<OnClauseWrapper<Rhs, On>> for Lhs
 where
-    Lhs: Table,
+    Lhs: QueryRelation,
 {
     type FromClause = Rhs;
     type OnClause = On;

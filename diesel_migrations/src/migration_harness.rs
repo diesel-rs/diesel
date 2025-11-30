@@ -1,15 +1,12 @@
-use diesel::associations::HasTable;
 use diesel::backend::Backend;
-use diesel::dsl;
 use diesel::migration::{
     Migration, MigrationConnection, MigrationSource, MigrationVersion, Result,
 };
 use diesel::prelude::*;
-use diesel::query_builder::{DeleteStatement, InsertStatement, IntoUpdateTarget};
-use diesel::query_dsl::methods::ExecuteDsl;
-use diesel::query_dsl::LoadQuery;
+use diesel::query_builder::QueryFragment;
+use diesel::query_dsl::methods;
 use diesel::serialize::ToSql;
-use diesel::sql_types::Text;
+use diesel::sql_types::{Text, VarChar};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io::Write;
@@ -31,19 +28,10 @@ pub trait MigrationHarness<DB: Backend> {
     }
 
     /// Execute all unapplied migrations for a given migration source
-    ///
-    /// # Concurrent Usage Safety
-    /// This method can be safely called concurrently from multiple processes. The behavior is as follows:
-    ///
-    /// * All migrations are applied atomically by the first process that successfully acquires the database lock
-    /// * Concurrent processes attempting to run migrations while the lock is held will receive a "database is locked" error
-    /// * Processes that start after successful migration completion will find no pending migrations and complete successfully
-    /// * Each migration is guaranteed to be applied exactly once
-    ///
     fn run_pending_migrations<S: MigrationSource<DB>>(
         &mut self,
         source: S,
-    ) -> Result<Vec<MigrationVersion>> {
+    ) -> Result<Vec<MigrationVersion<'_>>> {
         let pending = self.pending_migrations(source)?;
         self.run_migrations(&pending)
     }
@@ -55,7 +43,7 @@ pub trait MigrationHarness<DB: Backend> {
     fn run_migrations(
         &mut self,
         migrations: &[Box<dyn Migration<DB>>],
-    ) -> Result<Vec<MigrationVersion>> {
+    ) -> Result<Vec<MigrationVersion<'_>>> {
         migrations.iter().map(|m| self.run_migration(m)).collect()
     }
 
@@ -63,7 +51,7 @@ pub trait MigrationHarness<DB: Backend> {
     fn run_next_migration<S: MigrationSource<DB>>(
         &mut self,
         source: S,
-    ) -> Result<MigrationVersion> {
+    ) -> Result<MigrationVersion<'_>> {
         let pending_migrations = self.pending_migrations(source)?;
         let next_migration = pending_migrations
             .first()
@@ -75,7 +63,7 @@ pub trait MigrationHarness<DB: Backend> {
     fn revert_all_migrations<S: MigrationSource<DB>>(
         &mut self,
         source: S,
-    ) -> Result<Vec<MigrationVersion>> {
+    ) -> Result<Vec<MigrationVersion<'_>>> {
         let applied_versions = self.applied_migrations()?;
         let mut migrations = source
             .migrations()?
@@ -162,30 +150,18 @@ pub trait MigrationHarness<DB: Backend> {
     fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>>;
 }
 
-impl<'b, C, DB> MigrationHarness<DB> for C
+impl<C, DB> MigrationHarness<DB> for C
 where
-    DB: Backend,
+    DB: Backend + diesel::internal::migrations::DieselReserveSpecialization,
     C: Connection<Backend = DB> + MigrationConnection + 'static,
-    dsl::Order<
-        dsl::Select<__diesel_schema_migrations::table, __diesel_schema_migrations::version>,
-        dsl::Desc<__diesel_schema_migrations::version>,
-    >: LoadQuery<'b, C, MigrationVersion<'static>>,
-    for<'a> InsertStatement<
-        __diesel_schema_migrations::table,
-        <dsl::Eq<__diesel_schema_migrations::version, MigrationVersion<'static>> as Insertable<
-            __diesel_schema_migrations::table,
-        >>::Values,
-    >: diesel::query_builder::QueryFragment<DB> + ExecuteDsl<C, DB>,
-    DeleteStatement<
-        <dsl::Find<
-            __diesel_schema_migrations::table,
-            MigrationVersion<'static>,
-        > as HasTable>::Table,
-        <dsl::Find<
-            __diesel_schema_migrations::table,
-            MigrationVersion<'static>,
-        > as IntoUpdateTarget>::WhereClause,
-    >: ExecuteDsl<C>,
+    __diesel_schema_migrations::table: methods::BoxedDsl<
+        'static,
+        DB,
+        Output = __diesel_schema_migrations::BoxedQuery<'static, DB>,
+    >,
+    __diesel_schema_migrations::BoxedQuery<'static, DB, VarChar>:
+        methods::LoadQuery<'static, C, MigrationVersion<'static>>,
+    diesel::internal::migrations::DefaultValues: QueryFragment<DB>,
     str: ToSql<Text, DB>,
 {
     fn run_migration(
@@ -195,7 +171,10 @@ where
         let apply_migration = |conn: &mut C| -> Result<()> {
             migration.run(conn)?;
             diesel::insert_into(__diesel_schema_migrations::table)
-                .values(__diesel_schema_migrations::version.eq(migration.name().version().as_owned())).execute(conn)?;
+                .values(
+                    __diesel_schema_migrations::version.eq(migration.name().version().as_owned()),
+                )
+                .execute(conn)?;
             Ok(())
         };
 
@@ -213,8 +192,10 @@ where
     ) -> Result<MigrationVersion<'static>> {
         let revert_migration = |conn: &mut C| -> Result<()> {
             migration.revert(conn)?;
-            diesel::delete(__diesel_schema_migrations::table.find(migration.name().version().as_owned()))
-               .execute(conn)?;
+            diesel::delete(
+                __diesel_schema_migrations::table.find(migration.name().version().as_owned()),
+            )
+            .execute(conn)?;
             Ok(())
         };
 
@@ -229,6 +210,7 @@ where
     fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>> {
         setup_database(self)?;
         Ok(__diesel_schema_migrations::table
+            .into_boxed()
             .select(__diesel_schema_migrations::version)
             .order(__diesel_schema_migrations::version.desc())
             .load(self)?)

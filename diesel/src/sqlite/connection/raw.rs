@@ -3,7 +3,7 @@
 extern crate libsqlite3_sys as ffi;
 
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
-use sqlite_wasm_rs::export as ffi;
+use sqlite_wasm_rs as ffi;
 
 use std::ffi::{CString, NulError};
 use std::io::{stderr, Write};
@@ -274,7 +274,7 @@ impl Drop for RawConnection {
                 write!(stderr(), "Error closing SQLite connection: {error_message}")
                     .expect("Error writing to `stderr`");
             } else {
-                panic!("Error closing SQLite connection: {}", error_message);
+                panic!("Error closing SQLite connection: {error_message}");
             }
         }
     }
@@ -457,7 +457,7 @@ where
             Some(&mut OptionalAggregator::Some(ref mut agg)) => agg,
             Some(a_ptr @ &mut OptionalAggregator::None) => {
                 ptr::write_unaligned(a_ptr as *mut _, OptionalAggregator::Some(A::default()));
-                if let OptionalAggregator::Some(ref mut agg) = a_ptr {
+                if let OptionalAggregator::Some(agg) = a_ptr {
                     agg
                 } else {
                     return Err(SqliteCallbackError::Abort(NULL_CTX_ERR));
@@ -533,7 +533,9 @@ unsafe fn context_error_str(ctx: *mut ffi::sqlite3_context, error: &str) {
         .len()
         .try_into()
         .expect("Trying to set a error message with more than 2^32 byte is not supported");
-    ffi::sqlite3_result_error(ctx, error.as_ptr() as *const _, len);
+    unsafe {
+        ffi::sqlite3_result_error(ctx, error.as_ptr() as *const _, len);
+    }
 }
 
 struct CollationUserPtr<F> {

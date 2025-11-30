@@ -5,5 +5,7 @@
 
 pub mod alias_macro;
 pub mod derives;
+pub mod migrations;
 pub mod operators_macro;
+pub mod sql_functions;
 pub mod table_macro;

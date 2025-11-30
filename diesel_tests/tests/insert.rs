@@ -293,7 +293,10 @@ fn insert_record_attached_database_using_returning_clause() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "sqlite", feature = "mysql")))]
+#[cfg(not(any(
+    not(all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35")),
+    feature = "mysql"
+)))]
 fn insert_records_using_returning_clause() {
     use crate::schema::users::table as users;
     let connection = &mut connection();
@@ -903,6 +906,52 @@ fn batch_insert_is_atomic_on_sqlite() {
     assert_eq!(Ok(0), users.count().get_result(connection));
 }
 
+#[diesel_test_helper::test]
+#[cfg(all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"))]
+fn batch_insert_with_returning_is_atomic_on_sqlite() {
+    use crate::schema::users::dsl::*;
+    let connection = &mut connection();
+
+    let new_users = vec![(id.eq(1), name.eq("Sean")), (id.eq(1), name.eq("Tess"))];
+    let result = insert_into(users)
+        .values(&new_users)
+        .get_results::<User>(connection);
+    assert!(result.is_err());
+
+    assert_eq!(Ok(0), users.count().get_result(connection));
+}
+
+#[diesel_test_helper::test]
+#[cfg(all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"))]
+fn batch_insert_with_defaultables_and_returning_is_atomic_on_sqlite() {
+    use crate::schema::users::dsl::*;
+    let connection = &mut connection();
+
+    let new_users = vec![Some(name.eq("Sean")), None];
+    let result = insert_into(users)
+        .values(&new_users)
+        .get_results::<User>(connection);
+    assert!(result.is_err());
+
+    assert_eq!(Ok(0), users.count().get_result(connection));
+}
+
+#[diesel_test_helper::test]
+#[cfg(all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"))]
+fn batch_upsert_with_defaultables_and_returning_is_atomic_on_sqlite() {
+    use crate::schema::users::dsl::*;
+    let connection = &mut connection();
+
+    let new_users = vec![Some(name.eq("Sean")), None];
+    let result = insert_into(users)
+        .values(&new_users)
+        .on_conflict_do_nothing()
+        .get_results::<User>(connection);
+    assert!(result.is_err());
+
+    assert_eq!(Ok(0), users.count().get_result(connection));
+}
+
 // regression test for https://github.com/diesel-rs/diesel/issues/2898
 #[diesel_test_helper::test]
 fn mixed_defaultable_insert() {
@@ -1042,4 +1091,48 @@ fn batch_upsert_non_default_values() {
         (2, Some(String::from("blue"))),
     ];
     assert_eq!(users, expected);
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(
+    feature = "postgres",
+    all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35")
+))]
+fn batch_upsert_with_returning() {
+    use crate::schema::users;
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+
+    let inserted_users = diesel::insert_into(users::table)
+        .values([
+            (
+                users::id.eq(1),
+                users::name.eq("Sean"),
+                users::hair_color.eq("black"),
+            ),
+            (
+                users::id.eq(2),
+                users::name.eq("Tess"),
+                users::hair_color.eq("blue"),
+            ),
+        ])
+        .on_conflict(users::id)
+        .do_update()
+        .set(users::hair_color.eq(diesel::upsert::excluded(users::hair_color)))
+        .get_results::<User>(conn)
+        .unwrap();
+
+    let expected_users = vec![
+        User {
+            id: 1,
+            name: "Sean".to_string(),
+            hair_color: Some("black".to_string()),
+        },
+        User {
+            id: 2,
+            name: "Tess".to_string(),
+            hair_color: Some("blue".to_string()),
+        },
+    ];
+
+    assert_eq!(inserted_users, expected_users);
 }

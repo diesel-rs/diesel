@@ -1,47 +1,79 @@
 error[E0277]: the trait bound `users::table: UndecoratedInsertRecord<posts::table>` is not satisfied
-  --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:34:10
+  --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:30:24
    |
-34 |         .values(vec![users, users]);
-   |          ^^^^^^ the trait `UndecoratedInsertRecord<posts::table>` is not implemented for `users::table`
+LL |     insert_into(posts).values(vec![users, users]);
+   |                        ^^^^^^ unsatisfied trait bound
    |
+help: the trait `UndecoratedInsertRecord<posts::table>` is not implemented for `users::table`
+  --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:6:1
+   |
+ LL | / table! {
+ LL | |     users {
+   | |_________^
    = help: the following other types implement trait `UndecoratedInsertRecord<Table>`:
              `&T` implements `UndecoratedInsertRecord<Tab>`
-             `(T0, T1)` implements `UndecoratedInsertRecord<Tab>`
-             `(T0, T1, T2)` implements `UndecoratedInsertRecord<Tab>`
-             `(T0, T1, T2, T3)` implements `UndecoratedInsertRecord<Tab>`
-             `(T0, T1, T2, T3, T4)` implements `UndecoratedInsertRecord<Tab>`
-             `(T0, T1, T2, T3, T4, T5)` implements `UndecoratedInsertRecord<Tab>`
-             `(T0, T1, T2, T3, T4, T5, T6)` implements `UndecoratedInsertRecord<Tab>`
-             `(T0, T1, T2, T3, T4, T5, T6, T7)` implements `UndecoratedInsertRecord<Tab>`
-           and $N others
+             `(T, T1)` implements `UndecoratedInsertRecord<Tab>`
+             `(T, T1, T2)` implements `UndecoratedInsertRecord<Tab>`
+             `(T, T1, T2, T3)` implements `UndecoratedInsertRecord<Tab>`
+             `(T, T1, T2, T3, T4)` implements `UndecoratedInsertRecord<Tab>`
+             `(T, T1, T2, T3, T4, T5)` implements `UndecoratedInsertRecord<Tab>`
+             `(T, T1, T2, T3, T4, T5, T6)` implements `UndecoratedInsertRecord<Tab>`
+             `(T, T1, T2, T3, T4, T5, T6, T7)` implements `UndecoratedInsertRecord<Tab>`
+           and N others
    = note: required for `Vec<users::table>` to implement `diesel::Insertable<posts::table>`
 
-error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == ValuesClause<_, table>`
-  --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:37:10
-   |
-37 |         .values((users, users));
-   |          ^^^^^^ expected `ValuesClause<_, table>`, found `InsertFromSelect<..., ...>`
-   |
-   = note: expected struct `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
-              found struct `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<FromClause<users::table>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>`
-   = note: required for `(users::table, users::table)` to implement `diesel::Insertable<posts::table>`
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == ValuesClause<_, table>`
-  --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:37:17
+  --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:33:24
    |
-37 |         .values((users, users));
-   |          ------ ^^^^^^^^^^^^^^ expected `ValuesClause<_, table>`, found `InsertFromSelect<..., ...>`
-   |          |
-   |          required by a bound introduced by this call
+LL |     insert_into(posts).values((users, users));
+   |                        ^^^^^^ type mismatch resolving `<table as Insertable<table>>::Values == ValuesClause<_, table>`
    |
+note: expected this to be `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
+  --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:6:1
+   |
+ LL | / table! {
+ LL | |     users {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+LL | | }
+   | |_^
    = note: expected struct `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
-              found struct `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<FromClause<users::table>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>`
+              found struct `InsertFromSelect<SelectStatement<FromClause<table>>, (..., ..., ...)>`
    = note: required for `(users::table, users::table)` to implement `diesel::Insertable<posts::table>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == ValuesClause<_, table>`
+   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:33:31
+    |
+ LL |     insert_into(posts).values((users, users));
+    |                        ------ ^^^^^^^^^^^^^^ type mismatch resolving `<table as Insertable<table>>::Values == ValuesClause<_, table>`
+    |                        |
+    |                        required by a bound introduced by this call
+    |
+note: expected this to be `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
+   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:6:1
+    |
+  LL | / table! {
+  LL | |     users {
+  LL | |         id -> Integer,
+  LL | |         name -> Text,
+...   |
+ LL | | }
+    | |_^
+    = note: expected struct `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
+               found struct `InsertFromSelect<SelectStatement<FromClause<table>>, (..., ..., ...)>`
+    = note: required for `(users::table, users::table)` to implement `diesel::Insertable<posts::table>`
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
-  --> $DIESEL/src/query_builder/insert_statement/mod.rs
-   |
-   |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
-   |            ------ required by a bound in this associated function
-   |     where
-   |         U: Insertable<T>,
-   |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
+    |            ------ required by a bound in this associated function
+LL |     where
+LL |         U: Insertable<T>,
+    |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

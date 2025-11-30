@@ -83,10 +83,13 @@ where
     /// #     use diesel::insert_into;
     /// #     use self::users::dsl::*;
     /// #     let connection = &mut connection_no_data();
-    /// diesel::sql_query("CREATE TABLE users (
+    /// diesel::sql_query(
+    ///     "CREATE TABLE users (
     ///     name VARCHAR(255) NOT NULL DEFAULT 'Sean',
     ///     hair_color VARCHAR(255) NOT NULL DEFAULT 'Green'
-    /// )").execute(connection)?;
+    /// )",
+    /// )
+    /// .execute(connection)?;
     ///
     /// insert_into(users)
     ///     .default_values()

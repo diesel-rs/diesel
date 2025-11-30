@@ -8,6 +8,8 @@ mod bool_expression_methods;
 mod eq_all;
 mod escape_expression_methods;
 mod global_expression_methods;
+#[cfg(any(feature = "sqlite", feature = "postgres_backend"))]
+pub(crate) mod json_expression_methods;
 mod text_expression_methods;
 
 #[doc(inline)]
@@ -19,7 +21,23 @@ pub use self::escape_expression_methods::EscapeExpressionMethods;
 #[doc(inline)]
 pub use self::global_expression_methods::{ExpressionMethods, NullableExpressionMethods};
 #[doc(inline)]
+#[cfg(any(feature = "sqlite", feature = "postgres_backend"))]
+pub use self::json_expression_methods::{AnyJsonExpressionMethods, JsonIndex};
+#[doc(inline)]
 pub use self::text_expression_methods::TextExpressionMethods;
+#[doc(inline)]
+pub use crate::expression::functions::aggregate_expressions::frame_clause::FrameBoundDsl;
+#[doc(inline)]
+pub use crate::expression::functions::aggregate_expressions::frame_clause::FrameClauseDsl;
+#[doc(inline)]
+pub use crate::expression::functions::aggregate_expressions::frame_clause::{
+    FrameClauseEndBound, FrameClauseExclusion, FrameClauseStartBound, OffsetFollowing,
+    OffsetPreceding,
+};
+#[doc(inline)]
+pub use crate::expression::functions::aggregate_expressions::AggregateExpressionMethods;
+#[doc(inline)]
+pub use crate::expression::functions::aggregate_expressions::WindowExpressionMethods;
 
 #[cfg(feature = "postgres_backend")]
 #[doc(inline)]

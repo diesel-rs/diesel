@@ -18,7 +18,7 @@ mod delete_statement;
 mod distinct_clause;
 pub(crate) mod from_clause;
 pub(crate) mod functions;
-mod group_by_clause;
+pub(crate) mod group_by_clause;
 mod having_clause;
 pub(crate) mod insert_statement;
 pub(crate) mod limit_clause;
@@ -138,6 +138,8 @@ use crate::backend::Backend;
 use crate::result::QueryResult;
 use std::error::Error;
 
+pub(crate) use self::private::NotSpecialized;
+
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
 /// A specialized Result type used with the query builder.
@@ -149,7 +151,6 @@ pub type BuildQueryResult = Result<(), Box<dyn Error + Send + Sync>>;
 /// are extending Diesel with support for a new backend. Plugins which extend
 /// the query builder with new capabilities will interact with [`AstPass`]
 /// instead.
-///
 pub trait QueryBuilder<DB: Backend> {
     /// Add `sql` to the end of the query being constructed.
     fn push_sql(&mut self, sql: &str);
@@ -227,7 +228,6 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     /// This method is where the actual behavior of an AST node is implemented.
     /// This method will contain the behavior required for all possible AST
     /// passes. See [`AstPass`] for more details.
-    ///
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>;
 
     /// Converts this `QueryFragment` to its SQL representation.
@@ -356,6 +356,9 @@ where
 /// A trait used to construct type erased boxed variant of the current query node
 ///
 /// Mainly useful for implementing third party backends
+#[diagnostic::on_unimplemented(
+    note = "this usually means that `{Self}` is no valid SQL for `{DB}`"
+)]
 pub trait IntoBoxedClause<'a, DB> {
     /// Resulting type
     type BoxedClause;
@@ -429,8 +432,11 @@ impl<T: Query> AsQuery for T {
 /// #     assert_eq!(debug.to_string(), "SELECT \"users\".\"id\", \"users\".\"name\" \
 /// #         FROM \"users\" WHERE (\"users\".\"id\" = $1) -- binds: [1]");
 /// # } else {
-/// assert_eq!(debug.to_string(), "SELECT `users`.`id`, `users`.`name` FROM `users` \
-///     WHERE (`users`.`id` = ?) -- binds: [1]");
+/// assert_eq!(
+///     debug.to_string(),
+///     "SELECT `users`.`id`, `users`.`name` FROM `users` \
+///     WHERE (`users`.`id` = ?) -- binds: [1]"
+/// );
 /// # }
 ///
 /// let debug = format!("{:?}", debug);
@@ -452,3 +458,5 @@ mod private {
     #[allow(missing_debug_implementations, missing_copy_implementations)]
     pub struct NotSpecialized;
 }
+
+pub(crate) mod has_query;

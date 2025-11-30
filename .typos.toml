@@ -12,8 +12,8 @@ extend-ignore-re = [
     "dO_nOt_cHaNgE_cAsE", "fOoBaR",
     # That is the name of a book author
     "michael_ende", "Michael Ende",
-    # That's an actual money unit (include the commet to only match that part)
-    "Fils;  // 1/1000th unit of Dinar",
+    # That's an actual money unit (include the comment to only match that part)
+    "use diesel::data_types::PgMoney as Fils; // 1/1000th unit of Dinar",
     # That's a name (include the expression to only match the relevant part)
     "name\\.eq\\(\"Claus\"\\)",
     # Thats a test for a typo,
@@ -23,6 +23,8 @@ extend-ignore-re = [
     "big_sur",
     # That's Spanish for "type" (used in a unit-test)
     "tipe",
+    # we use this often in place of the reserved type identifier
+    "tpe",
 ]
 
 [type.md]

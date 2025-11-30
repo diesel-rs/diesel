@@ -1,7 +1,7 @@
 #![allow(unsafe_code)] // module uses ffi
 use mysqlclient_sys as ffi;
-use std::mem;
 use std::mem::MaybeUninit;
+use std::mem::{self, ManuallyDrop};
 use std::ops::Index;
 use std::os::raw as libc;
 use std::ptr::NonNull;
@@ -11,6 +11,15 @@ use crate::mysql::connection::stmt::StatementMetadata;
 use crate::mysql::types::date_and_time::MysqlTime;
 use crate::mysql::{MysqlType, MysqlValue};
 use crate::result::QueryResult;
+
+fn bind_buffer(data: Vec<u8>) -> (Option<NonNull<u8>>, libc::c_ulong, usize) {
+    let mut data = ManuallyDrop::new(data);
+    (
+        NonNull::new(data.as_mut_ptr()),
+        data.len() as libc::c_ulong,
+        data.capacity(),
+    )
+}
 
 pub(super) struct PreparedStatementBinds(Binds);
 
@@ -183,12 +192,7 @@ impl Clone for BindData {
                     self.length.try_into().expect("usize is at least 32bit"),
                 )
             };
-            let mut vec = slice.to_owned();
-            let ptr = NonNull::new(vec.as_mut_ptr());
-            let len = vec.len() as libc::c_ulong;
-            let capacity = vec.capacity();
-            mem::forget(vec);
-            (ptr, len, capacity)
+            bind_buffer(slice.to_owned())
         } else {
             (None, 0, 0)
         };
@@ -225,11 +229,7 @@ impl BindData {
     fn for_input((tpe, data): (MysqlType, Option<Vec<u8>>)) -> Self {
         let (tpe, flags) = tpe.into();
         let is_null = ffi::my_bool::from(data.is_none());
-        let mut bytes = data.unwrap_or_default();
-        let ptr = NonNull::new(bytes.as_mut_ptr());
-        let len = bytes.len() as libc::c_ulong;
-        let capacity = bytes.capacity();
-        mem::forget(bytes);
+        let (ptr, len, capacity) = bind_buffer(data.unwrap_or_default());
         Self {
             tpe,
             bytes: ptr,
@@ -379,11 +379,10 @@ impl BindData {
     fn from_tpe_and_flags((tpe, flags): (ffi::enum_field_types, Flags)) -> Self {
         // newer mysqlclient versions do not accept a zero sized buffer
         let len = known_buffer_size_for_ffi_type(tpe).unwrap_or(1);
-        let mut bytes = vec![0; len];
-        let length = bytes.len() as libc::c_ulong;
-        let capacity = bytes.capacity();
-        let ptr = NonNull::new(bytes.as_mut_ptr());
-        mem::forget(bytes);
+        // it's important to initialize the data with zeros here
+        // to make sure we don't expose any uninitialized memory if the underlying library
+        // (again…) skrews up something
+        let (ptr, length, capacity) = bind_buffer(vec![0; len]);
 
         Self {
             tpe,
@@ -410,6 +409,42 @@ impl BindData {
         } else {
             let data = self.bytes?;
             let tpe = (self.tpe, self.flags).into();
+
+            // Newer libmariadbclient versions overwrite the length field with zero values
+            // in some cases (mostly when we load a zero value). As we don't reset the length value
+            // and also reuse the underlying buffers for more than one row this is problematic
+            // for diesel. To workaround that issue we instead reset the length value
+            // for known statically sized types here.
+            //
+            // This is "safe" for all statically sized types as they are only "numeric" values
+            // that consider every possible byte pattern as valid. This also includes timestamps,
+            // but the MYSQL_TIME type consists only of numbers as well.
+            //
+            // To prevent a potential memory exposure we always initialize the buffer with
+            // zeros, so the worst thing that could happen is that you get the value from a previous
+            // row if the underlying library fails to reset the bytes
+            //
+            // We assert that we don't read more than capacity bytes below as that's
+            // the most important invariant to uphold here
+            let length = if let Some(length) = known_buffer_size_for_ffi_type(self.tpe) {
+                debug_assert!(length <= self.length.try_into().expect("Usize is at least 32 bit"),
+                    "Libmysqlclient reported a larger size for a fixed size buffer without setting the truncated flag. \n\
+                     This is a bug somewhere. Please open an issue with reproduction steps at \
+                     https://github.com/diesel-rs/diesel/issues/new \n\
+                     Length: {length}, Capacity: {}, Type: {:?}", self.capacity, self.tpe
+                );
+                length
+            } else {
+                self.length.try_into().expect("Usize is at least 32 bit")
+            };
+            assert!(
+                length <= self.capacity,
+                "Got a buffer size larger than the underlying allocation. \n\
+                 If you see this message, please open an issue at https://github.com/diesel-rs/diesel/issues/new.\n\
+                 Such an issue should contain exact reproduction steps how to trigger this message\n\
+                 Length: {length}, Capacity: {}, Type: {:?}", self.capacity, self.tpe
+            );
+
             let slice = unsafe {
                 // We know that this points to a slice and the pointer is not null at this
                 // location
@@ -418,10 +453,7 @@ impl BindData {
                 // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
                 // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
-                std::slice::from_raw_parts(
-                    data.as_ptr(),
-                    self.length.try_into().expect("Usize is at least 32 bit"),
-                )
+                std::slice::from_raw_parts(data.as_ptr(), length)
             };
             Some(MysqlValue::new_internal(slice, tpe))
         }
@@ -450,24 +482,26 @@ impl BindData {
         let mut bind: MaybeUninit<ffi::MYSQL_BIND> = mem::MaybeUninit::zeroed();
         let ptr = bind.as_mut_ptr();
 
-        addr_of_mut!((*ptr).buffer_type).write(self.tpe);
-        addr_of_mut!((*ptr).buffer).write(
-            self.bytes
-                .map(|p| p.as_ptr())
-                .unwrap_or(std::ptr::null_mut()) as *mut libc::c_void,
-        );
-        addr_of_mut!((*ptr).buffer_length).write(self.capacity as libc::c_ulong);
-        addr_of_mut!((*ptr).length).write(&mut self.length);
-        addr_of_mut!((*ptr).is_null).write(&mut self.is_null);
-        addr_of_mut!((*ptr).is_unsigned)
-            .write(self.flags.contains(Flags::UNSIGNED_FLAG) as ffi::my_bool);
+        unsafe {
+            addr_of_mut!((*ptr).buffer_type).write(self.tpe);
+            addr_of_mut!((*ptr).buffer).write(
+                self.bytes
+                    .map(|p| p.as_ptr())
+                    .unwrap_or(std::ptr::null_mut()) as *mut libc::c_void,
+            );
+            addr_of_mut!((*ptr).buffer_length).write(self.capacity as libc::c_ulong);
+            addr_of_mut!((*ptr).length).write(&mut self.length);
+            addr_of_mut!((*ptr).is_null).write(&mut self.is_null);
+            addr_of_mut!((*ptr).is_unsigned)
+                .write(self.flags.contains(Flags::UNSIGNED_FLAG) as ffi::my_bool);
 
-        if let Some(ref mut is_truncated) = self.is_truncated {
-            addr_of_mut!((*ptr).error).write(is_truncated);
+            if let Some(ref mut is_truncated) = self.is_truncated {
+                addr_of_mut!((*ptr).error).write(is_truncated);
+            }
+
+            // That's what the mysqlclient examples are doing
+            bind.assume_init()
         }
-
-        // That's what the mysqlclient examples are doing
-        bind.assume_init()
     }
 
     /// Resizes the byte buffer to fit the value of `self.length`, and returns
@@ -479,12 +513,13 @@ impl BindData {
     unsafe fn bind_for_truncated_data(&mut self) -> Option<(ffi::MYSQL_BIND, usize)> {
         if self.is_truncated() {
             if let Some(bytes) = self.bytes {
-                let mut bytes = Vec::from_raw_parts(bytes.as_ptr(), self.capacity, self.capacity);
+                let mut bytes =
+                    unsafe { Vec::from_raw_parts(bytes.as_ptr(), self.capacity, self.capacity) };
                 self.bytes = None;
 
                 let offset = self.capacity;
-                let truncated_amount =
-                    usize::try_from(self.length).expect("Usize is at least 32 bit") - offset;
+                let length = usize::try_from(self.length).expect("Usize is at least 32 bit");
+                let truncated_amount = length - offset;
 
                 debug_assert!(
                     truncated_amount > 0,
@@ -494,17 +529,20 @@ impl BindData {
 
                 // reserve space for any missing byte
                 // we know the exact size here
-                bytes.reserve(truncated_amount);
-                self.capacity = bytes.capacity();
-                self.bytes = NonNull::new(bytes.as_mut_ptr());
-                mem::forget(bytes);
+                // We use resize instead reserve to initialize the whole memory
+                // to prevent exposing memory if libmariadb/libmysqlclient (again)
+                // returns a wrong size here
+                bytes.resize(length, 0);
+                let (ptr, _length, capacity) = bind_buffer(bytes);
+                self.capacity = capacity;
+                self.bytes = ptr;
 
-                let mut bind = self.mysql_bind();
+                let mut bind = unsafe { self.mysql_bind() };
 
                 if let Some(ptr) = self.bytes {
                     // Using offset is safe here as we have a u8 array (where std::mem::size_of::<u8> == 1)
                     // and we have a buffer that has at least
-                    bind.buffer = ptr.as_ptr().add(offset) as *mut libc::c_void;
+                    bind.buffer = unsafe { ptr.as_ptr().add(offset) as *mut libc::c_void };
                     bind.buffer_length = truncated_amount as libc::c_ulong;
                 } else {
                     bind.buffer_length = 0;
@@ -514,12 +552,16 @@ impl BindData {
                 // offset is zero here as we don't have a buffer yet
                 // we know the requested length here so we can just request
                 // the correct size
-                let mut vec = vec![0_u8; self.length.try_into().expect("usize is at least 32 bit")];
-                self.capacity = vec.capacity();
-                self.bytes = NonNull::new(vec.as_mut_ptr());
-                mem::forget(vec);
+                let (ptr, _length, capacity) = bind_buffer(vec![
+                    0_u8;
+                    self.length.try_into().expect(
+                        "usize is at least 32 bit"
+                    )
+                ]);
+                self.capacity = capacity;
+                self.bytes = ptr;
 
-                let bind = self.mysql_bind();
+                let bind = unsafe { self.mysql_bind() };
                 // As we did not have a buffer before
                 // we couldn't have loaded any data yet, therefore
                 // request everything
@@ -763,7 +805,7 @@ mod tests {
 
     fn to_value<ST, T>(
         bind: &BindData,
-    ) -> Result<T, Box<(dyn std::error::Error + Send + Sync + 'static)>>
+    ) -> Result<T, Box<dyn std::error::Error + Send + Sync + 'static>>
     where
         T: FromSql<ST, crate::mysql::Mysql> + std::fmt::Debug,
     {
@@ -1267,7 +1309,7 @@ mod tests {
         query: &'static str,
         conn: &MysqlConnection,
         id: i32,
-        (mut field, tpe): (Vec<u8>, impl Into<(ffi::enum_field_types, Flags)>),
+        (field, tpe): (Vec<u8>, impl Into<(ffi::enum_field_types, Flags)>),
     ) {
         let mut stmt = conn
             .raw_connection
@@ -1275,9 +1317,7 @@ mod tests {
             .unwrap();
         let length = field.len() as _;
         let (tpe, flags) = tpe.into();
-        let capacity = field.capacity();
-        let ptr = NonNull::new(field.as_mut_ptr());
-        mem::forget(field);
+        let (ptr, _length, capacity) = bind_buffer(field);
 
         let field_bind = BindData {
             tpe,
@@ -1289,11 +1329,7 @@ mod tests {
             is_truncated: None,
         };
 
-        let mut bytes = id.to_be_bytes().to_vec();
-        let length = bytes.len() as _;
-        let capacity = bytes.capacity();
-        let ptr = NonNull::new(bytes.as_mut_ptr());
-        mem::forget(bytes);
+        let (ptr, length, capacity) = bind_buffer(id.to_be_bytes().to_vec());
 
         let id_bind = BindData {
             tpe: ffi::enum_field_types::MYSQL_TYPE_LONG,

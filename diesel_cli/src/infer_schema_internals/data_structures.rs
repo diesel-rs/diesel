@@ -1,6 +1,8 @@
 use diesel_table_macro_syntax::ColumnDef;
+use std::fmt::{self, Display};
+use std::str::FromStr;
 
-use super::table_data::TableName;
+use super::{table_data::TableName, TableData, ViewData};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ColumnInformation {
@@ -20,12 +22,13 @@ pub struct ColumnType {
     pub is_array: bool,
     pub is_nullable: bool,
     pub is_unsigned: bool,
+    pub record: Option<Vec<ColumnType>>,
     pub max_length: Option<u64>,
 }
 
 impl ColumnType {
     pub(crate) fn for_column_def(c: &ColumnDef) -> Result<Self, crate::errors::Error> {
-        Ok(Self::for_type_path(
+        Self::for_type_path(
             &c.tpe,
             c.max_length
                 .as_ref()
@@ -34,10 +37,13 @@ impl ColumnType {
                         .map_err(crate::errors::Error::ColumnLiteralParseError)
                 })
                 .transpose()?,
-        ))
+        )
     }
 
-    fn for_type_path(t: &syn::TypePath, max_length: Option<u64>) -> Self {
+    fn for_type_path(
+        t: &syn::TypePath,
+        max_length: Option<u64>,
+    ) -> Result<Self, crate::errors::Error> {
         let last = t
             .path
             .segments
@@ -51,10 +57,20 @@ impl ColumnType {
             is_array: last.ident == "Array",
             is_nullable: last.ident == "Nullable",
             is_unsigned: last.ident == "Unsigned",
+            record: None,
             max_length,
         };
+        let is_range = last.ident == "Range";
+        let is_multirange = last.ident == "Multirange";
+        let is_record = last.ident == "Record";
 
-        let sql_name = if !ret.is_nullable && !ret.is_array && !ret.is_unsigned {
+        let sql_name = if !ret.is_nullable
+            && !ret.is_array
+            && !ret.is_unsigned
+            && !is_range
+            && !is_multirange
+            && !is_record
+        {
             if last.ident == "PgLsn" {
                 "pg_lsn".to_string()
             } else {
@@ -62,12 +78,51 @@ impl ColumnType {
             }
         } else if let syn::PathArguments::AngleBracketed(ref args) = last.arguments {
             let arg = args.args.first().expect("There is at least one argument");
-            if let syn::GenericArgument::Type(syn::Type::Path(p)) = arg {
-                let s = Self::for_type_path(p, max_length);
-                ret.is_nullable |= s.is_nullable;
-                ret.is_array |= s.is_array;
-                ret.is_unsigned |= s.is_unsigned;
-                s.sql_name
+            if let syn::GenericArgument::Type(syn::Type::Tuple(t)) = arg {
+                ret.record = Some(
+                    t.elems
+                        .iter()
+                        .map(|t| {
+                            if let syn::Type::Path(p) = t {
+                                Self::for_type_path(p, None)
+                            } else {
+                                panic!();
+                            }
+                        })
+                        .collect::<Result<_, _>>()?,
+                );
+                "record".to_owned()
+            } else if let syn::GenericArgument::Type(syn::Type::Path(p)) = arg {
+                let s = Self::for_type_path(p, max_length)?;
+                if is_range {
+                    match s.sql_name.to_uppercase().as_str() {
+                        "INT4" | "INTEGER" => "int4range".to_owned(),
+                        "INT8" | "BIGINT" => "int8range".into(),
+                        "NUMERIC" => "numrange".into(),
+                        "TIMESTAMP" | "TIMESTAMP WITHOUT TIME ZONE" => "tsrange".into(),
+                        "TIMESTAMPTZ" | "TIMESTAMP WITH TIME ZONE" => "tstzrange".into(),
+                        "DATE" => "daterange".into(),
+                        s => format!("{s}range"),
+                    }
+                } else if is_multirange {
+                    match s.sql_name.to_uppercase().as_str() {
+                        "INT4" | "INTEGER" => "int4multirange".to_owned(),
+                        "INT8" | "BIGINT" => "int8multirange".into(),
+                        "NUMERIC" => "nummultirange".into(),
+                        "TIMESTAMP" | "TIMESTAMP WITHOUT TIME ZONE" => "tsmultirange".into(),
+                        "TIMESTAMPTZ" | "TIMESTAMP WITH TIME ZONE" => "tstzmultirange".into(),
+                        "DATE" => "datemultirange".into(),
+                        s => format!("{s}multirange"),
+                    }
+                } else {
+                    if !ret.is_array {
+                        ret.is_nullable |= s.is_nullable;
+                        ret.is_array |= s.is_array;
+                    }
+                    ret.is_unsigned |= s.is_unsigned;
+                    ret.record = ret.record.or(s.record);
+                    s.sql_name
+                }
             } else {
                 unreachable!("That shouldn't happen")
             }
@@ -75,11 +130,9 @@ impl ColumnType {
             unreachable!("That shouldn't happen")
         };
         ret.sql_name = sql_name;
-        ret
+        Ok(ret)
     }
 }
-
-use std::fmt;
 
 impl fmt::Display for ColumnType {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
@@ -106,7 +159,7 @@ impl fmt::Display for ColumnType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ColumnDefinition {
     pub sql_name: String,
     pub rust_name: String,
@@ -155,4 +208,83 @@ impl ForeignKeyConstraint {
             max(&self.parent_table, &self.child_table),
         )
     }
+}
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub enum SupportedQueryRelationStructures {
+    View,
+    Table,
+}
+
+#[derive(Debug)]
+pub enum QueryRelationData {
+    View(ViewData),
+    Table(TableData),
+}
+
+impl QueryRelationData {
+    pub fn table_name(&self) -> &TableName {
+        match &self {
+            Self::Table(table) => &table.name,
+            Self::View(view) => &view.name,
+        }
+    }
+
+    pub fn columns(&self) -> &Vec<ColumnDefinition> {
+        match self {
+            Self::Table(table) => &table.column_data,
+            Self::View(view) => &view.column_data,
+        }
+    }
+
+    pub fn comment(&self) -> &Option<String> {
+        match self {
+            Self::Table(table) => &table.comment,
+            Self::View(view) => &view.comment,
+        }
+    }
+
+    pub fn relation_type(&self) -> &'static str {
+        match self {
+            QueryRelationData::View(_view_data) => "view",
+            QueryRelationData::Table(_table_data) => "table",
+        }
+    }
+}
+
+impl Display for SupportedQueryRelationStructures {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let format = self.as_str();
+        write!(f, "{format}")
+    }
+}
+
+impl FromStr for SupportedQueryRelationStructures {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "BASE TABLE" => Ok(Self::Table),
+            "VIEW" => Ok(Self::View),
+            _ => unreachable!("This should never happen. Read {s}"),
+        }
+    }
+}
+
+impl SupportedQueryRelationStructures {
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Table => "BASE TABLE",
+            Self::View => "VIEW",
+        }
+    }
+
+    #[cfg(feature = "uses_information_schema")]
+    const fn display_all() -> [&'static str; Self::VARIANT_COUNT] {
+        [Self::Table.as_str(), Self::View.as_str()]
+    }
+
+    #[cfg(feature = "uses_information_schema")]
+    pub const ALL_NAMES: [&'static str; Self::VARIANT_COUNT] = Self::display_all();
+    #[cfg(feature = "uses_information_schema")]
+    const VARIANT_COUNT: usize = 2;
 }

@@ -1,0 +1,19 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(SqlType)]\n#[diesel(sqlite_type(name = \"Integer\"))]\nstruct Integer;\n"
+---
+const _: () = {
+    use diesel;
+    impl diesel::sql_types::SqlType for Integer {
+        type IsNull = diesel::sql_types::is_nullable::NotNull;
+        const IS_ARRAY: bool = false;
+    }
+    impl diesel::sql_types::SingleValue for Integer {}
+    impl diesel::sql_types::HasSqlType<Integer> for diesel::sqlite::Sqlite {
+        fn metadata(_: &mut ()) -> diesel::sqlite::SqliteType {
+            diesel::sqlite::SqliteType::Integer
+        }
+    }
+};

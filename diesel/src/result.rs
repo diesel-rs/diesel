@@ -96,7 +96,7 @@ pub enum Error {
     BrokenTransactionManager,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 /// The kind of database error that occurred.
 ///
 /// This is not meant to exhaustively cover all possible errors, but is used to
@@ -106,16 +106,16 @@ pub enum Error {
 #[non_exhaustive]
 pub enum DatabaseErrorKind {
     /// A unique constraint was violated.
-    UniqueViolation,
+    UniqueViolation = 0,
 
     /// A foreign key constraint was violated.
-    ForeignKeyViolation,
+    ForeignKeyViolation = 1,
 
     /// The query could not be sent to the database due to a protocol violation.
     ///
     /// An example of a case where this would occur is if you attempted to send
     /// a query with more than 65000 bind parameters using PostgreSQL.
-    UnableToSendCommand,
+    UnableToSendCommand = 2,
 
     /// A serializable transaction failed to commit due to a read/write
     /// dependency on a concurrent transaction.
@@ -124,35 +124,35 @@ pub enum DatabaseErrorKind {
     ///
     /// This error is only detected for PostgreSQL, as we do not yet support
     /// transaction isolation levels for other backends.
-    SerializationFailure,
+    SerializationFailure = 3,
 
     /// The command could not be completed because the transaction was read
     /// only.
     ///
     /// This error will also be returned for `SELECT` statements which attempted
     /// to lock the rows.
-    ReadOnlyTransaction,
+    ReadOnlyTransaction = 4,
 
     /// A restrict constraint was violated.
-    RestrictViolation,
+    RestrictViolation = 9,
 
     /// A not null constraint was violated.
-    NotNullViolation,
+    NotNullViolation = 5,
 
     /// A check constraint was violated.
-    CheckViolation,
+    CheckViolation = 6,
 
     /// An exclusion constraint was violated.
-    ExclusionViolation,
+    ExclusionViolation = 10,
 
     /// The connection to the server was unexpectedly closed.
     ///
     /// This error is only detected for PostgreSQL and is emitted on a best-effort basis
     /// and may be missed.
-    ClosedConnection,
+    ClosedConnection = 7,
 
     #[doc(hidden)]
-    Unknown, // Match against _ instead, more variants may be added in the future
+    Unknown = 8, // Match against _ instead, more variants may be added in the future
 }
 
 /// Information about an error that was returned by the database.
@@ -274,7 +274,7 @@ pub trait OptionalExtension<T> {
     /// # Example
     ///
     /// ```rust
-    /// use diesel::{QueryResult, NotFound, OptionalExtension};
+    /// use diesel::{NotFound, OptionalExtension, QueryResult};
     ///
     /// let result: QueryResult<i32> = Ok(1);
     /// assert_eq!(Ok(Some(1)), result.optional());
@@ -303,7 +303,10 @@ pub trait OptionalEmptyChangesetExtension<T> {
     /// # Example
     ///
     /// ```rust
-    /// use diesel::{QueryResult, OptionalEmptyChangesetExtension, result::Error::QueryBuilderError, result::EmptyChangeset};
+    /// use diesel::{
+    ///     result::EmptyChangeset, result::Error::QueryBuilderError, OptionalEmptyChangesetExtension,
+    ///     QueryResult,
+    /// };
     /// let result: QueryResult<i32> = Err(QueryBuilderError(Box::new(EmptyChangeset)));
     /// assert_eq!(Ok(None), result.optional_empty_changeset());
     /// ```

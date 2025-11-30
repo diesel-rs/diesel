@@ -90,9 +90,9 @@ where
     ///     .select(name)
     ///     .filter(
     ///         sql::<Bool>("id > ")
-    ///         .bind::<Integer,_>(1)
-    ///         .sql(" AND name <> ")
-    ///         .bind::<Text, _>("Ryan")
+    ///             .bind::<Integer, _>(1)
+    ///             .sql(" AND name <> ")
+    ///             .bind::<Text, _>("Ryan"),
     ///     )
     ///     .get_results(connection);
     /// let expected = vec!["Tess".to_string()];
@@ -140,10 +140,7 @@ where
     /// #           .execute(connection).unwrap();
     /// let query = users
     ///     .select(name)
-    ///     .filter(
-    ///         sql::<Bool>("id > 1")
-    ///         .sql(" AND name <> 'Ryan'")
-    ///     )
+    ///     .filter(sql::<Bool>("id > 1").sql(" AND name <> 'Ryan'"))
     ///     .get_results(connection);
     /// let expected = vec!["Tess".to_string()];
     /// assert_eq!(Ok(expected), query);
@@ -229,7 +226,9 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// #     use diesel::sql_types::Bool;
 /// use diesel::dsl::sql;
 /// #     let connection = &mut establish_connection();
-/// let user = users.filter(sql::<Bool>("name = 'Sean'")).first(connection)?;
+/// let user = users
+///     .filter(sql::<Bool>("name = 'Sean'"))
+///     .first(connection)?;
 /// let expected = (1, String::from("Sean"));
 /// assert_eq!(expected, user);
 /// #     Ok(())
@@ -247,9 +246,9 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 ///     .select(name)
 ///     .filter(
 ///         sql::<Bool>("id > ")
-///         .bind::<Integer,_>(1)
-///         .sql(" AND name <> ")
-///         .bind::<Text, _>("Ryan")
+///             .bind::<Integer, _>(1)
+///             .sql(" AND name <> ")
+///             .bind::<Text, _>("Ryan"),
 ///     )
 ///     .get_results(connection);
 /// let expected = vec!["Tess".to_string()];
@@ -268,7 +267,6 @@ where
 #[derive(QueryId, Debug, Clone, Copy)]
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
 /// Returned by the [`SqlLiteral::bind()`] method when binding a value to a fragment of SQL.
-///
 pub struct UncheckedBind<Query, Value> {
     query: Query,
     value: Value,
@@ -317,8 +315,8 @@ where
     ///     .select(name)
     ///     .filter(
     ///         sql::<Bool>("id > ")
-    ///         .bind::<Integer,_>(1)
-    ///         .sql(" AND name <> 'Ryan'")
+    ///             .bind::<Integer, _>(1)
+    ///             .sql(" AND name <> 'Ryan'"),
     ///     )
     ///     .get_results(connection);
     /// let expected = vec!["Tess".to_string()];

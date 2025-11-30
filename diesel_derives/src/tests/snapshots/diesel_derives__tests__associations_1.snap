@@ -1,0 +1,39 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(Associations)]\n#[diesel(belongs_to(User))]\nstruct Post {\n    id: i32,\n    title: String,\n    user_id: i32,\n}\n"
+---
+const _: () = {
+    use diesel;
+    impl<__FK> diesel::associations::BelongsTo<User> for Post
+    where
+        __FK: std::hash::Hash + std::cmp::Eq,
+        for<'__a> &'__a i32: std::convert::Into<::std::option::Option<&'__a __FK>>,
+        for<'__a> &'__a User: diesel::associations::Identifiable<Id = &'__a __FK>,
+    {
+        type ForeignKey = __FK;
+        type ForeignKeyColumn = posts::user_id;
+        fn foreign_key(&self) -> std::option::Option<&Self::ForeignKey> {
+            std::convert::Into::into(&self.user_id)
+        }
+        fn foreign_key_column() -> Self::ForeignKeyColumn {
+            posts::user_id
+        }
+    }
+    impl<__FK> diesel::associations::BelongsTo<&'_ User> for Post
+    where
+        __FK: std::hash::Hash + std::cmp::Eq,
+        for<'__a> &'__a i32: std::convert::Into<::std::option::Option<&'__a __FK>>,
+        for<'__a> &'__a User: diesel::associations::Identifiable<Id = &'__a __FK>,
+    {
+        type ForeignKey = __FK;
+        type ForeignKeyColumn = posts::user_id;
+        fn foreign_key(&self) -> std::option::Option<&Self::ForeignKey> {
+            std::convert::Into::into(&self.user_id)
+        }
+        fn foreign_key_column() -> Self::ForeignKeyColumn {
+            posts::user_id
+        }
+    }
+};

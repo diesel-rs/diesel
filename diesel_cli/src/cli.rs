@@ -252,6 +252,16 @@ pub fn build_cli() -> Command {
                 .action(clap::ArgAction::Append)
                 .help("Table names to filter."),
         )
+        .arg(Arg::new("include-views")
+             .long("include-views")
+             .action(ArgAction::SetTrue)
+             .help("Include views in the generated schema")
+        )
+        .arg(Arg::new("experimental_infer_nullable_for_views")
+             .long("experimental-infer-nullable-for-views")
+             .action(ArgAction::SetTrue)
+            .help("UNSTABLE: Infer nullability for view fields")
+        )
         .arg(
             position_sensitive_flag(Arg::new("only-tables"))
                 .short('o')

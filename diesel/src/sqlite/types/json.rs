@@ -155,7 +155,7 @@ mod jsonb {
             JSONB_TEXT5 => Err("TEXT5 is not supported".into()),
             JSONB_ARRAY => read_jsonb_array(payload_bytes, payload_size),
             JSONB_OBJECT => read_jsonb_object(payload_bytes, payload_size),
-            _ => Err(format!("Unsupported or reserved JSONB type: {}", element_type).into()),
+            _ => Err(format!("Unsupported or reserved JSONB type: {element_type}").into()),
         }?;
 
         Ok((value, total_size))
@@ -249,7 +249,7 @@ mod jsonb {
         let text = std::str::from_utf8(bytes).map_err(|_| "Invalid UTF-8 in JSONB string")?;
 
         // Unescape JSON escape sequences (e.g., "\n", "\u0020")
-        let unescaped_text = serde_json::from_str(&format!("\"{}\"", text))
+        let unescaped_text = serde_json::from_str(&format!("\"{text}\""))
             .map_err(|_| "Failed to parse JSON-escaped text in TEXTJ")?;
 
         Ok(unescaped_text)

@@ -34,6 +34,7 @@ fn show_posts() {
     let migrations = diesel_migrations::FileBasedMigrations::find_migrations_directory().unwrap();
     conn.run_pending_migrations(migrations).unwrap();
 
+    #[expect(deprecated, reason = "The suggested method doesn't work in this case")]
     let _ = Command::cargo_bin("show_posts")
         .unwrap()
         .env("PG_DATABASE_URL", db_url.to_string())

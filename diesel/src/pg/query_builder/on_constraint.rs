@@ -22,11 +22,23 @@ use crate::result::QueryResult;
 /// diesel::sql_query("ALTER TABLE users ADD CONSTRAINT users_name UNIQUE (name)")
 ///     .execute(conn)
 ///     .unwrap();
-/// let user = User { id: 1, name: "Sean" };
-/// let same_name_different_id = User { id: 2, name: "Sean" };
-/// let same_id_different_name = User { id: 1, name: "Pascal" };
+/// let user = User {
+///     id: 1,
+///     name: "Sean",
+/// };
+/// let same_name_different_id = User {
+///     id: 2,
+///     name: "Sean",
+/// };
+/// let same_id_different_name = User {
+///     id: 1,
+///     name: "Pascal",
+/// };
 ///
-/// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
+/// assert_eq!(
+///     Ok(1),
+///     diesel::insert_into(users).values(&user).execute(conn)
+/// );
 ///
 /// let inserted_row_count = diesel::insert_into(users)
 ///     .values(&same_name_different_id)

@@ -23,6 +23,10 @@ pub const SELECT_EXPRESSION_NOTE: &str =
 pub const SELECT_EXPRESSION_TYPE_NOTE: &str =
     "select_expression_type = dsl::IsNotNull<schema::table_name::column_name>";
 pub const CHECK_FOR_BACKEND_NOTE: &str = "diesel::pg::Pg";
+pub const BASE_QUERY_NOTE: &str =
+    "base_query = schema::table_name::table.order_by(schema::table_name::id)";
+pub const BASE_QUERY_TYPE_NOTE: &str =
+    "base_query_type = dsl::OrderBy<schema::table_name::table, schema::table_name::id>";
 
 pub fn unknown_attribute(name: &Ident, valid: &[&str]) -> syn::Error {
     let prefix = if valid.len() == 1 { "" } else { " one of" };
@@ -42,7 +46,7 @@ pub fn parse_eq<T: Parse>(input: ParseStream, help: &str) -> Result<T> {
             input.span(),
             format!(
                 "unexpected end of input, expected `=`\n\
-                 help: The correct format looks like `#[diesel({help})]`",
+                 help: the correct format looks like `#[diesel({help})]`",
             ),
         ));
     }
@@ -57,7 +61,7 @@ pub fn parse_paren<T: Parse>(input: ParseStream, help: &str) -> Result<T> {
             input.span(),
             format!(
                 "unexpected end of input, expected parentheses\n\
-                 help: The correct format looks like `#[diesel({help})]`",
+                 help: the correct format looks like `#[diesel({help})]`",
             ),
         ));
     }
@@ -82,7 +86,7 @@ where
             input.span(),
             format!(
                 "unexpected end of input, expected parentheses\n\
-                 help: The correct format looks like `#[diesel({help})]`",
+                 help: the correct format looks like `#[diesel({help})]`",
             ),
         ));
     }
@@ -93,10 +97,7 @@ where
 }
 
 pub fn wrap_in_dummy_mod(item: TokenStream) -> TokenStream {
-    // #[allow(unused_qualifications)] can be removed if https://github.com/rust-lang/rust/issues/130277 gets done
     quote! {
-        #[allow(unused_imports)]
-        #[allow(unused_qualifications)]
         const _: () = {
             // This import is not actually redundant. When using diesel_derives
             // inside of diesel, `diesel` doesn't exist as an extern crate, and
@@ -154,12 +155,12 @@ pub fn ty_for_foreign_derive(item: &DeriveInput, model: &Model) -> Result<Type> 
             Data::Struct(ref body) => match body.fields.iter().next() {
                 Some(field) => Ok(field.ty.clone()),
                 None => Err(syn::Error::new(
-                    proc_macro2::Span::call_site(),
+                    proc_macro2::Span::mixed_site(),
                     "foreign_derive requires at least one field",
                 )),
             },
             _ => Err(syn::Error::new(
-                proc_macro2::Span::call_site(),
+                proc_macro2::Span::mixed_site(),
                 "foreign_derive can only be used with structs",
             )),
         }

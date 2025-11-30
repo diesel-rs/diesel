@@ -1,6 +1,6 @@
 [package]
 name = "migrations_macros"
-version = "2.2.0"
+version = "2.3.0"
 license = "MIT OR Apache-2.0"
 description = "Codegeneration macros for diesels embedded migrations"
 homepage = "https://diesel.rs"
@@ -14,7 +14,7 @@ quote = "1"
 proc-macro2 = "1"
 
 [dependencies.migrations_internals]
-version = "~2.2.0"
+version = "~2.3.0"
 path = "../migrations_internals"
 
 [dev-dependencies]

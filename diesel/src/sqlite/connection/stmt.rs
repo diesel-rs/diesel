@@ -11,7 +11,7 @@ use crate::sqlite::{Sqlite, SqliteType};
 #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 use libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
-use sqlite_wasm_rs::export as ffi;
+use sqlite_wasm_rs as ffi;
 use std::cell::OnceCell;
 use std::ffi::{CStr, CString};
 use std::io::{stderr, Write};
@@ -81,21 +81,23 @@ impl Statement {
     ) -> QueryResult<Option<NonNull<[u8]>>> {
         let mut ret_ptr = None;
         let result = match (tpe, value) {
-            (_, InternalSqliteBindValue::Null) => {
+            (_, InternalSqliteBindValue::Null) => unsafe {
                 ffi::sqlite3_bind_null(self.inner_statement.as_ptr(), bind_index)
-            }
+            },
             (SqliteType::Binary, InternalSqliteBindValue::BorrowedBinary(bytes)) => {
                 let n = bytes
                     .len()
                     .try_into()
                     .map_err(|e| Error::SerializationError(Box::new(e)))?;
-                ffi::sqlite3_bind_blob(
-                    self.inner_statement.as_ptr(),
-                    bind_index,
-                    bytes.as_ptr() as *const libc::c_void,
-                    n,
-                    ffi::SQLITE_STATIC(),
-                )
+                unsafe {
+                    ffi::sqlite3_bind_blob(
+                        self.inner_statement.as_ptr(),
+                        bind_index,
+                        bytes.as_ptr() as *const libc::c_void,
+                        n,
+                        ffi::SQLITE_STATIC(),
+                    )
+                }
             }
             (SqliteType::Binary, InternalSqliteBindValue::Binary(mut bytes)) => {
                 let len = bytes
@@ -107,26 +109,30 @@ impl Statement {
                 // and not the pointer to the first element of the slice
                 let ptr = bytes.as_mut_ptr();
                 ret_ptr = NonNull::new(Box::into_raw(bytes));
-                ffi::sqlite3_bind_blob(
-                    self.inner_statement.as_ptr(),
-                    bind_index,
-                    ptr as *const libc::c_void,
-                    len,
-                    ffi::SQLITE_STATIC(),
-                )
+                unsafe {
+                    ffi::sqlite3_bind_blob(
+                        self.inner_statement.as_ptr(),
+                        bind_index,
+                        ptr as *const libc::c_void,
+                        len,
+                        ffi::SQLITE_STATIC(),
+                    )
+                }
             }
             (SqliteType::Text, InternalSqliteBindValue::BorrowedString(bytes)) => {
                 let len = bytes
                     .len()
                     .try_into()
                     .map_err(|e| Error::SerializationError(Box::new(e)))?;
-                ffi::sqlite3_bind_text(
-                    self.inner_statement.as_ptr(),
-                    bind_index,
-                    bytes.as_ptr() as *const libc::c_char,
-                    len,
-                    ffi::SQLITE_STATIC(),
-                )
+                unsafe {
+                    ffi::sqlite3_bind_text(
+                        self.inner_statement.as_ptr(),
+                        bind_index,
+                        bytes.as_ptr() as *const libc::c_char,
+                        len,
+                        ffi::SQLITE_STATIC(),
+                    )
+                }
             }
             (SqliteType::Text, InternalSqliteBindValue::String(bytes)) => {
                 let mut bytes = Box::<[u8]>::from(bytes);
@@ -139,29 +145,31 @@ impl Statement {
                 // and not the pointer to the first element of the slice
                 let ptr = bytes.as_mut_ptr();
                 ret_ptr = NonNull::new(Box::into_raw(bytes));
-                ffi::sqlite3_bind_text(
-                    self.inner_statement.as_ptr(),
-                    bind_index,
-                    ptr as *const libc::c_char,
-                    len,
-                    ffi::SQLITE_STATIC(),
-                )
+                unsafe {
+                    ffi::sqlite3_bind_text(
+                        self.inner_statement.as_ptr(),
+                        bind_index,
+                        ptr as *const libc::c_char,
+                        len,
+                        ffi::SQLITE_STATIC(),
+                    )
+                }
             }
             (SqliteType::Float, InternalSqliteBindValue::F64(value))
-            | (SqliteType::Double, InternalSqliteBindValue::F64(value)) => {
+            | (SqliteType::Double, InternalSqliteBindValue::F64(value)) => unsafe {
                 ffi::sqlite3_bind_double(
                     self.inner_statement.as_ptr(),
                     bind_index,
                     value as libc::c_double,
                 )
-            }
+            },
             (SqliteType::SmallInt, InternalSqliteBindValue::I32(value))
-            | (SqliteType::Integer, InternalSqliteBindValue::I32(value)) => {
+            | (SqliteType::Integer, InternalSqliteBindValue::I32(value)) => unsafe {
                 ffi::sqlite3_bind_int(self.inner_statement.as_ptr(), bind_index, value)
-            }
-            (SqliteType::Long, InternalSqliteBindValue::I64(value)) => {
+            },
+            (SqliteType::Long, InternalSqliteBindValue::I64(value)) => unsafe {
                 ffi::sqlite3_bind_int64(self.inner_statement.as_ptr(), bind_index, value)
-            }
+            },
             (t, b) => {
                 return Err(Error::SerializationError(
                     format!("Type mismatch: Expected {t:?}, got {b}").into(),
@@ -175,7 +183,7 @@ impl Statement {
                     // This is a `NonNul` ptr so it cannot be null
                     // It points to a slice internally as we did not apply
                     // any cast above.
-                    std::mem::drop(Box::from_raw(ptr.as_ptr()))
+                    std::mem::drop(unsafe { Box::from_raw(ptr.as_ptr()) })
                 }
                 Err(e)
             }
@@ -240,7 +248,7 @@ impl Drop for Statement {
                 )
                 .expect("Error writing to `stderr`");
             } else {
-                panic!("Error finalizing SQLite prepared statement: {:?}", e);
+                panic!("Error finalizing SQLite prepared statement: {e:?}");
             }
         }
     }
@@ -464,7 +472,9 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
     // It's always safe to call this function with `first_step = true` as this removes
     // the cached column names
     pub(super) unsafe fn step(&mut self, first_step: bool) -> QueryResult<bool> {
-        let res = match ffi::sqlite3_step(self.statement.statement.inner_statement.as_ptr()) {
+        let step_result =
+            unsafe { ffi::sqlite3_step(self.statement.statement.inner_statement.as_ptr()) };
+        let res = match step_result {
             ffi::SQLITE_DONE => Ok(false),
             ffi::SQLITE_ROW => Ok(true),
             _ => Err(last_error(self.statement.statement.raw_connection())),
@@ -488,14 +498,15 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
     // it should maximally be called once per column at all.
     unsafe fn column_name(&self, idx: i32) -> *const str {
         let name = {
-            let column_name =
-                ffi::sqlite3_column_name(self.statement.statement.inner_statement.as_ptr(), idx);
+            let column_name = unsafe {
+                ffi::sqlite3_column_name(self.statement.statement.inner_statement.as_ptr(), idx)
+            };
             assert!(
                 !column_name.is_null(),
                 "The Sqlite documentation states that it only returns a \
                  null pointer here if we are in a OOM condition."
             );
-            CStr::from_ptr(column_name)
+            unsafe { CStr::from_ptr(column_name) }
         };
         name.to_str().expect(
             "The Sqlite documentation states that this is UTF8. \

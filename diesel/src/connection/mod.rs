@@ -377,10 +377,12 @@ where
     {
         let mut user_result = None;
         let _ = self.transaction::<(), _, _>(|conn| {
-            user_result = f(conn).ok();
+            user_result = Some(f(conn));
             Err(Error::RollbackTransaction)
         });
-        user_result.expect("Transaction did not succeed")
+        user_result
+            .expect("Transaction never executed")
+            .unwrap_or_else(|e| panic!("Transaction did not succeed: {:?}", e))
     }
 
     /// Execute a single SQL statements given by a query and return
@@ -563,7 +565,7 @@ pub(crate) mod private {
 
     /// This trait restricts who can implement `Connection`
     #[cfg_attr(
-        docsrs,
+        diesel_docsrs,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub trait ConnectionSealed {}
@@ -572,7 +574,7 @@ pub(crate) mod private {
     /// to/from an `std::any::Any` reference. This is used internally by the `#[derive(MultiConnection)]`
     /// implementation
     #[cfg_attr(
-        docsrs,
+        diesel_docsrs,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub trait MultiConnectionHelper: super::Connection {

@@ -68,6 +68,7 @@ pub fn determine_column_type(
         is_array,
         is_nullable: attr.nullable,
         is_unsigned: false,
+        record: None,
         max_length: attr.max_length,
     })
 }

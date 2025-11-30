@@ -24,7 +24,7 @@ extern crate syn;
 
 use proc_macro::TokenStream;
 use sql_function::ExternSqlBlock;
-use syn::{parse_macro_input, parse_quote};
+use syn::parse_quote;
 
 mod attrs;
 mod deprecated;
@@ -40,6 +40,7 @@ mod diesel_for_each_tuple;
 mod diesel_numeric_ops;
 mod diesel_public_if;
 mod from_sql_row;
+mod has_query;
 mod identifiable;
 mod insertable;
 mod multiconnection;
@@ -50,6 +51,8 @@ mod selectable;
 mod sql_function;
 mod sql_type;
 mod table;
+#[cfg(test)]
+mod tests;
 mod valid_grouping;
 
 /// Implements `AsChangeset`
@@ -114,6 +117,7 @@ mod valid_grouping;
 ///   `treat_none_as_null` attribute for the current field.
 /// * `#[diesel(skip_update)]`, skips updating this field. Useful for working with
 ///   generated columns.
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/as_changeset.md")))]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(
@@ -126,9 +130,13 @@ mod valid_grouping;
     proc_macro_derive(AsChangeset, attributes(diesel))
 )]
 pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
-    as_changeset::derive(parse_macro_input!(input))
+    derive_as_changeset_inner(input.into()).into()
+}
+
+fn derive_as_changeset_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(as_changeset::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implements all required variants of `AsExpression`
@@ -160,6 +168,8 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
 ///
 /// * `#[diesel(not_sized)]`, to skip generating impls that require
 ///   that the type is `Sized`
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/as_expression.md")))]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(AsExpression, attributes(diesel, sql_type))
@@ -169,9 +179,13 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     proc_macro_derive(AsExpression, attributes(diesel))
 )]
 pub fn derive_as_expression(input: TokenStream) -> TokenStream {
-    as_expression::derive(parse_macro_input!(input))
+    derive_as_expression_inner(input.into()).into()
+}
+
+fn derive_as_expression_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(as_expression::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implement required traits for the associations API
@@ -208,6 +222,8 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
 /// * `#[diesel(column_name = some_column_name)]`, overrides the column the current
 ///   field maps to `some_column_name`. By default, the field name is used
 ///   as a column name.
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/associations.md")))]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(Associations, attributes(diesel, belongs_to, column_name, table_name))
@@ -217,15 +233,25 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
     proc_macro_derive(Associations, attributes(diesel, belongs_to, column_name, table_name))
 )]
 pub fn derive_associations(input: TokenStream) -> TokenStream {
-    associations::derive(parse_macro_input!(input))
+    derive_associations_inner(input.into()).into()
+}
+
+fn derive_associations_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(associations::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implement numeric operators for the current query node
 #[proc_macro_derive(DieselNumericOps)]
 pub fn derive_diesel_numeric_ops(input: TokenStream) -> TokenStream {
-    diesel_numeric_ops::derive(parse_macro_input!(input)).into()
+    derive_diesel_numeric_ops_inner(input.into()).into()
+}
+
+fn derive_diesel_numeric_ops_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .map(diesel_numeric_ops::derive)
+        .unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// Implements `Queryable` for types that correspond to a single SQL type. The type must implement `FromSql`.
@@ -234,11 +260,17 @@ pub fn derive_diesel_numeric_ops(input: TokenStream) -> TokenStream {
 /// into rust types not supported by Diesel itself.
 ///
 /// There are no options or special considerations needed for this derive.
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/from_sql_row.md")))]
 #[proc_macro_derive(FromSqlRow, attributes(diesel))]
 pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
-    from_sql_row::derive(parse_macro_input!(input))
+    derive_from_sql_row_inner(input.into()).into()
+}
+
+fn derive_from_sql_row_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(from_sql_row::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implements `Identifiable` for references of the current type
@@ -277,6 +309,8 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 /// * `#[diesel(column_name = some_column_name)]`, overrides the column the current
 ///   field maps to `some_column_name`. By default, the field name is used
 ///   as a column name.
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/identifiable.md")))]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(Identifiable, attributes(diesel, table_name, column_name, primary_key))
@@ -286,9 +320,13 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
     proc_macro_derive(Identifiable, attributes(diesel))
 )]
 pub fn derive_identifiable(input: TokenStream) -> TokenStream {
-    identifiable::derive(parse_macro_input!(input))
+    derive_identifiable_inner(input.into()).into()
+}
+
+fn derive_identifiable_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(identifiable::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implements `Insertable`
@@ -416,6 +454,8 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// # Ok(())
 /// # }
 /// ```
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/insertable.md")))]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(Insertable, attributes(diesel, table_name, column_name))
@@ -425,9 +465,13 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
     proc_macro_derive(Insertable, attributes(diesel))
 )]
 pub fn derive_insertable(input: TokenStream) -> TokenStream {
-    insertable::derive(parse_macro_input!(input))
+    derive_insertable_inner(input.into()).into()
+}
+
+fn derive_insertable_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(insertable::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implements `QueryId`
@@ -464,9 +508,17 @@ pub fn derive_insertable(input: TokenStream) -> TokenStream {
 /// meaning that `HAS_STATIC_QUERY_ID` should always be false,
 /// you shouldn't derive this trait.
 /// In that case, you should implement it manually instead.
-#[proc_macro_derive(QueryId)]
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/query_id.md")))]
+#[proc_macro_derive(QueryId, attributes(diesel))]
 pub fn derive_query_id(input: TokenStream) -> TokenStream {
-    query_id::derive(parse_macro_input!(input)).into()
+    derive_query_id_inner(input.into()).into()
+}
+
+fn derive_query_id_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .map(query_id::derive)
+        .unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// Implements `Queryable` to load the result of statically typed queries
@@ -498,8 +550,16 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// * `#[diesel(deserialize_as = Type)]`, instead of deserializing directly
 ///   into the field type, the implementation will deserialize into `Type`.
 ///   Then `Type` is converted via
-///   [`.try_into`](https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html#tymethod.try_into)
-///   into the field type. By default, this derive will deserialize directly into the field type
+///   `.try_into()` call into the field type. By default, this derive will deserialize directly into the field type
+///   The `try_into()` method can be provided by:
+///   + Implementing any of the [`TryInto`]/[`TryFrom`]/[`Into`]/[`From`] traits
+///   + Using an method on the type directly (Useful if it's not possible to implement the traits mentioned above
+///     due to the orphan rule)
+///
+/// [`TryInto`]: https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html
+/// [`TryFrom`]: https://doc.rust-lang.org/stable/std/convert/trait.TryFrom.html
+/// [`Into`]: https://doc.rust-lang.org/stable/std/convert/trait.Into.html
+/// [`From`]: https://doc.rust-lang.org/stable/std/convert/trait.From.html
 ///
 /// # Examples
 ///
@@ -524,7 +584,10 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut establish_connection();
 /// let first_user = users.first(connection)?;
-/// let expected = User { id: 1, name: "Sean".into() };
+/// let expected = User {
+///     id: 1,
+///     name: "Sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -554,9 +617,8 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// impl<DB> Queryable<Text, DB> for LowercaseString
 /// where
 ///     DB: Backend,
-///     String: FromSql<Text, DB>
+///     String: FromSql<Text, DB>,
 /// {
-///
 ///     type Row = String;
 ///
 ///     fn build(s: String) -> deserialize::Result<Self> {
@@ -579,7 +641,10 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut establish_connection();
 /// let first_user = users.first(connection)?;
-/// let expected = User { id: 1, name: "sean".into() };
+/// let expected = User {
+///     id: 1,
+///     name: "sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -592,14 +657,13 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// # extern crate dotenvy;
 /// # include!("../../diesel/src/doctest_setup.rs");
 /// #
-/// use schema::users;
-/// use diesel::deserialize::{self, Queryable, FromSqlRow};
+/// use diesel::deserialize::{self, FromSqlRow, Queryable};
 /// use diesel::row::Row;
+/// use schema::users;
 ///
 /// # /*
 /// type DB = diesel::sqlite::Sqlite;
 /// # */
-///
 /// #[derive(PartialEq, Debug)]
 /// struct User {
 ///     id: i32,
@@ -608,12 +672,15 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///
 /// impl Queryable<users::SqlType, DB> for User
 /// where
-///    (i32, String): FromSqlRow<users::SqlType, DB>,
+///     (i32, String): FromSqlRow<users::SqlType, DB>,
 /// {
 ///     type Row = (i32, String);
 ///
 ///     fn build((id, name): Self::Row) -> deserialize::Result<Self> {
-///         Ok(User { id, name: name.to_lowercase() })
+///         Ok(User {
+///             id,
+///             name: name.to_lowercase(),
+///         })
 ///     }
 /// }
 ///
@@ -625,11 +692,16 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut establish_connection();
 /// let first_user = users.first(connection)?;
-/// let expected = User { id: 1, name: "sean".into() };
+/// let expected = User {
+///     id: 1,
+///     name: "sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
 /// ```
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/queryable.md")))]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(Queryable, attributes(diesel, column_name))
@@ -639,9 +711,13 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
     proc_macro_derive(Queryable, attributes(diesel))
 )]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
-    queryable::derive(parse_macro_input!(input))
+    derive_queryable_inner(input.into()).into()
+}
+
+fn derive_queryable_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(queryable::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implements `QueryableByName` for untyped sql queries, such as that one generated
@@ -727,9 +803,11 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     let connection = &mut establish_connection();
-/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(connection)?;
-/// let expected = User { id: 1, name: "Sean".into() };
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1").get_result(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "Sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -761,8 +839,7 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///     String: FromSql<ST, DB>,
 /// {
 ///     fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
-///         String::from_sql(bytes)
-///             .map(|s| LowercaseString(s.to_lowercase()))
+///         String::from_sql(bytes).map(|s| LowercaseString(s.to_lowercase()))
 ///     }
 /// }
 ///
@@ -779,9 +856,11 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     let connection = &mut establish_connection();
-/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(connection)?;
-/// let expected = User { id: 1, name: "sean".into() };
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1").get_result(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -825,13 +904,17 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     let connection = &mut establish_connection();
-/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(connection)?;
-/// let expected = User { id: 1, name: "Sean".into() };
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1").get_result(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "Sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
 /// ```
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/queryable_by_name.md")))]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(QueryableByName, attributes(diesel, table_name, column_name, sql_type))
@@ -841,9 +924,13 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
     proc_macro_derive(QueryableByName, attributes(diesel))
 )]
 pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
-    queryable_by_name::derive(parse_macro_input!(input))
+    derive_queryable_by_name_inner(input.into()).into()
+}
+
+fn derive_queryable_by_name_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(queryable_by_name::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implements `Selectable`
@@ -905,11 +992,17 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 ///   function call that doesn't have the corresponding associated type defined at the same path.
 ///   Example use (this would actually be inferred):
 ///   `#[diesel(select_expression_type = dsl::IsNotNull<my_table::some_field>)]`
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/selectable.md")))]
 #[proc_macro_derive(Selectable, attributes(diesel))]
 pub fn derive_selectable(input: TokenStream) -> TokenStream {
-    selectable::derive(parse_macro_input!(input))
+    derive_selectable_inner(input.into()).into()
+}
+
+fn derive_selectable_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(|i| selectable::derive(i, None))
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implement necessary traits for adding a new sql type
@@ -950,6 +1043,8 @@ pub fn derive_selectable(input: TokenStream) -> TokenStream {
 /// * `#[diesel(mysql_type(name = "TypeName"))]`, specifies support for a mysql type
 ///   with the given name. `TypeName` needs to be one of the possible values
 ///   in `MysqlType`
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/sql_type.md")))]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(SqlType, attributes(diesel, postgres, sqlite_type, mysql_type))
@@ -959,9 +1054,13 @@ pub fn derive_selectable(input: TokenStream) -> TokenStream {
     proc_macro_derive(SqlType, attributes(diesel))
 )]
 pub fn derive_sql_type(input: TokenStream) -> TokenStream {
-    sql_type::derive(parse_macro_input!(input))
+    derive_sql_type_inner(input.into()).into()
+}
+
+fn derive_sql_type_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(sql_type::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Implements `ValidGrouping`
@@ -1003,11 +1102,17 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 ///
 /// * `#[diesel(aggregate)]` for cases where the type represents an aggregating
 ///   SQL expression
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/valid_grouping.md")))]
 #[proc_macro_derive(ValidGrouping, attributes(diesel))]
 pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
-    valid_grouping::derive(parse_macro_input!(input))
+    derive_valid_grouping_inner(input.into()).into()
+}
+
+fn derive_valid_grouping_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(valid_grouping::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
 }
 
 /// Declare a sql function for use in your code.
@@ -1083,9 +1188,16 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///     This can be used to represent functions which can take many argument
 ///     types, or to capitalize function names.
 ///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/define_sql_function.md")))]
 #[proc_macro]
 pub fn define_sql_function(input: TokenStream) -> TokenStream {
-    sql_function::expand(parse_macro_input!(input), false).into()
+    define_sql_function_inner(input.into()).into()
+}
+
+fn define_sql_function_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .map(|input| sql_function::expand(vec![input], false, false))
+        .unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// A legacy version of [`define_sql_function!`].
@@ -1118,7 +1230,14 @@ pub fn define_sql_function(input: TokenStream) -> TokenStream {
 #[proc_macro]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
-    sql_function::expand(parse_macro_input!(input), true).into()
+    sql_function_proc_inner(input.into()).into()
+}
+
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+fn sql_function_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .map(|i| sql_function::expand(vec![i], true, false))
+        .unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// This is an internal diesel macro that
@@ -1127,7 +1246,13 @@ pub fn sql_function_proc(input: TokenStream) -> TokenStream {
 #[doc(hidden)]
 #[proc_macro]
 pub fn __diesel_for_each_tuple(input: TokenStream) -> TokenStream {
-    diesel_for_each_tuple::expand(parse_macro_input!(input)).into()
+    __diesel_for_each_tuple_inner(input.into()).into()
+}
+
+fn __diesel_for_each_tuple_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .map(diesel_for_each_tuple::expand)
+        .unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// This is an internal diesel macro that
@@ -1136,7 +1261,17 @@ pub fn __diesel_for_each_tuple(input: TokenStream) -> TokenStream {
 #[doc(hidden)]
 #[proc_macro_attribute]
 pub fn __diesel_public_if(attrs: TokenStream, input: TokenStream) -> TokenStream {
-    diesel_public_if::expand(parse_macro_input!(attrs), parse_macro_input!(input)).into()
+    __diesel_public_if_inner(attrs.into(), input.into()).into()
+}
+
+fn __diesel_public_if_inner(
+    attrs: proc_macro2::TokenStream,
+    input: proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(|input| syn::parse2(attrs).map(|a| (a, input)))
+        .map(|(a, i)| diesel_public_if::expand(a, i))
+        .unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// Specifies that a table exists, and what columns it has. This will create a
@@ -1304,18 +1439,152 @@ pub fn __diesel_public_if(attrs: TokenStream, input: TokenStream) -> TokenStream
 /// ```ignore
 /// pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 /// ```
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/table.md")))]
 #[proc_macro]
 pub fn table_proc(input: TokenStream) -> TokenStream {
-    match syn::parse(input) {
-        Ok(input) => table::expand(input).into(),
-        Err(_) => quote::quote! {
-            compile_error!(
-                "Invalid `table!` syntax. Please see the `table!` macro docs for more info.\n\
-                 Docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`\n"
-            );
-        }
-        .into(),
-    }
+    table_proc_inner(input.into()).into()
+}
+
+fn table_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    self::table::query_source_macro(input, self::table::QuerySourceMacroKind::Table)
+}
+
+/// Specifies that a view exists, and what fields it has. This will create a
+/// new public module, with the same name, as the name of the view. In this
+/// module, you will find a unit struct named `view`, and a unit struct with the
+/// name of each field.
+///
+/// The macro and the generated code closely mirror the [`table!`](table_proc) macro.
+///
+/// By default, this allows a maximum of 32 columns per view.
+/// You can increase this limit to 64 by enabling the `64-column-tables` feature.
+/// You can increase it to 128 by enabling the `128-column-tables` feature.
+/// You can decrease it to 16 columns,
+/// which improves compilation time,
+/// by disabling the default features of Diesel.
+/// Note that enabling 64 column tables or larger will substantially increase
+/// the compile time of Diesel.
+///
+/// Example usage
+/// -------------
+///
+/// ```rust
+/// # extern crate diesel;
+///
+/// diesel::view! {
+///     users {
+///         name -> VarChar,
+///         favorite_color -> Nullable<VarChar>,
+///     }
+/// }
+/// ```
+///
+/// If you are using types that aren't from Diesel's core types, you can specify
+/// which types to import.
+///
+/// ```
+/// # extern crate diesel;
+/// # mod diesel_full_text_search {
+/// #     #[derive(diesel::sql_types::SqlType)]
+/// #     pub struct TsVector;
+/// # }
+///
+/// diesel::view! {
+///     use diesel::sql_types::*;
+/// #    use crate::diesel_full_text_search::*;
+/// # /*
+///     use diesel_full_text_search::*;
+/// # */
+///
+///     posts {
+///         title -> Text,
+///         keywords -> TsVector,
+///     }
+/// }
+/// # fn main() {}
+/// ```
+///
+/// If you want to add documentation to the generated code, you can use the
+/// following syntax:
+///
+/// ```
+/// # extern crate diesel;
+///
+/// diesel::view! {
+///     /// The table containing all blog posts
+///     posts {
+///         /// The post's title
+///         title -> Text,
+///     }
+/// }
+/// ```
+///
+/// If you have a column with the same name as a Rust reserved keyword, you can use
+/// the `sql_name` attribute like this:
+///
+/// ```
+/// # extern crate diesel;
+///
+/// diesel::view! {
+///     posts {
+///         /// This column is named `mytype` but references the table `type` column.
+///         #[sql_name = "type"]
+///         mytype -> Text,
+///     }
+/// }
+/// ```
+///
+/// This module will also contain several helper types:
+///
+/// dsl
+/// ---
+///
+/// This simply re-exports the view, renamed to the same name as the module,
+/// and each of the columns. This is useful to glob import when you're dealing
+/// primarily with one table, to allow writing `users.filter(name.eq("Sean"))`
+/// instead of `users::table.filter(users::name.eq("Sean"))`.
+///
+/// `all_columns`
+/// -----------
+///
+/// A constant will be assigned called `all_columns`. This is what will be
+/// selected if you don't otherwise specify a select clause. It's type will be
+/// `view::AllColumns`. You can also get this value from the
+/// `QueryRelation::all_columns` function.
+///
+/// star
+/// ----
+///
+/// This will be the qualified "star" expression for this view (e.g.
+/// `users.*`). Internally, we read columns by index, not by name, so this
+/// column is not safe to read data out of, and it has had its SQL type set to
+/// `()` to prevent accidentally using it as such. It is sometimes useful for
+/// counting statements, however. It can also be accessed through the `Table.star()`
+/// method.
+///
+/// `SqlType`
+/// -------
+///
+/// A type alias called `SqlType` will be created. It will be the SQL type of
+/// `all_columns`. The SQL type is needed for things like returning boxed
+/// queries.
+///
+/// `BoxedQuery`
+/// ----------
+///
+/// ```ignore
+/// pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, view, DB>;
+/// ```
+///
+#[cfg_attr(docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/view.md")))]
+#[proc_macro]
+pub fn view_proc(input: TokenStream) -> TokenStream {
+    view_proc_inner(input.into()).into()
+}
+
+fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    self::table::query_source_macro(input, self::table::QuerySourceMacroKind::View)
 }
 
 /// This derives implements `diesel::Connection` and related traits for an enum of
@@ -1362,24 +1631,24 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
 /// }
 ///
 /// fn use_multi(conn: &mut AnyConnection) -> QueryResult<()> {
-///    // Use the connection enum as any other connection type
-///    // for inserting/updating/loading/…
-///    diesel::insert_into(users::table)
-///        .values(users::name.eq("Sean"))
-///        .execute(conn)?;
+///     // Use the connection enum as any other connection type
+///     // for inserting/updating/loading/…
+///     diesel::insert_into(users::table)
+///         .values(users::name.eq("Sean"))
+///         .execute(conn)?;
 ///
-///    let users = users::table.load::<(i32, String)>(conn)?;
+///     let users = users::table.load::<(i32, String)>(conn)?;
 ///
-///    // Match on the connection type to access
-///    // the inner connection. This allows us then to use
-///    // backend specific methods.
+///     // Match on the connection type to access
+///     // the inner connection. This allows us then to use
+///     // backend specific methods.
 /// #    #[cfg(feature = "postgres")]
-///    if let AnyConnection::Postgresql(ref mut conn) = conn {
-///        // perform a postgresql specific query here
-///        let users = users::table.load::<(i32, String)>(conn)?;
-///    }
+///     if let AnyConnection::Postgresql(ref mut conn) = conn {
+///         // perform a postgresql specific query here
+///         let users = users::table.load::<(i32, String)>(conn)?;
+///     }
 ///
-///    Ok(())
+///     Ok(())
 /// }
 ///
 /// # fn main() {}
@@ -1496,9 +1765,17 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
 /// # }
 /// # fn main() {}
 /// ```
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/multiconnection.md")))]
 #[proc_macro_derive(MultiConnection)]
 pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
-    multiconnection::derive(syn::parse_macro_input!(input)).into()
+    derive_multiconnection_inner(input.into()).into()
+}
+
+fn derive_multiconnection_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .map(multiconnection::derive)
+        .unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// Automatically annotates return type of a query fragment function
@@ -1582,16 +1859,13 @@ pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
 ///   mod dsl {
 ///       /// export all of diesel dsl
 ///       pub use diesel::dsl::*;
-///    
+///
 ///       /// Export your extension types here
 ///       pub use crate::your_extension::dsl::YourType;
 ///    }
 ///    ```
-/// - `#[auto_type(method_type_case = "snake_case")]` to change the case of the
+/// - `#[auto_type(type_case = "snake_case")]` to change the case of the
 ///   method type alias.
-/// - `#[auto_type(function_type_case = "snake_case")]` to change the case of
-///   the function type alias (if you don't want the exact same path but want to
-///   change the case of the last element of the path).
 ///
 /// The `dsl_path` attribute in particular may be used to declare an
 /// intermediate module where you would define the few additional needed type
@@ -1652,14 +1926,23 @@ pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
 /// #     Ok(())
 /// # }
 /// ```
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/auto_type.md")))]
 #[proc_macro_attribute]
 pub fn auto_type(
     attr: proc_macro::TokenStream,
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
+    auto_type_inner(attr.into(), input.into()).into()
+}
+
+fn auto_type_inner(
+    attr: proc_macro2::TokenStream,
+    input: proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
     dsl_auto_type::auto_type_proc_macro_attribute(
-        proc_macro2::TokenStream::from(attr),
-        proc_macro2::TokenStream::from(input),
+        attr,
+        input,
         dsl_auto_type::DeriveSettings::builder()
             .default_dsl_path(parse_quote!(diesel::dsl))
             .default_generate_type_alias(true)
@@ -1667,7 +1950,6 @@ pub fn auto_type(
             .default_function_type_case(AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE)
             .build(),
     )
-    .into()
 }
 
 const AUTO_TYPE_DEFAULT_METHOD_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type::Case::UpperCamel;
@@ -1707,6 +1989,10 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///
 /// Most attributes given to this macro will be put on the generated function
 /// (including doc comments).
+///
+/// If the `generate_return_type_helpers` attribute is specified, an additional module named
+/// `return_type_helpers` will be generated, containing all return type helpers. For more
+/// information, refer to the `Helper types generation` section.
 ///
 /// # Adding Doc Comments
 ///
@@ -1825,7 +2111,7 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// # fn main() {
 /// # }
 /// #
-/// use diesel::sql_types::{Integer, Double};
+/// use diesel::sql_types::{Double, Integer};
 ///
 /// #[declare_sql_function]
 /// extern "SQL" {
@@ -1836,12 +2122,9 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// # fn run_test() -> Result<(), Box<dyn std::error::Error>> {
 /// let connection = &mut SqliteConnection::establish(":memory:")?;
 ///
-/// add_mul_utils::register_impl(connection, |x: i32, y: i32, z: f64| {
-///     (x + y) as f64 * z
-/// })?;
+/// add_mul_utils::register_impl(connection, |x: i32, y: i32, z: f64| (x + y) as f64 * z)?;
 ///
-/// let result = select(add_mul(1, 2, 1.5))
-///     .get_result::<f64>(connection)?;
+/// let result = select(add_mul(1, 2, 1.5)).get_result::<f64>(connection)?;
 /// assert_eq!(4.5, result);
 /// #     Ok(())
 /// # }
@@ -2025,6 +2308,11 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// # extern crate diesel;
 /// # use diesel::sql_types::*;
 /// # use diesel::expression::functions::declare_sql_function;
+/// #
+/// # fn main() {
+/// #   // Without the main function this code will be wrapped in the auto-generated
+/// #   // `main` function and `#[declare_sql_function]` won't work properly.
+/// # }
 ///
 /// # #[cfg(feature = "sqlite")]
 /// #[declare_sql_function]
@@ -2042,6 +2330,11 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// # extern crate diesel;
 /// # use diesel::sql_types::*;
 /// # use diesel::expression::functions::declare_sql_function;
+/// #
+/// # fn main() {
+/// #   // Without the main function this code will be wrapped in the auto-generated
+/// #   // `main` function and `#[declare_sql_function]` won't work properly.
+/// # }
 ///
 /// # #[cfg(feature = "sqlite")]
 /// #[declare_sql_function]
@@ -2053,12 +2346,9 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///     fn json_array_1<V1: SqlType + SingleValue>(value_1: V1) -> Json;
 ///
 ///     #[sql_name = "json_array"]
-///     fn json_array_2<
-///         V1: SqlType + SingleValue,
-///         V2: SqlType + SingleValue
-///     >(
+///     fn json_array_2<V1: SqlType + SingleValue, V2: SqlType + SingleValue>(
 ///         value_1: V1,
-///         value_2: V2
+///         value_2: V2,
 ///     ) -> Json;
 ///
 ///     // ...
@@ -2094,27 +2384,306 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///     ...
 /// }
 /// ```
+///
+/// Optionally, a second named boolean argument `skip_zero_argument_variant` can be provided to
+/// control whether the 0-argument variant is generated. By default, (omitted or `false`),
+/// the 0-argument variant is included. Set it to `true` to skip generating the 0-argument
+/// variant for functions that require at least one variadic argument. If you specify the boolean
+/// argument, the first argument has to be named `last_arguments` for clarity.
+///
+/// Example:
+///
+/// ```ignore
+/// #[declare_sql_function]
+/// extern "SQL" {
+///     #[variadic(last_arguments = 2, skip_zero_argument_variant = true)]
+///     fn foo<A, B, C>(a: A, b: B, c: C) -> Text;
+/// }
+/// ```
+///
+/// Which will be equivalent to
+///
+/// ```ignore
+/// #[declare_sql_function]
+/// extern "SQL" {
+///     #[sql_name = "foo"]
+///     fn foo_1<A, B1, C1>(a: A, b_1: B1, c_1: C1) -> Text;
+///
+///     #[sql_name = "foo"]
+///     fn foo_2<A, B1, C1, B2, C2>(a: A, b_1: B1, c_1: C1, b_2: B2, c_2: C2) -> Text;
+///
+///     ...
+/// }
+/// ```
+///
+/// ### Controlling the generation of variadic function variants
+///
+/// By default, only variants with 0, 1, and 2 repetitions of variadic arguments are generated. To
+/// generate more variants, set the `DIESEL_VARIADIC_FUNCTION_ARGS` environment variable to the
+/// desired number of variants.
+///
+/// • The boolean only affects whether the 0 variant is generated; the total number of variants
+/// (e.g., up to N) still follows DIESEL_VARIADIC_FUNCTION_ARGS or the default.
+///
+/// For a greater convenience this environment variable can also be set in a `.cargo/config.toml`
+/// file as described in the [cargo documentation](https://doc.rust-lang.org/cargo/reference/config.html#env).
+///
+/// ## Helper types generation
+///
+/// When the `generate_return_type_helpers` attribute is specified, for each function defined inside
+/// an `extern "SQL"` block, a return type alias with the same name as the function is created and
+/// placed in the `return_type_helpers` module:
+///
+/// ```rust
+/// # extern crate diesel;
+/// # use diesel::expression::functions::declare_sql_function;
+/// # use diesel::sql_types::*;
+/// #
+/// # fn main() {
+/// #   // Without the main function this code will be wrapped in the auto-generated
+/// #   // `main` function and `#[declare_sql_function]` won't work properly.
+/// # }
+/// #
+/// #[declare_sql_function(generate_return_type_helpers = true)]
+/// extern "SQL" {
+///     fn f<V: SqlType + SingleValue>(arg: V);
+/// }
+///
+/// type return_type_helper_for_f<V> = return_type_helpers::f<V>;
+/// ```
+///
+/// If you want to skip generating a type alias for a specific function, you can use the
+/// `#[skip_return_type_helper]` attribute, like this:
+///
+/// ```compile_fail
+/// # extern crate diesel;
+/// # use diesel::expression::functions::declare_sql_function;
+/// #
+/// # fn main() {
+/// #   // Without the main function this code will be wrapped in the auto-generated
+/// #   // `main` function and `#[declare_sql_function]` won't work properly.
+/// # }
+/// #
+/// #[declare_sql_function(generate_return_type_helpers = true)]
+/// extern "SQL" {
+///     #[skip_return_type_helper]
+///     fn f();
+/// }
+///
+/// # type skipped_type = return_type_helpers::f;
+/// ```
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/declare_sql_function.md")))]
 #[proc_macro_attribute]
 pub fn declare_sql_function(
-    _attr: proc_macro::TokenStream,
+    attr: proc_macro::TokenStream,
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-    let input = proc_macro2::TokenStream::from(input);
+    declare_sql_function_inner(attr.into(), input.into()).into()
+}
+
+fn declare_sql_function_inner(
+    attr: proc_macro2::TokenStream,
+    input: proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
+    let attr = crate::sql_function::DeclareSqlFunctionArgs::parse_from_macro_input(attr);
+
     let result = syn::parse2::<ExternSqlBlock>(input.clone()).map(|res| {
-        let expanded = res
-            .function_decls
-            .into_iter()
-            .map(|decl| sql_function::expand(decl, false));
-        quote::quote! {
-            #(#expanded)*
-        }
+        sql_function::expand(
+            res.function_decls,
+            false,
+            attr.as_ref()
+                .map(|attr| attr.generate_return_type_helpers)
+                .unwrap_or(true),
+        )
     });
-    match result {
-        Ok(token_stream) => token_stream.into(),
+
+    let mut output = match result {
+        Ok(token_stream) => token_stream,
         Err(e) => {
             let mut output = input;
             output.extend(e.into_compile_error());
-            output.into()
+            output
         }
+    };
+    if let Err(e) = attr {
+        output.extend(e.into_compile_error());
     }
+    output
+}
+
+/// Implements `HasQuery`
+///
+/// This derive implements a common entry point for building queries
+/// based on a model like Rust struct. It enables you to always have a certain base query
+/// associated with a given type. This derive is designed to easily couple your query with
+/// your Rust type. It's important to note that for Diesel this mapping happens always
+/// on query and not on table level, which enables you to write several queries related to the
+/// same table, while a single query could be related to zero or multiple tables.
+///
+/// By default this derive will use the equivalent of `SELECT your, fields FROM your_types`
+/// which implies that it needs to know the corresponding table type. As with any other
+/// diesel derive it uses the `snake_case` type name with an added `s` if no other
+/// name is specified.
+/// It is possible to change this default by using `#[diesel(table_name = something)]`.
+///
+/// If you would like to use a more complex query as base query you can overwrite the standard
+/// query by using the `#[diesel(base_query = your_type::table.filter(your_type::is_admin.eq(true)))]`
+/// attribute to overwrite the automatically generated base query. This derive will still apply
+/// a select clause that matches your type. By default it also tries to infer the correct
+/// type of that query. This type can be overwritten by using the `#[diesel(base_query_type)]`
+/// attribute.
+///
+/// This derive will internally implement the following traits:
+///
+/// * `HasQuery`
+/// * `Selectable` (for building the selection)
+/// * `Queryable` (for allowing to load results from the database)
+///
+/// For the later two traits see their corresponding derives for supported options:
+///
+/// * [Queryable]
+/// * [Selectable]
+///
+/// Any option documented there is also supported by this derive
+///
+/// In contrast to `#[derive(Selectable)]` this derive automatically enables
+/// `#[diesel(check_for_backend(_))]` with all backends enabled at compile time
+/// if no explicit `#[diesel(check_for_backend(_))]` attribute is given. This
+/// will lead to better error messages. You
+/// can use `#[diesel(check_for_backend(disable = true))]` to disable this behaviour
+/// for that particular instance.
+///
+/// # Attributes
+///
+/// ## Optional Type attributes
+///
+/// * `#[diesel(base_query = _)]`  specifies a base query associated with this type.
+///   It may be used in conjunction with `base_query_type` (described below)
+/// * `#[diesel(base_query_type = _)]` the Rust type described by the `base_query`
+///   attribute. Usually diesel is able to infer this type, but for complex types such an
+///   annotation might be required. This will be required if  a custom
+///   function call that doesn't have the corresponding associated type defined at the same path
+///   appears in your query.
+/// * `#[diesel(table_name = path::to::table)]`, specifies a path to the table for which the
+///   current type is selectable. The path is relative to the current module.
+///   If this attribute is not used, the type name converted to
+///   `snake_case` with an added `s` is used as table name.
+/// * `#[diesel(check_for_backend(diesel::pg::Pg, diesel::mysql::Mysql))]`, instructs
+///   the derive to generate additional code to identify potential type mismatches.
+///   It accepts a list of backend types to check the types against. If this option
+///   is not set this derive automatically uses all backends enabled at compile time
+///   for this check. You can disable this behaviour via `#[diesel(check_for_backend(disable = true))]`
+///
+/// ## Optional Field Attributes
+///
+/// * `#[diesel(column_name = some_column)]`, overrides the column name for
+///   a given field. If not set, the name of the field is used as column
+///   name.
+/// * `#[diesel(embed)]`, specifies that the current field maps not only
+///   a single database column, but is a type that implements
+///   `Selectable` on its own
+/// * `#[diesel(select_expression = some_custom_select_expression)]`, overrides
+///   the entire select expression for the given field. It may be used to select with
+///   custom tuples, or specify `select_expression = my_table::some_field.is_not_null()`,
+///   or separate tables...
+///   It may be used in conjunction with `select_expression_type` (described below)
+/// * `#[diesel(select_expression_type = the_custom_select_expression_type]`, should be used
+///   in conjunction with `select_expression` (described above) if the type is too complex
+///   for diesel to infer it automatically. This will be required if select_expression is a custom
+///   function call that doesn't have the corresponding associated type defined at the same path.
+///   Example use (this would actually be inferred):
+///   `#[diesel(select_expression_type = dsl::IsNotNull<my_table::some_field>)]`
+/// * `#[diesel(deserialize_as = Type)]`, instead of deserializing directly
+///   into the field type, the implementation will deserialize into `Type`.
+///   Then `Type` is converted via
+///   [`.try_into`](https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html#tymethod.try_into)
+///   into the field type. By default, this derive will deserialize directly into the field type
+///
+/// # Examples
+///
+/// ## Basic usage
+///
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenvy;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// #
+///
+/// // it's important to have the right table in scope
+/// use schema::users;
+///
+/// #[derive(HasQuery, PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// # fn main() -> QueryResult<()> {
+/// #
+/// #     let connection = &mut establish_connection();
+/// // equivalent to `users::table.select(User::as_select()).first(connection)?;
+/// let first_user = User::query().first(connection)?;
+/// let expected = User { id: 1, name: "Sean".into() };
+/// assert_eq!(expected, first_user);
+///
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// ## Custom base query
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenvy;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// #
+///
+/// // it's important to have the right table in scope
+/// use schema::{users, posts};
+///
+/// #[derive(HasQuery, PartialEq, Debug)]
+/// struct Post {
+///    id: i32,
+///    user_id: i32,
+///    title: String,
+/// }
+///
+/// #[derive(HasQuery, PartialEq, Debug)]
+/// #[diesel(base_query = users::table.inner_join(posts::table).order_by(users::id))]
+/// // that's required to let the derive understand
+/// // from which table the columns should be selected
+/// #[diesel(table_name = users)]
+/// struct UserWithPost {
+///     id: i32,
+///     name: String,
+///     #[diesel(embed)]
+///     post: Post,
+/// }
+///
+/// # fn main() -> QueryResult<()> {
+/// #
+/// #     let connection = &mut establish_connection();
+/// // equivalent to users::table.inner_join(posts::table)
+/// //               .order_by(users::id)
+/// //               .select(UserWithPost::as_select()).first(connection)?;
+/// let first_user = UserWithPost::query().first(connection)?;
+/// let expected = UserWithPost { id: 1, name: "Sean".into(), post: Post {id: 1, user_id: 1, title: "My first post".into() } };
+/// assert_eq!(expected, first_user);
+///
+/// #     Ok(())
+/// # }
+/// ```
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/has_query.md")))]
+#[proc_macro_derive(HasQuery, attributes(diesel))]
+pub fn derive_has_query(input: TokenStream) -> TokenStream {
+    derive_has_query_inner(input.into()).into()
+}
+
+fn derive_has_query_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(has_query::derive)
+        .unwrap_or_else(syn::Error::into_compile_error)
 }

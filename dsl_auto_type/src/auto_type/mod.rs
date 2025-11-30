@@ -66,7 +66,7 @@ pub(crate) fn auto_type_impl(
         (false, true, _) => false,
         (true, true, _) => {
             return Err(syn::Error::new(
-                Span::call_site(),
+                Span::mixed_site(),
                 "type_alias and no_type_alias are mutually exclusive",
             )
             .into())

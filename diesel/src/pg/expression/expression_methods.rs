@@ -1,9 +1,8 @@
 //! PostgreSQL specific expression methods
 
 pub(in crate::pg) use self::private::{
-    ArrayOrNullableArray, CombinedAllNullableValue, CombinedNullableValue, InetOrCidr, JsonIndex,
-    JsonOrNullableJson, JsonOrNullableJsonOrJsonbOrNullableJsonb, JsonRemoveIndex,
-    JsonbOrNullableJsonb, MaybeNullableValue, MultirangeOrNullableMultirange,
+    ArrayOrNullableArray, CombinedAllNullableValue, InetOrCidr, JsonOrNullableJson,
+    JsonRemoveIndex, JsonbOrNullableJsonb, MaybeNullableValue, MultirangeOrNullableMultirange,
     MultirangeOrRangeMaybeNullable, RangeOrMultirange, RangeOrNullableRange,
     RecordOrNullableRecord, TextArrayOrNullableTextArray, TextOrNullableText,
 };
@@ -13,7 +12,11 @@ use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::{Asc, Concat, Desc, Like, NotLike};
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
+use crate::expression_methods::json_expression_methods::private::JsonOrNullableJsonOrJsonbOrNullableJsonb;
+use crate::expression_methods::json_expression_methods::JsonIndex;
+use crate::expression_methods::AnyJsonExpressionMethods;
 use crate::pg::expression::expression_methods::private::BinaryOrNullableBinary;
+use crate::pg::expression::operators::RetrieveAsObjectJson;
 use crate::sql_types::{Array, Inet, Integer, Range, SqlType, Text, VarChar};
 use crate::EscapeExpressionMethods;
 
@@ -137,15 +140,20 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// #
     /// #     let conn = &mut establish_connection();
     /// #
-    ///       let my_range = int4range(1, 5, diesel::sql_types::RangeBound::LowerBoundInclusiveUpperBoundExclusive);
+    /// let my_range = int4range(
+    ///     1,
+    ///     5,
+    ///     diesel::sql_types::RangeBound::LowerBoundInclusiveUpperBoundExclusive,
+    /// );
     ///
-    ///       let (first, second) = diesel::select((
-    ///           4.into_sql::<Integer>().is_contained_by_range(my_range),
-    ///           10.into_sql::<Integer>().is_contained_by_range(my_range)
-    ///       )).get_result::<(bool, bool)>(conn)?;
+    /// let (first, second) = diesel::select((
+    ///     4.into_sql::<Integer>().is_contained_by_range(my_range),
+    ///     10.into_sql::<Integer>().is_contained_by_range(my_range),
+    /// ))
+    /// .get_result::<(bool, bool)>(conn)?;
     ///
-    ///       assert_eq!(first, true);
-    ///       assert_eq!(second, false);
+    /// assert_eq!(first, true);
+    /// assert_eq!(second, false);
     /// #
     /// #     Ok(())
     /// # }
@@ -197,8 +205,7 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
     /// #     let connection = &mut establish_connection();
     /// #     diesel::sql_query("CREATE TABLE timestamps (\"timestamp\"
     /// #         timestamp NOT NULL)").execute(connection)?;
-    /// let christmas_morning = NaiveDate::from_ymd(2017, 12, 25)
-    ///     .and_hms(8, 0, 0);
+    /// let christmas_morning = NaiveDate::from_ymd(2017, 12, 25).and_hms(8, 0, 0);
     /// diesel::insert_into(timestamps)
     ///     .values(timestamp.eq(christmas_morning))
     ///     .execute(connection)?;
@@ -494,7 +501,6 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// assert_eq!(expected_tags, res[0]);
     /// #     Ok(())
     /// # }
-    ///
     fn concat<T>(self, other: T) -> dsl::Concat<Self, T>
     where
         Self::SqlType: SqlType,
@@ -760,7 +766,8 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// assert_eq!(res, true);
     /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_json())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
     /// let res = diesel::select(("(1,2,3)".into_sql::<Text>().is_json())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
@@ -796,11 +803,14 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     ///
     /// let res = diesel::select(("1".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("(1,2,3)".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("(1,2,3)".into_sql::<Text>().is_not_json())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
     /// #
     /// #     Ok(())
@@ -832,15 +842,24 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     ///
-    /// let res = diesel::select(("123".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("123".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("abc".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("abc".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(
+    ///     ("{\"products\": [1,2,3]}"
+    ///         .into_sql::<Text>()
+    ///         .is_json_object()),
+    /// )
+    /// .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("[1,2,3]".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("\"abc\"".into_sql::<Text>().is_json_object())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
     /// #
     /// #     Ok(())
@@ -872,15 +891,24 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     ///
-    /// let res = diesel::select(("123".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("123".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("abc".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("abc".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(
+    ///     ("{\"products\": [1,2,3]}"
+    ///         .into_sql::<Text>()
+    ///         .is_not_json_object()),
+    /// )
+    /// .get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_object()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_object())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_object()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
     /// #
     /// #     Ok(())
@@ -912,15 +940,20 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     ///
-    /// let res = diesel::select(("123".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("123".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("abc".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("abc".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json_array()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("[1,2,3]".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("\"abc\"".into_sql::<Text>().is_json_array())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
     /// #
     /// #     Ok(())
@@ -952,15 +985,24 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     ///
-    /// let res = diesel::select(("123".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("123".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("abc".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("abc".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(
+    ///     ("{\"products\": [1,2,3]}"
+    ///         .into_sql::<Text>()
+    ///         .is_not_json_array()),
+    /// )
+    /// .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_array()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_array())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_array()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
     /// #
     /// #     Ok(())
@@ -993,17 +1035,27 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     ///
-    /// let res = diesel::select(("123".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("123".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("abc".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("abc".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(
+    ///     ("{\"products\": [1,2,3]}"
+    ///         .into_sql::<Text>()
+    ///         .is_json_scalar()),
+    /// )
+    /// .get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("[1,2,3]".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("\"abc\"".into_sql::<Text>().is_json_scalar())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(sql::<Nullable<Text>>("NULL").is_json_scalar()).get_result::<Option<bool>>(conn)?;
+    /// let res = diesel::select(sql::<Nullable<Text>>("NULL").is_json_scalar())
+    ///     .get_result::<Option<bool>>(conn)?;
     /// assert!(res.is_none());
     /// #     Ok(())
     /// # }
@@ -1034,15 +1086,24 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     ///
-    /// let res = diesel::select(("123".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("123".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
-    /// let res = diesel::select(("abc".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// let res =
+    ///     diesel::select(("abc".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("{\"products\": [1,2,3]}".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(
+    ///     ("{\"products\": [1,2,3]}"
+    ///         .into_sql::<Text>()
+    ///         .is_not_json_scalar()),
+    /// )
+    /// .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("[1,2,3]".into_sql::<Text>().is_not_json_scalar()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, true);
-    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_scalar())).get_result::<bool>(conn)?;
+    /// let res = diesel::select(("\"abc\"".into_sql::<Text>().is_not_json_scalar()))
+    ///     .get_result::<bool>(conn)?;
     /// assert_eq!(res, false);
     /// #
     /// #     Ok(())
@@ -1159,11 +1220,27 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #
     /// #     let conn = &mut establish_connection();
-    /// assert!(diesel::select((1..5).into_sql::<Range<Integer>>().contains(4)).first::<bool>(conn).unwrap());
-    /// assert!(!diesel::select((1..5).into_sql::<Range<Integer>>().contains(8)).first::<bool>(conn).unwrap());
+    /// assert!(
+    ///     diesel::select((1..5).into_sql::<Range<Integer>>().contains(4))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
+    /// assert!(
+    ///     !diesel::select((1..5).into_sql::<Range<Integer>>().contains(8))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
     ///
-    /// assert!(diesel::select((vec![1..5]).into_sql::<Multirange<Integer>>().contains(4)).first::<bool>(conn).unwrap());
-    /// assert!(!diesel::select((vec![1..5]).into_sql::<Multirange<Integer>>().contains(8)).first::<bool>(conn).unwrap());
+    /// assert!(
+    ///     diesel::select((vec![1..5]).into_sql::<Multirange<Integer>>().contains(4))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
+    /// assert!(
+    ///     !diesel::select((vec![1..5]).into_sql::<Multirange<Integer>>().contains(8))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
     ///
     /// #     Ok(())
     /// # }
@@ -1222,19 +1299,31 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// assert!(diesel::select(
-    ///     (1..5).into_sql::<Range<Integer>>().contains_range(1..5)
-    ///     ).first::<bool>(conn).unwrap());
-    /// assert!(!diesel::select(
-    ///     (1..5).into_sql::<Range<Integer>>().contains_range(3..7)
-    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(
+    ///     diesel::select((1..5).into_sql::<Range<Integer>>().contains_range(1..5))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
+    /// assert!(
+    ///     !diesel::select((1..5).into_sql::<Range<Integer>>().contains_range(3..7))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
     ///
     /// assert!(diesel::select(
-    ///     vec![1..5].into_sql::<Multirange<Integer>>().contains_range(vec![1..5])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..5]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .contains_range(vec![1..5])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     vec![1..5].into_sql::<Multirange<Integer>>().contains_range(vec![3..7])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..5]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .contains_range(vec![3..7])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1291,19 +1380,31 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// assert!(diesel::select(
-    ///     (1..5).into_sql::<Range<Integer>>().is_contained_by(1..5)
-    ///     ).first::<bool>(conn).unwrap());
-    /// assert!(!diesel::select(
-    ///     (1..5).into_sql::<Range<Integer>>().is_contained_by(3..7)
-    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(
+    ///     diesel::select((1..5).into_sql::<Range<Integer>>().is_contained_by(1..5))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
+    /// assert!(
+    ///     !diesel::select((1..5).into_sql::<Range<Integer>>().is_contained_by(3..7))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
     ///
     /// assert!(diesel::select(
-    ///     vec![1..5].into_sql::<Multirange<Integer>>().is_contained_by(vec![1..5])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..5]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .is_contained_by(vec![1..5])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     vec![1..5].into_sql::<Multirange<Integer>>().is_contained_by(vec![3..7])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..5]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .is_contained_by(vec![3..7])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1371,19 +1472,31 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// assert!(diesel::select(
-    ///     (1..5).into_sql::<Range<Integer>>().overlaps_with(3..7)
-    ///     ).first::<bool>(conn).unwrap());
-    /// assert!(!diesel::select(
-    ///     (1..5).into_sql::<Range<Integer>>().overlaps_with(10..15)
-    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(
+    ///     diesel::select((1..5).into_sql::<Range<Integer>>().overlaps_with(3..7))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
+    /// assert!(
+    ///     !diesel::select((1..5).into_sql::<Range<Integer>>().overlaps_with(10..15))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
     ///
     /// assert!(diesel::select(
-    ///     vec![1..5].into_sql::<Multirange<Integer>>().overlaps_with(vec![3..7])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..5]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .overlaps_with(vec![3..7])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     vec![1..5].into_sql::<Multirange<Integer>>().overlaps_with(vec![10..15])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..5]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .overlaps_with(vec![10..15])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1450,24 +1563,48 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     /// assert!(diesel::select(
-    ///     (1..20).into_sql::<Range<Integer>>().range_extends_right_to(18..20)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..20)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .range_extends_right_to(18..20)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(diesel::select(
-    ///     (1..20).into_sql::<Range<Integer>>().range_extends_right_to(25..30)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..20)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .range_extends_right_to(25..30)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     (1..20).into_sql::<Range<Integer>>().range_extends_right_to(-10..0)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..20)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .range_extends_right_to(-10..0)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     ///
     /// assert!(diesel::select(
-    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_right_to(vec![18..20])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..20]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_extends_right_to(vec![18..20])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(diesel::select(
-    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_right_to(vec![25..30])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..20]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_extends_right_to(vec![25..30])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_right_to(vec![-10..0])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..20]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_extends_right_to(vec![-10..0])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1534,24 +1671,48 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     let conn = &mut establish_connection();
     /// #
     /// assert!(diesel::select(
-    ///     (1..20).into_sql::<Range<Integer>>().range_extends_left_to(-10..5)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..20)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .range_extends_left_to(-10..5)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(diesel::select(
-    ///     (1..20).into_sql::<Range<Integer>>().range_extends_left_to(-10..-5)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..20)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .range_extends_left_to(-10..-5)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     (1..20).into_sql::<Range<Integer>>().range_extends_left_to(25..30)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..20)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .range_extends_left_to(25..30)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     ///
     /// assert!(diesel::select(
-    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_left_to(vec![-10..5])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..20]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_extends_left_to(vec![-10..5])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(diesel::select(
-    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_left_to(vec![-10..-5])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..20]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_extends_left_to(vec![-10..-5])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     vec![1..20].into_sql::<Multirange<Integer>>().range_extends_left_to(vec![25..30])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..20]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_extends_left_to(vec![25..30])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1788,19 +1949,31 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
-    /// assert!(diesel::select(
-    ///     (1..2).into_sql::<Range<Integer>>().range_adjacent(2..=6)
-    ///     ).first::<bool>(conn).unwrap());
-    /// assert!(!diesel::select(
-    ///     (4..7).into_sql::<Range<Integer>>().range_adjacent(2..=6)
-    ///     ).first::<bool>(conn).unwrap());
+    /// assert!(
+    ///     diesel::select((1..2).into_sql::<Range<Integer>>().range_adjacent(2..=6))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
+    /// assert!(
+    ///     !diesel::select((4..7).into_sql::<Range<Integer>>().range_adjacent(2..=6))
+    ///         .first::<bool>(conn)
+    ///         .unwrap()
+    /// );
     ///
     /// assert!(diesel::select(
-    ///     vec![1..2].into_sql::<Multirange<Integer>>().range_adjacent(vec![2..=6])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..2]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_adjacent(vec![2..=6])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// assert!(!diesel::select(
-    ///     vec![4..7].into_sql::<Multirange<Integer>>().range_adjacent(vec![2..=6])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![4..7]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .range_adjacent(vec![2..=6])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1847,12 +2020,22 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
     /// assert!(diesel::select(
-    ///     (1..=2).into_sql::<Range<Integer>>().union_range(2..=6).eq(1..=6)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..=2)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .union_range(2..=6)
+    ///         .eq(1..=6)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     ///
     /// assert!(diesel::select(
-    ///     vec![1..=2].into_sql::<Multirange<Integer>>().union_range(vec![1..=6]).eq(vec![1..=6])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..=2]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .union_range(vec![1..=6])
+    ///         .eq(vec![1..=6])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1902,12 +2085,22 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
     /// assert!(diesel::select(
-    ///     (1..=8).into_sql::<Range<Integer>>().difference_range(3..=8).eq(1..3)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..=8)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .difference_range(3..=8)
+    ///         .eq(1..3)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     ///
     /// assert!(diesel::select(
-    ///     vec![1..=8].into_sql::<Multirange<Integer>>().difference_range(vec![3..=8]).eq(vec![1..3])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..=8]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .difference_range(vec![3..=8])
+    ///         .eq(vec![1..3])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -1960,12 +2153,22 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     use diesel::sql_types::{Integer, Range, Multirange};
     /// #     let conn = &mut establish_connection();
     /// assert!(diesel::select(
-    ///     (1..=8).into_sql::<Range<Integer>>().intersection_range(3..=8).eq(3..=8)
-    ///     ).first::<bool>(conn).unwrap());
+    ///     (1..=8)
+    ///         .into_sql::<Range<Integer>>()
+    ///         .intersection_range(3..=8)
+    ///         .eq(3..=8)
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     ///
     /// assert!(diesel::select(
-    ///     vec![1..=8].into_sql::<Multirange<Integer>>().intersection_range(vec![3..=8]).eq(vec![3..=8])
-    ///     ).first::<bool>(conn).unwrap());
+    ///     vec![1..=8]
+    ///         .into_sql::<Multirange<Integer>>()
+    ///         .intersection_range(vec![3..=8])
+    ///         .eq(vec![3..=8])
+    /// )
+    /// .first::<bool>(conn)
+    /// .unwrap());
     /// #     Ok(())
     /// # }
     /// ```
@@ -2939,7 +3142,6 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }
-    ///
     fn remove<T>(
         self,
         other: T,
@@ -3059,7 +3261,6 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }
-    ///
     fn remove_by_path<T>(self, other: T) -> dsl::RemoveByPathFromJsonb<Self, T::Expression>
     where
         T: AsExpression<Array<Text>>,
@@ -3077,7 +3278,7 @@ where
 
 /// PostgreSQL specific methods present on JSON and JSONB expressions.
 #[cfg(feature = "postgres_backend")]
-pub trait PgAnyJsonExpressionMethods: Expression + Sized {
+pub trait PgAnyJsonExpressionMethods: AnyJsonExpressionMethods + Expression + Sized {
     /// Creates a PostgreSQL `->` expression.
     ///
     /// This operator extracts the value associated with the given key, that is provided on the
@@ -3169,114 +3370,12 @@ pub trait PgAnyJsonExpressionMethods: Expression + Sized {
     fn retrieve_as_object<T>(
         self,
         other: T,
-    ) -> dsl::RetrieveAsObjectJson<Self, T::Expression, <T::Expression as Expression>::SqlType>
+    ) -> crate::pg::expression::helper_types::RetrieveAsObject<Self, T>
     where
         T: JsonIndex,
         <T::Expression as Expression>::SqlType: SqlType,
     {
         Grouped(RetrieveAsObjectJson::new(
-            self,
-            other.into_json_index_expression(),
-        ))
-    }
-
-    /// Creates a PostgreSQL `->>` expression.
-    ///
-    /// This operator extracts the value associated with the given key, that is provided on the
-    /// Right Hand Side of the operator.
-    ///
-    /// Extracts n'th element of JSON array (array elements are indexed from zero, but negative integers count from the end).
-    /// Extracts JSON object field as Text with the given key.
-    /// # Example
-    ///
-    /// ```rust
-    /// # include!("../../doctest_setup.rs");
-    /// #
-    /// # table! {
-    /// #    contacts {
-    /// #        id -> Integer,
-    /// #        name -> VarChar,
-    /// #        address -> Jsonb,
-    /// #    }
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    ///
-    /// # #[cfg(feature = "serde_json")]
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::contacts::dsl::*;
-    /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE contacts (
-    /// #         id SERIAL PRIMARY KEY,
-    /// #         name VARCHAR NOT NULL,
-    /// #         address JSONB NOT NULL
-    /// #     )").execute(conn)
-    /// #        .unwrap();
-    /// #
-    /// let santas_address: serde_json::Value = serde_json::json!({
-    ///     "street": "Article Circle Expressway 1",
-    ///     "city": "North Pole",
-    ///     "postcode": "99705",
-    ///     "state": "Alaska"
-    /// });
-    /// diesel::insert_into(contacts)
-    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
-    ///     .execute(conn)?;
-    ///
-    /// let santas_postcode = contacts.select(address.retrieve_as_text("postcode")).get_result::<String>(conn)?;
-    /// assert_eq!(santas_postcode, "99705");
-    ///
-    ///
-    /// let robert_downey_jr_addresses: serde_json::Value = serde_json::json!([
-    ///     {
-    ///         "street": "Somewhere In La 251",
-    ///         "city": "Los Angeles",
-    ///         "postcode": "12231223",
-    ///         "state": "California"
-    ///     },
-    ///     {
-    ///         "street": "Somewhere In Ny 251",
-    ///         "city": "New York",
-    ///         "postcode": "3213212",
-    ///         "state": "New York"
-    ///     }
-    /// ]);
-    ///
-    /// diesel::insert_into(contacts)
-    ///     .values((name.eq("Robert Downey Jr."), address.eq(&robert_downey_jr_addresses)))
-    ///     .execute(conn)?;
-    ///
-    /// let roberts_second_address_in_db = contacts
-    ///                             .filter(name.eq("Robert Downey Jr."))
-    ///                             .select(address.retrieve_as_text(1))
-    ///                             .get_result::<String>(conn)?;
-    ///
-    /// let roberts_second_address = String::from(
-    ///     "{\"city\": \"New York\", \
-    ///     \"state\": \"New York\", \
-    ///     \"street\": \"Somewhere In Ny 251\", \
-    ///     \"postcode\": \"3213212\"}"
-    ///     );
-    /// assert_eq!(roberts_second_address, roberts_second_address_in_db);
-    /// #     Ok(())
-    /// # }
-    /// # #[cfg(not(feature = "serde_json"))]
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     Ok(())
-    /// # }
-    /// ```
-    fn retrieve_as_text<T>(
-        self,
-        other: T,
-    ) -> dsl::RetrieveAsTextJson<Self, T::Expression, <T::Expression as Expression>::SqlType>
-    where
-        T: JsonIndex,
-        <T::Expression as Expression>::SqlType: SqlType,
-    {
-        Grouped(RetrieveAsTextJson::new(
             self,
             other.into_json_index_expression(),
         ))
@@ -3621,7 +3720,7 @@ where
 pub(in crate::pg) mod private {
     use crate::sql_types::{
         AllAreNullable, Array, Binary, Cidr, Inet, Integer, Json, Jsonb, MaybeNullableType,
-        Multirange, Nullable, OneIsNullable, Range, Record, SingleValue, SqlType, Text,
+        Multirange, Nullable, Range, Record, SingleValue, SqlType, Text,
     };
     use crate::{Expression, IntoSql};
 
@@ -3850,67 +3949,6 @@ pub(in crate::pg) mod private {
     impl TextArrayOrTextOrInteger for Text {}
     impl TextArrayOrTextOrInteger for Integer {}
 
-    /// Marker trait used to implement `PgAnyJsonExpressionMethods` on the appropriate types.
-    #[diagnostic::on_unimplemented(
-        message = "`{Self}` is neither `diesel::sql_types::Json`, `diesel::sql_types::Jsonb`, `diesel::sql_types::Nullable<Json>` nor `diesel::sql_types::Nullable<Jsonb>`",
-        note = "try to provide an expression that produces one of the expected sql types"
-    )]
-    pub trait JsonOrNullableJsonOrJsonbOrNullableJsonb {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Json {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Json> {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Jsonb {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Jsonb> {}
-
-    pub trait JsonIndex {
-        type Expression: Expression;
-
-        fn into_json_index_expression(self) -> Self::Expression;
-    }
-
-    impl<'a> JsonIndex for &'a str {
-        type Expression = crate::dsl::AsExprOf<&'a str, crate::sql_types::Text>;
-
-        fn into_json_index_expression(self) -> Self::Expression {
-            self.into_sql::<Text>()
-        }
-    }
-
-    impl JsonIndex for String {
-        type Expression = crate::dsl::AsExprOf<String, crate::sql_types::Text>;
-
-        fn into_json_index_expression(self) -> Self::Expression {
-            self.into_sql::<Text>()
-        }
-    }
-
-    impl JsonIndex for i32 {
-        type Expression = crate::dsl::AsExprOf<i32, crate::sql_types::Int4>;
-
-        fn into_json_index_expression(self) -> Self::Expression {
-            self.into_sql::<crate::sql_types::Int4>()
-        }
-    }
-
-    impl<T> JsonIndex for T
-    where
-        T: Expression,
-        T::SqlType: TextOrInteger,
-    {
-        type Expression = Self;
-
-        fn into_json_index_expression(self) -> Self::Expression {
-            self
-        }
-    }
-
-    #[diagnostic::on_unimplemented(
-        message = "`{Self}` is neither `diesel::sql_types::Text` nor `diesel::sql_types::Integer`",
-        note = "try to provide an expression that produces one of the expected sql types"
-    )]
-    pub trait TextOrInteger {}
-    impl TextOrInteger for Text {}
-    impl TextOrInteger for Integer {}
-
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Binary` nor `diesel::sql_types::Nullable<Binary>`",
         note = "try to provide an expression that produces one of the expected sql types"
@@ -3931,21 +3969,6 @@ pub(in crate::pg) mod private {
         <T::IsNull as MaybeNullableType<O>>::Out: SingleValue,
     {
         type Out = <T::IsNull as MaybeNullableType<O>>::Out;
-    }
-
-    pub trait CombinedNullableValue<O, Out>: SingleValue {
-        type Out: SingleValue;
-    }
-
-    impl<T, O, Out> CombinedNullableValue<O, Out> for T
-    where
-        T: SingleValue,
-        O: SingleValue,
-        T::IsNull: OneIsNullable<O::IsNull>,
-        <T::IsNull as OneIsNullable<O::IsNull>>::Out: MaybeNullableType<Out>,
-        <<T::IsNull as OneIsNullable<O::IsNull>>::Out as MaybeNullableType<Out>>::Out: SingleValue,
-    {
-        type Out = <<T::IsNull as OneIsNullable<O::IsNull>>::Out as MaybeNullableType<Out>>::Out;
     }
 
     #[diagnostic::on_unimplemented(

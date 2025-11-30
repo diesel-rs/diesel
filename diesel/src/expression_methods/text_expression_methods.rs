@@ -50,10 +50,7 @@ pub trait TextExpressionMethods: Expression + Sized {
     ///
     /// // If the value is nullable, the output will be nullable
     /// let names = users.select(hair_color.concat("ish")).load(connection);
-    /// let expected_names = vec![
-    ///     Some("Greenish".to_string()),
-    ///     None,
-    /// ];
+    /// let expected_names = vec![Some("Greenish".to_string()), None];
     /// assert_eq!(Ok(expected_names), names);
     /// # }
     /// ```

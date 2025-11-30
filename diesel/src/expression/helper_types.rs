@@ -6,6 +6,8 @@ use super::grouped::Grouped;
 use super::select_by::SelectBy;
 use super::{AsExpression, Expression};
 use crate::expression;
+#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
+use crate::expression_methods::JsonIndex;
 use crate::expression_methods::PreferredBoolSqlType;
 use crate::sql_types;
 
@@ -172,6 +174,22 @@ pub type Fields<Alias, Fields> = <Fields as crate::query_source::aliasing::Field
     <Alias as crate::query_source::aliasing::GetAliasSourceFromAlias>::Source,
 >>::Out;
 
+/// The return type of
+/// [`l + r`](expression::ops::numeric::Add)
+pub type Add<L, R> = <L as ::core::ops::Add<R>>::Output;
+
+/// The return type of
+/// [`l - r`](expression::ops::numeric::Sub)
+pub type Sub<L, R> = <L as ::core::ops::Sub<R>>::Output;
+
+/// The return type of
+/// [`l * r`](expression::ops::numeric::Mul)
+pub type Mul<L, R> = <L as ::core::ops::Mul<R>>::Output;
+
+/// The return type of
+/// [`l / r`](expression::ops::numeric::Div)
+pub type Div<L, R> = <L as ::core::ops::Div<R>>::Output;
+
 // we allow unreachable_pub here
 // as rustc otherwise shows false positives
 // for every item in this module. We reexport
@@ -181,11 +199,40 @@ pub type Fields<Alias, Fields> = <Fields as crate::query_source::aliasing::Field
 pub use super::functions::helper_types::*;
 
 #[doc(inline)]
-#[cfg(feature = "postgres_backend")]
+#[cfg(all(feature = "postgres_backend", not(feature = "sqlite")))]
 #[allow(unreachable_pub)]
+#[cfg_attr(
+    all(feature = "sqlite", feature = "postgres_backend"),
+    expect(
+        ambiguous_glob_reexports,
+        reason = "we cannot do much about this anymore"
+    )
+)]
 pub use crate::pg::expression::helper_types::*;
 
 #[doc(inline)]
-#[cfg(feature = "sqlite")]
+#[cfg(all(feature = "postgres_backend", feature = "sqlite"))]
+#[allow(unreachable_pub, ambiguous_glob_reexports)]
+pub use crate::pg::expression::helper_types::*;
+
+#[doc(inline)]
+#[cfg(all(feature = "sqlite", not(feature = "postgres_backend")))]
 #[allow(unreachable_pub)]
 pub use crate::sqlite::expression::helper_types::*;
+
+#[doc(inline)]
+#[cfg(all(feature = "sqlite", feature = "postgres_backend"))]
+#[allow(unreachable_pub, ambiguous_glob_reexports)]
+pub use crate::sqlite::expression::helper_types::*;
+
+/// The return type of [`lhs.retrieve_as_text(rhs)`](crate::expression_methods::AnyJsonExpressionMethods::retrieve_as_text)
+#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
+pub type RetrieveAsText<Lhs, Rhs> = Grouped<
+    crate::expression::operators::RetrieveAsTextJson<
+        Lhs,
+        AsExprOf<
+            <Rhs as JsonIndex>::Expression,
+            <<Rhs as JsonIndex>::Expression as Expression>::SqlType,
+        >,
+    >,
+>;

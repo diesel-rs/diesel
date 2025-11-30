@@ -34,7 +34,6 @@ pub trait BindCollector<'a, DB: TypeMetadata>: Sized {
         U: ToSql<T, DB> + ?Sized + 'a;
 
     /// Push a null value with the given type information onto the bind collector
-    ///
     // For backward compatibility reasons we provide a default implementation
     // but custom backends that want to support `#[derive(MultiConnection)]`
     // need to provide a customized implementation of this function
@@ -61,6 +60,12 @@ pub trait MoveableBindCollector<DB: TypeMetadata> {
 
     /// Refill the bind collector with its bind data
     fn append_bind_data(&mut self, from: &Self::BindData);
+
+    /// Push bind data as debug representation
+    fn push_debug_binds<'a, 'b>(
+        bind_data: &Self::BindData,
+        f: &'a mut Vec<Box<dyn std::fmt::Debug + 'b>>,
+    );
 }
 
 #[derive(Debug)]
@@ -145,7 +150,7 @@ where
 impl<DB> MoveableBindCollector<DB> for RawBytesBindCollector<DB>
 where
     for<'a> DB: Backend<BindCollector<'a> = Self> + TypeMetadata + 'static,
-    <DB as TypeMetadata>::TypeMetadata: Clone + Send,
+    <DB as TypeMetadata>::TypeMetadata: std::fmt::Debug + Clone + Send,
 {
     type BindData = Self;
 
@@ -159,6 +164,18 @@ where
     fn append_bind_data(&mut self, from: &Self::BindData) {
         self.binds.extend(from.binds.iter().cloned());
         self.metadata.extend(from.metadata.clone());
+    }
+
+    fn push_debug_binds<'a, 'b>(
+        bind_data: &Self::BindData,
+        f: &'a mut Vec<Box<dyn std::fmt::Debug + 'b>>,
+    ) {
+        f.extend(
+            bind_data
+                .metadata
+                .iter()
+                .map(|m| Box::new(m.clone()) as Box<dyn std::fmt::Debug>),
+        );
     }
 }
 

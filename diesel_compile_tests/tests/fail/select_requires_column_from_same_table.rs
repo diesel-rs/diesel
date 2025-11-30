@@ -18,4 +18,5 @@ table! {
 
 fn main() {
     let select_id = users::table.select(posts::id);
+    //~^ ERROR: cannot select `posts::columns::id` from `users::table`
 }

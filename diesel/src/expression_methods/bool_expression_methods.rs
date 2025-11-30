@@ -28,12 +28,11 @@ pub trait BoolExpressionMethods: Expression + Sized {
     ///     ])
     ///     .execute(connection)?;
     ///
-    /// let data = animals.select((species, name))
+    /// let data = animals
+    ///     .select((species, name))
     ///     .filter(species.eq("ferret").and(name.eq("Jack")))
     ///     .load(connection)?;
-    /// let expected = vec![
-    ///     (String::from("ferret"), Some(String::from("Jack"))),
-    /// ];
+    /// let expected = vec![(String::from("ferret"), Some(String::from("Jack")))];
     /// assert_eq!(expected, data);
     /// #     Ok(())
     /// # }
@@ -74,7 +73,8 @@ pub trait BoolExpressionMethods: Expression + Sized {
     ///     ])
     ///     .execute(connection)?;
     ///
-    /// let data = animals.select((species, name))
+    /// let data = animals
+    ///     .select((species, name))
     ///     .filter(species.eq("ferret").or(name.eq("Jack")))
     ///     .load(connection)?;
     /// let expected = vec![

@@ -127,11 +127,11 @@ impl Field {
             Some(x) => FieldName::Named(x),
             None => FieldName::Unnamed(index.into()),
         };
-
         let span = match name {
             FieldName::Named(ref ident) => ident.span(),
             FieldName::Unnamed(_) => ty.span(),
         };
+        let span = Span::mixed_site().located_at(span);
 
         Ok(Self {
             ty: ty.clone(),
@@ -160,7 +160,7 @@ impl Field {
                 FieldName::Named(ref x) => Ok(x.into()),
                 FieldName::Unnamed(ref x) => Err(syn::Error::new(
                     x.span(),
-                    "All fields of tuple structs must be annotated with `#[diesel(column_name)]`",
+                    "all fields of tuple structs must be annotated with `#[diesel(column_name)]`",
                 )),
             }
         }

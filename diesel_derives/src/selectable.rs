@@ -1,14 +1,17 @@
-use proc_macro2::TokenStream;
-use quote::quote;
+use proc_macro2::{Span, TokenStream};
+use quote::{quote, quote_spanned};
 use std::borrow::Cow;
 use syn::spanned::Spanned;
 use syn::{parse_quote, DeriveInput, Result};
 
 use crate::field::Field;
-use crate::model::Model;
+use crate::model::{CheckForBackend, Model};
 use crate::util::wrap_in_dummy_mod;
 
-pub fn derive(item: DeriveInput) -> Result<TokenStream> {
+pub fn derive(
+    item: DeriveInput,
+    check_for_backend: Option<CheckForBackend>,
+) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, false)?;
 
     let (original_impl_generics, ty_generics, original_where_clause) =
@@ -47,14 +50,21 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         .map(|f| field_column_inst(f, &model))
         .collect::<Result<Vec<_>>>()?;
 
-    let check_function = if let Some(ref backends) = model.check_for_backend {
+    let check_function = if let Some(backends) = model
+        .check_for_backend
+        .as_ref()
+        .or(check_for_backend.as_ref())
+        .and_then(|c| match c {
+            CheckForBackend::Backends(punctuated) => Some(punctuated),
+            CheckForBackend::Disabled(_lit_bool) => None,
+        }) {
         let field_check_bound = model
             .fields()
             .iter()
             .zip(&field_select_expression_type_builders)
             .flat_map(|(f, ty_builder)| {
                 backends.iter().map(move |b| {
-                    let span = f.ty.span();
+                    let span = Span::mixed_site().located_at(f.ty.span());
                     let field_ty = to_field_ty_bound(f.ty_for_deserialize())?;
                     let ty = ty_builder.type_with_backend(b);
                     Ok(syn::parse_quote_spanned! {span =>
@@ -112,8 +122,8 @@ fn to_field_ty_bound(field_ty: &syn::Type) -> Result<TokenStream> {
             Err(syn::Error::new(
                 field_ty.span(),
                 format!(
-                    "References are not supported in `Queryable` types\n\
-                         Consider using `std::borrow::Cow<'{}, {}>` instead",
+                    "references are not supported in `Queryable` types\n\
+                         consider using `std::borrow::Cow<'{}, {}>` instead",
                     r.lifetime
                         .as_ref()
                         .expect("It's a struct field so it must have a named lifetime")
@@ -159,8 +169,9 @@ fn field_select_expression_ty_builder<'a>(
     } else {
         let table_name = &model.table_names()[0];
         let column_name = field.column_name()?.to_ident()?;
+        let span = Span::call_site();
         Ok(FieldSelectExpressionTyBuilder::Always(
-            quote!(#table_name::#column_name),
+            quote_spanned!(span=> #table_name::#column_name),
         ))
     }
 }
@@ -191,6 +202,7 @@ fn field_column_inst(field: &Field, model: &Model) -> Result<TokenStream> {
     } else {
         let table_name = &model.table_names()[0];
         let column_name = field.column_name()?.to_ident()?;
-        Ok(quote!(#table_name::#column_name))
+        let span = Span::call_site();
+        Ok(quote_spanned!(span=> #table_name::#column_name))
     }
 }

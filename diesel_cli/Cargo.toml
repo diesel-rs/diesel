@@ -1,6 +1,6 @@
 [package]
 name = "diesel_cli"
-version = "2.2.0"
+version = "2.3.0"
 license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
 readme = "README.md"
@@ -40,9 +40,10 @@ chrono = { version = "0.4.20", default-features = false, features = [
 clap = { version = "4.4.14", features = ["cargo", "string"] }
 clap_complete = "4"
 dotenvy = "0.15"
+dunce = "1.0.5"
 heck = "0.5.0"
 serde = { version = "1.0.193", features = ["derive", "std"] }
-toml = "0.8"
+toml = { version = "0.9", default-features = false, features = ["parse", "serde"] }
 url = "2.2.2"
 libsqlite3-sys = { workspace = true, optional = true }
 pq-sys = { workspace = true, optional = true }
@@ -51,7 +52,7 @@ mysqlclient-sys = { workspace = true, optional = true }
 diffy = "0.4.0"
 regex = "1.0.6"
 serde_regex = "1.1"
-diesel_table_macro_syntax = { version = "0.2", path = "../diesel_table_macro_syntax" }
+diesel_table_macro_syntax = { version = "0.3", path = "../diesel_table_macro_syntax" }
 syn = { version = "2", features = ["visit"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3.10", features = ["env-filter"] }
@@ -60,13 +61,16 @@ similar-asserts = "1.6.0"
 fd-lock = "4.0.2"
 
 [dependencies.diesel]
-version = "~2.2.0"
+version = "~2.3.0"
 path = "../diesel"
 default-features = false
 
 [dependencies.diesel_migrations]
-version = "~2.2.0"
+version = "~2.3.0"
 path = "../diesel_migrations/"
+
+[dependencies.diesel_infer_query]
+path = "../diesel_infer_query"
 
 [dev-dependencies]
 tempfile = "3.1.0"

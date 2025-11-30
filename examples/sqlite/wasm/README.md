@@ -10,11 +10,14 @@ Compile wasm and start the web server:
 rustup target add wasm32-unknown-unknown
 # Add wasm32-unknown-unknown toolchain
 
-cargo install wasm-pack
-# Install the wasm-pack toolchain
+cargo install wasm-bindgen-cli --locked
+# Install the wasm-bindgen cli
 
-wasm-pack build --target web
+cargo build --target wasm32-unknown-unknown
 # Build wasm
+
+wasm-bindgen ../../../target/wasm32-unknown-unknown/debug/sqlite_wasm_example.wasm --out-dir pkg --web
+# bindgen
 
 python3 server.py
 # Start server

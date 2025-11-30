@@ -1,35 +1,38 @@
 error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
- --> tests/fail/array_only_usable_with_pg.rs:8:48
-  |
-8 |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
-  |                         ----------             ^^^^^^^^^^^^^^^ expected `Pg`, found `Sqlite`
-  |                         |
-  |                         required by a bound introduced by this call
-  |
-  = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>,), diesel::sql_types::Integer>>>` to implement `LoadQuery<'_, diesel::SqliteConnection, Vec<i32>>`
+    --> tests/fail/array_only_usable_with_pg.rs:8:48
+     |
+   LL |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
+     |                         ----------             ^^^^^^^^^^^^^^^ expected `Pg`, found `Sqlite`
+     |                         |
+     |                         required by a bound introduced by this call
+     |
+     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<(...,), ...>>>` to implement `LoadQuery<'_, diesel::SqliteConnection, Vec<i32>>`
 note: required by a bound in `get_result`
- --> $DIESEL/src/query_dsl/mod.rs
-  |
-  |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
-  |        ---------- required by a bound in this associated function
-  |     where
-  |         Self: LoadQuery<'query, Conn, U>,
-  |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+     |        ---------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+  
+     
 error[E0271]: type mismatch resolving `<MysqlConnection as Connection>::Backend == Pg`
-  --> tests/fail/array_only_usable_with_pg.rs:11:48
-   |
-11 |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
-   |                         ----------             ^^^^^^^^^^^^^^^ expected `Pg`, found `Mysql`
-   |                         |
-   |                         required by a bound introduced by this call
-   |
-   = note: required for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>,), diesel::sql_types::Integer>>>` to implement `LoadQuery<'_, diesel::MysqlConnection, Vec<i32>>`
+    --> tests/fail/array_only_usable_with_pg.rs:12:48
+     |
+  LL |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
+     |                         ----------             ^^^^^^^^^^^^^^^ expected `Pg`, found `Mysql`
+     |                         |
+     |                         required by a bound introduced by this call
+     |
+     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<(...,), ...>>>` to implement `LoadQuery<'_, diesel::MysqlConnection, Vec<i32>>`
 note: required by a bound in `get_result`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
-   |        ---------- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+     |        ---------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+  
+     For more information about this error, try `rustc --explain E0271`.

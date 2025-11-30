@@ -2,7 +2,7 @@ use crate::attrs::AttributeSpanWrapper;
 use crate::field::Field;
 use crate::model::Model;
 use crate::util::{inner_of_option_ty, is_option_ty, wrap_in_dummy_mod};
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use quote::quote_spanned;
 use syn::parse_quote;
@@ -39,6 +39,10 @@ fn derive_into_single_table(
     let mut direct_field_assign = Vec::with_capacity(model.fields().len());
     let mut ref_field_ty = Vec::with_capacity(model.fields().len());
     let mut ref_field_assign = Vec::with_capacity(model.fields().len());
+
+    // Explicit trait bounds to improve error messages
+    let mut field_ty_bounds = Vec::with_capacity(model.fields().len());
+    let mut borrowed_field_ty_bounds = Vec::with_capacity(model.fields().len());
 
     for field in model.fields() {
         // skip this field while generating the insertion
@@ -99,6 +103,22 @@ fn derive_into_single_table(
                     Some(quote!(&)),
                     treat_none_as_default_value,
                 )?);
+
+                field_ty_bounds.push(generate_field_bound(
+                    field,
+                    table_name,
+                    &field.ty,
+                    treat_none_as_default_value,
+                    false,
+                )?);
+
+                borrowed_field_ty_bounds.push(generate_field_bound(
+                    field,
+                    table_name,
+                    &field.ty,
+                    treat_none_as_default_value,
+                    true,
+                )?);
             }
             (Some(AttributeSpanWrapper { item: ty, .. }), false) => {
                 direct_field_ty.push(field_ty_serialize_as(
@@ -114,6 +134,14 @@ fn derive_into_single_table(
                     treat_none_as_default_value,
                 )?);
 
+                field_ty_bounds.push(generate_field_bound(
+                    field,
+                    table_name,
+                    ty,
+                    treat_none_as_default_value,
+                    false,
+                )?);
+
                 generate_borrowed_insert = false; // as soon as we hit one field with #[diesel(serialize_as)] there is no point in generating the impl of Insertable for borrowed structs
             }
             (Some(AttributeSpanWrapper { attribute_span, .. }), true) => {
@@ -127,7 +155,9 @@ fn derive_into_single_table(
 
     let insert_owned = quote! {
         impl #impl_generics diesel::insertable::Insertable<#table_name::table> for #struct_name #ty_generics
+        where
             #where_clause
+            #(#field_ty_bounds,)*
         {
             type Values = <(#(#direct_field_ty,)*) as diesel::insertable::Insertable<#table_name::table>>::Values;
 
@@ -145,7 +175,9 @@ fn derive_into_single_table(
         quote! {
             impl #impl_generics diesel::insertable::Insertable<#table_name::table>
                 for &'insert #struct_name #ty_generics
-            #where_clause
+            where
+                #where_clause
+                #(#borrowed_field_ty_bounds,)*
             {
                 type Values = <(#(#ref_field_ty,)*) as diesel::insertable::Insertable<#table_name::table>>::Values;
 
@@ -173,7 +205,7 @@ fn derive_into_single_table(
 
 fn field_ty_embed(field: &Field, lifetime: Option<TokenStream>) -> TokenStream {
     let field_ty = &field.ty;
-    let span = field.span;
+    let span = Span::mixed_site().located_at(field.span);
     quote_spanned!(span=> #lifetime #field_ty)
 }
 
@@ -189,7 +221,7 @@ fn field_ty_serialize_as(
     treat_none_as_default_value: bool,
 ) -> Result<TokenStream> {
     let column_name = field.column_name()?.to_ident()?;
-    let span = field.span;
+    let span = Span::mixed_site().located_at(field.span);
     if treat_none_as_default_value {
         let inner_ty = inner_of_option_ty(ty);
 
@@ -242,7 +274,7 @@ fn field_ty(
     treat_none_as_default_value: bool,
 ) -> Result<TokenStream> {
     let column_name = field.column_name()?.to_ident()?;
-    let span = field.span;
+    let span = Span::mixed_site().located_at(field.span);
     if treat_none_as_default_value {
         let inner_ty = inner_of_option_ty(&field.ty);
 
@@ -291,4 +323,33 @@ fn field_expr(
     } else {
         Ok(quote!(diesel::ExpressionMethods::eq(#column, #lifetime self.#field_name)))
     }
+}
+
+/// Generate explicit trait bound with field span to improve error messages
+fn generate_field_bound(
+    field: &Field,
+    table_name: &Path,
+    ty: &Type,
+    treat_none_as_default_value: bool,
+    borrowed: bool,
+) -> Result<TokenStream> {
+    let column_name = field.column_name()?.to_ident()?;
+    let span = Span::mixed_site().located_at(field.span);
+    let ty_to_check = if treat_none_as_default_value {
+        inner_of_option_ty(ty)
+    } else {
+        ty
+    };
+
+    let bound_ty = if borrowed {
+        quote_spanned! {span=> &'insert #ty_to_check}
+    } else {
+        quote_spanned! {span=> #ty_to_check}
+    };
+
+    Ok(quote_spanned! {span=>
+        #bound_ty: diesel::expression::AsExpression<
+            <#table_name::#column_name as diesel::Expression>::SqlType
+        >
+    })
 }

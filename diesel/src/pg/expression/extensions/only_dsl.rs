@@ -43,7 +43,6 @@ use crate::Table;
 /// # }
 /// ```
 /// That query excludes any posts that reside in any inherited table.
-///
 pub trait OnlyDsl: Table {
     /// See the trait-level docs.
     fn only(self) -> Only<Self> {

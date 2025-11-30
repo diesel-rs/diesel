@@ -2,7 +2,8 @@ use clap::ArgMatches;
 use diesel::backend::Backend;
 use diesel::query_builder::QueryBuilder;
 use diesel::QueryResult;
-use diesel_table_macro_syntax::{ColumnDef, TableDecl};
+use diesel_table_macro_syntax::{ColumnDef, TableDecl, ViewDecl};
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::path::Path;
 use syn::visit::Visit;
@@ -11,7 +12,7 @@ use crate::config::PrintSchema;
 use crate::database::InferConnection;
 use crate::infer_schema_internals::{
     filter_table_names, load_table_names, ColumnDefinition, ColumnType, ForeignKeyConstraint,
-    TableData, TableName,
+    SupportedQueryRelationStructures, TableData, TableName,
 };
 use crate::print_schema::{ColumnSorting, DocConfig};
 
@@ -78,8 +79,8 @@ pub fn generate_sql_based_on_diff_schema(
                 .map(ToString::to_string)
                 .collect::<Vec<_>>()
         });
-        table_pk_key_list.insert(t.table_name.to_string(), keys);
-        expected_schema_map.insert(t.table_name.to_string(), t);
+        table_pk_key_list.insert(t.view.table_name.to_string(), keys);
+        expected_schema_map.insert(t.view.table_name.to_string(), t);
     }
     config.with_docs = DocConfig::NoDocComments;
     config.column_sorting = ColumnSorting::OrdinalPosition;
@@ -98,96 +99,73 @@ pub fn generate_sql_based_on_diff_schema(
 
     let mut schema_diff = Vec::new();
     let table_names = load_table_names(&mut conn, None)?;
-    let tables_from_database = filter_table_names(table_names.clone(), &config.filter);
-    for table in tables_from_database {
+    let tables_from_database =
+        filter_table_names(&table_names, &config.filter, config.include_views);
+    for (structure, table) in tables_from_database {
         tracing::info!(?table, "Diff for existing table");
-        let columns =
-            crate::infer_schema_internals::load_table_data(&mut conn, table.clone(), &config)?;
-        if let Some(t) = expected_schema_map.remove(&table.sql_name.to_lowercase()) {
-            tracing::info!(table = ?t.sql_name, "Table exists in schema.rs");
-            let mut primary_keys_in_db =
-                crate::infer_schema_internals::get_primary_keys(&mut conn, &table)?;
-            primary_keys_in_db.sort();
-            let mut primary_keys_in_schema = t
-                .primary_keys
-                .map(|pk| pk.keys.iter().map(|k| k.to_string()).collect::<Vec<_>>())
-                .unwrap_or_else(|| vec!["id".into()]);
-            primary_keys_in_schema.sort();
-            if primary_keys_in_db != primary_keys_in_schema {
-                tracing::debug!(
-                    ?primary_keys_in_schema,
-                    ?primary_keys_in_db,
-                    "Primary keys changed"
-                );
-                return Err(crate::errors::Error::UnsupportedFeature(
-                    "Cannot change primary keys with --diff-schema yet".into(),
-                ));
-            }
-
-            let mut expected_column_map = t
-                .column_defs
-                .into_iter()
-                .map(|c| (c.sql_name.to_lowercase(), c))
-                .collect::<HashMap<_, _>>();
-
-            let mut added_columns = Vec::new();
-            let mut removed_columns = Vec::new();
-            let mut changed_columns = Vec::new();
-
-            for c in columns.column_data {
-                if let Some(def) = expected_column_map.remove(&c.sql_name.to_lowercase()) {
-                    let tpe = ColumnType::for_column_def(&def)?;
-                    if !is_same_type(&c.ty, tpe) {
-                        tracing::info!(old = ?c, new = ?def.sql_name, "Column changed type");
-                        changed_columns.push((c, def));
+        match structure {
+            SupportedQueryRelationStructures::Table => {
+                let columns = crate::infer_schema_internals::load_table_data(
+                    &mut conn,
+                    table.clone(),
+                    &config,
+                    structure,
+                )?;
+                if let Some(TableDecl { primary_keys, view }) =
+                    expected_schema_map.remove(&table.sql_name.to_lowercase())
+                {
+                    tracing::info!(table = ?view.sql_name, "Table exists in schema.rs");
+                    let mut primary_keys_in_db =
+                        crate::infer_schema_internals::get_primary_keys(&mut conn, &table)?;
+                    primary_keys_in_db.sort();
+                    let mut primary_keys_in_schema = primary_keys
+                        .map(|pk| pk.keys.iter().map(|k| k.to_string()).collect::<Vec<_>>())
+                        .unwrap_or_else(|| vec!["id".into()]);
+                    primary_keys_in_schema.sort();
+                    if primary_keys_in_db != primary_keys_in_schema {
+                        tracing::debug!(
+                            ?primary_keys_in_schema,
+                            ?primary_keys_in_db,
+                            "Primary keys changed"
+                        );
+                        return Err(crate::errors::Error::UnsupportedFeature(
+                            "Cannot change primary keys with --diff-schema yet".into(),
+                        ));
                     }
+                    schema_diff.push(update_columns(view, columns.column_data)?);
                 } else {
-                    tracing::info!(column = ?c, "Column was removed");
-                    removed_columns.push(c);
+                    tracing::info!("Table does not exist yet");
+                    let foreign_keys = foreign_key_map
+                        .get(&table.rust_name)
+                        .cloned()
+                        .unwrap_or_default();
+                    if foreign_keys.iter().any(|fk| {
+                        fk.foreign_key_columns.len() != 1 || fk.primary_key_columns.len() != 1
+                    }) {
+                        return Err(crate::errors::Error::UnsupportedFeature(
+                            "Tables with composite foreign keys are not supported by --diff-schema"
+                                .into(),
+                        ));
+                    }
+                    schema_diff.push(SchemaDiff::DropTable {
+                        table,
+                        columns,
+                        foreign_keys,
+                    });
                 }
             }
-
-            if !expected_column_map.is_empty() {
-                let columns = expected_column_map
-                    .values()
-                    .map(|v| v.column_name.to_string())
-                    .collect::<Vec<_>>();
-                tracing::info!(added = ?columns, "Added columns");
-            }
-            added_columns.extend(expected_column_map.into_values());
-
-            schema_diff.push(SchemaDiff::ChangeTable {
-                table: t.sql_name,
-                added_columns,
-                removed_columns,
-                changed_columns,
-            });
-        } else {
-            tracing::info!("Table does not exist yet");
-            let foreign_keys = foreign_key_map
-                .get(&table.rust_name)
-                .cloned()
-                .unwrap_or_default();
-            if foreign_keys
-                .iter()
-                .any(|fk| fk.foreign_key_columns.len() != 1 || fk.primary_key_columns.len() != 1)
-            {
+            SupportedQueryRelationStructures::View => {
                 return Err(crate::errors::Error::UnsupportedFeature(
-                    "Tables with composite foreign keys are not supported by --diff-schema".into(),
+                    "Views are not supported by `--diff-schema`".into(),
                 ));
             }
-            schema_diff.push(SchemaDiff::DropTable {
-                table,
-                columns,
-                foreign_keys,
-            });
         }
     }
 
     schema_diff.extend(expected_schema_map.into_values().map(|t| {
-        tracing::info!(table = ?t.sql_name, "Tables does not exist in database");
+        tracing::info!(table = ?t.view.sql_name, "Tables does not exist in database");
         let foreign_keys = expected_fk_map
-            .remove(&t.table_name.to_string())
+            .remove(&t.view.table_name.to_string())
             .unwrap_or_default()
             .into_iter()
             .filter_map(|j| {
@@ -257,6 +235,50 @@ pub fn generate_sql_based_on_diff_schema(
     }
 
     Ok((up_sql, down_sql))
+}
+
+fn update_columns(
+    view: ViewDecl,
+    columns: Vec<ColumnDefinition>,
+) -> Result<SchemaDiff, crate::errors::Error> {
+    let mut expected_column_map = view
+        .column_defs
+        .into_iter()
+        .map(|c| (c.sql_name.to_lowercase(), c))
+        .collect::<HashMap<_, _>>();
+
+    let mut added_columns = Vec::new();
+    let mut removed_columns = Vec::new();
+    let mut changed_columns = Vec::new();
+
+    for c in columns {
+        if let Some(def) = expected_column_map.remove(&c.sql_name.to_lowercase()) {
+            let tpe = ColumnType::for_column_def(&def)?;
+            if !is_same_type(&c.ty, tpe) {
+                tracing::info!(old = ?c, new = ?def.sql_name, "Column changed type");
+                changed_columns.push((c, def));
+            }
+        } else {
+            tracing::info!(column = ?c, "Column was removed");
+            removed_columns.push(c);
+        }
+    }
+
+    if !expected_column_map.is_empty() {
+        let columns = expected_column_map
+            .values()
+            .map(|v| v.column_name.to_string())
+            .collect::<Vec<_>>();
+        tracing::info!(added = ?columns, "Added columns");
+    }
+    added_columns.extend(expected_column_map.into_values());
+
+    Ok(SchemaDiff::ChangeTable {
+        table: view.sql_name,
+        added_columns,
+        removed_columns,
+        changed_columns,
+    })
 }
 
 fn is_same_type(ty: &ColumnType, tpe: ColumnType) -> bool {
@@ -329,13 +351,14 @@ impl SchemaDiff {
                 to_create,
                 foreign_keys,
             } => {
-                let table = &to_create.sql_name.to_lowercase();
+                let table = &to_create.view.sql_name.to_lowercase();
                 let primary_keys = to_create
                     .primary_keys
                     .as_ref()
                     .map(|keys| keys.keys.iter().map(|k| k.to_string()).collect())
                     .unwrap_or_else(|| vec![String::from("id")]);
                 let column_data = to_create
+                    .view
                     .column_defs
                     .iter()
                     .map(|c| {
@@ -348,6 +371,7 @@ impl SchemaDiff {
                         })
                     })
                     .collect::<Result<Vec<_>, crate::errors::Error>>()?;
+
                 let foreign_keys = foreign_keys
                     .iter()
                     .map(|(f, pk)| {
@@ -362,7 +386,7 @@ impl SchemaDiff {
                 let sqlite_integer_primary_key_is_bigint = config
                     .sqlite_integer_primary_key_is_bigint
                     .unwrap_or_default();
-
+                collect_and_generate_record_types(query_builder, &column_data)?;
                 generate_create_table(
                     query_builder,
                     table,
@@ -385,6 +409,9 @@ impl SchemaDiff {
                     generate_drop_column(query_builder, &table.to_lowercase(), &c.sql_name)?;
                     query_builder.push_sql("\n");
                 }
+                let for_record_types =
+                    extract_record_types_from_changed_columns(added_columns, changed_columns)?;
+                collect_and_generate_record_types(query_builder, &for_record_types)?;
                 for c in added_columns
                     .iter()
                     .chain(changed_columns.iter().map(|(_, b)| b))
@@ -406,7 +433,7 @@ impl SchemaDiff {
         &self,
         query_builder: &mut impl QueryBuilder<DB>,
         config: &PrintSchema,
-    ) -> QueryResult<()>
+    ) -> Result<(), crate::errors::Error>
     where
         DB: Backend,
     {
@@ -441,7 +468,23 @@ impl SchemaDiff {
                 )?;
             }
             SchemaDiff::CreateTable { to_create, .. } => {
-                generate_drop_table(query_builder, &to_create.sql_name.to_lowercase())?;
+                generate_drop_table(query_builder, &to_create.view.sql_name.to_lowercase())?;
+                let for_record_types = to_create
+                    .view
+                    .column_defs
+                    .iter()
+                    .map(|c| {
+                        let ty = ColumnType::for_column_def(c)?;
+                        Ok::<_, crate::errors::Error>(ColumnDefinition {
+                            sql_name: c.sql_name.to_lowercase(),
+                            rust_name: c.sql_name.clone(),
+                            ty,
+                            comment: None,
+                        })
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let record_types = collect_record_types(&for_record_types);
+                drop_record_types(record_types, query_builder)?;
             }
             SchemaDiff::ChangeTable {
                 table,
@@ -463,6 +506,10 @@ impl SchemaDiff {
                     )?;
                     query_builder.push_sql("\n");
                 }
+                let for_record_types =
+                    extract_record_types_from_changed_columns(added_columns, changed_columns)?;
+                let record_types = collect_record_types(&for_record_types);
+                drop_record_types(record_types, query_builder)?;
                 for c in removed_columns
                     .iter()
                     .chain(changed_columns.iter().map(|(a, _)| a))
@@ -481,6 +528,162 @@ impl SchemaDiff {
     }
 }
 
+fn extract_record_types_from_changed_columns(
+    added_columns: &[ColumnDef],
+    changed_columns: &[(ColumnDefinition, ColumnDef)],
+) -> Result<Vec<ColumnDefinition>, crate::errors::Error> {
+    let for_record_types = added_columns
+        .iter()
+        .map(|c| {
+            let ty = ColumnType::for_column_def(c)?;
+            Ok::<_, crate::errors::Error>(ColumnDefinition {
+                sql_name: c.sql_name.to_lowercase(),
+                rust_name: c.sql_name.clone(),
+                ty,
+                comment: None,
+            })
+        })
+        .chain(changed_columns.iter().map(|(c, _)| Ok(c.clone())))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(for_record_types)
+}
+
+fn drop_record_types<DB>(
+    record_types: Vec<(Cow<'_, str>, &[ColumnType])>,
+    query_builder: &mut impl QueryBuilder<DB>,
+) -> Result<(), crate::errors::Error>
+where
+    DB: Backend,
+{
+    if !record_types.is_empty() {
+        query_builder.push_sql("\n\n");
+    }
+    for (column, _) in record_types.into_iter().rev() {
+        drop_record_type(column, query_builder)?;
+    }
+    Ok(())
+}
+
+fn drop_record_type<DB>(
+    column: Cow<'_, str>,
+    query_builder: &mut impl QueryBuilder<DB>,
+) -> Result<(), crate::errors::Error>
+where
+    DB: Backend,
+{
+    query_builder.push_sql("DROP TYPE IF EXISTS ");
+    query_builder.push_identifier(&format!("{}_RECORD", column.to_uppercase()))?;
+    query_builder.push_sql(";\n\n");
+    Ok(())
+}
+
+fn collect_and_generate_record_types<DB>(
+    query_builder: &mut impl QueryBuilder<DB>,
+    column_data: &[ColumnDefinition],
+) -> Result<(), crate::errors::Error>
+where
+    DB: Backend,
+{
+    let record_types = collect_record_types(column_data);
+    for (column, record_types) in record_types {
+        generate_record_types(query_builder, record_types, column)?;
+    }
+    Ok(())
+}
+
+// We need to return a boxed iterator here and not a impl Iterator as
+// rustc otherwise returns a not very good error message that it cannot infer the type behind
+// the impl
+//
+// I believe that's reasonable as rustc likely struggles with the recursive type otherwise
+// Boxing just makes it much clearer what really happens here for the compiler
+#[expect(
+    clippy::type_complexity,
+    reason = "Its an internally only type and it's not that complex"
+)]
+fn recursive_record_types<'a>(
+    ty: &'a ColumnType,
+    prefix: Cow<'a, str>,
+) -> Box<dyn Iterator<Item = (Cow<'a, str>, Option<&'a [ColumnType]>)> + 'a> {
+    let prefix_2 = prefix.clone();
+    let iter = ty
+        .record
+        .as_deref()
+        .into_iter()
+        .flatten()
+        .enumerate()
+        .flat_map(move |(idx, c)| {
+            recursive_record_types(c, Cow::Owned(format!("{prefix_2}_RECORD_FIELD_{idx}")))
+        })
+        .chain(
+            ty.record
+                .as_deref()
+                .into_iter()
+                .flatten()
+                .enumerate()
+                .map(move |(idx, c)| {
+                    (
+                        Cow::Owned(format!("{prefix}_RECORD_FIELD_{idx}")),
+                        c.record.as_deref(),
+                    )
+                }),
+        );
+    Box::new(iter)
+}
+
+fn collect_record_types(column_data: &[ColumnDefinition]) -> Vec<(Cow<'_, str>, &[ColumnType])> {
+    column_data
+        .iter()
+        .flat_map(|c| {
+            recursive_record_types(&c.ty, Cow::Borrowed(c.sql_name.as_str())).chain(
+                std::iter::once((Cow::Borrowed(c.sql_name.as_str()), c.ty.record.as_deref())),
+            )
+        })
+        .filter_map(|(column_name, record)| Some((column_name, record?)))
+        .collect::<Vec<_>>()
+}
+
+fn generate_record_types<DB>(
+    query_builder: &mut impl QueryBuilder<DB>,
+    record_types: &[ColumnType],
+    column_name: Cow<'_, str>,
+) -> QueryResult<()>
+where
+    DB: Backend,
+{
+    query_builder.push_sql("CREATE TYPE ");
+    let record_type_name = format!("{}_RECORD", column_name.to_uppercase());
+    if dbg!(record_type_name.len()) > 64 {
+        return Err(diesel::result::Error::QueryBuilderError(
+            format!(
+                "Failed to construct a suitable name \
+             for a record type for `{column_name}` due to PostgreSQL limiting \
+             type names to 64 byte"
+            )
+            .into(),
+        ));
+    }
+    query_builder.push_identifier(&record_type_name)?;
+    query_builder.push_sql(" AS (\n");
+    for (idx, record_type) in record_types.iter().enumerate() {
+        query_builder.push_sql("\t");
+        query_builder.push_identifier(&format!("FIELD_{idx}"))?;
+        query_builder.push_sql(" ");
+        generate_column_type_name(
+            query_builder,
+            record_type,
+            &format!("{}_RECORD_FIELD_{idx}", column_name.to_uppercase()),
+            true,
+        )?;
+        if idx != record_types.len() - 1 {
+            query_builder.push_sql(",");
+        }
+        query_builder.push_sql("\n");
+    }
+    query_builder.push_sql(");\n\n");
+    Ok(())
+}
+
 fn generate_add_column<DB>(
     query_builder: &mut impl QueryBuilder<DB>,
     table: &str,
@@ -494,7 +697,7 @@ where
     query_builder.push_identifier(table)?;
     query_builder.push_sql(" ADD COLUMN ");
     query_builder.push_identifier(column)?;
-    generate_column_type_name(query_builder, ty);
+    generate_column_type_name(query_builder, ty, column, false)?;
     query_builder.push_sql(";");
     Ok(())
 }
@@ -559,9 +762,9 @@ where
                 sql_name: "Integer".into(),
                 ..column.ty.clone()
             };
-            generate_column_type_name(query_builder, &ty);
+            generate_column_type_name(query_builder, &ty, &column.sql_name, false)?;
         } else {
-            generate_column_type_name(query_builder, &column.ty);
+            generate_column_type_name(query_builder, &column.ty, &column.sql_name, false)?;
         }
 
         if is_only_primary_key {
@@ -608,24 +811,38 @@ where
     Ok(())
 }
 
-fn generate_column_type_name<DB>(query_builder: &mut impl QueryBuilder<DB>, ty: &ColumnType)
+fn generate_column_type_name<DB>(
+    query_builder: &mut impl QueryBuilder<DB>,
+    ty: &ColumnType,
+    column_name: &str,
+    for_record: bool,
+) -> QueryResult<()>
 where
     DB: Backend,
 {
     // TODO: handle schema
-    query_builder.push_sql(&format!(" {}", ty.sql_name.to_uppercase()));
-    if let Some(max_length) = ty.max_length {
-        query_builder.push_sql(&format!("({max_length})"));
-    }
-    if !ty.is_nullable {
-        query_builder.push_sql(" NOT NULL");
-    }
-    if ty.is_unsigned {
-        query_builder.push_sql(" UNSIGNED");
+    if ty.record.is_some() {
+        query_builder.push_sql(" ");
+        // need to quote the type name here as we quote it during creating which creates an upper case only type
+        query_builder.push_identifier(&format!("{}_RECORD", column_name.to_uppercase()))?;
+    } else {
+        query_builder.push_sql(&format!(" {}", ty.sql_name.to_uppercase()));
     }
     if ty.is_array {
         query_builder.push_sql("[]");
     }
+    if let Some(max_length) = ty.max_length {
+        query_builder.push_sql(&format!("({max_length})"));
+    }
+    if !for_record {
+        if !ty.is_nullable {
+            query_builder.push_sql(" NOT NULL");
+        }
+        if ty.is_unsigned {
+            query_builder.push_sql(" UNSIGNED");
+        }
+    }
+    Ok(())
 }
 
 fn generate_drop_table<DB>(

@@ -34,24 +34,31 @@ pub fn check(conn: &mut PgConnection) {
     // wrong fields
 
     user_alias.field(posts::id);
+    //~^ ERROR: type mismatch resolving `<id as QueryRelationField>::QueryRelation == table`
 
     // joining the same alias twice
 
     users::table
         .inner_join(post_alias)
         .inner_join(post_alias)
+        //~^ ERROR: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
+        //~| ERROR: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
         .select(users::id)
+        //~^ ERROR: the method `select` exists for struct `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>`, but its trait bounds were not satisfied
         .load::<i32>(conn)
         .unwrap();
 
     // Selecting the raw field on the aliased table
     user_alias.select(users::id).load::<i32>(conn).unwrap();
+    //~^ ERROR: cannot select `users::columns::id` from `Alias<users2>`
+    //~| ERROR: cannot select `users::columns::id` from `Alias<users2>`
 
     let user2_alias = alias!(users as user3);
 
     // don't allow joins to not joinable tables
     pets::table
         .inner_join(user_alias)
+        //~^ ERROR: cannot join `pets::table` to `Alias<users2>` due to missing relation
         .select(pets::id)
         .load::<i32>(conn)
         .unwrap();
@@ -60,11 +67,15 @@ pub fn check(conn: &mut PgConnection) {
     let post_alias_2 = alias!(posts as posts3);
     let posts = post_alias
         .inner_join(
+            //~^ ERROR: the trait bound `Join<Alias<posts2>, Alias<posts3>, Inner>: AppearsInFromClause<...>` is not satisfied
+            //~| ERROR: the trait bound `Join<Alias<posts2>, Alias<posts3>, Inner>: AppearsInFromClause<...>` is not satisfied
             post_alias_2.on(post_alias
                 .field(posts::author)
                 .eq(post_alias_2.field(posts::author))),
+            //~^^^ ERROR: the trait bound `Alias<posts3>: AppearsInFromClause<Alias<posts2>>` is not satisfied
         )
         .select((post_alias.field(posts::id), post_alias_2.field(posts::id)))
+        //~^ ERROR:  the method `select` exists for struct `SelectStatement<FromClause<JoinOn<Join<Alias<...>, ..., ...>, ...>>>`, but its trait bounds were not satisfied
         .load::<(i32, i32)>(conn)
         .unwrap();
 }

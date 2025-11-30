@@ -1,30 +1,33 @@
+warning: #[changeset_options] attribute form is deprecated
+  = help: use `#[diesel(treat_none_as_null = true)]` instead
+
 error: unexpected end of input, expected parentheses
   --> tests/fail/derive_deprecated/deprecated_changeset_options.rs:21:3
    |
-21 | #[changeset_options]
+LL | #[changeset_options]
    |   ^^^^^^^^^^^^^^^^^
 
 error: unexpected end of input, expected identifier
-  --> tests/fail/derive_deprecated/deprecated_changeset_options.rs:29:20
+  --> tests/fail/derive_deprecated/deprecated_changeset_options.rs:30:20
    |
-29 | #[changeset_options()]
+LL | #[changeset_options()]
    |                    ^^
 
 error: expected `treat_none_as_null`
-  --> tests/fail/derive_deprecated/deprecated_changeset_options.rs:37:21
+  --> tests/fail/derive_deprecated/deprecated_changeset_options.rs:39:21
    |
-37 | #[changeset_options(what)]
+LL | #[changeset_options(what)]
    |                     ^^^^
 
 error: unexpected end of input, expected `=`
-       help: The correct format looks like `#[diesel(treat_none_as_null = true)]`
-  --> tests/fail/derive_deprecated/deprecated_changeset_options.rs:45:21
+       help: the correct format looks like `#[diesel(treat_none_as_null = true)]`
+  --> tests/fail/derive_deprecated/deprecated_changeset_options.rs:48:21
    |
-45 | #[changeset_options(treat_none_as_null)]
+LL | #[changeset_options(treat_none_as_null)]
    |                     ^^^^^^^^^^^^^^^^^^
 
 error: expected boolean literal
-  --> tests/fail/derive_deprecated/deprecated_changeset_options.rs:53:42
+  --> tests/fail/derive_deprecated/deprecated_changeset_options.rs:57:42
    |
-53 | #[changeset_options(treat_none_as_null = "what")]
+LL | #[changeset_options(treat_none_as_null = "what")]
    |                                          ^^^^^^

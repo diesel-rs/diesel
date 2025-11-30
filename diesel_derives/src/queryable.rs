@@ -18,11 +18,15 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let build_expr = model.fields().iter().enumerate().map(|(i, f)| {
         let field_name = &f.name;
         let i = Index::from(i);
-        quote!(#field_name: std::convert::TryInto::try_into(row.#i)?)
+        // we explicitly call `.try_into()` here
+        // instead of using the fully qualified variant
+        // to allow also using a `.try_into()` method on the type
+        // itself without going through the trait
+        quote!(#field_name: row.#i.try_into()?)
     });
     let sql_type = &(0..model.fields().len())
         .map(|i| {
-            let i = Ident::new(&format!("__ST{i}"), Span::call_site());
+            let i = Ident::new(&format!("__ST{i}"), Span::mixed_site());
             quote!(#i)
         })
         .collect::<Vec<_>>();
@@ -33,7 +37,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         .params
         .push(parse_quote!(__DB: diesel::backend::Backend));
     for id in 0..model.fields().len() {
-        let ident = Ident::new(&format!("__ST{id}"), Span::call_site());
+        let ident = Ident::new(&format!("__ST{id}"), Span::mixed_site());
         generics.params.push(parse_quote!(#ident));
     }
     {
@@ -53,7 +57,8 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             type Row = (#(#field_ty,)*);
 
             fn build(row: (#(#field_ty,)*)) -> diesel::deserialize::Result<Self> {
-                Ok(Self {
+                use std::convert::TryInto;
+                diesel::deserialize::Result::Ok(Self {
                     #(#build_expr,)*
                 })
             }

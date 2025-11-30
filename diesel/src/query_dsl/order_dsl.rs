@@ -1,5 +1,5 @@
 use crate::expression::Expression;
-use crate::query_source::Table;
+use crate::query_source::QueryRelation;
 
 /// The `order` method
 ///
@@ -19,7 +19,7 @@ pub trait OrderDsl<Expr: Expression> {
 impl<T, Expr> OrderDsl<Expr> for T
 where
     Expr: Expression,
-    T: Table,
+    T: QueryRelation,
     T::Query: OrderDsl<Expr>,
 {
     type Output = <T::Query as OrderDsl<Expr>>::Output;
@@ -47,7 +47,7 @@ pub trait ThenOrderDsl<Expr> {
 impl<T, Expr> ThenOrderDsl<Expr> for T
 where
     Expr: Expression,
-    T: Table,
+    T: QueryRelation,
     T::Query: ThenOrderDsl<Expr>,
 {
     type Output = <T::Query as ThenOrderDsl<Expr>>::Output;
@@ -57,4 +57,9 @@ where
     }
 }
 
+#[diagnostic::on_unimplemented(
+    message = "invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause",
+    note = "the elements in your `DISTINCT ON` clause needs to match the elements \
+            in your `ORDER BY` clause up to which clause contains less elements"
+)]
 pub trait ValidOrderingForDistinct<D> {}

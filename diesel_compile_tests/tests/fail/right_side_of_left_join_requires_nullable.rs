@@ -42,14 +42,20 @@ fn direct_joins() {
 
     // Invalid, only Nullable<title> is selectable
     let _ = join.select(posts::title);
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+    //~| ERROR: annot select `posts::columns::title` from `users::table`
     // Valid
     let _ = join.select(posts::title.nullable());
     // Valid -- NULL to a function will return null
     let _ = join.select(lower(posts::title).nullable());
     // Invalid, only Nullable<title> is selectable
     let _ = join.select(lower(posts::title));
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+    //~| ERROR: annot select `posts::columns::title` from `users::table`
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
+    //~^ ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+    //~| ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
 }
 
 fn nested_outer_joins_left_associative() {
@@ -59,14 +65,20 @@ fn nested_outer_joins_left_associative() {
 
     // Invalid, only Nullable<title> is selectable
     let _ = join.select(posts::title);
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+    //~| ERROR: cannot select `posts::columns::title` from `users::table`
     // Valid
     let _ = join.select(posts::title.nullable());
     // Valid -- NULL to a function will return null
     let _ = join.select(lower(posts::title).nullable());
     // Invalid, only Nullable<title> is selectable
     let _ = join.select(lower(posts::title));
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+    //~| ERROR: cannot select `posts::columns::title` from `users::table`
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
+    //~^ ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+    //~| ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
 }
 
 fn nested_mixed_joins_left_associative() {
@@ -76,14 +88,20 @@ fn nested_mixed_joins_left_associative() {
 
     // Invalid, only Nullable<title> is selectable
     let _ = join.select(posts::title);
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+    //~| ERROR: cannot select `posts::columns::title` from `users::table`
     // Valid
     let _ = join.select(posts::title.nullable());
     // Valid -- NULL to a function will return null
     let _ = join.select(lower(posts::title).nullable());
     // Invalid, only Nullable<title> is selectable
     let _ = join.select(lower(posts::title));
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+    //~| ERROR: cannot select `posts::columns::title` from `users::table`
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
+    //~^ ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+    //~| ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
 }
 
 fn nested_outer_joins_right_associative() {
@@ -91,14 +109,20 @@ fn nested_outer_joins_right_associative() {
 
     // Invalid, only Nullable<title> is selectable
     let _ = join.select(posts::title);
+    //~^ ERROR: type mismatch resolving `<SelectStatement<...> as AppearsInFromClause<...>>::Count == Never`
+    //~| ERROR: cannot select `posts::columns::title` from `pets::table`
     // Valid
     let _ = join.select(posts::title.nullable());
     // Valid -- NULL to a function will return null
     let _ = join.select(lower(posts::title).nullable());
     // Invalid, only Nullable<title> is selectable
     let _ = join.select(lower(posts::title));
+    //~^ ERROR: type mismatch resolving `<SelectStatement<...> as AppearsInFromClause<...>>::Count == Never`
+    //~| ERROR: cannot select `posts::columns::title` from `pets::table`
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
+    //~^ ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+    //~| ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
 }
 
 fn nested_mixed_joins_right_associative() {
@@ -106,12 +130,18 @@ fn nested_mixed_joins_right_associative() {
 
     // Invalid, only Nullable<title> is selectable
     let _ = join.select(posts::title);
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+    //~| ERROR: cannot select `posts::columns::title` from `users::table`
     // Valid
     let _ = join.select(posts::title.nullable());
     // Valid -- NULL to a function will return null
     let _ = join.select(lower(posts::title).nullable());
     // Invalid, only Nullable<title> is selectable
     let _ = join.select(lower(posts::title));
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
+    //~| ERROR: cannot select `posts::columns::title` from `users::table`
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
+    //~^ ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+    //~| ERROR: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
 }

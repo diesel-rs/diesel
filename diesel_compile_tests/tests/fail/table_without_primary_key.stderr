@@ -1,14 +1,18 @@
-error: Neither an explicit primary key found nor does an `id` column exist.
-       Consider explicitly defining a primary key.
-       For example for specifying `user_id` as primary key:
-
+error: neither an explicit primary key found nor does an `id` column exist.
+       consider explicitly defining a primary key. 
+       for example for specifying `user_id` as primary key:
+       
        table! {
+       
+                            user(user_id){
            user (user_id) {
                user_id -> Integer,
                name -> Text,
            }
        }
- --> tests/fail/table_without_primary_key.rs:4:5
+ --> tests/fail/table_without_primary_key.rs:5:5
   |
-4 |     user {
+LL |     user {
   |     ^^^^
+  |
+  = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

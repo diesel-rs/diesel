@@ -72,7 +72,11 @@ macro_rules! no_arg_sql_function_body {
 ///
 /// ```no_run
 /// # pub use diesel::*;
-/// no_arg_sql_function!(now, sql_types::Timestamp, "Represents the SQL NOW() function");
+/// no_arg_sql_function!(
+///     now,
+///     sql_types::Timestamp,
+///     "Represents the SQL NOW() function"
+/// );
 /// # fn main() {}
 /// ```
 ///
@@ -97,7 +101,9 @@ macro_rules! no_arg_sql_function {
     };
 }
 
+pub(crate) mod aggregate_expressions;
 pub(crate) mod aggregate_folding;
 pub(crate) mod aggregate_ordering;
 pub(crate) mod date_and_time;
 pub(crate) mod helper_types;
+pub(crate) mod window_functions;

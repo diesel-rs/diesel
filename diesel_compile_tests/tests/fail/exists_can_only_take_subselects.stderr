@@ -1,29 +1,38 @@
 error[E0277]: the trait bound `bool: SelectQuery` is not satisfied
-  --> tests/fail/exists_can_only_take_subselects.rs:23:18
+  --> tests/fail/exists_can_only_take_subselects.rs:26:18
    |
-23 |     users::table.filter(exists(true));
+LL |     users::table.filter(exists(true));
    |                  ^^^^^^ the trait `SelectQuery` is not implemented for `bool`
    |
    = help: the following other types implement trait `SelectQuery`:
              BoxedSelectStatement<'_, ST, QS, DB, GB>
              SelectStatement<F, S, D, W, O, LOf, G, H, LC>
-             diesel::query_builder::combination_clause::CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
+             CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
    = note: required for `diesel::expression::subselect::Subselect<bool, Bool>` to implement `diesel::Expression`
    = note: 1 redundant requirement hidden
    = note: required for `Exists<bool>` to implement `diesel::Expression`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Exists<bool>>`
 
+   
 error[E0277]: the trait bound `users::columns::id: SelectQuery` is not satisfied
-  --> tests/fail/exists_can_only_take_subselects.rs:24:18
+  --> tests/fail/exists_can_only_take_subselects.rs:28:18
    |
-24 |     users::table.filter(exists(users::id));
-   |                  ^^^^^^ the trait `SelectQuery` is not implemented for `users::columns::id`
+LL |     users::table.filter(exists(users::id));
+   |                  ^^^^^^ unsatisfied trait bound
    |
+help: the trait `SelectQuery` is not implemented for `users::columns::id`
+  --> tests/fail/exists_can_only_take_subselects.rs:8:9
+   |
+ LL |         id -> Integer,
+   |         ^^
    = help: the following other types implement trait `SelectQuery`:
              BoxedSelectStatement<'_, ST, QS, DB, GB>
              SelectStatement<F, S, D, W, O, LOf, G, H, LC>
-             diesel::query_builder::combination_clause::CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
+             CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
    = note: required for `diesel::expression::subselect::Subselect<users::columns::id, Bool>` to implement `diesel::Expression`
    = note: 1 redundant requirement hidden
    = note: required for `Exists<users::columns::id>` to implement `diesel::Expression`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Exists<users::columns::id>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.

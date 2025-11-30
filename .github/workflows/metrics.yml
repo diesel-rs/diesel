@@ -4,15 +4,14 @@ on:
   push:
     branches:
       - try_to_fix_metrics_job
-
 name: Metrics
-
+permissions:
+  contents: "read"
 env:
   CARGO_INCREMENTAL: 0
   CARGO_NET_RETRY: 10
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: "-C target-cpu=native"
-
 jobs:
   metrics:
     runs-on: ubuntu-latest
@@ -22,13 +21,11 @@ jobs:
         backend: ["postgres", "sqlite", "mysql"]
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
-
+        uses: actions/checkout@v5
       - name: cache
         uses: Swatinem/rust-cache@v2
         with:
           key: metrics-${{matrix.backend}}-cargo-${{ hashFiles('diesel_bench/Cargo.toml')}}
-
       - name: Install postgres (Linux)
         if: matrix.backend == 'postgres'
         env:
@@ -51,7 +48,6 @@ jobs:
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
           sudo service postgresql restart $PG_VERSION && sleep 3
           echo 'DATABASE_URL=postgres://postgres:postgres@localhost:5432/' >> $GITHUB_ENV
-
       - name: Install sqlite (Linux)
         if: matrix.backend == 'sqlite'
         run: |
@@ -59,7 +55,6 @@ jobs:
           sudo apt-get install -y libsqlite3-dev
           echo 'SQLITE_DATABASE_URL=/tmp/test.db' >> $GITHUB_ENV
           echo 'DATABASE_URL=sqlite:///tmp/test.db' >> $GITHUB_ENV
-
       - name: Install mysql (Linux)
         if: matrix.backend == 'mysql'
         run: |
@@ -67,23 +62,18 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install libmysqlclient-dev
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
-          echo 'DATABASE_URL=mysql://root:root@localhost/diesel_test' >> $GITHUB_ENV
-
+          echo 'DATABASE_URL=mysql://root:root@127.0.0.1/diesel_test' >> $GITHUB_ENV
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
-
       - name: Run Benchmarks (Postgres)
         if: matrix.backend == 'postgres'
-        run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "postgres sqlx-bench sqlx/postgres rand_chacha rust_postgres tokio_postgres futures futures-util sea-orm sea-orm/sqlx-postgres criterion/async_tokio serde diesel-async diesel-async/postgres wtx"
-
+        run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "postgres sqlx-bench sqlx/postgres rand_chacha rust_postgres tokio_postgres futures futures-util sea-orm sea-orm/sqlx-postgres criterion/async_tokio serde diesel-async diesel-async/postgres wtx wtx/postgres"
       - name: Run Benchmarks (Sqlite)
         if: matrix.backend == 'sqlite'
         run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "sqlite sqlx-bench sqlx/sqlite tokio rusqlite futures sea-orm sea-orm/sqlx-sqlite criterion/async_tokio diesel-async diesel-async/sqlite"
-
       - name: Run Benchmarks (Mysql)
         if: matrix.backend == 'mysql'
-        run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "mysql sqlx-bench sqlx/mysql tokio rustorm rustorm/with-mysql rand_chacha rustorm_dao rust_mysql futures sea-orm sea-orm/sqlx-mysql criterion/async_tokio serde diesel-async diesel-async/mysql wtx"
-
+        run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "mysql sqlx-bench sqlx/mysql tokio rustorm rustorm/with-mysql rand_chacha rustorm_dao rust_mysql futures sea-orm sea-orm/sqlx-mysql criterion/async_tokio serde diesel-async diesel-async/mysql wtx wtx/mysql"
       - name: Push metrics
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -124,7 +114,6 @@ jobs:
           git -c user.name=Bot -c user.email=dummy@example.com commit --message "📈"
 
           git push origin master
-
       - name: cleanup
         if: always()
         env:

@@ -2,7 +2,7 @@ extern crate diesel;
 
 use diesel::*;
 
-table!{
+table! {
     users{
        id -> Integer,
        name -> Text,
@@ -20,4 +20,5 @@ fn main() {
     let mut conn = PgConnection::establish("").unwrap();
     let subquery = users::table.filter(users::id.eq(1));
     let query = posts::table.filter(posts::user_id.eq_any(subquery));
+    //~^ ERROR: the trait bound `SelectStatement<FromClause<table>, ..., ..., ...>: AsInExpression<...>` is not satisfied
 }

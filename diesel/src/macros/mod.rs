@@ -19,7 +19,7 @@ pub use diesel_derives::table_proc as table;
 /// explicit `ON` clause.
 ///
 /// The generated `ON` clause will always join to the primary key of the parent
-/// table. This macro removes the need to call [`.on`] explicitly, you will
+/// table. This macro removes the need to call [`.on`](crate::query_dsl::JoinOnDsl::on) explicitly, you will
 /// still need to invoke
 /// [`allow_tables_to_appear_in_same_query!`](crate::allow_tables_to_appear_in_same_query)
 /// for these two tables to be able to use the resulting query, unless you are
@@ -55,7 +55,6 @@ pub use diesel_derives::table_proc as table;
 ///
 /// assert_eq!(implicit_on_clause_sql, explicit_on_clause_sql);
 /// # }
-///
 /// ```
 ///
 /// In the example above, the line `joinable!(posts -> users (user_id));`
@@ -213,7 +212,6 @@ macro_rules! allow_tables_to_appear_in_same_query {
         $(
             impl $crate::query_source::TableNotEqual<$left_mod::table> for $right_mod::table {}
             impl $crate::query_source::TableNotEqual<$right_mod::table> for $left_mod::table {}
-            $crate::__diesel_internal_backend_specific_allow_tables_to_appear_in_same_query!($left_mod, $right_mod);
         )+
         $crate::allow_tables_to_appear_in_same_query!($($right_mod,)+);
     };
@@ -221,63 +219,6 @@ macro_rules! allow_tables_to_appear_in_same_query {
     ($last_table:ident,) => {};
 
     () => {};
-}
-#[doc(hidden)]
-#[macro_export]
-#[cfg(feature = "postgres_backend")]
-macro_rules! __diesel_internal_backend_specific_allow_tables_to_appear_in_same_query {
-    ($left:ident, $right:ident) => {
-        impl $crate::query_source::TableNotEqual<$left::table>
-            for $crate::query_builder::Only<$right::table>
-        {
-        }
-        impl $crate::query_source::TableNotEqual<$right::table>
-            for $crate::query_builder::Only<$left::table>
-        {
-        }
-        impl $crate::query_source::TableNotEqual<$crate::query_builder::Only<$left::table>>
-            for $right::table
-        {
-        }
-        impl $crate::query_source::TableNotEqual<$crate::query_builder::Only<$right::table>>
-            for $left::table
-        {
-        }
-        impl<TSM> $crate::query_source::TableNotEqual<$left::table>
-            for $crate::query_builder::Tablesample<$right::table, TSM>
-        where
-            TSM: $crate::internal::table_macro::TablesampleMethod,
-        {
-        }
-        impl<TSM> $crate::query_source::TableNotEqual<$right::table>
-            for $crate::query_builder::Tablesample<$left::table, TSM>
-        where
-            TSM: $crate::internal::table_macro::TablesampleMethod,
-        {
-        }
-        impl<TSM>
-            $crate::query_source::TableNotEqual<
-                $crate::query_builder::Tablesample<$left::table, TSM>,
-            > for $right::table
-        where
-            TSM: $crate::internal::table_macro::TablesampleMethod,
-        {
-        }
-        impl<TSM>
-            $crate::query_source::TableNotEqual<
-                $crate::query_builder::Tablesample<$right::table, TSM>,
-            > for $left::table
-        where
-            TSM: $crate::internal::table_macro::TablesampleMethod,
-        {
-        }
-    };
-}
-#[doc(hidden)]
-#[macro_export]
-#[cfg(not(feature = "postgres_backend"))]
-macro_rules! __diesel_internal_backend_specific_allow_tables_to_appear_in_same_query {
-    ($left:ident, $right:ident) => {};
 }
 
 #[doc(hidden)]
@@ -414,7 +355,9 @@ macro_rules! __diesel_impl_allow_in_same_group_by_clause {
 /// allow_columns_to_appear_in_same_group_by_clause!(users::name, posts::id, posts::title);
 /// # fn main() {
 /// // to do implement the following join
-/// users::table.inner_join(posts::table).group_by((users::name, posts::id, posts::title))
+/// users::table
+///     .inner_join(posts::table)
+///     .group_by((users::name, posts::id, posts::title))
 /// # ;
 /// # }
 /// ```

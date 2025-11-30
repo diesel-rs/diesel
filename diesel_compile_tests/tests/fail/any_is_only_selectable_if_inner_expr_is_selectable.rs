@@ -32,4 +32,5 @@ fn main() {
     let _ = stuff
         .filter(name.eq(any(more_stuff::names)))
         .load(&mut conn);
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
 }

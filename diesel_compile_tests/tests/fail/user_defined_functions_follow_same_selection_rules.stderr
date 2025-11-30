@@ -1,35 +1,53 @@
-error[E0271]: type mismatch resolving `<foo<Bound<Integer, i32>> as Expression>::SqlType == Text`
+error[E0277]: the trait bound `foo<Bound<Integer, i32>>: AsExpression<Text>` is not satisfied
   --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:40:38
    |
-40 |     let _ = users::table.filter(name.eq(foo(1)));
-   |                                      ^^ expected `Text`, found `Integer`
+LL |     let _ = users::table.filter(name.eq(foo(1)));
+   |                                      ^^ unsatisfied trait bound
    |
-   = note: required for `foo_utils::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>` to implement `AsExpression<diesel::sql_types::Text>`
+help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `foo_utils::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>`
+  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:28:1
+   |
+LL | #[declare_sql_function]
+   | ^^^^^^^^^^^^^^^^^^^^^^^
+   = help: the following other types implement trait `AsExpression<T>`:
+             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+             `&'__expr Cents` implements `AsExpression<Money>`
+             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+             `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+           and N others
+
+      = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:44:23
-   |
-44 |         .load::<User>(&mut conn);
-   |          ----         ^^^^^^^^^ expected `Once`, found `Never`
-   |          |
-   |          required by a bound introduced by this call
-   |
+    --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:45:23
+     |
+  LL |         .load::<User>(&mut conn);
+     |          ----         ^^^^^^^^^ expected `Once`, found `Never`
+     |          |
+     |          required by a bound introduced by this call
+     |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:16:9
-   |
-16 |         title -> VarChar,
-   |         ^^^^^
-   = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: 3 redundant requirements hidden
-   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar_utils::bar<posts::columns::title>>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar_utils::bar<posts::columns::title>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar_utils::bar<posts::columns::title>>>>>` to implement `Query`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar_utils::bar<posts::columns::title>>>>>` to implement `LoadQuery<'_, _, User>`
+    --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:16:9
+     |
+  LL |         title -> VarChar,
+     |         ^^^^^
+     = note: associated types for the current `impl` cannot be restricted in `where` clauses
+     = note: 3 redundant requirements hidden
+     = note: required for `Grouped<Eq<name, bar<title>>>` to implement `AppearsOnTable<users::table>`
+     = note: required for `WhereClause<Grouped<Eq<name, bar<title>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
+     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-   |        ---- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+          = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

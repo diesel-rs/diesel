@@ -1,157 +1,146 @@
 error[E0271]: type mismatch resolving `<id as Column>::Table == table`
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:22:18
-   |
-22 |         .values(&posts::id.eq(1));
-   |          ------  ^^^^^^^^^^^^^^^ type mismatch resolving `<id as Column>::Table == table`
-   |          |
-   |          required by a bound introduced by this call
-   |
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:21:39
+    |
+ LL |     insert_into(users::table).values(&posts::id.eq(1));
+    |                               ------  ^^^^^^^^^^^^^^^ type mismatch resolving `<id as Column>::Table == table`
+    |                               |
+    |                               required by a bound introduced by this call
+    |
 note: expected this to be `users::table`
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:14:9
-   |
-14 |         id -> Integer,
-   |         ^^
-   = note: `posts::table` and `users::table` have similar names, but are actually distinct types
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
+    |
+ LL | / table! {
+ LL | |     posts {
+ LL | |         id -> Integer,
+ LL | |     }
+ LL | | }
+    | |_^
+    = note: `posts::table` and `users::table` have similar names, but are actually distinct types
 note: `posts::table` is defined in module `crate::posts` of the current crate
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
-   |
-12 | / table! {
-13 | |     posts {
-14 | |         id -> Integer,
-15 | |     }
-16 | | }
-   | |_^
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
+    |
+ LL | / table! {
+ LL | |     posts {
+    | |_________^
 note: `users::table` is defined in module `crate::users` of the current crate
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
-   |
-6  | / table! {
-7  | |     users {
-8  | |         id -> Integer,
-9  | |     }
-10 | | }
-   | |_^
-   = note: required for `&diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>` to implement `diesel::Insertable<users::table>`
-   = note: 1 redundant requirement hidden
-   = note: required for `&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>` to implement `diesel::Insertable<users::table>`
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
+    = note: required for `&Eq<id, Bound<Integer, i32>>` to implement `diesel::Insertable<users::table>`
+    = note: 1 redundant requirement hidden
+    = note: required for `&Grouped<Eq<id, Bound<Integer, i32>>>` to implement `diesel::Insertable<users::table>`
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
-  --> $DIESEL/src/query_builder/insert_statement/mod.rs
-   |
-   |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
-   |            ------ required by a bound in this associated function
-   |     where
-   |         U: Insertable<T>,
-   |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
+    |            ------ required by a bound in this associated function
+LL |     where
+LL |         U: Insertable<T>,
+    |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<&Grouped<Eq<id, Bound<Integer, i32>>> as Insertable<table>>::Values == ValuesClause<ColumnInsertValue<id, &Bound<Integer, i32>>, table>`
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:25:10
+error[E0271]: type mismatch resolving `<&... as Insertable<...>>::Values == ValuesClause<..., ...>`
+  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:24:31
    |
-25 |         .values(&(posts::id.eq(1), users::id.eq(2)));
-   |          ^^^^^^ expected `users::table`, found `posts::table`
+LL |     insert_into(users::table).values(&(posts::id.eq(1), users::id.eq(2)));
+   |                               ^^^^^^ expected `users::table`, found `posts::table`
    |
    = note: `posts::table` and `users::table` have similar names, but are actually distinct types
 note: `posts::table` is defined in module `crate::posts` of the current crate
   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
    |
-12 | / table! {
-13 | |     posts {
-14 | |         id -> Integer,
-15 | |     }
-16 | | }
-   | |_^
+LL | / table! {
+LL | |     posts {
+   | |_________^
 note: `users::table` is defined in module `crate::users` of the current crate
   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
    |
-6  | / table! {
-7  | |     users {
-8  | |         id -> Integer,
-9  | |     }
-10 | | }
-   | |_^
-   = note: required for `(&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, &diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)` to implement `diesel::Insertable<users::table>`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+ LL | / table! {
+ LL | |     users {
+   | |_________^
+   = note: required for `(&Grouped<Eq<id, Bound<Integer, i32>>>, &Grouped<Eq<id, ...>>)` to implement `diesel::Insertable<users::table>`
 
-error[E0271]: type mismatch resolving `<&Grouped<Eq<id, Bound<Integer, i32>>> as Insertable<table>>::Values == ValuesClause<ColumnInsertValue<id, &Bound<Integer, i32>>, table>`
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:25:18
-   |
-25 |         .values(&(posts::id.eq(1), users::id.eq(2)));
-   |          ------  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `users::table`, found `posts::table`
-   |          |
-   |          required by a bound introduced by this call
-   |
-   = note: `posts::table` and `users::table` have similar names, but are actually distinct types
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<&... as Insertable<...>>::Values == ValuesClause<..., ...>`
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:24:39
+    |
+ LL |     insert_into(users::table).values(&(posts::id.eq(1), users::id.eq(2)));
+    |                               ------  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `users::table`, found `posts::table`
+    |                               |
+    |                               required by a bound introduced by this call
+    |
+    = note: `posts::table` and `users::table` have similar names, but are actually distinct types
 note: `posts::table` is defined in module `crate::posts` of the current crate
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
-   |
-12 | / table! {
-13 | |     posts {
-14 | |         id -> Integer,
-15 | |     }
-16 | | }
-   | |_^
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
+    |
+ LL | / table! {
+ LL | |     posts {
+    | |_________^
 note: `users::table` is defined in module `crate::users` of the current crate
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
-   |
-6  | / table! {
-7  | |     users {
-8  | |         id -> Integer,
-9  | |     }
-10 | | }
-   | |_^
-   = note: required for `(&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, &diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)` to implement `diesel::Insertable<users::table>`
-   = note: 1 redundant requirement hidden
-   = note: required for `&(diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)` to implement `diesel::Insertable<users::table>`
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
+    = note: required for `(&Grouped<Eq<id, Bound<Integer, i32>>>, &Grouped<Eq<id, ...>>)` to implement `diesel::Insertable<users::table>`
+    = note: 1 redundant requirement hidden
+    = note: required for `&(Grouped<Eq<id, Bound<Integer, i32>>>, Grouped<Eq<id, ...>>)` to implement `diesel::Insertable<users::table>`
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
-  --> $DIESEL/src/query_builder/insert_statement/mod.rs
-   |
-   |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
-   |            ------ required by a bound in this associated function
-   |     where
-   |         U: Insertable<T>,
-   |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
+    |            ------ required by a bound in this associated function
+LL |     where
+LL |         U: Insertable<T>,
+    |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<id as Column>::Table == table`
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:25:18
-   |
-25 |         .values(&(posts::id.eq(1), users::id.eq(2)));
-   |          ------  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ type mismatch resolving `<id as Column>::Table == table`
-   |          |
-   |          required by a bound introduced by this call
-   |
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:24:39
+    |
+ LL |     insert_into(users::table).values(&(posts::id.eq(1), users::id.eq(2)));
+    |                               ------  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ type mismatch resolving `<id as Column>::Table == table`
+    |                               |
+    |                               required by a bound introduced by this call
+    |
 note: expected this to be `users::table`
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:14:9
-   |
-14 |         id -> Integer,
-   |         ^^
-   = note: `posts::table` and `users::table` have similar names, but are actually distinct types
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
+    |
+ LL | / table! {
+ LL | |     posts {
+ LL | |         id -> Integer,
+ LL | |     }
+ LL | | }
+    | |_^
+    = note: `posts::table` and `users::table` have similar names, but are actually distinct types
 note: `posts::table` is defined in module `crate::posts` of the current crate
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
-   |
-12 | / table! {
-13 | |     posts {
-14 | |         id -> Integer,
-15 | |     }
-16 | | }
-   | |_^
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
+    |
+ LL | / table! {
+ LL | |     posts {
+    | |_________^
 note: `users::table` is defined in module `crate::users` of the current crate
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
-   |
-6  | / table! {
-7  | |     users {
-8  | |         id -> Integer,
-9  | |     }
-10 | | }
-   | |_^
-   = note: required for `&diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>` to implement `diesel::Insertable<users::table>`
-   = note: 3 redundant requirements hidden
-   = note: required for `&(diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)` to implement `diesel::Insertable<users::table>`
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
+    = note: required for `&Eq<id, Bound<Integer, i32>>` to implement `diesel::Insertable<users::table>`
+    = note: 3 redundant requirements hidden
+    = note: required for `&(Grouped<Eq<id, Bound<Integer, i32>>>, Grouped<Eq<id, ...>>)` to implement `diesel::Insertable<users::table>`
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
-  --> $DIESEL/src/query_builder/insert_statement/mod.rs
-   |
-   |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
-   |            ------ required by a bound in this associated function
-   |     where
-   |         U: Insertable<T>,
-   |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
+    |            ------ required by a bound in this associated function
+LL |     where
+LL |         U: Insertable<T>,
+    |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0271`.

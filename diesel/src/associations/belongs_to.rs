@@ -102,17 +102,33 @@ pub trait BelongsTo<Parent> {
 ///
 /// let expected_data = vec![
 ///     (
-///         User { id: 1, name: "Sean".into() },
+///         User {
+///             id: 1,
+///             name: "Sean".into(),
+///         },
 ///         vec![
-///             Post { id: 1, user_id: 1, title: "My first post".into() },
-///             Post { id: 2, user_id: 1, title: "About Rust".into() },
+///             Post {
+///                 id: 1,
+///                 user_id: 1,
+///                 title: "My first post".into(),
+///             },
+///             Post {
+///                 id: 2,
+///                 user_id: 1,
+///                 title: "About Rust".into(),
+///             },
 ///         ],
 ///     ),
 ///     (
-///         User { id: 2, name: "Tess".into() },
-///         vec![
-///             Post { id: 3, user_id: 2, title: "My first post too".into() },
-///         ],
+///         User {
+///             id: 2,
+///             name: "Tess".into(),
+///         },
+///         vec![Post {
+///             id: 3,
+///             user_id: 2,
+///             title: "My first post too".into(),
+///         }],
 ///     ),
 /// ];
 ///
@@ -174,34 +190,55 @@ pub trait GroupedBy<'a, Parent>: IntoIterator + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     let connection = &mut establish_connection();
     /// let users = users::table.load::<User>(connection)?;
-    /// let mut posts = Post::belonging_to(&users)
-    ///     .load::<Post>(connection)?;
-    /// posts.push(
-    ///     Post { id: 9, user_id: 42, title: "A post returned from another query".into() }
-    /// );
-    /// let TryGroupedByError { grouped, ungrouped, .. } = posts.try_grouped_by(&users).unwrap_err();
+    /// let mut posts = Post::belonging_to(&users).load::<Post>(connection)?;
+    /// posts.push(Post {
+    ///     id: 9,
+    ///     user_id: 42,
+    ///     title: "A post returned from another query".into(),
+    /// });
+    /// let TryGroupedByError {
+    ///     grouped, ungrouped, ..
+    /// } = posts.try_grouped_by(&users).unwrap_err();
     ///
     /// let grouped_data = users.into_iter().zip(grouped).collect::<Vec<_>>();
     ///
     /// let expected_grouped_data = vec![
     ///     (
-    ///         User { id: 1, name: "Sean".into() },
+    ///         User {
+    ///             id: 1,
+    ///             name: "Sean".into(),
+    ///         },
     ///         vec![
-    ///             Post { id: 1, user_id: 1, title: "My first post".into() },
-    ///             Post { id: 2, user_id: 1, title: "About Rust".into() },
+    ///             Post {
+    ///                 id: 1,
+    ///                 user_id: 1,
+    ///                 title: "My first post".into(),
+    ///             },
+    ///             Post {
+    ///                 id: 2,
+    ///                 user_id: 1,
+    ///                 title: "About Rust".into(),
+    ///             },
     ///         ],
     ///     ),
     ///     (
-    ///         User { id: 2, name: "Tess".into() },
-    ///         vec![
-    ///             Post { id: 3, user_id: 2, title: "My first post too".into() },
-    ///         ],
+    ///         User {
+    ///             id: 2,
+    ///             name: "Tess".into(),
+    ///         },
+    ///         vec![Post {
+    ///             id: 3,
+    ///             user_id: 2,
+    ///             title: "My first post too".into(),
+    ///         }],
     ///     ),
     /// ];
     ///
-    /// let expected_ungrouped_data = vec![
-    ///     Post { id: 9, user_id: 42, title: "A post returned from another query".into() }
-    /// ];
+    /// let expected_ungrouped_data = vec![Post {
+    ///     id: 9,
+    ///     user_id: 42,
+    ///     title: "A post returned from another query".into(),
+    /// }];
     ///
     /// assert_eq!(expected_grouped_data, grouped_data);
     /// assert_eq!(expected_ungrouped_data, ungrouped);

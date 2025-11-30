@@ -1,9 +1,14 @@
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
    |
-21 |     let source = users::table.select(sum(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+LL |     let source = users::table.select(sum(posts::id));
+   |                               ^^^^^^ unsatisfied trait bound
    |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
+   |
+LL |         id -> Integer,
+   |         ^^
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -13,102 +18,41 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
              `posts::columns::id` implements `SelectableExpression<posts::table>`
              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-   = note: required for `diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `sum<Integer, id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<sum<Integer, id>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
    |
-21 |     let source = users::table.select(sum(posts::id));
+LL |     let source = users::table.select(sum(posts::id));
    |                               ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
    |
-13 |         id -> Integer,
+LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `sum<Integer, id>` to implement `AppearsOnTable<users::table>`
+   = note: required for `sum<Integer, id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<sum<Integer, id>>`
 
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
-   |
-22 |     let source = users::table.select(avg(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
-   |
-   = note: `posts::columns::id` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::id` implements `SelectableExpression<posts::table>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-   = note: required for `diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>>`
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
-   |
-22 |     let source = users::table.select(avg(posts::id));
-   |                               ^^^^^^ expected `Once`, found `Never`
-   |
-note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
-   |
-13 |         id -> Integer,
-   |         ^^
-   = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>>`
-
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:23:31
-   |
-23 |     let source = users::table.select(max(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
-   |
-   = note: `posts::columns::id` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::id` implements `SelectableExpression<posts::table>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-   = note: required for `diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>>`
-
-error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:23:31
-   |
-23 |     let source = users::table.select(max(posts::id));
-   |                               ^^^^^^ expected `Once`, found `Never`
-   |
-note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
-   |
-13 |         id -> Integer,
-   |         ^^
-   = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>>`
-
-error[E0277]: Cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:24:31
    |
-24 |     let source = users::table.select(min(posts::id));
-   |                               ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+LL |     let source = users::table.select(avg(posts::id));
+   |                               ^^^^^^ unsatisfied trait bound
    |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
+   |
+LL |         id -> Integer,
+   |         ^^
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
@@ -118,22 +62,114 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
              `posts::columns::id` implements `SelectableExpression<posts::table>`
              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-   = note: required for `diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `avg<Integer, id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<avg<Integer, id>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:24:31
    |
-24 |     let source = users::table.select(min(posts::id));
+LL |     let source = users::table.select(avg(posts::id));
    |                               ^^^^^^ expected `Once`, found `Never`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
    |
-13 |         id -> Integer,
+LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `avg<Integer, id>` to implement `AppearsOnTable<users::table>`
+   = note: required for `avg<Integer, id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<avg<Integer, id>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: cannot select `posts::columns::id` from `users::table`
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:27:31
+   |
+LL |     let source = users::table.select(max(posts::id));
+   |                               ^^^^^^ unsatisfied trait bound
+   |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
+   |
+LL |         id -> Integer,
+   |         ^^
+   = note: `posts::columns::id` is no valid selection for `users::table`
+   = help: the following other types implement trait `SelectableExpression<QS>`:
+             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::id` implements `SelectableExpression<posts::table>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+   = note: required for `max<Integer, id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<max<Integer, id>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:27:31
+   |
+LL |     let source = users::table.select(max(posts::id));
+   |                               ^^^^^^ expected `Once`, found `Never`
+   |
+note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
+   |
+LL |         id -> Integer,
+   |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 1 redundant requirement hidden
+   = note: required for `max<Integer, id>` to implement `AppearsOnTable<users::table>`
+   = note: required for `max<Integer, id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<max<Integer, id>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: cannot select `posts::columns::id` from `users::table`
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:30:31
+   |
+LL |     let source = users::table.select(min(posts::id));
+   |                               ^^^^^^ unsatisfied trait bound
+   |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
+   |
+LL |         id -> Integer,
+   |         ^^
+   = note: `posts::columns::id` is no valid selection for `users::table`
+   = help: the following other types implement trait `SelectableExpression<QS>`:
+             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::id` implements `SelectableExpression<posts::table>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
+             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+   = note: required for `min<Integer, id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<min<Integer, id>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:30:31
+   |
+LL |     let source = users::table.select(min(posts::id));
+   |                               ^^^^^^ expected `Once`, found `Never`
+   |
+note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
+  --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
+   |
+LL |         id -> Integer,
+   |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 1 redundant requirement hidden
+   = note: required for `min<Integer, id>` to implement `AppearsOnTable<users::table>`
+   = note: required for `min<Integer, id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<min<Integer, id>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

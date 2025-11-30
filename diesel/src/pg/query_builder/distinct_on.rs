@@ -1,9 +1,12 @@
-use crate::expression::SelectableExpression;
+use crate::expression::{SelectableExpression, ValidGrouping};
 use crate::pg::Pg;
+use crate::query_builder::group_by_clause::ValidGroupByClause;
 use crate::query_builder::order_clause::NoOrderClause;
 use crate::query_builder::{
-    AstPass, FromClause, QueryFragment, QueryId, SelectQuery, SelectStatement,
+    AstPass, FromClause, QueryFragment, QueryId, SelectClauseExpression, SelectQuery,
+    SelectStatement,
 };
+use crate::query_dsl::group_by_dsl::ValidDistinctForGroupBy;
 use crate::query_dsl::methods::DistinctOnDsl;
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::result::QueryResult;
@@ -19,6 +22,8 @@ pub struct DistinctOnClause<T>(pub(crate) T);
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for NoOrderClause {}
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Expression {}
+
+impl<S, G, D> ValidDistinctForGroupBy<S, G> for DistinctOnClause<D> where (D, S): ValidGrouping<G> {}
 
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
     for OrderClause<crate::expression::operators::Asc<T>>
@@ -53,6 +58,7 @@ macro_rules! valid_ordering {
         [distinct: $D:ident]
         [order: $($O: ty,)*]
     ) => {
+        #[diagnostic::do_not_recommend]
         impl<$($T,)*> ValidOrderingForDistinct<DistinctOnClause<$D>>
             for OrderClause<($($O,)*)>
         {}
@@ -63,6 +69,7 @@ macro_rules! valid_ordering {
         [distinct: $($D:ident)*]
         [order: $O: ty,]
     ) => {
+        #[diagnostic::do_not_recommend]
         impl<$($T,)*> ValidOrderingForDistinct<DistinctOnClause<($($D,)*)>>
             for OrderClause<$O>
         {}
@@ -94,6 +101,7 @@ macro_rules! valid_ordering {
      [other: $($O:ident)*]
      [$($Ty:ty, )*]
     ) => {
+        #[diagnostic::do_not_recommend]
         impl<$($T,)*> ValidOrderingForDistinct<DistinctOnClause<($($D, )*)>>
             for OrderClause<($($Ty, )* $($O,)*)>
         {}
@@ -279,12 +287,15 @@ where
 impl<ST, F, S, D, W, O, LOf, G, H, Selection> DistinctOnDsl<Selection>
     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
 where
+    G: ValidGroupByClause,
     F: QuerySource,
     Selection: SelectableExpression<F>,
     Self: SelectQuery<SqlType = ST>,
     O: ValidOrderingForDistinct<DistinctOnClause<Selection>>,
     SelectStatement<FromClause<F>, S, DistinctOnClause<Selection>, W, O, LOf, G, H>:
         SelectQuery<SqlType = ST>,
+    S: SelectClauseExpression<FromClause<F>>,
+    (Selection, S::Selection): ValidGrouping<G::Expressions>,
 {
     type Output = SelectStatement<FromClause<F>, S, DistinctOnClause<Selection>, W, O, LOf, G, H>;
 

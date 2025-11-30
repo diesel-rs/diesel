@@ -1,0 +1,382 @@
+error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
+   --> tests/fail/window_functions_expression_requires_window_function.rs:15:25
+    |
+ LL |     users::table.select(lower(users::name).partition_by(users::id));
+    |                         ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
+    = note: try to provide an expression that produces one of the expected sql types
+    = help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`:
+              Multirange<ST>
+              Nullable<Multirange<ST>>
+              Nullable<diesel::sql_types::Range<ST>>
+              diesel::sql_types::Range<ST>
+note: required by a bound in `diesel::dsl::lower`
+   --> DIESEL/diesel/diesel/src/pg/expression/functions.rs
+    |
+LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inner>;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
+
+error[E0277]: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+  --> tests/fail/window_functions_expression_requires_window_function.rs:15:44
+   |
+LL |     users::table.select(lower(users::name).partition_by(users::id));
+   |                                            ^^^^^^^^^^^^ remove this function call to use `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` as normal SQL function
+   |
+   = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
+   = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
+   = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
+             diesel::expression::count::count_utils::count<T, expr>
+             diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
+             diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
+             diesel::expression::functions::aggregate_ordering::max_utils::max<ST, expr>
+             diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
+             diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
+             diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
+           and N others
+   = note: required for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` to implement `diesel::expression::functions::aggregate_expressions::partition_by::PartitionByDsl<_>`
+
+   
+error[E0277]: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+  --> tests/fail/window_functions_expression_requires_window_function.rs:15:18
+   |
+LL |     users::table.select(lower(users::name).partition_by(users::id));
+   |                  ^^^^^^ remove this function call to use `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` as normal SQL function
+   |
+   = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
+   = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
+   = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
+             diesel::expression::count::count_utils::count<T, expr>
+             diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
+             diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
+             diesel::expression::functions::aggregate_ordering::max_utils::max<ST, expr>
+             diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
+             diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
+             diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
+           and N others
+   = note: required for `AggregateExpression<lower<Text, name>, NoPrefix, NoOrder, ..., ...>` to implement `ValidGrouping<()>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<AggregateExpression<lower<Text, name>, ..., ..., ..., ...>>`
+
+   
+error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
+  --> tests/fail/window_functions_expression_requires_window_function.rs:15:18
+   |
+LL |     users::table.select(lower(users::name).partition_by(users::id));
+   |                  ^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
+   = note: try to provide an expression that produces one of the expected sql types
+   = help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`:
+             Multirange<ST>
+             Nullable<Multirange<ST>>
+             Nullable<diesel::sql_types::Range<ST>>
+             diesel::sql_types::Range<ST>
+   = note: required for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` to implement `diesel::Expression`
+   = note: 1 redundant requirement hidden
+   = note: required for `AggregateExpression<lower<Text, name>, NoPrefix, NoOrder, ..., ...>` to implement `diesel::Expression`
+   = note: required for `users::table` to implement `SelectDsl<AggregateExpression<lower<Text, name>, ..., ..., ..., ...>>`
+
+   
+error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
+   --> tests/fail/window_functions_expression_requires_window_function.rs:21:25
+    |
+ LL |     users::table.select(lower(users::name).over());
+    |                         ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
+    = note: try to provide an expression that produces one of the expected sql types
+    = help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`:
+              Multirange<ST>
+              Nullable<Multirange<ST>>
+              Nullable<diesel::sql_types::Range<ST>>
+              diesel::sql_types::Range<ST>
+note: required by a bound in `diesel::dsl::lower`
+   --> DIESEL/diesel/diesel/src/pg/expression/functions.rs
+    |
+LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inner>;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
+
+error[E0277]: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+  --> tests/fail/window_functions_expression_requires_window_function.rs:21:44
+   |
+LL |     users::table.select(lower(users::name).over());
+   |                                            ^^^^ remove this function call to use `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` as normal SQL function
+   |
+   = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
+   = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
+   = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
+             diesel::expression::count::count_utils::count<T, expr>
+             diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
+             diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
+             diesel::expression::functions::aggregate_ordering::max_utils::max<ST, expr>
+             diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
+             diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
+             diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
+           and N others
+   = note: required for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` to implement `diesel::expression::functions::aggregate_expressions::over_clause::OverDsl`
+
+   
+error[E0277]: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+  --> tests/fail/window_functions_expression_requires_window_function.rs:21:18
+   |
+LL |     users::table.select(lower(users::name).over());
+   |                  ^^^^^^ remove this function call to use `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` as normal SQL function
+   |
+   = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
+   = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
+   = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
+             diesel::expression::count::count_utils::count<T, expr>
+             diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
+             diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
+             diesel::expression::functions::aggregate_ordering::max_utils::max<ST, expr>
+             diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
+             diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
+             diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
+           and N others
+   = note: required for `AggregateExpression<lower<Text, name>, NoPrefix, NoOrder, ..., ...>` to implement `ValidGrouping<()>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<AggregateExpression<lower<Text, name>, ..., ..., ..., ...>>`
+
+   
+error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
+  --> tests/fail/window_functions_expression_requires_window_function.rs:21:18
+   |
+LL |     users::table.select(lower(users::name).over());
+   |                  ^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
+   = note: try to provide an expression that produces one of the expected sql types
+   = help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`:
+             Multirange<ST>
+             Nullable<Multirange<ST>>
+             Nullable<diesel::sql_types::Range<ST>>
+             diesel::sql_types::Range<ST>
+   = note: required for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` to implement `diesel::Expression`
+   = note: 1 redundant requirement hidden
+   = note: required for `AggregateExpression<lower<Text, name>, NoPrefix, NoOrder, ..., ...>` to implement `diesel::Expression`
+   = note: required for `users::table` to implement `SelectDsl<AggregateExpression<lower<Text, name>, ..., ..., ..., ...>>`
+
+   
+error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
+   --> tests/fail/window_functions_expression_requires_window_function.rs:27:25
+    |
+ LL |     users::table.select(lower(users::name).window_filter(users::id.eq(42)));
+    |                         ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
+    = note: try to provide an expression that produces one of the expected sql types
+    = help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`:
+              Multirange<ST>
+              Nullable<Multirange<ST>>
+              Nullable<diesel::sql_types::Range<ST>>
+              diesel::sql_types::Range<ST>
+note: required by a bound in `diesel::dsl::lower`
+   --> DIESEL/diesel/diesel/src/pg/expression/functions.rs
+    |
+LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inner>;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
+
+error[E0277]: the trait bound `lower<Text, name>: IsAggregateFunction` is not satisfied
+  --> tests/fail/window_functions_expression_requires_window_function.rs:27:44
+   |
+LL |     users::table.select(lower(users::name).window_filter(users::id.eq(42)));
+   |                                            ^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `IsAggregateFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
+   = help: the following other types implement trait `IsAggregateFunction`:
+             diesel::expression::count::count_utils::count<T, expr>
+             diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
+             diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
+             diesel::expression::functions::aggregate_ordering::max_utils::max<ST, expr>
+             diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
+             diesel::sqlite::expression::functions::json_group_array_utils::json_group_array<E, elements>
+             json_group_object<N, V, names, values>
+             jsonb_group_array<E, elements>
+             jsonb_group_object<N, V, names, values>
+   = note: required for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` to implement `diesel::expression::functions::aggregate_expressions::aggregate_filter::FilterDsl<_>`
+
+   
+error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
+  --> tests/fail/window_functions_expression_requires_window_function.rs:27:18
+   |
+LL |     users::table.select(lower(users::name).window_filter(users::id.eq(42)));
+   |                  ^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
+   = note: try to provide an expression that produces one of the expected sql types
+   = help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`:
+             Multirange<ST>
+             Nullable<Multirange<ST>>
+             Nullable<diesel::sql_types::Range<ST>>
+             diesel::sql_types::Range<ST>
+   = note: required for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` to implement `diesel::Expression`
+   = note: 1 redundant requirement hidden
+   = note: required for `AggregateExpression<lower<Text, name>, NoPrefix, NoOrder, Filter<...>>` to implement `diesel::Expression`
+   = note: required for `users::table` to implement `SelectDsl<AggregateExpression<lower<Text, name>, NoPrefix, ..., ...>>`
+
+   
+error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
+   --> tests/fail/window_functions_expression_requires_window_function.rs:32:25
+    |
+ LL |     users::table.select(lower(users::name).window_order(users::id));
+    |                         ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
+    = note: try to provide an expression that produces one of the expected sql types
+    = help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`:
+              Multirange<ST>
+              Nullable<Multirange<ST>>
+              Nullable<diesel::sql_types::Range<ST>>
+              diesel::sql_types::Range<ST>
+note: required by a bound in `diesel::dsl::lower`
+   --> DIESEL/diesel/diesel/src/pg/expression/functions.rs
+    |
+LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inner>;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
+
+error[E0277]: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+  --> tests/fail/window_functions_expression_requires_window_function.rs:32:44
+   |
+LL |     users::table.select(lower(users::name).window_order(users::id));
+   |                                            ^^^^^^^^^^^^ remove this function call to use `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` as normal SQL function
+   |
+   = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
+   = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
+   = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
+             diesel::expression::count::count_utils::count<T, expr>
+             diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
+             diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
+             diesel::expression::functions::aggregate_ordering::max_utils::max<ST, expr>
+             diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
+             diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
+             diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
+           and N others
+   = note: required for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` to implement `diesel::expression::functions::aggregate_expressions::aggregate_order::OrderWindowDsl<_>`
+
+   
+error[E0277]: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+  --> tests/fail/window_functions_expression_requires_window_function.rs:32:18
+   |
+LL |     users::table.select(lower(users::name).window_order(users::id));
+   |                  ^^^^^^ remove this function call to use `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` as normal SQL function
+   |
+   = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
+   = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
+   = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
+             diesel::expression::count::count_utils::count<T, expr>
+             diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
+             diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
+             diesel::expression::functions::aggregate_ordering::max_utils::max<ST, expr>
+             diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
+             diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
+             diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
+           and N others
+   = note: required for `AggregateExpression<lower<Text, name>, NoPrefix, NoOrder, ..., ...>` to implement `ValidGrouping<()>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<AggregateExpression<lower<Text, name>, ..., ..., ..., ...>>`
+
+   
+error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
+  --> tests/fail/window_functions_expression_requires_window_function.rs:32:18
+   |
+LL |     users::table.select(lower(users::name).window_order(users::id));
+   |                  ^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
+   = note: try to provide an expression that produces one of the expected sql types
+   = help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`:
+             Multirange<ST>
+             Nullable<Multirange<ST>>
+             Nullable<diesel::sql_types::Range<ST>>
+             diesel::sql_types::Range<ST>
+   = note: required for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` to implement `diesel::Expression`
+   = note: 1 redundant requirement hidden
+   = note: required for `AggregateExpression<lower<Text, name>, NoPrefix, NoOrder, ..., ...>` to implement `diesel::Expression`
+   = note: required for `users::table` to implement `SelectDsl<AggregateExpression<lower<Text, name>, ..., ..., ..., ...>>`
+
+   
+error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
+   --> tests/fail/window_functions_expression_requires_window_function.rs:39:17
+    |
+ LL |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(frame::CurrentRow)));
+    |                 ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
+    = note: try to provide an expression that produces one of the expected sql types
+    = help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`:
+              Multirange<ST>
+              Nullable<Multirange<ST>>
+              Nullable<diesel::sql_types::Range<ST>>
+              diesel::sql_types::Range<ST>
+note: required by a bound in `diesel::dsl::lower`
+   --> DIESEL/diesel/diesel/src/pg/expression/functions.rs
+    |
+LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inner>;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
+
+error[E0277]: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+  --> tests/fail/window_functions_expression_requires_window_function.rs:39:36
+   |
+LL |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(frame::CurrentRow)));
+   |                                    ^^^^^^^^ remove this function call to use `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` as normal SQL function
+   |
+   = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
+   = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
+   = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
+             diesel::expression::count::count_utils::count<T, expr>
+             diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
+             diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
+             diesel::expression::functions::aggregate_ordering::max_utils::max<ST, expr>
+             diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
+             diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
+             diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
+           and N others
+   = note: required for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` to implement `diesel::expression::functions::aggregate_expressions::frame_clause::FrameDsl<_>`
+
+   
+error[E0277]: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+  --> tests/fail/window_functions_expression_requires_window_function.rs:39:10
+   |
+LL |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(frame::CurrentRow)));
+   |          ^^^^^^ remove this function call to use `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` as normal SQL function
+   |
+   = help: the trait `IsWindowFunction` is not implemented for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>`
+   = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
+   = help: the following other types implement trait `IsWindowFunction`:
+             CountStar
+             diesel::expression::count::count_utils::count<T, expr>
+             diesel::expression::functions::aggregate_folding::avg_utils::avg<ST, expr>
+             diesel::expression::functions::aggregate_folding::sum_utils::sum<ST, expr>
+             diesel::expression::functions::aggregate_ordering::max_utils::max<ST, expr>
+             diesel::expression::functions::aggregate_ordering::min_utils::min<ST, expr>
+             diesel::expression::functions::window_functions::cume_dist_utils::cume_dist
+             diesel::expression::functions::window_functions::dense_rank_utils::dense_rank
+           and N others
+   = note: required for `AggregateExpression<lower<Text, name>, NoPrefix, NoOrder, ..., ...>` to implement `ValidGrouping<()>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<AggregateExpression<lower<Text, name>, ..., ..., ..., ...>>`
+
+   
+error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
+  --> tests/fail/window_functions_expression_requires_window_function.rs:39:10
+   |
+LL |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(frame::CurrentRow)));
+   |          ^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
+   = note: try to provide an expression that produces one of the expected sql types
+   = help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`:
+             Multirange<ST>
+             Nullable<Multirange<ST>>
+             Nullable<diesel::sql_types::Range<ST>>
+             diesel::sql_types::Range<ST>
+   = note: required for `diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name>` to implement `diesel::Expression`
+   = note: 1 redundant requirement hidden
+   = note: required for `AggregateExpression<lower<Text, name>, NoPrefix, NoOrder, ..., ...>` to implement `diesel::Expression`
+   = note: required for `users::table` to implement `SelectDsl<AggregateExpression<lower<Text, name>, ..., ..., ..., ...>>`
+
+   For more information about this error, try `rustc --explain E0277`.

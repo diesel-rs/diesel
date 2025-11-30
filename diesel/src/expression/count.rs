@@ -1,13 +1,16 @@
-use std::marker::PhantomData;
-
+#[cfg(doc)]
+use super::functions::aggregate_expressions::{
+    AggregateExpressionMethods, WindowExpressionMethods,
+};
 use super::functions::declare_sql_function;
-use super::{is_aggregate, AsExpression};
 use super::{Expression, ValidGrouping};
 use crate::backend::Backend;
+use crate::internal::sql_functions::{
+    FunctionFragment, IsWindowFunction, OverClause, WindowFunctionFragment,
+};
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types::{BigInt, DieselNumericOps, SingleValue, SqlType};
-use crate::{AppearsOnTable, SelectableExpression};
 
 #[declare_sql_function]
 extern "SQL" {
@@ -17,7 +20,17 @@ extern "SQL" {
     /// it specifically as `diesel::dsl::count`, or glob import
     /// `diesel::dsl::*`
     ///
+    /// ## Window Function Usage
+    ///
+    /// This function can be used as window function. See [`WindowExpressionMethods`] for details
+    ///
+    /// ## Aggregate Function Expression
+    ///
+    /// This function can be used as aggregate expression. See [`AggregateExpressionMethods`] for details.
+    ///
     /// # Examples
+    ///
+    /// ## Normal function usage
     ///
     /// ```rust
     /// # include!("../doctest_setup.rs");
@@ -29,7 +42,44 @@ extern "SQL" {
     /// assert_eq!(Ok(1), animals.select(count(name)).first(connection));
     /// # }
     /// ```
+    ///
+    /// ## Window function
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::dsl::*;
+    /// #
+    /// # fn main() {
+    /// #     use schema::animals::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// assert_eq!(
+    ///     Ok(1),
+    ///     animals
+    ///         .select(count(name).partition_by(id))
+    ///         .first(connection)
+    /// );
+    /// # }
+    /// ```
+    ///
+    /// ## Aggregate function expression
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::dsl::*;
+    /// #
+    /// # fn main() {
+    /// #     use schema::animals::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// assert_eq!(
+    ///     Ok(1),
+    ///     animals
+    ///         .select(count(name).aggregate_distinct())
+    ///         .first(connection)
+    /// );
+    /// # }
+    /// ```
     #[aggregate]
+    #[window]
     fn count<T: SqlType + SingleValue>(expr: T) -> BigInt;
 }
 
@@ -68,6 +118,15 @@ impl Expression for CountStar {
     type SqlType = BigInt;
 }
 
+impl<DB: Backend> FunctionFragment<DB> for CountStar {
+    const FUNCTION_NAME: &'static str = "COUNT";
+
+    fn walk_arguments<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_sql("*");
+        Ok(())
+    }
+}
+
 impl<DB: Backend> QueryFragment<DB> for CountStar {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("COUNT(*)");
@@ -75,85 +134,30 @@ impl<DB: Backend> QueryFragment<DB> for CountStar {
     }
 }
 
+impl<Partition, Order, Frame, DB: Backend> WindowFunctionFragment<CountStar, DB>
+    for OverClause<Partition, Order, Frame>
+{
+}
+
+impl IsWindowFunction for CountStar {
+    type ArgTypes = ();
+}
+
 impl_selectable_expression!(CountStar);
 
-/// Creates a SQL `COUNT(DISTINCT ...)` expression
-///
-/// As with most bare functions, this is not exported by default. You can import
-/// it specifically as `diesel::dsl::count_distinct`, or glob import
-/// `diesel::dsl::*`
-///
-/// # Examples
-///
-/// ```rust
-/// # #[macro_use] extern crate diesel;
-/// # include!("../doctest_setup.rs");
-/// # use diesel::dsl::*;
-/// #
-/// # fn main() {
-/// #     use schema::posts::dsl::*;
-/// #     let connection = &mut establish_connection();
-/// let unique_user_count = posts.select(count_distinct(user_id)).first(connection);
-/// assert_eq!(Ok(2), unique_user_count);
-/// # }
-/// ```
+#[doc(hidden)]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+#[deprecated(note = "Use `AggregateExpressionMethods::aggregate_distinct` instead")]
 pub fn count_distinct<T, E>(expr: E) -> CountDistinct<T, E::Expression>
 where
     T: SqlType + SingleValue,
-    E: AsExpression<T>,
+    E: crate::expression::AsExpression<T>,
 {
-    CountDistinct {
-        expr: expr.as_expression(),
-        _marker: PhantomData,
-    }
+    use crate::AggregateExpressionMethods;
+
+    count(expr).aggregate_distinct()
 }
 
-#[derive(Debug, Clone, Copy, QueryId, DieselNumericOps)]
 #[doc(hidden)]
-pub struct CountDistinct<T, E> {
-    expr: E,
-    _marker: PhantomData<T>,
-}
-
-impl<T, E> Expression for CountDistinct<T, E>
-where
-    T: SqlType + SingleValue,
-    E: Expression,
-{
-    type SqlType = BigInt;
-}
-
-impl<T, E, GB> ValidGrouping<GB> for CountDistinct<T, E>
-where
-    T: SqlType + SingleValue,
-{
-    type IsAggregate = is_aggregate::Yes;
-}
-
-impl<T, E, QS> SelectableExpression<QS> for CountDistinct<T, E>
-where
-    Self: AppearsOnTable<QS>,
-    E: SelectableExpression<QS>,
-{
-}
-
-impl<T, E, QS> AppearsOnTable<QS> for CountDistinct<T, E>
-where
-    Self: Expression,
-    E: AppearsOnTable<QS>,
-{
-}
-
-impl<T, E, DB> QueryFragment<DB> for CountDistinct<T, E>
-where
-    T: SqlType + SingleValue,
-    DB: Backend,
-    E: QueryFragment<DB>,
-{
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        out.push_sql("COUNT(DISTINCT ");
-        self.expr.walk_ast(out.reborrow())?;
-        out.push_sql(")");
-        Ok(())
-    }
-}
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+pub type CountDistinct<T, E> = crate::dsl::AggregateDistinct<self::count<T, E>>;

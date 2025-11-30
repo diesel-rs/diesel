@@ -32,20 +32,16 @@ use std::marker::PhantomData;
 /// #     use diesel::dsl::array;
 /// #     use diesel::sql_types::Integer;
 /// #     let connection = &mut establish_connection();
-/// let ints = diesel::select(array::<Integer, _>((1, 2)))
-///     .get_result::<Vec<i32>>(connection)?;
+/// let ints = diesel::select(array::<Integer, _>((1, 2))).get_result::<Vec<i32>>(connection)?;
 /// assert_eq!(vec![1, 2], ints);
 ///
-/// let ids = users.select(array((id, id * 2)))
+/// let ids = users
+///     .select(array((id, id * 2)))
 ///     .get_results::<Vec<i32>>(connection)?;
-/// let expected = vec![
-///     vec![1, 2],
-///     vec![2, 4],
-/// ];
+/// let expected = vec![vec![1, 2], vec![2, 4]];
 /// assert_eq!(expected, ids);
 ///
-/// let ids = diesel::select(array(users.select(id)))
-///     .first::<Vec<i32>>(connection)?;
+/// let ids = diesel::select(array(users.select(id))).first::<Vec<i32>>(connection)?;
 /// assert_eq!(vec![1, 2], ids);
 /// #     Ok(())
 /// # }
@@ -67,7 +63,7 @@ pub type array<ST, T> = <T as IntoArrayExpression<ST>>::ArrayExpression;
 ///
 /// This includes tuples of expressions with the same SQL type, and subselects with a single column.
 #[diagnostic::on_unimplemented(
-    message = "Cannot convert `{Self}` into an expression of type `Array<{ST}>`",
+    message = "cannot convert `{Self}` into an expression of type `Array<{ST}>`",
     note = "`the trait bound `{Self}: IntoArrayExpression<{ST}>` is not satisfied. \
         (`AsExpressionList` is a deprecated trait alias for `IntoArrayExpression`)"
 )]

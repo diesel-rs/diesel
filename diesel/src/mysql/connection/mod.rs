@@ -56,7 +56,8 @@ use crate::RunQueryDsl;
 /// #     use schema::users;
 /// #     let connection = &mut establish_connection();
 /// use diesel::connection::DefaultLoadingMode;
-/// { // scope to restrict the lifetime of the iterator
+/// {
+///     // scope to restrict the lifetime of the iterator
 ///     let iter1 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
 ///
 ///     for r in iter1 {
@@ -218,15 +219,30 @@ fn update_transaction_manager_status<T>(
     instrumentation: &mut DynInstrumentation,
     query: &dyn DebugQuery,
 ) -> QueryResult<T> {
-    if let Err(Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)) = query_result {
-        transaction_manager
-            .status
-            .set_requires_rollback_maybe_up_to_top_level(true)
+    fn non_generic_inner(
+        query_result: Result<(), &Error>,
+        transaction_manager: &mut AnsiTransactionManager,
+        instrumentation: &mut DynInstrumentation,
+        query: &dyn DebugQuery,
+    ) {
+        if let Err(Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)) = query_result
+        {
+            transaction_manager
+                .status
+                .set_requires_rollback_maybe_up_to_top_level(true)
+        }
+        instrumentation.on_connection_event(InstrumentationEvent::FinishQuery {
+            query,
+            error: query_result.err(),
+        });
     }
-    instrumentation.on_connection_event(InstrumentationEvent::FinishQuery {
+
+    non_generic_inner(
+        query_result.as_ref().map(|_| ()),
+        transaction_manager,
+        instrumentation,
         query,
-        error: query_result.as_ref().err(),
-    });
+    );
     query_result
 }
 

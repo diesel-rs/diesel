@@ -20,21 +20,18 @@ use crate::serialize::{self, Output};
 /// #     use diesel::serialize::{self, ToSql, Output, WriteTuple};
 /// #     use diesel::sql_types::{Integer, Text, SqlType};
 /// #
-///     #[derive(SqlType)]
-///     #[diesel(postgres_type(name = "my_type"))]
-///     struct MyType;
+/// #[derive(SqlType)]
+/// #[diesel(postgres_type(name = "my_type"))]
+/// struct MyType;
 ///
-///     #[derive(Debug)]
-///     struct MyStruct<'a>(i32, &'a str);
+/// #[derive(Debug)]
+/// struct MyStruct<'a>(i32, &'a str);
 ///
-///     impl<'a> ToSql<MyType, Pg> for MyStruct<'a> {
-///         fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
-///             WriteTuple::<(Integer, Text)>::write_tuple(
-///                 &(self.0, self.1),
-///                 &mut out.reborrow(),
-///             )
-///         }
+/// impl<'a> ToSql<MyType, Pg> for MyStruct<'a> {
+///     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+///         WriteTuple::<(Integer, Text)>::write_tuple(&(self.0, self.1), &mut out.reborrow())
 ///     }
+/// }
 /// # }
 /// # fn main() {}
 /// ```

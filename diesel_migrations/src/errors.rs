@@ -104,7 +104,16 @@ impl fmt::Display for RunMigrationsError {
                 write!(f, "Failed to run {v} with: {err}")
             }
             RunMigrationsError::QueryError(v, err) => {
-                write!(f, "Failed to run {v} with: {err}")
+                write!(f, "Failed to run {v} with: {err}")?;
+
+                if let diesel::result::Error::DatabaseError(_, error_info) = err {
+                    let message = error_info.message();
+                    if message.ends_with("cannot run inside a transaction block") {
+                        write!(f, " (see https://docs.diesel.rs/master/diesel_migrations/struct.FileBasedMigrations.html#transactions)")?;
+                    }
+                }
+
+                Ok(())
             }
             RunMigrationsError::EmptyMigration(v) => write!(
                 f,

@@ -1,0 +1,24 @@
+error[E0277]: `ExcludeGroup` is no valid SQL fragment for the `Mysql` backend
+  --> tests/fail/mysql_does_not_support_group_frame_clauses_boxed.rs:16:17
+   |
+LL |           .select(Box::new(
+   |  _________________^
+LL | |             dsl::count(users::id).frame_by(
+LL | |                 dsl::frame::Rows
+LL | |                     .frame_start_with_exclusion(dsl::frame::CurrentRow, dsl::frame::ExcludeGroup),
+LL | |             ),
+LL | |         ) as Box<dyn BoxableExpression<_, _, SqlType = _>>)
+   | |_________^ the trait `QueryFragment<Mysql, NoFrameFrameExclusionSupport>` is not implemented for `ExcludeGroup`
+   |
+   = note: this usually means that the `Mysql` database system does not support 
+           this SQL syntax
+   = help: the following other types implement trait `QueryFragment<DB, SP>`:
+             `ExcludeGroup` implements `QueryFragment<DB, FrameExclusionSupport>`
+             `ExcludeGroup` implements `QueryFragment<DB>`
+   = note: required for `ExcludeGroup` to implement `QueryFragment<Mysql>`
+   = note: 4 redundant requirements hidden
+   = note: required for `AggregateExpression<count<Integer, id>, NoPrefix, NoOrder, ..., ...>` to implement `QueryFragment<Mysql>`
+   = note: required for `AggregateExpression<count<Integer, id>, NoPrefix, NoOrder, ..., ...>` to implement `diesel::BoxableExpression<users::table, Mysql>`
+   = note: required for the cast from `Box<AggregateExpression<count<Integer, id>, NoPrefix, ..., ..., ...>>` to `Box<dyn diesel::BoxableExpression<users::table, Mysql, SqlType = diesel::sql_types::BigInt>>`
+
+   For more information about this error, try `rustc --explain E0277`.

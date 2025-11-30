@@ -17,9 +17,9 @@ impl FromSql<Any, diesel::pg::Pg> for MyDynamicValue {
         use diesel::pg::Pg;
         use std::num::NonZeroU32;
 
-        const VARCHAR_OID: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(1043) };
-        const TEXT_OID: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(25) };
-        const INTEGER_OID: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(23) };
+        const VARCHAR_OID: NonZeroU32 = NonZeroU32::new(1043).unwrap();
+        const TEXT_OID: NonZeroU32 = NonZeroU32::new(25).unwrap();
+        const INTEGER_OID: NonZeroU32 = NonZeroU32::new(23).unwrap();
 
         match value.get_oid() {
             VARCHAR_OID | TEXT_OID => {

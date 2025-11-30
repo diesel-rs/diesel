@@ -27,8 +27,15 @@ pub struct Model {
     pub mysql_type: Option<MysqlType>,
     pub sqlite_type: Option<SqliteType>,
     pub postgres_type: Option<PostgresType>,
-    pub check_for_backend: Option<syn::punctuated::Punctuated<syn::TypePath, syn::Token![,]>>,
+    pub check_for_backend: Option<CheckForBackend>,
+    pub base_query: Option<syn::Expr>,
+    pub base_query_type: Option<syn::Type>,
     fields: Vec<Field>,
+}
+
+pub enum CheckForBackend {
+    Backends(syn::punctuated::Punctuated<syn::TypePath, syn::Token![,]>),
+    Disabled(LitBool),
 }
 
 impl Model {
@@ -52,15 +59,15 @@ impl Model {
             }) => Some(unnamed),
             _ if !allow_unit_structs => {
                 return Err(syn::Error::new(
-                    proc_macro2::Span::call_site(),
-                    "This derive can only be used on non-unit structs",
+                    proc_macro2::Span::mixed_site(),
+                    "this derive can only be used on non-unit structs",
                 ));
             }
             _ => None,
         };
 
         let mut table_names = vec![];
-        let mut primary_key_names = vec![Ident::new("id", Span::call_site())];
+        let mut primary_key_names = vec![Ident::new("id", Span::mixed_site())];
         let mut treat_none_as_default_value = None;
         let mut treat_none_as_null = None;
         let mut belongs_to = vec![];
@@ -72,6 +79,8 @@ impl Model {
         let mut sqlite_type = None;
         let mut postgres_type = None;
         let mut check_for_backend = None;
+        let mut base_query = None;
+        let mut base_query_type = None;
 
         for attr in parse_attributes(attrs)? {
             match attr.item {
@@ -103,6 +112,8 @@ impl Model {
                 StructAttr::CheckForBackend(_, b) => {
                     check_for_backend = Some(b);
                 }
+                StructAttr::BaseQuery(_, e) => base_query = Some(e),
+                StructAttr::BaseQueryType(_, t) => base_query_type = Some(t),
             }
         }
 
@@ -124,6 +135,8 @@ impl Model {
             postgres_type,
             fields: fields_from_item_data(fields)?,
             check_for_backend,
+            base_query,
+            base_query_type,
         })
     }
 
@@ -149,7 +162,7 @@ impl Model {
             .ok_or_else(|| {
                 syn::Error::new(
                     column_name.span(),
-                    format!("No field with column name {column_name}"),
+                    format!("no field with column name `{column_name}`"),
                 )
             })
     }

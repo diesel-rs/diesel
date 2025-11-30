@@ -73,9 +73,10 @@ impl<Inner> SqlQuery<Inner> {
     ///     .bind::<Integer, _>(1)
     ///     .bind::<Text, _>("Tess")
     ///     .get_results(connection);
-    /// let expected_users = vec![
-    ///     User { id: 3, name: "Jim".into() },
-    /// ];
+    /// let expected_users = vec![User {
+    ///     id: 3,
+    ///     name: "Jim".into(),
+    /// }];
     /// assert_eq!(Ok(expected_users), users);
     /// # }
     /// ```
@@ -113,10 +114,10 @@ impl<Inner> SqlQuery<Inner> {
     ///     }
     /// # #[cfg(feature = "postgres")]
     /// # {
-    ///    q = q
-    ///        // postgresql bind syntax
-    ///        .sql(format!("${}", idx + 1))
-    ///        .bind::<Integer, _>(user_id);
+    ///     q = q
+    ///         // postgresql bind syntax
+    ///         .sql(format!("${}", idx + 1))
+    ///         .bind::<Integer, _>(user_id);
     /// # }
     /// # #[cfg(not(feature = "postgres"))]
     /// # {
@@ -126,9 +127,10 @@ impl<Inner> SqlQuery<Inner> {
     /// # }
     /// }
     /// let users = q.sql(");").get_results(connection);
-    /// let expected_users = vec![
-    ///     User { id: 3, name: "Jim".into() },
-    /// ];
+    /// let expected_users = vec![User {
+    ///     id: 3,
+    ///     name: "Jim".into(),
+    /// }];
     /// assert_eq!(Ok(expected_users), users);
     /// # }
     /// ```
@@ -183,7 +185,6 @@ impl<Inner, Conn> RunQueryDsl<Conn> for SqlQuery<Inner> {}
 #[derive(Debug, Clone, Copy)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Returned by the [`SqlQuery::bind()`] method when binding a value to a fragment of SQL.
-///
 pub struct UncheckedBind<Query, Value, ST> {
     query: Query,
     value: Value,
@@ -259,9 +260,10 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     ///     .bind::<Integer, _>(1)
     ///     .bind::<Text, _>("Tess")
     ///     .get_results(connection);
-    /// let expected_users = vec![
-    ///     User { id: 3, name: "Jim".into() },
-    /// ];
+    /// let expected_users = vec![User {
+    ///     id: 3,
+    ///     name: "Jim".into(),
+    /// }];
     /// assert_eq!(Ok(expected_users), users);
     /// # }
     /// ```

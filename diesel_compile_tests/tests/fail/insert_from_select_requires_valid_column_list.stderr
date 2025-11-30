@@ -1,198 +1,176 @@
-error[E0271]: type mismatch resolving `<SelectStatement<FromClause<table>, SelectClause<(name, hair_color)>> as Query>::SqlType == (Integer, Text, Nullable<Text>)`
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:57:18
-   |
-57 |         .execute(&mut conn)
-   |          ------- ^^^^^^^^^ expected a tuple with 3 elements, found one with 2 elements
-   |          |
-   |          required by a bound introduced by this call
-   |
-   = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
-              found tuple `(diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
-   = note: required for `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>` to implement `QueryFragment<_>`
-   = note: 1 redundant requirement hidden
-   = note: required for `InsertStatement<posts::table, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>>` to implement `QueryFragment<_>`
-   = note: required for `InsertStatement<posts::table, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>>` to implement `ExecuteDsl<_, _>`
+error[E0271]: type mismatch resolving `<SelectStatement<..., ...> as Query>::SqlType == (..., ..., ...)`
+    --> tests/fail/insert_from_select_requires_valid_column_list.rs:57:18
+     |
+  LL |         .execute(&mut conn)
+     |          ------- ^^^^^^^^^ expected a tuple with 3 elements, found one with 2 elements
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+                found tuple `(diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+     = note: required for `InsertFromSelect<SelectStatement<FromClause<table>, ...>, ...>` to implement `QueryFragment<_>`
+     = note: 1 redundant requirement hidden
+     = note: required for `InsertStatement<table, InsertFromSelect<..., ...>>` to implement `QueryFragment<_>`
+     = note: required for `InsertStatement<table, InsertFromSelect<..., ...>>` to implement `ExecuteDsl<_, _>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
-   |        ------- required by a bound in this associated function
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
+     |        ------- required by a bound in this associated function
 ...
-   |         Self: methods::ExecuteDsl<Conn>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-
+LL |         Self: methods::ExecuteDsl<Conn>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
+  
+     
 error[E0271]: type mismatch resolving `<post_id as ColumnList>::Table == table`
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:63:23
-   |
-63 |         .into_columns(comments::post_id);
-   |          ------------ ^^^^^^^^^^^^^^^^^ expected `posts::table`, found `comments::table`
-   |          |
-   |          required by a bound introduced by this call
-   |
-   = note: `comments::table` and `posts::table` have similar names, but are actually distinct types
+   --> tests/fail/insert_from_select_requires_valid_column_list.rs:65:23
+    |
+ LL |         .into_columns(comments::post_id);
+    |          ------------ ^^^^^^^^^^^^^^^^^ expected `posts::table`, found `comments::table`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = note: `comments::table` and `posts::table` have similar names, but are actually distinct types
 note: `comments::table` is defined in module `crate::comments` of the current crate
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:22:1
-   |
-22 | / table! {
-23 | |     comments (post_id) {
-24 | |         post_id -> Integer,
-25 | |         body -> Nullable<Text>,
-26 | |     }
-27 | | }
-   | |_^
+   --> tests/fail/insert_from_select_requires_valid_column_list.rs:22:1
+    |
+ LL | / table! {
+ LL | |     comments (post_id) {
+    | |____________^
 note: `posts::table` is defined in module `crate::posts` of the current crate
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:14:1
-   |
-14 | / table! {
-15 | |     posts (user_id) {
-16 | |         user_id -> Integer,
-17 | |         title -> Text,
-...  |
-20 | | }
-   | |_^
+   --> tests/fail/insert_from_select_requires_valid_column_list.rs:14:1
+    |
+ LL | / table! {
+ LL | |     posts (user_id) {
+    | |_________^
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
-  --> $DIESEL/src/query_builder/insert_statement/mod.rs
-   |
-   |     pub fn into_columns<C2>(
-   |            ------------ required by a bound in this associated function
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn into_columns<C2>(
+    |            ------------ required by a bound in this associated function
 ...
-   |         C2: ColumnList<Table = T> + Expression,
-   |                        ^^^^^^^^^ required by this bound in `InsertStatement::<T, InsertFromSelect<U, C>, Op, Ret>::into_columns`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+LL |         C2: ColumnList<Table = T> + Expression,
+    |                        ^^^^^^^^^ required by this bound in `InsertStatement::<T, InsertFromSelect<U, C>, Op, Ret>::into_columns`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<title as Expression>::SqlType == Integer`
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:68:10
+  --> tests/fail/insert_from_select_requires_valid_column_list.rs:69:41
    |
-68 |         .into_columns(title);
-   |          ^^^^^^^^^^^^ type mismatch resolving `<title as Expression>::SqlType == Integer`
+LL |     users.select(id).insert_into(posts).into_columns(title);
+   |                                         ^^^^^^^^^^^^ type mismatch resolving `<title as Expression>::SqlType == Integer`
    |
 note: expected this to be `diesel::sql_types::Integer`
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:17:18
    |
-17 |         title -> Text,
+LL |         title -> Text,
    |                  ^^^^
 
-error[E0277]: the trait bound `(comments::columns::post_id, posts::columns::title): diesel::query_builder::insert_statement::column_list::ColumnList` is not satisfied
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:73:23
-   |
-73 |         .into_columns((comments::post_id, title));
-   |          ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
-   |          |
-   |          required by a bound introduced by this call
-   |
-   = help: the trait `diesel::query_builder::insert_statement::column_list::ColumnList` is not implemented for `(comments::columns::post_id, posts::columns::title)`
-   = help: the following other types implement trait `diesel::query_builder::insert_statement::column_list::ColumnList`:
-             (T0, T1)
-             (T0, T1, T2)
-             (T0, T1, T2, T3)
-             (T0, T1, T2, T3, T4)
-             (T0, T1, T2, T3, T4, T5)
-             (T0, T1, T2, T3, T4, T5, T6)
-             (T0, T1, T2, T3, T4, T5, T6, T7)
-             (T0, T1, T2, T3, T4, T5, T6, T7, T8)
-           and $N others
+error[E0277]: the trait bound `(post_id, title): ColumnList` is not satisfied
+   --> tests/fail/insert_from_select_requires_valid_column_list.rs:76:23
+    |
+ LL |         .into_columns((comments::post_id, title));
+    |          ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = help: the trait `diesel::query_builder::insert_statement::column_list::ColumnList` is not implemented for `(comments::columns::post_id, posts::columns::title)`
+    = help: the following other types implement trait `diesel::query_builder::insert_statement::column_list::ColumnList`:
+              (T, T1)
+              (T, T1, T2)
+              (T, T1, T2, T3)
+              (T, T1, T2, T3, T4)
+              (T, T1, T2, T3, T4, T5)
+              (T, T1, T2, T3, T4, T5, T6)
+              (T, T1, T2, T3, T4, T5, T6, T7)
+              (T, T1, T2, T3, T4, T5, T6, T7, T8)
+            and N others
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
-  --> $DIESEL/src/query_builder/insert_statement/mod.rs
-   |
-   |     pub fn into_columns<C2>(
-   |            ------------ required by a bound in this associated function
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn into_columns<C2>(
+    |            ------------ required by a bound in this associated function
 ...
-   |         C2: ColumnList<Table = T> + Expression,
-   |             ^^^^^^^^^^^^^^^^^^^^^ required by this bound in `InsertStatement::<T, InsertFromSelect<U, C>, Op, Ret>::into_columns`
-
+LL |         C2: ColumnList<Table = T> + Expression,
+    |             ^^^^^^^^^^^^^^^^^^^^^ required by this bound in `InsertStatement::<T, InsertFromSelect<U, C>, Op, Ret>::into_columns`
+ 
+    
 error[E0271]: type mismatch resolving `<post_id as ColumnList>::Table == table`
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:78:23
-   |
-78 |         .into_columns((comments::post_id, comments::body));
-   |          ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `posts::table`, found `comments::table`
-   |          |
-   |          required by a bound introduced by this call
-   |
-   = note: `comments::table` and `posts::table` have similar names, but are actually distinct types
+   --> tests/fail/insert_from_select_requires_valid_column_list.rs:83:23
+    |
+ LL |         .into_columns((comments::post_id, comments::body));
+    |          ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `posts::table`, found `comments::table`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = note: `comments::table` and `posts::table` have similar names, but are actually distinct types
 note: `comments::table` is defined in module `crate::comments` of the current crate
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:22:1
-   |
-22 | / table! {
-23 | |     comments (post_id) {
-24 | |         post_id -> Integer,
-25 | |         body -> Nullable<Text>,
-26 | |     }
-27 | | }
-   | |_^
+   --> tests/fail/insert_from_select_requires_valid_column_list.rs:22:1
+    |
+ LL | / table! {
+ LL | |     comments (post_id) {
+    | |____________^
 note: `posts::table` is defined in module `crate::posts` of the current crate
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:14:1
-   |
-14 | / table! {
-15 | |     posts (user_id) {
-16 | |         user_id -> Integer,
-17 | |         title -> Text,
-...  |
-20 | | }
-   | |_^
-   = note: required for `(comments::columns::post_id, comments::columns::body)` to implement `diesel::query_builder::insert_statement::column_list::ColumnList`
+   --> tests/fail/insert_from_select_requires_valid_column_list.rs:14:1
+    |
+ LL | / table! {
+ LL | |     posts (user_id) {
+    | |_________^
+    = note: required for `(comments::columns::post_id, comments::columns::body)` to implement `diesel::query_builder::insert_statement::column_list::ColumnList`
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
-  --> $DIESEL/src/query_builder/insert_statement/mod.rs
-   |
-   |     pub fn into_columns<C2>(
-   |            ------------ required by a bound in this associated function
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn into_columns<C2>(
+    |            ------------ required by a bound in this associated function
 ...
-   |         C2: ColumnList<Table = T> + Expression,
-   |                        ^^^^^^^^^ required by this bound in `InsertStatement::<T, InsertFromSelect<U, C>, Op, Ret>::into_columns`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+LL |         C2: ColumnList<Table = T> + Expression,
+    |                        ^^^^^^^^^ required by this bound in `InsertStatement::<T, InsertFromSelect<U, C>, Op, Ret>::into_columns`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<body as ColumnList>::Table == table`
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:78:23
-   |
-78 |         .into_columns((comments::post_id, comments::body));
-   |          ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `posts::table`, found `comments::table`
-   |          |
-   |          required by a bound introduced by this call
-   |
-   = note: `comments::table` and `posts::table` have similar names, but are actually distinct types
+   --> tests/fail/insert_from_select_requires_valid_column_list.rs:83:23
+    |
+ LL |         .into_columns((comments::post_id, comments::body));
+    |          ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `posts::table`, found `comments::table`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = note: `comments::table` and `posts::table` have similar names, but are actually distinct types
 note: `comments::table` is defined in module `crate::comments` of the current crate
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:22:1
-   |
-22 | / table! {
-23 | |     comments (post_id) {
-24 | |         post_id -> Integer,
-25 | |         body -> Nullable<Text>,
-26 | |     }
-27 | | }
-   | |_^
+   --> tests/fail/insert_from_select_requires_valid_column_list.rs:22:1
+    |
+ LL | / table! {
+ LL | |     comments (post_id) {
+    | |____________^
 note: `posts::table` is defined in module `crate::posts` of the current crate
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:14:1
-   |
-14 | / table! {
-15 | |     posts (user_id) {
-16 | |         user_id -> Integer,
-17 | |         title -> Text,
-...  |
-20 | | }
-   | |_^
-   = note: required for `(comments::columns::post_id, comments::columns::body)` to implement `diesel::query_builder::insert_statement::column_list::ColumnList`
+   --> tests/fail/insert_from_select_requires_valid_column_list.rs:14:1
+    |
+ LL | / table! {
+ LL | |     posts (user_id) {
+    | |_________^
+    = note: required for `(comments::columns::post_id, comments::columns::body)` to implement `diesel::query_builder::insert_statement::column_list::ColumnList`
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
-  --> $DIESEL/src/query_builder/insert_statement/mod.rs
-   |
-   |     pub fn into_columns<C2>(
-   |            ------------ required by a bound in this associated function
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn into_columns<C2>(
+    |            ------------ required by a bound in this associated function
 ...
-   |         C2: ColumnList<Table = T> + Expression,
-   |                        ^^^^^^^^^ required by this bound in `InsertStatement::<T, InsertFromSelect<U, C>, Op, Ret>::into_columns`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+LL |         C2: ColumnList<Table = T> + Expression,
+    |                        ^^^^^^^^^ required by this bound in `InsertStatement::<T, InsertFromSelect<U, C>, Op, Ret>::into_columns`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<(user_id, body) as Expression>::SqlType == (Integer, Text)`
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:83:10
+  --> tests/fail/insert_from_select_requires_valid_column_list.rs:91:10
    |
-83 |         .into_columns((user_id, body));
+LL |         .into_columns((user_id, body));
    |          ^^^^^^^^^^^^ expected `(Integer, Text)`, found `(Integer, Nullable<Text>)`
    |
    = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`
               found tuple `(diesel::sql_types::Integer, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
 
 error[E0271]: type mismatch resolving `<(title, body) as Expression>::SqlType == (Integer, Text)`
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:88:10
+  --> tests/fail/insert_from_select_requires_valid_column_list.rs:98:10
    |
-88 |         .into_columns((title, body));
+LL |         .into_columns((title, body));
    |          ^^^^^^^^^^^^ expected `(Integer, Text)`, found `(Text, Nullable<Text>)`
    |
    = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`

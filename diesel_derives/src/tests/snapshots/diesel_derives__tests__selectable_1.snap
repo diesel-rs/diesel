@@ -1,0 +1,16 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(Selectable)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
+---
+const _: () = {
+    use diesel;
+    use diesel::expression::Selectable;
+    impl<__DB: diesel::backend::Backend> Selectable<__DB> for User {
+        type SelectExpression = (users::r#id, users::r#name);
+        fn construct_selection() -> Self::SelectExpression {
+            (users::r#id, users::r#name)
+        }
+    }
+};
