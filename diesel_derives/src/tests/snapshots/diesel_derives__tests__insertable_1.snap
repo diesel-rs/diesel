@@ -6,7 +6,15 @@ info:
 ---
 const _: () = {
     use diesel;
-    impl diesel::insertable::Insertable<users::table> for User {
+    impl diesel::insertable::Insertable<users::table> for User
+    where
+        i32: diesel::expression::AsExpression<
+            <users::r#id as diesel::Expression>::SqlType,
+        >,
+        String: diesel::expression::AsExpression<
+            <users::r#name as diesel::Expression>::SqlType,
+        >,
+    {
         type Values = <(
             std::option::Option<diesel::dsl::Eq<users::r#id, i32>>,
             std::option::Option<diesel::dsl::Eq<users::r#name, String>>,
@@ -29,7 +37,15 @@ const _: () = {
             ))
         }
     }
-    impl<'insert> diesel::insertable::Insertable<users::table> for &'insert User {
+    impl<'insert> diesel::insertable::Insertable<users::table> for &'insert User
+    where
+        &'insert i32: diesel::expression::AsExpression<
+            <users::r#id as diesel::Expression>::SqlType,
+        >,
+        &'insert String: diesel::expression::AsExpression<
+            <users::r#name as diesel::Expression>::SqlType,
+        >,
+    {
         type Values = <(
             std::option::Option<diesel::dsl::Eq<users::r#id, &'insert i32>>,
             std::option::Option<diesel::dsl::Eq<users::r#name, &'insert String>>,

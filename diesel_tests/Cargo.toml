@@ -38,7 +38,7 @@ sqlite-wasm-rs = "0.4.0"
 [features]
 default = []
 unstable = ["diesel/unstable"]
-postgres = ["diesel/postgres"]
+postgres = ["diesel/postgres", "diesel/network-address", "diesel/ipnet-address"]
 sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql"]
 returning_clauses_for_sqlite_3_35 = ["diesel/returning_clauses_for_sqlite_3_35"]
@@ -47,4 +47,3 @@ returning_clauses_for_sqlite_3_35 = ["diesel/returning_clauses_for_sqlite_3_35"]
 name = "integration_tests"
 path = "tests/lib.rs"
 harness = true
-
