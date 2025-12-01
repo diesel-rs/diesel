@@ -1,0 +1,80 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Specifies that a view exists, and what fields it has. This will create a new public module, with the same name, as the name of the view. In this module, you will find a unit struct named `view`, and a unit struct with the name of each field."><title>view_proc in diesel_derives - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel_derives" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0-nightly (b84478a1c 2025-11-30)" data-channel="nightly" data-search-js="search-9e2438ea.js" data-stringdex-js="stringdex-a3946164.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-a410ff4d.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">view_proc</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel_derives/index.html">diesel_<wbr>derives</a><span class="version">2.3.2</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">view_<wbr>proc</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example-usage" title="Example usage">Example usage</a></li><li><a href="#dsl" title="dsl">dsl</a></li><li><a href="#all_columns" title="`all_columns`"><code>all_columns</code></a></li><li><a href="#star" title="star">star</a></li><li><a href="#sqltype" title="`SqlType`"><code>SqlType</code></a></li><li><a href="#boxedquery" title="`BoxedQuery`"><code>BoxedQuery</code></a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate diesel_<wbr>derives</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">diesel_derives</a></div><h1>Macro <span class="macro">view_<wbr>proc</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/diesel_derives/lib.rs.html#1582-1584">Source</a> </span></div><pre class="rust item-decl"><code>view_proc!() { <span class="comment">/* proc-macro */</span> }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Specifies that a view exists, and what fields it has. This will create a
+new public module, with the same name, as the name of the view. In this
+module, you will find a unit struct named <code>view</code>, and a unit struct with the
+name of each field.</p>
+<p>The macro and the generated code closely mirror the <a href="macro.table_proc.html" title="macro diesel_derives::table_proc"><code>table!</code></a> macro.</p>
+<p>By default, this allows a maximum of 32 columns per view.
+You can increase this limit to 64 by enabling the <code>64-column-tables</code> feature.
+You can increase it to 128 by enabling the <code>128-column-tables</code> feature.
+You can decrease it to 16 columns,
+which improves compilation time,
+by disabling the default features of Diesel.
+Note that enabling 64 column tables or larger will substantially increase
+the compile time of Diesel.</p>
+<h3 id="example-usage"><a class="doc-anchor" href="#example-usage">§</a>Example usage</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::view!</span> {
+    users {
+        name -&gt; VarChar,
+        favorite_color -&gt; Nullable&lt;VarChar&gt;,
+    }
+}</code></pre></div>
+<p>If you are using types that aren’t from Diesel’s core types, you can specify
+which types to import.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::view!</span> {
+    <span class="kw">use </span>diesel::sql_types::<span class="kw-2">*</span>;
+    <span class="kw">use </span>diesel_full_text_search::<span class="kw-2">*</span>;
+
+    posts {
+        title -&gt; Text,
+        keywords -&gt; TsVector,
+    }
+}</code></pre></div>
+<p>If you want to add documentation to the generated code, you can use the
+following syntax:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::view!</span> {
+    <span class="doccomment">/// The table containing all blog posts
+    </span>posts {
+        <span class="doccomment">/// The post's title
+        </span>title -&gt; Text,
+    }
+}</code></pre></div>
+<p>If you have a column with the same name as a Rust reserved keyword, you can use
+the <code>sql_name</code> attribute like this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="macro">diesel::view!</span> {
+    posts {
+        <span class="doccomment">/// This column is named `mytype` but references the table `type` column.
+        </span><span class="attr">#[sql_name = <span class="string">"type"</span>]
+        </span>mytype -&gt; Text,
+    }
+}</code></pre></div>
+<p>This module will also contain several helper types:</p>
+<h3 id="dsl"><a class="doc-anchor" href="#dsl">§</a>dsl</h3>
+<p>This simply re-exports the view, renamed to the same name as the module,
+and each of the columns. This is useful to glob import when you’re dealing
+primarily with one table, to allow writing <code>users.filter(name.eq("Sean"))</code>
+instead of <code>users::table.filter(users::name.eq("Sean"))</code>.</p>
+<h3 id="all_columns"><a class="doc-anchor" href="#all_columns">§</a><code>all_columns</code></h3>
+<p>A constant will be assigned called <code>all_columns</code>. This is what will be
+selected if you don’t otherwise specify a select clause. It’s type will be
+<code>view::AllColumns</code>. You can also get this value from the
+<code>QueryRelation::all_columns</code> function.</p>
+<h3 id="star"><a class="doc-anchor" href="#star">§</a>star</h3>
+<p>This will be the qualified “star” expression for this view (e.g.
+<code>users.*</code>). Internally, we read columns by index, not by name, so this
+column is not safe to read data out of, and it has had its SQL type set to
+<code>()</code> to prevent accidentally using it as such. It is sometimes useful for
+counting statements, however. It can also be accessed through the <code>Table.star()</code>
+method.</p>
+<h3 id="sqltype"><a class="doc-anchor" href="#sqltype">§</a><code>SqlType</code></h3>
+<p>A type alias called <code>SqlType</code> will be created. It will be the SQL type of
+<code>all_columns</code>. The SQL type is needed for things like returning boxed
+queries.</p>
+<h3 id="boxedquery"><a class="doc-anchor" href="#boxedquery">§</a><code>BoxedQuery</code></h3>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">pub type </span>BoxedQuery&lt;<span class="lifetime">'a</span>, DB, ST = SqlType&gt; = BoxedSelectStatement&lt;<span class="lifetime">'a</span>, ST, view, DB&gt;;</code></pre></div></div></details></section></div></main></body></html>
