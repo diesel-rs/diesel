@@ -33,9 +33,6 @@ proc-macro = true
 [[test]]
 name = "tests"
 
-[[test]]
-name = "test_associated_types"
-
 [features]
 default = []
 nightly = ["proc-macro2/nightly"]

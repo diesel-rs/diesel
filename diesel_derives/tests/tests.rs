@@ -16,4 +16,3 @@ mod multiconnection;
 mod queryable;
 mod queryable_by_name;
 mod selectable;
-mod test_associated_types;
