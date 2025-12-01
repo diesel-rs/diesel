@@ -478,7 +478,7 @@ pub struct Json;
 /// #   feature = "serde_json",
 /// #   any(
 /// #       feature = "postgres_backend",
-/// #       all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"),
+/// #       feature = "returning_clauses_for_sqlite_3_35",
 /// #   )
 /// # ))]
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -516,7 +516,7 @@ pub struct Json;
 /// #   feature = "serde_json",
 /// #   any(
 /// #       feature = "postgres_backend",
-/// #       all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"),
+/// #       feature = "returning_clauses_for_sqlite_3_35",
 /// #   )
 /// # )))]
 /// # fn main() {}
