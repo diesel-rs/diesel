@@ -8,6 +8,7 @@ pub(crate) mod aliasing;
 pub(crate) mod joins;
 mod peano_numbers;
 
+use crate::associations::HasTable;
 use crate::expression::{Expression, SelectableExpression, ValidGrouping};
 use crate::query_builder::*;
 
@@ -51,6 +52,14 @@ pub trait Column: Expression {
 
     /// The name of this column
     const NAME: &'static str;
+}
+
+impl<C: Column> HasTable for C {
+    type Table = C::Table;
+
+    fn table() -> Self::Table {
+        Self::Table
+    }
 }
 
 /// A field on a database relation. Types which implement this trait
