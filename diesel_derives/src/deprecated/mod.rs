@@ -36,6 +36,8 @@ mod not_deprecated {
 #[cfg(all(not(feature = "without-deprecated"), feature = "with-deprecated"))]
 mod impl_deprecated {
     use super::{ParseDeprecated, ParseStream, Result};
+    #[cfg(all(not(feature = "without-deprecated"), feature = "with-deprecated"))]
+    use crate::attrs::EnumAttr;
     use crate::attrs::{FieldAttr, StructAttr};
     use crate::deprecated::belongs_to::parse_belongs_to;
     use crate::deprecated::changeset_options::parse_changeset_options;
@@ -211,6 +213,13 @@ mod impl_deprecated {
 
                 _ => Ok(None),
             }
+        }
+    }
+
+    #[cfg(all(not(feature = "without-deprecated"), feature = "with-deprecated"))]
+    impl ParseDeprecated for EnumAttr {
+        fn parse_deprecated(_: ParseStream) -> Result<Option<Self>> {
+            panic!("this proc-macro cannot be used with the deprecated style of diesel proc-macros")
         }
     }
 
