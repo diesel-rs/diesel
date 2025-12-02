@@ -8,6 +8,7 @@
 pub enum Error {
     /// Parsing the SQL failed with the provided error message
     #[error("Failed to parse sql: {0:?}")]
+    #[non_exhaustive]
     ParserError(#[from] sqlparser::parser::ParserError),
     /// Handling this kind of SQL is currently not supported by this crate
     #[error("Unsupported SQL: {msg}")]
@@ -17,13 +18,18 @@ pub enum Error {
     },
     /// The query referenced a unknown query source
     #[error("Querysource was not found in the from clause: `{query_source}`")]
+    #[non_exhaustive]
     InvalidQuerySource {
         /// Which query source is unknown
         query_source: String,
     },
     /// The schema resolver returned an error
-    #[error("Could not resolve view data: {0}")]
-    ResolverFailure(Box<dyn std::error::Error + Send + Sync + 'static>),
+    #[error("Could not resolve view data: {inner}")]
+    #[non_exhaustive]
+    ResolverFailure {
+        /// The inner resolver failure
+        inner: Box<dyn std::error::Error + Send + Sync + 'static>,
+    },
 }
 
 /// A result type using the error provided by this crate as default

@@ -14,8 +14,8 @@ diesel::table! {
 
 diesel::view! {
     test {
-        id -> Nullable<Integer>,
-        name -> Nullable<Text>,
+        id -> Integer,
+        name -> Text,
         hair_color -> Nullable<Text>,
     }
 }

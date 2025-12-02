@@ -106,8 +106,10 @@ impl Error {
 impl From<diesel_infer_query::Error> for Error {
     fn from(value: diesel_infer_query::Error) -> Self {
         match value {
-            diesel_infer_query::Error::ResolverFailure(e) if e.downcast_ref::<Self>().is_some() => {
-                *e.downcast().expect("We checked this before")
+            diesel_infer_query::Error::ResolverFailure { inner, .. }
+                if inner.downcast_ref::<Self>().is_some() =>
+            {
+                *inner.downcast().expect("We checked this before")
             }
             e => Self::InferError(e),
         }

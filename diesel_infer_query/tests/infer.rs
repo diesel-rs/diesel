@@ -28,7 +28,10 @@ impl<const N: usize> From<[(&'static str, &'static str, &'static str, bool); N]>
                         table: rel.into(),
                         field: field.into(),
                     },
-                    Field { is_null: null },
+                    Field {
+                        is_null: null,
+                        name: field,
+                    },
                 )
             })
             .collect();
@@ -47,7 +50,10 @@ impl<const N: usize> From<[(&'static str, &'static str, bool); N]> for Resolver 
                         table: rel.into(),
                         field: field.into(),
                     },
-                    Field { is_null: null },
+                    Field {
+                        is_null: null,
+                        name: field,
+                    },
                 )
             })
             .collect();
@@ -65,6 +71,7 @@ impl From<()> for Resolver {
 
 struct Field {
     is_null: bool,
+    name: &'static str,
 }
 
 impl SchemaResolver for Resolver {
@@ -85,11 +92,37 @@ impl SchemaResolver for Resolver {
         let s = self.data.get(&key).unwrap();
         Ok(s)
     }
+
+    fn list_fields<'s>(
+        &'s mut self,
+        relation_schema: Option<&str>,
+        query_relation: &str,
+    ) -> Result<Vec<&'s dyn SchemaField>, Box<dyn std::error::Error + Send + Sync + 'static>> {
+        let mut res = self
+            .data
+            .iter()
+            .filter_map(|(k, v)| {
+                (k.schema.as_deref() == relation_schema && k.table == query_relation)
+                    .then_some(v as &dyn SchemaField)
+            })
+            .collect::<Vec<_>>();
+        // need to sort here otherwise we get a random column
+        // order by the hashmap
+        //
+        // This now assumes that columns are alphabetically sorted for tables
+        res.sort_by(|a, b| a.name().cmp(b.name()));
+
+        Ok(res)
+    }
 }
 
 impl SchemaField for Field {
     fn is_nullable(&self) -> bool {
         self.is_null
+    }
+
+    fn name(&self) -> &str {
+        self.name
     }
 }
 
@@ -107,7 +140,8 @@ fn check_infer<const N: usize>(
         "Failed to infer SQL with error: {}",
         res.unwrap_err()
     );
-    let view_def = res.unwrap();
+    let mut view_def = res.unwrap();
+    view_def.resolve_references(&mut resolver).unwrap();
     assert_eq!(view_def.field_count(), N);
 
     let res = view_def.infer_nullability(&mut resolver);
@@ -214,5 +248,139 @@ pub(crate) fn nested_join() {
             ("posts", "id", false),
             ("comments", "id", false),
         ],
+    );
+}
+
+#[test]
+pub(crate) fn operations() {
+    check_infer(
+        "CREATE VIEW test AS SELECT 1+ 1, 1+NULL, NULL+1, NULL + NULL",
+        [Some(false), Some(true), Some(true), Some(true)],
+        (),
+    );
+}
+
+#[test]
+fn is_null_and_is_not_null() {
+    check_infer(
+        "CREATE VIEW test AS SELECT NULL IS NOT NULL, NULL IS NULL",
+        [Some(false), Some(false)],
+        (),
+    );
+}
+
+#[test]
+fn functions() {
+    check_infer(
+        "CREATE VIEW test AS SELECT count(*), COUNT(id), sum(id) FROM users",
+        [Some(false), Some(false), Some(true)],
+        [("users", "id", false)],
+    );
+}
+
+#[test]
+fn wildcard_select() {
+    check_infer(
+        "CREATE VIEW test AS SELECT * FROM users",
+        [Some(false), Some(true)],
+        [("users", "id", false), ("users", "name", true)],
+    );
+}
+
+#[test]
+fn qualified_wildcard_select() {
+    check_infer(
+        "CREATE VIEW test AS SELECT users.* FROM users",
+        [Some(false), Some(true)],
+        [("users", "id", false), ("users", "name", true)],
+    );
+}
+
+#[test]
+fn qualified_wildcard_select_left_join() {
+    check_infer(
+        "CREATE VIEW test AS SELECT users.*, posts.* FROM users LEFT JOIN posts ON users.id = posts.user_id",
+        [Some(false), Some(true), Some(true), Some(true)],
+        [
+            ("users", "id", false),
+            ("users", "name", true),
+            ("posts", "id", false),
+            ("posts", "name", true),
+        ],
+    );
+}
+
+#[test]
+fn is_distinct_from() {
+    check_infer(
+        "CREATE VIEW test AS SELECT 'abc' IS DISTINCT FROM NULL, 'def' IS NOT DISTINCT FROM NULL",
+        [Some(false), Some(false)],
+        (),
+    )
+}
+
+#[test]
+fn like() {
+    check_infer(
+        "CREATE VIEW test AS SELECT 'abc' LIKE 'foo', 'cde' LIKE NULL, \
+              'fgh' ILIKE '%', 'ijk' ILIKE NULL, 'abc' NOT LIKE '%', NULL NOT LIKE '%'",
+        [
+            Some(false),
+            Some(true),
+            Some(false),
+            Some(true),
+            Some(false),
+            Some(true),
+        ],
+        (),
+    );
+}
+
+#[test]
+fn between() {
+    check_infer(
+        "CREATE VIEW test AS SELECT 1 BETWEEN 0 AND 10, 1 BETWEEN NULL AND 25, \
+             1 NOT BETWEEN 0 AND 10, 1 NOT BETWEEN NULL AND 25, NULL BETWEEN 1 AND 2, \
+             1 BETWEEN 2 AND NULL",
+        [
+            Some(false),
+            Some(true),
+            Some(false),
+            Some(true),
+            Some(true),
+            Some(true),
+        ],
+        (),
+    )
+}
+
+#[test]
+fn similar_to() {
+    check_infer(
+        "CREATE VIEW test AS SELECT 'abc' SIMILAR TO 'cde', 'ABC' NOT SIMILAR TO NULL, NULL SIMILAR TO 'abc'",
+        [Some(false), Some(true), Some(true)],
+        (),
+    )
+}
+
+#[test]
+fn regexp() {
+    check_infer(
+        "CREATE VIEW test AS SELECT 'abc' REGEXP 'abc', NULL REGEXP 'abc', 'abc' REGEXP NULL,\
+        'abc' RLIKE 'abc', NULL RLIKE 'abc'",
+        [Some(false), Some(true), Some(true), Some(false), Some(true)],
+        (),
+    )
+}
+
+#[test]
+fn case_when() {
+    check_infer(
+        "CREATE VIEW test AS SELECT \
+              CASE WHEN 1 = 1 THEN 1 WHEN NULL THEN 1 ELSE 1 END,
+              CASE WHEN 1 = 1 THEN 1 WHEN NULL THEN 1 ELSE NULL END,
+              CASE WHEN 1 = 1 THEN NULL WHEN NULL THEN 1 ELSE 1 END",
+        [Some(false), Some(true), Some(true)],
+        (),
     );
 }
