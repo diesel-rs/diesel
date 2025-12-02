@@ -82,10 +82,10 @@ impl Display for MigrationVersion<'_> {
 
 /// Represents the name of a migration
 ///
-/// Users should threat this as `impl Display` type,
-/// for implementors of custom migration types
-/// this opens the possibility to roll out their own versioning
-/// schema.
+/// Users should treat this as `impl Display` type,
+/// for implementors of custom migration types this
+/// opens the possibility to roll out their own
+/// versioning schema.
 pub trait MigrationName: Display {
     /// The version corresponding to the current migration name
     fn version(&self) -> MigrationVersion<'_>;
