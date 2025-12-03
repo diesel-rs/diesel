@@ -169,9 +169,11 @@ impl TestArgs {
             command
                 .args(["nextest", "run", "--workspace", "--no-default-features"])
                 .current_dir(&metadata.workspace_root)
-                .args(exclude)
-                .arg("-F")
-                .arg(format!("diesel/{backend}"))
+                .args(exclude);
+            for f in backend.features() {
+                command.arg("-F").arg(format!("diesel/{f}"));
+            }
+            command
                 .args(["-F", "diesel/extras"])
                 .arg("-F")
                 .arg(format!("diesel_derives/{backend}"))

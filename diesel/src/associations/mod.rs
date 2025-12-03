@@ -403,7 +403,7 @@
 //! be used to construct the complex behavior applications need.
 mod belongs_to;
 
-use std::hash::Hash;
+use core::hash::Hash;
 
 use crate::query_source::Table;
 

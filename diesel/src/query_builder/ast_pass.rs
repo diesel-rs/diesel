@@ -1,10 +1,11 @@
-use std::fmt;
-
 use crate::backend::Backend;
 use crate::query_builder::{BindCollector, MoveableBindCollector, QueryBuilder};
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
+use alloc::boxed::Box;
+use alloc::fmt;
+use alloc::vec::Vec;
 
 #[allow(missing_debug_implementations)]
 /// The primary type used when walking a Diesel AST during query execution.

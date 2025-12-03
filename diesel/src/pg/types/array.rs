@@ -1,5 +1,5 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use std::fmt;
+use core::fmt;
 use std::io::Write;
 
 use crate::deserialize::{self, FromSql};

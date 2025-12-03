@@ -95,11 +95,14 @@
 //! nanoseconds on an operation that will take microseconds or even
 //! milliseconds.
 
-use std::any::TypeId;
-use std::borrow::Cow;
-use std::collections::hash_map::Entry;
-use std::hash::Hash;
-use std::ops::{Deref, DerefMut};
+use crate::util::std_compat::Entry;
+use alloc::borrow::Cow;
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::any::TypeId;
+use core::hash::Hash;
+use core::ops::{Deref, DerefMut};
 
 use strategy::{
     LookupStatementResult, StatementCacheStrategy, WithCacheStrategy, WithoutCacheStrategy,

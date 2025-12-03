@@ -3,7 +3,7 @@ use crate::backend::Backend;
 use crate::pg::value::TypeOidLookup;
 use crate::pg::{Pg, PgValue};
 use crate::row::*;
-use std::rc::Rc;
+use alloc::rc::Rc;
 
 #[derive(Clone)]
 #[allow(missing_debug_implementations)]
@@ -45,7 +45,7 @@ impl<'a> Row<'a, Pg> for PgRow {
         })
     }
 
-    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
+    fn partial_row(&self, range: core::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
         PartialRow::new(self, range)
     }
 }
@@ -86,7 +86,7 @@ impl<'a> Field<'a, Pg> for PgField<'a> {
 }
 
 impl TypeOidLookup for PgField<'_> {
-    fn lookup(&self) -> std::num::NonZeroU32 {
+    fn lookup(&self) -> core::num::NonZeroU32 {
         self.db_result.column_type(self.col_idx)
     }
 }

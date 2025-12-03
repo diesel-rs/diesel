@@ -8,6 +8,7 @@ use super::{
 };
 use crate::expression::Expression;
 use crate::Table;
+use alloc::string::String;
 
 /// Creates an `UPDATE` statement.
 ///

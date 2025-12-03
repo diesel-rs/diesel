@@ -19,6 +19,7 @@ use crate::helper_types::*;
 use crate::query_builder::locking_clause as lock;
 use crate::query_source::{joins, QueryRelation};
 use crate::result::QueryResult;
+use alloc::vec::Vec;
 
 mod belonging_to_dsl;
 #[doc(hidden)]

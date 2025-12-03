@@ -5,7 +5,7 @@ use crate::query_source::aliasing::{AliasSource, FieldAliasMapper};
 use crate::result::QueryResult;
 use crate::{query_builder, query_source, sql_types};
 
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 pub(crate) mod private {
     use super::*;

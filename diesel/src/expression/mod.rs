@@ -127,6 +127,8 @@ pub use self::sql_literal::{SqlLiteral, UncheckedBind};
 use crate::backend::Backend;
 use crate::dsl::{AsExprOf, AsSelect};
 use crate::sql_types::{HasSqlType, SingleValue, SqlType};
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 /// Represents a typed fragment of SQL.
 ///
@@ -148,6 +150,7 @@ pub mod expression_types {
     use super::{QueryMetadata, TypedExpressionType};
     use crate::backend::Backend;
     use crate::sql_types::SingleValue;
+    use alloc::vec::Vec;
 
     /// Query nodes with this expression type do not have a statically at compile
     /// time known expression type.
