@@ -12,7 +12,7 @@ use crate::sqlite::expression::expression_methods::TextOrNullableText;
 use crate::sqlite::expression::expression_methods::TextOrNullableTextOrBinaryOrNullableBinary;
 use crate::sqlite::expression::functions::helper::CombinedNullableValue;
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 #[declare_sql_function(generate_return_type_helpers = true)]
 #[backends(crate::sqlite::Sqlite)]
 extern "SQL" {
@@ -155,7 +155,7 @@ extern "SQL" {
     /// #     Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_array_length<
         J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Integer>,
     >(
@@ -233,7 +233,7 @@ extern "SQL" {
     /// # }
     /// ```
     #[sql_name = "json_array_length"]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_array_length_with_path<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
         j: J,
         path: Text,
@@ -326,7 +326,7 @@ extern "SQL" {
     /// #     Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_error_position<
         X: TextOrNullableTextOrBinaryOrNullableBinary + MaybeNullableValue<Integer>,
     >(
@@ -660,7 +660,7 @@ extern "SQL" {
     /// # }
     /// ```
     #[sql_name = "json_valid"]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_valid<J: JsonOrNullableJson + MaybeNullableValue<Bool>>(j: J) -> J::Out;
 
     /// The json_valid(X,Y) function returns 1 if the argument X is well-formed JSON, or returns 0 if X is not well-formed.
@@ -736,7 +736,7 @@ extern "SQL" {
     /// # }
     /// ```
     #[sql_name = "json_valid"]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_valid_with_flags<
         X: TextOrNullableTextOrBinaryOrNullableBinary + SingleValue + MaybeNullableValue<Bool>,
     >(
@@ -787,7 +787,7 @@ extern "SQL" {
     /// # }
     /// ```
     #[sql_name = "json_type"]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_type<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Text>>(
         j: J,
     ) -> J::Out;
@@ -856,7 +856,7 @@ extern "SQL" {
     /// # }
     /// ```
     #[sql_name = "json_type"]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_type_with_path<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
         j: J,
         path: Text,
@@ -914,7 +914,7 @@ extern "SQL" {
     /// # }
     /// ```
     #[sql_name = "json_quote"]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_quote<J: SqlType + SingleValue>(j: J) -> Json;
 
     /// The `json_group_array(X)` function is an aggregate SQL function that returns a JSON array comprised of
@@ -992,7 +992,7 @@ extern "SQL" {
     /// # See also
     /// - [`jsonb_group_array`](jsonb_group_array()) will return data in JSONB format instead of JSON.
     /// - [`json_group_object`](json_group_object()) will return JSON object instead of array.
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[aggregate]
     fn json_group_array<E: SqlType + SingleValue>(elements: E) -> Json;
 
@@ -1072,7 +1072,7 @@ extern "SQL" {
     /// # See also
     /// - [`json_group_array`](json_group_array()) will return data in JSON format instead of JSONB.
     /// - [`jsonb_group_object`](jsonb_group_object()) will return JSONB object instead of array.
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[aggregate]
     fn jsonb_group_array<E: SqlType + SingleValue>(elements: E) -> Jsonb;
 
@@ -1130,7 +1130,7 @@ extern "SQL" {
     /// # Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[variadic(2)]
     fn json_object<K: NotBlob<IsNull = is_nullable::NotNull>, V: NotBlob>(key: K, value: V)
     -> Json;
@@ -1176,7 +1176,7 @@ extern "SQL" {
     /// # Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[variadic(2)]
     fn jsonb_object<K: NotBlob<IsNull = is_nullable::NotNull>, V: NotBlob>(
         key: K,
@@ -1266,7 +1266,7 @@ extern "SQL" {
     /// # See also
     /// - [`jsonb_group_object`](jsonb_group_object()) will return data in JSONB format instead of JSON.
     /// - [`json_group_array`](json_group_array()) will return JSON array instead of object.
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[aggregate]
     fn json_group_object<
         N: SqlType<IsNull = is_nullable::NotNull> + SingleValue,
@@ -1359,7 +1359,7 @@ extern "SQL" {
     /// # See also
     /// - [`json_group_object`](jsonb_group_array()) will return data in JSON format instead of JSONB.
     /// - [`jsonb_group_array`](jsonb_group_array()) will return JSONB array instead of object.
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[aggregate]
     fn jsonb_group_object<
         N: SqlType<IsNull = is_nullable::NotNull> + SingleValue,
@@ -1413,7 +1413,7 @@ extern "SQL" {
     /// # Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[variadic(1)]
     fn json_array<V: NotBlob>(value: V) -> Json;
 
@@ -1465,7 +1465,7 @@ extern "SQL" {
     /// # Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[variadic(1)]
     fn jsonb_array<V: NotBlob>(value: V) -> Jsonb;
 
@@ -1534,7 +1534,7 @@ extern "SQL" {
     /// # Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[variadic(1)]
     fn json_remove<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
         json: J,
@@ -1608,7 +1608,7 @@ extern "SQL" {
     /// # Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[variadic(1)]
     fn jsonb_remove<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
         json: J,
@@ -1688,7 +1688,7 @@ extern "SQL" {
     /// #     Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_patch<
         T: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue,
         P: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue + CombinedNullableValue<T, Json>,
@@ -1738,7 +1738,7 @@ extern "SQL" {
     /// #     Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn jsonb_patch<
         T: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue,
         P: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue + CombinedNullableValue<T, Jsonb>,

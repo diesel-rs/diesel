@@ -1,7 +1,7 @@
 use crate::backend::Backend;
-use std::collections::HashMap;
-use std::collections::hash_map::Entry;
-use std::hash::Hash;
+use crate::util::std_compat::Entry;
+use crate::util::std_compat::HashMap;
+use core::hash::Hash;
 
 use super::{CacheSize, StatementCacheKey};
 
@@ -342,7 +342,7 @@ mod tests_pg {
 }
 
 #[cfg(test)]
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 mod tests_sqlite {
 
     use crate::connection::CacheSize;

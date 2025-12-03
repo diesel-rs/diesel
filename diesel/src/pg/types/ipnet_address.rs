@@ -1,8 +1,8 @@
 extern crate libc;
 
+use core::net::{Ipv4Addr, Ipv6Addr};
 use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 use std::io::prelude::*;
-use std::net::{Ipv4Addr, Ipv6Addr};
 
 use crate::deserialize::{self, FromSql, FromSqlRow};
 use crate::pg::{Pg, PgValue};

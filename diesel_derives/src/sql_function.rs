@@ -476,7 +476,7 @@ fn expand_nonvariadic(
         #numeric_derive
         pub struct #fn_name #ty_generics {
             #(pub(in super) #args_iter,)*
-            #(pub(in super) #type_args: ::std::marker::PhantomData<#type_args>,)*
+            #(pub(in super) #type_args: ::core::marker::PhantomData<#type_args>,)*
         }
 
         #[doc = #helper_type_doc]
@@ -674,7 +674,7 @@ fn expand_nonvariadic(
         {
             #internals_module_name::#fn_name {
                 #(#arg_struct_assign,)*
-                #(#type_args: ::std::marker::PhantomData,)*
+                #(#type_args: ::core::marker::PhantomData,)*
             }
         }
 
@@ -765,7 +765,7 @@ fn generate_tokens_for_non_aggregate_functions(
                 f: F,
             ) -> QueryResult<()>
             where
-                F: Fn(#(#arg_name,)*) -> Ret + std::panic::UnwindSafe + Send + 'static,
+                F: Fn(#(#arg_name,)*) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
                 (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
                     StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
                 Ret: ToSql<#return_type, Sqlite>,
@@ -791,7 +791,7 @@ fn generate_tokens_for_non_aggregate_functions(
                 mut f: F,
             ) -> QueryResult<()>
             where
-                F: FnMut(#(#arg_name,)*) -> Ret + std::panic::UnwindSafe + Send + 'static,
+                F: FnMut(#(#arg_name,)*) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
                 (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
                     StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
                 Ret: ToSql<#return_type, Sqlite>,
@@ -825,7 +825,7 @@ fn generate_tokens_for_non_aggregate_functions(
                 f: F,
             ) -> QueryResult<()>
             where
-                F: Fn() -> Ret + std::panic::UnwindSafe + Send + 'static,
+                F: Fn() -> Ret + ::core::panic::UnwindSafe + Send + 'static,
                 Ret: ToSql<#return_type, Sqlite>,
             {
                 conn.register_noarg_sql_function::<#return_type, _, _>(
@@ -849,7 +849,7 @@ fn generate_tokens_for_non_aggregate_functions(
                 mut f: F,
             ) -> QueryResult<()>
             where
-                F: FnMut() -> Ret + std::panic::UnwindSafe + Send + 'static,
+                F: FnMut() -> Ret + ::core::panic::UnwindSafe + Send + 'static,
                 Ret: ToSql<#return_type, Sqlite>,
             {
                 conn.register_noarg_sql_function::<#return_type, _, _>(
@@ -918,12 +918,12 @@ fn generate_tokens_for_aggregate_functions(
                         A: SqliteAggregateFunction<(#(#arg_name,)*)>
                             + Send
                             + 'static
-                            + ::std::panic::UnwindSafe
-                            + ::std::panic::RefUnwindSafe,
+                            + ::core::panic::UnwindSafe
+                            + ::core::panic::RefUnwindSafe,
                         A::Output: ToSql<#return_type, Sqlite>,
                         (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
                             StaticallySizedRow<(#(#arg_type,)*), Sqlite> +
-                            ::std::panic::UnwindSafe,
+                            ::core::panic::UnwindSafe,
                     {
                         conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name)
                     }
@@ -949,12 +949,12 @@ fn generate_tokens_for_aggregate_functions(
                         A: SqliteAggregateFunction<#arg_name>
                             + Send
                             + 'static
-                            + std::panic::UnwindSafe
-                            + std::panic::RefUnwindSafe,
+                            + ::core::panic::UnwindSafe
+                            + ::core::panic::RefUnwindSafe,
                         A::Output: ToSql<#return_type, Sqlite>,
                         #arg_name: FromSqlRow<#arg_type, Sqlite> +
                             StaticallySizedRow<#arg_type, Sqlite> +
-                            ::std::panic::UnwindSafe,
+                            ::core::panic::UnwindSafe,
                         {
                             conn.register_aggregate_function::<#arg_type, #return_type, _, _, A>(#sql_name)
                         }

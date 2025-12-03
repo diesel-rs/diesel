@@ -23,9 +23,9 @@ use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::ConnectionError::CouldntSetupConfiguration;
 use crate::result::*;
-use std::ffi::CString;
-use std::fmt::Debug;
-use std::os::raw as libc;
+use alloc::ffi::CString;
+use core::ffi as libc;
+use core::fmt::Debug;
 
 use super::query_builder::copy::{CopyFromExpression, CopyTarget, CopyToCommand};
 
@@ -399,12 +399,12 @@ impl crate::r2d2::R2D2Connection for PgConnection {
 impl MultiConnectionHelper for PgConnection {
     fn to_any<'a>(
         lookup: &mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup,
-    ) -> &mut (dyn std::any::Any + 'a) {
+    ) -> &mut (dyn core::any::Any + 'a) {
         lookup.as_any()
     }
 
     fn from_any(
-        lookup: &mut dyn std::any::Any,
+        lookup: &mut dyn core::any::Any,
     ) -> Option<&mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup> {
         lookup
             .downcast_mut::<Self>()
@@ -444,7 +444,7 @@ impl PgConnection {
     where
         S: CopyFromExpression<T>,
     {
-        let query = CopyFromWrapper(std::cell::RefCell::new(InternalCopyFromQuery::new(target)));
+        let query = CopyFromWrapper(core::cell::RefCell::new(InternalCopyFromQuery::new(target)));
         let res =
             self.with_prepared_query(Box::new(query), false, &mut |stmt, binds, conn, source| {
                 fn inner_copy_in<S, T>(
@@ -651,7 +651,7 @@ impl PgConnection {
     /// ```
     pub fn notifications_iter(&mut self) -> impl Iterator<Item = QueryResult<PgNotification>> + '_ {
         let conn = &self.connection_and_transaction_manager.raw_connection;
-        std::iter::from_fn(move || conn.pq_notifies().transpose())
+        core::iter::from_fn(move || conn.pq_notifies().transpose())
     }
 }
 
@@ -717,7 +717,7 @@ mod private {
     pub trait QueryFragmentHelper<E>:
         crate::connection::statement_cache::QueryFragmentForCachedStatement<crate::pg::Pg>
     {
-        fn query_id(&self) -> Option<std::any::TypeId>;
+        fn query_id(&self) -> Option<core::any::TypeId>;
 
         fn instrumentation(
             &self,
@@ -740,7 +740,7 @@ mod private {
     where
         T: QueryFragment<crate::pg::Pg> + QueryId,
     {
-        fn query_id(&self) -> Option<std::any::TypeId> {
+        fn query_id(&self) -> Option<core::any::TypeId> {
             <T as QueryId>::query_id()
         }
 
@@ -768,7 +768,7 @@ mod private {
     // This wrapper exists as we need to have custom behavior for copy from
     // statements (fn write_copy_from is relevant)
     pub(super) struct CopyFromWrapper<S, T>(
-        pub(super) std::cell::RefCell<InternalCopyFromQuery<S, T>>,
+        pub(super) core::cell::RefCell<InternalCopyFromQuery<S, T>>,
     );
 
     impl<S, T> crate::connection::statement_cache::QueryFragmentForCachedStatement<Pg>
@@ -792,7 +792,7 @@ mod private {
         InternalCopyFromQuery<S, T>: QueryFragmentHelper<crate::result::Error>,
         Self: crate::connection::statement_cache::QueryFragmentForCachedStatement<Pg>,
     {
-        fn query_id(&self) -> Option<std::any::TypeId> {
+        fn query_id(&self) -> Option<core::any::TypeId> {
             self.0.borrow().query_id()
         }
 

@@ -13,19 +13,19 @@ pub trait ExpressionMethods: Expression + Sized {
     /// so `eq(None)` will never match. Use [`is_null`](ExpressionMethods::is_null()) instead.
     ///
     #[cfg_attr(
-        any(feature = "sqlite", feature = "postgres"),
+        any(feature = "__sqlite-shared", feature = "postgres"),
         doc = "To get behavior that is more like the Rust `=` operator you can also use the"
     )]
     #[cfg_attr(
-        feature = "sqlite",
+        feature = "__sqlite-shared",
         doc = "sqlite-specific [`is`](crate::SqliteExpressionMethods::is())"
     )]
-    #[cfg_attr(all(feature = "sqlite", feature = "postgres"), doc = "or the")]
+    #[cfg_attr(all(feature = "__sqlite-shared", feature = "postgres"), doc = "or the")]
     #[cfg_attr(
         feature = "postgres",
         doc = "postgres-specific [`is_not_distinct_from`](crate::PgExpressionMethods::is_not_distinct_from())"
     )]
-    #[cfg_attr(any(feature = "sqlite", feature = "postgres"), doc = ".")]
+    #[cfg_attr(any(feature = "__sqlite-shared", feature = "postgres"), doc = ".")]
     ///
     /// # Example
     ///

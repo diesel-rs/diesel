@@ -1,9 +1,9 @@
 //! Types and traits related to serializing values for the database
 
-use std::error::Error;
-use std::fmt;
-use std::io::{self, Write};
-use std::result;
+use alloc::boxed::Box;
+use alloc::fmt;
+use core::error::Error;
+use core::result;
 
 use crate::backend::Backend;
 use crate::query_builder::BindCollector;
@@ -90,23 +90,24 @@ impl<'a, DB: Backend> Output<'a, 'static, DB> {
     }
 }
 
-impl<DB> Write for Output<'_, '_, DB>
+#[cfg(feature = "std")]
+impl<DB> std::io::Write for Output<'_, '_, DB>
 where
     for<'c> DB: Backend<BindCollector<'c> = RawBytesBindCollector<DB>>,
 {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         self.out.0.write(buf)
     }
 
-    fn flush(&mut self) -> io::Result<()> {
+    fn flush(&mut self) -> std::io::Result<()> {
         self.out.0.flush()
     }
 
-    fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
+    fn write_all(&mut self, buf: &[u8]) -> std::io::Result<()> {
         self.out.0.write_all(buf)
     }
 
-    fn write_fmt(&mut self, fmt: fmt::Arguments<'_>) -> io::Result<()> {
+    fn write_fmt(&mut self, fmt: fmt::Arguments<'_>) -> std::io::Result<()> {
         self.out.0.write_fmt(fmt)
     }
 }
@@ -304,7 +305,7 @@ where
 ///     B = 2,
 /// }
 ///
-/// # #[cfg(feature = "sqlite")]
+/// # #[cfg(feature = "__sqlite-shared")]
 /// impl ToSql<Integer, diesel::sqlite::Sqlite> for MyEnum
 /// where
 ///     i32: ToSql<Integer, diesel::sqlite::Sqlite>,

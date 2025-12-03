@@ -1,15 +1,16 @@
-use std::error::Error;
-use std::io::Write;
-
 use crate::backend::Backend;
 use crate::deserialize::{self, FromSql, Queryable};
+#[cfg(feature = "std")]
 use crate::query_builder::bind_collector::RawBytesBindCollector;
-use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::serialize::{self, Output, ToSql};
 use crate::sql_types::{
     self, BigInt, Binary, Bool, Double, Float, Integer, SingleValue, SmallInt, Text,
 };
-use std::borrow::Cow;
-use std::fmt;
+use alloc::borrow::Cow;
+use alloc::borrow::ToOwned;
+use alloc::fmt;
+use alloc::string::String;
+use alloc::vec::Vec;
 
 #[allow(dead_code)]
 mod foreign_impls {
@@ -90,18 +91,18 @@ mod foreign_impls {
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
     #[diesel(sql_type = Text)]
-    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Date))]
-    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Time))]
-    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Timestamp))]
+    #[cfg_attr(feature = "__sqlite-shared", diesel(sql_type = crate::sql_types::Date))]
+    #[cfg_attr(feature = "__sqlite-shared", diesel(sql_type = crate::sql_types::Time))]
+    #[cfg_attr(feature = "__sqlite-shared", diesel(sql_type = crate::sql_types::Timestamp))]
     #[cfg_attr(feature = "postgres_backend", diesel(sql_type = crate::sql_types::Citext))]
     struct StringProxy(String);
 
     #[derive(AsExpression)]
     #[diesel(foreign_derive, not_sized)]
     #[diesel(sql_type = Text)]
-    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Date))]
-    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Time))]
-    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Timestamp))]
+    #[cfg_attr(feature = "__sqlite-shared", diesel(sql_type = crate::sql_types::Date))]
+    #[cfg_attr(feature = "__sqlite-shared", diesel(sql_type = crate::sql_types::Time))]
+    #[cfg_attr(feature = "__sqlite-shared", diesel(sql_type = crate::sql_types::Timestamp))]
     #[cfg_attr(feature = "postgres_backend", diesel(sql_type = crate::sql_types::Citext))]
     struct StrProxy(str);
 
@@ -140,14 +141,18 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<DB> ToSql<sql_types::Text, DB> for str
 where
     for<'a> DB: Backend<BindCollector<'a> = RawBytesBindCollector<DB>>,
 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        use alloc::boxed::Box;
+        use std::io::Write;
+
         out.write_all(self.as_bytes())
-            .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+            .map(|_| crate::serialize::IsNull::No)
+            .map_err(|e| Box::new(e) as Box<dyn core::error::Error + Send + Sync>)
     }
 }
 
@@ -195,14 +200,18 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<DB> ToSql<sql_types::Binary, DB> for [u8]
 where
     for<'a> DB: Backend<BindCollector<'a> = RawBytesBindCollector<DB>>,
 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        use alloc::boxed::Box;
+        use std::io::Write;
+
         out.write_all(self)
-            .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+            .map(|_| crate::serialize::IsNull::No)
+            .map_err(|e| Box::new(e) as Box<dyn core::error::Error + Send + Sync>)
     }
 }
 

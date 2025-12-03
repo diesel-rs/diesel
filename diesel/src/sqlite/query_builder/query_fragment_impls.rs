@@ -10,7 +10,7 @@ use crate::query_builder::where_clause::WhereClause;
 
 // The corresponding impl for`NoWhereClause` is missing because of
 // https://www.sqlite.org/lang_UPSERT.html (Parsing Ambiguity)
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 impl<F, S, D, W, O, LOf, G, H, LC> QueryFragment<crate::sqlite::Sqlite>
     for OnConflictSelectWrapper<SelectStatement<F, S, D, WhereClause<W>, O, LOf, G, H, LC>>
 where
@@ -22,7 +22,7 @@ where
     }
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 impl<'a, ST, QS, GB> QueryFragment<crate::sqlite::Sqlite>
     for OnConflictSelectWrapper<BoxedSelectStatement<'a, ST, QS, crate::sqlite::Sqlite, GB>>
 where

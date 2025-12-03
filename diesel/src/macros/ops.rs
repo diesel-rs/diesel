@@ -6,7 +6,7 @@
 /// orphan rules.
 macro_rules! operator_allowed {
     ($tpe:ty, $op:ident, $fn_name:ident) => {
-        impl<Rhs> ::std::ops::$op<Rhs> for $tpe
+        impl<Rhs> ::core::ops::$op<Rhs> for $tpe
         where
             Rhs: $crate::expression::AsExpression<
                     <<$tpe as $crate::Expression>::SqlType as $crate::sql_types::ops::$op>::Rhs,

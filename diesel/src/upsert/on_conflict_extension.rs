@@ -34,7 +34,7 @@ where
     /// #     let conn = &mut establish_connection();
     /// #     #[cfg(feature = "postgres")]
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
-    /// #     #[cfg(any(feature = "sqlite", feature = "mysql"))]
+    /// #     #[cfg(any(feature = "__sqlite-shared", feature = "mysql"))]
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
     /// let user = User {
     ///     id: 1,
@@ -75,7 +75,7 @@ where
     /// #     let conn = &mut establish_connection();
     /// #     #[cfg(feature = "postgres")]
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
-    /// #     #[cfg(any(feature = "mysql", feature = "sqlite"))]
+    /// #     #[cfg(any(feature = "mysql", feature = "__sqlite-shared"))]
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
     /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
     /// let user = User {
@@ -138,15 +138,15 @@ where
     /// # fn main() {
     /// #    run_test().unwrap()
     /// # }
-    /// # #[cfg(any(feature = "postgres", feature = "sqlite"))]
+    /// # #[cfg(any(feature = "postgres", feature = "__sqlite-shared"))]
     /// # fn run_test() -> diesel::QueryResult<()> {
     /// #     use self::users::dsl::*;
     /// use diesel::upsert::*;
     ///
     /// #     let conn = &mut establish_connection();
-    /// #     #[cfg(any(feature = "sqlite", feature = "postgres"))]
+    /// #     #[cfg(any(feature = "__sqlite-shared", feature = "postgres"))]
     /// #     diesel::sql_query("DROP TABLE users").execute(conn).unwrap();
-    /// #     #[cfg(any(feature = "sqlite", feature = "postgres"))]
+    /// #     #[cfg(any(feature = "__sqlite-shared", feature = "postgres"))]
     /// #     diesel::sql_query("CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT)").execute(conn).unwrap();
     /// diesel::sql_query("CREATE UNIQUE INDEX users_name ON users (name)").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Sean" };
@@ -198,7 +198,7 @@ where
     /// #     hair_color: &'a str,
     /// # }
     /// #
-    /// # #[cfg(any(feature = "sqlite", feature = "postgres"))]
+    /// # #[cfg(any(feature = "__sqlite-shared", feature = "postgres"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// use diesel::upsert::*;
@@ -389,7 +389,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// #     let conn = &mut establish_connection();
     /// #     #[cfg(feature = "postgres")]
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
-    /// #     #[cfg(feature = "sqlite")]
+    /// #     #[cfg(feature = "__sqlite-shared")]
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
     /// let user = User {
     ///     id: 1,
@@ -411,7 +411,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     ///     .do_update()
     ///     .set(name.eq("I DONT KNOW ANYMORE"))
     ///     .execute(conn);
-    /// # #[cfg(any(feature = "sqlite", feature = "postgres"))]
+    /// # #[cfg(any(feature = "__sqlite-shared", feature = "postgres"))]
     /// assert_eq!(Ok(1), insert_count);
     /// # #[cfg(feature = "mysql")]
     /// assert_eq!(Ok(2), insert_count);
@@ -481,7 +481,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// #     let conn = &mut establish_connection();
     /// #     #[cfg(feature = "postgres")]
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
-    /// #     #[cfg(feature = "sqlite")]
+    /// #     #[cfg(feature = "__sqlite-shared")]
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
     /// let user = User {
     ///     id: 1,
@@ -557,7 +557,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
-    /// # #[cfg(any(feature = "sqlite", feature = "postgres"))]
+    /// # #[cfg(any(feature = "__sqlite-shared", feature = "postgres"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// use diesel::upsert::excluded;
@@ -619,7 +619,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// #     let conn = &mut establish_connection();
     /// #     #[cfg(feature = "postgres")]
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
-    /// #     #[cfg(feature = "sqlite")]
+    /// #     #[cfg(feature = "__sqlite-shared")]
     /// #     diesel::delete(users).execute(conn).unwrap();
     /// let user = User {
     ///     id: 1,

@@ -30,7 +30,7 @@ path = "../diesel"
 default-features = false
 
 [features]
-default = []
+default = ["diesel/std"]
 sqlite = []
 postgres = []
 mysql = []

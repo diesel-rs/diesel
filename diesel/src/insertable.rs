@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use crate::backend::{Backend, DieselReserveSpecialization, SqlDialect, sql_dialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::{AppearsOnTable, Expression};
@@ -9,6 +7,9 @@ use crate::query_builder::{
 };
 use crate::query_source::{Column, Table};
 use crate::result::QueryResult;
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+use core::marker::PhantomData;
 
 /// Represents that a structure can be used to insert a new row into the
 /// database. This is automatically implemented for `&[T]` and `&Vec<T>` for
@@ -206,7 +207,7 @@ where
     }
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 impl<Col, Expr> InsertValues<crate::sqlite::Sqlite, Col::Table>
     for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
@@ -222,7 +223,7 @@ where
     }
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 impl<Col, Expr>
     QueryFragment<
         crate::sqlite::Sqlite,
@@ -322,7 +323,7 @@ mod private {
     #[allow(missing_debug_implementations)]
     pub struct InsertableOptionHelper<T, V>(
         pub(crate) Option<T>,
-        pub(crate) std::marker::PhantomData<V>,
+        pub(crate) core::marker::PhantomData<V>,
     );
 }
 

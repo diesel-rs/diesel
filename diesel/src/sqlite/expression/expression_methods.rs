@@ -13,7 +13,7 @@ use crate::expression_methods::json_expression_methods::{AnyJsonExpressionMethod
 use crate::sql_types::SqlType;
 
 /// Sqlite specific methods which are present on all expressions.
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 pub trait SqliteExpressionMethods: Expression + Sized {
     /// Creates a Sqlite `IS` expression.
     ///
@@ -90,7 +90,7 @@ pub trait SqliteExpressionMethods: Expression + Sized {
 impl<T: Expression> SqliteExpressionMethods for T {}
 
 /// SQLite specific methods present on JSON and JSONB expressions.
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 pub trait SqliteAnyJsonExpressionMethods: AnyJsonExpressionMethods + Expression + Sized {
     /// Creates a SQLite `->` expression.
     ///

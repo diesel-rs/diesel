@@ -407,7 +407,7 @@ mod mysql {
     impl SupportsCombinationClause<Union, All> for Mysql {}
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 mod sqlite {
     use super::*;
     use crate::sqlite::Sqlite;

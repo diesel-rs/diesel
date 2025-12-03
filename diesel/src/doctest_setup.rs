@@ -315,7 +315,7 @@ mod schema {
         }
     }
 
-    #[cfg(not(feature = "sqlite"))]
+    #[cfg(not(feature = "__sqlite-shared"))]
     table! {
         brands {
             id -> Integer,

@@ -1,13 +1,15 @@
 #![allow(dead_code)]
 
-use crate::deserialize::FromSqlRow;
-use crate::expression::AsExpression;
-use std::time::SystemTime;
+#[cfg(feature = "std")]
+mod std {
+    use crate::deserialize::FromSqlRow;
+    use crate::expression::AsExpression;
 
-#[derive(AsExpression, FromSqlRow)]
-#[diesel(foreign_derive)]
-#[diesel(sql_type = crate::sql_types::Timestamp)]
-struct SystemTimeProxy(SystemTime);
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = crate::sql_types::Timestamp)]
+    struct SystemTimeProxy(std::time::SystemTime);
+}
 
 #[cfg(feature = "chrono")]
 mod chrono {
@@ -40,14 +42,14 @@ mod chrono {
     #[derive(FromSqlRow)]
     #[diesel(foreign_derive)]
     #[cfg_attr(
-        any(feature = "postgres_backend", feature = "sqlite"),
+        any(feature = "postgres_backend", feature = "__sqlite-shared"),
         derive(AsExpression)
     )]
     #[cfg_attr(
         feature = "postgres_backend",
         diesel(sql_type = crate::sql_types::Timestamptz)
     )]
-    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::TimestamptzSqlite))]
+    #[cfg_attr(feature = "__sqlite-shared", diesel(sql_type = crate::sql_types::TimestamptzSqlite))]
     struct DateTimeProxy<Tz: TimeZone>(DateTime<Tz>);
 
     #[derive(AsExpression, FromSqlRow)]
@@ -89,7 +91,7 @@ mod time {
     #[cfg_attr(
         any(
             feature = "postgres_backend",
-            feature = "sqlite",
+            feature = "__sqlite-shared",
             feature = "mysql_backend"
         ),
         derive(AsExpression)
@@ -98,7 +100,7 @@ mod time {
         feature = "postgres_backend",
         diesel(sql_type = crate::sql_types::Timestamptz)
     )]
-    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::TimestamptzSqlite))]
+    #[cfg_attr(feature = "__sqlite-shared", diesel(sql_type = crate::sql_types::TimestamptzSqlite))]
     #[cfg_attr(feature = "mysql_backend", diesel(sql_type = crate::sql_types::Datetime))]
     struct DateTimeProxy(OffsetDateTime);
 }

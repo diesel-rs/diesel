@@ -429,7 +429,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn table_with_column_renaming_sqlite() {
         use crate::sqlite::Sqlite;
         let expected_sql = r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE (`foo`.`type` = ?) -- binds: [1]"#;
@@ -473,7 +473,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn table_renaming_sqlite() {
         use crate::sqlite::Sqlite;
         let expected_sql = r#"SELECT `mod`.`id` FROM `mod` -- binds: []"#;

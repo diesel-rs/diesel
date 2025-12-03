@@ -1,5 +1,5 @@
 //! Support for Money values under PostgreSQL.
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use core::ops::{Add, AddAssign, Sub, SubAssign};
 
 use crate::deserialize::{self, FromSql, FromSqlRow};
 use crate::expression::AsExpression;

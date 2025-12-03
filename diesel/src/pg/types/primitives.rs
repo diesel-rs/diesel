@@ -45,7 +45,7 @@ impl ToSql<sql_types::CChar, Pg> for u8 {
 #[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Text, Pg> for *const str {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
-        use std::str;
+        use core::str;
         let string = str::from_utf8(value.as_bytes())?;
         Ok(string as *const _)
     }

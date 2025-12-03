@@ -1,7 +1,3 @@
-use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use std::io::Write;
-use std::ops::Bound;
-
 use crate::deserialize::{self, Defaultable, FromSql};
 use crate::expression::AsExpression;
 use crate::expression::bound::Bound as SqlBound;
@@ -9,6 +5,10 @@ use crate::pg::{Pg, PgTypeMetadata, PgValue};
 use crate::query_builder::bind_collector::ByteWrapper;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::*;
+use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
+use core::ops::Bound;
+use core::ops::RangeBounds;
+use std::io::Write;
 
 // from `SELECT oid, typname FROM pg_catalog.pg_type where typname LIKE '%multirange'`;
 macro_rules! multirange_has_sql_type {
@@ -59,11 +59,11 @@ macro_rules! multirange_as_expressions {
 }
 
 multirange_as_expressions!((Bound<T>, Bound<T>));
-multirange_as_expressions!(std::ops::Range<T>);
-multirange_as_expressions!(std::ops::RangeInclusive<T>);
-multirange_as_expressions!(std::ops::RangeToInclusive<T>);
-multirange_as_expressions!(std::ops::RangeFrom<T>);
-multirange_as_expressions!(std::ops::RangeTo<T>);
+multirange_as_expressions!(core::ops::Range<T>);
+multirange_as_expressions!(core::ops::RangeInclusive<T>);
+multirange_as_expressions!(core::ops::RangeToInclusive<T>);
+multirange_as_expressions!(core::ops::RangeFrom<T>);
+multirange_as_expressions!(core::ops::RangeTo<T>);
 
 #[cfg(feature = "postgres_backend")]
 impl<T, ST> FromSql<Multirange<ST>, Pg> for Vec<(Bound<T>, Bound<T>)>
@@ -129,7 +129,6 @@ where
     }
 }
 
-use std::ops::RangeBounds;
 macro_rules! multirange_std_to_sql {
     ($ty:ty) => {
         #[cfg(feature = "postgres_backend")]
@@ -159,11 +158,11 @@ macro_rules! multirange_std_to_sql {
     };
 }
 
-multirange_std_to_sql!(std::ops::Range<T>);
-multirange_std_to_sql!(std::ops::RangeInclusive<T>);
-multirange_std_to_sql!(std::ops::RangeFrom<T>);
-multirange_std_to_sql!(std::ops::RangeTo<T>);
-multirange_std_to_sql!(std::ops::RangeToInclusive<T>);
+multirange_std_to_sql!(core::ops::Range<T>);
+multirange_std_to_sql!(core::ops::RangeInclusive<T>);
+multirange_std_to_sql!(core::ops::RangeFrom<T>);
+multirange_std_to_sql!(core::ops::RangeTo<T>);
+multirange_std_to_sql!(core::ops::RangeToInclusive<T>);
 
 macro_rules! multirange_to_sql_nullable {
     ($ty:ty) => {
@@ -192,8 +191,8 @@ macro_rules! multirange_to_sql_nullable {
 }
 
 multirange_to_sql_nullable!((Bound<T>, Bound<T>));
-multirange_to_sql_nullable!(std::ops::Range<T>);
-multirange_to_sql_nullable!(std::ops::RangeInclusive<T>);
-multirange_to_sql_nullable!(std::ops::RangeFrom<T>);
-multirange_to_sql_nullable!(std::ops::RangeTo<T>);
-multirange_to_sql_nullable!(std::ops::RangeToInclusive<T>);
+multirange_to_sql_nullable!(core::ops::Range<T>);
+multirange_to_sql_nullable!(core::ops::RangeInclusive<T>);
+multirange_to_sql_nullable!(core::ops::RangeFrom<T>);
+multirange_to_sql_nullable!(core::ops::RangeTo<T>);
+multirange_to_sql_nullable!(core::ops::RangeToInclusive<T>);

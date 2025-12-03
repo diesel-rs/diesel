@@ -3,6 +3,7 @@ use crate::expression::IntoSql;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::{Escape, Like, NotLike};
 use crate::sql_types::VarChar;
+use alloc::string::ToString;
 
 /// Adds the `escape` method to `LIKE` and `NOT LIKE`. This is used to specify
 /// the escape character for the pattern.

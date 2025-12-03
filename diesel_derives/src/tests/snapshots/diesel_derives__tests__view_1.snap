@@ -157,7 +157,7 @@ pub mod view {
         C,
     > for view
     where
-        S: diesel::query_source::AliasSource<Target = Self> + ::std::clone::Clone,
+        S: diesel::query_source::AliasSource<Target = Self> + ::core::clone::Clone,
         C: diesel::query_source::QueryRelationField<QueryRelation = Self>,
     {
         type Out = diesel::query_source::AliasedField<S, C>;
@@ -576,7 +576,7 @@ pub mod view {
                 self.eq(__diesel_internal_rhs)
             }
         }
-        impl<Rhs> ::std::ops::Add<Rhs> for id
+        impl<Rhs> ::core::ops::Add<Rhs> for id
         where
             Rhs: diesel::expression::AsExpression<
                 <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Add>::Rhs,
@@ -590,7 +590,7 @@ pub mod view {
                 )
             }
         }
-        impl<Rhs> ::std::ops::Sub<Rhs> for id
+        impl<Rhs> ::core::ops::Sub<Rhs> for id
         where
             Rhs: diesel::expression::AsExpression<
                 <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Sub>::Rhs,
@@ -604,7 +604,7 @@ pub mod view {
                 )
             }
         }
-        impl<Rhs> ::std::ops::Div<Rhs> for id
+        impl<Rhs> ::core::ops::Div<Rhs> for id
         where
             Rhs: diesel::expression::AsExpression<
                 <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Div>::Rhs,
@@ -618,7 +618,7 @@ pub mod view {
                 )
             }
         }
-        impl<Rhs> ::std::ops::Mul<Rhs> for id
+        impl<Rhs> ::core::ops::Mul<Rhs> for id
         where
             Rhs: diesel::expression::AsExpression<
                 <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Mul>::Rhs,

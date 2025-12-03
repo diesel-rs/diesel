@@ -10,7 +10,7 @@ use crate::sql_types::{Date, Datetime, Time, Timestamp};
 
 use super::{MysqlTime, MysqlTimestampType};
 
-fn to_time(dt: MysqlTime) -> Result<NaiveTime, Box<dyn std::error::Error>> {
+fn to_time(dt: MysqlTime) -> Result<NaiveTime, Box<dyn core::error::Error>> {
     for (name, field) in [
         ("year", dt.year),
         ("month", dt.month),
@@ -35,7 +35,7 @@ fn to_time(dt: MysqlTime) -> Result<NaiveTime, Box<dyn std::error::Error>> {
     )?)
 }
 
-fn to_datetime(dt: MysqlTime) -> Result<OffsetDateTime, Box<dyn std::error::Error>> {
+fn to_datetime(dt: MysqlTime) -> Result<OffsetDateTime, Box<dyn core::error::Error>> {
     let year: i32 = dt.year.try_into()?;
     let month: u8 = dt.month.try_into()?;
     let month: Month = month.try_into()?;

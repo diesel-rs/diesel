@@ -1,9 +1,9 @@
 #![allow(unsafe_code)] // ffi code
 extern crate pq_sys;
 
-use std::ffi::CString;
-use std::os::raw as libc;
-use std::ptr;
+use alloc::ffi::CString;
+use core::ffi as libc;
+use core::ptr;
 
 use super::result::PgResult;
 use super::statement_cache::PrepareForCache;
@@ -41,7 +41,7 @@ impl Statement {
             .iter()
             .map(|data| data.as_ref().map(|d| d.len().try_into()).unwrap_or(Ok(0)))
             .collect::<Result<Vec<_>, _>>()
-            .map_err(|_: std::num::TryFromIntError| {
+            .map_err(|_: core::num::TryFromIntError| {
                 crate::result::Error::SerializationError(
                     "A bind parameter's serialized size is bigger than fits on an i32".into(),
                 )
@@ -50,7 +50,7 @@ impl Statement {
             params_pointer
                 .len()
                 .try_into()
-                .map_err(|_: std::num::TryFromIntError| {
+                .map_err(|_: core::num::TryFromIntError| {
                     crate::result::Error::SerializationError(
                         "There are more than i32::MAX bind parameters".into(),
                     )
@@ -116,7 +116,7 @@ impl Statement {
                 let internal_result =
                     unsafe {
                         let param_count: libc::c_int = param_types.len().try_into().map_err(
-                            |_: std::num::TryFromIntError| {
+                            |_: core::num::TryFromIntError| {
                                 crate::result::Error::SerializationError(
                                     "There are more than i32::MAX bind parameters".into(),
                                 )

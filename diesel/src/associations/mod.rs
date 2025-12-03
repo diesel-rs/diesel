@@ -403,7 +403,7 @@
 //! be used to construct the complex behavior applications need.
 mod belongs_to;
 
-use std::hash::Hash;
+use core::hash::Hash;
 
 use crate::query_source::Table;
 
@@ -440,7 +440,7 @@ impl<T: HasTable> HasTable for Option<T> {
     }
 }
 
-impl<T: HasTable> HasTable for Box<T> {
+impl<T: HasTable> HasTable for alloc::boxed::Box<T> {
     type Table = T::Table;
 
     fn table() -> Self::Table {
@@ -448,7 +448,7 @@ impl<T: HasTable> HasTable for Box<T> {
     }
 }
 
-impl<T: HasTable> HasTable for std::rc::Rc<T> {
+impl<T: HasTable> HasTable for alloc::rc::Rc<T> {
     type Table = T::Table;
 
     fn table() -> Self::Table {
@@ -456,7 +456,7 @@ impl<T: HasTable> HasTable for std::rc::Rc<T> {
     }
 }
 
-impl<T: HasTable> HasTable for std::sync::Arc<T> {
+impl<T: HasTable> HasTable for alloc::sync::Arc<T> {
     type Table = T::Table;
 
     fn table() -> Self::Table {

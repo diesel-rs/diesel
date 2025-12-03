@@ -36,13 +36,13 @@ impl QueryId for Custom {
 /// This collation is binary, case-sensitive, and locale-free.
 /// It is supported by SQLite.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, QueryId)]
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 pub struct Binary;
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 impl Collation for Binary {}
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 impl QueryFragment<crate::sqlite::Sqlite> for Binary {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, crate::sqlite::Sqlite>) -> QueryResult<()> {
         out.push_sql("BINARY");
@@ -74,13 +74,13 @@ impl QueryFragment<crate::pg::Pg> for C {
 /// This collation is ASCII-only case-insensitive.
 /// It is supported by SQLite.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, QueryId)]
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 pub struct NoCase;
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 impl Collation for NoCase {}
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 impl QueryFragment<crate::sqlite::Sqlite> for NoCase {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, crate::sqlite::Sqlite>) -> QueryResult<()> {
         out.push_sql("NOCASE");
@@ -112,13 +112,13 @@ impl QueryFragment<crate::pg::Pg> for Posix {
 /// This collation ignores trailing spaces.
 /// It is supported by SQLite.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, QueryId)]
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 pub struct RTrim;
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 impl Collation for RTrim {}
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 impl QueryFragment<crate::sqlite::Sqlite> for RTrim {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, crate::sqlite::Sqlite>) -> QueryResult<()> {
         out.push_sql("RTRIM");

@@ -20,11 +20,11 @@ use crate::query_builder::*;
 use crate::query_dsl::RunQueryDsl;
 use crate::query_source::{Column, Table};
 use crate::{QuerySource, insertable::*};
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 pub(crate) use self::private::InsertAutoTypeHelper;
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 mod insert_with_default_for_sqlite;
 
 /// The structure returned by [`insert_into`].
@@ -498,7 +498,7 @@ mod private {
     #[derive(Debug, Copy, Clone, QueryId)]
     pub struct InsertOrIgnore;
 
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     impl QueryFragment<crate::sqlite::Sqlite> for InsertOrIgnore {
         fn walk_ast<'b>(
             &'b self,
@@ -524,7 +524,7 @@ mod private {
     #[derive(Debug, Copy, Clone, QueryId)]
     pub struct Replace;
 
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     impl QueryFragment<crate::sqlite::Sqlite> for Replace {
         fn walk_ast<'b>(
             &'b self,
