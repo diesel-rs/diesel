@@ -7,7 +7,7 @@ use crate::sql_types::{self, HasSqlType, TypeMetadata};
     not(any(
         feature = "postgres_backend",
         feature = "mysql_backend",
-        feature = "sqlite",
+        feature = "__sqlite-shared",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )),
     allow(unused_imports)

@@ -1,9 +1,10 @@
-use std::sync::Arc;
-
 use super::sqlite_value::{OwnedSqliteValue, SqliteValue};
 use crate::backend::Backend;
 use crate::row::{Field, PartialRow, Row, RowIndex, RowSealed};
 use crate::sqlite::Sqlite;
+use alloc::string::String;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
 
 #[derive(Debug)]
 pub struct OwnedSqliteRow {
@@ -49,7 +50,7 @@ impl<'a> Row<'a, Sqlite> for OwnedSqliteRow {
         })
     }
 
-    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
+    fn partial_row(&self, range: core::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
         PartialRow::new(self, range)
     }
 }

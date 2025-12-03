@@ -16,7 +16,7 @@ mod bigdecimal {
     use crate::serialize::{self, Output, ToSql};
     use crate::sql_types::Numeric;
 
-    use std::error::Error;
+    use core::error::Error;
 
     /// Iterator over the digits of a big uint in base 10k.
     /// The digits will be returned in little endian order.

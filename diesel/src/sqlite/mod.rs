@@ -50,10 +50,10 @@ pub mod sql_types {
     #[doc(inline)]
     pub use super::types::Timestamptz;
 
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[doc(inline)]
     pub use super::types::JsonValidFlags;
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 pub use self::types::JsonValidFlag;

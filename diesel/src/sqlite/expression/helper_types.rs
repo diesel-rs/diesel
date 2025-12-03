@@ -12,7 +12,7 @@ pub type IsNot<Lhs, Rhs> = Grouped<super::operators::IsNot<Lhs, AsExpr<Rhs, Lhs>
 /// The return type of [`lhs.retrieve_as_object(rhs)`](super::expression_methods::SqliteAnyJsonExpressionMethods::retrieve_as_object)
 ///
 /// Note: SQLite's `->` operator always returns JSON (TEXT representation), not JSONB
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 pub type RetrieveAsObjectSqlite<Lhs, Rhs> = Grouped<
     crate::sqlite::expression::operators::RetrieveAsObjectSqlite<
         Lhs,
