@@ -1577,7 +1577,7 @@ fn table_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream
 /// pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, view, DB>;
 /// ```
 ///
-#[cfg_attr(docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/view.md")))]
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/view.md")))]
 #[proc_macro]
 pub fn view_proc(input: TokenStream) -> TokenStream {
     view_proc_inner(input.into()).into()

@@ -50,7 +50,8 @@ fn write_detail_section(content: String) -> String {
 #[cfg(diesel_docsrs)]
 fn read_snapshot(snapshot_dir: &std::path::Path, file: &str) -> (String, String) {
     let file = snapshot_dir.join(file);
-    let content = std::fs::read_to_string(file).expect("Failed to read snapshot");
+    let content = std::fs::read_to_string(&file)
+        .expect(&format!("Failed to read snapshot: `{}`", file.display()));
     let mut lines = content
         .lines()
         .skip_while(|l| !l.trim().starts_with("input:"));
@@ -147,7 +148,7 @@ fn main() {
                     "With `#[diesel(table_name = crate::schema::users)]`",
                 ),
                 Example::with_heading(
-                    "diesel_derives__tests__as_changeset_change_field_to_type_1.snap",
+                    "diesel_derives__tests__as_changeset_change_field_type_1.snap",
                     "With `#[serialize_as = String]`",
                 ),
                 Example::with_heading(
