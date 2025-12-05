@@ -379,11 +379,11 @@ fn tuples_of_columns_implement_has_table() {
     use diesel::associations::HasTable;
 
     // Composite tuple case
-    let _users: users::table = <(users::id, users::name)>::table();
+    let _users: users::table = <(User, NewUser)>::table();
 
     // Triple element tuple case
-    let _users: users::table = <(users::id, users::name, users::hair_color)>::table();
+    let _users: users::table = <(User, User, NewUser)>::table();
 
     // Single element tuple case
-    let _users: users::table = <(users::id,)>::table();
+    let _users: users::table = <(NewUser,)>::table();
 }

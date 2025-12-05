@@ -446,12 +446,11 @@ impl<T: HasTable> HasTable for &T {
 impl<T> HasTable for (T,)
 where
     T: HasTable,
-    T::Table: Default,
 {
     type Table = T::Table;
 
     fn table() -> Self::Table {
-        Default::default()
+        T::table()
     }
 }
 
@@ -466,12 +465,11 @@ macro_rules! has_table_tuples {
             where
                 _T: HasTable,
                 $($T: HasTable<Table = _T::Table>,)*
-                _T::Table: Default,
             {
                 type Table = _T::Table;
 
                 fn table() -> Self::Table {
-                    _T::Table::default()
+                    _T::table()
                 }
             }
         )+
