@@ -427,11 +427,13 @@ impl BindData {
             // We assert that we don't read more than capacity bytes below as that's
             // the most important invariant to uphold here
             let length = if let Some(length) = known_buffer_size_for_ffi_type(self.tpe) {
-                debug_assert!(length <= self.length.try_into().expect("Usize is at least 32 bit"),
+                debug_assert!(
+                    length <= self.capacity
+                    && <usize as TryFrom<_>>::try_from(self.length).expect("32bit integer fits in a usize")  <= self.capacity,
                     "Libmysqlclient reported a larger size for a fixed size buffer without setting the truncated flag. \n\
                      This is a bug somewhere. Please open an issue with reproduction steps at \
                      https://github.com/diesel-rs/diesel/issues/new \n\
-                     Length: {length}, Capacity: {}, Type: {:?}", self.capacity, self.tpe
+                     Calculated Length: {length}, Buffer Capacity: {}, Reported Length {}, Type: {:?}", self.capacity, self.length, self.tpe
                 );
                 length
             } else {
