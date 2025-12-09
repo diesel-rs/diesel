@@ -375,7 +375,7 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
             pub const all_columns: (#(#column_names,)*) = (#(#column_names,)*);
 
             #[allow(non_camel_case_types)]
-            #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default)]
+            #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
             #[doc = concat!("The actual ", #kind_name, " struct")]
             ///
             /// This is the type which provides the base methods of the query
@@ -552,7 +552,7 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
                 #(#imports_for_column_module)*
 
                 #[allow(non_camel_case_types, dead_code)]
-                #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+                #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, PartialEq, Eq, PartialOrd, Ord, Hash)]
                 #[doc = concat!("Represents `", #kind_name, "_name.*`, which is sometimes needed for")]
                 /// efficient count queries. It cannot be used in place of
                 /// `all_columns`, and has a `SqlType` of `()` to prevent it
@@ -860,7 +860,7 @@ fn expand_column_def(
     quote::quote_spanned! {span=>
         #(#meta)*
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default)]
+        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub struct #column_name;
 
         impl diesel::expression::Expression for #column_name {
