@@ -73,7 +73,7 @@ pub fn bench_loading_associations_sequentially(b: &mut Bencher) {
     b.iter(|| {
         runtime.block_on(async {
             let mut users = Vec::with_capacity(LEN);
-            conn.fetch_many_with_stmt(stmt_hash, (), |record| {
+            conn.execute_stmt_many(stmt_hash, (), |record| {
                 users.push(User {
                     hair_color: record.decode_opt(2).unwrap(),
                     id: record.decode(0).unwrap(),
@@ -95,7 +95,7 @@ pub fn bench_loading_associations_sequentially(b: &mut Bencher) {
             posts_query.push(')');
 
             let mut posts = Vec::with_capacity(LEN);
-            conn.fetch_many_with_stmt(
+            conn.execute_stmt_many(
                 posts_query.as_str(),
                 Wrapper(users.iter().map(|user| user.id)),
                 |record| {
@@ -123,7 +123,7 @@ pub fn bench_loading_associations_sequentially(b: &mut Bencher) {
             comments_query.push(')');
 
             let mut comments = Vec::with_capacity(LEN);
-            conn.fetch_many_with_stmt(
+            conn.execute_stmt_many(
                 comments_query.as_str(),
                 Wrapper(posts.iter().map(|post| post.id)),
                 |record| {
@@ -198,7 +198,7 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
     b.iter(|| {
         runtime.block_on(async {
             let mut _rslt = Vec::with_capacity(size);
-            conn.fetch_many_with_stmt(stmt_hash, ("black",), |record| {
+            conn.execute_stmt_many(stmt_hash, ("black",), |record| {
                 let user = User {
                     id: record.decode(0).unwrap(),
                     name: record.decode(1).unwrap(),
@@ -240,7 +240,7 @@ pub fn bench_trivial_query(b: &mut Bencher, size: usize) {
     b.iter(|| {
         runtime.block_on(async {
             let mut users = Vec::with_capacity(size);
-            conn.fetch_many_with_stmt(stmt_hash, (), |record| {
+            conn.execute_stmt_many(stmt_hash, (), |record| {
                 users.push(User {
                     id: record.decode(0).unwrap(),
                     name: record.decode(1).unwrap(),
@@ -288,12 +288,11 @@ async fn connection() -> LocalExecutor<wtx::Error, ExecutorBuffer, TcpStream> {
     )
     .await
     .unwrap();
-    conn.execute(
+    conn.execute_ignored(
         #[cfg(feature = "postgres")]
         "TRUNCATE TABLE comments CASCADE;TRUNCATE TABLE posts CASCADE;TRUNCATE TABLE users CASCADE",
         #[cfg(feature = "mysql")]
         "SET FOREIGN_KEY_CHECKS = 0;DELETE FROM comments;DELETE FROM posts;DELETE FROM users;SET FOREIGN_KEY_CHECKS = 1;",
-        |_| Ok(()),
     )
     .await
     .unwrap();
@@ -304,7 +303,7 @@ async fn insert_posts<const N: usize>(
     conn: &mut LocalExecutor<wtx::Error, ExecutorBuffer, TcpStream>,
 ) {
     let mut users_ids: Vec<i32> = Vec::with_capacity(N);
-    conn.fetch_many_with_stmt("SELECT id FROM users", (), |record| {
+    conn.execute_stmt_many("SELECT id FROM users", (), |record| {
         users_ids.push(record.decode(0).unwrap());
         Ok(())
     })
@@ -344,12 +343,12 @@ async fn insert_posts<const N: usize>(
         },
     );
 
-    conn.execute_with_stmt(insert_stmt.as_str(), Wrapper(params.into_iter().flatten()))
+    conn.execute_stmt_ignored(insert_stmt.as_str(), Wrapper(params.into_iter().flatten()))
         .await
         .unwrap();
 
     let mut post_ids: Vec<i32> = Vec::with_capacity(N * 10);
-    conn.fetch_many_with_stmt("SELECT id FROM posts", (), |record| {
+    conn.execute_stmt_many("SELECT id FROM posts", (), |record| {
         post_ids.push(record.decode(0).unwrap());
         Ok(())
     })
@@ -383,12 +382,12 @@ async fn insert_posts<const N: usize>(
         },
     );
 
-    conn.execute_with_stmt(insert_stmt.as_str(), Wrapper(params.into_iter().flatten()))
+    conn.execute_stmt_ignored(insert_stmt.as_str(), Wrapper(params.into_iter().flatten()))
         .await
         .unwrap();
 
     let mut count: Vec<i64> = Vec::with_capacity(N * 10);
-    conn.fetch_many_with_stmt("SELECT count(id) FROM comments", (), |record| {
+    conn.execute_stmt_many("SELECT count(id) FROM comments", (), |record| {
         count.push(record.decode(0).unwrap());
         Ok(())
     })
@@ -418,7 +417,7 @@ async fn insert_users<const N: usize>(
         ]
     });
 
-    conn.execute_with_stmt(query.as_str(), Wrapper(params))
+    conn.execute_stmt_ignored(query.as_str(), Wrapper(params))
         .await
         .unwrap();
 }
