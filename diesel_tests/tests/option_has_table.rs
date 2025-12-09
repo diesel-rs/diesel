@@ -1,5 +1,5 @@
-use diesel::prelude::*;
 use diesel::associations::HasTable;
+use diesel::prelude::*;
 
 table! {
     users (id) {

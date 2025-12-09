@@ -46,9 +46,9 @@ mod limit_offset;
 mod macros;
 #[cfg(feature = "postgres")]
 mod only;
-mod option_has_table;
 #[cfg(not(feature = "sqlite"))]
 mod operations;
+mod option_has_table;
 mod order;
 mod perf_details;
 #[cfg(feature = "postgres")]
