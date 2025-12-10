@@ -9,7 +9,9 @@ use diesel::serialize::ToSql;
 use diesel::sql_types::{Text, VarChar};
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fmt::Write as _;
 use std::io::Write;
+use std::time::{Duration, Instant};
 
 use crate::errors::MigrationError;
 
@@ -217,11 +219,36 @@ where
     }
 }
 
+#[cfg(feature = "tracing")]
+#[derive(Clone, Copy)]
+pub struct TracingOutput(TracingOutputLevel);
+
+#[cfg(feature = "tracing")]
+#[derive(Clone, Copy)]
+enum TracingOutputLevel {
+    Info,
+    Debug,
+    Trace,
+}
+
+#[cfg(feature = "tracing")]
+impl TracingOutput {
+    fn write(self, line: String) {
+        // https://github.com/tokio-rs/tracing/issues/2730
+        match self.0 {
+            TracingOutputLevel::Info => tracing::info!("{line}"),
+            TracingOutputLevel::Debug => tracing::debug!("{line}"),
+            TracingOutputLevel::Trace => tracing::trace!("{line}"),
+        }
+    }
+}
+
 /// A migration harness that writes messages
 /// into some output for each applied/reverted migration
 pub struct HarnessWithOutput<'a, C, W> {
     connection: &'a mut C,
     output: RefCell<W>,
+    timed: bool,
 }
 
 impl<'a, C, W> HarnessWithOutput<'a, C, W> {
@@ -235,7 +262,14 @@ impl<'a, C, W> HarnessWithOutput<'a, C, W> {
         Self {
             connection: harness,
             output: RefCell::new(output),
+            timed: false,
         }
+    }
+
+    /// Instead of logging before each migration, log after each migration and include the migration's duration
+    pub fn timed(mut self) -> Self {
+        self.timed = true;
+        self
     }
 }
 
@@ -246,10 +280,45 @@ impl<'a, C> HarnessWithOutput<'a, C, std::io::Stdout> {
         C: MigrationHarness<DB>,
         DB: Backend,
     {
+        Self::new(harness, std::io::stdout())
+    }
+}
+
+#[cfg(feature = "tracing")]
+impl<'a, C> HarnessWithOutput<'a, C, TracingOutput> {
+    fn write_to_tracing(harness: &'a mut C, level: TracingOutputLevel) -> Self {
         Self {
             connection: harness,
-            output: RefCell::new(std::io::stdout()),
+            output: RefCell::new(TracingOutput(level)),
+            timed: false,
         }
+    }
+
+    /// Create a new `HarnessWithOutput` that writes to [`tracing::info`]
+    pub fn write_to_tracing_info<DB>(harness: &'a mut C) -> Self
+    where
+        C: MigrationHarness<DB>,
+        DB: Backend,
+    {
+        Self::write_to_tracing(harness, TracingOutputLevel::Info)
+    }
+
+    /// Create a new `HarnessWithOutput` that writes to [`tracing::debug`]
+    pub fn write_to_tracing_debug<DB>(harness: &'a mut C) -> Self
+    where
+        C: MigrationHarness<DB>,
+        DB: Backend,
+    {
+        Self::write_to_tracing(harness, TracingOutputLevel::Debug)
+    }
+
+    /// Create a new `HarnessWithOutput` that writes to [`tracing::trace`]
+    pub fn write_to_tracing_trace<DB>(harness: &'a mut C) -> Self
+    where
+        C: MigrationHarness<DB>,
+        DB: Backend,
+    {
+        Self::write_to_tracing(harness, TracingOutputLevel::Trace)
     }
 }
 
@@ -263,22 +332,42 @@ where
         &mut self,
         migration: &dyn Migration<DB>,
     ) -> Result<MigrationVersion<'static>> {
-        if migration.name().version() != MigrationVersion::from("00000000000000") {
+        if migration_is_included_in_output(migration) && !self.timed {
             let mut output = self.output.try_borrow_mut()?;
-            writeln!(output, "Running migration {}", migration.name())?;
+            writeln!(output, "{}", message_before_run_migration(migration))?;
         }
-        self.connection.run_migration(migration)
+        let started_at = Instant::now();
+        let result = self.connection.run_migration(migration)?;
+        if migration_is_included_in_output(migration) && self.timed {
+            let mut output = self.output.try_borrow_mut()?;
+            writeln!(
+                output,
+                "{}",
+                message_after_run_migration(migration, started_at)?
+            )?;
+        }
+        Ok(result)
     }
 
     fn revert_migration(
         &mut self,
         migration: &dyn Migration<DB>,
     ) -> Result<MigrationVersion<'static>> {
-        if migration.name().version() != MigrationVersion::from("00000000000000") {
+        if migration_is_included_in_output(migration) && !self.timed {
             let mut output = self.output.try_borrow_mut()?;
-            writeln!(output, "Rolling back migration {}", migration.name())?;
+            writeln!(output, "{}", message_before_revert_migration(migration))?;
         }
-        self.connection.revert_migration(migration)
+        let started_at = Instant::now();
+        let result = self.connection.revert_migration(migration)?;
+        if migration_is_included_in_output(migration) && self.timed {
+            let mut output = self.output.try_borrow_mut()?;
+            writeln!(
+                output,
+                "{}",
+                message_after_revert_migration(migration, started_at)?
+            )?;
+        }
+        Ok(result)
     }
 
     fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>> {
@@ -286,6 +375,149 @@ where
     }
 }
 
+#[cfg(feature = "tracing")]
+impl<C, DB> MigrationHarness<DB> for HarnessWithOutput<'_, C, TracingOutput>
+where
+    C: MigrationHarness<DB>,
+    DB: Backend,
+{
+    fn run_migration(
+        &mut self,
+        migration: &dyn Migration<DB>,
+    ) -> Result<MigrationVersion<'static>> {
+        if migration_is_included_in_output(migration) && !self.timed {
+            let output = self.output.try_borrow()?;
+            output.write(message_before_run_migration(migration));
+        }
+        let started_at = Instant::now();
+        let result = self.connection.run_migration(migration)?;
+        if migration_is_included_in_output(migration) && self.timed {
+            let output = self.output.try_borrow()?;
+            output.write(message_after_run_migration(migration, started_at)?);
+        }
+        Ok(result)
+    }
+
+    fn revert_migration(
+        &mut self,
+        migration: &dyn Migration<DB>,
+    ) -> Result<MigrationVersion<'static>> {
+        if migration_is_included_in_output(migration) && !self.timed {
+            let output = self.output.try_borrow()?;
+            output.write(message_before_revert_migration(migration));
+        }
+        let started_at = Instant::now();
+        let result = self.connection.revert_migration(migration)?;
+        if migration_is_included_in_output(migration) && self.timed {
+            let output = self.output.try_borrow()?;
+            output.write(message_after_revert_migration(migration, started_at)?);
+        }
+        Ok(result)
+    }
+
+    fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>> {
+        self.connection.applied_migrations()
+    }
+}
+
+fn migration_is_included_in_output(migration: &dyn Migration<impl Backend>) -> bool {
+    migration.name().version() != MigrationVersion::from("00000000000000")
+}
+
+fn message_before_run_migration(migration: &dyn Migration<impl Backend>) -> String {
+    format!("Running migration {}", migration.name())
+}
+
+fn message_before_revert_migration(migration: &dyn Migration<impl Backend>) -> String {
+    format!("Rolling back migration {}", migration.name())
+}
+
+fn message_after_run_migration(
+    migration: &dyn Migration<impl Backend>,
+    started_at: Instant,
+) -> Result<String> {
+    // Duration is placed on the left side for alignment
+    Ok(format!(
+        "(Duration: {}) Ran migration {}",
+        display_migration_duration(started_at.elapsed())?,
+        migration.name()
+    ))
+}
+
+fn message_after_revert_migration(
+    migration: &dyn Migration<impl Backend>,
+    started_at: Instant,
+) -> Result<String> {
+    // Duration is placed on the left side for alignment
+    Ok(format!(
+        "(Duration: {}) Rolled back migration {}",
+        display_migration_duration(started_at.elapsed())?,
+        migration.name()
+    ))
+}
+
+fn display_migration_duration(duration: Duration) -> Result<String> {
+    let total_secs = duration.as_secs();
+    let secs = total_secs % 60;
+    let total_mins = total_secs / 60;
+    let mins = total_mins % 60;
+    let total_hours = total_mins / 60;
+
+    let mut result = String::new();
+
+    if total_hours != 0 {
+        write!(&mut result, "{total_hours:>2}h")?;
+    } else {
+        write!(&mut result, "   ")?;
+    }
+
+    if total_hours != 0 {
+        write!(&mut result, "{mins:02}m")?;
+    } else if mins != 0 {
+        write!(&mut result, "{mins:>2}m")?;
+    } else {
+        write!(&mut result, "   ")?;
+    }
+
+    if total_mins != 0 {
+        write!(&mut result, "{secs:02}s")?;
+    } else if secs != 0 {
+        write!(&mut result, "{secs:>2}s")?;
+    } else {
+        write!(&mut result, " {:.0E} s", duration.as_secs_f64())?;
+    }
+
+    Ok(result)
+}
+
 fn setup_database<Conn: MigrationConnection>(conn: &mut Conn) -> QueryResult<usize> {
     conn.setup()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::display_migration_duration;
+    use std::time::Duration;
+
+    #[test]
+    fn test_display_migration_duration() {
+        for (expected_result, secs) in [
+            ("       1E-3 s", 0.00123),
+            ("       9E-1 s", 0.9),
+            ("       1s", 1.0),
+            ("      11s", 11.0),
+            ("    1m00s", 60.0),
+            ("    1m01s", 61.0),
+            ("    1m11s", 71.0),
+            ("   11m00s", 660.0),
+            (" 1h00m00s", 3600.0),
+            ("11h00m00s", 3600.0 * 11.0),
+            ("111h00m00s", 3600.0 * 111.0),
+        ] {
+            assert_eq!(
+                display_migration_duration(Duration::from_secs_f64(secs)).unwrap(),
+                expected_result
+            );
+        }
+    }
 }
