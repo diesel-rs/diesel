@@ -1,8 +1,6 @@
 ---
 source: diesel_derives/src/tests/mod.rs
 expression: out
-info:
-  input: "table! {\n    users { id -> Integer, name -> Text, }\n}\n"
 ---
 #[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
 pub mod users {
@@ -25,7 +23,18 @@ pub mod users {
     #[doc = concat!("A tuple of all of the columns on this", "table")]
     pub const all_columns: (id, name) = (id, name);
     #[allow(non_camel_case_types)]
-    #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default)]
+    #[derive(
+        Debug,
+        Clone,
+        Copy,
+        diesel::query_builder::QueryId,
+        Default,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Hash
+    )]
     #[doc = concat!("The actual ", "table", " struct")]
     ///
     /// This is the type which provides the base methods of the query
@@ -452,7 +461,17 @@ pub mod users {
         use super::table;
         use diesel::sql_types::*;
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+        #[derive(
+            Debug,
+            Clone,
+            Copy,
+            diesel::query_builder::QueryId,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash
+        )]
         #[doc = concat!(
             "Represents `", "table", "_name.*`, which is sometimes needed for"
         )]
@@ -499,7 +518,18 @@ pub mod users {
         impl diesel::SelectableExpression<table> for star {}
         impl diesel::AppearsOnTable<table> for star {}
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default)]
+        #[derive(
+            Debug,
+            Clone,
+            Copy,
+            diesel::query_builder::QueryId,
+            Default,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash
+        )]
         pub struct id;
         impl diesel::expression::Expression for id {
             type SqlType = Integer;
@@ -734,7 +764,18 @@ pub mod users {
             const NAME: &'static str = "id";
         }
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default)]
+        #[derive(
+            Debug,
+            Clone,
+            Copy,
+            diesel::query_builder::QueryId,
+            Default,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash
+        )]
         pub struct name;
         impl diesel::expression::Expression for name {
             type SqlType = Text;
