@@ -48,6 +48,7 @@ mod macros;
 mod only;
 #[cfg(not(feature = "sqlite"))]
 mod operations;
+mod option_has_table;
 mod order;
 mod perf_details;
 #[cfg(feature = "postgres")]
