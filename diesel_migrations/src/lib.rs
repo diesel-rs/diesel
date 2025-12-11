@@ -40,7 +40,7 @@ mod migration_harness;
 
 pub use crate::embedded_migrations::EmbeddedMigrations;
 pub use crate::file_based_migrations::FileBasedMigrations;
-pub use crate::migration_harness::{HarnessWithOutput, MigrationHarness};
+pub use crate::migration_harness::{HarnessWithOutput, MigrationHarness, Range};
 pub use migrations_macros::embed_migrations;
 
 #[doc(hidden)]
