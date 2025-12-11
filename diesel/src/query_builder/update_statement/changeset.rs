@@ -192,31 +192,33 @@ where
 
     --------------------------------------------------------------------------------------------------
 
+    The following is unclear to me and needs clarification please:
+
     I understand that in Source_M all combinations for the tuples (0...MAX_TUPLE_SIZE)
     use the macro from Source_T 'tuple_impls':
-    Tuple with no elements like ():
+    Counting by the index (please forgive my off by one error, if I made one):
+    Tuple with no elements like () ?
         tuple_impls{ 1 { (0) -> T, ST, TT } }
-    Tuple with no one element like (one):
+    Tuple with no one element like (one) ?
         tuple_impls{ 2 { (0) -> T, ST, TT, (1) -> T1, ST1, TT1, } }
-    Tuple with no two elements like (one, two):
+    Tuple with no two elements like (one, two) ?
         tuple_impls{ 3 { (0) -> T, ST, TT, (1) -> T1, ST1, TT1, (2) -> T2, ST2, TT2, } }
     and so on until MAX_TUPLE_SIZE is reached.
 
-    Unclear and needs clarification please:
-        Meaning of $T:ident and $ST:ident in 'tuple_impls' for each tuple element.
-        How does a tuple translate to T, ST and TT ? (maybe TT is unimportant since unused)
-        Maybe:
-            impl<$($T,)+ Tab> for (Eq<Table::a, example.a>, Eq<Table::b, example.b>)
-            T  = type representing the individual elements Eq<Left, Right>
+    I could not figure out the meaning of $T:ident and $ST:ident in 'tuple_impls' for each tuple element.
+    How does a tuple translate to T, ST and TT ? (maybe TT is unimportant since unused)
+    Maybe:
+        impl<$($T,)+ Tab> for (Eq<Table::a, example.a>, Eq<Table::b, example.b>)
+        T  = type representing the individual elements Eq<Left, Right>
 
-            impl<$($T,)+ $($ST,)+ Tab> for (Eq<Table::a, example.a>, Eq<Table::b, example.b>)
-            T  = type of Left for all Eq<Left, Right>
-            ST = type of Right for all Eq<Left, Right>
-        Or:
-            T  = always the type for Eq<Table::a, example.a>
-            ST = stands for Bound<Text, &String> since example.a is of type String
+        impl<$($T,)+ $($ST,)+ Tab> for (Eq<Table::a, example.a>, Eq<Table::b, example.b>)
+        T  = type of Left for all Eq<Left, Right>
+        ST = type of Right for all Eq<Left, Right>
+    Or:
+        T  = always the type for Eq<Table::a, example.a>
+        ST = stands for Bound<Text, &String> since example.a is of type String
 
-        I'm just guessing at this point...
+    I'm just guessing at this point and would appreciate some explanation...
 
     --------------------------------------------------------------------------------------------------
 
