@@ -1,6 +1,8 @@
 ---
 source: diesel_derives/src/tests/mod.rs
 expression: out
+info:
+  input: "table! {\n    users { id -> Integer, name -> Text, }\n}\n"
 ---
 #[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
 pub mod users {
