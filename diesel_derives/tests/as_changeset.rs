@@ -1001,3 +1001,60 @@ fn optional_embedded_struct() {
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
 }
+
+#[test]
+fn named_struct_batch() {
+    #[derive(Debug, Clone, AsChangeset, Insertable)]
+    struct User {
+        name: String,
+        hair_color: String,
+        r#type: String,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let jim = User {
+        name: String::from("Jim"),
+        hair_color: String::from("blue"),
+        r#type: String::from("super"),
+    };
+    let tess = User {
+        name: String::from("Tess"),
+        hair_color: String::from("blue"),
+        r#type: String::from("super"),
+    };
+
+    let mut users: Vec<User> = Vec::new();
+    users.push(jim.clone());
+    users.push(tess.clone());
+
+    // Control: See if query of assign remains unchanged.
+    let update_jim = update(users::table.find(1)).set(&jim);
+    let debug_jim = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_jim);
+    println!("debug_jim\n-------------{:?}", debug_jim);
+
+    // TODO: batch update.
+    let update_users = update(users::table.find(1)).set(&users);
+    let debug_users = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_users);
+    println!("debug_users\n-------------{:?}\n-------------", debug_users);
+
+    // Should update both Jim and Tess
+    update_users.execute(connection).unwrap();
+
+    let expected = vec![
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("blue")),
+            Some(String::from("admin")),
+        ),
+    ];
+    let actual = users::table.order(users::id).load(connection);
+    assert_eq!(Ok(expected), actual);
+}

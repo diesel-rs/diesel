@@ -1,3 +1,4 @@
+use super::batch_update::*;
 use crate::backend::DieselReserveSpecialization;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
@@ -140,3 +141,252 @@ where
         ColumnWrapperForUpdate(self)
     }
 }
+
+/*
+    Run batch update unit test: (not working obviously)
+    cargo test -p diesel_derives -F diesel/postgres -F diesel_derives/postgres named_struct_batch -- --nocapture
+
+    Sources:
+    Source_D: DERIVE impl AsChangeset       -> diesel/diesel_derives/src/as_changeset.rs
+    Source_T: TUPLE impl for all traits     -> diesel/diesel/src/type_impls/tuples.rs
+    Source_M: MACRO for tuple combinations  -> diesel/diesel_derives/src/diesel_for_each_tuple.rs
+    Source_U: UPDATE_STATEMENT main logic   -> diesel/diesel/src/query_builder/update_statement/mod.rs
+    Source_I: INSERTABLE trait impl         -> diesel/diesel/src/insertable.rs
+
+    --------------------------------------------------------------------------------------------------
+
+    My understanding so far:
+
+    #[derive(AsChangeset)]
+    struct Example {
+        a: String,
+        b: i32,
+    }
+    let example = Example { a: "my_string".to_string() , b: "61" };
+
+    1.  The derive AsChangeset from Source_D lays out all fields of a struct as a tuple and calls
+        AsChangeset::as_changeset on the tuple. The struct fields turn into:
+            Eq<column, field_name> or Option<Eq<column, field_name>> respectively and
+            Eq<column, field_type> or Option<Eq<column, field_type>> respectively
+        For our 'Example' struct:
+            Eq<Table::a, example.a> and Eq<Table::a_type, String>
+            Eq<Table::b, example.b> and Eq<Table::b_type, i32>
+        where column name of a field (e.g. example.a) has to match table column name (e.g. Table::a).
+        This results in a call like:
+            AsChangeset::as_changeset( (Eq<Table::a, example.a>, Eq<Table::b, example.b>) );
+        lets call this Func1 going forward.
+
+    2.  All traits are implemented directly on the tuples (see Source_T). The implementation
+        of AsChangeset for a tuple in turn subsequently calls AsChangeset::as_changeset for
+        each of its elements. Func1 becomes:
+            AsChangeset::as_changeset( Eq<Table::a, example.a> );
+            AsChangeset::as_changeset( Eq<Table::b, example.b> );
+
+    3.  AsChangeset::as_changeset recursively calls AsChangeset::as_changeset for all structs
+        with matching bounds. Using 'impl<Left, Right> AsChangeset for Eq<Left, Right>' (and
+        proper trait bounds) we now can access our fields (see above line 53). A struct that
+        implements QueryFragment has to be returned by the end of this recursion. That's the
+        part defining the behavior of UPDATE_STATEMENT::values.walk_ast(...) (see Source_U).
+        That generates and pushes the following to the end of the current sql statement:
+            "'table'.'a' = "my_string", 'table'.'b' = 61"
+
+    --------------------------------------------------------------------------------------------------
+
+    I understand that in Source_M all combinations for the tuples (0...MAX_TUPLE_SIZE)
+    use the macro from Source_T 'tuple_impls':
+    Tuple with no elements like ():
+        tuple_impls{ 1 { (0) -> T, ST, TT } }
+    Tuple with no one element like (one):
+        tuple_impls{ 2 { (0) -> T, ST, TT, (1) -> T1, ST1, TT1, } }
+    Tuple with no two elements like (one, two):
+        tuple_impls{ 3 { (0) -> T, ST, TT, (1) -> T1, ST1, TT1, (2) -> T2, ST2, TT2, } }
+    and so on until MAX_TUPLE_SIZE is reached.
+
+    Unclear and needs clarification please:
+        Meaning of $T:ident and $ST:ident in 'tuple_impls' for each tuple element.
+        How does a tuple translate to T, ST and TT ? (maybe TT is unimportant since unused)
+        Maybe:
+            impl<$($T,)+ Tab> for (Eq<Table::a, example.a>, Eq<Table::b, example.b>)
+            T  = type representing the individual elements Eq<Left, Right>
+
+            impl<$($T,)+ $($ST,)+ Tab> for (Eq<Table::a, example.a>, Eq<Table::b, example.b>)
+            T  = type of Left for all Eq<Left, Right>
+            ST = type of Right for all Eq<Left, Right>
+        Or:
+            T  = always the type for Eq<Table::a, example.a>
+            ST = stands for Bound<Text, &String> since example.a is of type String
+
+        I'm just guessing at this point...
+
+    --------------------------------------------------------------------------------------------------
+
+    TODO:
+    1.  Implement trait UpdateValues similar to InsertValues (see Source_I).
+        That should handle convenient sequential listing of columns.
+
+    2.  Figure out how the values can be accumulated similar to Insertable (see Source_I).
+            impl<$($T,)+ $($ST,)+ Tab> Insertable<Tab> for ($($T,)+) from Source_T seems promising.
+
+    3.  Create an enum wrapper to store the result of AsChangeset::as_changeset recursion. E.g.
+            enum UpdateValuesMethod<T> { Assign<T>, Batch<T>, }
+
+    4.  Create and implement a new trait for the enum UpdateValuesMethod such that it can
+        explicitely be bound by it.
+            trait UpdateValuesMethodTrait<T> {}
+            impl<T> UpdateValuesMethodTrait<T> for UpdateValuesMethod<T> {}
+
+    5.  Add UpdateValuesMethodTrait trait to the bounds for UpdateStatement::values
+        impl<T, U, V, Ret, DB> QueryFragment<DB> for UpdateStatement<T, U, V, Ret>
+        ...
+            V: QueryFragment<DB> + UpdateValuesMethodTrait<DB>
+
+    6.  Specialize the implementation for UpdateStatement::walk_ast (see Source_U) to cover
+        for the different cases of the enum UpdateValuesMethod.
+
+        UpdateValuesMethod::Assign:
+            Should remain unchanges from its current statement.
+
+        UpdateValuesMethod::Batch:
+            Postgress example for batch update similar to
+            UPDATE .. SET .. FROM ( VALUES (..), (..) ) .. WHERE .. ;
+
+            UPDATE my_table AS tab SET
+                column_a = tmp.column_a,
+                column_c = tmp.column_c
+            FROM ( VALUES
+                ('aa', 1, 11),
+                ('bb', 2, 22)
+            ) AS tmp(column_a, column_b, column_c)
+            WHERE tab.column_b = tmp.column_b;
+
+            Note that calling filter() on an update statement would corrupt the query.
+            Maybe it makes sense to ignore the UpdateStatement::where_clause for Batches?
+
+    7.  Add constraint for UpdateValuesMethod::Batch such that tab.column_b should
+        not appear in the SET clause if it was specified in the WHERE clause.
+
+    8.  Add a mechanism to conveniently specify which column should be used in the WHERE clause.
+
+    9.  Look into batch updates for MySql and SQLite and apply them.
+
+    10. Pray: Hope I can nail it!
+
+    Lastly.
+        apply diesel practices
+        write tests
+        write documentation
+*/
+
+// Copied from diesel/diesel/src/insertable.rs
+
+impl<'a, T> AsChangeset for &'a [T]
+where
+    T: AsChangeset,
+    &'a T: AsChangeset + UndecoratedInsertRecord<T::Target>,
+{
+    type Target = T::Target;
+    type Changeset = BatchUpdate<Vec<<&'a T as AsChangeset>::Changeset>, T::Target, (), false>;
+
+    fn as_changeset(self) -> Self::Changeset {
+        let values = self
+            .iter()
+            .map(AsChangeset::as_changeset)
+            .collect::<Vec<_>>();
+        BatchUpdate::new(values)
+    }
+}
+
+impl<'a, T> AsChangeset for &'a Vec<T>
+where
+    T: AsChangeset,
+    &'a [T]: AsChangeset,
+{
+    type Target = T::Target;
+    type Changeset = <&'a [T] as AsChangeset>::Changeset;
+
+    fn as_changeset(self) -> Self::Changeset {
+        (&**self).as_changeset()
+    }
+}
+
+impl<T> AsChangeset for Vec<T>
+where
+    T: AsChangeset + UndecoratedUpdateRecord<T::Target>,
+{
+    type Target = T::Target;
+
+    type Changeset = BatchUpdate<Vec<T::Changeset>, T::Target, (), false>;
+
+    fn as_changeset(self) -> Self::Changeset {
+        let values = self
+            .into_iter()
+            .map(AsChangeset::as_changeset)
+            .collect::<Vec<_>>();
+
+        BatchUpdate::new(values)
+    }
+}
+
+impl<T, const N: usize> AsChangeset for [T; N]
+where
+    T: AsChangeset,
+{
+    type Target = T::Target;
+    type Changeset = BatchUpdate<Vec<T::Changeset>, T::Target, [T::Changeset; N], true>;
+
+    fn as_changeset(self) -> Self::Changeset {
+        let values = self
+            .into_iter()
+            .map(AsChangeset::as_changeset)
+            .collect::<Vec<_>>();
+        BatchUpdate::new(values)
+    }
+}
+
+impl<'a, T, const N: usize> AsChangeset for &'a [T; N]
+where
+    T: AsChangeset,
+    &'a T: AsChangeset,
+{
+    // We can reuse the query id for [T; N] here as this
+    // compiles down to the same query
+    type Target = T::Target;
+    type Changeset =
+        BatchUpdate<Vec<<&'a T as AsChangeset>::Changeset>, T::Target, [T::Changeset; N], true>;
+
+    fn as_changeset(self) -> Self::Changeset {
+        let values = self.iter().map(AsChangeset::as_changeset).collect();
+        BatchUpdate::new(values)
+    }
+}
+
+impl<T, const N: usize> AsChangeset for Box<[T; N]>
+where
+    T: AsChangeset,
+{
+    // We can reuse the query id for [T; N] here as this
+    // compiles down to the same query
+    type Target = T::Target;
+    type Changeset = BatchUpdate<Vec<T::Changeset>, T::Target, [T::Changeset; N], true>;
+
+    fn as_changeset(self) -> Self::Changeset {
+        let v = Vec::from(self as Box<[T]>);
+        let values = v
+            .into_iter()
+            .map(AsChangeset::as_changeset)
+            .collect::<Vec<_>>();
+        BatchUpdate::new(values)
+    }
+}
+
+/// Marker trait to indicate that no additional operations have been added
+/// to a record for update.
+///
+/// This is used to prevent things like
+/// `.on_conflict_do_nothing().on_conflict_do_nothing()`
+/// from compiling.
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
+pub trait UndecoratedUpdateRecord<Table> {}
