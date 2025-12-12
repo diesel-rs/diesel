@@ -11,6 +11,9 @@ an up to date version of the specific dependency. We check this by using the uns
 Increasing the minimal supported Rust version will always be coupled at least with a minor release.
 
 ## Unreleased
+### Changed
+
+* The minimal supported Rust version is now 1.88.0
 
 ## [2.3.5] 2025-12-19
 

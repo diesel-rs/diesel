@@ -76,7 +76,7 @@ fn main() {
         .into_boxed()
         .inner_join(posts::table)
         //~^ ERROR: mismatched types
-        //~| ERROR: the trait bound `BoxedSelectStatement<'_, Text, FromClause<table>, _, name>: Table` is not satisfied
+        //~| ERROR: the trait bound `BoxedSelectStatement<'_, Text, FromClause<...>, _, ...>: QueryRelation` is not satisfied
         .load::<String>(&mut conn);
 
     let mut a = users::table.into_boxed();
@@ -90,7 +90,7 @@ fn main() {
         .into_boxed()
         .group_by(users::id)
         //~^ ERROR: the trait bound `BoxedSelectStatement<'_, (Integer, Text), ..., _>: GroupByDsl<_>` is not satisfied
-        //~| ERROR: the trait bound `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, _>: Table` is not satisfied
+        //~| ERROR: the trait bound `BoxedSelectStatement<'_, (Integer, Text), ..., _>: QueryRelation` is not satisfied
         //~| ERROR: the trait bound `SelectStatement<FromClause<...>>: GroupByDsl<_>` is not satisfied
         .select(users::name)
         .load::<String>(&mut conn);

@@ -9,11 +9,7 @@ help: the trait `DistinctOnDsl<posts::columns::id>` is not implemented for `user
     |
   LL | / table! {
   LL | |     users {
-  LL | |         id -> Integer,
-  LL | |         name -> VarChar,
-  LL | |     }
- LL | | }
-    | |_^
+    | |_________^
     = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
     = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
     = help: the following other types implement trait `DistinctOnDsl<Selection>`:
@@ -40,11 +36,7 @@ help: the trait `DistinctOnDsl<(posts::columns::name, users::columns::name)>` is
    |
 LL | / table! {
 LL | |     posts {
-LL | |         id -> Integer,
-LL | |         name -> Text,
-...  |
-LL | | }
-   | |_^
+   | |_________^
    = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
    = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
    = help: the following other types implement trait `DistinctOnDsl<Selection>`:

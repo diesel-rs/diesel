@@ -169,7 +169,7 @@ impl LikeIsAllowedForType<crate::sql_types::Binary> for Pg {}
 
 // Using the same field names as tokio-postgres
 /// See Postgres documentation for SQL Commands NOTIFY and LISTEN
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PgNotification {
     /// process ID of notifying server process
     pub process_id: i32,

@@ -450,6 +450,60 @@ fn print_schema_sqlite_primary_key_as_bigint() {
     );
 }
 
+#[test]
+fn print_schema_with_view() {
+    test_print_schema(
+        "print_schema_with_view",
+        vec!["--include-views", "--with-docs"],
+    );
+}
+
+#[test]
+fn print_schema_view_infer_nullable_simple() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_simple",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    )
+}
+
+#[test]
+fn print_schema_view_infer_nullable_from_table() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_from_table",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    );
+}
+
+#[test]
+fn print_schema_view_infer_nullable_from_table_only_view() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_only_view",
+        vec![
+            "--include-views",
+            "--experimental-infer-nullable-for-views",
+            "-o",
+            "test",
+        ],
+    )
+}
+
+#[test]
+fn print_schema_view_infer_nullable_left_join() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_left_join",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_view_infer_nullable_mixed_schema() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_mixed_schema",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    )
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]

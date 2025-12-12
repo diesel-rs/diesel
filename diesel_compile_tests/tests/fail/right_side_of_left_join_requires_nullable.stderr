@@ -135,10 +135,10 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
              `&'__expr Cents` implements `AsExpression<Money>`
              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+             `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-             `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
            and N others
 note: required by a bound in `lower`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -162,10 +162,10 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
              `&'__expr Cents` implements `AsExpression<Money>`
              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+             `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-             `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
            and N others
 
    
@@ -306,10 +306,10 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
              `&'__expr Cents` implements `AsExpression<Money>`
              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+             `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-             `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
            and N others
 note: required by a bound in `lower`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -333,10 +333,10 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
              `&'__expr Cents` implements `AsExpression<Money>`
              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+             `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-             `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
            and N others
 
    
@@ -477,10 +477,10 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
               `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
               `&'__expr Cents` implements `AsExpression<Money>`
               `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+              `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -504,10 +504,10 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
               `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
               `&'__expr Cents` implements `AsExpression<Money>`
               `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+              `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
             and N others
  
     
@@ -628,10 +628,10 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
               `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
               `&'__expr Cents` implements `AsExpression<Money>`
               `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+              `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -655,10 +655,10 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
               `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
               `&'__expr Cents` implements `AsExpression<Money>`
               `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+              `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
             and N others
  
     
@@ -799,10 +799,10 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
               `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
               `&'__expr Cents` implements `AsExpression<Money>`
               `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+              `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -826,8 +826,8 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
               `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
               `&'__expr Cents` implements `AsExpression<Money>`
               `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+              `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
             and N others

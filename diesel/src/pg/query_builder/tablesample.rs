@@ -1,7 +1,8 @@
 use crate::expression::{Expression, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::{AsQuery, AstPass, FromClause, QueryFragment, QueryId, SelectStatement};
-use crate::query_source::QuerySource;
+use crate::query_source::private::PlainQuerySource;
+use crate::query_source::{QueryRelation, QuerySource, TableNotEqual};
 use crate::result::QueryResult;
 use crate::sql_types::{Double, SmallInt};
 use crate::{JoinTo, SelectableExpression, Table};
@@ -67,6 +68,26 @@ where
             seed: Some(seed),
         }
     }
+}
+
+#[diagnostic::do_not_recommend]
+impl<T1, T2, TSM> TableNotEqual<T1> for Tablesample<T2, TSM>
+where
+    T1: QueryRelation,
+    T2: TableNotEqual<T1>,
+    TSM: TablesampleMethod,
+    Self: Table,
+{
+}
+
+#[diagnostic::do_not_recommend]
+impl<T1, T2, TSM> TableNotEqual<Tablesample<T1, TSM>> for T2
+where
+    T1: QueryRelation,
+    T2: PlainQuerySource + TableNotEqual<T1>,
+    Tablesample<T1, TSM>: Table,
+    TSM: TablesampleMethod,
+{
 }
 
 impl<S, TSM> QueryId for Tablesample<S, TSM>

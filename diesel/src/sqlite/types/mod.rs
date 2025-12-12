@@ -6,6 +6,7 @@ mod numeric;
 use super::connection::SqliteValue;
 use super::Sqlite;
 use crate::deserialize::{self, FromSql, Queryable};
+use crate::expression::AsExpression;
 use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
@@ -214,3 +215,67 @@ impl ToSql<sql_types::Double, Sqlite> for f64 {
 #[diesel(sqlite_type(name = "Text"))]
 #[cfg(feature = "sqlite")]
 pub struct Timestamptz;
+
+/// The SQL type for JSON validation flags
+///
+/// This type is backed by an Integer in SQLite.
+///
+/// ### [`ToSql`] impls
+///
+/// - [`JsonValidFlag`]
+///
+/// [`ToSql`]: crate::serialize::ToSql
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[diesel(sqlite_type(name = "Integer"))]
+#[cfg(feature = "sqlite")]
+pub struct JsonValidFlags;
+
+/// Flags for the `json_valid` function
+///
+/// These flags define what is meant by "well-formed" JSON when validating.
+///
+/// The following bits are currently defined:
+/// - `0x01` → The input is text that strictly complies with canonical RFC-8259 JSON, without any extensions.
+/// - `0x02` → The input is text that is JSON with JSON5 extensions.
+/// - `0x04` → The input is a BLOB that superficially appears to be JSONB.
+/// - `0x08` → The input is a BLOB that strictly conforms to the internal JSONB format.
+///
+/// By combining bits, the following useful values can be derived:
+/// - `Rfc8259Json` (1) → X is RFC-8259 JSON text
+/// - `Json5` (2) → X is JSON5 text
+/// - `JsonbLike` (4) → X is probably JSONB
+/// - `Rfc8259JsonOrJsonb` (5) → X is RFC-8259 JSON text or JSONB
+/// - `Json5OrJsonb` (6) → X is JSON5 text or JSONB (recommended for most use cases)
+/// - `JsonbStrict` (8) → X is strictly conforming JSONB
+/// - `Rfc8259JsonOrJsonbStrict` (9) → X is RFC-8259 or strictly conforming JSONB
+/// - `Json5OrJsonbStrict` (10) → X is JSON5 or strictly conforming JSONB
+#[derive(Debug, Clone, Copy, AsExpression)]
+#[diesel(sql_type = JsonValidFlags)]
+#[cfg(feature = "sqlite")]
+#[non_exhaustive]
+pub enum JsonValidFlag {
+    /// X is RFC-8259 JSON text (flag = 1)
+    Rfc8259Json = 1,
+    /// X is JSON5 text (flag = 2)
+    Json5 = 2,
+    /// X is probably JSONB (flag = 4)
+    JsonbLike = 4,
+    /// X is RFC-8259 JSON text or JSONB (flag = 5)
+    Rfc8259JsonOrJsonb = 5,
+    /// X is JSON5 text or JSONB (flag = 6, recommended for most use cases)
+    Json5OrJsonb = 6,
+    /// X is strictly conforming JSONB (flag = 8)
+    JsonbStrict = 8,
+    /// X is RFC-8259 or strictly conforming JSONB (flag = 9)
+    Rfc8259JsonOrJsonbStrict = 9,
+    /// X is JSON5 or strictly conforming JSONB (flag = 10)
+    Json5OrJsonbStrict = 10,
+}
+
+#[cfg(feature = "sqlite")]
+impl ToSql<JsonValidFlags, Sqlite> for JsonValidFlag {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
+        out.set_value(*self as i32);
+        Ok(IsNull::No)
+    }
+}

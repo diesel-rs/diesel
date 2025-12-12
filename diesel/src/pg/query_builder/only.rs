@@ -1,7 +1,8 @@
 use crate::expression::{Expression, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::{AsQuery, AstPass, FromClause, QueryFragment, QueryId, SelectStatement};
-use crate::query_source::QuerySource;
+use crate::query_source::private::PlainQuerySource;
+use crate::query_source::{QueryRelation, QuerySource, TableNotEqual};
 use crate::result::QueryResult;
 use crate::{JoinTo, SelectableExpression, Table};
 
@@ -9,6 +10,24 @@ use crate::{JoinTo, SelectableExpression, Table};
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Only<S> {
     pub(crate) source: S,
+}
+
+#[diagnostic::do_not_recommend]
+impl<T1, T2> TableNotEqual<T1> for Only<T2>
+where
+    T1: PlainQuerySource,
+    T2: TableNotEqual<T1>,
+    Self: Table,
+{
+}
+
+#[diagnostic::do_not_recommend]
+impl<T1, T2> TableNotEqual<Only<T1>> for T2
+where
+    T1: QueryRelation,
+    T2: PlainQuerySource + TableNotEqual<T1>,
+    Only<T1>: Table,
+{
 }
 
 impl<S> QueryId for Only<S>

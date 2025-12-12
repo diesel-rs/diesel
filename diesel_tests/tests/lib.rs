@@ -17,6 +17,7 @@ mod alias;
 mod annotations;
 mod associations;
 mod boxed_queries;
+mod cast;
 mod combination;
 mod connection;
 #[cfg(feature = "postgres")]
@@ -63,4 +64,5 @@ mod transactions;
 mod types;
 mod types_roundtrip;
 mod update;
+mod view_testing;
 mod window_functions;

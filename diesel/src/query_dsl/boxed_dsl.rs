@@ -4,7 +4,7 @@ use crate::expression::ValidGrouping;
 use crate::query_builder::AsQuery;
 use crate::query_builder::FromClause;
 use crate::query_builder::SelectStatement;
-use crate::query_source::Table;
+use crate::query_source::QueryRelation;
 use crate::Expression;
 
 /// The `into_boxed` method
@@ -30,7 +30,7 @@ pub trait BoxedDsl<'a, DB> {
 #[diagnostic::do_not_recommend]
 impl<'a, T, DB> BoxedDsl<'a, DB> for T
 where
-    T: Table + AsQuery<Query = SelectStatement<FromClause<T>>>,
+    T: QueryRelation + AsQuery<Query = SelectStatement<FromClause<T>>>,
     SelectStatement<FromClause<T>>: BoxedDsl<'a, DB>,
     T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
     T::SqlType: TypedExpressionType,

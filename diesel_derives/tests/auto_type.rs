@@ -3,6 +3,8 @@ use diesel::dsl::*;
 use diesel::helper_types::*;
 use diesel::prelude::*;
 use diesel::sql_types;
+#[cfg(feature = "sqlite")]
+use diesel::sqlite::JsonValidFlag;
 #[cfg(feature = "postgres")]
 use std::ops::Bound;
 
@@ -369,6 +371,13 @@ fn test_pg_any_json_expression_methods() -> _ {
         .and(pg_extras::name.is_not_json_scalar())
 }
 
+#[cfg(feature = "sqlite")]
+#[auto_type]
+fn test_sqlite_any_json_expression_methods() -> _ {
+    let s: &'static str = "";
+    sqlite_extras::json.retrieve_as_object_sqlite(s)
+}
+
 #[cfg(feature = "postgres")]
 #[auto_type]
 fn test_pg_timestamp_expression_methods() -> _ {
@@ -495,12 +504,25 @@ fn postgres_functions() -> _ {
             pg_extras::jsonb,
             pg_extras::boolean,
         ),
+        json_build_array_1(pg_extras::jsonb),
+        json_build_array_2(pg_extras::name, pg_extras::id),
+        jsonb_build_array_1(pg_extras::jsonb),
+        jsonb_build_array_2(pg_extras::text_array, pg_extras::jsonb),
+        json_extract_path_1(pg_extras::json, pg_extras::name),
+        json_extract_path_2(pg_extras::json, pg_extras::name, pg_extras::name),
+        jsonb_extract_path_1(pg_extras::jsonb, pg_extras::name),
+        jsonb_extract_path_2(pg_extras::jsonb, pg_extras::name, pg_extras::name),
+        json_extract_path_text_1(pg_extras::json, pg_extras::name),
+        json_extract_path_text_2(pg_extras::json, pg_extras::name, pg_extras::name),
+        jsonb_extract_path_text_1(pg_extras::jsonb, pg_extras::name),
+        jsonb_extract_path_text_2(pg_extras::jsonb, pg_extras::name, pg_extras::name),
     )
 }
 
 #[cfg(feature = "sqlite")]
 #[auto_type]
 fn sqlite_functions() -> _ {
+    let flag: JsonValidFlag = JsonValidFlag::Json5;
     (
         json(sqlite_extras::text),
         jsonb(sqlite_extras::blob),
@@ -513,6 +535,7 @@ fn sqlite_functions() -> _ {
         json_pretty_with_indentation(sqlite_extras::json, "  "),
         json_pretty_with_indentation(sqlite_extras::jsonb, "  "),
         json_valid(sqlite_extras::json),
+        json_valid_with_flags(sqlite_extras::text, flag),
         json_type(sqlite_extras::json),
         json_type_with_path(sqlite_extras::json, sqlite_extras::text),
         json_quote(sqlite_extras::json),
@@ -544,6 +567,22 @@ fn sqlite_variadic_functions() -> _ {
         jsonb_array_0(),
         jsonb_array_1(sqlite_extras::text),
         jsonb_array_2(sqlite_extras::id, sqlite_extras::json),
+        json_object_0(),
+        json_object_1(sqlite_extras::text, sqlite_extras::id),
+        json_object_2(
+            sqlite_extras::text,
+            sqlite_extras::id,
+            sqlite_extras::text,
+            sqlite_extras::json,
+        ),
+        jsonb_object_0(),
+        jsonb_object_1(sqlite_extras::text, sqlite_extras::id),
+        jsonb_object_2(
+            sqlite_extras::text,
+            sqlite_extras::id,
+            sqlite_extras::text,
+            sqlite_extras::json,
+        ),
         json_remove_0(sqlite_extras::json),
         json_remove_1(sqlite_extras::jsonb, sqlite_extras::text),
         json_remove_2(
