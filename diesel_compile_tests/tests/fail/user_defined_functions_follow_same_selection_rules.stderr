@@ -14,10 +14,10 @@ LL | #[declare_sql_function]
              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
              `&'__expr Cents` implements `AsExpression<Money>`
              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
-             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-             `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
+             `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
            and N others
 
       = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
