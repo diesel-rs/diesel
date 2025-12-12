@@ -2375,7 +2375,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
         Grouped(IsContainedByNet::new(self, other.as_expression()))
     }
 
-    /// Creates a PostgreSQL `>>=` expression.
+    /// Creates a PostgreSQL `<<= expression.
     ///
     /// This operator returns whether a subnet is contained by or equal to another subnet.
     ///

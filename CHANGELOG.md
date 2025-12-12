@@ -12,6 +12,14 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.3.5] 2025-12-19
+
+* Fix another libmariadb related issue with time types
+* Improve compile time error messages for `#[derive(Insertable)]`
+* Bump supported version of sqlite-wasm-rs to 0.5.0
+* Minor documentation fixes
+* Make the `returning_clauses_for_sqlite_3_35` feature enable the `sqlite` feature by default
+
 ## [2.3.4] 2025-11-26
 
 * Fix an issue with breaking changes in libmariadb
@@ -2300,3 +2308,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.2]: https://github.com/diesel-rs/diesel/compare/v2.3.0...v2.3.2
 [2.3.3]: https://github.com/diesel-rs/diesel/compare/v2.3.2...v2.3.3
 [2.3.4]: https://github.com/diesel-rs/diesel/compare/v2.3.3...v2.3.4
+[2.3.5]: https://github.com/diesel-rs/diesel/compare/v2.3.4...v2.3.5

@@ -38,7 +38,7 @@ fn main() {
     let mut conn = PgConnection::establish("").unwrap();
 
     let _ = users::table.filter(name.eq(foo(1)));
-    //~^ ERROR: type mismatch resolving `<foo<Bound<Integer, i32>> as Expression>::SqlType == Text
+    //~^ ERROR: the trait bound `foo<Bound<Integer, i32>>: AsExpression<Text>` is not satisfied
 
     let _ = users::table
         .filter(name.eq(bar(title)))

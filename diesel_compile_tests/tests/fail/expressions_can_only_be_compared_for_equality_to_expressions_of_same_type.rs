@@ -13,7 +13,7 @@ fn main() {
     use self::users::dsl::*;
 
     let pred = id.eq("string");
-    //~^ ERROR: the trait bound `str: diesel::Expression` is not satisfied
+    //~^ ERROR: the trait bound `&str: AsExpression<diesel::sql_types::Integer>` is not satisfied
     let pred = id.eq(name);
-    //~^ ERROR: type mismatch resolving `<name as Expression>::SqlType == Integer`
+    //~^ ERROR: the trait bound `columns::name: AsExpression<diesel::sql_types::Integer>` is not satisfied
 }

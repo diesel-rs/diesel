@@ -74,7 +74,7 @@ fn main() {
         .on_conflict(id)
         .do_update()
         .set(name.eq(excluded(id)));
-    //~^ ERROR: type mismatch resolving `<Excluded<id> as Expression>::SqlType == Text`
+    //~^ ERROR: the trait bound `Excluded<id>: AsExpression<Text>` is not satisfied
 
     // Excluded is only valid in upsert
     // FIXME: This should not compile

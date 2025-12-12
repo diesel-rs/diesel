@@ -16,5 +16,5 @@ fn main() {
     let mut conn = PgConnection::establish("").unwrap();
 
     insert_into(users).values(&name.eq(1));
-    //~^ ERROR: the trait bound `{integer}: diesel::Expression` is not satisfied
+    //~^ ERROR: the trait bound `{integer}: AsExpression<diesel::sql_types::Text>` is not satisfied
 }
