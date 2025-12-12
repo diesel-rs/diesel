@@ -3,6 +3,7 @@ use crate::serialize::{self, Output, ToSql};
 use crate::sql_types;
 use crate::sqlite::connection::SqliteValue;
 use crate::sqlite::Sqlite;
+use alloc::string::String;
 
 #[cfg(feature = "chrono")]
 mod chrono;

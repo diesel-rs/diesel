@@ -3,6 +3,7 @@
 use super::backend::Sqlite;
 use crate::query_builder::QueryBuilder;
 use crate::result::QueryResult;
+use alloc::string::String;
 
 mod limit_offset;
 mod query_fragment_impls;

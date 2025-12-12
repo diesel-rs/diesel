@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "std"), no_std)]
 //! # Diesel
 //!
 //! Diesel is an ORM and query builder designed to reduce the boilerplate for database interactions.
@@ -220,11 +221,16 @@
 //!   explicitly opts out the stability guarantee given by diesel. This feature overrides the `with-deprecated`.
 //!   Note that this may also remove items that are not shown as `#[deprecated]` in our documentation, due to
 //!   various bugs in rustdoc. It can be used to check if you depend on any such hidden `#[deprecated]` item.
+//! - `std`: This features enables usage of the rust standard library. When disabled Diesel will only use the `core`
+//!   and `alloc` crate instead. If this feature is disabled it is required to enable the `hashbrown` feature.
+//! - `hashbrown`: This feature enables an optional dependency on the hashbrown crate. It's required for usage in `no_std`
+//!   environments.
 //!
 //! By default the following features are enabled:
 //!
 //! - `with-deprecated`
 //! - `32-column-tables`
+//! - `std`
 
 #![cfg_attr(feature = "unstable", feature(trait_alias))]
 #![cfg_attr(feature = "unstable", feature(strict_provenance_lints))]
@@ -266,6 +272,10 @@
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss
 )]
+#![cfg_attr(
+    not(test),
+    warn(clippy::std_instead_of_alloc, clippy::std_instead_of_core)
+)]
 #![deny(unsafe_code)]
 #![cfg_attr(test, allow(clippy::unwrap_used))]
 
@@ -274,6 +284,12 @@
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_dedicated_worker);
 
+// the no-std version needs hashbrown
+#[cfg(all(not(feature = "hashbrown"), not(feature = "std")))]
+compile_error!("The hashbrown feature is required for no-std support");
+
+extern crate alloc;
+extern crate core;
 extern crate diesel_derives;
 
 #[macro_use]

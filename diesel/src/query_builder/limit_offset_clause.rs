@@ -1,5 +1,6 @@
 use super::QueryFragment;
 use crate::query_builder::QueryId;
+use alloc::boxed::Box;
 
 /// A helper query node that contains both limit and offset clauses
 ///

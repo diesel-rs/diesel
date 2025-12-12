@@ -51,6 +51,13 @@ enum Backend {
 
 impl Backend {
     const ALL: &'static [Self] = &[Backend::Postgres, Backend::Sqlite, Backend::Mysql];
+
+    fn features(&self) -> Vec<String> {
+        match self {
+            Self::Sqlite => vec!["sqlite".into(), "std".into()],
+            _ => vec![self.to_string()],
+        }
+    }
 }
 
 impl Display for Backend {

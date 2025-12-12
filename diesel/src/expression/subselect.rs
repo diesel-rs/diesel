@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use crate::expression::array_comparison::InExpression;
 use crate::expression::*;

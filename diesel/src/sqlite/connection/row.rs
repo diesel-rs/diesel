@@ -1,13 +1,15 @@
-use std::cell::{Ref, RefCell};
-use std::rc::Rc;
-use std::sync::Arc;
-
 use super::owned_row::OwnedSqliteRow;
 use super::sqlite_value::{OwnedSqliteValue, SqliteValue};
 use super::stmt::StatementUse;
 use crate::backend::Backend;
 use crate::row::{Field, IntoOwnedRow, PartialRow, Row, RowIndex, RowSealed};
 use crate::sqlite::Sqlite;
+use alloc::borrow::ToOwned;
+use alloc::rc::Rc;
+use alloc::string::String;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
+use core::cell::{Ref, RefCell};
 
 #[allow(missing_debug_implementations)]
 pub struct SqliteRow<'stmt, 'query> {
@@ -153,7 +155,7 @@ impl<'stmt> Row<'stmt, Sqlite> for SqliteRow<'stmt, '_> {
         })
     }
 
-    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
+    fn partial_row(&self, range: core::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
         PartialRow::new(self, range)
     }
 }

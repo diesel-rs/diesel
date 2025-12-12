@@ -10,6 +10,7 @@ use crate::expression;
 use crate::expression_methods::JsonIndex;
 use crate::expression_methods::PreferredBoolSqlType;
 use crate::sql_types;
+use alloc::string::String;
 
 /// The SQL type of an expression
 pub type SqlTypeOf<Expr> = <Expr as Expression>::SqlType;

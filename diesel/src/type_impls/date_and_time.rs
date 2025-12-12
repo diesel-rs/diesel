@@ -1,13 +1,15 @@
 #![allow(dead_code)]
 
-use crate::deserialize::FromSqlRow;
-use crate::expression::AsExpression;
-use std::time::SystemTime;
+#[cfg(feature = "std")]
+mod std {
+    use crate::deserialize::FromSqlRow;
+    use crate::expression::AsExpression;
 
-#[derive(AsExpression, FromSqlRow)]
-#[diesel(foreign_derive)]
-#[diesel(sql_type = crate::sql_types::Timestamp)]
-struct SystemTimeProxy(SystemTime);
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = crate::sql_types::Timestamp)]
+    struct SystemTimeProxy(std::time::SystemTime);
+}
 
 #[cfg(feature = "chrono")]
 mod chrono {

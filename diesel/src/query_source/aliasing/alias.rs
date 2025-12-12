@@ -10,7 +10,7 @@ use crate::query_source::{
 };
 use crate::result::QueryResult;
 
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 #[derive(Debug, Clone, Copy, Default)]
 /// Represents an alias within diesel's query builder

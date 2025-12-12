@@ -130,6 +130,7 @@ pub(crate) mod private {
     use crate::expression::IntoSql;
     use crate::sql_types::{Integer, Json, Jsonb, Nullable, Text};
     use crate::Expression;
+    use alloc::string::String;
 
     pub trait Sealed {}
 

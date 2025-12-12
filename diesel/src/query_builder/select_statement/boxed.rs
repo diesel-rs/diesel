@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use crate::backend::{sql_dialect, DieselReserveSpecialization};
 use crate::dsl::AsExprOf;

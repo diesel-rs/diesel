@@ -1,6 +1,6 @@
 #![allow(unsafe_code)] // module uses ffi
-use std::cell::{Ref, RefCell};
-use std::rc::Rc;
+use alloc::rc::Rc;
+use core::cell::{Ref, RefCell};
 
 use super::{OutputBinds, Statement, StatementMetadata, StatementUse};
 use crate::backend::Backend;
@@ -78,7 +78,7 @@ impl Iterator for StatementIterator<'_> {
                 };
                 let last_row = &mut *last_row;
                 let duplicated = last_row.duplicate();
-                std::mem::replace(last_row, duplicated)
+                core::mem::replace(last_row, duplicated)
             };
             let res = if let PrivateMysqlRow::Direct(ref mut binds) = last_row {
                 self.stmt.populate_row_buffers(binds)
@@ -178,7 +178,7 @@ impl<'a> Row<'a, Mysql> for MysqlRow {
         })
     }
 
-    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
+    fn partial_row(&self, range: core::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
         PartialRow::new(self, range)
     }
 }
