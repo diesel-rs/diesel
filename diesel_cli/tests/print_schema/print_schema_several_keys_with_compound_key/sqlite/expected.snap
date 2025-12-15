@@ -1,7 +1,6 @@
 ---
 source: diesel_cli/tests/print_schema.rs
 description: "Test: print_schema_several_keys_with_compound_key"
-snapshot_kind: text
 ---
 // @generated automatically by Diesel CLI.
 
@@ -28,5 +27,8 @@ diesel::table! {
         card_code -> Text,
     }
 }
+
+diesel::joinable!(transaction_one -> payment_card (by_card_id));
+diesel::joinable!(transaction_two -> payment_card (payment_card_id));
 
 diesel::allow_tables_to_appear_in_same_query!(payment_card, transaction_one, transaction_two,);
