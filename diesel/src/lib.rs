@@ -319,6 +319,8 @@ pub mod pg;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
 
+#[macro_use]
+mod reexport_ambiguities;
 mod type_impls;
 mod util;
 
@@ -332,16 +334,17 @@ pub use diesel_derives::{
 
 pub use diesel_derives::MultiConnection;
 
-#[allow(unknown_lints, ambiguous_glob_reexports)]
 pub mod dsl {
     //! Includes various helper types and bare functions which are named too
     //! generically to be included in prelude, but are often used when using Diesel.
 
+    make_proxy_mod!(helper_types_proxy, crate::helper_types);
     #[doc(inline)]
-    pub use crate::helper_types::*;
+    pub use helper_types_proxy::*;
 
+    make_proxy_mod!(expression_dsl_proxy, crate::expression::dsl);
     #[doc(inline)]
-    pub use crate::expression::dsl::*;
+    pub use expression_dsl_proxy::*;
 
     #[doc(inline)]
     pub use crate::query_builder::functions::{

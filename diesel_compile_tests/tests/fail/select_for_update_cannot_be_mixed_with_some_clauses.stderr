@@ -336,8 +336,14 @@ LL |     users.for_update().group_by(id).having(id.gt(1));
    = help: the trait `GroupByDsl<Expr>` is implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`
 
    
+error[E0282]: type annotations needed
+  --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:47:5
+   |
+LL |     users.for_update().group_by(id).having(id.gt(1));
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ cannot infer type
+
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>: LockingDsl<...>` is not satisfied
-  --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:51:41
+  --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:52:41
    |
 LL |     users.group_by(id).having(id.gt(1)).for_update();
    |                                         ^^^^^^^^^^ unsatisfied trait bound
@@ -349,7 +355,7 @@ LL |     users.group_by(id).having(id.gt(1)).for_update();
 
    
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>: Table` is not satisfied
-  --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:51:41
+  --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:52:41
    |
 LL |     users.group_by(id).having(id.gt(1)).for_update();
    |                                         ^^^^^^^^^^ unsatisfied trait bound
@@ -360,12 +366,10 @@ LL |     users.group_by(id).having(id.gt(1)).for_update();
 
    
 error[E0277]: the trait bound `SelectStatement<FromClause<...>>: LockingDsl<...>` is not satisfied
-  --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:51:41
+  --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:52:41
    |
 LL |     users.group_by(id).having(id.gt(1)).for_update();
    |                                         ^^^^^^^^^^ the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<...>>`
    |
    = note: a `LOCKING` clause is incompatible with various other clauses like a `DISTINCT` clause
    = help: the trait `LockingDsl<Lock>` is implemented for `SelectStatement<F, S, diesel::query_builder::distinct_clause::NoDistinctClause, W, O, LOf>`
-
-   For more information about this error, try `rustc --explain E0277`.

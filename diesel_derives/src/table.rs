@@ -568,7 +568,7 @@ fn fix_import_for_submodule(import: &syn::ItemUse) -> syn::ItemUse {
         // module
         if path.ident == "super" {
             let inner = path.clone();
-            path.tree = Box::new(syn::UseTree::Path(inner));
+            *path.tree = syn::UseTree::Path(inner);
         }
     }
 
