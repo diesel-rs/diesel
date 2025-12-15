@@ -6,6 +6,7 @@ use crate::expression::AppearsOnTable;
 use crate::query_builder::*;
 use crate::query_source::{Column, QuerySource};
 use crate::Table;
+use std::marker::PhantomData;
 
 /// Types which can be passed to
 /// [`update.set`](UpdateStatement::set()).
@@ -284,17 +285,22 @@ where
 impl<'a, T> AsChangeset for &'a [T]
 where
     T: AsChangeset,
-    &'a T: AsChangeset + UndecoratedInsertRecord<T::Target>,
+    // TODO: [UndecoratedUpdateRecord] could be used to enforce setting a where_clause maybe.
+    // &'a T: AsChangeset + UndecoratedUpdateRecord<T::Target>,
+    &'a T: AsChangeset,
 {
     type Target = T::Target;
-    type Changeset = BatchUpdate<Vec<<&'a T as AsChangeset>::Changeset>, T::Target, (), false>;
+    type Changeset = BatchChangeSet<<&'a T as AsChangeset>::Changeset, T::Target>;
 
     fn as_changeset(self) -> Self::Changeset {
         let values = self
             .iter()
             .map(AsChangeset::as_changeset)
             .collect::<Vec<_>>();
-        BatchUpdate::new(values)
+        BatchChangeSet {
+            values: values,
+            _marker: PhantomData,
+        }
     }
 }
 
@@ -392,3 +398,152 @@ where
     cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
 )]
 pub trait UndecoratedUpdateRecord<Table> {}
+
+impl<Col, U, DB> BatchUpdateTarget<DB, Col::Table> for Assign<ColumnWrapperForUpdate<Col>, U>
+where
+    DB: Backend,
+    Col: Column,
+    ColumnWrapperForUpdate<Col>: QueryFragment<DB>,
+    Self: QueryFragment<DB>,
+{
+    fn column_target<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        QueryFragment::walk_ast(&self.target, out.reborrow())
+    }
+}
+
+impl<Col, U, DB> BatchUpdateTargetAssign<DB, Col::Table> for Assign<ColumnWrapperForUpdate<Col>, U>
+where
+    DB: Backend,
+    Col: Column,
+    ColumnWrapperForUpdate<Col>: QueryFragment<DB>,
+    Self: QueryFragment<DB>,
+{
+    fn column_target_assign<'b>(
+        &'b self,
+        mut out: AstPass<'_, 'b, DB>,
+        alias: &str,
+    ) -> QueryResult<()> {
+        let _ = BatchUpdateTarget::column_target(self, out.reborrow());
+        out.push_sql(" = ");
+        out.push_sql(alias);
+        out.push_sql(".");
+        BatchUpdateTarget::column_target(self, out.reborrow())
+    }
+}
+
+impl<Col, U, DB> BatchUpdateExpr<DB, Col::Table> for Assign<ColumnWrapperForUpdate<Col>, U>
+where
+    DB: Backend,
+    Col: Column,
+    U: QueryFragment<DB>,
+    Self: QueryFragment<DB>,
+{
+    fn column_expr<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        QueryFragment::walk_ast(&self.expr, out.reborrow())
+    }
+}
+
+#[derive(Debug)]
+pub struct BatchChangeSet<T, Tab> {
+    pub(crate) values: Vec<T>,
+    _marker: PhantomData<Tab>,
+}
+
+impl<T, Tab, DB> QueryFragment<DB> for BatchChangeSet<T, Tab>
+where
+    DB: Backend,
+    Tab: Table,
+    T: BatchUpdateTargetAssign<DB, Tab> + BatchUpdateExpr<DB, Tab> + Clone,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        if let None = self.values.first() {
+            // TODO: more meaningful return maybe?
+            return Ok(());
+        }
+
+        // TODO: Create proper struct for alias that implements QueryFragment.
+        // Maybe there is already something?
+        const ALIAS: &str = "\"tmp\"";
+
+        // --- Create this statement with the following steps:
+        // UPDATE my_table AS tab SET
+        //     column_a = tmp.column_a,
+        //     column_c = tmp.column_c
+        // FROM ( VALUES
+        //     ('aa', 1, 11),
+        //     ('bb', 2, 22)
+        // ) AS tmp(column_a, column_b, column_c)
+        // WHERE tab.column_b = tmp.column_b;
+
+        // --- Assign columns to temporary columns
+        //     column_a = tmp.column_a,
+        //     column_c = tmp.column_c
+        if let Some(first) = self.values.first() {
+            first.column_target_assign(out.reborrow(), ALIAS)?;
+        }
+
+        // --- List of values
+        // FROM ( VALUES
+        //     ('aa', 1, 11),
+        //     ('bb', 2, 22)
+        // )
+        out.push_sql(" FROM ( VALUES");
+        let mut values = self.values.iter();
+        if let Some(value) = values.next() {
+            out.push_sql(" (");
+            value.column_expr(out.reborrow())?;
+            out.push_sql(")");
+        }
+        for value in values {
+            out.push_sql(", (");
+            value.column_expr(out.reborrow())?;
+            out.push_sql(")");
+        }
+        out.push_sql(" )");
+
+        // --- Set alias and its columns
+        //     AS tmp(column_a, column_b, column_c)
+        if let Some(last) = self.values.last() {
+            out.push_sql(" AS ");
+            out.push_sql(ALIAS);
+            out.push_sql("(");
+            last.column_target(out.reborrow())?;
+            out.push_sql(")");
+        }
+
+        // id = primary key -> therefore not available in update batch! See Note below.
+        const UPDATE_CONDITION_COLUMN: &str = "\"name\"";
+        // --- TODO: Handle proper UpdateStatement::where_clause
+        // --- Implemented here for testing purpose!
+        // WHERE tab.column_b = tmp.column_b;
+        out.push_sql(" WHERE \"users\".");
+        out.push_sql(UPDATE_CONDITION_COLUMN);
+        out.push_sql(" = ");
+        out.push_sql(ALIAS);
+        out.push_sql(".");
+        out.push_sql(UPDATE_CONDITION_COLUMN);
+
+        /*
+        NOTE: derive(AsChangeset) prevents from updating the primary key.
+        Therefore the primary key cannot be provided in the update batch
+        and then referenced in the WHERE clause.
+        Both User_A and User_B will create the alias:
+            AS tmp(name, hair_color, type)
+
+        struct User_A {
+            name: String,
+            hair_color: String,
+            r#type: String,
+        }
+
+        struct User_B {
+            id: u32,
+            name: String,
+            hair_color: String,
+            r#type: String,
+        }
+        */
+
+        Ok(())
+    }
+}

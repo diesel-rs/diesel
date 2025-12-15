@@ -1004,7 +1004,7 @@ fn optional_embedded_struct() {
 
 #[test]
 fn named_struct_batch() {
-    #[derive(Debug, Clone, AsChangeset, Insertable)]
+    #[derive(Debug, Clone, AsChangeset)]
     struct User {
         name: String,
         hair_color: String,
@@ -1013,28 +1013,29 @@ fn named_struct_batch() {
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    let jim = User {
-        name: String::from("Jim"),
+    let sean = User {
+        name: String::from("Sean"),
         hair_color: String::from("blue"),
         r#type: String::from("super"),
     };
     let tess = User {
         name: String::from("Tess"),
-        hair_color: String::from("blue"),
-        r#type: String::from("super"),
+        hair_color: String::from("black"),
+        r#type: String::from("regular"),
     };
 
     let mut users: Vec<User> = Vec::new();
-    users.push(jim.clone());
+    users.push(sean.clone());
     users.push(tess.clone());
 
     // Control: See if query of assign remains unchanged.
-    let update_jim = update(users::table.find(1)).set(&jim);
-    let debug_jim = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_jim);
-    println!("debug_jim\n-------------{:?}", debug_jim);
+    let update_sean = update(users::table.find(1)).set(&sean);
+    let debug_sean = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_sean);
+    println!("debug_sean\n-------------{:?}", debug_sean);
 
     // TODO: batch update.
-    let update_users = update(users::table.find(1)).set(&users);
+    // important not to set filter. Not supported yet.
+    let update_users = update(users::table).set(&users);
     let debug_users = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_users);
     println!("debug_users\n-------------{:?}\n-------------", debug_users);
 
@@ -1044,15 +1045,15 @@ fn named_struct_batch() {
     let expected = vec![
         (
             1,
-            String::from("Jim"),
+            String::from("Sean"),
             Some(String::from("blue")),
             Some(String::from("super")),
         ),
         (
             2,
             String::from("Tess"),
-            Some(String::from("blue")),
-            Some(String::from("admin")),
+            Some(String::from("black")),
+            Some(String::from("regular")),
         ),
     ];
     let actual = users::table.order(users::id).load(connection);

@@ -20,8 +20,17 @@ pub trait CanUpdateInSingleQuery<DB: Backend> {
     fn rows_to_update(&self) -> Option<usize>;
 }
 
-pub trait UpdateValues<DB: Backend, T: Table>: QueryFragment<DB> {
-    fn column_names(&self, out: AstPass<'_, '_, DB>) -> QueryResult<()>;
+pub trait BatchUpdateTarget<DB: Backend, T: Table>: QueryFragment<DB> {
+    fn column_target<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>;
+}
+
+pub trait BatchUpdateTargetAssign<DB: Backend, T: Table>: BatchUpdateTarget<DB, T> {
+    fn column_target_assign<'b>(&'b self, out: AstPass<'_, 'b, DB>, alias: &str)
+        -> QueryResult<()>;
+}
+
+pub trait BatchUpdateExpr<DB: Backend, T: Table>: QueryFragment<DB> {
+    fn column_expr<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>;
 }
 
 /// This type represents a batch update clause, which allows
