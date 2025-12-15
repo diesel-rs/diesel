@@ -134,7 +134,7 @@ LL |     a = users::table.group_by(users::id).into_boxed();
               found struct `BoxedSelectStatement<'_, _, _, _, users::columns::id>`
 
 error[E0277]: the trait bound `BoxedSelectStatement<'_, (Integer, Text), ..., _>: GroupByDsl<_>` is not satisfied
-  --> tests/fail/boxed_queries_and_group_by.rs:91:10
+  --> tests/fail/boxed_queries_and_group_by.rs:92:10
    |
 LL |         .group_by(users::id)
    |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, _>`
@@ -145,7 +145,7 @@ LL |         .group_by(users::id)
 
    
 error[E0277]: the trait bound `SelectStatement<FromClause<...>>: GroupByDsl<_>` is not satisfied
-  --> tests/fail/boxed_queries_and_group_by.rs:91:10
+  --> tests/fail/boxed_queries_and_group_by.rs:92:10
    |
 LL |         .group_by(users::id)
    |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<BoxedSelectStatement<'_, ..., ..., _>>>`
@@ -154,7 +154,7 @@ LL |         .group_by(users::id)
 
    
 error[E0277]: the trait bound `BoxedSelectStatement<'_, (Integer, Text), ..., _>: QueryRelation` is not satisfied
-  --> tests/fail/boxed_queries_and_group_by.rs:91:10
+  --> tests/fail/boxed_queries_and_group_by.rs:92:10
    |
 LL |         .group_by(users::id)
    |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, _>`
@@ -162,3 +162,13 @@ LL |         .group_by(users::id)
    = help: the following other types implement trait `GroupByDsl<Expr>`:
              Alias<S>
              SelectStatement<F, S, D, W, O, LOf, G, H>
+
+   
+error[E0282]: type annotations needed
+  --> tests/fail/boxed_queries_and_group_by.rs:89:5
+   |
+LL | /     users::table
+LL | |
+LL | |         .into_boxed()
+LL | |         .group_by(users::id)
+   | |____________________________^ cannot infer type
