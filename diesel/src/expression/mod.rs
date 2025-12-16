@@ -73,13 +73,6 @@ pub(crate) mod dsl {
     pub use super::sql_literal::sql;
 
     #[cfg(feature = "postgres_backend")]
-    #[cfg_attr(
-        all(feature = "sqlite", feature = "postgres_backend"),
-        expect(
-            ambiguous_glob_reexports,
-            reason = "we cannot do much about this anymore"
-        )
-    )]
     pub use crate::pg::expression::dsl::*;
 
     #[cfg(feature = "sqlite")]
