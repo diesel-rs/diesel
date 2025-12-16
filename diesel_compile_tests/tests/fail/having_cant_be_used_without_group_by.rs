@@ -24,6 +24,7 @@ fn main() {
     let mut conn = PgConnection::establish("").unwrap();
 
     users::table
+        //~^ ERROR: type annotations needed
         .select(users::name)
         .having(users::id.gt(1))
         //~^ ERROR: the trait bound `SelectStatement<FromClause<table>, SelectClause<name>>: HavingDsl<_>` is not satisfied

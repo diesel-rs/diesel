@@ -68,8 +68,6 @@ pub(crate) mod dsl {
     #[doc(inline)]
     pub use super::functions::window_functions::*;
     #[doc(inline)]
-    pub use super::helper_types::{case_when, IntoSql, Otherwise, When};
-    #[doc(inline)]
     pub use super::not::not;
     #[doc(inline)]
     pub use super::sql_literal::sql;

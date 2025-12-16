@@ -1,5 +1,5 @@
 error[E0277]: the trait bound `SelectStatement<FromClause<table>, SelectClause<name>>: HavingDsl<_>` is not satisfied
-  --> tests/fail/having_cant_be_used_without_group_by.rs:28:10
+  --> tests/fail/having_cant_be_used_without_group_by.rs:29:10
    |
 LL |         .having(users::id.gt(1))
    |          ^^^^^^ the trait `HavingDsl<_>` is not implemented for `SelectStatement<FromClause<table>, SelectClause<name>>`
@@ -10,8 +10,17 @@ LL |         .having(users::id.gt(1))
    = help: for that trait implementation, expected `diesel::query_builder::group_by_clause::GroupByClause<_>`, found `diesel::query_builder::group_by_clause::NoGroupByClause`
 
    
+error[E0282]: type annotations needed
+  --> tests/fail/having_cant_be_used_without_group_by.rs:26:5
+   |
+LL | /     users::table
+LL | |
+LL | |         .select(users::name)
+LL | |         .having(users::id.gt(1))
+   | |________________________________^ cannot infer type
+
 error[E0277]: the trait bound `(): diesel::Expression` is not satisfied
-  --> tests/fail/having_cant_be_used_without_group_by.rs:34:10
+  --> tests/fail/having_cant_be_used_without_group_by.rs:35:10
    |
 LL |         .having(users::id.gt(1))
    |          ^^^^^^ the trait `diesel::Expression` is not implemented for `()`
@@ -23,14 +32,14 @@ LL |         .having(users::id.gt(1))
              CaseWhen<CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
              CaseWhen<CaseWhenConditionsLeaf<W, T>, ElseExpression<E>>
              CaseWhen<CaseWhenConditionsLeaf<W, T>, NoElseExpression>
-             CountStar
              Exists<T>
+             In<T, U>
            and N others
    = note: required for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, _>` to implement `HavingDsl<_>`
 
    
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/having_cant_be_used_without_group_by.rs:41:10
+  --> tests/fail/having_cant_be_used_without_group_by.rs:42:10
    |
 LL |         .having(posts::id.eq(42))
    |          ^^^^^^ expected `Once`, found `Never`
@@ -48,7 +57,7 @@ LL |         id -> Integer,
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/having_cant_be_used_without_group_by.rs:49:10
+  --> tests/fail/having_cant_be_used_without_group_by.rs:50:10
    |
 LL |         .having(posts::id.eq(42))
    |          ^^^^^^ expected `Once`, found `Never`
