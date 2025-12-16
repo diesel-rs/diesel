@@ -398,20 +398,29 @@ pub fn load_view_data(
     if resolver.config.experimental_infer_nullable_for_views {
         tracing::debug!("Infer nullability for view fields");
         match diesel_infer_query::parse_view_def(&sql_definition) {
-            Ok(data) => {
-                tracing::debug!(view = %name, ?data, "Inferred data");
-                if data.field_count() == column_data.len() {
-                    for (column_data, is_nullable) in column_data
-                        .iter_mut()
-                        .zip(data.infer_nullability(resolver)?)
-                    {
-                        tracing::debug!(view = %name, field = %column_data.rust_name, ?is_nullable, "Correct field nullablility");
-                        if let Some(is_nullable) = is_nullable {
-                            column_data.ty.is_nullable = is_nullable;
+            Ok(mut data) => {
+                if data
+                    .resolve_references(resolver)
+                    .map_err(|e| {
+                        tracing::debug!(view = %name, ?data, ?e, "Failed to resolve references");
+                        e
+                    })
+                    .is_ok()
+                {
+                    tracing::debug!(view = %name, ?data, "Inferred data");
+                    if data.field_count() == column_data.len() {
+                        for (column_data, is_nullable) in column_data
+                            .iter_mut()
+                            .zip(data.infer_nullability(resolver)?)
+                        {
+                            tracing::debug!(view = %name, field = %column_data.rust_name, ?is_nullable, "Correct field nullablility");
+                            if let Some(is_nullable) = is_nullable {
+                                column_data.ty.is_nullable = is_nullable;
+                            }
                         }
+                    } else {
+                        tracing::warn!(view = %name, ?data, ?column_data, "Field count mismatch between what the database returned and what we inferred");
                     }
-                } else {
-                    tracing::warn!(view = %name, ?data, ?column_data, "Field count mismatch between what the database returned and what we inferred");
                 }
             }
             Err(e) => {

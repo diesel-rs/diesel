@@ -471,7 +471,7 @@ fn print_schema_view_infer_nullable_from_table() {
     test_print_schema(
         "print_schema_view_infer_nullable_from_table",
         vec!["--include-views", "--experimental-infer-nullable-for-views"],
-    )
+    );
 }
 
 #[test]
