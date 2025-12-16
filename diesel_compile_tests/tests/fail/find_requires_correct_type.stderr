@@ -11,8 +11,8 @@ LL |     int_primary_key::table.find("1");
              CaseWhen<CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
              CaseWhen<CaseWhenConditionsLeaf<W, T>, ElseExpression<E>>
              CaseWhen<CaseWhenConditionsLeaf<W, T>, NoElseExpression>
-             CountStar
              Exists<T>
+             In<T, U>
            and N others
    = note: required for `&str` to implement `diesel::Expression`
    = note: 1 redundant requirement hidden
@@ -58,8 +58,8 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
               CaseWhen<CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
               CaseWhen<CaseWhenConditionsLeaf<W, T>, ElseExpression<E>>
               CaseWhen<CaseWhenConditionsLeaf<W, T>, NoElseExpression>
-              CountStar
               Exists<T>
+              In<T, U>
             and N others
     = note: required for `diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>` to implement `diesel::Expression`
 note: required for `string_primary_key::columns::id` to implement `EqAll<{integer}>`

@@ -337,8 +337,14 @@ LL |     users.for_update().group_by(id).having(id.gt(1));
    = help: for that trait implementation, expected `diesel::query_builder::locking_clause::NoLockingClause`, found `diesel::query_builder::locking_clause::LockingClause`
 
    
+error[E0282]: type annotations needed
+  --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:47:5
+   |
+LL |     users.for_update().group_by(id).having(id.gt(1));
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ cannot infer type
+
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>: LockingDsl<...>` is not satisfied
-  --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:51:41
+  --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:52:41
    |
 LL |     users.group_by(id).having(id.gt(1)).for_update();
    |                                         ^^^^^^^^^^ unsatisfied trait bound
@@ -350,7 +356,7 @@ LL |     users.group_by(id).having(id.gt(1)).for_update();
 
    
 error[E0277]: the trait bound `SelectStatement<FromClause<...>>: LockingDsl<...>` is not satisfied
-  --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:51:41
+  --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:52:41
    |
 LL |     users.group_by(id).having(id.gt(1)).for_update();
    |                                         ^^^^^^^^^^ the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<...>>`
@@ -360,7 +366,7 @@ LL |     users.group_by(id).having(id.gt(1)).for_update();
 
    
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>: QueryRelation` is not satisfied
-  --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:51:41
+  --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:52:41
    |
 LL |     users.group_by(id).having(id.gt(1)).for_update();
    |                                         ^^^^^^^^^^ unsatisfied trait bound
@@ -368,5 +374,3 @@ LL |     users.group_by(id).having(id.gt(1)).for_update();
    = help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::GroupByClause<columns::id>, diesel::query_builder::having_clause::HavingClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Gt<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>, _>`
            but it is implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, _>`
    = help: for that trait implementation, expected `diesel::query_builder::group_by_clause::NoGroupByClause`, found `diesel::query_builder::group_by_clause::GroupByClause<columns::id>`
-
-   For more information about this error, try `rustc --explain E0277`.

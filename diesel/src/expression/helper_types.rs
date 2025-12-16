@@ -201,18 +201,11 @@ pub use super::functions::helper_types::*;
 #[doc(inline)]
 #[cfg(all(feature = "postgres_backend", not(feature = "sqlite")))]
 #[allow(unreachable_pub)]
-#[cfg_attr(
-    all(feature = "sqlite", feature = "postgres_backend"),
-    expect(
-        ambiguous_glob_reexports,
-        reason = "we cannot do much about this anymore"
-    )
-)]
 pub use crate::pg::expression::helper_types::*;
 
 #[doc(inline)]
 #[cfg(all(feature = "postgres_backend", feature = "sqlite"))]
-#[allow(unreachable_pub, ambiguous_glob_reexports)]
+#[allow(unreachable_pub)]
 pub use crate::pg::expression::helper_types::*;
 
 #[doc(inline)]
@@ -222,7 +215,7 @@ pub use crate::sqlite::expression::helper_types::*;
 
 #[doc(inline)]
 #[cfg(all(feature = "sqlite", feature = "postgres_backend"))]
-#[allow(unreachable_pub, ambiguous_glob_reexports)]
+#[allow(unreachable_pub)]
 pub use crate::sqlite::expression::helper_types::*;
 
 /// The return type of [`lhs.retrieve_as_text(rhs)`](crate::expression_methods::AnyJsonExpressionMethods::retrieve_as_text)
