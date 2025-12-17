@@ -269,11 +269,6 @@
 #![deny(unsafe_code)]
 #![cfg_attr(test, allow(clippy::unwrap_used))]
 
-// Running wasm tests on dedicated_worker
-#[cfg(test)]
-#[cfg(all(target_family = "wasm", target_os = "unknown"))]
-wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_dedicated_worker);
-
 extern crate diesel_derives;
 
 #[macro_use]
