@@ -337,5 +337,296 @@ pub type NotLikeBinary<Lhs, Rhs> = crate::dsl::NotLike<Lhs, Rhs>;
 #[deprecated(note = "Use `dsl::Concat` instead")]
 pub type ConcatArray<Lhs, Rhs> = crate::dsl::Concat<Lhs, Rhs>;
 
+/// Return type of [`array_to_string_with_null_string(arr, delim, null_str)`](super::functions::array_to_string_with_null_string())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_to_string_with_null_string<A, D, N> =
+    super::functions::array_to_string_with_null_string<
+        SqlTypeOf<A>, // The SQL type of the array
+        A,            // The array itself
+        D,            // The delimiter
+        N,            // The null string
+    >;
+
+/// Return type of [`array_to_string(arr, delim)`](super::functions::array_to_string())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_to_string<A, D> = super::functions::array_to_string<
+    SqlTypeOf<A>, // The SQL type of the array
+    A,            // The array itself
+    D,            // The delimiter
+>;
+
+/// Return type of [`lower(range)`](super::functions::lower())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type lower<R> = super::functions::lower<SqlTypeOf<R>, R>;
+
+/// Return type of [`upper(range)`](super::functions::upper())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type upper<R> = super::functions::upper<SqlTypeOf<R>, R>;
+
+/// Return type of [`isempty(range)`](super::functions::isempty())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type isempty<R> = super::functions::isempty<SqlTypeOf<R>, R>;
+
+/// Return type of [`lower_inc(range)`](super::functions::lower_inc())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type lower_inc<R> = super::functions::lower_inc<SqlTypeOf<R>, R>;
+
+/// Return type of [`upper_inc(range)`](super::functions::upper_inc())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type upper_inc<R> = super::functions::upper_inc<SqlTypeOf<R>, R>;
+
+/// Return type of [`lower_inf(range)`](super::functions::lower_inf())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type lower_inf<R> = super::functions::lower_inf<SqlTypeOf<R>, R>;
+
+/// Return type of [`upper_inf(range)`](super::functions::upper_inf())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type upper_inf<R> = super::functions::upper_inf<SqlTypeOf<R>, R>;
+
+/// Return type of [`range_merge(range_a, range_b)`](super::functions::range_merge())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type range_merge<R1, R2> = super::functions::range_merge<SqlTypeOf<R1>, SqlTypeOf<R2>, R1, R2>;
+
+/// Return type of [`multirange_merge(multirange)`](super::functions::multirange_merge())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type multirange_merge<R> = super::functions::multirange_merge<SqlTypeOf<R>, R>;
+
+/// Return type of [`array_append(array, element)`](super::functions::array_append())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_append<A, E> = super::functions::array_append<SqlTypeOf<A>, SqlTypeOf<E>, A, E>;
+
+/// Return type of [`array_replace(array, element, replace_with)`](super::functions::array_replace())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_replace<A, E, R> =
+    super::functions::array_replace<SqlTypeOf<A>, SqlTypeOf<E>, A, E, R>;
+
+/// Return type of [`array_dims(array)`](super::functions::array_append())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_dims<A> = super::functions::array_dims<SqlTypeOf<A>, A>;
+
+/// Return type of [`array_prepend(element, array)`](super::functions::array_prepend())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_prepend<E, A> = super::functions::array_prepend<SqlTypeOf<E>, SqlTypeOf<A>, E, A>;
+
+/// Return type of [`array_remove(array, element)`](super::functions::array_remove())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_remove<A, E> = super::functions::array_remove<SqlTypeOf<A>, SqlTypeOf<E>, A, E>;
+
+/// Return type of [`cardinality(array)`](super::functions::cardinality())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type cardinality<A> = super::functions::cardinality<SqlTypeOf<A>, A>;
+
+/// Return type of [`trim_array(array)`](super::functions::trim_array())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type trim_array<A, N> = super::functions::trim_array<SqlTypeOf<A>, A, N>;
+
+/// Return type of [`array_cat(array_a, array_b)`](super::functions::array_cat())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_cat<A, B> = super::functions::array_cat<SqlTypeOf<A>, A, B>;
+
+/// Return type of [`array_length(array, dimension)`](super::functions::array_length())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_length<A, D> = super::functions::array_length<SqlTypeOf<A>, A, D>;
+
+/// Return type of [`array_fill(value,array)`](super::functions::array_fill())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_fill<E, A> = super::functions::array_fill<SqlTypeOf<E>, E, A>;
+
+/// Return type of [`array_fill_with_lower_bound(value,array,array)`](super::functions::array_fill_with_lower_bound())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_fill_with_lower_bound<E, A1, A2> =
+    super::functions::array_fill_with_lower_bound<SqlTypeOf<E>, E, A1, A2>;
+
+/// Return type of [`array_lower(array, bound)`](super::functions::array_lower())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_lower<A, D> = super::functions::array_lower<SqlTypeOf<A>, A, D>;
+
+/// Return type of [`array_upper(array, bound)`](super::functions::array_upper())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_upper<A, D> = super::functions::array_upper<SqlTypeOf<A>, A, D>;
+
+/// Return type of [`array_position(array, element)`](super::functions::array_position())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_position<A, E> = super::functions::array_position<SqlTypeOf<A>, SqlTypeOf<E>, A, E>;
+
+/// Return type of [`array_position_with_subscript(array,element, subscript)`](super::functions::array_position_with_subscript())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_position_with_subscript<A, E, S> =
+    super::functions::array_position_with_subscript<SqlTypeOf<A>, SqlTypeOf<E>, A, E, S>;
+
+/// Return type of [`array_positions(array, element)`](super::functions::array_positions())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_positions<A, E> =
+    super::functions::array_positions<SqlTypeOf<A>, SqlTypeOf<E>, A, E>;
+
+/// Return type of [`array_ndims(array)`](super::functions::array_ndims())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_ndims<A> = super::functions::array_ndims<SqlTypeOf<A>, A>;
+
+/// Return type of [`array_shuffle(array)`](super::functions::array_shuffle())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_shuffle<A> = super::functions::array_shuffle<SqlTypeOf<A>, A>;
+
+/// Return type of [`array_sample(array,n)`](super::functions::array_sample())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_sample<A, N> = super::functions::array_sample<SqlTypeOf<A>, A, N>;
+
+/// Return type of [`array_to_json(array)`](super::functions::array_to_json())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type array_to_json<A> = super::functions::array_to_json<SqlTypeOf<A>, A>;
+
+/// Return type of [`to_json(element)`](super::functions::to_json())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type to_json<E> = super::functions::to_json<SqlTypeOf<E>, E>;
+
+/// Return type of [`to_jsonb(element)`](super::functions::to_jsonb())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type to_jsonb<E> = super::functions::to_jsonb<SqlTypeOf<E>, E>;
+
+/// Return type of [`json_object(text_array)`](super::functions::json_object())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_object<A> = super::functions::json_object<SqlTypeOf<A>, A>;
+
+/// Return type of [`json_object_with_keys_and_values(text_array, text_array)`](super::functions::json_object_with_keys_and_values())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_object_with_keys_and_values<K, V> =
+    super::functions::json_object_with_keys_and_values<SqlTypeOf<K>, SqlTypeOf<V>, K, V>;
+
+/// Return type of [`json_typeof(json)`](super::functions::json_typeof())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_typeof<E> = super::functions::json_typeof<SqlTypeOf<E>, E>;
+
+/// Return type of [`jsonb_typeof(jsonb)`](super::functions::jsonb_typeof())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_typeof<E> = super::functions::jsonb_typeof<SqlTypeOf<E>, E>;
+
+/// Return type of [`jsonb_pretty(jsonb)`](super::functions::jsonb_pretty())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_pretty<E> = super::functions::jsonb_pretty<SqlTypeOf<E>, E>;
+
+/// Return type of [`json_strip_nulls(json)`](super::functions::json_strip_nulls())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_strip_nulls<E> = super::functions::json_strip_nulls<SqlTypeOf<E>, E>;
+
+/// Return type of [`jsonb_strip_nulls(jsonb)`](super::functions::jsonb_strip_nulls())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_strip_nulls<E> = super::functions::jsonb_strip_nulls<SqlTypeOf<E>, E>;
+
+/// Return type of [`json_array_length(json)`](super::functions::json_array_length())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_array_length<E> = super::functions::json_array_length<SqlTypeOf<E>, E>;
+
+/// Return type of [`jsonb_array_length(jsonb)`](super::functions::jsonb_array_length())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_array_length<E> = super::functions::jsonb_array_length<SqlTypeOf<E>, E>;
+
+/// Return type of [`jsonb_object(text_array)`](super::functions::jsonb_object())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_object<A> = super::functions::jsonb_object<SqlTypeOf<A>, A>;
+
+/// Return type of [`jsonb_object_with_keys_and_values(text_array, text_array)`](super::functions::jsonb_object_with_keys_and_values())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_object_with_keys_and_values<K, V> =
+    super::functions::jsonb_object_with_keys_and_values<SqlTypeOf<K>, SqlTypeOf<V>, K, V>;
+
+/// Return type of [`row_to_json(record)`](super::functions::row_to_json())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type row_to_json<R> = super::functions::row_to_json<SqlTypeOf<R>, R>;
+
+/// Return type of [`json_populate_record(base, json)`](super::functions::json_populate_record())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type json_populate_record<B, J> =
+    super::functions::json_populate_record<SqlTypeOf<B>, SqlTypeOf<J>, B, J>;
+
+/// Return type of [`jsonb_populate_record(base, json)`](super::functions::jsonb_populate_record())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_populate_record<B, J> =
+    super::functions::jsonb_populate_record<SqlTypeOf<B>, SqlTypeOf<J>, B, J>;
+
+/// Return type of [`jsonb_set(base, path, new_value)`](super::functions::jsonb_set())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_set<B, J, R> = super::functions::jsonb_set<SqlTypeOf<B>, SqlTypeOf<J>, B, J, R>;
+
+/// Return type of [`jsonb_set_create_if_missing(base, path, new_value, create_if_missing)`](super::functions::jsonb_set_create_if_missing())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_set_create_if_missing<B, J, R, C> =
+    super::functions::jsonb_set_create_if_missing<SqlTypeOf<B>, SqlTypeOf<J>, B, J, R, C>;
+
+/// Return type of [`jsonb_set_lax(base, path, new_value, create_if_missing, null_value_treatment)`](super::functions::jsonb_set_lax())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_set_lax<B, J, R, C, E> =
+    super::functions::jsonb_set_lax<SqlTypeOf<B>, SqlTypeOf<J>, B, J, R, C, E>;
+
+/// Return type of [`jsonb_insert(base, path, new_value)`](super::functions::jsonb_insert())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_insert<B, J, R> =
+    super::functions::jsonb_insert<SqlTypeOf<B>, SqlTypeOf<J>, B, J, R>;
+
+/// Return type of [`jsonb_insert_with_insert_after(base, path, new_value, insert_after)`](super::functions::jsonb_insert_with_insert_after())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_insert_with_insert_after<B, J, R, I> =
+    super::functions::jsonb_insert_with_insert_after<SqlTypeOf<B>, SqlTypeOf<J>, B, J, R, I>;
+
+/// Return type of [`jsonb_path_exists(target, path) `] (super::functions::jsonb_path_exists())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_path_exists<E, P> = super::functions::jsonb_path_exists<SqlTypeOf<E>, E, P>;
+
+/// Return type of [`jsonb_path_match(target, path) `] (super::functions::jsonb_path_match())
+#[allow(non_camel_case_types)]
+#[cfg(feature = "postgres_backend")]
+pub type jsonb_path_match<E, P> = super::functions::jsonb_path_match<SqlTypeOf<E>, E, P>;
 #[doc(inline)]
 pub use super::return_type_helpers::*;
