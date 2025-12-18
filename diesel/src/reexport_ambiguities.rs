@@ -40,12 +40,15 @@ macro_rules! make_proxy_mod {
             type avg = ();
             type broadcast = ();
             type cardinality = ();
+            type daterange = ();
             type family = ();
             type first_value = ();
             type host = ();
             type hostmask = ();
             type inet_merge = ();
             type inet_same_family = ();
+            type int4range = ();
+            type int8range = ();
             type isempty = ();
             type json_array_length = ();
             type json_build_array_0 = ();
@@ -96,6 +99,7 @@ macro_rules! make_proxy_mod {
             type netmask = ();
             type network = ();
             type nth_value = ();
+            type numrange = ();
             type range_merge = ();
             type row_to_json = ();
             type set_masklen = ();
@@ -103,6 +107,8 @@ macro_rules! make_proxy_mod {
             type to_json = ();
             type to_jsonb = ();
             type trim_array = ();
+            type tsrange = ();
+            type tstzrange = ();
             type upper_inc = ();
             type upper_inf = ();
             type upper = ();
