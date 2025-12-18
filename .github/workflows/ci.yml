@@ -349,17 +349,8 @@ jobs:
       - name: Install wasm-bindgen-cli
         run: cargo install wasm-bindgen-cli --locked
 
-      - name: Install emscripten toolchains
-        run: |
-          git clone https://github.com/emscripten-core/emsdk.git
-          cd emsdk
-          ./emsdk install latest
-          ./emsdk activate latest
-
       - name: Test unit and integration tests
-        run: |
-          source ./emsdk/emsdk_env.sh
-          cargo xtask run-tests --wasm sqlite
+        run: cargo xtask run-tests --wasm sqlite
 
   sqlite_bundled:
     name: Check sqlite bundled + Sqlite with asan
