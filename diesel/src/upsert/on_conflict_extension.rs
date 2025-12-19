@@ -7,7 +7,9 @@ pub use crate::query_builder::upsert::on_conflict_target_decorations::Decoratabl
 use crate::query_builder::where_clause::{NoWhereClause, WhereAnd, WhereOr};
 use crate::query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
 use crate::query_dsl::filter_dsl::FilterDsl;
-use crate::query_dsl::methods::{OnConflictDoNothingDsl, OnConflictDsl, OrFilterDsl};
+use crate::query_dsl::methods::{
+    DoNothingDsl, DoUpdateDsl, OnConflictDoNothingDsl, OnConflictDsl, OrFilterDsl,
+};
 use crate::query_source::QuerySource;
 use crate::sql_types::BoolOrNullableBool;
 
@@ -371,6 +373,16 @@ pub struct IncompleteOnConflict<Stmt, Target> {
     target: Target,
 }
 
+impl<T: QuerySource, U, Op, Ret, Target> DoNothingDsl
+    for IncompleteOnConflict<InsertStatement<T, U, Op, Ret>, Target>
+{
+    type Output = InsertStatement<T, OnConflictValues<U, Target, DoNothing<T>>, Op, Ret>;
+
+    fn do_nothing(self) -> Self::Output {
+        self.do_nothing()
+    }
+}
+
 impl<T: QuerySource, U, Op, Ret, Target>
     IncompleteOnConflict<InsertStatement<T, U, Op, Ret>, Target>
 {
@@ -389,6 +401,14 @@ impl<T: QuerySource, U, Op, Ret, Target>
         self.stmt.replace_values(|values| {
             OnConflictValues::new(values, target, DoNothing::new(), NoWhereClause)
         })
+    }
+}
+
+impl<Stmt, Target> DoUpdateDsl for IncompleteOnConflict<Stmt, Target> {
+    type Output = IncompleteDoUpdate<Stmt, Target>;
+
+    fn do_update(self) -> Self::Output {
+        self.do_update()
     }
 }
 

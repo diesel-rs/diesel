@@ -53,7 +53,7 @@ pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
 pub use self::load_dsl::CompatibleType;
 #[doc(hidden)]
 pub use self::load_dsl::LoadQuery;
-pub use self::on_conflict_dsl::{OnConflictDoNothingDsl, OnConflictDsl};
+pub use self::on_conflict_dsl::{DoNothingDsl, DoUpdateDsl, OnConflictDoNothingDsl, OnConflictDsl};
 pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
 
 /// The traits used by `QueryDsl`.
