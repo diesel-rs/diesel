@@ -1,15 +1,26 @@
-error[E0271]: type mismatch resolving `<foo<Bound<Integer, i32>> as Expression>::SqlType == Text`
+error[E0277]: the trait bound `foo<Bound<Integer, i32>>: AsExpression<Text>` is not satisfied
   --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:40:38
    |
 LL |     let _ = users::table.filter(name.eq(foo(1)));
-   |                                      ^^ type mismatch resolving `<foo<Bound<Integer, i32>> as Expression>::SqlType == Text`
+   |                                      ^^ unsatisfied trait bound
    |
-note: expected this to be `diesel::sql_types::Text`
-  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:30:27
+help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `foo_utils::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>`
+  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:28:1
    |
-LL |     fn foo(x: Integer) -> Integer;
-   |                           ^^^^^^^
-   = note: required for `foo_utils::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>` to implement `AsExpression<diesel::sql_types::Text>`
+LL | #[declare_sql_function]
+   | ^^^^^^^^^^^^^^^^^^^^^^^
+   = help: the following other types implement trait `AsExpression<T>`:
+             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+             `&'__expr Cents` implements `AsExpression<Money>`
+             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
+             `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
+           and N others
+
+      = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
     --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:45:23
@@ -40,4 +51,3 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
-For more information about this error, try `rustc --explain E0271`.

@@ -87,6 +87,7 @@ fn main() {
 
     // you cannot call group by after boxing
     users::table
+        //~^ ERROR: type annotations needed
         .into_boxed()
         .group_by(users::id)
         //~^ ERROR: the trait bound `BoxedSelectStatement<'_, (Integer, Text), ..., _>: GroupByDsl<_>` is not satisfied

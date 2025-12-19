@@ -68,8 +68,6 @@ pub(crate) mod dsl {
     #[doc(inline)]
     pub use super::functions::window_functions::*;
     #[doc(inline)]
-    pub use super::helper_types::{case_when, IntoSql, Otherwise, When};
-    #[doc(inline)]
     pub use super::not::not;
     #[doc(inline)]
     pub use super::sql_literal::sql;
@@ -242,6 +240,7 @@ where
 #[doc(inline)]
 pub use diesel_derives::AsExpression;
 
+#[diagnostic::do_not_recommend]
 impl<T, ST> AsExpression<ST> for T
 where
     T: Expression<SqlType = ST>,

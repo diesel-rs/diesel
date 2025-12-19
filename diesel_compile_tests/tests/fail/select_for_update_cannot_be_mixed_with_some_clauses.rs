@@ -48,6 +48,7 @@ fn main() {
     //~^ ERROR: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>: Table` is not satisfied
     //~| ERROR: the trait bound `SelectStatement<FromClause<...>>: GroupByDsl<_>` is not satisfied
     //~| ERROR: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>: GroupByDsl<_>` is not satisfied
+    //~| ERROR: type annotations needed
     users.group_by(id).having(id.gt(1)).for_update();
     //~^ ERROR: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>: Table` is not satisfied
     //~| ERROR: the trait bound `SelectStatement<FromClause<...>>: LockingDsl<...>` is not satisfied

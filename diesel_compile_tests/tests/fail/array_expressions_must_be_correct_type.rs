@@ -11,7 +11,7 @@ fn main() {
     //~| ERROR: the trait bound `f64: ValidGrouping<()>` is not satisfied
     //~| ERROR: the trait bound `f64: QueryId` is not satisfied
     //~| ERROR: `f64` is no valid SQL fragment for the `Pg` backend
-    //~| ERROR: the trait bound `f64: diesel::Expression` is not satisfied
+    //~| ERROR: the trait bound `f64: AsExpression<diesel::sql_types::Integer>` is not satisfied
     //~| ERROR: cannot select `f64` from `NoFromClause`
     //~| ERROR: the trait bound `f64: ValidGrouping<()>` is not satisfied
     //~| ERROR: cannot convert `(f64, f64)` into an expression of type `Array<diesel::sql_types::Integer>`

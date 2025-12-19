@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "2.3.4"
+version = "2.3.5"
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"
 readme = "README.md"
@@ -53,13 +53,12 @@ path = "../diesel_derives"
 libsqlite3-sys = { version = ">=0.17.2, <0.36.0", optional = true, features = ["bundled_bindings"] }
 
 [target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
-sqlite-wasm-rs = { version = "0.4.0", optional = true, default-features = false }
+sqlite-wasm-rs = { version = ">=0.4.0, <0.6.0", optional = true, default-features = false }
 
 [target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dev-dependencies]
 # Something is dependent on it, we use feature to override it.
 getrandom = { version = "0.2", features = ["js"] }
 wasm-bindgen-test = "0.3.49"
-sqlite-wasm-rs = "0.4.0"
 
 [dev-dependencies]
 cfg-if = "1"
@@ -88,7 +87,7 @@ ipnet-address = ["dep:ipnet", "dep:libc"]
 numeric = ["dep:num-bigint", "dep:bigdecimal", "dep:num-traits", "dep:num-integer", "diesel_derives/numeric"]
 postgres_backend = ["diesel_derives/postgres", "dep:bitflags", "dep:byteorder", "dep:itoa"]
 mysql_backend = ["diesel_derives/mysql", "dep:byteorder"]
-returning_clauses_for_sqlite_3_35 = []
+returning_clauses_for_sqlite_3_35 = ["sqlite"]
 i-implement-a-third-party-backend-and-opt-into-breaking-changes = []
 r2d2 = ["diesel_derives/r2d2", "dep:r2d2"]
 chrono = ["diesel_derives/chrono", "dep:chrono"]

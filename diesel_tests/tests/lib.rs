@@ -1,10 +1,5 @@
 #![recursion_limit = "1024"]
 
-// Running wasm tests on dedicated_worker
-#[cfg(test)]
-#[cfg(all(target_family = "wasm", target_os = "unknown"))]
-wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_dedicated_worker);
-
 #[macro_use]
 extern crate assert_matches;
 
