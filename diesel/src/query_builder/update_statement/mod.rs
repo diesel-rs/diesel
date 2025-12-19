@@ -10,7 +10,7 @@ use crate::query_builder::returning_clause::*;
 use crate::query_builder::where_clause::*;
 use crate::query_dsl::methods::{BoxedDsl, FilterDsl, SetUpdateDsl};
 use crate::query_dsl::RunQueryDsl;
-use crate::query_source::Table;
+use crate::query_source::{QueryRelation, Table};
 use crate::result::EmptyChangeset;
 use crate::result::Error::QueryBuilderError;
 use crate::{query_builder::*, QuerySource};
@@ -51,7 +51,7 @@ impl<T, U, V> SetUpdateDsl<V> for UpdateStatement<T, U, SetNotCalled>
 where
     T: QuerySource + Table,
     V: changeset::AsChangeset<Target = T>,
-    UpdateStatement<T, U, V::Changeset>: AsQuery,
+    UpdateStatement<T, U, V::Changeset>: AsQuery + QueryRelation,
 {
     type Output = UpdateStatement<T, U, V::Changeset>;
 
