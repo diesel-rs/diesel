@@ -362,7 +362,6 @@ fn print_schema_comments_dont_fallback_on_generated() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
 fn print_schema_fk_related_tables() {
     test_print_schema(
         "print_schema_fk_related_tables",
