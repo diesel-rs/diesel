@@ -51,7 +51,7 @@ impl<T, U, V> SetUpdateDsl<V> for UpdateStatement<T, U, SetNotCalled>
 where
     T: QuerySource + Table,
     V: changeset::AsChangeset<Target = T>,
-    UpdateStatement<T, U, V::Changeset>: AsQuery + QueryRelation,
+    UpdateStatement<T, U, V::Changeset>: AsQuery,
 {
     type Output = UpdateStatement<T, U, V::Changeset>;
 
