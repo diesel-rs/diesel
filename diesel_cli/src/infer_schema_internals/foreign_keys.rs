@@ -1,5 +1,7 @@
 #![allow(clippy::expect_fun_call)] // My calls are so fun
 
+use std::collections::HashSet;
+
 use super::data_structures::ForeignKeyConstraint;
 use super::inference::get_primary_keys;
 use super::table_data::TableName;
@@ -56,27 +58,14 @@ pub fn remove_unsafe_foreign_keys_for_codegen(
             parent_ok && child_ok
         })
         .filter_map(|fk| {
-            if fk.foreign_key_columns.len() > 1 {
-                let first_pk = &fk.primary_key_columns[0];
-                let all_same_pk = fk.primary_key_columns.iter().all(|pk| pk == first_pk);
-
-                if all_same_pk {
-                    tracing::debug!(?fk, "Extract first column from grouped foreign keys");
-                    Some(ForeignKeyConstraint {
-                        child_table: fk.child_table.clone(),
-                        parent_table: fk.parent_table.clone(),
-                        foreign_key_columns: vec![fk.foreign_key_columns[0].clone()],
-                        foreign_key_columns_rust: vec![fk.foreign_key_columns_rust[0].clone()],
-                        primary_key_columns: vec![fk.primary_key_columns[0].clone()],
-                    })
-                } else {
-                    tracing::debug!(?fk, "Remove foreign key constraint because it's a compound foreign key");
+            match fk.foreign_key_columns.len() {
+                1 => Some(fk.clone()),
+                x => {
+                    if x > 1 {
+                        tracing::debug!(?fk, "Remove foreign key constraint because it's a compound foreign key");
+                    }
                     None
                 }
-            } else if fk.foreign_key_columns.len() == 1 {
-                Some(fk.clone())
-            } else {
-                None
             }
         })
         .filter(|fk| {
@@ -94,26 +83,39 @@ pub fn remove_unsafe_foreign_keys_for_codegen(
         .collect()
 }
 
-/// Remove duplicate foreign keys for joinable! macro (only one relationship per table pair allowed)
+/// get a list of relations with several foreign key constraints between the same tables
+pub fn duplicated_foreign_keys(
+    foreign_keys: &[ForeignKeyConstraint],
+) -> HashSet<(&TableName, &TableName)> {
+    foreign_keys
+        .iter()
+        .map(ForeignKeyConstraint::ordered_tables)
+        .filter(|tables| {
+            let dup_count = foreign_keys
+                .iter()
+                .filter(|fk| tables == &fk.ordered_tables())
+                .count();
+            if dup_count > 1 {
+                tracing::debug!(
+                    ?tables,
+                    "Remove foreign key constraint because it's not unique"
+                );
+            }
+            dup_count > 1
+        })
+        .collect()
+}
+
+/// Remove duplicate foreign keys for joinable! macro.
+///
+/// We only want to generate a `joinable!` entry if a single relation exists
 pub fn remove_duplicated_foreign_keys(
     foreign_keys: &[ForeignKeyConstraint],
+    duplicates: &HashSet<(&TableName, &TableName)>,
 ) -> Vec<ForeignKeyConstraint> {
-    use std::collections::HashSet;
-
-    let mut seen_table_pairs = HashSet::new();
-    let mut result = Vec::new();
-
-    for fk in foreign_keys {
-        let ordered_tables = fk.ordered_tables();
-        if seen_table_pairs.insert(ordered_tables) {
-            result.push(fk.clone());
-        } else {
-            tracing::debug!(
-                ?ordered_tables,
-                "Remove foreign key constraint because another foreign key between these tables already exists"
-            );
-        }
-    }
-
-    result
+    foreign_keys
+        .iter()
+        .filter(|fk| !duplicates.contains(&fk.ordered_tables()))
+        .cloned()
+        .collect()
 }

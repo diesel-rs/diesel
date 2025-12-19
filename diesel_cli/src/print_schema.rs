@@ -176,9 +176,11 @@ pub fn output_schema(
         &filter_column_structure(&table_names, SupportedQueryRelationStructures::Table);
     let foreign_keys_for_allow_tables =
         filter_foreign_keys_for_grouping(&foreign_keys, safe_tables);
+    let duplicate_foreign_keys = duplicated_foreign_keys(&foreign_keys);
     let foreign_keys_for_joinable =
         remove_unsafe_foreign_keys_for_codegen(connection, &foreign_keys, safe_tables);
-    let foreign_keys_for_joinable = remove_duplicated_foreign_keys(&foreign_keys_for_joinable);
+    let foreign_keys_for_joinable =
+        remove_duplicated_foreign_keys(&foreign_keys_for_joinable, &duplicate_foreign_keys);
 
     let resolver = SchemaResolverImpl::new(connection, table_names, config, unfiltered_table_names);
     let data = resolver.resolve_query_relations()?;

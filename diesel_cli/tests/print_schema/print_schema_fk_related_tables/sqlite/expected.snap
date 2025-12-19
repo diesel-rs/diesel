@@ -52,7 +52,6 @@ diesel::table! {
     }
 }
 
-diesel::joinable!(comments -> posts (post_id));
 diesel::joinable!(posts -> users (user_id));
 diesel::joinable!(transactions -> sessions (session_id));
 

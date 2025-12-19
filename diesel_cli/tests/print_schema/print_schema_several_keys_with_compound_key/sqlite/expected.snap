@@ -28,7 +28,4 @@ diesel::table! {
     }
 }
 
-diesel::joinable!(transaction_one -> payment_card (by_card_id));
-diesel::joinable!(transaction_two -> payment_card (payment_card_id));
-
 diesel::allow_tables_to_appear_in_same_query!(payment_card, transaction_one, transaction_two,);
