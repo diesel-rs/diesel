@@ -2,7 +2,7 @@ error[E0599]: the method `save_changes` exists for struct `User`, but its trait 
    --> tests/fail/codegen_does_not_add_save_changes_method_on_structs_without_primary_key.rs:26:10
     |
  LL | pub struct User {
-    | --------------- method `save_changes` not found for this struct because it doesn't satisfy `User: Copy`, `User: HasTable`, `User: IntoUpdateTarget` or `User: diesel::SaveChangesDsl<_>`
+    | --------------- method `save_changes` not found for this struct because it doesn't satisfy `User: HasTable`, `User: IntoUpdateTarget`, `User: diesel::SaveChangesDsl<_>` or `User: std::marker::Copy`
 ...
  LL |     user.save_changes(&mut connection);
     |          ^^^^^^^^^^^^ method cannot be called on `User` due to unsatisfied trait bounds
@@ -10,7 +10,7 @@ error[E0599]: the method `save_changes` exists for struct `User`, but its trait 
     = note: the following trait bounds were not satisfied:
             `User: HasTable`
             which is required by `User: diesel::SaveChangesDsl<_>`
-            `User: Copy`
+            `User: std::marker::Copy`
             which is required by `User: diesel::SaveChangesDsl<_>`
             `User: IntoUpdateTarget`
             which is required by `User: diesel::SaveChangesDsl<_>`
@@ -22,7 +22,7 @@ error[E0599]: the method `save_changes` exists for struct `User`, but its trait 
             which is required by `&mut User: diesel::SaveChangesDsl<_>`
             `<&mut User as diesel::AsChangeset>::Target = _`
             which is required by `&mut User: diesel::SaveChangesDsl<_>`
-            `&mut User: Copy`
+            `&mut User: std::marker::Copy`
             which is required by `&mut User: diesel::SaveChangesDsl<_>`
             `&mut User: diesel::AsChangeset`
             which is required by `&mut User: diesel::SaveChangesDsl<_>`

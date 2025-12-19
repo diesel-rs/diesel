@@ -1,5 +1,5 @@
-use std::borrow::Cow;
-use std::marker::PhantomData;
+use alloc::borrow::Cow;
+use core::marker::PhantomData;
 
 use byteorder::NetworkEndian;
 use byteorder::WriteBytesExt;
@@ -131,7 +131,7 @@ where
 }
 
 pub trait CopyFromExpression<T> {
-    type Error: From<crate::result::Error> + std::error::Error;
+    type Error: From<crate::result::Error> + core::error::Error;
 
     fn callback(&mut self, copy: &mut impl std::io::Write) -> Result<(), Self::Error>;
 
@@ -145,7 +145,7 @@ pub trait CopyFromExpression<T> {
 
 impl<S, F, E> CopyFromExpression<S::Table> for CopyFrom<S, F>
 where
-    E: From<crate::result::Error> + std::error::Error,
+    E: From<crate::result::Error> + core::error::Error,
     S: CopyTarget,
     F: Fn(&mut dyn std::io::Write) -> Result<(), E>,
 {
@@ -510,7 +510,7 @@ where
     C: Connection<Backend = Pg>,
 {
     /// The error type returned by the execute function
-    type Error: std::error::Error;
+    type Error: core::error::Error;
 
     /// See the trait documentation for details
     fn execute(self, conn: &mut C) -> Result<usize, Self::Error>;

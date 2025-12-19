@@ -1,6 +1,6 @@
+use core::ffi as libc;
+use core::{mem, slice};
 use std::io::Write;
-use std::os::raw as libc;
-use std::{mem, slice};
 
 use crate::deserialize::{self, FromSql, FromSqlRow};
 use crate::expression::AsExpression;

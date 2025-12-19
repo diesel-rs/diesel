@@ -3,6 +3,7 @@ use crate::expression::helper_types::{Asc, Desc};
 use crate::expression::Expression;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::QueryResult;
+use alloc::string::ToString;
 
 /// The `positional_order_by` method
 ///
