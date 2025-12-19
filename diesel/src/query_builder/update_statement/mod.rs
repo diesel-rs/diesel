@@ -10,7 +10,7 @@ use crate::query_builder::returning_clause::*;
 use crate::query_builder::where_clause::*;
 use crate::query_dsl::methods::{BoxedDsl, FilterDsl, SetUpdateDsl};
 use crate::query_dsl::RunQueryDsl;
-use crate::query_source::{QueryRelation, Table};
+use crate::query_source::Table;
 use crate::result::EmptyChangeset;
 use crate::result::Error::QueryBuilderError;
 use crate::{query_builder::*, QuerySource};

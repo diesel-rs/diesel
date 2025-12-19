@@ -8,7 +8,7 @@ use crate::query_builder::where_clause::{NoWhereClause, WhereAnd, WhereOr};
 use crate::query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
 use crate::query_dsl::filter_dsl::FilterDsl;
 use crate::query_dsl::methods::{
-    DoNothingDsl, DoUpdateDsl, OnConflictDoNothingDsl, OnConflictDsl, OrFilterDsl,
+    DoNothingDsl, DoUpdateDsl, OnConflictDoNothingDsl, OnConflictDsl, OrFilterDsl, SetUpdateDsl,
 };
 use crate::query_source::QuerySource;
 use crate::sql_types::BoolOrNullableBool;
@@ -739,6 +739,20 @@ impl<T: QuerySource, U, Op, Ret, Target>
                 NoWhereClause,
             )
         })
+    }
+}
+
+impl<T, U, Op, Ret, Target, Changes> SetUpdateDsl<Changes>
+    for IncompleteDoUpdate<InsertStatement<T, U, Op, Ret>, Target>
+where
+    T: QuerySource,
+    Changes: AsChangeset<Target = T>,
+{
+    type Output =
+        InsertStatement<T, OnConflictValues<U, Target, DoUpdate<Changes::Changeset, T>>, Op, Ret>;
+
+    fn set(self, changes: Changes) -> Self::Output {
+        self.set(changes)
     }
 }
 
