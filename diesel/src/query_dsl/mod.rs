@@ -45,6 +45,7 @@ mod save_changes_dsl;
 #[doc(hidden)]
 pub mod select_dsl;
 mod single_value_dsl;
+mod update_dsl;
 
 pub use self::belonging_to_dsl::BelongingToDsl;
 pub use self::combine_dsl::CombineDsl;
@@ -55,6 +56,7 @@ pub use self::load_dsl::CompatibleType;
 pub use self::load_dsl::LoadQuery;
 pub use self::on_conflict_dsl::{DoNothingDsl, DoUpdateDsl, OnConflictDoNothingDsl, OnConflictDsl};
 pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
+pub use self::update_dsl::SetUpdateDsl;
 
 /// The traits used by `QueryDsl`.
 ///
@@ -78,6 +80,7 @@ pub mod methods {
     pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;
     pub use super::single_value_dsl::SingleValueDsl;
+    pub use super::update_dsl::SetUpdateDsl;
 
     #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
     #[doc(hidden)]
