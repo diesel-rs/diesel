@@ -25,7 +25,18 @@ pub mod view {
     #[doc = concat!("A tuple of all of the columns on this", "view")]
     pub const all_columns: (id, name) = (id, name);
     #[allow(non_camel_case_types)]
-    #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default)]
+    #[derive(
+        Debug,
+        Clone,
+        Copy,
+        diesel::query_builder::QueryId,
+        Default,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Hash
+    )]
     #[doc = concat!("The actual ", "view", " struct")]
     ///
     /// This is the type which provides the base methods of the query
@@ -348,7 +359,17 @@ pub mod view {
         use super::view;
         use diesel::sql_types::*;
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+        #[derive(
+            Debug,
+            Clone,
+            Copy,
+            diesel::query_builder::QueryId,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash
+        )]
         #[doc = concat!(
             "Represents `", "view", "_name.*`, which is sometimes needed for"
         )]
@@ -395,7 +416,18 @@ pub mod view {
         impl diesel::SelectableExpression<view> for star {}
         impl diesel::AppearsOnTable<view> for star {}
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default)]
+        #[derive(
+            Debug,
+            Clone,
+            Copy,
+            diesel::query_builder::QueryId,
+            Default,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash
+        )]
         pub struct id;
         impl diesel::expression::Expression for id {
             type SqlType = Integer;
@@ -605,7 +637,18 @@ pub mod view {
             const NAME: &'static str = "id";
         }
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default)]
+        #[derive(
+            Debug,
+            Clone,
+            Copy,
+            diesel::query_builder::QueryId,
+            Default,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash
+        )]
         pub struct name;
         impl diesel::expression::Expression for name {
             type SqlType = Text;
