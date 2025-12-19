@@ -19,6 +19,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Bump supported version of sqlite-wasm-rs to 0.5.0
 * Minor documentation fixes
 * Make the `returning_clauses_for_sqlite_3_35` feature enable the `sqlite` feature by default
+* Include a fix for a nightly rust name resolution ambiguity
 
 ## [2.3.4] 2025-11-26
 
