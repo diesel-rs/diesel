@@ -1,3 +1,4 @@
+pub(crate) mod batch_update;
 pub(crate) mod changeset;
 pub(super) mod target;
 
