@@ -3,6 +3,7 @@ use crate::query_builder::*;
 use crate::query_source::joins::ToInnerJoin;
 use crate::result::QueryResult;
 use crate::sql_types::{DieselNumericOps, IntoNotNullable};
+use crate::Column;
 
 #[derive(Default, Debug, Copy, Clone, DieselNumericOps, ValidGrouping)]
 pub struct AssumeNotNull<T>(T);
@@ -56,4 +57,13 @@ where
 impl<T> SelectableExpression<NoFromClause> for AssumeNotNull<T> where
     Self: AppearsOnTable<NoFromClause>
 {
+}
+
+impl<T> Column for AssumeNotNull<T>
+where
+    T: Column<SqlType: IntoNotNullable<NotNullable: TypedExpressionType>>,
+{
+    type Table = T::Table;
+
+    const NAME: &'static str = T::NAME;
 }
