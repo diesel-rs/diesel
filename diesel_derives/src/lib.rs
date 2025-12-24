@@ -26,6 +26,7 @@ use proc_macro::TokenStream;
 use sql_function::ExternSqlBlock;
 use syn::parse_quote;
 
+mod allow_tables_to_appear_in_same_query;
 mod attrs;
 mod deprecated;
 mod field;
@@ -1444,6 +1445,91 @@ fn __diesel_public_if_inner(
 #[proc_macro]
 pub fn table_proc(input: TokenStream) -> TokenStream {
     table_proc_inner(input.into()).into()
+}
+
+/// Allow two or more tables which are otherwise unrelated to be used together
+/// in a query.
+///
+/// This macro must be invoked any time two tables need to appear in the same
+/// query either because they are being joined together, or because one appears
+/// in a subselect. When this macro is invoked with more than 2 tables, every
+/// combination of those tables will be allowed to appear together.
+///
+/// If you are using `diesel print-schema`, an invocation of
+/// this macro will be generated for you for all tables in your schema.
+///
+/// # Example
+///
+/// ```
+/// # use diesel::{allow_tables_to_appear_in_same_query, table};
+/// #
+/// // This would be required to do `users.inner_join(posts.inner_join(comments))`
+/// allow_tables_to_appear_in_same_query!(comments, posts, users);
+///
+/// table! {
+///     comments {
+///         id -> Integer,
+///         post_id -> Integer,
+///         body -> VarChar,
+///     }
+/// }
+///
+/// table! {
+///    posts {
+///        id -> Integer,
+///        user_id -> Integer,
+///        title -> VarChar,
+///    }
+/// }
+///
+/// table! {
+///     users {
+///        id -> Integer,
+///        name -> VarChar,
+///     }
+/// }
+/// ```
+///
+/// When more than two tables are passed, the relevant code is generated for
+/// every combination of those tables. This code would be equivalent to the
+/// previous example.
+///
+/// ```
+/// # use diesel::{allow_tables_to_appear_in_same_query, table};
+/// # table! {
+/// #    comments {
+/// #        id -> Integer,
+/// #        post_id -> Integer,
+/// #        body -> VarChar,
+/// #    }
+/// # }
+/// #
+/// # table! {
+/// #    posts {
+/// #        id -> Integer,
+/// #        user_id -> Integer,
+/// #        title -> VarChar,
+/// #    }
+/// # }
+/// #
+/// # table! {
+/// #     users {
+/// #        id -> Integer,
+/// #        name -> VarChar,
+/// #     }
+/// # }
+/// #
+/// allow_tables_to_appear_in_same_query!(comments, posts);
+/// allow_tables_to_appear_in_same_query!(comments, users);
+/// allow_tables_to_appear_in_same_query!(posts, users);
+/// #
+/// # fn main() {}
+/// ```
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/allow_tables_to_appear_in_same_query.md")))]
+#[proc_macro]
+pub fn allow_tables_to_appear_in_same_query(input: TokenStream) -> TokenStream {
+    allow_tables_to_appear_in_same_query::expand(input.into()).into()
 }
 
 fn table_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
