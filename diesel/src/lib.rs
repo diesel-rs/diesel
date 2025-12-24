@@ -771,6 +771,8 @@ pub mod prelude {
     pub use diesel_derives::table_proc as table;
     #[doc(inline)]
     pub use diesel_derives::view_proc as view;
+    #[doc(inline)]
+    pub use diesel_derives::allow_tables_to_appear_in_same_query;
 
     #[cfg(feature = "mysql")]
     #[doc(inline)]
@@ -788,6 +790,10 @@ pub mod prelude {
 
 #[doc(inline)]
 pub use crate::macros::table;
+
+#[doc(inline)]
+pub use diesel_derives::allow_tables_to_appear_in_same_query;
+
 pub use crate::prelude::*;
 #[doc(inline)]
 pub use crate::query_builder::debug_query;
