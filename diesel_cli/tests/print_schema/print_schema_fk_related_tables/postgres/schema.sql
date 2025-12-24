@@ -1,7 +1,7 @@
 -- Three related tables.
 CREATE TABLE users (id SERIAL PRIMARY KEY);
 CREATE TABLE posts (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users);
-CREATE TABLE comments (id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL REFERENCES posts);
+CREATE TABLE comments (id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL REFERENCES posts, post_id_2 INTEGER NOT NULL REFERENCES posts);
 
 -- Two related tables.
 CREATE TABLE sessions (id SERIAL PRIMARY KEY);

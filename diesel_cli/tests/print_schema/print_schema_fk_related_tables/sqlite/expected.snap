@@ -1,52 +1,54 @@
 ---
 source: diesel_cli/tests/print_schema.rs
+assertion_line: 503
 description: "Test: print_schema_fk_related_tables"
+snapshot_kind: text
 ---
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
     bikes (id) {
-        id -> Int4,
+        id -> Nullable<Integer>,
     }
 }
 
 diesel::table! {
     cars (id) {
-        id -> Int4,
+        id -> Nullable<Integer>,
     }
 }
 
 diesel::table! {
     comments (id) {
-        id -> Int4,
-        post_id -> Int4,
-        post_id_2 -> Int4,
+        id -> Nullable<Integer>,
+        post_id -> Integer,
+        post_id_2 -> Integer,
     }
 }
 
 diesel::table! {
     posts (id) {
-        id -> Int4,
-        user_id -> Int4,
+        id -> Nullable<Integer>,
+        user_id -> Integer,
     }
 }
 
 diesel::table! {
     sessions (id) {
-        id -> Int4,
+        id -> Nullable<Integer>,
     }
 }
 
 diesel::table! {
     transactions (id) {
-        id -> Int4,
-        session_id -> Int4,
+        id -> Nullable<Integer>,
+        session_id -> Integer,
     }
 }
 
 diesel::table! {
     users (id) {
-        id -> Int4,
+        id -> Nullable<Integer>,
     }
 }
 
