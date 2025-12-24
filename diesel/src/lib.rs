@@ -768,11 +768,11 @@ pub mod prelude {
         QueryResult,
     };
     #[doc(inline)]
+    pub use diesel_derives::allow_tables_to_appear_in_same_query;
+    #[doc(inline)]
     pub use diesel_derives::table_proc as table;
     #[doc(inline)]
     pub use diesel_derives::view_proc as view;
-    #[doc(inline)]
-    pub use diesel_derives::allow_tables_to_appear_in_same_query;
 
     #[cfg(feature = "mysql")]
     #[doc(inline)]

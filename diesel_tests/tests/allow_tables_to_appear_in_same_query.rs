@@ -1,7 +1,7 @@
 //! Test submodule to verify that the `allow_tables_to_appear_in_same_query!` macro
 //! can accept as input tables defined in the root module as well as in submodules.
-use diesel::table;
 use diesel::allow_tables_to_appear_in_same_query;
+use diesel::table;
 
 table! {
     table_a (id) {

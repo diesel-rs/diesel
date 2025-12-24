@@ -26,8 +26,8 @@ use proc_macro::TokenStream;
 use sql_function::ExternSqlBlock;
 use syn::parse_quote;
 
-mod attrs;
 mod allow_tables_to_appear_in_same_query;
+mod attrs;
 mod deprecated;
 mod field;
 mod model;
@@ -1525,7 +1525,7 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
 /// #
 /// # fn main() {}
 /// ```
-/// 
+///
 #[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/allow_tables_to_appear_in_same_query.md")))]
 #[proc_macro]
 pub fn allow_tables_to_appear_in_same_query(input: TokenStream) -> TokenStream {
