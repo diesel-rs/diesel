@@ -11,6 +11,7 @@ mod ipnet_address;
 #[cfg(feature = "serde_json")]
 mod json;
 mod json_function_enum;
+mod jsonpath;
 mod mac_addr;
 mod mac_addr_8;
 #[doc(hidden)]
@@ -689,6 +690,28 @@ pub mod sql_types {
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 3220, array_oid = 3221))]
     pub struct PgLsn;
+
+    /// The [`jsonpath`] SQL type. This type can only be used with `feature = "postgres_backend"`
+    ///
+    /// `jsonpath` is a PostgreSQL specific type that represents a compiled JSON path query.
+    /// It is used with functions like `jsonb_path_exists`, `jsonb_path_match`, etc.
+    ///
+    /// ### [`ToSql`] impls
+    ///
+    /// - [`String`]
+    /// - [`&str`]
+    ///
+    /// ### [`FromSql`] impls
+    ///
+    /// - [`String`]
+    ///
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [`jsonpath`]: https://www.postgresql.org/docs/current/datatype-json.html#DATATYPE-JSONPATH
+    #[cfg(feature = "postgres_backend")]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[diesel(postgres_type(oid = 4072, array_oid = 4073))]
+    pub struct Jsonpath;
 
     #[doc(inline)]
     pub use crate::sql_types::Jsonb;
