@@ -6,6 +6,7 @@ use crate::pg::expression::expression_methods::ArrayOrNullableArray;
 use crate::pg::expression::expression_methods::CombinedAllNullableValue;
 use crate::pg::expression::expression_methods::JsonOrNullableJson;
 use crate::pg::expression::expression_methods::JsonbOrNullableJsonb;
+use crate::pg::expression::expression_methods::JsonpathOrNullableJsonpath;
 use crate::pg::expression::expression_methods::MaybeNullableValue;
 use crate::pg::expression::expression_methods::MultirangeOrNullableMultirange;
 use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
@@ -3254,6 +3255,1105 @@ extern "SQL" {
         json: J,
         text: T,
     ) -> Nullable<Text>;
+
+    /// Checks whether the JSON path returns any item for the specified JSON value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_exists;
+    /// #     use diesel::sql_types::{Jsonb, Nullable, Bool};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::json;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_exists::<Jsonb, Jsonpath, _, _>(
+    ///     json!({"a": [1, 2, 3]}),
+    ///     "$.a[*] ? (@ > 2)"
+    /// ))
+    /// .get_result::<bool>(connection)?;
+    ///
+    /// assert_eq!(result, true);
+    ///
+    /// let result = diesel::select(jsonb_path_exists::<Jsonb, Jsonpath, _, _>(
+    ///     json!({"a": [1, 2, 3]}),
+    ///     "$.b"
+    /// ))
+    /// .get_result::<bool>(connection)?;
+    ///
+    /// assert_eq!(result, false);
+    ///
+    /// let result = diesel::select(jsonb_path_exists::<Nullable<Jsonb>, Jsonpath, _, _>(
+    ///     None::<serde_json::Value>,
+    ///     "$.a"
+    /// ))
+    /// .get_result::<Option<bool>>(connection)?;
+    ///
+    /// assert_eq!(result, None);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn jsonb_path_exists<
+        J: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Bool>,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+    >(
+        target: J,
+        path: P,
+    ) -> J::Out;
+
+    /// Checks whether the JSON path returns any item for the specified JSON value, with variables.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_exists_with_vars;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::json;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_exists_with_vars::<Jsonb, Jsonpath, Jsonb, _, _, _>(
+    ///     json!({"a": [1, 2, 3]}),
+    ///     "$.a[*] ? (@ > $x)",
+    ///     json!({"x": 2})
+    /// ))
+    /// .get_result::<bool>(connection)?;
+    ///
+    /// assert_eq!(result, true);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_exists"]
+    fn jsonb_path_exists_with_vars<
+        J: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Bool>,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+    ) -> J::Out;
+
+    /// Checks whether the JSON path returns any item for the specified JSON value, with variables and silent flag.
+    ///
+    /// When `silent` is true, the function suppresses errors that would be thrown if the path expression
+    /// would result in an error.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_exists_with_vars_and_silent;
+    /// #     use diesel::sql_types::{Jsonb, Bool, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::json;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_exists_with_vars_and_silent::<Jsonb, Jsonpath, Jsonb, Bool, _, _, _, _>(
+    ///     json!({"a": [1, 2, 3]}),
+    ///     "$.a[*] ? (@ > $x)",
+    ///     json!({"x": 2}),
+    ///     true
+    /// ))
+    /// .get_result::<bool>(connection)?;
+    ///
+    /// assert_eq!(result, true);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_exists"]
+    fn jsonb_path_exists_with_vars_and_silent<
+        J: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Bool>,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+        S: SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+        silent: S,
+    ) -> J::Out;
+
+    /// Returns the result of a JSON path predicate check for the specified JSON value.
+    ///
+    /// Only the first item of the result is taken into account. If the result is not Boolean,
+    /// then NULL is returned.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_match;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::json;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_match::<Jsonb, Jsonpath, _, _>(
+    ///     json!({"a": [1, 2, 3]}),
+    ///     "exists($.a[*] ? (@ > 2))"
+    /// ))
+    /// .get_result::<Option<bool>>(connection)?;
+    ///
+    /// assert_eq!(result, Some(true));
+    ///
+    /// let result = diesel::select(jsonb_path_match::<Nullable<Jsonb>, Jsonpath, _, _>(
+    ///     None::<serde_json::Value>,
+    ///     "$.a"
+    /// ))
+    /// .get_result::<Option<bool>>(connection)?;
+    ///
+    /// assert_eq!(result, None);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn jsonb_path_match<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+    >(
+        target: J,
+        path: P,
+    ) -> Nullable<Bool>;
+
+    /// Returns the result of a JSON path predicate check with variables.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_match_with_vars;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::json;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_match_with_vars::<Jsonb, Jsonpath, Jsonb, _, _, _>(
+    ///     json!({"a": [1, 2, 3]}),
+    ///     "exists($.a[*] ? (@ > $x))",
+    ///     json!({"x": 2})
+    /// ))
+    /// .get_result::<Option<bool>>(connection)?;
+    ///
+    /// assert_eq!(result, Some(true));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_match"]
+    fn jsonb_path_match_with_vars<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+    ) -> Nullable<Bool>;
+
+    /// Returns the result of a JSON path predicate check with variables and silent flag.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_match_with_vars_and_silent;
+    /// #     use diesel::sql_types::{Jsonb, Bool, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::json;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_match_with_vars_and_silent::<Jsonb, Jsonpath, Jsonb, Bool, _, _, _, _>(
+    ///     json!({"a": [1, 2, 3]}),
+    ///     "exists($.a[*] ? (@ > $x))",
+    ///     json!({"x": 2}),
+    ///     true
+    /// ))
+    /// .get_result::<Option<bool>>(connection)?;
+    ///
+    /// assert_eq!(result, Some(true));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_match"]
+    fn jsonb_path_match_with_vars_and_silent<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+        S: SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+        silent: S,
+    ) -> Nullable<Bool>;
+
+    /// Returns all JSON items returned by the JSON path for the specified JSON value, as a JSON array.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_query_array;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_query_array::<Jsonb, Jsonpath, _, _>(
+    ///     json!({"a": [1, 2, 3, 4, 5]}),
+    ///     "$.a[*] ? (@ > 2)"
+    /// ))
+    /// .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(result, json!([3, 4, 5]));
+    ///
+    /// let result = diesel::select(jsonb_path_query_array::<Nullable<Jsonb>, Jsonpath, _, _>(
+    ///     None::<serde_json::Value>,
+    ///     "$.a"
+    /// ))
+    /// .get_result::<Option<Value>>(connection)?;
+    ///
+    /// assert_eq!(result, None);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn jsonb_path_query_array<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+    >(
+        target: J,
+        path: P,
+    ) -> J;
+
+    /// Returns all JSON items returned by the JSON path with variables, as a JSON array.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_query_array_with_vars;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_query_array_with_vars::<Jsonb, Jsonpath, Jsonb, _, _, _>(
+    ///     json!({"a": [1, 2, 3, 4, 5]}),
+    ///     "$.a[*] ? (@ > $x)",
+    ///     json!({"x": 2})
+    /// ))
+    /// .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(result, json!([3, 4, 5]));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_query_array"]
+    fn jsonb_path_query_array_with_vars<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+    ) -> J;
+
+    /// Returns all JSON items returned by the JSON path with variables and silent flag, as a JSON array.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_query_array_with_vars_and_silent;
+    /// #     use diesel::sql_types::{Jsonb, Bool, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_query_array_with_vars_and_silent::<Jsonb, Jsonpath, Jsonb, Bool, _, _, _, _>(
+    ///     json!({"a": [1, 2, 3, 4, 5]}),
+    ///     "$.a[*] ? (@ > $x)",
+    ///     json!({"x": 2}),
+    ///     true
+    /// ))
+    /// .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(result, json!([3, 4, 5]));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_query_array"]
+    fn jsonb_path_query_array_with_vars_and_silent<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+        S: SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+        silent: S,
+    ) -> J;
+
+    /// Returns the first JSON item returned by the JSON path for the specified JSON value.
+    ///
+    /// Returns NULL if there are no results.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_query_first;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_query_first::<Jsonb, Jsonpath, _, _>(
+    ///     json!({"a": [1, 2, 3, 4, 5]}),
+    ///     "$.a[*] ? (@ > 2)"
+    /// ))
+    /// .get_result::<Option<Value>>(connection)?;
+    ///
+    /// assert_eq!(result, Some(json!(3)));
+    ///
+    /// let result = diesel::select(jsonb_path_query_first::<Jsonb, Jsonpath, _, _>(
+    ///     json!({"a": [1, 2, 3]}),
+    ///     "$.b"
+    /// ))
+    /// .get_result::<Option<Value>>(connection)?;
+    ///
+    /// assert_eq!(result, None);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn jsonb_path_query_first<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+    >(
+        target: J,
+        path: P,
+    ) -> Nullable<Jsonb>;
+
+    /// Returns the first JSON item returned by the JSON path with variables.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_query_first_with_vars;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_query_first_with_vars::<Jsonb, Jsonpath, Jsonb, _, _, _>(
+    ///     json!({"a": [1, 2, 3, 4, 5]}),
+    ///     "$.a[*] ? (@ > $x)",
+    ///     json!({"x": 2})
+    /// ))
+    /// .get_result::<Option<Value>>(connection)?;
+    ///
+    /// assert_eq!(result, Some(json!(3)));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_query_first"]
+    fn jsonb_path_query_first_with_vars<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+    ) -> Nullable<Jsonb>;
+
+    /// Returns the first JSON item returned by the JSON path with variables and silent flag.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_query_first_with_vars_and_silent;
+    /// #     use diesel::sql_types::{Jsonb, Bool, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_query_first_with_vars_and_silent::<Jsonb, Jsonpath, Jsonb, Bool, _, _, _, _>(
+    ///     json!({"a": [1, 2, 3, 4, 5]}),
+    ///     "$.a[*] ? (@ > $x)",
+    ///     json!({"x": 2}),
+    ///     true
+    /// ))
+    /// .get_result::<Option<Value>>(connection)?;
+    ///
+    /// assert_eq!(result, Some(json!(3)));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_query_first"]
+    fn jsonb_path_query_first_with_vars_and_silent<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+        S: SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+        silent: S,
+    ) -> Nullable<Jsonb>;
+
+    /// Checks whether the JSON path returns any item for the specified JSON value.
+    ///
+    /// This is the same as `jsonb_path_exists`, but it supports comparisons of date/time values
+    /// that require timezone-aware conversions.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_exists_tz;
+    /// #     use diesel::sql_types::{Jsonb, Nullable, Bool};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::json;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_exists_tz::<Jsonb, Jsonpath, _, _>(
+    ///     json!({"a": "2023-01-01T00:00:00Z"}),
+    ///     "$.a"
+    /// ))
+    /// .get_result::<bool>(connection)?;
+    ///
+    /// assert_eq!(result, true);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn jsonb_path_exists_tz<
+        J: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Bool>,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+    >(
+        target: J,
+        path: P,
+    ) -> J::Out;
+
+    /// Checks whether the JSON path returns any item with timezone-aware date/time comparisons and variables.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_exists_tz_with_vars;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::json;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_exists_tz_with_vars::<Jsonb, Jsonpath, Jsonb, _, _, _>(
+    ///     json!({"a": "2023-01-01T00:00:00Z"}),
+    ///     "$.a",
+    ///     json!({})
+    /// ))
+    /// .get_result::<bool>(connection)?;
+    ///
+    /// assert_eq!(result, true);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_exists_tz"]
+    fn jsonb_path_exists_tz_with_vars<
+        J: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Bool>,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+    ) -> J::Out;
+
+    /// Checks whether the JSON path returns any item with timezone-aware date/time comparisons, variables and silent flag.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_exists_tz_with_vars_and_silent;
+    /// #     use diesel::sql_types::{Jsonb, Bool, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::json;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_exists_tz_with_vars_and_silent::<Jsonb, Jsonpath, Jsonb, Bool, _, _, _, _>(
+    ///     json!({"a": "2023-01-01T00:00:00Z"}),
+    ///     "$.a",
+    ///     json!({}),
+    ///     true
+    /// ))
+    /// .get_result::<bool>(connection)?;
+    ///
+    /// assert_eq!(result, true);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_exists_tz"]
+    fn jsonb_path_exists_tz_with_vars_and_silent<
+        J: JsonbOrNullableJsonb + SingleValue + MaybeNullableValue<Bool>,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+        S: SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+        silent: S,
+    ) -> J::Out;
+
+    /// Returns the result of a JSON path predicate check with timezone-aware date/time comparisons.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_match_tz;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::json;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_match_tz::<Jsonb, Jsonpath, _, _>(
+    ///     json!({"a": [1, 2, 3]}),
+    ///     "exists($.a[*] ? (@ > 2))"
+    /// ))
+    /// .get_result::<Option<bool>>(connection)?;
+    ///
+    /// assert_eq!(result, Some(true));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn jsonb_path_match_tz<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+    >(
+        target: J,
+        path: P,
+    ) -> Nullable<Bool>;
+
+    /// Returns the result of a JSON path predicate check with timezone-aware date/time comparisons and variables.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_match_tz_with_vars;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::json;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_match_tz_with_vars::<Jsonb, Jsonpath, Jsonb, _, _, _>(
+    ///     json!({"a": [1, 2, 3]}),
+    ///     "exists($.a[*] ? (@ > $x))",
+    ///     json!({"x": 2})
+    /// ))
+    /// .get_result::<Option<bool>>(connection)?;
+    ///
+    /// assert_eq!(result, Some(true));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_match_tz"]
+    fn jsonb_path_match_tz_with_vars<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+    ) -> Nullable<Bool>;
+
+    /// Returns the result of a JSON path predicate check with timezone-aware date/time comparisons, variables and silent flag.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_match_tz_with_vars_and_silent;
+    /// #     use diesel::sql_types::{Jsonb, Bool, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::json;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_match_tz_with_vars_and_silent::<Jsonb, Jsonpath, Jsonb, Bool, _, _, _, _>(
+    ///     json!({"a": [1, 2, 3]}),
+    ///     "exists($.a[*] ? (@ > $x))",
+    ///     json!({"x": 2}),
+    ///     true
+    /// ))
+    /// .get_result::<Option<bool>>(connection)?;
+    ///
+    /// assert_eq!(result, Some(true));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_match_tz"]
+    fn jsonb_path_match_tz_with_vars_and_silent<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+        S: SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+        silent: S,
+    ) -> Nullable<Bool>;
+
+    /// Returns all JSON items returned by the JSON path with timezone-aware date/time comparisons.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_query_array_tz;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_query_array_tz::<Jsonb, Jsonpath, _, _>(
+    ///     json!({"a": [1, 2, 3, 4, 5]}),
+    ///     "$.a[*] ? (@ > 2)"
+    /// ))
+    /// .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(result, json!([3, 4, 5]));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn jsonb_path_query_array_tz<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+    >(
+        target: J,
+        path: P,
+    ) -> J;
+
+    /// Returns all JSON items returned by the JSON path with timezone-aware date/time comparisons and variables.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_query_array_tz_with_vars;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_query_array_tz_with_vars::<Jsonb, Jsonpath, Jsonb, _, _, _>(
+    ///     json!({"a": [1, 2, 3, 4, 5]}),
+    ///     "$.a[*] ? (@ > $x)",
+    ///     json!({"x": 2})
+    /// ))
+    /// .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(result, json!([3, 4, 5]));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_query_array_tz"]
+    fn jsonb_path_query_array_tz_with_vars<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+    ) -> J;
+
+    /// Returns all JSON items returned by the JSON path with timezone-aware date/time comparisons, variables and silent flag.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_query_array_tz_with_vars_and_silent;
+    /// #     use diesel::sql_types::{Jsonb, Bool, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_query_array_tz_with_vars_and_silent::<Jsonb, Jsonpath, Jsonb, Bool, _, _, _, _>(
+    ///     json!({"a": [1, 2, 3, 4, 5]}),
+    ///     "$.a[*] ? (@ > $x)",
+    ///     json!({"x": 2}),
+    ///     true
+    /// ))
+    /// .get_result::<Value>(connection)?;
+    ///
+    /// assert_eq!(result, json!([3, 4, 5]));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_query_array_tz"]
+    fn jsonb_path_query_array_tz_with_vars_and_silent<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+        S: SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+        silent: S,
+    ) -> J;
+
+    /// Returns the first JSON item returned by the JSON path with timezone-aware date/time comparisons.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_query_first_tz;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_query_first_tz::<Jsonb, Jsonpath, _, _>(
+    ///     json!({"a": [1, 2, 3, 4, 5]}),
+    ///     "$.a[*] ? (@ > 2)"
+    /// ))
+    /// .get_result::<Option<Value>>(connection)?;
+    ///
+    /// assert_eq!(result, Some(json!(3)));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    fn jsonb_path_query_first_tz<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+    >(
+        target: J,
+        path: P,
+    ) -> Nullable<Jsonb>;
+
+    /// Returns the first JSON item returned by the JSON path with timezone-aware date/time comparisons and variables.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_query_first_tz_with_vars;
+    /// #     use diesel::sql_types::{Jsonb, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_query_first_tz_with_vars::<Jsonb, Jsonpath, Jsonb, _, _, _>(
+    ///     json!({"a": [1, 2, 3, 4, 5]}),
+    ///     "$.a[*] ? (@ > $x)",
+    ///     json!({"x": 2})
+    /// ))
+    /// .get_result::<Option<Value>>(connection)?;
+    ///
+    /// assert_eq!(result, Some(json!(3)));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_query_first_tz"]
+    fn jsonb_path_query_first_tz_with_vars<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+    ) -> Nullable<Jsonb>;
+
+    /// Returns the first JSON item returned by the JSON path with timezone-aware date/time comparisons, variables and silent flag.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::jsonb_path_query_first_tz_with_vars_and_silent;
+    /// #     use diesel::sql_types::{Jsonb, Bool, Nullable};
+    /// #     use diesel::pg::sql_types::Jsonpath;
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_path_query_first_tz_with_vars_and_silent::<Jsonb, Jsonpath, Jsonb, Bool, _, _, _, _>(
+    ///     json!({"a": [1, 2, 3, 4, 5]}),
+    ///     "$.a[*] ? (@ > $x)",
+    ///     json!({"x": 2}),
+    ///     true
+    /// ))
+    /// .get_result::<Option<Value>>(connection)?;
+    ///
+    /// assert_eq!(result, Some(json!(3)));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_path_query_first_tz"]
+    fn jsonb_path_query_first_tz_with_vars_and_silent<
+        J: JsonbOrNullableJsonb + SingleValue,
+        P: JsonpathOrNullableJsonpath + SingleValue,
+        V: JsonbOrNullableJsonb + SingleValue,
+        S: SingleValue,
+    >(
+        target: J,
+        path: P,
+        vars: V,
+        silent: S,
+    ) -> Nullable<Jsonb>;
 }
 
 pub(super) mod return_type_helpers_reexported {
