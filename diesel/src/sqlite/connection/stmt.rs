@@ -212,16 +212,25 @@ pub(super) fn ensure_sqlite_ok(
 
 fn last_error(raw_connection: *mut ffi::sqlite3) -> Error {
     let error_message = last_error_message(raw_connection);
-    let error_information = Box::new(error_message);
-    let error_kind = match last_error_code(raw_connection) {
+    let error_code = last_error_code(raw_connection);
+    let error_kind = match error_code {
         ffi::SQLITE_CONSTRAINT_UNIQUE | ffi::SQLITE_CONSTRAINT_PRIMARYKEY => {
             DatabaseErrorKind::UniqueViolation
         }
         ffi::SQLITE_CONSTRAINT_FOREIGNKEY => DatabaseErrorKind::ForeignKeyViolation,
+        // SQLITE_CONSTRAINT_TRIGGER is returned for ON DELETE RESTRICT violations,
+        // which are actually foreign key violations. We check the error message
+        // to distinguish from user-defined trigger failures.
+        ffi::SQLITE_CONSTRAINT_TRIGGER
+            if error_message.contains("FOREIGN KEY constraint failed") =>
+        {
+            DatabaseErrorKind::ForeignKeyViolation
+        }
         ffi::SQLITE_CONSTRAINT_NOTNULL => DatabaseErrorKind::NotNullViolation,
         ffi::SQLITE_CONSTRAINT_CHECK => DatabaseErrorKind::CheckViolation,
         _ => DatabaseErrorKind::Unknown,
     };
+    let error_information = Box::new(error_message);
     DatabaseError(error_kind, error_information)
 }
 
