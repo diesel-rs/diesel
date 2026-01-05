@@ -45,7 +45,7 @@ edition = "2021"
 libsqlite3-sys = ">=0.30.1,<0.36.0"
 pq-sys = ">=0.6,<0.8"
 openssl-sys = "0.9.100"
-mysqlclient-sys = "0.4"
+mysqlclient-sys = "0.5"
 
 [profile.dev.package.insta]
 opt-level = 3
