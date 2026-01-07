@@ -6,6 +6,8 @@ publish = false
 
 [dependencies]
 diesel = { version = "2.3.0", path = "../../../diesel", features = ["mysql"] }
+mysqlclient-sys = { workspace = true, features = ["bundled"] }
+openssl-sys = { workspace = true, features = ["vendored"] }
 dotenvy = "0.15"
 
 [dev-dependencies]

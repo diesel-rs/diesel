@@ -172,11 +172,15 @@ pub fn output_schema(
     );
 
     let foreign_keys = load_foreign_key_constraints(connection, config.schema_name())?;
-    let foreign_keys = remove_unsafe_foreign_keys_for_codegen(
-        connection,
-        &foreign_keys,
-        &filter_column_structure(&table_names, SupportedQueryRelationStructures::Table),
-    );
+    let safe_tables =
+        &filter_column_structure(&table_names, SupportedQueryRelationStructures::Table);
+    let foreign_keys_for_allow_tables =
+        filter_foreign_keys_for_grouping(&foreign_keys, safe_tables);
+    let duplicate_foreign_keys = duplicated_foreign_keys(&foreign_keys);
+    let foreign_keys_for_joinable =
+        remove_unsafe_foreign_keys_for_codegen(connection, &foreign_keys, safe_tables);
+    let foreign_keys_for_joinable =
+        remove_duplicated_foreign_keys(&foreign_keys_for_joinable, &duplicate_foreign_keys);
 
     let resolver = SchemaResolverImpl::new(connection, table_names, config, unfiltered_table_names);
     let data = resolver.resolve_query_relations()?;
@@ -240,7 +244,8 @@ pub fn output_schema(
 
     let definitions = QueryRelationDefinitions {
         data,
-        fk_constraints: foreign_keys,
+        fk_constraints_for_joinable: foreign_keys_for_joinable,
+        fk_constraints_for_allow_tables: foreign_keys_for_allow_tables,
         with_docs: config.with_docs,
         allow_tables_to_appear_in_same_query_config: config
             .allow_tables_to_appear_in_same_query_config,
@@ -551,7 +556,8 @@ impl Display for ModuleDefinition<'_> {
 
 struct QueryRelationDefinitions<'a> {
     data: Vec<QueryRelationData>,
-    fk_constraints: Vec<ForeignKeyConstraint>,
+    fk_constraints_for_joinable: Vec<ForeignKeyConstraint>,
+    fk_constraints_for_allow_tables: Vec<ForeignKeyConstraint>,
     with_docs: DocConfig,
     allow_tables_to_appear_in_same_query_config: AllowTablesToAppearInSameQueryConfig,
     import_types: Option<&'a [String]>,
@@ -582,11 +588,11 @@ impl<'a> Display for QueryRelationDefinitions<'a> {
             )?;
         }
 
-        if !self.fk_constraints.is_empty() {
+        if !self.fk_constraints_for_joinable.is_empty() {
             writeln!(f)?;
         }
 
-        for foreign_key in &self.fk_constraints {
+        for foreign_key in &self.fk_constraints_for_joinable {
             writeln!(f, "{}", Joinable(foreign_key))?;
         }
 
@@ -599,7 +605,7 @@ impl<'a> Display for QueryRelationDefinitions<'a> {
                         QueryRelationData::Table(table_data) => Some(table_data),
                     })
                     .collect(),
-                &self.fk_constraints,
+                &self.fk_constraints_for_allow_tables,
             ),
             AllowTablesToAppearInSameQueryConfig::AllTables => {
                 vec![self.data.iter().map(|table| table.table_name()).collect()]
