@@ -129,6 +129,19 @@ fn main() {
 
     let mut mapping = [
         (
+            "allow_tables_to_appear_in_same_query",
+            vec![
+                Example::with_heading(
+                    "diesel_derives__tests__simple.snap",
+                    "Simple example",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__with_paths.snap",
+                    "With paths",
+                ),
+            ],
+        ),
+        (
             "as_changeset",
             vec![
                 Example::with_heading(
