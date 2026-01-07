@@ -16,22 +16,6 @@ impl Parse for AllowTablesToAppearInSameQuery {
     }
 }
 
-/// Example expansion:
-///
-/// ```rust
-/// allow_tables_to_appear_in_same_query!(t1, t2, t3);
-/// ```
-///
-/// Expands to:
-///
-/// ```rust
-/// impl ::diesel::query_source::TableNotEqual<t2::table> for t1::table {}
-/// impl ::diesel::query_source::TableNotEqual<t1::table> for t2::table {}
-/// impl ::diesel::query_source::TableNotEqual<t3::table> for t1::table {}
-/// impl ::diesel::query_source::TableNotEqual<t1::table> for t3::table {}
-/// impl ::diesel::query_source::TableNotEqual<t3::table> for t2::table {}
-/// impl ::diesel::query_source::TableNotEqual<t2::table> for t3::table {}
-/// ```
 pub fn expand(input: TokenStream) -> TokenStream {
     let input: AllowTablesToAppearInSameQuery = match syn::parse2(input) {
         Ok(input) => input,
