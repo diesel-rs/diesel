@@ -26,4 +26,3 @@ table! {
 
 allow_tables_to_appear_in_same_query!(table_a, table_c);
 allow_tables_to_appear_in_same_query!(table_a, sub_table::table_b);
-
