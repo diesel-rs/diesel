@@ -74,3 +74,11 @@ where
 impl<DB, QS> ValidGrouping<()> for DynamicSelectClause<'_, DB, QS> {
     type IsAggregate = is_aggregate::No;
 }
+
+impl<'a, DB, QS> AsRef<[Box<dyn QueryFragment<DB> + Send + 'a>]>
+    for DynamicSelectClause<'a, DB, QS>
+{
+    fn as_ref(&self) -> &[Box<dyn QueryFragment<DB> + Send + 'a>] {
+        &self.selects
+    }
+}
