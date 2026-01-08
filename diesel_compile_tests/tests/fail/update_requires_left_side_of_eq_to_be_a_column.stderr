@@ -7,6 +7,7 @@ LL |     let command = update(users).set(foo.eq(name));
    = help: the following other types implement trait `Column`:
              columns::id
              columns::name
+             diesel::expression::assume_not_null::AssumeNotNull<T>
              pg::metadata_lookup::pg_namespace::columns::nspname
              pg::metadata_lookup::pg_namespace::columns::oid
              pg::metadata_lookup::pg_type::columns::oid

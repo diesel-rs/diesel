@@ -774,9 +774,11 @@ pub mod is_nullable {
     pub type MaybeNullable<N, T> = <N as MaybeNullableType<T>>::Out;
 
     /// Represents the output type of [`OneIsNullable`]
+    pub type OneNullable<T1, T2> = <T1 as OneIsNullable<T2>>::Out;
+
+    /// Represents the output type of [`OneIsNullable`]
     /// for two given SQL types
-    pub type IsOneNullable<S1, S2> =
-        <IsSqlTypeNullable<S1> as OneIsNullable<IsSqlTypeNullable<S2>>>::Out;
+    pub type IsOneNullable<S1, S2> = OneNullable<IsSqlTypeNullable<S1>, IsSqlTypeNullable<S2>>;
 
     /// Represents the output type of [`AllAreNullable`]
     /// for two given SQL types
