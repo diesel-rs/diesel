@@ -1,3 +1,5 @@
+use std::collections::{HashMap, HashSet};
+
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::spanned::Spanned as _;
@@ -45,6 +47,12 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let mut ref_field_ty = Vec::with_capacity(fields_for_update.len());
     let mut ref_field_assign = Vec::with_capacity(fields_for_update.len());
 
+    // Explicit trait bounds to improve error messages
+    let mut field_ty_bounds = Vec::with_capacity(model.fields().len());
+    let mut borrowed_field_ty_bounds = Vec::with_capacity(model.fields().len());
+    let mut field_ty_bounds_guard = HashMap::new();
+    let mut borrowed_field_ty_bounds_guard = HashMap::new();
+
     for field in fields_for_update {
         // skip this field while generating the update
         if field.skip_update() {
@@ -84,6 +92,14 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                     field,
                     table_name,
                     ty,
+                    treat_none_as_null,
+                )?);
+                field_ty_bounds.push(generate_field_bound(
+                    field,
+                    table_name,
+                    Some(ty),
+                    None,
+                    &mut field_ty_bounds_guard,
                     treat_none_as_null,
                 )?);
 
@@ -126,11 +142,41 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                     Some(quote!(&)),
                     treat_none_as_null,
                 )?);
+
+                field_ty_bounds.push(generate_field_bound(
+                    field,
+                    table_name,
+                    None,
+                    None,
+                    &mut field_ty_bounds_guard,
+                    treat_none_as_null,
+                )?);
+
+                borrowed_field_ty_bounds.push(generate_field_bound(
+                    field,
+                    table_name,
+                    None,
+                    Some(parse_quote!('update)),
+                    &mut borrowed_field_ty_bounds_guard,
+                    treat_none_as_null,
+                )?);
             }
         }
     }
 
+    let field_ty_bounds = field_ty_bounds
+        .into_iter()
+        .filter_map(|(type_to_check, bound)| {
+            super::insertable::filter_bounds(&field_ty_bounds_guard, type_to_check, bound)
+        });
+
+    let tpe_lifetimes = item.generics.lifetimes();
+
     let changeset_owned = quote! {
+        fn _check_owned<#(#tpe_lifetimes,)*>()
+        where #(#field_ty_bounds,)*
+        {}
+
         impl #impl_generics diesel::query_builder::AsChangeset for #struct_name #ty_generics
         #where_clause
         {
@@ -147,10 +193,36 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         let mut impl_generics = item.generics.clone();
         impl_generics.params.push(parse_quote!('update));
         let (impl_generics, _, _) = impl_generics.split_for_impl();
-
+        let borrowed_field_ty_bounds =
+            borrowed_field_ty_bounds
+                .into_iter()
+                .filter_map(|(type_to_check, bound)| {
+                    super::insertable::filter_bounds(
+                        &borrowed_field_ty_bounds_guard,
+                        type_to_check,
+                        bound,
+                    )
+                });
+        let tpe_lifetimes = item.generics.lifetimes().map(|lp| {
+            let lt = &lp.lifetime;
+            let bound = lp.bounds.iter();
+            if lp.bounds.is_empty() {
+                quote!(#lt: 'update)
+            } else {
+                quote!(#lt: 'update + #(#bound +)*)
+            }
+        });
         quote! {
+            #[allow(clippy::multiple_bound_locations)]
+            fn _check_borrowed<'update, #(#tpe_lifetimes,)*>()
+            where
+                #(#borrowed_field_ty_bounds,)*
+            {}
+
             impl #impl_generics diesel::query_builder::AsChangeset for &'update #struct_name #ty_generics
+            where
             #where_clause
+            (#(#ref_field_ty,)*): diesel::query_builder::AsChangeset,
             {
                 type Target = #table_name::table;
                 type Changeset = <(#(#ref_field_ty,)*) as diesel::query_builder::AsChangeset>::Changeset;
@@ -169,6 +241,33 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
         #changeset_borrowed
     )))
+}
+
+fn generate_field_bound(
+    field: &Field,
+    table_name: &Path,
+    ty: Option<&Type>,
+    borrowed: Option<syn::Lifetime>,
+    guard: &mut HashMap<Type, HashSet<Vec<syn::Lifetime>>>,
+    treat_none_as_null: bool,
+) -> Result<(Type, TokenStream)> {
+    let (ty_for_guard, as_expression_bound) = super::insertable::generate_field_bound(
+        field,
+        table_name,
+        ty.unwrap_or_else(|| field_changeset_actual_ty(field, treat_none_as_null)),
+        treat_none_as_null,
+        borrowed.clone(),
+        guard,
+    )?;
+    Ok((ty_for_guard, as_expression_bound))
+}
+
+fn field_changeset_actual_ty(field: &Field, treat_none_as_null: bool) -> &Type {
+    if !treat_none_as_null && is_option_ty(&field.ty) {
+        inner_of_option_ty(&field.ty)
+    } else {
+        &field.ty
+    }
 }
 
 fn field_changeset_ty_embed(field: &Field, lifetime: Option<TokenStream>) -> TokenStream {
