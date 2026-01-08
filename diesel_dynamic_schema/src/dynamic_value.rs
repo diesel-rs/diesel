@@ -186,20 +186,38 @@ impl diesel::expression::QueryMetadata<Any> for diesel::mysql::Mysql {
 
 /// A dynamically sized container that allows to receive
 /// a not at compile time known number of columns from the database
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DynamicRow<I> {
     values: Vec<I>,
+}
+
+impl<I> From<DynamicRow<I>> for Vec<I> {
+    fn from(row: DynamicRow<I>) -> Self {
+        row.values
+    }
 }
 
 /// A helper struct used as field type in `DynamicRow`
 /// to also return the name of the field along with the
 /// value
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NamedField<I> {
     /// Name of the field
     pub name: String,
     /// Actual field value
     pub value: I,
+}
+
+impl<I> From<NamedField<I>> for I {
+    fn from(field: NamedField<I>) -> Self {
+        field.value
+    }
+}
+
+impl<I> AsRef<I> for NamedField<I> {
+    fn as_ref(&self) -> &I {
+        &self.value
+    }
 }
 
 impl<I> FromIterator<I> for DynamicRow<I> {
