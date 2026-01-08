@@ -3,7 +3,7 @@ use crate::expression::array_comparison::{AsInExpression, In, NotIn};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::*;
 use crate::expression::{assume_not_null, cast, nullable, AsExpression, Expression};
-use crate::sql_types::{SingleValue, SqlType};
+use crate::sql_types::{SingleValue, SqlType, Untyped};
 
 /// Methods present on all expressions, except tuples
 pub trait ExpressionMethods: Expression + Sized {
@@ -588,6 +588,35 @@ where
     T::SqlType: SingleValue,
 {
 }
+
+/// Methods present on untyped expressions.
+pub trait UntypedExpressionMethods: Sized {
+    /// Creates a SQL `IS NULL` expression.
+    #[allow(clippy::wrong_self_convention)]
+    fn is_null(self) -> dsl::IsNull<Self> {
+        Grouped(IsNull::new(self))
+    }
+
+    /// Creates a SQL `IS NOT NULL` expression.
+    #[allow(clippy::wrong_self_convention)]
+    fn is_not_null(self) -> dsl::IsNotNull<Self> {
+        Grouped(IsNotNull::new(self))
+    }
+
+    /// Creates a SQL `DESC` expression, representing this expression in
+    /// descending order.
+    fn desc(self) -> dsl::Desc<Self> {
+        Desc::new(self)
+    }
+
+    /// Creates a SQL `ASC` expression, representing this expression in
+    /// ascending order.
+    fn asc(self) -> dsl::Asc<Self> {
+        Asc::new(self)
+    }
+}
+
+impl UntypedExpressionMethods for Untyped {}
 
 /// Methods present on all expressions
 pub trait NullableExpressionMethods: Expression + Sized {
