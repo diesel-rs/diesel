@@ -42,6 +42,9 @@ table! {
 
 #[cfg(feature = "postgres")]
 table! {
+    use diesel::sql_types::*;
+    use diesel::pg::sql_types::*;
+
     pg_extras(id) {
         id -> Integer,
         json -> Json,
@@ -57,6 +60,7 @@ table! {
         text_array -> Array<Text>,
         record -> Record<(Integer, Text, Date)>,
         boolean -> Bool,
+        jsonpath -> Jsonpath,
     }
 }
 
@@ -516,6 +520,80 @@ fn postgres_functions() -> _ {
         json_extract_path_text_2(pg_extras::json, pg_extras::name, pg_extras::name),
         jsonb_extract_path_text_1(pg_extras::jsonb, pg_extras::name),
         jsonb_extract_path_text_2(pg_extras::jsonb, pg_extras::name, pg_extras::name),
+        // jsonb_path_* functions
+        jsonb_path_exists(pg_extras::jsonb, pg_extras::jsonpath),
+        jsonb_path_exists_with_vars(pg_extras::jsonb, pg_extras::jsonpath, pg_extras::jsonb),
+        jsonb_path_exists_with_vars_and_silent(
+            pg_extras::jsonb,
+            pg_extras::jsonpath,
+            pg_extras::jsonb,
+            pg_extras::boolean,
+        ),
+        jsonb_path_match(pg_extras::jsonb, pg_extras::jsonpath),
+        jsonb_path_match_with_vars(pg_extras::jsonb, pg_extras::jsonpath, pg_extras::jsonb),
+        jsonb_path_match_with_vars_and_silent(
+            pg_extras::jsonb,
+            pg_extras::jsonpath,
+            pg_extras::jsonb,
+            pg_extras::boolean,
+        ),
+        jsonb_path_query_array(pg_extras::jsonb, pg_extras::jsonpath),
+        jsonb_path_query_array_with_vars(pg_extras::jsonb, pg_extras::jsonpath, pg_extras::jsonb),
+        jsonb_path_query_array_with_vars_and_silent(
+            pg_extras::jsonb,
+            pg_extras::jsonpath,
+            pg_extras::jsonb,
+            pg_extras::boolean,
+        ),
+        jsonb_path_query_first(pg_extras::jsonb, pg_extras::jsonpath),
+        jsonb_path_query_first_with_vars(pg_extras::jsonb, pg_extras::jsonpath, pg_extras::jsonb),
+        jsonb_path_query_first_with_vars_and_silent(
+            pg_extras::jsonb,
+            pg_extras::jsonpath,
+            pg_extras::jsonb,
+            pg_extras::boolean,
+        ),
+        // jsonb_path_*_tz functions
+        jsonb_path_exists_tz(pg_extras::jsonb, pg_extras::jsonpath),
+        jsonb_path_exists_tz_with_vars(pg_extras::jsonb, pg_extras::jsonpath, pg_extras::jsonb),
+        jsonb_path_exists_tz_with_vars_and_silent(
+            pg_extras::jsonb,
+            pg_extras::jsonpath,
+            pg_extras::jsonb,
+            pg_extras::boolean,
+        ),
+        jsonb_path_match_tz(pg_extras::jsonb, pg_extras::jsonpath),
+        jsonb_path_match_tz_with_vars(pg_extras::jsonb, pg_extras::jsonpath, pg_extras::jsonb),
+        jsonb_path_match_tz_with_vars_and_silent(
+            pg_extras::jsonb,
+            pg_extras::jsonpath,
+            pg_extras::jsonb,
+            pg_extras::boolean,
+        ),
+        jsonb_path_query_array_tz(pg_extras::jsonb, pg_extras::jsonpath),
+        jsonb_path_query_array_tz_with_vars(
+            pg_extras::jsonb,
+            pg_extras::jsonpath,
+            pg_extras::jsonb,
+        ),
+        jsonb_path_query_array_tz_with_vars_and_silent(
+            pg_extras::jsonb,
+            pg_extras::jsonpath,
+            pg_extras::jsonb,
+            pg_extras::boolean,
+        ),
+        jsonb_path_query_first_tz(pg_extras::jsonb, pg_extras::jsonpath),
+        jsonb_path_query_first_tz_with_vars(
+            pg_extras::jsonb,
+            pg_extras::jsonpath,
+            pg_extras::jsonb,
+        ),
+        jsonb_path_query_first_tz_with_vars_and_silent(
+            pg_extras::jsonb,
+            pg_extras::jsonpath,
+            pg_extras::jsonb,
+            pg_extras::boolean,
+        ),
     )
 }
 

@@ -2,9 +2,9 @@
 
 pub(in crate::pg) use self::private::{
     ArrayOrNullableArray, CombinedAllNullableValue, InetOrCidr, JsonOrNullableJson,
-    JsonRemoveIndex, JsonbOrNullableJsonb, MaybeNullableValue, MultirangeOrNullableMultirange,
-    MultirangeOrRangeMaybeNullable, RangeOrMultirange, RangeOrNullableRange,
-    RecordOrNullableRecord, TextArrayOrNullableTextArray, TextOrNullableText,
+    JsonRemoveIndex, JsonbOrNullableJsonb, JsonpathOrNullableJsonpath, MaybeNullableValue,
+    MultirangeOrNullableMultirange, MultirangeOrRangeMaybeNullable, RangeOrMultirange,
+    RangeOrNullableRange, RecordOrNullableRecord, TextArrayOrNullableTextArray, TextOrNullableText,
 };
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
@@ -3718,6 +3718,7 @@ where
 }
 
 pub(in crate::pg) mod private {
+    use crate::pg::sql_types::Jsonpath;
     use crate::sql_types::{
         AllAreNullable, Array, Binary, Cidr, Inet, Integer, Json, Jsonb, MaybeNullableType,
         Multirange, Nullable, Range, Record, SingleValue, SqlType, Text,
@@ -3991,6 +3992,16 @@ pub(in crate::pg) mod private {
 
     impl<T> RecordOrNullableRecord for Record<T> {}
     impl<T> RecordOrNullableRecord for Nullable<Record<T>> {}
+
+    /// Marker trait used to implement jsonpath functions on the appropriate types.
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::pg::sql_types::Jsonpath` nor `diesel::sql_types::Nullable<Jsonpath>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait JsonpathOrNullableJsonpath {}
+
+    impl JsonpathOrNullableJsonpath for Jsonpath {}
+    impl JsonpathOrNullableJsonpath for Nullable<Jsonpath> {}
 
     pub trait CombinedAllNullableValue<O, Out>: SingleValue {
         type Out: SingleValue;
