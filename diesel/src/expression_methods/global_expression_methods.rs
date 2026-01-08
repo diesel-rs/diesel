@@ -616,7 +616,7 @@ pub trait UntypedExpressionMethods: Sized {
     }
 }
 
-impl UntypedExpressionMethods for Untyped {}
+impl<T> UntypedExpressionMethods for T where T: Expression<SqlType = Untyped> {}
 
 /// Methods present on all expressions
 pub trait NullableExpressionMethods: Expression + Sized {
