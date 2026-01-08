@@ -152,6 +152,7 @@ use diesel::deserialize::{self, FromSql};
 use diesel::expression::TypedExpressionType;
 use diesel::row::{Field, NamedRow, Row};
 use diesel::QueryableByName;
+use std::borrow::Borrow;
 use std::iter::FromIterator;
 use std::ops::Index;
 
@@ -197,6 +198,18 @@ impl<I> From<DynamicRow<I>> for Vec<I> {
     }
 }
 
+impl<I> From<DynamicRow<NamedField<I>>> for Vec<I> {
+    fn from(row: DynamicRow<NamedField<I>>) -> Self {
+        row.values.into_iter().map(|f| f.value).collect()
+    }
+}
+
+impl<I> AsRef<DynamicRow<I>> for DynamicRow<I> {
+    fn as_ref(&self) -> &DynamicRow<I> {
+        self
+    }
+}
+
 /// A helper struct used as field type in `DynamicRow`
 /// to also return the name of the field along with the
 /// value
@@ -210,6 +223,12 @@ pub struct NamedField<I> {
 
 impl<I> AsRef<I> for NamedField<I> {
     fn as_ref(&self) -> &I {
+        &self.value
+    }
+}
+
+impl<I> Borrow<I> for NamedField<I> {
+    fn borrow(&self) -> &I {
         &self.value
     }
 }
