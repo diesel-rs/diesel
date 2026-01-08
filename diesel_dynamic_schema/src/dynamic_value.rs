@@ -208,12 +208,6 @@ pub struct NamedField<I> {
     pub value: I,
 }
 
-impl<I> From<NamedField<I>> for I {
-    fn from(field: NamedField<I>) -> Self {
-        field.value
-    }
-}
-
 impl<I> AsRef<I> for NamedField<I> {
     fn as_ref(&self) -> &I {
         &self.value
