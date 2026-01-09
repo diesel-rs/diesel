@@ -80,7 +80,7 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #     #[cfg(feature = "sqlite")]
     /// #     let collation = "BINARY";
     /// #     #[cfg(feature = "postgres")]
-    /// #     let collation = "C";
+    /// #     let collation = "\"C\"";
     /// #     #[cfg(feature = "mysql")]
     /// #     let collation = "utf8mb4_bin";
     /// #
