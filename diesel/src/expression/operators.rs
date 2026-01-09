@@ -853,3 +853,72 @@ impl<T, DB> LikeIsAllowedForType<crate::sql_types::Nullable<T>> for DB where
     DB: Backend + LikeIsAllowedForType<T>
 {
 }
+
+/// Represents the SQL `COLLATE` operator
+#[derive(Debug, Clone, DieselNumericOps, ValidGrouping)]
+pub struct Collate<T> {
+    pub(crate) expr: T,
+    pub(crate) collation: String,
+}
+
+impl<T> Collate<T> {
+    /// Creates a new `Collate` expression
+    pub fn new(expr: T, collation: impl ToString) -> Self {
+        Collate {
+            expr,
+            collation: collation.to_string(),
+        }
+    }
+}
+
+impl<T> crate::expression::Expression for Collate<T>
+where
+    T: crate::expression::Expression,
+{
+    type SqlType = T::SqlType;
+}
+
+impl<T, DB> crate::query_builder::QueryFragment<DB> for Collate<T>
+where
+    DB: crate::backend::Backend,
+    T: crate::query_builder::QueryFragment<DB>,
+{
+    fn walk_ast<'b>(
+        &'b self,
+        mut out: crate::query_builder::AstPass<'_, 'b, DB>,
+    ) -> crate::result::QueryResult<()> {
+        self.expr.walk_ast(out.reborrow())?;
+        out.push_sql(" COLLATE ");
+        out.push_sql(&self.collation);
+        Ok(())
+    }
+}
+
+impl<T> crate::query_builder::QueryId for Collate<T> {
+    type QueryId = ();
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl_selectable_expression!(Collate<T>);
+
+impl<T, QS> crate::expression::AppearsOnTable<QS> for Collate<T>
+where
+    T: crate::expression::AppearsOnTable<QS>,
+    Collate<T>: crate::expression::Expression,
+{
+}
+
+impl<S, T> crate::internal::operators_macro::FieldAliasMapper<S> for Collate<T>
+where
+    S: crate::query_source::AliasSource,
+    T: crate::internal::operators_macro::FieldAliasMapper<S>,
+{
+    type Out = Collate<<T as crate::internal::operators_macro::FieldAliasMapper<S>>::Out>;
+
+    fn map(self, alias: &crate::query_source::Alias<S>) -> Self::Out {
+        Collate {
+            expr: self.expr.map(alias),
+            collation: self.collation,
+        }
+    }
+}

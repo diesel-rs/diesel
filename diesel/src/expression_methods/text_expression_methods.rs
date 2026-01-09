@@ -1,8 +1,9 @@
 use self::private::TextOrNullableText;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
-use crate::expression::operators::{Concat, Like, NotLike};
+use crate::expression::operators::{Collate, Concat, Like, NotLike};
 use crate::expression::{AsExpression, Expression};
+
 use crate::sql_types::SqlType;
 
 /// Methods present on text expressions
@@ -60,6 +61,39 @@ pub trait TextExpressionMethods: Expression + Sized {
         T: AsExpression<Self::SqlType>,
     {
         Grouped(Concat::new(self, other.as_expression()))
+    }
+
+    /// Returns a SQL `COLLATE` expression.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     #[cfg(feature = "sqlite")]
+    /// #     let collation = "BINARY";
+    /// #     #[cfg(feature = "postgres")]
+    /// #     let collation = "C";
+    /// #     #[cfg(feature = "mysql")]
+    /// #     let collation = "utf8mb4_bin";
+    /// #
+    /// let starts_with_s = users
+    ///     .select(name)
+    ///     .filter(name.collate(collation).like("S%"))
+    ///     .load::<String>(connection)?;
+    /// assert_eq!(vec!["Sean"], starts_with_s);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn collate<S: ToString>(self, collation: S) -> dsl::Collate<Self> {
+        Grouped(Collate::new(self, collation))
     }
 
     /// Returns a SQL `LIKE` expression
