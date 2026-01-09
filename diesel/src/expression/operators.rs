@@ -901,13 +901,6 @@ impl<T> crate::query_builder::QueryId for Collate<T> {
 
 impl_selectable_expression!(Collate<T>);
 
-impl<T, QS> crate::expression::AppearsOnTable<QS> for Collate<T>
-where
-    T: crate::expression::AppearsOnTable<QS>,
-    Collate<T>: crate::expression::Expression,
-{
-}
-
 impl<S, T> crate::internal::operators_macro::FieldAliasMapper<S> for Collate<T>
 where
     S: crate::query_source::AliasSource,
