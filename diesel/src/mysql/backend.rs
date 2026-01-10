@@ -82,6 +82,8 @@ impl SqlDialect for Mysql {
     type BatchInsertSupport = sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport;
     type DefaultValueClauseForInsert = MysqlStyleDefaultValueClause;
 
+    type BatchUpdateSupport = sql_dialect::batch_update_support::PostgresLikeBatchUpdateSupport;
+
     type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;
     type SelectStatementSyntax = sql_dialect::select_statement_syntax::AnsiSqlSelectStatement;
 

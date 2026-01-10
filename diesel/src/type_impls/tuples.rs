@@ -249,6 +249,75 @@ macro_rules! tuple_impls {
                 }
             }
 
+            #[allow(unused_assignments)]
+            impl<$($T,)+ Tab, __DB> BatchUpdateTarget<__DB, Tab> for ($($T,)+)
+            where
+                Tab: Table,
+                __DB: Backend,
+                $($T: BatchUpdateTarget<__DB, Tab>,)+
+            {
+                fn column_target<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()> {
+                    let mut needs_comma = false;
+                    $(
+                        let noop_element = self.$idx.is_noop(out.backend())?;
+                        if !noop_element {
+                            if needs_comma {
+                                out.push_sql(", ");
+                            }
+                            self.$idx.column_target(out.reborrow())?;
+                            needs_comma = true;
+                        }
+                    )+
+                    Ok(())
+                }
+            }
+
+            #[allow(unused_assignments)]
+            impl<$($T,)+ Tab, __DB> BatchUpdateTargetAssign<__DB, Tab> for ($($T,)+)
+            where
+                Tab: Table,
+                __DB: Backend,
+                $($T: BatchUpdateTargetAssign<__DB, Tab>,)+
+            {
+                fn column_target_assign<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>, alias: &str) -> QueryResult<()> {
+                    let mut needs_comma = false;
+                    $(
+                        let noop_element = self.$idx.is_noop(out.backend())?;
+                        if !noop_element {
+                            if needs_comma {
+                                out.push_sql(", ");
+                            }
+                            self.$idx.column_target_assign(out.reborrow(), alias)?;
+                            needs_comma = true;
+                        }
+                    )+
+                    Ok(())
+                }
+            }
+
+            #[allow(unused_assignments)]
+            impl<$($T,)+ Tab, __DB> BatchUpdateExpr<__DB, Tab> for ($($T,)+)
+            where
+                Tab: Table,
+                __DB: Backend,
+                $($T: BatchUpdateExpr<__DB, Tab>,)+
+            {
+                fn column_expr<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()> {
+                    let mut needs_comma = false;
+                    $(
+                        let noop_element = self.$idx.is_noop(out.backend())?;
+                        if !noop_element {
+                            if needs_comma {
+                                out.push_sql(", ");
+                            }
+                            self.$idx.column_expr(out.reborrow())?;
+                            needs_comma = true;
+                        }
+                    )+
+                    Ok(())
+                }
+            }
+
             fake_variadic! {
                 $Tuple ->
                 impl<Target, $($T,)+> AsChangeset for ($($T,)+) where
