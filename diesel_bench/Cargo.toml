@@ -11,11 +11,11 @@ autobenches = false
 [dependencies]
 dotenvy = "0.15"
 criterion = { version = "0.6", default-features = false, features = [
-  "csv_output",
-  "cargo_bench_support",
+    "csv_output",
+    "cargo_bench_support",
 ] }
 sqlx = { version = "0.8.6", features = [
-  "runtime-tokio-rustls",
+    "runtime-tokio-rustls",
 ], optional = true }
 tokio = { version = "1", optional = true, features = ["rt-multi-thread"] }
 rusqlite = { version = "0.32", optional = true }
@@ -27,18 +27,23 @@ rustorm = { version = "0.20", optional = true }
 rustorm_dao = { version = "0.20", optional = true }
 serde = { version = "1", optional = true, features = ["derive"] }
 sea-orm = { version = "1.1.0", optional = true, features = [
-  "runtime-tokio-rustls",
+    "runtime-tokio-rustls",
 ] }
 futures = { version = "0.3", optional = true }
 futures-util = { version = "0.3", optional = true }
 criterion-perf-events = { version = "0.4", optional = true }
 perfcnt = { version = "0.8", optional = true }
 wtx = { default-features = false, features = [
-  "getrandom",
-  "optimization",
-  "std",
-  "tokio"
+    "getrandom",
+    "optimization",
+    "std",
+    "tokio",
 ], optional = true, version = "0.41" }
+zero-mysql = { optional = true, version = "=0.3.1", features = ["tokio", "derive"] }
+zero-postgres = { optional = true, version = "=0.6.0", features = [
+    "tokio",
+    "derive",
+] }
 
 [dependencies.diesel-async]
 git = "https://github.com/weiznich/diesel_async"
@@ -71,6 +76,9 @@ mysql = ["diesel/mysql"]
 sqlx-bench = ["sqlx", "tokio", "sqlx/runtime-tokio-rustls"]
 instruction_count = ["criterion-perf-events", "perfcnt"]
 fast_run = []
+zero-mysql = ["dep:zero-mysql", "tokio"]
+zero-postgres = ["dep:zero-postgres", "tokio"]
+tokio_postgres = ["dep:tokio_postgres", "tokio", "futures-util"]
 
 [profile.release]
 lto = true
