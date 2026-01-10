@@ -1,0 +1,171 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="PostgreSQL specific methods present between CIDR/INET expressions"><title>PgNetExpressionMethods in diesel::expression_methods - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (e3181b091 2024-04-18)" data-channel="nightly" data-search-js="search-5b46ae87cc198d72.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-e32f0c247825364d.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.1.6</span></h2></div><h2 class="location"><a href="#">PgNetExpressionMethods</a></h2><div class="sidebar-elems"><section><h3><a href="#provided-methods">Provided Methods</a></h3><ul class="block"><li><a href="#method.and">and</a></li><li><a href="#method.contains">contains</a></li><li><a href="#method.contains_or_eq">contains_or_eq</a></li><li><a href="#method.diff">diff</a></li><li><a href="#method.is_contained_by">is_contained_by</a></li><li><a href="#method.is_contained_by_or_eq">is_contained_by_or_eq</a></li><li><a href="#method.or">or</a></li><li><a href="#method.overlaps_with">overlaps_with</a></li></ul><h3><a href="#object-safety">Object Safety</a></h3><h3><a href="#implementors">Implementors</a></h3></section><h2><a href="index.html">In diesel::expression_methods</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../diesel/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Trait <a href="../index.html">diesel</a>::<wbr><a href="index.html">expression_methods</a>::<wbr><a class="trait" href="#">PgNetExpressionMethods</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel/pg/expression/expression_methods.rs.html#723-1183">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub trait PgNetExpressionMethods: <a class="trait" href="../prelude/trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> {
+    // Provided methods
+    fn <a href="#method.contains" class="fn">contains</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.ContainsNet.html" title="type diesel::dsl::ContainsNet">ContainsNet</a>&lt;Self, T&gt;
+       <span class="where">where T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.contains_or_eq" class="fn">contains_or_eq</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.ContainsNetLoose.html" title="type diesel::dsl::ContainsNetLoose">ContainsNetLoose</a>&lt;Self, T&gt;
+       <span class="where">where T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.is_contained_by" class="fn">is_contained_by</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.IsContainedByNet.html" title="type diesel::dsl::IsContainedByNet">IsContainedByNet</a>&lt;Self, T&gt;
+       <span class="where">where T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.is_contained_by_or_eq" class="fn">is_contained_by_or_eq</a>&lt;T&gt;(
+        self,
+        other: T
+    ) -&gt; <a class="type" href="../dsl/type.IsContainedByNetLoose.html" title="type diesel::dsl::IsContainedByNetLoose">IsContainedByNetLoose</a>&lt;Self, T&gt;
+       <span class="where">where T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.overlaps_with" class="fn">overlaps_with</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.OverlapsWithNet.html" title="type diesel::dsl::OverlapsWithNet">OverlapsWithNet</a>&lt;Self, T&gt;
+       <span class="where">where T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.and" class="fn">and</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.AndNet.html" title="type diesel::dsl::AndNet">AndNet</a>&lt;Self, T&gt;
+       <span class="where">where T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.or" class="fn">or</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.OrNet.html" title="type diesel::dsl::OrNet">OrNet</a>&lt;Self, T&gt;
+       <span class="where">where T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.diff" class="fn">diff</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.DifferenceNet.html" title="type diesel::dsl::DifferenceNet">DifferenceNet</a>&lt;Self, T&gt;
+       <span class="where">where T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;</span> { ... }
+}</code></pre><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>postgres_backend</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>PostgreSQL specific methods present between CIDR/INET expressions</p>
+</div></details><h2 id="provided-methods" class="section-header">Provided Methods<a href="#provided-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="method.contains" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#779-784">source</a><h4 class="code-header">fn <a href="#method.contains" class="fn">contains</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.ContainsNet.html" title="type diesel::dsl::ContainsNet">ContainsNet</a>&lt;Self, T&gt;<div class="where">where
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>&gt;&gt;</code> expression.</p>
+<p>This operator returns whether a subnet strictly contains another subnet or address.</p>
+<h5 id="example"><a class="doc-anchor" href="#example">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>diesel::insert_into(hosts)
+    .values(<span class="macro">vec!</span>[address.eq(IpNetwork::from_str(<span class="string">"10.0.2.3/24"</span>).unwrap()),
+                 address.eq(IpNetwork::from_str(<span class="string">"10.0.3.4/23"</span>).unwrap())])
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>my_hosts = hosts.select(id)
+    .filter(address.contains(IpNetwork::from_str(<span class="string">"10.0.2.5"</span>).unwrap()))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>], my_hosts);
+
+<span class="kw">let </span>my_hosts = hosts.select(id)
+    .filter(address.contains(IpNetwork::from_str(<span class="string">"10.0.2.5/24"</span>).unwrap()))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">2</span>], my_hosts);
+
+<span class="kw">let </span>my_hosts = hosts.select(id)
+    .filter(address.contains(IpNetwork::from_str(<span class="string">"10.0.3.31"</span>).unwrap()))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">2</span>], my_hosts);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.contains_or_eq" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#841-846">source</a><h4 class="code-header">fn <a href="#method.contains_or_eq" class="fn">contains_or_eq</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.ContainsNetLoose.html" title="type diesel::dsl::ContainsNetLoose">ContainsNetLoose</a>&lt;Self, T&gt;<div class="where">where
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>&gt;&gt;=</code> expression.</p>
+<p>This operator returns whether a subnet contains or is equal to another subnet.</p>
+<h5 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>diesel::insert_into(hosts)
+    .values(<span class="macro">vec!</span>[address.eq(IpNetwork::from_str(<span class="string">"10.0.2.3/24"</span>).unwrap()),
+                 address.eq(IpNetwork::from_str(<span class="string">"10.0.3.4/23"</span>).unwrap())])
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>my_hosts = hosts.select(id)
+    .filter(address.contains_or_eq(IpNetwork::from_str(<span class="string">"10.0.2.5"</span>).unwrap()))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>], my_hosts);
+
+<span class="kw">let </span>my_hosts = hosts.select(id)
+    .filter(address.contains_or_eq(IpNetwork::from_str(<span class="string">"10.0.2.5/24"</span>).unwrap()))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>], my_hosts);
+
+<span class="kw">let </span>my_hosts = hosts.select(id)
+    .filter(address.contains_or_eq(IpNetwork::from_str(<span class="string">"10.0.3.31"</span>).unwrap()))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">2</span>], my_hosts);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.is_contained_by" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#904-909">source</a><h4 class="code-header">fn <a href="#method.is_contained_by" class="fn">is_contained_by</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.IsContainedByNet.html" title="type diesel::dsl::IsContainedByNet">IsContainedByNet</a>&lt;Self, T&gt;<div class="where">where
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>&lt;&lt;</code> expression.</p>
+<p>This operator returns whether a subnet or address is strictly contained by another subnet.</p>
+<h5 id="example-2"><a class="doc-anchor" href="#example-2">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>diesel::insert_into(hosts)
+    .values(<span class="macro">vec!</span>[address.eq(IpNetwork::from_str(<span class="string">"10.0.2.3/24"</span>).unwrap()),
+                 address.eq(IpNetwork::from_str(<span class="string">"10.0.3.4/23"</span>).unwrap())])
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>my_hosts = hosts.select(id)
+    .filter(address.is_contained_by(IpNetwork::from_str(<span class="string">"10.0.2.5/24"</span>).unwrap()))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(my_hosts.len(), <span class="number">0</span>);
+
+<span class="kw">let </span>my_hosts = hosts.select(id)
+    .filter(address.is_contained_by(IpNetwork::from_str(<span class="string">"10.0.3.31/23"</span>).unwrap()))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">1</span>], my_hosts);
+
+<span class="kw">let </span>my_hosts = hosts.select(id)
+    .filter(address.is_contained_by(IpNetwork::from_str(<span class="string">"10.0.3.31/22"</span>).unwrap()))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>], my_hosts);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.is_contained_by_or_eq" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#962-967">source</a><h4 class="code-header">fn <a href="#method.is_contained_by_or_eq" class="fn">is_contained_by_or_eq</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.IsContainedByNetLoose.html" title="type diesel::dsl::IsContainedByNetLoose">IsContainedByNetLoose</a>&lt;Self, T&gt;<div class="where">where
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>&gt;&gt;=</code> expression.</p>
+<p>This operator returns whether a subnet is contained by or equal to another subnet.</p>
+<h5 id="example-3"><a class="doc-anchor" href="#example-3">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>diesel::insert_into(hosts)
+    .values(<span class="macro">vec!</span>[address.eq(IpNetwork::from_str(<span class="string">"10.0.2.3/24"</span>).unwrap()),
+                 address.eq(IpNetwork::from_str(<span class="string">"10.0.3.4/23"</span>).unwrap())])
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>my_hosts = hosts.select(id)
+    .filter(address.is_contained_by_or_eq(IpNetwork::from_str(<span class="string">"10.0.2.5/24"</span>).unwrap()))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">1</span>], my_hosts);
+
+<span class="kw">let </span>my_hosts = hosts.select(id)
+    .filter(address.is_contained_by_or_eq(IpNetwork::from_str(<span class="string">"10.0.3.31/23"</span>).unwrap()))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>], my_hosts);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.overlaps_with" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1024-1029">source</a><h4 class="code-header">fn <a href="#method.overlaps_with" class="fn">overlaps_with</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.OverlapsWithNet.html" title="type diesel::dsl::OverlapsWithNet">OverlapsWithNet</a>&lt;Self, T&gt;<div class="where">where
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>&amp;&amp;</code> expression.</p>
+<p>This operator returns whether a subnet contains or is contained by another subnet.</p>
+<h5 id="example-4"><a class="doc-anchor" href="#example-4">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>diesel::insert_into(hosts)
+    .values(<span class="macro">vec!</span>[address.eq(IpNetwork::from_str(<span class="string">"10.0.2.3/24"</span>).unwrap()),
+                 address.eq(IpNetwork::from_str(<span class="string">"10.0.3.4/23"</span>).unwrap())])
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>my_hosts = hosts.select(id)
+    .filter(address.overlaps_with(IpNetwork::from_str(<span class="string">"10.0.2.5/24"</span>).unwrap()))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>], my_hosts);
+
+<span class="kw">let </span>my_hosts = hosts.select(id)
+    .filter(address.overlaps_with(IpNetwork::from_str(<span class="string">"10.0.3.31/24"</span>).unwrap()))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">2</span>], my_hosts);
+
+<span class="kw">let </span>my_hosts = hosts.select(id)
+    .filter(address.overlaps_with(IpNetwork::from_str(<span class="string">"10.0.3.31/23"</span>).unwrap()))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>], my_hosts);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.and" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1075-1080">source</a><h4 class="code-header">fn <a href="#method.and" class="fn">and</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.AndNet.html" title="type diesel::dsl::AndNet">AndNet</a>&lt;Self, T&gt;<div class="where">where
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>&amp;</code> expression.</p>
+<p>This operator computes the bitwise AND between two network addresses.</p>
+<h5 id="example-5"><a class="doc-anchor" href="#example-5">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>diesel::insert_into(hosts)
+    .values(<span class="macro">vec!</span>[address.eq(IpNetwork::from_str(<span class="string">"10.0.2.3"</span>).unwrap())])
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>addr = hosts
+    .select(address.and(IpNetwork::from_str(<span class="string">"0.0.0.255"</span>).unwrap()))
+    .first::&lt;IpNetwork&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(addr, IpNetwork::from_str(<span class="string">"0.0.0.3"</span>).unwrap());</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.or" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1126-1131">source</a><h4 class="code-header">fn <a href="#method.or" class="fn">or</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.OrNet.html" title="type diesel::dsl::OrNet">OrNet</a>&lt;Self, T&gt;<div class="where">where
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>|</code> expression.</p>
+<p>This operator computes the bitwise OR between two network addresses.</p>
+<h5 id="example-6"><a class="doc-anchor" href="#example-6">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>diesel::insert_into(hosts)
+    .values(<span class="macro">vec!</span>[address.eq(IpNetwork::from_str(<span class="string">"10.0.2.3"</span>).unwrap())])
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>addr = hosts
+    .select(address.or(IpNetwork::from_str(<span class="string">"0.0.0.255"</span>).unwrap()))
+    .first::&lt;IpNetwork&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(addr, IpNetwork::from_str(<span class="string">"10.0.2.255"</span>).unwrap());</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.diff" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1177-1182">source</a><h4 class="code-header">fn <a href="#method.diff" class="fn">diff</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.DifferenceNet.html" title="type diesel::dsl::DifferenceNet">DifferenceNet</a>&lt;Self, T&gt;<div class="where">where
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Inet.html" title="struct diesel::sql_types::Inet">Inet</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>-</code> expression.</p>
+<p>This operator substracts an address from an address to compute the distance between the two</p>
+<h5 id="example-7"><a class="doc-anchor" href="#example-7">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>diesel::insert_into(hosts)
+    .values(<span class="macro">vec!</span>[address.eq(IpNetwork::from_str(<span class="string">"10.0.2.53"</span>).unwrap())])
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>offset = hosts
+    .select(address.diff(IpNetwork::from_str(<span class="string">"10.0.2.42"</span>).unwrap()))
+    .first::&lt;i64&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(offset, <span class="number">11</span>);</code></pre></div>
+</div></details></div><h2 id="object-safety" class="section-header">Object Safety<a href="#object-safety" class="anchor">§</a></h2><div class="object-safety-info">This trait is <b>not</b> <a href="https://doc.rust-lang.org/nightly/reference/items/traits.html#object-safety">object safe</a>.</div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"><section id="impl-PgNetExpressionMethods-for-T" class="impl"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1185-1190">source</a><a href="#impl-PgNetExpressionMethods-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="trait.PgNetExpressionMethods.html" title="trait diesel::expression_methods::PgNetExpressionMethods">PgNetExpressionMethods</a> for T<div class="where">where
+    T: <a class="trait" href="../prelude/trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>,
+    T::<a class="associatedtype" href="../prelude/trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: InetOrCidr,</div></h3></section></div><script src="../../trait.impl/diesel/pg/expression/expression_methods/trait.PgNetExpressionMethods.js" async></script></section></div></main></body></html>
