@@ -1,0 +1,27 @@
+[package]
+name = "esp32c6_example"
+version = "0.3.0"
+edition = "2024"
+license = "MIT OR APACHE-2"
+
+[profile.release]
+debug = true
+
+[profile.dev]
+opt-level = 3
+
+[dependencies]
+esp-alloc = "0.9"
+esp-backtrace = { version = "0.18", features = ["esp32c6", "panic-handler", "println"] }
+esp-hal = { version = "1.0", features = ["esp32c6", "unstable"] }
+esp-println = { version = "0.16", features = ["esp32c6"] }
+esp-bootloader-esp-idf = { version = "0.2.0", features = ["esp32c6"] }
+diesel = { version = "2.3.0", path = "../../../diesel/", default-features = false, features = ["sqlite-no-std"] }
+libsqlite3-sys = { version = "0.35.0", features = ["bundled"] }
+hashbrown = {version = "0.16", default-features = false }
+tinyrlibc = "0.5"
+
+[workspace]
+
+[patch.crates-io]
+libsqlite3-sys = { git = "https://github.com/rusqlite/rusqlite", branch = "master" }
