@@ -17,6 +17,14 @@ mod sqlx_benches;
 mod tokio_postgres_benches;
 #[cfg(all(feature = "wtx", not(feature = "sqlite")))]
 mod wtx;
+#[cfg(all(feature = "mysql", feature = "zero-mysql"))]
+mod zero_mysql_async_benches;
+#[cfg(all(feature = "mysql", feature = "zero-mysql"))]
+mod zero_mysql_benches;
+#[cfg(all(feature = "postgres", feature = "zero-postgres"))]
+mod zero_postgres_async_benches;
+#[cfg(all(feature = "postgres", feature = "zero-postgres"))]
+mod zero_postgres_benches;
 
 use criterion::{BenchmarkId, Criterion};
 
@@ -174,6 +182,74 @@ fn bench_trivial_query(c: &mut CriterionType) {
         group.bench_with_input(BenchmarkId::new("wtx", size), size, |b, i| {
             crate::wtx::bench_trivial_query(b, *i);
         });
+
+        #[cfg(all(feature = "mysql", feature = "zero-mysql"))]
+        group.bench_with_input(BenchmarkId::new("zero_mysql_by_id", size), size, |b, i| {
+            crate::zero_mysql_benches::bench_trivial_query_by_id(b, *i);
+        });
+
+        #[cfg(all(feature = "mysql", feature = "zero-mysql"))]
+        group.bench_with_input(
+            BenchmarkId::new("zero_mysql_by_name", size),
+            size,
+            |b, i| {
+                crate::zero_mysql_benches::bench_trivial_query_by_name(b, *i);
+            },
+        );
+
+        #[cfg(all(feature = "mysql", feature = "zero-mysql"))]
+        group.bench_with_input(
+            BenchmarkId::new("zero_mysql_async_by_id", size),
+            size,
+            |b, i| {
+                crate::zero_mysql_async_benches::bench_trivial_query_by_id(b, *i);
+            },
+        );
+
+        #[cfg(all(feature = "mysql", feature = "zero-mysql"))]
+        group.bench_with_input(
+            BenchmarkId::new("zero_mysql_async_by_name", size),
+            size,
+            |b, i| {
+                crate::zero_mysql_async_benches::bench_trivial_query_by_name(b, *i);
+            },
+        );
+
+        #[cfg(all(feature = "postgres", feature = "zero-postgres"))]
+        group.bench_with_input(
+            BenchmarkId::new("zero_postgres_by_id", size),
+            size,
+            |b, i| {
+                crate::zero_postgres_benches::bench_trivial_query_by_id(b, *i);
+            },
+        );
+
+        #[cfg(all(feature = "postgres", feature = "zero-postgres"))]
+        group.bench_with_input(
+            BenchmarkId::new("zero_postgres_by_name", size),
+            size,
+            |b, i| {
+                crate::zero_postgres_benches::bench_trivial_query_by_name(b, *i);
+            },
+        );
+
+        #[cfg(all(feature = "postgres", feature = "zero-postgres"))]
+        group.bench_with_input(
+            BenchmarkId::new("zero_postgres_async_by_id", size),
+            size,
+            |b, i| {
+                crate::zero_postgres_async_benches::bench_trivial_query_by_id(b, *i);
+            },
+        );
+
+        #[cfg(all(feature = "postgres", feature = "zero-postgres"))]
+        group.bench_with_input(
+            BenchmarkId::new("zero_postgres_async_by_name", size),
+            size,
+            |b, i| {
+                crate::zero_postgres_async_benches::bench_trivial_query_by_name(b, *i);
+            },
+        );
     }
 
     group.finish();
@@ -290,6 +366,30 @@ fn bench_medium_complex_query(c: &mut CriterionType) {
         group.bench_with_input(BenchmarkId::new("wtx", size), size, |b, i| {
             crate::wtx::bench_medium_complex_query(b, *i);
         });
+
+        #[cfg(all(feature = "mysql", feature = "zero-mysql"))]
+        group.bench_with_input(BenchmarkId::new("zero_mysql", size), size, |b, i| {
+            crate::zero_mysql_benches::bench_medium_complex_query(b, *i);
+        });
+
+        #[cfg(all(feature = "mysql", feature = "zero-mysql"))]
+        group.bench_with_input(BenchmarkId::new("zero_mysql_async", size), size, |b, i| {
+            crate::zero_mysql_async_benches::bench_medium_complex_query(b, *i);
+        });
+
+        #[cfg(all(feature = "postgres", feature = "zero-postgres"))]
+        group.bench_with_input(BenchmarkId::new("zero_postgres", size), size, |b, i| {
+            crate::zero_postgres_benches::bench_medium_complex_query(b, *i);
+        });
+
+        #[cfg(all(feature = "postgres", feature = "zero-postgres"))]
+        group.bench_with_input(
+            BenchmarkId::new("zero_postgres_async", size),
+            size,
+            |b, i| {
+                crate::zero_postgres_async_benches::bench_medium_complex_query(b, *i);
+            },
+        );
     }
 
     group.finish();
@@ -348,6 +448,26 @@ fn bench_loading_associations_sequentially(c: &mut CriterionType) {
         crate::wtx::bench_loading_associations_sequentially(b);
     });
 
+    #[cfg(all(feature = "mysql", feature = "zero-mysql"))]
+    group.bench_function("zero_mysql", |b| {
+        crate::zero_mysql_benches::loading_associations_sequentially(b);
+    });
+
+    #[cfg(all(feature = "mysql", feature = "zero-mysql"))]
+    group.bench_function("zero_mysql_async", |b| {
+        crate::zero_mysql_async_benches::loading_associations_sequentially(b);
+    });
+
+    #[cfg(all(feature = "postgres", feature = "zero-postgres"))]
+    group.bench_function("zero_postgres", |b| {
+        crate::zero_postgres_benches::loading_associations_sequentially(b);
+    });
+
+    #[cfg(all(feature = "postgres", feature = "zero-postgres"))]
+    group.bench_function("zero_postgres_async", |b| {
+        crate::zero_postgres_async_benches::loading_associations_sequentially(b);
+    });
+
     group.finish();
 }
 
@@ -403,6 +523,30 @@ fn bench_insert(c: &mut CriterionType) {
         group.bench_with_input(BenchmarkId::new("wtx", size), size, |b, i| {
             crate::wtx::bench_insert(b, *i);
         });
+
+        #[cfg(all(feature = "mysql", feature = "zero-mysql"))]
+        group.bench_with_input(BenchmarkId::new("zero_mysql", size), size, |b, i| {
+            crate::zero_mysql_benches::bench_insert(b, *i);
+        });
+
+        #[cfg(all(feature = "mysql", feature = "zero-mysql"))]
+        group.bench_with_input(BenchmarkId::new("zero_mysql_async", size), size, |b, i| {
+            crate::zero_mysql_async_benches::bench_insert(b, *i);
+        });
+
+        #[cfg(all(feature = "postgres", feature = "zero-postgres"))]
+        group.bench_with_input(BenchmarkId::new("zero_postgres", size), size, |b, i| {
+            crate::zero_postgres_benches::bench_insert(b, *i);
+        });
+
+        #[cfg(all(feature = "postgres", feature = "zero-postgres"))]
+        group.bench_with_input(
+            BenchmarkId::new("zero_postgres_async", size),
+            size,
+            |b, i| {
+                crate::zero_postgres_async_benches::bench_insert(b, *i);
+            },
+        );
     }
 
     group.finish();
