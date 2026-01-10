@@ -19,7 +19,9 @@ pub use self::eq_all::EqAll;
 #[doc(inline)]
 pub use self::escape_expression_methods::EscapeExpressionMethods;
 #[doc(inline)]
-pub use self::global_expression_methods::{ExpressionMethods, NullableExpressionMethods};
+pub use self::global_expression_methods::{
+    ExpressionMethods, NullableExpressionMethods, UntypedExpressionMethods,
+};
 #[doc(inline)]
 #[cfg(any(feature = "sqlite", feature = "postgres_backend"))]
 pub use self::json_expression_methods::{AnyJsonExpressionMethods, JsonIndex};
