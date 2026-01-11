@@ -440,6 +440,30 @@ impl<T: HasTable> HasTable for Option<T> {
     }
 }
 
+impl<T: HasTable> HasTable for Box<T> {
+    type Table = T::Table;
+
+    fn table() -> Self::Table {
+        T::table()
+    }
+}
+
+impl<T: HasTable> HasTable for std::rc::Rc<T> {
+    type Table = T::Table;
+
+    fn table() -> Self::Table {
+        T::table()
+    }
+}
+
+impl<T: HasTable> HasTable for std::sync::Arc<T> {
+    type Table = T::Table;
+
+    fn table() -> Self::Table {
+        T::table()
+    }
+}
+
 // Implement HasTable for tuples of types which implement `HasTable` for
 // the same table.
 // This is useful for multi-column constraints like composite foreign keys.

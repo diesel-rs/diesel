@@ -1,5 +1,7 @@
 use diesel::associations::HasTable;
 use diesel::prelude::*;
+use std::rc::Rc;
+use std::sync::Arc;
 
 table! {
     users (id) {
@@ -24,4 +26,7 @@ fn option_user_implements_has_table() {
     assert_has_table::<User>();
     assert_has_table::<Option<User>>();
     assert_has_table::<Option<&User>>();
+    assert_has_table::<Box<User>>();
+    assert_has_table::<Rc<User>>();
+    assert_has_table::<Arc<User>>();
 }
