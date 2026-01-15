@@ -55,6 +55,8 @@ pub use self::query_id::QueryId;
 #[doc(inline)]
 pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
 #[doc(inline)]
+pub use self::upsert::on_conflict_target::OnConflictTarget;
+#[doc(inline)]
 pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 
 #[doc(inline)]

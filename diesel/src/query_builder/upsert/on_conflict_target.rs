@@ -4,7 +4,18 @@ use crate::query_builder::*;
 use crate::query_source::Column;
 
 #[doc(hidden)]
-pub trait OnConflictTarget<Table> {}
+pub mod sealed {
+    pub trait Sealed {}
+}
+
+impl sealed::Sealed for NoConflictTarget {}
+impl<T> sealed::Sealed for ConflictTarget<T> {}
+
+/// Represents the target of an `ON CONFLICT` clause.
+///
+/// This trait is sealed and cannot be implemented for types outside of Diesel,
+/// and may be used to constrain generic parameters.
+pub trait OnConflictTarget<Table>: sealed::Sealed {}
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, QueryId)]
