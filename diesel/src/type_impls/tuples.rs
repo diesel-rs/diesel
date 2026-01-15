@@ -150,6 +150,12 @@ macro_rules! tuple_impls {
 
             impl_valid_grouping_for_tuple_of_columns!($($T,)*);
 
+            impl<$($T,)+ Tab> crate::query_builder::insert_statement::sealed::Sealed<Tab> for ($($T,)+)
+            where
+                $($T: UndecoratedInsertRecord<Tab>,)+
+            {
+            }
+
             impl<$($T,)+ Tab> UndecoratedInsertRecord<Tab> for ($($T,)+)
             where
                 $($T: UndecoratedInsertRecord<Tab>,)+

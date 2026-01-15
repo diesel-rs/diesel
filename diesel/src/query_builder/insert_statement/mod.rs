@@ -312,7 +312,7 @@ impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
     }
 }
 
-mod sealed {
+pub(crate) mod sealed {
     pub trait Sealed<T> {}
 }
 
