@@ -96,6 +96,321 @@ pub trait TextExpressionMethods: Expression + Sized {
         Grouped(Collate::new(self, collation))
     }
 
+    /// Returns a SQL `COLLATE BINARY` expression.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     #[cfg(not(any(feature = "mysql", feature = "sqlite")))]
+    /// #     return Ok(());
+    /// #
+    /// let starts_with_s = users
+    ///     .select(name)
+    ///     .filter(name.collate_binary().like("S%"))
+    ///     .load::<String>(connection)?;
+    /// assert_eq!(vec!["Sean"], starts_with_s);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(any(feature = "sqlite", feature = "mysql"))]
+    #[allow(clippy::needless_doc_main)]
+    fn collate_binary(self) -> dsl::Collate<Self> {
+        Grouped(Collate::new(self, crate::collation::Binary))
+    }
+
+    /// Returns a SQL `COLLATE NOCASE` expression.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     #[cfg(not(feature = "sqlite"))]
+    /// #     return Ok(());
+    /// #
+    /// let starts_with_s = users
+    ///     .select(name)
+    ///     .filter(name.collate_nocase().eq("sean"))
+    ///     .load::<String>(connection)?;
+    /// assert_eq!(vec!["Sean"], starts_with_s);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "sqlite")]
+    #[allow(clippy::needless_doc_main)]
+    fn collate_nocase(self) -> dsl::Collate<Self> {
+        Grouped(Collate::new(self, crate::collation::NoCase))
+    }
+
+    /// Returns a SQL `COLLATE RTRIM` expression.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     #[cfg(not(feature = "sqlite"))]
+    /// #     return Ok(());
+    /// #
+    ///     use diesel::insert_into;
+    ///     insert_into(users)
+    ///        .values(name.eq("Dan   "))
+    ///        .execute(connection)?;
+    ///
+    ///     let names = users
+    ///         .select(name)
+    ///         .filter(name.collate_rtrim().eq("Dan"))
+    ///         .load::<String>(connection)?;
+    ///     assert_eq!(vec!["Dan   "], names);
+    ///     Ok(())
+    /// }
+    /// ```
+    #[cfg(feature = "sqlite")]
+    #[allow(clippy::needless_doc_main)]
+    fn collate_rtrim(self) -> dsl::Collate<Self> {
+        Grouped(Collate::new(self, crate::collation::RTrim))
+    }
+
+    /// Returns a SQL `COLLATE POSIX` expression.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     #[cfg(not(feature = "postgres"))]
+    /// #     return Ok(());
+    /// #
+    /// let starts_with_s = users
+    ///     .select(name)
+    ///     .filter(name.collate_posix().eq("Sean"))
+    ///     .load::<String>(connection)?;
+    /// assert_eq!(vec!["Sean"], starts_with_s);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres")]
+    #[allow(clippy::needless_doc_main)]
+    fn collate_posix(self) -> dsl::Collate<Self> {
+        Grouped(Collate::new(self, crate::collation::Posix))
+    }
+
+    /// Returns a SQL `COLLATE "C"` expression.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     #[cfg(not(feature = "postgres"))]
+    /// #     return Ok(());
+    /// #
+    /// let starts_with_s = users
+    ///     .select(name)
+    ///     .filter(name.collate_c().eq("Sean"))
+    ///     .load::<String>(connection)?;
+    /// assert_eq!(vec!["Sean"], starts_with_s);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres")]
+    #[allow(clippy::needless_doc_main)]
+    fn collate_c(self) -> dsl::Collate<Self> {
+        Grouped(Collate::new(self, crate::collation::C))
+    }
+
+    /// Returns a SQL `COLLATE unicode` expression.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     #[cfg(not(feature = "postgres"))]
+    /// #     return Ok(());
+    /// #
+    /// let starts_with_s = users
+    ///     .select(name)
+    ///     .filter(name.collate_unicode().eq("Sean"))
+    ///     .load::<String>(connection)?;
+    /// assert_eq!(vec!["Sean"], starts_with_s);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres")]
+    #[allow(clippy::needless_doc_main)]
+    fn collate_unicode(self) -> dsl::Collate<Self> {
+        Grouped(Collate::new(self, crate::collation::Unicode))
+    }
+
+    /// Returns a SQL `COLLATE ucs_basic` expression.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     #[cfg(not(feature = "postgres"))]
+    /// #     return Ok(());
+    /// #
+    /// let starts_with_s = users
+    ///     .select(name)
+    ///     .filter(name.collate_ucs_basic().eq("Sean"))
+    ///     .load::<String>(connection)?;
+    /// assert_eq!(vec!["Sean"], starts_with_s);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres")]
+    #[allow(clippy::needless_doc_main)]
+    fn collate_ucs_basic(self) -> dsl::Collate<Self> {
+        Grouped(Collate::new(self, crate::collation::UcsBasic))
+    }
+
+    /// Returns a SQL `COLLATE pg_unicode_fast` expression.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     #[cfg(not(feature = "postgres"))]
+    /// #     return Ok(());
+    /// #
+    /// let starts_with_s = users
+    ///     .select(name)
+    ///     .filter(name.collate_pg_unicode_fast().eq("Sean"))
+    ///     .load::<String>(connection)?;
+    /// assert_eq!(vec!["Sean"], starts_with_s);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres")]
+    #[allow(clippy::needless_doc_main)]
+    fn collate_pg_unicode_fast(self) -> dsl::Collate<Self> {
+        Grouped(Collate::new(self, crate::collation::PgUnicodeFast))
+    }
+
+    /// Returns a SQL `COLLATE pg_c_utf8` expression.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     #[cfg(not(feature = "postgres"))]
+    /// #     return Ok(());
+    /// #
+    /// let starts_with_s = users
+    ///     .select(name)
+    ///     .filter(name.collate_pg_c_utf8().eq("Sean"))
+    ///     .load::<String>(connection)?;
+    /// assert_eq!(vec!["Sean"], starts_with_s);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres")]
+    #[allow(clippy::needless_doc_main)]
+    fn collate_pg_c_utf8(self) -> dsl::Collate<Self> {
+        Grouped(Collate::new(self, crate::collation::PgCUtf8))
+    }
+
+    /// Returns a SQL `COLLATE default` expression.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     #[cfg(not(feature = "postgres"))]
+    /// #     return Ok(());
+    /// #
+    /// let starts_with_s = users
+    ///     .select(name)
+    ///     .filter(name.collate_default().eq("Sean"))
+    ///     .load::<String>(connection)?;
+    /// assert_eq!(vec!["Sean"], starts_with_s);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres")]
+    #[allow(clippy::needless_doc_main)]
+    fn collate_default(self) -> dsl::Collate<Self> {
+        Grouped(Collate::new(self, crate::collation::Default))
+    }
+
     /// Returns a SQL `LIKE` expression
     ///
     /// This method is case insensitive for SQLite and MySQL.

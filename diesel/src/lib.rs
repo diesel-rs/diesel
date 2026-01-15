@@ -286,6 +286,7 @@ pub mod test_helpers;
 
 pub mod associations;
 pub mod backend;
+pub mod collation;
 pub mod connection;
 pub mod data_types;
 pub mod deserialize;
