@@ -12,7 +12,7 @@ note: an implementation of `std::ops::Add` might be missing for `columns::name`
  LL |         name -> VarChar,
    |         ^^^^ must implement `std::ops::Add`
 note: the trait `std::ops::Add` must be implemented
-  --> /home/lucac/.rustup/toolchains/1.92.0-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/arith.rs:77:1
+  --> /rustc/0000000000000000000000000000000000000000/library/core/src/ops/arith.rs:77:1
    |
 LL | pub const trait Add<Rhs = Self> {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
