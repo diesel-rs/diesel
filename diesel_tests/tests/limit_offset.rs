@@ -46,7 +46,11 @@ fn limit_offset() {
         .unwrap();
 
     let expected_data = vec![("Ruby".to_string(), None::<String>)];
-    let q = users.select((name, hair_color)).order(id).limit(1).offset(2);
+    let q = users
+        .select((name, hair_color))
+        .order(id)
+        .limit(1)
+        .offset(2);
     let actual_data: Vec<_> = q.load(connection).unwrap();
     assert_eq!(expected_data, actual_data);
 }
