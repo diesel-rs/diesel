@@ -66,19 +66,20 @@ fn custom_collation() {
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    #[cfg(feature = "sqlite")]
-    let collation = Custom("BINARY");
-    #[cfg(feature = "postgres")]
-    let collation = Custom("\"C\"");
+    let target_collation = if cfg!(feature = "postgres") {
+        Custom("\"C\"")
+    } else {
+        Custom("BINARY")
+    };
 
     let sean = users
-        .filter(name.collate(collation).eq("Sean"))
+        .filter(name.collate(target_collation).eq("Sean"))
         .load::<User>(connection);
     assert!(sean.is_ok());
     assert_eq!(1, sean.unwrap().len());
 
     let sean_lower = users
-        .filter(name.collate(collation).eq("sean"))
+        .filter(name.collate(target_collation).eq("sean"))
         .load::<User>(connection);
     assert!(sean_lower.is_ok());
 
