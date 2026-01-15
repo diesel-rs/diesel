@@ -52,7 +52,7 @@ impl QueryFragment<crate::sqlite::Sqlite> for Binary {
 
 #[cfg(feature = "sqlite")]
 impl QueryId for Binary {
-    type QueryId = ();
+    type QueryId = Self;
     const HAS_STATIC_QUERY_ID: bool = true;
 }
 
@@ -102,7 +102,7 @@ impl QueryFragment<crate::sqlite::Sqlite> for NoCase {
 
 #[cfg(feature = "sqlite")]
 impl QueryId for NoCase {
-    type QueryId = ();
+    type QueryId = Self;
     const HAS_STATIC_QUERY_ID: bool = true;
 }
 
@@ -127,7 +127,7 @@ impl QueryFragment<crate::pg::Pg> for Posix {
 
 #[cfg(feature = "postgres")]
 impl QueryId for Posix {
-    type QueryId = ();
+    type QueryId = Self;
     const HAS_STATIC_QUERY_ID: bool = true;
 }
 
@@ -152,6 +152,6 @@ impl QueryFragment<crate::sqlite::Sqlite> for RTrim {
 
 #[cfg(feature = "sqlite")]
 impl QueryId for RTrim {
-    type QueryId = ();
+    type QueryId = Self;
     const HAS_STATIC_QUERY_ID: bool = true;
 }

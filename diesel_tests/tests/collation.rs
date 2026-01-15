@@ -18,10 +18,16 @@ fn no_case_collation() {
         .first::<User>(connection);
     assert_eq!(Ok(User::new(1, "Sean")), sean);
 
-    let sean = users
-        .filter(name.collate(RTrim).eq("Sean   "))
-        .first::<User>(connection);
+    let query = users.filter(name.collate(RTrim).eq("Sean   "));
+
+    let sean = query.first::<User>(connection);
     assert_eq!(Ok(User::new(1, "Sean")), sean);
+
+    // Test RTrim with no spaces (sanity check)
+    let sean_no_space = users
+        .filter(name.collate(RTrim).eq("Sean"))
+        .first::<User>(connection);
+    assert_eq!(Ok(User::new(1, "Sean")), sean_no_space);
 }
 
 #[diesel_test_helper::test]
