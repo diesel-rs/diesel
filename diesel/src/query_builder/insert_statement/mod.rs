@@ -312,22 +312,48 @@ impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
     }
 }
 
+mod sealed {
+    pub trait Sealed<T> {}
+}
+
 /// Marker trait to indicate that no additional operations have been added
 /// to a record for insert.
 ///
 /// This is used to prevent things like
 /// `.on_conflict_do_nothing().on_conflict_do_nothing()`
 /// from compiling.
-#[cfg_attr(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
-)]
+///
+/// This trait is sealed and cannot be implemented for types outside of Diesel,
+/// and may be used to constrain generic parameters, unless the feature
+/// `i-implement-a-third-party-backend-and-opt-into-breaking-changes` is
+/// enabled. In such a case, this trait is public.
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub trait UndecoratedInsertRecord<Table>: sealed::Sealed<Table> {}
+
+/// Marker trait to indicate that no additional operations have been added
+/// to a record for insert.
+///
+/// This is used to prevent things like
+/// `.on_conflict_do_nothing().on_conflict_do_nothing()`
+/// from compiling.
+///
+/// This trait is sealed and cannot be implemented for types outside of Diesel,
+/// and may be used to constrain generic parameters, unless the feature
+/// `i-implement-a-third-party-backend-and-opt-into-breaking-changes` is
+/// enabled. In such a case, this trait is public.
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub trait UndecoratedInsertRecord<Table> {}
 
+impl<T, Tab> sealed::Sealed<Tab> for &T where T: ?Sized + UndecoratedInsertRecord<Tab> {}
 impl<T, Tab> UndecoratedInsertRecord<Tab> for &T where T: ?Sized + UndecoratedInsertRecord<Tab> {}
 
+impl<T, U> sealed::Sealed<T::Table> for ColumnInsertValue<T, U> where T: Column {}
 impl<T, U> UndecoratedInsertRecord<T::Table> for ColumnInsertValue<T, U> where T: Column {}
 
+impl<T, U> sealed::Sealed<T::Table> for DefaultableColumnInsertValue<ColumnInsertValue<T, U>> where
+    T: Column
+{
+}
 impl<T, U> UndecoratedInsertRecord<T::Table>
     for DefaultableColumnInsertValue<ColumnInsertValue<T, U>>
 where
@@ -335,8 +361,15 @@ where
 {
 }
 
+impl<T, Table> sealed::Sealed<Table> for [T] where T: UndecoratedInsertRecord<Table> {}
 impl<T, Table> UndecoratedInsertRecord<Table> for [T] where T: UndecoratedInsertRecord<Table> {}
 
+impl<T, Table, QId, const STATIC_QUERY_ID: bool> sealed::Sealed<Table>
+    for BatchInsert<T, Table, QId, STATIC_QUERY_ID>
+where
+    T: UndecoratedInsertRecord<Table>,
+{
+}
 impl<T, Table, QId, const STATIC_QUERY_ID: bool> UndecoratedInsertRecord<Table>
     for BatchInsert<T, Table, QId, STATIC_QUERY_ID>
 where
@@ -344,24 +377,52 @@ where
 {
 }
 
+impl<T, Table> sealed::Sealed<Table> for Vec<T> where [T]: UndecoratedInsertRecord<Table> {}
 impl<T, Table> UndecoratedInsertRecord<Table> for Vec<T> where [T]: UndecoratedInsertRecord<Table> {}
 
+impl<Lhs, Rhs> sealed::Sealed<Lhs::Table> for Eq<Lhs, Rhs> where Lhs: Column {}
 impl<Lhs, Rhs> UndecoratedInsertRecord<Lhs::Table> for Eq<Lhs, Rhs> where Lhs: Column {}
 
+impl<Lhs, Rhs, Tab> sealed::Sealed<Tab> for Option<Eq<Lhs, Rhs>> where
+    Eq<Lhs, Rhs>: UndecoratedInsertRecord<Tab>
+{
+}
 impl<Lhs, Rhs, Tab> UndecoratedInsertRecord<Tab> for Option<Eq<Lhs, Rhs>> where
     Eq<Lhs, Rhs>: UndecoratedInsertRecord<Tab>
 {
 }
 
+impl<Lhs, Rhs> sealed::Sealed<Lhs::Table> for Grouped<Eq<Lhs, Rhs>> where Lhs: Column {}
 impl<Lhs, Rhs> UndecoratedInsertRecord<Lhs::Table> for Grouped<Eq<Lhs, Rhs>> where Lhs: Column {}
 
+impl<Lhs, Rhs, Tab> sealed::Sealed<Tab> for Option<Grouped<Eq<Lhs, Rhs>>> where
+    Eq<Lhs, Rhs>: UndecoratedInsertRecord<Tab>
+{
+}
 impl<Lhs, Rhs, Tab> UndecoratedInsertRecord<Tab> for Option<Grouped<Eq<Lhs, Rhs>>> where
     Eq<Lhs, Rhs>: UndecoratedInsertRecord<Tab>
 {
 }
 
+impl<T, Table> sealed::Sealed<Table> for ValuesClause<T, Table> where
+    T: UndecoratedInsertRecord<Table>
+{
+}
 impl<T, Table> UndecoratedInsertRecord<Table> for ValuesClause<T, Table> where
     T: UndecoratedInsertRecord<Table>
+{
+}
+
+impl<Select, Columns> sealed::Sealed<Columns::Table> for InsertFromSelect<Select, Columns>
+where
+    Columns: ColumnList + Expression,
+    Select: Query<SqlType = Columns::SqlType>,
+{
+}
+impl<Select, Columns> UndecoratedInsertRecord<Columns::Table> for InsertFromSelect<Select, Columns>
+where
+    Columns: ColumnList + Expression,
+    Select: Query<SqlType = Columns::SqlType>,
 {
 }
 

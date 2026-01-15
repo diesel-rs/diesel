@@ -56,10 +56,3 @@ where
         Ok(())
     }
 }
-
-impl<Select, Columns> UndecoratedInsertRecord<Columns::Table> for InsertFromSelect<Select, Columns>
-where
-    Columns: ColumnList + Expression,
-    Select: Query<SqlType = Columns::SqlType>,
-{
-}
