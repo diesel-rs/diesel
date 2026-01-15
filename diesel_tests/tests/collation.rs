@@ -68,6 +68,8 @@ fn custom_collation() {
 
     let target_collation = if cfg!(feature = "postgres") {
         Custom("\"C\"")
+    } else if cfg!(feature = "mysql") {
+        Custom("utf8mb4_bin")
     } else {
         Custom("BINARY")
     };
