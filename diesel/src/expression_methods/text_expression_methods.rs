@@ -110,7 +110,7 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// #     #[cfg(not(any(feature = "mysql", feature = "sqlite")))]
+    /// #     #[cfg(not(feature = "sqlite"))]
     /// #     return Ok(());
     /// #
     /// let starts_with_s = users
@@ -121,7 +121,7 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    #[cfg(any(feature = "sqlite", feature = "mysql"))]
+    #[cfg(feature = "sqlite")]
     fn collate_binary(self) -> dsl::Collate<Self> {
         Grouped(Collate::new(self, crate::collation::Binary))
     }

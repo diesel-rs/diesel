@@ -30,7 +30,7 @@ fn no_case_collation() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(any(feature = "sqlite", feature = "mysql"))]
+#[cfg(feature = "sqlite")]
 fn binary_collation() {
     use crate::schema::users::dsl::*;
     use diesel::collation::Binary;
@@ -69,9 +69,7 @@ fn custom_collation() {
     #[cfg(feature = "sqlite")]
     let collation = Custom("BINARY");
     #[cfg(feature = "postgres")]
-    let collation = Custom("C");
-    #[cfg(feature = "mysql")]
-    let collation = Custom("BINARY");
+    let collation = Custom("\"C\"");
 
     let sean = users
         .filter(name.collate(collation).eq("Sean"))

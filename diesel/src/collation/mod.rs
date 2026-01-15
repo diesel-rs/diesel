@@ -21,12 +21,12 @@ impl fmt::Display for Custom {
 /// The `BINARY` collation.
 ///
 /// This collation is binary, case-sensitive, and locale-free.
-/// It is supported by MySQL and SQLite.
+/// It is supported by SQLite.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-#[cfg(any(feature = "sqlite", feature = "mysql"))]
+#[cfg(feature = "sqlite")]
 pub struct Binary;
 
-#[cfg(any(feature = "sqlite", feature = "mysql"))]
+#[cfg(feature = "sqlite")]
 impl fmt::Display for Binary {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "BINARY")
@@ -74,7 +74,7 @@ pub struct Posix;
 #[cfg(feature = "postgres")]
 impl fmt::Display for Posix {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "POSIX")
+        write!(f, "\"POSIX\"")
     }
 }
 
