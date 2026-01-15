@@ -5,7 +5,7 @@ use diesel::*;
 #[cfg(feature = "sqlite")]
 fn no_case_collation() {
     use crate::schema::users::dsl::*;
-    use diesel::collation::NoCase;
+    use diesel::collation::{NoCase, RTrim};
 
     let connection = &mut connection();
     diesel::insert_into(users)
@@ -19,12 +19,7 @@ fn no_case_collation() {
     assert_eq!(Ok(User::new(1, "Sean")), sean);
 
     let sean = users
-        .filter(name.collate_nocase().eq("sean"))
-        .first::<User>(connection);
-    assert_eq!(Ok(User::new(1, "Sean")), sean);
-
-    let sean = users
-        .filter(name.collate_rtrim().eq("Sean   "))
+        .filter(name.collate(RTrim).eq("Sean   "))
         .first::<User>(connection);
     assert_eq!(Ok(User::new(1, "Sean")), sean);
 }
@@ -37,13 +32,6 @@ fn binary_collation() {
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    // Test helper method
-    let sean = users
-        .filter(name.collate_binary().eq("Sean"))
-        .load::<User>(connection);
-    assert!(sean.is_ok());
-    assert_eq!(1, sean.unwrap().len());
-
     // Test struct
     let sean = users
         .filter(name.collate(Binary).eq("Sean"))
@@ -53,7 +41,7 @@ fn binary_collation() {
 
     // Case sensitivity check
     let sean = users
-        .filter(name.collate_binary().eq("sean"))
+        .filter(name.collate(Binary).eq("sean"))
         .load::<User>(connection);
     assert!(sean.is_ok());
     assert_eq!(0, sean.unwrap().len());
@@ -102,17 +90,9 @@ fn postgres_collations() {
         .filter(name.collate(Posix).eq("Sean"))
         .load::<User>(connection)
         .unwrap();
-    let _ = users
-        .filter(name.collate_posix().eq("Sean"))
-        .load::<User>(connection)
-        .unwrap();
 
     let _ = users
         .filter(name.collate(C).eq("Sean"))
-        .load::<User>(connection)
-        .unwrap();
-    let _ = users
-        .filter(name.collate_c().eq("Sean"))
         .load::<User>(connection)
         .unwrap();
 }
