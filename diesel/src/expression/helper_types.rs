@@ -231,4 +231,4 @@ pub type RetrieveAsText<Lhs, Rhs> = Grouped<
 >;
 
 /// The return type of [`lhs.collate(collation)`](crate::expression_methods::TextExpressionMethods::collate)
-pub type Collate<Lhs> = Grouped<super::operators::Collate<Lhs>>;
+pub type Collate<Lhs, Collation> = Grouped<super::operators::Collate<Lhs, Collation>>;

@@ -3,7 +3,12 @@
 //! These types are used as arguments for
 //! [`TextExpressionMethods::collate`](crate::expression_methods::TextExpressionMethods::collate).
 
-use std::fmt;
+use crate::backend::Backend;
+use crate::query_builder::{AstPass, QueryFragment, QueryId};
+use crate::result::QueryResult;
+
+/// Trait to identify a valid collation.
+pub trait Collation: QueryId + Copy + Send + Sync + 'static {}
 
 /// A custom collation.
 ///
@@ -12,10 +17,18 @@ use std::fmt;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Custom(pub &'static str);
 
-impl fmt::Display for Custom {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+impl Collation for Custom {}
+
+impl<DB: Backend> QueryFragment<DB> for Custom {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_sql(self.0);
+        Ok(())
     }
+}
+
+impl QueryId for Custom {
+    type QueryId = ();
+    const HAS_STATIC_QUERY_ID: bool = false;
 }
 
 /// The `BINARY` collation.
@@ -27,10 +40,20 @@ impl fmt::Display for Custom {
 pub struct Binary;
 
 #[cfg(feature = "sqlite")]
-impl fmt::Display for Binary {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "BINARY")
+impl Collation for Binary {}
+
+#[cfg(feature = "sqlite")]
+impl QueryFragment<crate::sqlite::Sqlite> for Binary {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, crate::sqlite::Sqlite>) -> QueryResult<()> {
+        out.push_sql("BINARY");
+        Ok(())
     }
+}
+
+#[cfg(feature = "sqlite")]
+impl QueryId for Binary {
+    type QueryId = ();
+    const HAS_STATIC_QUERY_ID: bool = true;
 }
 
 /// The `C` collation.
@@ -42,10 +65,20 @@ impl fmt::Display for Binary {
 pub struct C;
 
 #[cfg(feature = "postgres")]
-impl fmt::Display for C {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "\"C\"")
+impl Collation for C {}
+
+#[cfg(feature = "postgres")]
+impl QueryFragment<crate::pg::Pg> for C {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, crate::pg::Pg>) -> QueryResult<()> {
+        out.push_sql("\"C\"");
+        Ok(())
     }
+}
+
+#[cfg(feature = "postgres")]
+impl QueryId for C {
+    type QueryId = ();
+    const HAS_STATIC_QUERY_ID: bool = true;
 }
 
 /// The `NOCASE` collation.
@@ -57,10 +90,20 @@ impl fmt::Display for C {
 pub struct NoCase;
 
 #[cfg(feature = "sqlite")]
-impl fmt::Display for NoCase {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "NOCASE")
+impl Collation for NoCase {}
+
+#[cfg(feature = "sqlite")]
+impl QueryFragment<crate::sqlite::Sqlite> for NoCase {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, crate::sqlite::Sqlite>) -> QueryResult<()> {
+        out.push_sql("NOCASE");
+        Ok(())
     }
+}
+
+#[cfg(feature = "sqlite")]
+impl QueryId for NoCase {
+    type QueryId = ();
+    const HAS_STATIC_QUERY_ID: bool = true;
 }
 
 /// The `POSIX` collation.
@@ -72,10 +115,20 @@ impl fmt::Display for NoCase {
 pub struct Posix;
 
 #[cfg(feature = "postgres")]
-impl fmt::Display for Posix {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "\"POSIX\"")
+impl Collation for Posix {}
+
+#[cfg(feature = "postgres")]
+impl QueryFragment<crate::pg::Pg> for Posix {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, crate::pg::Pg>) -> QueryResult<()> {
+        out.push_sql("\"POSIX\"");
+        Ok(())
     }
+}
+
+#[cfg(feature = "postgres")]
+impl QueryId for Posix {
+    type QueryId = ();
+    const HAS_STATIC_QUERY_ID: bool = true;
 }
 
 /// The `RTRIM` collation.
@@ -87,8 +140,18 @@ impl fmt::Display for Posix {
 pub struct RTrim;
 
 #[cfg(feature = "sqlite")]
-impl fmt::Display for RTrim {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "RTRIM")
+impl Collation for RTrim {}
+
+#[cfg(feature = "sqlite")]
+impl QueryFragment<crate::sqlite::Sqlite> for RTrim {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, crate::sqlite::Sqlite>) -> QueryResult<()> {
+        out.push_sql("RTRIM");
+        Ok(())
     }
+}
+
+#[cfg(feature = "sqlite")]
+impl QueryId for RTrim {
+    type QueryId = ();
+    const HAS_STATIC_QUERY_ID: bool = true;
 }

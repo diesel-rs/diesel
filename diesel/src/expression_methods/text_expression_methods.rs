@@ -65,6 +65,8 @@ pub trait TextExpressionMethods: Expression + Sized {
 
     /// Returns a SQL `COLLATE` expression.
     ///
+    /// This method can be used to control the collation of a column or expression.
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -77,178 +79,27 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
+    /// #     #[cfg(not(feature = "sqlite"))]
+    /// #     return Ok(());
+    /// #
     /// #     #[cfg(feature = "sqlite")]
-    /// #     let collation = "BINARY";
-    /// #     #[cfg(feature = "postgres")]
-    /// #     let collation = "\"C\"";
-    /// #     #[cfg(feature = "mysql")]
-    /// #     let collation = "utf8mb4_bin";
-    /// #
-    /// let starts_with_s = users
-    ///     .select(name)
-    ///     .filter(name.collate(collation).like("S%"))
-    ///     .load::<String>(connection)?;
-    /// assert_eq!(vec!["Sean"], starts_with_s);
-    /// #     Ok(())
-    /// # }
-    /// ```
-    fn collate<S: ToString>(self, collation: S) -> dsl::Collate<Self> {
-        Grouped(Collate::new(self, collation))
-    }
-
-    /// Returns a SQL `COLLATE BINARY` expression.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # include!("../doctest_setup.rs");
-    /// #
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    /// #
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
-    /// #     let connection = &mut establish_connection();
-    /// #     #[cfg(not(feature = "sqlite"))]
-    /// #     return Ok(());
-    /// #
-    /// let starts_with_s = users
-    ///     .select(name)
-    ///     .filter(name.collate_binary().like("S%"))
-    ///     .load::<String>(connection)?;
-    /// assert_eq!(vec!["Sean"], starts_with_s);
-    /// #     Ok(())
-    /// # }
-    /// ```
-    #[cfg(feature = "sqlite")]
-    fn collate_binary(self) -> dsl::Collate<Self> {
-        Grouped(Collate::new(self, crate::collation::Binary))
-    }
-
-    /// Returns a SQL `COLLATE NOCASE` expression.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # include!("../doctest_setup.rs");
-    /// #
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    /// #
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
-    /// #     let connection = &mut establish_connection();
-    /// #     #[cfg(not(feature = "sqlite"))]
-    /// #     return Ok(());
-    /// #
-    /// let starts_with_s = users
-    ///     .select(name)
-    ///     .filter(name.collate_nocase().eq("sean"))
-    ///     .load::<String>(connection)?;
-    /// assert_eq!(vec!["Sean"], starts_with_s);
-    /// #     Ok(())
-    /// # }
-    /// ```
-    #[cfg(feature = "sqlite")]
-    fn collate_nocase(self) -> dsl::Collate<Self> {
-        Grouped(Collate::new(self, crate::collation::NoCase))
-    }
-
-    /// Returns a SQL `COLLATE RTRIM` expression.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # include!("../doctest_setup.rs");
-    /// #
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    /// #
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
-    /// #     let connection = &mut establish_connection();
-    /// #     #[cfg(not(feature = "sqlite"))]
-    /// #     return Ok(());
-    /// #
-    ///     use diesel::insert_into;
-    ///     insert_into(users)
-    ///        .values(name.eq("Dan   "))
-    ///        .execute(connection)?;
+    /// #     {
+    ///     use diesel::collation::NoCase;
     ///
     ///     let names = users
     ///         .select(name)
-    ///         .filter(name.collate_rtrim().eq("Dan"))
+    ///         .filter(name.collate(NoCase).eq("sean"))
     ///         .load::<String>(connection)?;
-    ///     assert_eq!(vec!["Dan   "], names);
-    ///     Ok(())
-    /// }
-    /// ```
-    #[cfg(feature = "sqlite")]
-    fn collate_rtrim(self) -> dsl::Collate<Self> {
-        Grouped(Collate::new(self, crate::collation::RTrim))
-    }
-
-    /// Returns a SQL `COLLATE POSIX` expression.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # include!("../doctest_setup.rs");
-    /// #
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    /// #
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
-    /// #     let connection = &mut establish_connection();
-    /// #     #[cfg(not(feature = "postgres"))]
-    /// #     return Ok(());
-    /// #
-    /// let starts_with_s = users
-    ///     .select(name)
-    ///     .filter(name.collate_posix().eq("Sean"))
-    ///     .load::<String>(connection)?;
-    /// assert_eq!(vec!["Sean"], starts_with_s);
+    ///     assert_eq!(vec!["Sean"], names);
+    /// #     }
     /// #     Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "postgres")]
-    fn collate_posix(self) -> dsl::Collate<Self> {
-        Grouped(Collate::new(self, crate::collation::Posix))
-    }
-
-    /// Returns a SQL `COLLATE "C"` expression.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # include!("../doctest_setup.rs");
-    /// #
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    /// #
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
-    /// #     let connection = &mut establish_connection();
-    /// #     #[cfg(not(feature = "postgres"))]
-    /// #     return Ok(());
-    /// #
-    /// let starts_with_s = users
-    ///     .select(name)
-    ///     .filter(name.collate_c().eq("Sean"))
-    ///     .load::<String>(connection)?;
-    /// assert_eq!(vec!["Sean"], starts_with_s);
-    /// #     Ok(())
-    /// # }
-    /// ```
-    #[cfg(feature = "postgres")]
-    fn collate_c(self) -> dsl::Collate<Self> {
-        Grouped(Collate::new(self, crate::collation::C))
+    fn collate<C>(self, collation: C) -> dsl::Collate<Self, C>
+    where
+        C: crate::collation::Collation,
+    {
+        Grouped(Collate::new(self, collation))
     }
 
     /// Returns a SQL `LIKE` expression
