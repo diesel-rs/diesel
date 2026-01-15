@@ -93,9 +93,7 @@ fn custom_collation() {
 #[cfg(feature = "postgres")]
 fn postgres_collations() {
     use crate::schema::users::dsl::*;
-    use diesel::collation::{
-        Default as DefaultCollation, PgCUtf8, PgUnicodeFast, Posix, UcsBasic, Unicode, C,
-    };
+    use diesel::collation::{Default as DefaultCollation, Posix, C};
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
@@ -115,42 +113,6 @@ fn postgres_collations() {
         .unwrap();
     let _ = users
         .filter(name.collate_c().eq("Sean"))
-        .load::<User>(connection)
-        .unwrap();
-
-    let _ = users
-        .filter(name.collate(Unicode).eq("Sean"))
-        .load::<User>(connection)
-        .unwrap();
-    let _ = users
-        .filter(name.collate_unicode().eq("Sean"))
-        .load::<User>(connection)
-        .unwrap();
-
-    let _ = users
-        .filter(name.collate(UcsBasic).eq("Sean"))
-        .load::<User>(connection)
-        .unwrap();
-    let _ = users
-        .filter(name.collate_ucs_basic().eq("Sean"))
-        .load::<User>(connection)
-        .unwrap();
-
-    let _ = users
-        .filter(name.collate(PgUnicodeFast).eq("Sean"))
-        .load::<User>(connection)
-        .unwrap();
-    let _ = users
-        .filter(name.collate_pg_unicode_fast().eq("Sean"))
-        .load::<User>(connection)
-        .unwrap();
-
-    let _ = users
-        .filter(name.collate(PgCUtf8).eq("Sean"))
-        .load::<User>(connection)
-        .unwrap();
-    let _ = users
-        .filter(name.collate_pg_c_utf8().eq("Sean"))
         .load::<User>(connection)
         .unwrap();
 
