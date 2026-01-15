@@ -3,8 +3,7 @@ use crate::expression::SqlLiteral;
 use crate::query_builder::*;
 use crate::query_source::Column;
 
-#[doc(hidden)]
-pub mod sealed {
+mod sealed {
     pub trait Sealed {}
 }
 
