@@ -8,7 +8,7 @@ use crate::expression::{
 };
 use crate::query_builder::returning_clause::*;
 use crate::query_builder::where_clause::*;
-use crate::query_dsl::methods::{BoxedDsl, FilterDsl, SetUpdateDsl};
+use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
 use crate::query_dsl::RunQueryDsl;
 use crate::query_source::Table;
 use crate::result::EmptyChangeset;
@@ -44,19 +44,6 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
             values: values.as_changeset(),
             returning: self.returning,
         }
-    }
-}
-
-impl<T, U, V> SetUpdateDsl<V> for UpdateStatement<T, U, SetNotCalled>
-where
-    T: QuerySource + Table,
-    V: changeset::AsChangeset<Target = T>,
-    UpdateStatement<T, U, V::Changeset>: AsQuery,
-{
-    type Output = UpdateStatement<T, U, V::Changeset>;
-
-    fn set(self, values: V) -> Self::Output {
-        self.set(values)
     }
 }
 

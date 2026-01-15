@@ -37,7 +37,6 @@ pub mod load_dsl;
 mod locking_dsl;
 mod nullable_select_dsl;
 mod offset_dsl;
-mod on_conflict_dsl;
 pub(crate) mod order_dsl;
 #[doc(hidden)]
 pub mod positional_order_dsl;
@@ -45,7 +44,6 @@ mod save_changes_dsl;
 #[doc(hidden)]
 pub mod select_dsl;
 mod single_value_dsl;
-mod update_dsl;
 
 pub use self::belonging_to_dsl::BelongingToDsl;
 pub use self::combine_dsl::CombineDsl;
@@ -54,9 +52,7 @@ pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
 pub use self::load_dsl::CompatibleType;
 #[doc(hidden)]
 pub use self::load_dsl::LoadQuery;
-pub use self::on_conflict_dsl::{DoNothingDsl, DoUpdateDsl, OnConflictDoNothingDsl, OnConflictDsl};
 pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
-pub use self::update_dsl::SetUpdateDsl;
 
 /// The traits used by `QueryDsl`.
 ///
@@ -76,11 +72,9 @@ pub mod methods {
     pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
     pub use super::nullable_select_dsl::SelectNullableDsl;
     pub use super::offset_dsl::OffsetDsl;
-    pub use super::on_conflict_dsl::*;
     pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;
     pub use super::single_value_dsl::SingleValueDsl;
-    pub use super::update_dsl::SetUpdateDsl;
 
     #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
     #[doc(hidden)]

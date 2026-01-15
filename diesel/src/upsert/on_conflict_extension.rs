@@ -7,9 +7,7 @@ pub use crate::query_builder::upsert::on_conflict_target_decorations::Decoratabl
 use crate::query_builder::where_clause::{NoWhereClause, WhereAnd, WhereOr};
 use crate::query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
 use crate::query_dsl::filter_dsl::FilterDsl;
-use crate::query_dsl::methods::{
-    DoNothingDsl, DoUpdateDsl, OnConflictDoNothingDsl, OnConflictDsl, OrFilterDsl, SetUpdateDsl,
-};
+use crate::query_dsl::methods::OrFilterDsl;
 use crate::query_source::QuerySource;
 use crate::sql_types::BoolOrNullableBool;
 
@@ -320,37 +318,6 @@ where
     }
 }
 
-impl<T, U, Op, Ret, Target> OnConflictDsl<Target> for InsertStatement<T, U, Op, Ret>
-where
-    T: QuerySource,
-    U: UndecoratedInsertRecord<T> + IntoConflictValueClause,
-    ConflictTarget<Target>: OnConflictTarget<T>,
-{
-    type Output =
-        IncompleteOnConflict<InsertStatement<T, U::ValueClause, Op, Ret>, ConflictTarget<Target>>;
-
-    fn on_conflict(self, target: Target) -> Self::Output {
-        self.on_conflict(target)
-    }
-}
-
-impl<T, U, Op, Ret> OnConflictDoNothingDsl for InsertStatement<T, U, Op, Ret>
-where
-    T: QuerySource,
-    U: UndecoratedInsertRecord<T> + IntoConflictValueClause,
-{
-    type Output = InsertStatement<
-        T,
-        OnConflictValues<U::ValueClause, NoConflictTarget, DoNothing<T>>,
-        Op,
-        Ret,
-    >;
-
-    fn on_conflict_do_nothing(self) -> Self::Output {
-        self.on_conflict_do_nothing()
-    }
-}
-
 impl<Stmt, T, P> DecoratableTarget<P> for IncompleteOnConflict<Stmt, T>
 where
     P: Expression,
@@ -373,16 +340,6 @@ pub struct IncompleteOnConflict<Stmt, Target> {
     target: Target,
 }
 
-impl<T: QuerySource, U, Op, Ret, Target> DoNothingDsl
-    for IncompleteOnConflict<InsertStatement<T, U, Op, Ret>, Target>
-{
-    type Output = InsertStatement<T, OnConflictValues<U, Target, DoNothing<T>>, Op, Ret>;
-
-    fn do_nothing(self) -> Self::Output {
-        self.do_nothing()
-    }
-}
-
 impl<T: QuerySource, U, Op, Ret, Target>
     IncompleteOnConflict<InsertStatement<T, U, Op, Ret>, Target>
 {
@@ -401,14 +358,6 @@ impl<T: QuerySource, U, Op, Ret, Target>
         self.stmt.replace_values(|values| {
             OnConflictValues::new(values, target, DoNothing::new(), NoWhereClause)
         })
-    }
-}
-
-impl<Stmt, Target> DoUpdateDsl for IncompleteOnConflict<Stmt, Target> {
-    type Output = IncompleteDoUpdate<Stmt, Target>;
-
-    fn do_update(self) -> Self::Output {
-        self.do_update()
     }
 }
 
@@ -739,20 +688,6 @@ impl<T: QuerySource, U, Op, Ret, Target>
                 NoWhereClause,
             )
         })
-    }
-}
-
-impl<T, U, Op, Ret, Target, Changes> SetUpdateDsl<Changes>
-    for IncompleteDoUpdate<InsertStatement<T, U, Op, Ret>, Target>
-where
-    T: QuerySource,
-    Changes: AsChangeset<Target = T>,
-{
-    type Output =
-        InsertStatement<T, OnConflictValues<U, Target, DoUpdate<Changes::Changeset, T>>, Op, Ret>;
-
-    fn set(self, changes: Changes) -> Self::Output {
-        self.set(changes)
     }
 }
 
