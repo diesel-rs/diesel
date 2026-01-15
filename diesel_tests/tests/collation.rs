@@ -93,7 +93,7 @@ fn custom_collation() {
 #[cfg(feature = "postgres")]
 fn postgres_collations() {
     use crate::schema::users::dsl::*;
-    use diesel::collation::{Default as DefaultCollation, Posix, C};
+    use diesel::collation::{Posix, C};
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
@@ -113,15 +113,6 @@ fn postgres_collations() {
         .unwrap();
     let _ = users
         .filter(name.collate_c().eq("Sean"))
-        .load::<User>(connection)
-        .unwrap();
-
-    let _ = users
-        .filter(name.collate(DefaultCollation).eq("Sean"))
-        .load::<User>(connection)
-        .unwrap();
-    let _ = users
-        .filter(name.collate_default().eq("Sean"))
         .load::<User>(connection)
         .unwrap();
 }

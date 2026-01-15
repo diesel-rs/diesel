@@ -251,36 +251,6 @@ pub trait TextExpressionMethods: Expression + Sized {
         Grouped(Collate::new(self, crate::collation::C))
     }
 
-    /// Returns a SQL `COLLATE default` expression.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # include!("../doctest_setup.rs");
-    /// #
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    /// #
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
-    /// #     let connection = &mut establish_connection();
-    /// #     #[cfg(not(feature = "postgres"))]
-    /// #     return Ok(());
-    /// #
-    /// let starts_with_s = users
-    ///     .select(name)
-    ///     .filter(name.collate_default().eq("Sean"))
-    ///     .load::<String>(connection)?;
-    /// assert_eq!(vec!["Sean"], starts_with_s);
-    /// #     Ok(())
-    /// # }
-    /// ```
-    #[cfg(feature = "postgres")]
-    fn collate_default(self) -> dsl::Collate<Self> {
-        Grouped(Collate::new(self, crate::collation::Default))
-    }
-
     /// Returns a SQL `LIKE` expression
     ///
     /// This method is case insensitive for SQLite and MySQL.

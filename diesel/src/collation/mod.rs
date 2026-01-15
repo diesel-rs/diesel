@@ -92,18 +92,3 @@ impl fmt::Display for RTrim {
         write!(f, "RTRIM")
     }
 }
-
-/// The `default` collation.
-///
-/// This collation uses the database locale at creation time.
-/// It is supported by PostgreSQL.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-#[cfg(feature = "postgres")]
-pub struct Default;
-
-#[cfg(feature = "postgres")]
-impl fmt::Display for Default {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("default")
-    }
-}
