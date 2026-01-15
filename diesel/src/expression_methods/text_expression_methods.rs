@@ -122,7 +122,6 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # }
     /// ```
     #[cfg(any(feature = "sqlite", feature = "mysql"))]
-    #[allow(clippy::needless_doc_main)]
     fn collate_binary(self) -> dsl::Collate<Self> {
         Grouped(Collate::new(self, crate::collation::Binary))
     }
@@ -153,7 +152,6 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # }
     /// ```
     #[cfg(feature = "sqlite")]
-    #[allow(clippy::needless_doc_main)]
     fn collate_nocase(self) -> dsl::Collate<Self> {
         Grouped(Collate::new(self, crate::collation::NoCase))
     }
@@ -189,7 +187,6 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// }
     /// ```
     #[cfg(feature = "sqlite")]
-    #[allow(clippy::needless_doc_main)]
     fn collate_rtrim(self) -> dsl::Collate<Self> {
         Grouped(Collate::new(self, crate::collation::RTrim))
     }
@@ -220,7 +217,6 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # }
     /// ```
     #[cfg(feature = "postgres")]
-    #[allow(clippy::needless_doc_main)]
     fn collate_posix(self) -> dsl::Collate<Self> {
         Grouped(Collate::new(self, crate::collation::Posix))
     }
@@ -251,7 +247,6 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # }
     /// ```
     #[cfg(feature = "postgres")]
-    #[allow(clippy::needless_doc_main)]
     fn collate_c(self) -> dsl::Collate<Self> {
         Grouped(Collate::new(self, crate::collation::C))
     }
@@ -282,7 +277,6 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # }
     /// ```
     #[cfg(feature = "postgres")]
-    #[allow(clippy::needless_doc_main)]
     fn collate_unicode(self) -> dsl::Collate<Self> {
         Grouped(Collate::new(self, crate::collation::Unicode))
     }
@@ -313,7 +307,6 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # }
     /// ```
     #[cfg(feature = "postgres")]
-    #[allow(clippy::needless_doc_main)]
     fn collate_ucs_basic(self) -> dsl::Collate<Self> {
         Grouped(Collate::new(self, crate::collation::UcsBasic))
     }
@@ -344,7 +337,6 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # }
     /// ```
     #[cfg(feature = "postgres")]
-    #[allow(clippy::needless_doc_main)]
     fn collate_pg_unicode_fast(self) -> dsl::Collate<Self> {
         Grouped(Collate::new(self, crate::collation::PgUnicodeFast))
     }
@@ -375,7 +367,6 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # }
     /// ```
     #[cfg(feature = "postgres")]
-    #[allow(clippy::needless_doc_main)]
     fn collate_pg_c_utf8(self) -> dsl::Collate<Self> {
         Grouped(Collate::new(self, crate::collation::PgCUtf8))
     }
@@ -406,7 +397,6 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # }
     /// ```
     #[cfg(feature = "postgres")]
-    #[allow(clippy::needless_doc_main)]
     fn collate_default(self) -> dsl::Collate<Self> {
         Grouped(Collate::new(self, crate::collation::Default))
     }
