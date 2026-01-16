@@ -227,32 +227,6 @@ pub struct NamedField<I> {
     pub value: I,
 }
 
-impl<I> AsRef<I> for NamedField<I> {
-    fn as_ref(&self) -> &I {
-        &self.value
-    }
-}
-
-impl<I> Borrow<I> for NamedField<I> {
-    fn borrow(&self) -> &I {
-        &self.value
-    }
-}
-
-impl<I> Deref for NamedField<I> {
-    type Target = I;
-
-    fn deref(&self) -> &Self::Target {
-        &self.value
-    }
-}
-
-impl<I> DerefMut for NamedField<I> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.value
-    }
-}
-
 impl<I> FromIterator<I> for DynamicRow<I> {
     fn from_iter<T>(iter: T) -> Self
     where
@@ -290,12 +264,12 @@ impl<I> DynamicRow<I> {
     }
 
     /// Returns an iterator over the values of the row
-    pub fn iter(&self) -> std::slice::Iter<'_, I> {
+    pub fn iter(&self) -> impl Iterator<Item = &I> {
         self.values.iter()
     }
 
     /// Returns a mutable iterator over the values of the row
-    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, I> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut I> {
         self.values.iter_mut()
     }
 

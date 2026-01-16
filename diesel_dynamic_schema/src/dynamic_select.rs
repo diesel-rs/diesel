@@ -53,6 +53,16 @@ impl<'a, DB, QS> DynamicSelectClause<'a, DB, QS> {
             self.add_field(field);
         }
     }
+
+    /// Returns the number of fields in the select clause
+    pub fn len(&self) -> usize {
+        self.selects.len()
+    }
+
+    /// Returns whether the select clause is empty
+    pub fn is_empty(&self) -> bool {
+        self.selects.is_empty()
+    }
 }
 
 impl<DB, QS> AppearsOnTable<QS> for DynamicSelectClause<'_, DB, QS> where Self: Expression {}
@@ -88,14 +98,6 @@ impl<DB, QS> ValidGrouping<()> for DynamicSelectClause<'_, DB, QS> {
     type IsAggregate = is_aggregate::No;
 }
 
-impl<'a, DB, QS> AsRef<[Box<dyn QueryFragment<DB> + Send + 'a>]>
-    for DynamicSelectClause<'a, DB, QS>
-{
-    fn as_ref(&self) -> &[Box<dyn QueryFragment<DB> + Send + 'a>] {
-        &self.selects
-    }
-}
-
 impl<'a, DB, QS, F> FromIterator<F> for DynamicSelectClause<'a, DB, QS>
 where
     F: QueryFragment<DB> + SelectableExpression<QS> + NonAggregate + Send + 'a,
@@ -115,26 +117,5 @@ where
 {
     fn extend<I: IntoIterator<Item = F>>(&mut self, iter: I) {
         self.add_fields(iter)
-    }
-}
-
-impl<'a, DB, QS> IntoIterator for DynamicSelectClause<'a, DB, QS> {
-    type Item = Box<dyn QueryFragment<DB> + Send + 'a>;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.selects.into_iter()
-    }
-}
-
-impl<'a, 'b, DB, QS> IntoIterator for &'b DynamicSelectClause<'a, DB, QS> {
-    type Item = &'b (dyn QueryFragment<DB> + Send + 'a);
-    type IntoIter = std::iter::Map<
-        std::slice::Iter<'b, Box<dyn QueryFragment<DB> + Send + 'a>>,
-        fn(&'b Box<dyn QueryFragment<DB> + Send + 'a>) -> &'b (dyn QueryFragment<DB> + Send + 'a),
-    >;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.selects.iter().map(|b| &**b)
     }
 }

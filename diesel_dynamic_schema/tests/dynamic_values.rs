@@ -97,7 +97,8 @@ fn test_ergonomics() {
     select_clause.extend(fields);
 
     // IntoIterator
-    assert_eq!(select_clause.into_iter().count(), 2);
+    assert_eq!(select_clause.len(), 2);
+    assert!(!select_clause.is_empty());
 
     // Test DynamicRow ergonomics
     // Re-create query since select_clause was consumed
