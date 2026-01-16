@@ -36,8 +36,16 @@ impl<Table> OnConflictTarget<Table> for NoConflictTarget {}
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct ConflictTarget<T>(T);
 
-impl<T> From<T> for ConflictTarget<T> {
-    fn from(target: T) -> Self {
+impl<T> ConflictTarget<T> {
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    /// Creates a new `ConflictTarget` wrapping the given target.
+    ///
+    /// # Arguments
+    ///
+    /// * `target` - The target of the `ON CONFLICT` clause.
+    pub(crate) fn new(target: T) -> Self {
         ConflictTarget(target)
     }
 }
