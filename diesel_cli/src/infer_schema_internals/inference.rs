@@ -64,6 +64,7 @@ static RESERVED_NAMES: &[&str] = &[
     "while",
     "yield",
     "bool",
+    "table",
     "columns",
     "is_nullable",
 ];
