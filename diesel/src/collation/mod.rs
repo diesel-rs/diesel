@@ -77,7 +77,7 @@ impl QueryFragment<crate::pg::Pg> for C {
 
 #[cfg(feature = "postgres")]
 impl QueryId for C {
-    type QueryId = ();
+    type QueryId = Self;
     const HAS_STATIC_QUERY_ID: bool = true;
 }
 
