@@ -152,7 +152,6 @@ use diesel::deserialize::{self, FromSql};
 use diesel::expression::TypedExpressionType;
 use diesel::row::{Field, NamedRow, Row};
 use diesel::QueryableByName;
-use std::borrow::Borrow;
 use std::iter::FromIterator;
 use std::ops::{Index, IndexMut};
 
