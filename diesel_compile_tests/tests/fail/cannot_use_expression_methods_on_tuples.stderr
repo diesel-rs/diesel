@@ -7,10 +7,18 @@ LL |     users.filter((id, name).is_not_null());
    = note: the following trait bounds were not satisfied:
            `(diesel::sql_types::Integer, diesel::sql_types::Text): SingleValue`
            which is required by `(columns::id, columns::name): diesel::ExpressionMethods`
+           `<(columns::id, columns::name) as diesel::Expression>::SqlType = Untyped`
+           which is required by `(columns::id, columns::name): diesel::UntypedExpressionMethods`
            `(diesel::sql_types::Integer, diesel::sql_types::Text): SingleValue`
            which is required by `&(columns::id, columns::name): diesel::ExpressionMethods`
+           `<&(columns::id, columns::name) as diesel::Expression>::SqlType = Untyped`
+           which is required by `&(columns::id, columns::name): diesel::UntypedExpressionMethods`
            `&mut (columns::id, columns::name): diesel::Expression`
            which is required by `&mut (columns::id, columns::name): diesel::ExpressionMethods`
+           `<&mut (columns::id, columns::name) as diesel::Expression>::SqlType = Untyped`
+           which is required by `&mut (columns::id, columns::name): diesel::UntypedExpressionMethods`
+           `&mut (columns::id, columns::name): diesel::Expression`
+           which is required by `&mut (columns::id, columns::name): diesel::UntypedExpressionMethods`
 
 error[E0599]: the method `eq_any` exists for tuple `(columns::id, columns::name)`, but its trait bounds were not satisfied
   --> tests/fail/cannot_use_expression_methods_on_tuples.rs:20:29
