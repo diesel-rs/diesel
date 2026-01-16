@@ -43,13 +43,7 @@ infix_operator!(HasAnyKeyJsonb, " ?| ", backend: Pg);
 infix_operator!(HasAllKeysJsonb, " ?& ", backend: Pg);
 infix_operator!(RangeAdjacent, " -|- ", backend: Pg);
 infix_operator!(RemoveFromJsonb, " - ", Jsonb, backend: Pg);
-__diesel_infix_operator!(
-    RetrieveAsObjectJson,
-    " -> ",
-    __diesel_internal_SameResultAsInput,
-    backend: Pg
-);
-infix_operator!(RetrieveAsTextJson, " ->> ", Text, backend: Pg);
+__diesel_infix_operator!(RetrieveAsObjectJson, " -> ", __diesel_internal_SameResultAsInput, backend: Pg);
 __diesel_infix_operator!(
     RetrieveByPathAsObjectJson,
     " #> ",

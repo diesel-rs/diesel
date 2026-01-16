@@ -1,7 +1,7 @@
 use super::{Alias, AliasSource, AliasedField};
 
 use crate::expression;
-use crate::query_source::{Column, Table, TableNotEqual};
+use crate::query_source::{QueryRelation, QueryRelationField, TableNotEqual};
 
 /// Serves to map `Self` to `Alias<S>`
 ///
@@ -28,7 +28,7 @@ pub trait FieldAliasMapper<S> {
 /// Allows implementing `FieldAliasMapper` in external crates without running into conflicting impl
 /// errors due to https://github.com/rust-lang/rust/issues/20400
 ///
-/// We will always have `Self = S::Table` and `CT = C::Table`
+/// We will always have `Self = S::QueryRelation` and `CT = C::QueryRelation`
 pub trait FieldAliasMapperAssociatedTypesDisjointnessTrick<CT, S, C> {
     type Out;
     fn map(column: C, alias: &Alias<S>) -> Self::Out;
@@ -36,13 +36,17 @@ pub trait FieldAliasMapperAssociatedTypesDisjointnessTrick<CT, S, C> {
 impl<S, C> FieldAliasMapper<S> for C
 where
     S: AliasSource,
-    C: Column,
-    S::Target: FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>,
+    C: QueryRelationField,
+    S::Target: FieldAliasMapperAssociatedTypesDisjointnessTrick<C::QueryRelation, S, C>,
 {
-    type Out = <S::Target as FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>>::Out;
+    type Out = <S::Target as FieldAliasMapperAssociatedTypesDisjointnessTrick<
+        C::QueryRelation,
+        S,
+        C,
+    >>::Out;
 
     fn map(self, alias: &Alias<S>) -> Self::Out {
-        <S::Target as FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>>::map(
+        <S::Target as FieldAliasMapperAssociatedTypesDisjointnessTrick<C::QueryRelation, S, C>>::map(
             self, alias,
         )
     }
@@ -51,8 +55,8 @@ where
 impl<TS, TC, S, C> FieldAliasMapperAssociatedTypesDisjointnessTrick<TC, S, C> for TS
 where
     S: AliasSource<Target = TS>,
-    C: Column<Table = TC>,
-    TC: Table,
+    C: QueryRelationField<QueryRelation = TC>,
+    TC: QueryRelation,
     TS: TableNotEqual<TC>,
 {
     type Out = C;

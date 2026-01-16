@@ -33,10 +33,11 @@ members = [
     "examples/sqlite/relations",
     "examples/sqlite/wasm",
     "xtask",
+    "diesel_infer_query",
 ]
 
 [workspace.package]
-rust-version = "1.86.0"
+rust-version = "1.88.0"
 include = ["src/**/*.rs", "tests/**/*.rs", "LICENSE-*", "README.md"]
 edition = "2021"
 

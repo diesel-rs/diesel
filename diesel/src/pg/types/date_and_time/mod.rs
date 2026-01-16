@@ -15,7 +15,7 @@ mod std_time;
 mod time;
 
 #[cfg(feature = "postgres_backend")]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, AsExpression, FromSqlRow)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, AsExpression, FromSqlRow)]
 #[diesel(sql_type = Timestamp)]
 #[diesel(sql_type = Timestamptz)]
 /// Timestamps are represented in Postgres as a 64 bit signed integer representing the number of
@@ -30,7 +30,7 @@ impl Defaultable for PgTimestamp {
 }
 
 #[cfg(feature = "postgres_backend")]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, AsExpression, FromSqlRow)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, AsExpression, FromSqlRow)]
 #[diesel(sql_type = Date)]
 /// Dates are represented in Postgres as a 32 bit signed integer representing the number of julian
 /// days since January 1st 2000. This struct is a dumb wrapper type, meant only to indicate the
@@ -47,7 +47,7 @@ impl Defaultable for PgDate {
 /// microseconds since midnight. This struct is a dumb wrapper type, meant only to indicate the
 /// integer's meaning.
 #[cfg(feature = "postgres_backend")]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, AsExpression, FromSqlRow)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, AsExpression, FromSqlRow)]
 #[diesel(sql_type = Time)]
 pub struct PgTime(pub i64);
 
@@ -62,7 +62,7 @@ impl Defaultable for PgTime {
 /// representing number of months. This struct is a dumb wrapper type, meant only to indicate the
 /// meaning of these parts.
 #[cfg(feature = "postgres_backend")]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, AsExpression, FromSqlRow)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, AsExpression, FromSqlRow)]
 #[diesel(sql_type = Interval)]
 pub struct PgInterval {
     /// The number of whole microseconds
@@ -80,7 +80,7 @@ impl PgInterval {
     /// of microseconds greater than the longest possible day, or a number of
     /// days greater than the longest possible month, as it is impossible to say
     /// how many months are in "40 days" without knowing a precise date.
-    pub fn new(microseconds: i64, days: i32, months: i32) -> Self {
+    pub const fn new(microseconds: i64, days: i32, months: i32) -> Self {
         PgInterval {
             microseconds,
             days,
@@ -89,17 +89,17 @@ impl PgInterval {
     }
 
     /// Equivalent to `new(microseconds, 0, 0)`
-    pub fn from_microseconds(microseconds: i64) -> Self {
+    pub const fn from_microseconds(microseconds: i64) -> Self {
         Self::new(microseconds, 0, 0)
     }
 
     /// Equivalent to `new(0, days, 0)`
-    pub fn from_days(days: i32) -> Self {
+    pub const fn from_days(days: i32) -> Self {
         Self::new(0, days, 0)
     }
 
     /// Equivalent to `new(0, 0, months)`
-    pub fn from_months(months: i32) -> Self {
+    pub const fn from_months(months: i32) -> Self {
         Self::new(0, 0, months)
     }
 }

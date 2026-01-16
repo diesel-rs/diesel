@@ -432,6 +432,84 @@ impl<T: HasTable> HasTable for &T {
     }
 }
 
+impl<T: HasTable> HasTable for Option<T> {
+    type Table = T::Table;
+
+    fn table() -> Self::Table {
+        T::table()
+    }
+}
+
+impl<T: HasTable> HasTable for Box<T> {
+    type Table = T::Table;
+
+    fn table() -> Self::Table {
+        T::table()
+    }
+}
+
+impl<T: HasTable> HasTable for std::rc::Rc<T> {
+    type Table = T::Table;
+
+    fn table() -> Self::Table {
+        T::table()
+    }
+}
+
+impl<T: HasTable> HasTable for std::sync::Arc<T> {
+    type Table = T::Table;
+
+    fn table() -> Self::Table {
+        T::table()
+    }
+}
+
+// Implement HasTable for tuples of types which implement `HasTable` for
+// the same table.
+// This is useful for multi-column constraints like composite foreign keys.
+//
+// For example:
+// ```rust,ignore
+// // Given a table with columns (id, name)
+// type UserTable = <(users::id, users::name) as HasTable>::Table;
+// let table = <(users::id, users::name)>::table();
+// ```
+
+impl<T> HasTable for (T,)
+where
+    T: HasTable,
+{
+    type Table = T::Table;
+
+    fn table() -> Self::Table {
+        T::table()
+    }
+}
+
+macro_rules! has_table_tuples {
+    ($(
+        $Tuple:tt {
+            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)*
+        }
+    )+) => {
+        $(
+            impl<_T, $($T),*> HasTable for (_T, $($T),*)
+            where
+                _T: HasTable,
+                $($T: HasTable<Table = _T::Table>,)*
+            {
+                type Table = _T::Table;
+
+                fn table() -> Self::Table {
+                    _T::table()
+                }
+            }
+        )+
+    };
+}
+
+diesel_derives::__diesel_for_each_tuple!(has_table_tuples);
+
 /// This trait indicates that a struct represents a single row in a database table.
 ///
 /// This must be implemented to use associations.

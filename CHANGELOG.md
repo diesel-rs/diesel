@@ -12,6 +12,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+### Changed
+
+* The minimal supported Rust version is now 1.88.0
+
 ## [2.3.6] 2025-01-23
 
 * Added support for mysqlclient-sys 0.5.0

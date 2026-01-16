@@ -49,4 +49,11 @@ pub trait SqliteAggregateFunction<Args>: Default {
 pub mod sql_types {
     #[doc(inline)]
     pub use super::types::Timestamptz;
+
+    #[cfg(feature = "sqlite")]
+    #[doc(inline)]
+    pub use super::types::JsonValidFlags;
 }
+
+#[cfg(feature = "sqlite")]
+pub use self::types::JsonValidFlag;

@@ -26,6 +26,7 @@ use proc_macro::TokenStream;
 use sql_function::ExternSqlBlock;
 use syn::parse_quote;
 
+mod allow_tables_to_appear_in_same_query;
 mod attrs;
 mod deprecated;
 mod field;
@@ -1446,19 +1447,230 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
     table_proc_inner(input.into()).into()
 }
 
+/// Allow two or more tables which are otherwise unrelated to be used together
+/// in a query.
+///
+/// This macro must be invoked any time two tables need to appear in the same
+/// query either because they are being joined together, or because one appears
+/// in a subselect. When this macro is invoked with more than 2 tables, every
+/// combination of those tables will be allowed to appear together.
+///
+/// If you are using `diesel print-schema`, an invocation of
+/// this macro will be generated for you for all tables in your schema.
+///
+/// # Example
+///
+/// ```
+/// # use diesel::{allow_tables_to_appear_in_same_query, table};
+/// #
+/// // This would be required to do `users.inner_join(posts.inner_join(comments))`
+/// allow_tables_to_appear_in_same_query!(comments, posts, users);
+///
+/// table! {
+///     comments {
+///         id -> Integer,
+///         post_id -> Integer,
+///         body -> VarChar,
+///     }
+/// }
+///
+/// table! {
+///    posts {
+///        id -> Integer,
+///        user_id -> Integer,
+///        title -> VarChar,
+///    }
+/// }
+///
+/// table! {
+///     users {
+///        id -> Integer,
+///        name -> VarChar,
+///     }
+/// }
+/// ```
+///
+/// When more than two tables are passed, the relevant code is generated for
+/// every combination of those tables. This code would be equivalent to the
+/// previous example.
+///
+/// ```
+/// # use diesel::{allow_tables_to_appear_in_same_query, table};
+/// # table! {
+/// #    comments {
+/// #        id -> Integer,
+/// #        post_id -> Integer,
+/// #        body -> VarChar,
+/// #    }
+/// # }
+/// #
+/// # table! {
+/// #    posts {
+/// #        id -> Integer,
+/// #        user_id -> Integer,
+/// #        title -> VarChar,
+/// #    }
+/// # }
+/// #
+/// # table! {
+/// #     users {
+/// #        id -> Integer,
+/// #        name -> VarChar,
+/// #     }
+/// # }
+/// #
+/// allow_tables_to_appear_in_same_query!(comments, posts);
+/// allow_tables_to_appear_in_same_query!(comments, users);
+/// allow_tables_to_appear_in_same_query!(posts, users);
+/// #
+/// # fn main() {}
+/// ```
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/allow_tables_to_appear_in_same_query.md")))]
+#[proc_macro]
+pub fn allow_tables_to_appear_in_same_query(input: TokenStream) -> TokenStream {
+    allow_tables_to_appear_in_same_query::expand(input.into()).into()
+}
+
 fn table_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
-    // include the input in the error output so that rust-analyzer is happy
-    let tokenstream2 = input.clone();
-    match syn::parse2(input) {
-        Ok(input) => table::expand(input),
-        Err(_) => quote::quote! {
-            compile_error!(
-                "invalid `table!` syntax \nhelp: please see the `table!` macro docs for more info\n\
-                 help: docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`\n"
-            );
-            #tokenstream2
-        },
-    }
+    self::table::query_source_macro(input, self::table::QuerySourceMacroKind::Table)
+}
+
+/// Specifies that a view exists, and what fields it has. This will create a
+/// new public module, with the same name, as the name of the view. In this
+/// module, you will find a unit struct named `view`, and a unit struct with the
+/// name of each field.
+///
+/// The macro and the generated code closely mirror the [`table!`](table_proc) macro.
+///
+/// By default, this allows a maximum of 32 columns per view.
+/// You can increase this limit to 64 by enabling the `64-column-tables` feature.
+/// You can increase it to 128 by enabling the `128-column-tables` feature.
+/// You can decrease it to 16 columns,
+/// which improves compilation time,
+/// by disabling the default features of Diesel.
+/// Note that enabling 64 column tables or larger will substantially increase
+/// the compile time of Diesel.
+///
+/// Example usage
+/// -------------
+///
+/// ```rust
+/// # extern crate diesel;
+///
+/// diesel::view! {
+///     users {
+///         name -> VarChar,
+///         favorite_color -> Nullable<VarChar>,
+///     }
+/// }
+/// ```
+///
+/// If you are using types that aren't from Diesel's core types, you can specify
+/// which types to import.
+///
+/// ```
+/// # extern crate diesel;
+/// # mod diesel_full_text_search {
+/// #     #[derive(diesel::sql_types::SqlType)]
+/// #     pub struct TsVector;
+/// # }
+///
+/// diesel::view! {
+///     use diesel::sql_types::*;
+/// #    use crate::diesel_full_text_search::*;
+/// # /*
+///     use diesel_full_text_search::*;
+/// # */
+///
+///     posts {
+///         title -> Text,
+///         keywords -> TsVector,
+///     }
+/// }
+/// # fn main() {}
+/// ```
+///
+/// If you want to add documentation to the generated code, you can use the
+/// following syntax:
+///
+/// ```
+/// # extern crate diesel;
+///
+/// diesel::view! {
+///     /// The table containing all blog posts
+///     posts {
+///         /// The post's title
+///         title -> Text,
+///     }
+/// }
+/// ```
+///
+/// If you have a column with the same name as a Rust reserved keyword, you can use
+/// the `sql_name` attribute like this:
+///
+/// ```
+/// # extern crate diesel;
+///
+/// diesel::view! {
+///     posts {
+///         /// This column is named `mytype` but references the table `type` column.
+///         #[sql_name = "type"]
+///         mytype -> Text,
+///     }
+/// }
+/// ```
+///
+/// This module will also contain several helper types:
+///
+/// dsl
+/// ---
+///
+/// This simply re-exports the view, renamed to the same name as the module,
+/// and each of the columns. This is useful to glob import when you're dealing
+/// primarily with one table, to allow writing `users.filter(name.eq("Sean"))`
+/// instead of `users::table.filter(users::name.eq("Sean"))`.
+///
+/// `all_columns`
+/// -----------
+///
+/// A constant will be assigned called `all_columns`. This is what will be
+/// selected if you don't otherwise specify a select clause. It's type will be
+/// `view::AllColumns`. You can also get this value from the
+/// `QueryRelation::all_columns` function.
+///
+/// star
+/// ----
+///
+/// This will be the qualified "star" expression for this view (e.g.
+/// `users.*`). Internally, we read columns by index, not by name, so this
+/// column is not safe to read data out of, and it has had its SQL type set to
+/// `()` to prevent accidentally using it as such. It is sometimes useful for
+/// counting statements, however. It can also be accessed through the `Table.star()`
+/// method.
+///
+/// `SqlType`
+/// -------
+///
+/// A type alias called `SqlType` will be created. It will be the SQL type of
+/// `all_columns`. The SQL type is needed for things like returning boxed
+/// queries.
+///
+/// `BoxedQuery`
+/// ----------
+///
+/// ```ignore
+/// pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, view, DB>;
+/// ```
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/view.md")))]
+#[proc_macro]
+pub fn view_proc(input: TokenStream) -> TokenStream {
+    view_proc_inner(input.into()).into()
+}
+
+fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    self::table::query_source_macro(input, self::table::QuerySourceMacroKind::View)
 }
 
 /// This derives implements `diesel::Connection` and related traits for an enum of
@@ -2259,11 +2471,45 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// }
 /// ```
 ///
+/// Optionally, a second named boolean argument `skip_zero_argument_variant` can be provided to
+/// control whether the 0-argument variant is generated. By default, (omitted or `false`),
+/// the 0-argument variant is included. Set it to `true` to skip generating the 0-argument
+/// variant for functions that require at least one variadic argument. If you specify the boolean
+/// argument, the first argument has to be named `last_arguments` for clarity.
+///
+/// Example:
+///
+/// ```ignore
+/// #[declare_sql_function]
+/// extern "SQL" {
+///     #[variadic(last_arguments = 2, skip_zero_argument_variant = true)]
+///     fn foo<A, B, C>(a: A, b: B, c: C) -> Text;
+/// }
+/// ```
+///
+/// Which will be equivalent to
+///
+/// ```ignore
+/// #[declare_sql_function]
+/// extern "SQL" {
+///     #[sql_name = "foo"]
+///     fn foo_1<A, B1, C1>(a: A, b_1: B1, c_1: C1) -> Text;
+///
+///     #[sql_name = "foo"]
+///     fn foo_2<A, B1, C1, B2, C2>(a: A, b_1: B1, c_1: C1, b_2: B2, c_2: C2) -> Text;
+///
+///     ...
+/// }
+/// ```
+///
 /// ### Controlling the generation of variadic function variants
 ///
 /// By default, only variants with 0, 1, and 2 repetitions of variadic arguments are generated. To
 /// generate more variants, set the `DIESEL_VARIADIC_FUNCTION_ARGS` environment variable to the
 /// desired number of variants.
+///
+/// • The boolean only affects whether the 0 variant is generated; the total number of variants
+/// (e.g., up to N) still follows DIESEL_VARIADIC_FUNCTION_ARGS or the default.
 ///
 /// For a greater convenience this environment variable can also be set in a `.cargo/config.toml`
 /// file as described in the [cargo documentation](https://doc.rust-lang.org/cargo/reference/config.html#env).

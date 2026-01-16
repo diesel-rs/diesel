@@ -23,13 +23,13 @@ error[E0599]: the method `load` exists for struct `CopyToQuery<users::table, pg:
    ::: DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_to.rs
     |
 LL |   pub struct CopyToQuery<T, O> {
-    |   ---------------------------- doesn't satisfy `_: RunQueryDsl<_>` or `_: Table`
+    |   ---------------------------- doesn't satisfy `_: QueryRelation` or `_: RunQueryDsl<_>`
     |
     = note: the following trait bounds were not satisfied:
-            `CopyToQuery<users::table, pg::query_builder::copy::copy_to::CopyToOptions>: Table`
+            `CopyToQuery<users::table, pg::query_builder::copy::copy_to::CopyToOptions>: QueryRelation`
             which is required by `CopyToQuery<users::table, pg::query_builder::copy::copy_to::CopyToOptions>: diesel::RunQueryDsl<_>`
-            `&CopyToQuery<users::table, pg::query_builder::copy::copy_to::CopyToOptions>: Table`
+            `&CopyToQuery<users::table, pg::query_builder::copy::copy_to::CopyToOptions>: QueryRelation`
             which is required by `&CopyToQuery<users::table, pg::query_builder::copy::copy_to::CopyToOptions>: diesel::RunQueryDsl<_>`
-            `&mut CopyToQuery<users::table, pg::query_builder::copy::copy_to::CopyToOptions>: Table`
+            `&mut CopyToQuery<users::table, pg::query_builder::copy::copy_to::CopyToOptions>: QueryRelation`
             which is required by `&mut CopyToQuery<users::table, pg::query_builder::copy::copy_to::CopyToOptions>: diesel::RunQueryDsl<_>`
 For more information about this error, try `rustc --explain E0599`.

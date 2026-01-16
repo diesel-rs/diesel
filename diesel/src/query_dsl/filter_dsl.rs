@@ -19,7 +19,7 @@ pub trait FilterDsl<Predicate> {
 
 impl<T, Predicate> FilterDsl<Predicate> for T
 where
-    T: Table,
+    T: QueryRelation,
     T::Query: FilterDsl<Predicate>,
 {
     type Output = Filter<T::Query, Predicate>;
@@ -74,7 +74,7 @@ pub trait OrFilterDsl<Predicate> {
 
 impl<T, Predicate> OrFilterDsl<Predicate> for T
 where
-    T: Table,
+    T: QueryRelation,
     T::Query: OrFilterDsl<Predicate>,
 {
     type Output = OrFilter<T::Query, Predicate>;

@@ -109,6 +109,7 @@ fn expand_with<Fn: ProcMacroFn>(
     insta::assert_snapshot!(snapshot_name, out);
 }
 
+mod allow_tables_to_appear_in_same_query;
 mod as_changeset;
 mod as_expression;
 mod associations;
@@ -131,3 +132,4 @@ mod sql_function;
 mod sql_type;
 mod table;
 mod valid_grouping;
+mod view;

@@ -1,0 +1,98 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT 'abc' REGEXP 'abc', NULL REGEXP 'abc', 'abc' REGEXP NULL,'abc' RLIKE 'abc', NULL RLIKE 'abc'"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Literal {
+                    value: Some(
+                        "abc",
+                    ),
+                    is_null: false,
+                },
+                right: Literal {
+                    value: Some(
+                        "abc",
+                    ),
+                    is_null: false,
+                },
+                op: "REGEXP",
+                statically_not_null: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Literal {
+                    value: None,
+                    is_null: true,
+                },
+                right: Literal {
+                    value: Some(
+                        "abc",
+                    ),
+                    is_null: false,
+                },
+                op: "REGEXP",
+                statically_not_null: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Literal {
+                    value: Some(
+                        "abc",
+                    ),
+                    is_null: false,
+                },
+                right: Literal {
+                    value: None,
+                    is_null: true,
+                },
+                op: "REGEXP",
+                statically_not_null: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Literal {
+                    value: Some(
+                        "abc",
+                    ),
+                    is_null: false,
+                },
+                right: Literal {
+                    value: Some(
+                        "abc",
+                    ),
+                    is_null: false,
+                },
+                op: "RLIKE",
+                statically_not_null: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Literal {
+                    value: None,
+                    is_null: true,
+                },
+                right: Literal {
+                    value: Some(
+                        "abc",
+                    ),
+                    is_null: false,
+                },
+                op: "RLIKE",
+                statically_not_null: false,
+            },
+        },
+    ],
+}

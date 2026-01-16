@@ -512,7 +512,7 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
         with:
-          toolchain: 1.86.0
+          toolchain: 1.88.0
       - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
         with:
           toolchain: nightly
@@ -528,15 +528,15 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       - name: Check diesel_derives
-        run: cargo +1.86.0 minimal-versions check -p diesel_derives --features "postgres sqlite mysql 32-column-tables 64-column-tables 128-column-tables without-deprecated with-deprecated r2d2"
+        run: cargo +1.88.0 minimal-versions check -p diesel_derives --features "postgres sqlite mysql 32-column-tables 64-column-tables 128-column-tables without-deprecated with-deprecated r2d2"
       - name: Check diesel
-        run: cargo +1.86.0 minimal-versions check -p diesel --features "postgres mysql sqlite extras"
+        run: cargo +1.88.0 minimal-versions check -p diesel --features "postgres mysql sqlite extras"
       - name: Check diesel_dynamic_schema
-        run: cargo +1.86.0 minimal-versions check -p diesel-dynamic-schema --all-features
+        run: cargo +1.88.0 minimal-versions check -p diesel-dynamic-schema --all-features
       - name: Check diesel_migrations
-        run: cargo +1.86.0 minimal-versions check -p diesel_migrations --all-features
+        run: cargo +1.88.0 minimal-versions check -p diesel_migrations --all-features
       - name: Check diesel_cli
-        run: cargo +1.86.0 minimal-versions check -p diesel_cli --features "default sqlite-bundled"
+        run: cargo +1.88.0 minimal-versions check -p diesel_cli --features "default sqlite-bundled"
 
   Semver-Checks:
     name: Run Cargo Semver-Checks

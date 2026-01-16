@@ -6,7 +6,7 @@ use std::str::FromStr;
 use super::data_structures::ColumnDefinition;
 use super::inference;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TableName {
     pub sql_name: String,
     pub rust_name: String,
@@ -96,6 +96,15 @@ pub struct TableData {
     pub primary_key: Vec<String>,
     pub column_data: Vec<ColumnDefinition>,
     pub comment: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct ViewData {
+    pub name: TableName,
+    pub column_data: Vec<ColumnDefinition>,
+    pub comment: Option<String>,
+    #[expect(dead_code, reason = "Will be used later")]
+    pub sql_definition: String,
 }
 
 mod serde_impls {

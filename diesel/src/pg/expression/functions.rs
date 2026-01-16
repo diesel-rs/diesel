@@ -12,10 +12,11 @@ use crate::pg::expression::expression_methods::MultirangeOrRangeMaybeNullable;
 use crate::pg::expression::expression_methods::RangeOrNullableRange;
 use crate::pg::expression::expression_methods::RecordOrNullableRecord;
 use crate::pg::expression::expression_methods::TextArrayOrNullableTextArray;
+use crate::pg::expression::expression_methods::TextOrNullableText;
 use crate::sql_types::helper::CombinedNullableValue;
 use crate::sql_types::*;
 
-#[declare_sql_function]
+#[declare_sql_function(generate_return_type_helpers = true)]
 #[backends(crate::pg::Pg)]
 extern "SQL" {
     /// Creates an abbreviated display format as text.
@@ -2872,4 +2873,391 @@ extern "SQL" {
         new_value: E,
         insert_after: Bool,
     ) -> Arr::Out;
+
+    /// Builds a possibly-heterogeneously-typed JSON array out of a variadic argument list. Each argument is converted as per to_json.
+    ///
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{json_build_array_1, json_build_array_2, json_build_array_0};
+    /// #     use diesel::sql_types::{Jsonb, Array, Json, Nullable, Text, Integer, Record, Double};
+    /// #     use serde_json::{json,Value};
+    /// #     use diesel::dsl::sql;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(json_build_array_0()).get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([]), result);
+    ///
+    /// let result = diesel::select(json_build_array_1::<Text, _>("abc"))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(["abc"]), result);
+    ///
+    /// let result = diesel::select(json_build_array_2::<Text, Double, _, _>("abc", 3.1415))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(["abc", 3.1415]), result);
+    ///
+    /// let result = diesel::select(json_build_array_1::<Record<(Text, Double)>, _>(sql::<Record<(Text, Double)>>("ROW('abc',3.1415)")))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([
+    ///     {
+    ///         "f1":"abc",
+    ///         "f2":3.1415
+    ///     }
+    ///  ]), result);
+    ///
+    /// let result = diesel::select(json_build_array_1::<Array<Integer>, _>(vec![1, 2, 3]))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([ [1, 2, 3] ]), result);
+    ///
+    /// let result = diesel::select(json_build_array_2::<Nullable<Text>, Double, _, _>(None::<String>, 3.1415))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([None::<String>, 3.1415]), result);
+    ///
+    /// let result = diesel::select(json_build_array_1::<Record<(Nullable<Text>, Double)>, _>(sql::<Record<(Nullable<Text>, Double)>>("ROW(null,3.1415)")))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    ///
+    /// assert_eq!(json!([
+    ///     {
+    ///         "f1":None::<String>,
+    ///         "f2":3.1415
+    ///     }
+    ///  ]), result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "json_build_array"]
+    #[variadic(1)]
+    fn json_build_array<V: SingleValue>(value: V) -> Json;
+
+    /// Builds a possibly-heterogeneously-typed JSON array out of a variadic argument list. Each argument is converted as per to_jsonb.
+    ///
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{jsonb_build_array_1, jsonb_build_array_2, jsonb_build_array_0};
+    /// #     use diesel::sql_types::{Jsonb, Array, Json, Nullable, Text, Integer, Record, Double};
+    /// #     use serde_json::{json,Value};
+    /// #     use diesel::dsl::sql;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let result = diesel::select(jsonb_build_array_0()).get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([]), result);
+    ///
+    /// let result = diesel::select(jsonb_build_array_1::<Text, _>("abc"))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(["abc"]), result);
+    ///
+    /// let result = diesel::select(jsonb_build_array_2::<Text, Double, _, _>("abc", 3.1415))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(["abc", 3.1415]), result);
+    ///
+    /// let result = diesel::select(jsonb_build_array_1::<Record<(Text, Double)>, _>(sql::<Record<(Text, Double)>>("ROW('abc',3.1415)")))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([
+    ///     {
+    ///         "f1":"abc",
+    ///         "f2":3.1415
+    ///     }
+    ///  ]), result);
+    ///
+    /// let result = diesel::select(jsonb_build_array_1::<Array<Integer>, _>(vec![1, 2, 3]))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([ [1, 2, 3] ]), result);
+    ///
+    /// let result = diesel::select(jsonb_build_array_2::<Nullable<Text>, Double, _, _>(None::<String>, 3.1415))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!([None::<String>, 3.1415]), result);
+    ///
+    /// let result = diesel::select(jsonb_build_array_1::<Record<(Nullable<Text>, Double)>, _>(sql::<Record<(Nullable<Text>, Double)>>("ROW(null,3.1415)")))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    ///
+    /// assert_eq!(json!([
+    ///     {
+    ///         "f1":None::<String>,
+    ///         "f2":3.1415
+    ///     }
+    ///  ]), result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_build_array"]
+    #[variadic(1)]
+    fn jsonb_build_array<V: SingleValue>(value: V) -> Jsonb;
+    /// Extracts JSON sub-object at the specified path. (This is functionally equivalent to the #> operator, but writing the path out as a variadic list can be more convenient in some cases.)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{json_extract_path_1, json_extract_path_2};
+    /// #     use diesel::sql_types::{Json, Nullable, Text};
+    /// #     use serde_json::{json,Value};
+    /// #     use diesel::dsl::sql;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let expected = Some(json!({"f5":99, "f6":"foo"}));
+    /// let result = diesel::select(json_extract_path_1::<Json, Text, _, _>(
+    ///     json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}),
+    ///     "f4",
+    /// ))
+    /// .get_result::<Option<serde_json::Value>>(connection)?;
+    ///
+    /// assert_eq!(expected, result);
+    ///
+    /// let expected = Some(json!("foo"));
+    /// let result = diesel::select(json_extract_path_2::<Json, Text, Text, _, _, _>(
+    ///     json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}),
+    ///     "f4",
+    ///     "f6"
+    /// ))
+    /// .get_result::<Option<serde_json::Value>>(connection)?;
+    ///
+    /// assert_eq!(expected, result);
+    ///
+    /// let result = diesel::select(json_extract_path_1::<Nullable<Json>, Text, _, _>(None::<serde_json::Value>, "f4"))
+    /// .get_result::<Option<serde_json::Value>>(connection)?;
+    ///
+    /// assert_eq!(None::<serde_json::Value>, result);
+    ///
+    /// let result = diesel::select(json_extract_path_2::<Json, Nullable<Text>, Text, _, _, _>(json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}), None::<String>, "f6"))
+    /// .get_result::<Option<serde_json::Value>>(connection)?;
+    ///
+    ///
+    /// assert_eq!(None::<serde_json::Value>, result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "json_extract_path"]
+    #[variadic(last_arguments = 1, skip_zero_argument_variant = true)]
+    fn json_extract_path<J: JsonOrNullableJson + SingleValue, T: SingleValue>(
+        json: J,
+        text: T,
+    ) -> Nullable<Json>;
+
+    /// Extracts JSON sub-object at the specified path. (This is functionally equivalent to the #> operator, but writing the path out as a variadic list can be more convenient in some cases.)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{jsonb_extract_path_1, jsonb_extract_path_2};
+    /// #     use diesel::sql_types::{Jsonb, Nullable, Text};
+    /// #     use serde_json::{json,Value};
+    /// #     use diesel::dsl::sql;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let expected = Some(json!({"f5":99, "f6":"foo"}));
+    /// let result = diesel::select(jsonb_extract_path_1::<Jsonb, Text, _, _>(
+    ///     json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}),
+    ///     "f4",
+    /// ))
+    /// .get_result::<Option<serde_json::Value>>(connection)?;
+    ///
+    /// assert_eq!(expected, result);
+    ///
+    /// let expected = Some(json!("foo"));
+    /// let result = diesel::select(jsonb_extract_path_2::<Jsonb, Text, Text, _, _, _>(
+    ///     json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}),
+    ///     "f4",
+    ///     "f6"
+    /// ))
+    /// .get_result::<Option<serde_json::Value>>(connection)?;
+    ///
+    /// assert_eq!(expected, result);
+    ///
+    /// let result = diesel::select(jsonb_extract_path_1::<Nullable<Jsonb>, Text, _, _>(None::<serde_json::Value>, "f4"))
+    /// .get_result::<Option<serde_json::Value>>(connection)?;
+    ///
+    /// assert_eq!(None::<serde_json::Value>, result);
+    ///
+    /// let result = diesel::select(jsonb_extract_path_2::<Jsonb, Nullable<Text>, Text, _, _, _>(json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}), None::<String>, "f6"))
+    /// .get_result::<Option<serde_json::Value>>(connection)?;
+    ///
+    ///
+    /// assert_eq!(None::<serde_json::Value>, result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_extract_path"]
+    #[variadic(last_arguments = 1, skip_zero_argument_variant = true)]
+    fn jsonb_extract_path<J: JsonbOrNullableJsonb + SingleValue, T: SingleValue>(
+        json: J,
+        text: T,
+    ) -> Nullable<Jsonb>;
+
+    /// Extracts JSON sub-object at the specified path as text. (This is functionally equivalent to the #>> operator.)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{json_extract_path_text_1, json_extract_path_text_2};
+    /// #     use diesel::sql_types::{Json, Nullable, Text};
+    /// #     use serde_json::{json,Value};
+    /// #     use diesel::dsl::sql;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let expected = Some(String::from("{\"f5\":99,\"f6\":\"foo\"}"));
+    /// let result = diesel::select(json_extract_path_text_1::<Json, Text, _, _>(
+    ///     json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}),
+    ///     "f4",
+    /// ))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(expected, result);
+    ///
+    /// let expected = Some(String::from("foo"));
+    /// let result = diesel::select(json_extract_path_text_2::<Json, Text, Text, _, _, _>(
+    ///     json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}),
+    ///     "f4",
+    ///     "f6"
+    /// ))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(expected, result);
+    ///
+    /// let result = diesel::select(json_extract_path_text_1::<Nullable<Json>, Text, _, _>(None::<serde_json::Value>, "f4"))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(None::<String>, result);
+    ///
+    /// let result = diesel::select(json_extract_path_text_2::<Json, Nullable<Text>, Text, _, _, _>(json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}), None::<String>, "f6"))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(None::<String>, result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "json_extract_path_text"]
+    #[variadic(last_arguments = 1, skip_zero_argument_variant = true)]
+    fn json_extract_path_text<
+        J: JsonOrNullableJson + SingleValue,
+        T: SingleValue + TextOrNullableText,
+    >(
+        json: J,
+        text: T,
+    ) -> Nullable<Text>;
+
+    /// Extracts JSON sub-object at the specified path as text. (This is functionally equivalent to the #>> operator.)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{jsonb_extract_path_text_1, jsonb_extract_path_text_2};
+    /// #     use diesel::sql_types::{Jsonb, Nullable, Text};
+    /// #     use serde_json::{json,Value};
+    /// #     use diesel::dsl::sql;
+    /// #     let connection = &mut establish_connection();
+    ///
+    /// let expected = Some(String::from("{\"f5\": 99, \"f6\": \"foo\"}"));
+    /// let result = diesel::select(jsonb_extract_path_text_1::<Jsonb, Text, _, _>(
+    ///     json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}),
+    ///     "f4",
+    /// ))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(expected, result);
+    ///
+    /// let expected = Some(String::from("foo"));
+    /// let result = diesel::select(jsonb_extract_path_text_2::<Jsonb, Text, Text, _, _, _>(
+    ///     json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}),
+    ///     "f4",
+    ///     "f6"
+    /// ))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(expected, result);
+    ///
+    /// let result = diesel::select(jsonb_extract_path_text_1::<Nullable<Jsonb>, Text, _, _>(None::<serde_json::Value>, "f4"))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(None::<String>, result);
+    ///
+    /// let result = diesel::select(jsonb_extract_path_text_2::<Jsonb, Nullable<Text>, Text, _, _, _>(json!({"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}), None::<String>, "f6"))
+    /// .get_result::<Option<String>>(connection)?;
+    ///
+    /// assert_eq!(None::<String>, result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[sql_name = "jsonb_extract_path_text"]
+    #[variadic(last_arguments = 1, skip_zero_argument_variant = true)]
+    fn jsonb_extract_path_text<
+        J: JsonbOrNullableJsonb + SingleValue,
+        T: SingleValue + TextOrNullableText,
+    >(
+        json: J,
+        text: T,
+    ) -> Nullable<Text>;
+}
+
+pub(super) mod return_type_helpers_reexported {
+    #[allow(unused_imports)]
+    #[doc(inline)]
+    pub use super::return_type_helpers::*;
 }
