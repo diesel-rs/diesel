@@ -590,6 +590,12 @@ where
 }
 
 /// Methods present on untyped expressions.
+///
+/// This trait is implemented for expressions where the sql type is [`Untyped`].
+/// This allows calling common operators on these expressions.
+///
+/// This trait is primarily meant to be used for untyped queries in
+/// [`diesel_dynamic_schema`](https://docs.rs/diesel-dynamic-schema/latest/diesel_dynamic_schema/).
 pub trait UntypedExpressionMethods: Sized {
     /// Creates a SQL `IS NULL` expression.
     ///
