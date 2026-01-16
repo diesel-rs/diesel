@@ -80,7 +80,7 @@ impl PgInterval {
     /// of microseconds greater than the longest possible day, or a number of
     /// days greater than the longest possible month, as it is impossible to say
     /// how many months are in "40 days" without knowing a precise date.
-    pub fn new(microseconds: i64, days: i32, months: i32) -> Self {
+    pub const fn new(microseconds: i64, days: i32, months: i32) -> Self {
         PgInterval {
             microseconds,
             days,
@@ -89,17 +89,17 @@ impl PgInterval {
     }
 
     /// Equivalent to `new(microseconds, 0, 0)`
-    pub fn from_microseconds(microseconds: i64) -> Self {
+    pub const fn from_microseconds(microseconds: i64) -> Self {
         Self::new(microseconds, 0, 0)
     }
 
     /// Equivalent to `new(0, days, 0)`
-    pub fn from_days(days: i32) -> Self {
+    pub const fn from_days(days: i32) -> Self {
         Self::new(0, days, 0)
     }
 
     /// Equivalent to `new(0, 0, months)`
-    pub fn from_months(months: i32) -> Self {
+    pub const fn from_months(months: i32) -> Self {
         Self::new(0, 0, months)
     }
 }
