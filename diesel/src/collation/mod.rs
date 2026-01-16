@@ -8,7 +8,7 @@ use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::result::QueryResult;
 
 /// Trait to identify a valid collation.
-pub trait Collation: QueryId + Copy + Send + Sync + 'static {}
+pub trait Collation: QueryId + Clone + Send + Sync + 'static {}
 
 /// A custom collation.
 ///
@@ -61,13 +61,13 @@ impl QueryId for Binary {
 /// This collation is byte-wise, with only ASCII A-Z treated as letters.
 /// It is supported by PostgreSQL.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 pub struct C;
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 impl Collation for C {}
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 impl QueryFragment<crate::pg::Pg> for C {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, crate::pg::Pg>) -> QueryResult<()> {
         out.push_sql("\"C\"");
@@ -75,7 +75,7 @@ impl QueryFragment<crate::pg::Pg> for C {
     }
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 impl QueryId for C {
     type QueryId = Self;
     const HAS_STATIC_QUERY_ID: bool = true;
@@ -111,13 +111,13 @@ impl QueryId for NoCase {
 /// This collation is byte-wise, with only ASCII A-Z treated as letters.
 /// It is supported by PostgreSQL.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 pub struct Posix;
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 impl Collation for Posix {}
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 impl QueryFragment<crate::pg::Pg> for Posix {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, crate::pg::Pg>) -> QueryResult<()> {
         out.push_sql("\"POSIX\"");
@@ -125,7 +125,7 @@ impl QueryFragment<crate::pg::Pg> for Posix {
     }
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 impl QueryId for Posix {
     type QueryId = Self;
     const HAS_STATIC_QUERY_ID: bool = true;
