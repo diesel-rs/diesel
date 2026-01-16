@@ -50,6 +50,12 @@ impl<T> ConflictTarget<T> {
     }
 }
 
+impl<T> AsRef<T> for ConflictTarget<T> {
+    fn as_ref(&self) -> &T {
+        &self.0
+    }
+}
+
 impl<DB, T> QueryFragment<DB> for ConflictTarget<T>
 where
     DB: Backend,
