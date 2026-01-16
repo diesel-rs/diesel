@@ -154,7 +154,7 @@ use diesel::row::{Field, NamedRow, Row};
 use diesel::QueryableByName;
 use std::borrow::Borrow;
 use std::iter::FromIterator;
-use std::ops::{Deref, DerefMut, Index, IndexMut};
+use std::ops::{Index, IndexMut};
 
 /// A marker type used to indicate that
 /// the provided `FromSql` impl does handle
