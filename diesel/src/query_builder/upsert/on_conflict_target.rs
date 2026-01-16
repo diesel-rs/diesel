@@ -34,7 +34,13 @@ impl<Table> OnConflictTarget<Table> for NoConflictTarget {}
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, QueryId)]
-pub struct ConflictTarget<T>(pub T);
+pub struct ConflictTarget<T>(T);
+
+impl<T> From<T> for ConflictTarget<T> {
+    fn from(target: T) -> Self {
+        ConflictTarget(target)
+    }
+}
 
 impl<DB, T> QueryFragment<DB> for ConflictTarget<T>
 where

@@ -313,7 +313,7 @@ where
     {
         IncompleteOnConflict {
             stmt: self.replace_values(IntoConflictValueClause::into_value_clause),
-            target: ConflictTarget(target),
+            target: target.into(),
         }
     }
 }

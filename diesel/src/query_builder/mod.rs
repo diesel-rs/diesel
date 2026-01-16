@@ -57,7 +57,7 @@ pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
 #[doc(inline)]
 pub use self::upsert::into_conflict_clause::IntoConflictValueClause;
 #[doc(inline)]
-pub use self::upsert::on_conflict_target::OnConflictTarget;
+pub use self::upsert::on_conflict_target::{ConflictTarget, OnConflictTarget};
 #[doc(inline)]
 pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 
