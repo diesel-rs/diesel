@@ -171,7 +171,9 @@
 //!   crate so libmysqlclient will be bundled:
 //!   ```toml
 //!   [dependencies]
-//!   mysqlclient-sys = { version = "0.4", features = ["bundled"] }
+//!   mysqlclient-sys = { version = "0.5", features = ["bundled"] }
+//!   openssl-sys = { version = "0.9.100", features = ["vendored"] }
+//!   ```
 //! - `postgres_backend`: This feature enables those parts of diesels postgres backend, that are not dependent
 //!   on `libpq`. Diesel does not provide any connection implementation with only this feature enabled.
 //!   This feature can be used to implement a custom implementation of diesels `Connection` trait for the

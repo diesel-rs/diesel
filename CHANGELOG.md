@@ -15,6 +15,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ## [2.3.6] 2025-01-23
 
 * Added support for mysqlclient-sys 0.5.0
+* Fix generating valid schema if a column is named `table`
+* Fixed a regression with `#[derive(Insertable)]` if the same field type is used with different lifetime values
 
 ## [2.3.5] 2025-12-19
 
