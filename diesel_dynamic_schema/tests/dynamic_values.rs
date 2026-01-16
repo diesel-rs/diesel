@@ -132,11 +132,14 @@ fn test_ergonomics() {
 
     // Deref/DerefMut
     let field = &mut row[0];
-    if let MyDynamicValue::String(ref mut s) = **field {
+    if let MyDynamicValue::String(ref mut s) = field.value {
         *s = "DerefUpdated".to_string();
     }
     // Check via deref
-    assert_eq!(**field, MyDynamicValue::String("DerefUpdated".to_string()));
+    assert_eq!(
+        field.value,
+        MyDynamicValue::String("DerefUpdated".to_string())
+    );
 
     // Iter/IterMut on Row
     for field in row.iter_mut() {
