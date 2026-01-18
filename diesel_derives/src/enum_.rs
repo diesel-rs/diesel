@@ -54,7 +54,8 @@ fn as_bytes_method_body(enum_variant: &Variant) -> Result<TokenStream> {
 }
 
 fn parse_backends(enum_attr: &AttributeSpanWrapper<EnumAttr>) -> Result<HashSet<String>> {
-    let mut parsed_backends = HashSet::new();
+    // We only support Postgres and MySQL
+    let mut parsed_backends = HashSet::with_capacity(2);
 
     match &enum_attr.item {
         EnumAttr::Backend(_, backends) => {
