@@ -161,6 +161,8 @@ impl TestArgs {
                 .arg(format!("diesel_tests/{backend}"))
                 .arg("-F")
                 .arg(format!("diesel-dynamic-schema/{backend}"))
+                .arg("-F")
+                .arg(format!("diesel_migrations/{backend}"))
                 .args(&self.flags);
 
             if matches!(self.backend, Backend::Mysql) {
@@ -223,7 +225,9 @@ impl TestArgs {
                 .arg("-F")
                 .arg(format!("diesel_derives/{backend}"))
                 .arg("-F")
-                .arg(format!("diesel-dynamic-schema/{backend}"));
+                .arg(format!("diesel-dynamic-schema/{backend}"))
+                .arg("-F")
+                .arg(format!("diesel_migrations/{backend}"));
             if matches!(backend, Backend::Mysql) {
                 // cannot run mysql tests in parallel
                 command.args(["-j", "1"]);
