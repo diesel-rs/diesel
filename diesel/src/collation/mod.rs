@@ -35,7 +35,7 @@ impl QueryId for Custom {
 ///
 /// This collation is binary, case-sensitive, and locale-free.
 /// It is supported by SQLite.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, QueryId)]
 #[cfg(feature = "sqlite")]
 pub struct Binary;
 
@@ -50,17 +50,11 @@ impl QueryFragment<crate::sqlite::Sqlite> for Binary {
     }
 }
 
-#[cfg(feature = "sqlite")]
-impl QueryId for Binary {
-    type QueryId = Self;
-    const HAS_STATIC_QUERY_ID: bool = true;
-}
-
 /// The `C` collation.
 ///
 /// This collation is byte-wise, with only ASCII A-Z treated as letters.
 /// It is supported by PostgreSQL.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, QueryId)]
 #[cfg(feature = "postgres_backend")]
 pub struct C;
 
@@ -75,17 +69,11 @@ impl QueryFragment<crate::pg::Pg> for C {
     }
 }
 
-#[cfg(feature = "postgres_backend")]
-impl QueryId for C {
-    type QueryId = Self;
-    const HAS_STATIC_QUERY_ID: bool = true;
-}
-
 /// The `NOCASE` collation.
 ///
 /// This collation is ASCII-only case-insensitive.
 /// It is supported by SQLite.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, QueryId)]
 #[cfg(feature = "sqlite")]
 pub struct NoCase;
 
@@ -100,17 +88,11 @@ impl QueryFragment<crate::sqlite::Sqlite> for NoCase {
     }
 }
 
-#[cfg(feature = "sqlite")]
-impl QueryId for NoCase {
-    type QueryId = Self;
-    const HAS_STATIC_QUERY_ID: bool = true;
-}
-
 /// The `POSIX` collation.
 ///
 /// This collation is byte-wise, with only ASCII A-Z treated as letters.
 /// It is supported by PostgreSQL.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, QueryId)]
 #[cfg(feature = "postgres_backend")]
 pub struct Posix;
 
@@ -125,17 +107,11 @@ impl QueryFragment<crate::pg::Pg> for Posix {
     }
 }
 
-#[cfg(feature = "postgres_backend")]
-impl QueryId for Posix {
-    type QueryId = Self;
-    const HAS_STATIC_QUERY_ID: bool = true;
-}
-
 /// The `RTRIM` collation.
 ///
 /// This collation ignores trailing spaces.
 /// It is supported by SQLite.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, QueryId)]
 #[cfg(feature = "sqlite")]
 pub struct RTrim;
 
@@ -148,10 +124,4 @@ impl QueryFragment<crate::sqlite::Sqlite> for RTrim {
         out.push_sql("RTRIM");
         Ok(())
     }
-}
-
-#[cfg(feature = "sqlite")]
-impl QueryId for RTrim {
-    type QueryId = Self;
-    const HAS_STATIC_QUERY_ID: bool = true;
 }
