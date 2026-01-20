@@ -325,6 +325,20 @@ where
 {
 }
 
+impl<T: ?Sized, QS> AppearsOnTable<QS> for std::rc::Rc<T>
+where
+    T: AppearsOnTable<QS>,
+    std::rc::Rc<T>: Expression,
+{
+}
+
+impl<T: ?Sized, QS> AppearsOnTable<QS> for std::sync::Arc<T>
+where
+    T: AppearsOnTable<QS>,
+    std::sync::Arc<T>: Expression,
+{
+}
+
 impl<'a, T: ?Sized, QS> AppearsOnTable<QS> for &'a T
 where
     T: AppearsOnTable<QS>,
@@ -351,6 +365,20 @@ impl<T: ?Sized, QS> SelectableExpression<QS> for Box<T>
 where
     T: SelectableExpression<QS>,
     Box<T>: AppearsOnTable<QS>,
+{
+}
+
+impl<T: ?Sized, QS> SelectableExpression<QS> for std::rc::Rc<T>
+where
+    T: SelectableExpression<QS>,
+    std::rc::Rc<T>: AppearsOnTable<QS>,
+{
+}
+
+impl<T: ?Sized, QS> SelectableExpression<QS> for std::sync::Arc<T>
+where
+    T: SelectableExpression<QS>,
+    std::sync::Arc<T>: AppearsOnTable<QS>,
 {
 }
 
@@ -734,6 +762,14 @@ pub trait ValidGrouping<GroupByClause> {
 }
 
 impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for Box<T> {
+    type IsAggregate = T::IsAggregate;
+}
+
+impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for std::rc::Rc<T> {
+    type IsAggregate = T::IsAggregate;
+}
+
+impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for std::sync::Arc<T> {
     type IsAggregate = T::IsAggregate;
 }
 

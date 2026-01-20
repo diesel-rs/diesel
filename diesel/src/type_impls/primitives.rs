@@ -271,3 +271,153 @@ where
         Bound::new(&**self)
     }
 }
+
+impl<T: ?Sized, ST, DB> ToSql<ST, DB> for Box<T>
+where
+    T: ToSql<ST, DB>,
+    DB: Backend,
+    Self: fmt::Debug,
+{
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        ToSql::<ST, DB>::to_sql(&**self, out)
+    }
+}
+
+impl<T, ST, DB> FromSql<ST, DB> for Box<T>
+where
+    DB: Backend,
+    T: FromSql<ST, DB>,
+{
+    fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        T::from_sql(bytes).map(Box::from)
+    }
+}
+
+impl<T: ?Sized, ST, DB> Queryable<ST, DB> for Box<T>
+where
+    ST: SingleValue,
+    DB: Backend,
+    Self: FromSql<ST, DB>,
+{
+    type Row = Self;
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
+    }
+}
+
+impl<T: ?Sized, ST, DB> ToSql<ST, DB> for std::rc::Rc<T>
+where
+    T: ToSql<ST, DB>,
+    DB: Backend,
+    Self: fmt::Debug,
+{
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        ToSql::<ST, DB>::to_sql(&**self, out)
+    }
+}
+
+impl<T, ST, DB> FromSql<ST, DB> for std::rc::Rc<T>
+where
+    DB: Backend,
+    T: FromSql<ST, DB>,
+{
+    fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        T::from_sql(bytes).map(std::rc::Rc::from)
+    }
+}
+
+impl<T: ?Sized, ST, DB> Queryable<ST, DB> for std::rc::Rc<T>
+where
+    ST: SingleValue,
+    DB: Backend,
+    Self: FromSql<ST, DB>,
+{
+    type Row = Self;
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
+    }
+}
+
+impl<T: ?Sized, ST> AsExpression<ST> for std::rc::Rc<T>
+where
+    Bound<ST, std::rc::Rc<T>>: Expression<SqlType = ST>,
+    ST: SqlType + TypedExpressionType,
+{
+    type Expression = Bound<ST, Self>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(self)
+    }
+}
+
+impl<'a, T: ?Sized, ST> AsExpression<ST> for &'a std::rc::Rc<T>
+where
+    Bound<ST, &'a T>: Expression<SqlType = ST>,
+    ST: SqlType + TypedExpressionType,
+{
+    type Expression = Bound<ST, &'a T>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(&**self)
+    }
+}
+
+impl<T: ?Sized, ST, DB> ToSql<ST, DB> for std::sync::Arc<T>
+where
+    T: ToSql<ST, DB>,
+    DB: Backend,
+    Self: fmt::Debug,
+{
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        ToSql::<ST, DB>::to_sql(&**self, out)
+    }
+}
+
+impl<T, ST, DB> FromSql<ST, DB> for std::sync::Arc<T>
+where
+    DB: Backend,
+    T: FromSql<ST, DB>,
+{
+    fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        T::from_sql(bytes).map(std::sync::Arc::from)
+    }
+}
+
+impl<T, ST, DB> Queryable<ST, DB> for std::sync::Arc<T>
+where
+    ST: SingleValue,
+    DB: Backend,
+    Self: FromSql<ST, DB>,
+{
+    type Row = Self;
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
+    }
+}
+
+impl<T: ?Sized, ST> AsExpression<ST> for std::sync::Arc<T>
+where
+    Bound<ST, std::sync::Arc<T>>: Expression<SqlType = ST>,
+    ST: SqlType + TypedExpressionType,
+{
+    type Expression = Bound<ST, Self>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(self)
+    }
+}
+
+impl<'a, T: ?Sized, ST> AsExpression<ST> for &'a std::sync::Arc<T>
+where
+    Bound<ST, &'a T>: Expression<SqlType = ST>,
+    ST: SqlType + TypedExpressionType,
+{
+    type Expression = Bound<ST, &'a T>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(&**self)
+    }
+}
