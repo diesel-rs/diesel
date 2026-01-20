@@ -392,6 +392,97 @@ pub struct Timestamp;
 ///
 /// - [`serde_json::Value`]
 ///
+/// ## Using custom types for JSON deserialization
+///
+/// Using a custom type that can be serialized or deserialized to/from JSON should be done by using
+/// the `serialize_as` and `deserialize_as` attribute macros. For more information have a look at
+/// the [Queryable](crate::deserialize::Queryable) trait documentation.
+///
+/// ```rust
+/// # #![allow(dead_code)]
+/// # include!("../doctest_setup.rs");
+/// #
+/// table! {
+///     contacts {
+///         id -> Integer,
+///         name -> Text,
+///         address -> Jsonb,
+///     }
+/// }
+///
+/// # #[cfg(all(
+/// #   feature = "serde_json",
+/// #   any(
+/// #       feature = "postgres_backend",
+/// #       feature = "sqlite",
+/// #   )
+/// # ))]
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// #     use diesel::insert_into;
+/// #     use self::contacts::dsl::*;
+/// #     let connection = &mut connection_no_data();
+/// # #[cfg(feature = "postgres_backend")]
+/// #     diesel::sql_query("CREATE TABLE contacts (
+/// #         id SERIAL PRIMARY KEY,
+/// #         name VARCHAR NOT NULL,
+/// #         address JSONB NOT NULL
+/// #     )").execute(connection)?;
+/// # #[cfg(feature = "sqlite")]
+/// #     diesel::sql_query("CREATE TABLE contacts (
+/// #         id INT PRIMARY KEY,
+/// #         name TEXT NOT NULL,
+/// #         address BLOB NOT NULL
+/// #     )").execute(connection)?;
+/// #[derive(Queryable, Selectable)]
+/// struct Contact {
+///     pub id: i32,
+///     pub name: String,
+///     #[diesel(deserialize_as = serde_json::Value)]
+///     pub address: Address,
+/// }
+///
+/// #[derive(serde::Deserialize, Eq, PartialEq)]
+/// struct Address {
+///     pub street: String,
+///     pub city: String,
+///     pub postcode: String,
+///     pub state: String,
+/// }
+///
+/// let santas_address: serde_json::Value = serde_json::from_str(
+///     r#"{
+///     "street": "Article Circle Expressway 1",
+///     "city": "North Pole",
+///     "postcode": "99705",
+///     "state": "Alaska"
+/// }"#,
+/// )?;
+/// let santas_address: Address {
+///     street: "Article Circle Expressway 1".to_string(),
+///     city: "North Pole".to_string(),
+///     postcode: "99705".to_string(),
+///     state: "Alaska".to_string(),
+/// };
+///
+/// #let inserted_address = insert_into(contacts)
+/// #    .values((name.eq("Claus"), address.eq(&santas_address)))
+/// #    .returning(address)
+/// #    .get_result::<serde_json::Value>(connection)?;
+///
+/// let santa = contacts.filter(id.eq(1)).first(connection)?;
+/// assert_eq!(santas_address, santda.address);
+/// #     Ok(())
+/// # }
+/// # #[cfg(not(all(
+/// #   feature = "serde_json",
+/// #   any(
+/// #       feature = "postgres_backend",
+/// #       feature = "sqlite",
+/// #   )
+/// # )))]
+/// # fn main() {}
+/// ```
+///
 /// [`ToSql`]: /serialize/trait.ToSql.html
 /// [`FromSql`]: /deserialize/trait.FromSql.html
 /// [`serde_json::Value`]: /../serde_json/value/enum.Value.html
