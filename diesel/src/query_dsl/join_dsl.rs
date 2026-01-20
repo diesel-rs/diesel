@@ -32,8 +32,10 @@ mod private {
 /// `JoinDsl` support trait to emulate associated type constructors and grab
 /// the known on clause from the associations API
 pub trait JoinWithImplicitOnClause<Rhs, Kind>: private::Sealed<Rhs, Kind> {
+    #[doc(hidden)]
     type Output;
 
+    #[doc(hidden)]
     fn join_with_implicit_on_clause(self, rhs: Rhs, kind: Kind) -> Self::Output;
 }
 
