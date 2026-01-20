@@ -20,6 +20,18 @@ diesel::table! {
     }
 }
 
+/// Controls the amount of migrations that are run or reverted
+#[derive(Debug, Hash, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum Range {
+    /// Run all pending migrations, or revert all applied migrations
+    All,
+    /// Stop after the specified number of migrations have been run or reverted
+    ///
+    /// If this number exceeds the number of available migrations, then this has the same result as [`Range::All`]
+    NumberOfMigrations(u64),
+}
+
 /// A migration harness is an entity which applies migration to an existing database
 pub trait MigrationHarness<DB: Backend> {
     /// Checks if the database represented by the current harness has unapplied migrations
@@ -32,7 +44,21 @@ pub trait MigrationHarness<DB: Backend> {
         &mut self,
         source: S,
     ) -> Result<Vec<MigrationVersion<'_>>> {
-        let pending = self.pending_migrations(source)?;
+        self.run_pending_migrations_in_range(source, &Range::All)
+    }
+
+    /// Execute unapplied migrations for a given migration source, limited to the given range
+    fn run_pending_migrations_in_range<S: MigrationSource<DB>>(
+        &mut self,
+        source: S,
+        range: &Range,
+    ) -> Result<Vec<MigrationVersion<'_>>> {
+        let mut pending = self.pending_migrations(source)?;
+
+        if let &Range::NumberOfMigrations(number) = range {
+            pending.truncate(number.try_into().unwrap_or(usize::MAX));
+        }
+
         self.run_migrations(&pending)
     }
 
@@ -64,7 +90,21 @@ pub trait MigrationHarness<DB: Backend> {
         &mut self,
         source: S,
     ) -> Result<Vec<MigrationVersion<'_>>> {
-        let applied_versions = self.applied_migrations()?;
+        self.revert_last_migrations_in_range(source, &Range::All)
+    }
+
+    /// Revert applied migrations from a given migration source, limited to the given range
+    fn revert_last_migrations_in_range<S: MigrationSource<DB>>(
+        &mut self,
+        source: S,
+        range: &Range,
+    ) -> Result<Vec<MigrationVersion<'_>>> {
+        let mut applied_versions = self.applied_migrations()?;
+
+        if let &Range::NumberOfMigrations(number) = range {
+            applied_versions.truncate(number.try_into().unwrap_or(usize::MAX));
+        }
+
         let mut migrations = source
             .migrations()?
             .into_iter()

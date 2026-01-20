@@ -3,10 +3,10 @@ use clap::ArgMatches;
 use diesel::backend::Backend;
 use diesel::migration::{Migration, MigrationSource};
 use diesel::Connection;
-use diesel_migrations::{FileBasedMigrations, HarnessWithOutput, MigrationError, MigrationHarness};
+use diesel_migrations::{FileBasedMigrations, HarnessWithOutput, MigrationHarness, Range};
 use fd_lock::RwLock;
 use std::any::Any;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::error::Error;
 use std::fmt::Display;
 use std::fs::{self, File};
@@ -32,29 +32,9 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
         }
         ("revert", args) => {
             let (mut conn, dir) = conn_and_migration_dir(matches)?;
+            let range = get_range_from_args(args, "REVERT_ALL", "REVERT_NUMBER");
 
-            if args.get_flag("REVERT_ALL") {
-                revert_all_migrations_with_output(&mut conn, dir)?;
-            } else {
-                let number = args
-                    .get_one::<u64>("REVERT_NUMBER")
-                    .expect("Clap ensure this argument is set");
-                for _ in 0..*number {
-                    match revert_migration_with_output(&mut conn, dir.clone()) {
-                        Ok(_) => {}
-                        Err(e) if e.is::<MigrationError>() => {
-                            match e.downcast_ref::<MigrationError>() {
-                                // If n is larger then the actual number of migrations,
-                                // just stop reverting them
-                                Some(MigrationError::NoMigrationRun) => break,
-                                _ => return Err(crate::errors::Error::MigrationError(e)),
-                            }
-                        }
-                        Err(e) => return Err(crate::errors::Error::MigrationError(e)),
-                    }
-                }
-            }
-
+            revert_migrations_with_output(&mut conn, dir, &range)?;
             regenerate_schema_if_file_specified(matches)?;
         }
         ("redo", args) => {
@@ -344,31 +324,19 @@ where
         .map_err(crate::errors::Error::MigrationError)
 }
 
-fn revert_all_migrations_with_output<Conn, DB>(
+fn revert_migrations_with_output<Conn, DB>(
     conn: &mut Conn,
     migrations: FileBasedMigrations,
+    range: &Range,
 ) -> Result<(), crate::errors::Error>
 where
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
     DB: Backend,
 {
     HarnessWithOutput::write_to_stdout(conn)
-        .revert_all_migrations(migrations)
+        .revert_last_migrations_in_range(migrations, range)
         .map(|_| ())
         .map_err(crate::errors::Error::MigrationError)
-}
-
-fn revert_migration_with_output<Conn, DB>(
-    conn: &mut Conn,
-    migrations: FileBasedMigrations,
-) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
-where
-    Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
-    DB: Backend,
-{
-    HarnessWithOutput::write_to_stdout(conn)
-        .revert_last_migration(migrations)
-        .map(|_| ())
 }
 
 fn list_migrations<Conn, DB>(
@@ -449,78 +417,28 @@ where
     DB: Backend,
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
 {
-    let migrations = MigrationSource::<DB>::migrations(&migrations_dir)
+    let range = get_range_from_args(args, "REDO_ALL", "REDO_NUMBER");
+    let versions_not_run_in_transaction = MigrationSource::<DB>::migrations(&migrations_dir)
         .map_err(crate::errors::Error::MigrationError)?
         .into_iter()
-        .map(|m| (m.name().version().as_owned(), m))
-        .collect::<HashMap<_, _>>();
-    let applied_migrations = conn
+        .filter(|m| !m.metadata().run_in_transaction())
+        .map(|m| m.name().version().as_owned())
+        .collect::<HashSet<_>>();
+    let mut versions_to_revert = conn
         .applied_migrations()
         .map_err(crate::errors::Error::MigrationError)?;
-    let versions_to_revert = if args.get_flag("REDO_ALL") {
-        &applied_migrations
-    } else {
-        let number = args
-            .get_one::<u64>("REDO_NUMBER")
-            .expect("Clap ensures this value is set");
-        let number = std::cmp::min(*number as usize, applied_migrations.len());
-        &applied_migrations[..number]
-    };
-    let should_use_not_use_transaction = versions_to_revert.iter().any(|v| {
-        migrations
-            .get(v)
-            .map(|m| !m.metadata().run_in_transaction())
-            .unwrap_or_default()
-    });
+    if let Range::NumberOfMigrations(number) = range {
+        versions_to_revert.truncate(number.try_into().unwrap_or(usize::MAX));
+    }
+    let should_use_not_use_transaction = versions_to_revert
+        .iter()
+        .any(|v| versions_not_run_in_transaction.contains(v));
 
     let migrations_inner =
         |harness: &mut HarnessWithOutput<Conn, _>|
          -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-            // revert all the migrations
-            let reverted_versions = if args.get_flag("REDO_ALL") {
-                harness.revert_all_migrations(migrations_dir.clone())?
-            } else {
-                let number = args.get_one::<u64>("REDO_NUMBER").expect("Clap should ensure this value is set");
-                (0..*number)
-                    .filter_map(|_| {
-                        match harness.revert_last_migration(migrations_dir.clone()) {
-                            Ok(v) => Some(Ok(v)),
-                            Err(e) if e.is::<MigrationError>() => {
-                                match e.downcast_ref::<MigrationError>() {
-                                    // If n is larger then the actual number of migrations,
-                                    // just stop reverting them
-                                    Some(MigrationError::NoMigrationRun) => None,
-                                    _ => Some(Err(e)),
-                                }
-                            }
-                            Err(e) => Some(Err(e)),
-                        }
-                    })
-                    .collect::<Result<Vec<_>, _>>()?
-            };
-
-            // get a mapping between migrations and migration versions
-             let mut migrations = MigrationSource::<DB>::migrations(&migrations_dir)
-                .map_err(crate::errors::Error::MigrationError)?
-                 .into_iter()
-                 .map(|m| (m.name().version().as_owned(), m))
-                 .collect::<HashMap<_, _>>();
-
-            // build a list of migrations that need to be applied
-            let mut migrations = reverted_versions
-                .into_iter()
-                .map(|v| {
-                    migrations
-                        .remove(&v)
-                        .ok_or_else(|| MigrationError::UnknownMigrationVersion(v.as_owned()))
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-
-            // Sort the migrations by version to apply them in order.
-            migrations.sort_by_key(|m| m.name().version().as_owned());
-
-            // apply all outstanding migrations
-            harness.run_migrations(&migrations)?;
+            harness.revert_last_migrations_in_range(migrations_dir.clone(), &range)?;
+            harness.run_pending_migrations_in_range(migrations_dir.clone(), &range)?;
 
             Ok(())
         };
@@ -531,6 +449,17 @@ where
     } else {
         migrations_inner(&mut HarnessWithOutput::write_to_stdout(conn))
             .map_err(crate::errors::Error::MigrationError)
+    }
+}
+
+fn get_range_from_args(args: &ArgMatches, all_id: &str, number_id: &str) -> Range {
+    if args.get_flag(all_id) {
+        Range::All
+    } else {
+        let number = args
+            .get_one::<u64>(number_id)
+            .expect("Clap should ensure this value is set");
+        Range::NumberOfMigrations(*number)
     }
 }
 
