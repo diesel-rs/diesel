@@ -1,5 +1,6 @@
 use crate::Bencher;
 use std::collections::HashMap;
+use std::fmt::Write;
 use tokio::runtime::Runtime;
 use zero_postgres::r#macro::FromRow;
 use zero_postgres::tokio::Conn;
@@ -36,15 +37,13 @@ async fn connection() -> Conn {
     opts.upgrade_to_unix_socket = false;
     let mut conn = Conn::new(opts).await.unwrap();
 
-    conn.query_drop("TRUNCATE TABLE comments CASCADE")
-        .await
-        .unwrap();
-    conn.query_drop("TRUNCATE TABLE posts CASCADE")
-        .await
-        .unwrap();
-    conn.query_drop("TRUNCATE TABLE users CASCADE")
-        .await
-        .unwrap();
+    conn.query_drop(
+        "TRUNCATE TABLE comments CASCADE; \
+         TRUNCATE TABLE posts CASCADE; \
+         TRUNCATE TABLE users CASCADE",
+    )
+    .await
+    .unwrap();
 
     conn
 }
@@ -55,19 +54,18 @@ async fn insert_users(
     hair_color_init: impl Fn(usize) -> Option<&'static str>,
 ) {
     let mut query = String::from("INSERT INTO users (name, hair_color) VALUES ");
-
+    let mut params: Vec<Option<String>> = Vec::with_capacity(size * 2);
     for x in 0..size {
         if x > 0 {
             query.push(',');
         }
-        let hair_color = match hair_color_init(x) {
-            Some(c) => format!("'{}'", c),
-            None => "NULL".to_string(),
-        };
-        query.push_str(&format!("('User {}', {})", x, hair_color));
+        let idx = x * 2;
+        write!(query, "(${}, ${})", idx + 1, idx + 2).unwrap();
+        params.push(Some(format!("User {}", x)));
+        params.push(hair_color_init(x).map(String::from));
     }
-
-    conn.query_drop(&query).await.unwrap();
+    let stmt = conn.prepare(&query).await.unwrap();
+    conn.exec_drop(&stmt, params).await.unwrap();
 }
 
 pub fn bench_trivial_query_by_id(b: &mut Bencher, size: usize) {
@@ -210,10 +208,12 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                     insert_query.push(',');
                 }
                 first = false;
-                insert_query.push_str(&format!(
+                write!(
+                    insert_query,
                     "('Post {} by user {}', {}, NULL)",
                     i, user_id, user_id
-                ));
+                )
+                .unwrap();
             }
         }
         conn.query_drop(&insert_query).await.unwrap();
@@ -230,10 +230,12 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                     insert_query.push(',');
                 }
                 first = false;
-                insert_query.push_str(&format!(
+                write!(
+                    insert_query,
                     "('Comment {} on post {}', {})",
                     i, post_id, post_id
-                ));
+                )
+                .unwrap();
             }
         }
         conn.query_drop(&insert_query).await.unwrap();

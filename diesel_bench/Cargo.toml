@@ -39,8 +39,11 @@ wtx = { default-features = false, features = [
     "std",
     "tokio",
 ], optional = true, version = "0.41" }
-zero-mysql = { optional = true, version = "=0.3.1", features = ["tokio", "derive"] }
-zero-postgres = { optional = true, version = "=0.6.0", features = [
+zero-mysql = { optional = true, version = "=0.4.1", features = [
+    "tokio",
+    "derive",
+] }
+zero-postgres = { optional = true, version = "=0.8.0", features = [
     "tokio",
     "derive",
 ] }
