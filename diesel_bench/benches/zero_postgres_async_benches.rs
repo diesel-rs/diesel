@@ -84,7 +84,7 @@ pub fn bench_trivial_query_by_id(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         runtime.block_on(async {
-            let mut users = Vec::with_capacity(size);
+            let mut users = Vec::new();
             conn.exec_foreach(&stmt, (), |row: (i32, String, Option<String>)| {
                 users.push(User {
                     id: row.0,
@@ -114,7 +114,7 @@ pub fn bench_trivial_query_by_name(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         runtime.block_on(async {
-            let mut users = Vec::with_capacity(size);
+            let mut users = Vec::new();
             conn.exec_foreach(&stmt, (), |user: User| {
                 users.push(user);
                 Ok(())
@@ -146,11 +146,19 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         runtime.block_on(async {
-            let mut results = Vec::with_capacity(size);
+            let mut results = Vec::new();
             conn.exec_foreach(
                 &stmt,
                 (&"black",),
-                |row: (i32, String, Option<String>, Option<i32>, Option<i32>, Option<String>, Option<String>)| {
+                |row: (
+                    i32,
+                    String,
+                    Option<String>,
+                    Option<i32>,
+                    Option<i32>,
+                    Option<String>,
+                    Option<String>,
+                )| {
                     let user = User {
                         id: row.0,
                         name: row.1,
@@ -177,9 +185,7 @@ pub fn bench_insert(b: &mut Bencher, size: usize) {
     let runtime = Runtime::new().unwrap();
     let mut conn = runtime.block_on(connection());
 
-    b.iter(|| {
-        runtime.block_on(insert_users(&mut conn, size, |_| Some("hair_color")))
-    })
+    b.iter(|| runtime.block_on(insert_users(&mut conn, size, |_| Some("hair_color"))))
 }
 
 pub fn loading_associations_sequentially(b: &mut Bencher) {

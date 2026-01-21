@@ -78,7 +78,7 @@ pub fn bench_trivial_query_by_id(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         runtime.block_on(async {
-            let mut users = Vec::with_capacity(size);
+            let mut users = Vec::new();
             conn.exec_foreach(&mut stmt, (), |row: (i32, String, Option<String>)| {
                 users.push(User {
                     id: row.0,
@@ -108,7 +108,7 @@ pub fn bench_trivial_query_by_name(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         runtime.block_on(async {
-            let mut users = Vec::with_capacity(size);
+            let mut users = Vec::new();
             conn.exec_foreach(&mut stmt, (), |user: User| {
                 users.push(user);
                 Ok(())
@@ -140,7 +140,7 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         runtime.block_on(async {
-            let mut results = Vec::with_capacity(size);
+            let mut results = Vec::new();
             conn.exec_foreach(
                 &mut stmt,
                 ("black",),
@@ -179,9 +179,7 @@ pub fn bench_insert(b: &mut Bencher, size: usize) {
     let runtime = Runtime::new().unwrap();
     let mut conn = runtime.block_on(connection());
 
-    b.iter(|| {
-        runtime.block_on(insert_users(&mut conn, size, |_| Some("hair_color")))
-    })
+    b.iter(|| runtime.block_on(insert_users(&mut conn, size, |_| Some("hair_color"))))
 }
 
 pub fn loading_associations_sequentially(b: &mut Bencher) {
@@ -194,7 +192,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         })
         .await;
 
-        let mut user_ids = Vec::with_capacity(100);
+        let mut user_ids = Vec::new();
         let mut stmt = conn.prepare("SELECT id FROM users").await.unwrap();
         conn.exec_foreach(&mut stmt, (), |row: (i32,)| {
             user_ids.push(row.0);
@@ -217,7 +215,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         }
         conn.query_drop(&insert_query).await.unwrap();
 
-        let mut all_posts = Vec::with_capacity(1000);
+        let mut all_posts = Vec::new();
         let mut stmt = conn.prepare("SELECT id FROM posts").await.unwrap();
         conn.exec_foreach(&mut stmt, (), |row: (i32,)| {
             all_posts.push(row.0);
@@ -250,7 +248,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
 
     b.iter(|| {
         runtime.block_on(async {
-            let mut users = Vec::with_capacity(100);
+            let mut users = Vec::new();
             conn.exec_foreach(&mut user_stmt, (), |user: User| {
                 users.push(user);
                 Ok(())
@@ -269,7 +267,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                 user_ids_str
             );
 
-            let mut posts = Vec::with_capacity(1000);
+            let mut posts = Vec::new();
             let mut stmt = conn.prepare(&posts_query).await.unwrap();
             conn.exec_foreach(&mut stmt, (), |post: Post| {
                 posts.push(post);
@@ -289,7 +287,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                 post_ids_str
             );
 
-            let mut comments = Vec::with_capacity(10000);
+            let mut comments = Vec::new();
             let mut stmt = conn.prepare(&comments_query).await.unwrap();
             conn.exec_foreach(&mut stmt, (), |comment: Comment| {
                 comments.push(comment);

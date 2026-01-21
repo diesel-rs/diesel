@@ -1,7 +1,7 @@
 use crate::Bencher;
 use std::collections::HashMap;
-use zero_postgres::sync::Conn;
 use zero_postgres::r#macro::FromRow;
+use zero_postgres::sync::Conn;
 use zero_postgres::Opts;
 
 #[derive(FromRow)]
@@ -42,7 +42,11 @@ fn connection() -> Conn {
     conn
 }
 
-fn insert_users(size: usize, conn: &mut Conn, hair_color_init: impl Fn(usize) -> Option<&'static str>) {
+fn insert_users(
+    size: usize,
+    conn: &mut Conn,
+    hair_color_init: impl Fn(usize) -> Option<&'static str>,
+) {
     let mut query = String::from("INSERT INTO users (name, hair_color) VALUES ");
 
     for x in 0..size {
@@ -68,7 +72,7 @@ pub fn bench_trivial_query_by_id(b: &mut Bencher, size: usize) {
         .unwrap();
 
     b.iter(|| {
-        let mut users = Vec::with_capacity(size);
+        let mut users = Vec::new();
         conn.exec_foreach(&stmt, (), |row: (i32, String, Option<String>)| {
             users.push(User {
                 id: row.0,
@@ -91,7 +95,7 @@ pub fn bench_trivial_query_by_name(b: &mut Bencher, size: usize) {
         .unwrap();
 
     b.iter(|| {
-        let mut users = Vec::with_capacity(size);
+        let mut users = Vec::new();
         conn.exec_foreach(&stmt, (), |user: User| {
             users.push(user);
             Ok(())
@@ -115,11 +119,19 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
         .unwrap();
 
     b.iter(|| {
-        let mut results = Vec::with_capacity(size);
+        let mut results = Vec::new();
         conn.exec_foreach(
             &stmt,
             (&"black",),
-            |row: (i32, String, Option<String>, Option<i32>, Option<i32>, Option<String>, Option<String>)| {
+            |row: (
+                i32,
+                String,
+                Option<String>,
+                Option<i32>,
+                Option<i32>,
+                Option<String>,
+                Option<String>,
+            )| {
                 let user = User {
                     id: row.0,
                     name: row.1,
