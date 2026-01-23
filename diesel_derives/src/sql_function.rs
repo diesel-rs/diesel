@@ -1004,9 +1004,9 @@ impl Parse for ExternSqlBlock {
         if block.abi.name.as_ref().map(|n| n.value()) != Some("SQL".into()) {
             return Err(syn::Error::new(block.abi.span(), "expect `SQL` as ABI"));
         }
-        if block.unsafety.is_some() {
+        if let Some(unsafety) = block.unsafety {
             return Err(syn::Error::new(
-                block.unsafety.unwrap().span(),
+                unsafety.span(),
                 "expect `SQL` function blocks to be safe",
             ));
         }

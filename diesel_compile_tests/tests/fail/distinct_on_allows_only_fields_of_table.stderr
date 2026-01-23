@@ -12,9 +12,28 @@ help: the trait `DistinctOnDsl<posts::columns::id>` is not implemented for `user
     | |_________^
     = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
     = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
-    = help: the following other types implement trait `DistinctOnDsl<Selection>`:
-              Alias<S>
-              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
+help: the following other types implement trait `DistinctOnDsl<Selection>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+LL | / impl<ST, F, S, D, W, O, LOf, G, H, Selection> DistinctOnDsl<Selection>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
+LL | | where
+LL | |     G: ValidGroupByClause,
+...   |
+LL | |     S: SelectClauseExpression<FromClause<F>>,
+LL | |     (Selection, S::Selection): ValidGrouping<G::Expressions>,
+    | |_____________________________________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>`
+    |
+   ::: DIESEL/diesel/diesel/src/query_source/aliasing/dsl_impls.rs
+    |
+LL | / impl<S, Selection> DistinctOnDsl<Selection> for Alias<S>
+LL | | where
+LL | |     S: AliasSource,
+LL | |     Selection: SelectableExpression<Self>,
+...   |
+LL | |         Expression<SqlType = <Self as AsQuery>::SqlType> + ValidGrouping<()>,
+LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
+    | |____________________________________________________^ `Alias<S>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
     |
@@ -25,22 +44,42 @@ LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
     = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `posts::table: DistinctOnDsl<(posts::columns::name, users::columns::name)>` is not satisfied
-  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:31:10
-   |
-LL |         .distinct_on((posts::name, users::name))
-   |          ^^^^^^^^^^^ unsatisfied trait bound
-   |
+error[E0277]: the trait bound `table: DistinctOnDsl<(name, name)>` is not satisfied
+   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:31:10
+    |
+ LL |         .distinct_on((posts::name, users::name))
+    |          ^^^^^^^^^^^ unsatisfied trait bound
+    |
 help: the trait `DistinctOnDsl<(posts::columns::name, users::columns::name)>` is not implemented for `posts::table`
-  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:12:1
-   |
-LL | / table! {
-LL | |     posts {
-   | |_________^
-   = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
-   = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
-   = help: the following other types implement trait `DistinctOnDsl<Selection>`:
-             Alias<S>
-             SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:12:1
+    |
+ LL | / table! {
+ LL | |     posts {
+    | |_________^
+    = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
+    = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
+help: the following other types implement trait `DistinctOnDsl<Selection>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+LL | / impl<ST, F, S, D, W, O, LOf, G, H, Selection> DistinctOnDsl<Selection>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
+LL | | where
+LL | |     G: ValidGroupByClause,
+...   |
+LL | |     S: SelectClauseExpression<FromClause<F>>,
+LL | |     (Selection, S::Selection): ValidGrouping<G::Expressions>,
+    | |_____________________________________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>`
+    |
+   ::: DIESEL/diesel/diesel/src/query_source/aliasing/dsl_impls.rs
+    |
+LL | / impl<S, Selection> DistinctOnDsl<Selection> for Alias<S>
+LL | | where
+LL | |     S: AliasSource,
+LL | |     Selection: SelectableExpression<Self>,
+...   |
+LL | |         Expression<SqlType = <Self as AsQuery>::SqlType> + ValidGrouping<()>,
+LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
+    | |____________________________________________________^ `Alias<S>`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

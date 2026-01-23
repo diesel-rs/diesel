@@ -22,7 +22,7 @@ fn main() {
     use self::users::dsl::*;
 
     let command = update(users).set(posts::title.eq("Hello"));
-    //~^ ERROR: type mismatch resolving `<Grouped<Eq<title, Bound<Text, &str>>> as AsChangeset>::Target == table`
+    //~^ ERROR: type mismatch resolving `<Grouped<...> as AsChangeset>::Target == table`
     let command = update(users).set(name.eq(posts::title));
     //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
 }

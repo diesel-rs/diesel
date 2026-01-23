@@ -1,6 +1,6 @@
 [package]
 name = "diesel_derives"
-version = "2.3.6"
+version = "2.3.7"
 license = "MIT OR Apache-2.0"
 description = "You should not use this crate directly, it is internal to Diesel."
 documentation = "https://diesel.rs/guides/"

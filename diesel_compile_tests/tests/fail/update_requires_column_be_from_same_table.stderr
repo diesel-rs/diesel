@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<Grouped<Eq<title, Bound<Text, &str>>> as AsChangeset>::Target == table`
+error[E0271]: type mismatch resolving `<Grouped<...> as AsChangeset>::Target == table`
   --> tests/fail/update_requires_column_be_from_same_table.rs:24:37
    |
 LL |     let command = update(users).set(posts::title.eq("Hello"));
@@ -34,7 +34,8 @@ LL |     pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset>
 ...
 LL |         V: changeset::AsChangeset<Target = T>,
    |                                   ^^^^^^^^^^ required by this bound in `UpdateStatement::<T, U>::set`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/update_requires_column_be_from_same_table.rs:26:33
@@ -48,6 +49,7 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
 LL |         title -> VarChar,
    |         ^^^^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>` to implement `AsChangeset`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: required for `Eq<name, title>` to implement `AsChangeset`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0271`.

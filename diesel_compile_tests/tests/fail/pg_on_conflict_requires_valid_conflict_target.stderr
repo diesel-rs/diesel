@@ -62,7 +62,7 @@ help: the trait `Column` is not implemented for `lower_utils::lower<posts::colum
               posts::columns::id
               posts::columns::title
             and N others
-    = note: required for `ConflictTarget<lower<title>>` to implement `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>`
+    = note: required for `ConflictTarget<lower<title>>` to implement `OnConflictTarget<table>`
 note: required by a bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
    --> DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
     |
@@ -92,7 +92,7 @@ error[E0277]: the trait bound `&str: Column` is not satisfied
               posts::columns::id
               posts::columns::title
             and N others
-    = note: required for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<&str>` to implement `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>`
+    = note: required for `ConflictTarget<&str>` to implement `OnConflictTarget<table>`
 note: required by a bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
    --> DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
     |
