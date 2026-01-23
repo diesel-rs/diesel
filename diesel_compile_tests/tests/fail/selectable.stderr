@@ -1,4 +1,4 @@
-error[E0412]: cannot find type `titel` in module `posts`
+error[E0425]: cannot find type `titel` in module `posts`
   --> tests/fail/selectable.rs:55:5
    |
 LL |         title -> Text,
@@ -55,7 +55,7 @@ note: required for `posts::columns::id` to implement `SelectableExpression<query
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 4 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -86,7 +86,7 @@ note: required for `posts::columns::id` to implement `SelectableExpression<query
     |         ^^
     = note: 4 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -117,7 +117,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     |         ^^^^^
     = note: 4 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, ...>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -263,10 +263,17 @@ help: the trait `IsContainedInGroupBy<users::columns::id>` is not implemented fo
  LL |         id -> Integer,
     |         ^^
     = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
-    = help: the following other types implement trait `IsContainedInGroupBy<T>`:
-              `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::id>`
-              `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::title>`
-              `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::user_id>`
+help: the following other types implement trait `IsContainedInGroupBy<T>`
+   --> tests/fail/selectable.rs:12:1
+    |
+ LL | / table! {
+ LL | |     posts {
+ LL | |         id -> Integer,
+    | |         ^^
+    | |         ||
+    | |_________|`posts::columns::id` implements `IsContainedInGroupBy<posts::columns::title>`
+    |           |`posts::columns::id` implements `IsContainedInGroupBy<posts::columns::user_id>`
+    |           `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::id>`
 note: required for `users::columns::id` to implement `ValidGrouping<posts::columns::id>`
    --> tests/fail/selectable.rs:7:9
     |
@@ -290,10 +297,17 @@ help: the trait `IsContainedInGroupBy<users::columns::name>` is not implemented 
  LL |         id -> Integer,
     |         ^^
     = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
-    = help: the following other types implement trait `IsContainedInGroupBy<T>`:
-              `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::id>`
-              `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::title>`
-              `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::user_id>`
+help: the following other types implement trait `IsContainedInGroupBy<T>`
+   --> tests/fail/selectable.rs:12:1
+    |
+ LL | / table! {
+ LL | |     posts {
+ LL | |         id -> Integer,
+    | |         ^^
+    | |         ||
+    | |_________|`posts::columns::id` implements `IsContainedInGroupBy<posts::columns::title>`
+    |           |`posts::columns::id` implements `IsContainedInGroupBy<posts::columns::user_id>`
+    |           `posts::columns::id` implements `IsContainedInGroupBy<posts::columns::id>`
 note: required for `users::columns::name` to implement `ValidGrouping<posts::columns::id>`
    --> tests/fail/selectable.rs:8:9
     |
@@ -314,9 +328,14 @@ LL |         .select(UserWithPostCount::as_select())
     = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
-    = help: the following other types implement trait `MixedAggregates<Other>`:
-              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
-              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
+help: the following other types implement trait `MixedAggregates<Other>`
+   --> DIESEL/diesel/diesel/src/expression/mod.rs
+    |
+LL |     impl MixedAggregates<No> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
+...
+LL |     impl MixedAggregates<Never> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `(name, count<Integer, id>)` to implement `ValidGrouping<()>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>` to implement `ValidGrouping<()>`

@@ -8,8 +8,12 @@ error[E0277]: `ILike<name, Bound<Text, &str>>` is no valid SQL fragment for the 
      |
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
-     = help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `ILike<name, Bound<Text, &str>>`
-             but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `ILike<name, Bound<Text, &str>>`
+      but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+    --> DIESEL/diesel/diesel/src/pg/expression/operators.rs
+     |
+  LL | infix_operator!(ILike, " ILIKE ", backend: Pg);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      = help: for that trait implementation, expected `Pg`, found `Sqlite`
      = note: required for `Grouped<ILike<name, Bound<Text, &str>>>` to implement `QueryFragment<Sqlite>`
      = note: 3 redundant requirements hidden
@@ -24,7 +28,8 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
   
-     
+          = note: this error originates in the macro `$crate::__diesel_operator_body` which comes from the expansion of the macro `infix_operator` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: `ILike<name, Bound<Text, &str>>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/ilike_only_compiles_for_pg.rs:29:18
      |
@@ -35,8 +40,12 @@ error[E0277]: `ILike<name, Bound<Text, &str>>` is no valid SQL fragment for the 
      |
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-     = help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `ILike<name, Bound<Text, &str>>`
-             but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `ILike<name, Bound<Text, &str>>`
+      but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+    --> DIESEL/diesel/diesel/src/pg/expression/operators.rs
+     |
+  LL | infix_operator!(ILike, " ILIKE ", backend: Pg);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      = help: for that trait implementation, expected `Pg`, found `Mysql`
      = note: required for `Grouped<ILike<name, Bound<Text, &str>>>` to implement `QueryFragment<Mysql>`
      = note: 3 redundant requirements hidden
@@ -51,4 +60,5 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
   
-     For more information about this error, try `rustc --explain E0277`.
+          = note: this error originates in the macro `$crate::__diesel_operator_body` which comes from the expansion of the macro `infix_operator` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.

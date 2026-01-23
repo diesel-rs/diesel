@@ -7,10 +7,21 @@ error[E0277]: cannot deserialize a value of the database type `diesel::sql_types
      |                           required by a bound introduced by this call
      |
      = note: double check your type mappings via the documentation of `diesel::sql_types::Text`
-     = help: the following other types implement trait `FromSql<A, DB>`:
-               `i32` implements `FromSql<diesel::sql_types::Integer, Mysql>`
-               `i32` implements `FromSql<diesel::sql_types::Integer, Pg>`
-               `i32` implements `FromSql<diesel::sql_types::Integer, Sqlite>`
+help: the following other types implement trait `FromSql<A, DB>`
+    --> DIESEL/diesel/diesel/src/mysql/types/primitives.rs
+     |
+  LL | impl FromSql<Integer, Mysql> for i32 {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Mysql>`
+     |
+    ::: DIESEL/diesel/diesel/src/pg/types/integers.rs
+     |
+  LL | impl FromSql<sql_types::Integer, Pg> for i32 {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Pg>`
+     |
+    ::: DIESEL/diesel/diesel/src/sqlite/types/mod.rs
+     |
+  LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Sqlite>`
      = note: required for `i32` to implement `Queryable<diesel::sql_types::Text, _>`
      = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, _>`
      = note: required for `diesel::sql_types::Text` to implement `load_dsl::private::CompatibleType<i32, _>`

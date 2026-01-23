@@ -1,4 +1,4 @@
-error[E0277]: the trait bound `(Integer, Text, Nullable<Text>): CompatibleType<..., _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, Nullable<Text>): CompatibleType<UserWithToFewFields, _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:58:54
      |
   LL |     let _ = users::table.load::<UserWithToFewFields>(conn);
