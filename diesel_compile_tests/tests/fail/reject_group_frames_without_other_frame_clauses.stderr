@@ -1,8 +1,8 @@
 error[E0277]: `Groups` frame clauses require a ordered window function
    --> tests/fail/reject_group_frames_without_other_frame_clauses.rs:18:18
     |
- LL |                 .frame_by(dsl::frame::Groups.frame_start_with(dsl::frame::UnboundedPreceding)),
-    |                  ^^^^^^^^ unsatisfied trait bound
+ LL | ...   .frame_by(dsl::frame::Groups.frame_start_with(dsl::frame::UnboundedPreceding)),
+    |        ^^^^^^^^ unsatisfied trait bound
     |
     = note: call `.window_order(some_column)` first
 help: the trait `ValidFrameClause<diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder>` is not implemented for `Groups`
@@ -11,8 +11,8 @@ help: the trait `ValidFrameClause<diesel::expression::functions::aggregate_expre
     |
 LL | impl<O> ValidFrameClause<Order<O, true>> for Groups {}
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    = help: for that trait implementation, expected `Order<_, true>`, found `diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder`
+    = help: for that trait implementation, expected `Order<_, true>`, found `NoOrder`
     = note: required for `StartFrame<Groups, UnboundedPreceding>` to implement `ValidFrameClause<NoOrder>`
-    = note: required for `diesel::expression::count::count_utils::count<diesel::sql_types::Integer, columns::id>` to implement `FrameDsl<StartFrame<Groups, UnboundedPreceding>>`
+    = note: required for `count<Integer, id>` to implement `FrameDsl<StartFrame<Groups, UnboundedPreceding>>`
  
     For more information about this error, try `rustc --explain E0277`.

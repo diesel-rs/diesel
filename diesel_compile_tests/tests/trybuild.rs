@@ -44,6 +44,7 @@ fn main() -> ui_test::color_eyre::Result<()> {
     // as it breaks layout it some cases
     config.filter("[0-9]+ \\|", "LL |");
 
+    config.comment_defaults.base().compile_flags.push("--diagnostic-width=100".into());
     config.comment_defaults.base().set_custom(
         "dependencies",
         ui_test::dependencies::DependencyBuilder {

@@ -17,10 +17,10 @@ help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecia
  LL | |     T: QueryFragment<Pg>,
      | |_________________________^
      = help: for that trait implementation, expected `Pg`, found `Sqlite`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `QueryFragment<Sqlite, AnsiSqlSelectStatement>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ...>` to implement `QueryFragment<Sqlite, AnsiSqlSelectStatement>`
      = note: 1 redundant requirement hidden
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `QueryFragment<Sqlite>`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ...>` to implement `QueryFragment<Sqlite>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
 note: required by a bound in `get_results`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -50,10 +50,10 @@ help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecial
  LL | |     T: QueryFragment<Pg>,
      | |_________________________^
      = help: for that trait implementation, expected `Pg`, found `Mysql`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `QueryFragment<Mysql, AnsiSqlSelectStatement>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ...>` to implement `QueryFragment<Mysql, AnsiSqlSelectStatement>`
      = note: 1 redundant requirement hidden
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, _>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ...>` to implement `QueryFragment<Mysql>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, _>`
 note: required by a bound in `get_results`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

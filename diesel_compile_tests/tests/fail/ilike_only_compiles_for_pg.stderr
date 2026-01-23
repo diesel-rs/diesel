@@ -17,8 +17,8 @@ help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecia
      = help: for that trait implementation, expected `Pg`, found `Sqlite`
      = note: required for `Grouped<ILike<name, Bound<Text, &str>>>` to implement `QueryFragment<Sqlite>`
      = note: 3 redundant requirements hidden
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `QueryFragment<Sqlite>`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `ExecuteDsl<diesel::SqliteConnection, Sqlite>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `QueryFragment<Sqlite>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `ExecuteDsl<diesel::SqliteConnection, Sqlite>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -49,8 +49,8 @@ help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecial
      = help: for that trait implementation, expected `Pg`, found `Mysql`
      = note: required for `Grouped<ILike<name, Bound<Text, &str>>>` to implement `QueryFragment<Mysql>`
      = note: 3 redundant requirements hidden
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `ExecuteDsl<diesel::MysqlConnection, Mysql>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `QueryFragment<Mysql>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `ExecuteDsl<diesel::MysqlConnection, Mysql>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

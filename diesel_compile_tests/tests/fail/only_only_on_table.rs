@@ -11,9 +11,9 @@ table! {
 
 fn main() {
     foo::table.select(foo::id).only();
-    //~^ ERROR: the method `only` exists for struct `SelectStatement<FromClause<table>, SelectClause<id>>`, but its trait bounds were not satisfied
+    //~^ ERROR: the method `only` exists for struct `SelectStatement<FromClause<table>, ...>`, but its trait bounds were not satisfied
     foo::table.select(foo::id).filter(foo::id.eq(1)).only();
-    //~^ ERROR: the method `only` exists for struct `SelectStatement<FromClause<table>, SelectClause<id>, ..., ...>`, but its trait bounds were not satisfied
+    //~^ ERROR: the method `only` exists for struct `SelectStatement<FromClause<table>, ..., ..., ...>`, but its trait bounds were not satisfied
     foo::table.select(foo::id.only());
     //~^ ERROR: the method `only` exists for struct `columns::id`, but its trait bounds were not satisfied
 

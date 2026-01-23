@@ -1,17 +1,18 @@
-error[E0277]: the trait bound `SelectStatement<FromClause<table>, ..., ..., ...>: IntoUpdateTarget` is not satisfied
+error[E0277]: the trait bound `SelectStatement<..., ..., ..., ...>: IntoUpdateTarget` is not satisfied
    --> tests/fail/update_requires_valid_where_clause.rs:23:12
     |
  LL |     update(users::table.filter(posts::id.eq(1)));
-    |     ------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `IntoUpdateTarget` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
+    |     ------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |     |
     |     required by a bound introduced by this call
     |
+    = help: the trait `IntoUpdateTarget` is not implemented for `SelectStatement<FromClause<table>, ..., ..., ...>`
     = note: only tables or select statements with only the filter clause applied are valid update targets
-help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, DefaultSelectClause<...>, ..., ...>`
+help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, ..., ..., ...>`
    --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, W> IntoUpdateTarget
-LL | |     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, NoDistinctClause, W>
+LL | |     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, NoDistinctClau...
 LL | | where
 LL | |     F: QuerySource,
 LL | |     Self: HasTable,
@@ -43,7 +44,7 @@ LL |         id -> Integer,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>` to implement `FilterDsl<Grouped<Eq<id, Bound<Integer, i32>>>>`
+   = note: required for `UpdateStatement<table, NoWhereClause>` to implement `FilterDsl<Grouped<Eq<id, Bound<Integer, i32>>>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -61,22 +62,23 @@ LL |         id -> Integer,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `UpdateStatement<table, NoWhereClause, Assign<..., ...>>` to implement `FilterDsl<Grouped<Eq<id, Bound<Integer, i32>>>>`
+   = note: required for `UpdateStatement<table, NoWhereClause, ...>` to implement `FilterDsl<Grouped<Eq<id, Bound<Integer, i32>>>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `SelectStatement<FromClause<table>, ..., ..., ...>: IntoUpdateTarget` is not satisfied
+error[E0277]: the trait bound `SelectStatement<..., ..., ..., ...>: IntoUpdateTarget` is not satisfied
    --> tests/fail/update_requires_valid_where_clause.rs:23:5
     |
  LL |     update(users::table.filter(posts::id.eq(1)));
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `IntoUpdateTarget` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
+    = help: the trait `IntoUpdateTarget` is not implemented for `SelectStatement<FromClause<table>, ..., ..., ...>`
     = note: only tables or select statements with only the filter clause applied are valid update targets
-help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, DefaultSelectClause<...>, ..., ...>`
+help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, ..., ..., ...>`
    --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, W> IntoUpdateTarget
-LL | |     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, NoDistinctClause, W>
+LL | |     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, NoDistinctClau...
 LL | | where
 LL | |     F: QuerySource,
 LL | |     Self: HasTable,

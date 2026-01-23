@@ -159,12 +159,12 @@ help: the following other types implement trait `LoadQuery<'query, Conn, U, B>`
      |
  LL | / impl<'query, V, T, QId, Op, O, U, B, const STATIC_QUERY_ID: bool>
  LL | |     LoadQuery<'query, SqliteConnection, U, B>
- LL | |     for InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>
+ LL | |     for InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>...
  LL | | where
 ...    |
  LL | |     O: Default,
  LL | |     (O, Self): LoadQuery<'query, SqliteConnection, U, B>,
-     | |_________________________________________________________^ `InsertStatement<T, BatchInsert<..., ..., ..., STATIC_QUERY_ID>, ...>`
+     | |_________________________________________________________^ `InsertStatement<T, ..., ...>`
 ...
  LL | / impl<'query, V, T, QId, Op, O, U, B, Target, ConflictOpt, const STATIC_QUERY_ID: bool>
  LL | |     LoadQuery<'query, SqliteConnection, U, B>
@@ -173,7 +173,7 @@ help: the following other types implement trait `LoadQuery<'query, Conn, U, B>`
 ...    |
  LL | |     O: Default,
  LL | |     (O, Self): LoadQuery<'query, SqliteConnection, U, B>,
-     | |_________________________________________________________^ `InsertStatement<T, OnConflictValues<..., ..., ...>, ...>`
+     | |_________________________________________________________^ `InsertStatement<T, ..., ...>`
      = note: required for `SqlQuery` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs

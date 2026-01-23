@@ -124,7 +124,7 @@ where
 /// This check is postponed to building the query via `QueryFragment`
 /// (We have access to the DB type there)
 #[diagnostic::on_unimplemented(
-    message = "{Self} is not a window function",
+    message = "`{Self}` is not a window function",
     label = "remove this function call to use `{Self}` as normal SQL function",
     note = "try removing any method call to `WindowExpressionMethods` and use it as normal SQL function"
 )]

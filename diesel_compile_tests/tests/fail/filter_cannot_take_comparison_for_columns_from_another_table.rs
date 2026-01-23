@@ -35,7 +35,7 @@ fn main() {
     //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
 
     let _ = users::table.filter(posts::id.eq(1)).into_boxed::<Pg>();
-    //~^ ERROR: cannot box `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` for backend `Pg`
+    //~^ ERROR: cannot box `SelectStatement<FromClause<table>, ..., ..., ...>` for backend `Pg`
     // FIXME: It'd be great if this mentioned `AppearsInFromClause` instead...
 
     let _ = users::table
@@ -51,6 +51,6 @@ fn main() {
     let _ = users::table
         .filter(users::name.eq(posts::title))
         .into_boxed::<Pg>();
-    //~^ ERROR: cannot box `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` for backend `Pg`
+    //~^ ERROR: cannot box `SelectStatement<FromClause<table>, ..., ..., ...>` for backend `Pg`
     // FIXME: It'd be great if this mentioned `AppearsInFromClause` instead...
 }

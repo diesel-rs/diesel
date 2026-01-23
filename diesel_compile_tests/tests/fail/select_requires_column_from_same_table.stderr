@@ -18,8 +18,8 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
               `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::id` implements `SelectableExpression<posts::table>`
-              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-              `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
+              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
     = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<posts::columns::id>`
     = note: 1 redundant requirement hidden
     = note: required for `users::table` to implement `SelectDsl<posts::columns::id>`
@@ -31,5 +31,6 @@ LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Select
 ...
 LL |         Self: methods::SelectDsl<Selection>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
-    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

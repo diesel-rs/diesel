@@ -1,8 +1,8 @@
-error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<table>, SelectClause<id>>`, but its trait bounds were not satisfied
+error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<table>, ...>`, but its trait bounds were not satisfied
   --> tests/fail/only_only_on_table.rs:13:32
    |
 LL |       foo::table.select(foo::id).only();
-   |                                  ^^^^ method cannot be called due to unsatisfied trait bounds
+   |                                  ^^^^ method cannot be called on `SelectStatement<FromClause<table>, ...>` due to unsatisfied trait bounds
    |
   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/mod.rs
    |
@@ -23,11 +23,11 @@ LL | | )]
            which is required by `&mut SelectStatement<FromClause<foo::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>: diesel::dsl::OnlyDsl`
 
    
-error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<table>, SelectClause<id>, ..., ...>`, but its trait bounds were not satisfied
+error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<table>, ..., ..., ...>`, but its trait bounds were not satisfied
   --> tests/fail/only_only_on_table.rs:15:54
    |
 LL |       foo::table.select(foo::id).filter(foo::id.eq(1)).only();
-   |                                                        ^^^^ method cannot be called due to unsatisfied trait bounds
+   |                                                        ^^^^ method cannot be called on `SelectStatement<FromClause<table>, ..., ..., ...>` due to unsatisfied trait bounds
    |
   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/mod.rs
    |

@@ -15,14 +15,15 @@ LL |     C: Connection<Backend = Pg>,
 LL |     fn execute(self, conn: &mut C) -> Result<usize, Self::Error>;
     |        ------- required by a bound in this associated function
 
-error[E0277]: the trait bound `CopyFromQuery<table, InsertableWrapper<...>>: ExecuteCopyFromDsl<...>` is not satisfied
+error[E0277]: the trait bound `CopyFromQuery<table, ...>: ExecuteCopyFromDsl<...>` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:52:18
     |
  LL |         .execute(conn)
-    |          ------- ^^^^ the trait `diesel::ExecuteCopyFromDsl<diesel::MysqlConnection>` is not implemented for `CopyFromQuery<table, InsertableWrapper<Vec<NewUser>>>`
+    |          ------- ^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
+    = help: the trait `diesel::ExecuteCopyFromDsl<diesel::MysqlConnection>` is not implemented for `CopyFromQuery<table, InsertableWrapper<Vec<...>>>`
 help: the following other types implement trait `diesel::ExecuteCopyFromDsl<C>`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_from.rs
     |
@@ -31,67 +32,71 @@ LL | | where
 LL | |     A: CopyFromExpression<T>,
     | |_____________________________^ `CopyFromQuery<T, A>` implements `diesel::ExecuteCopyFromDsl<diesel::PgConnection>`
 ...
-LL | / impl<T, A, C> ExecuteCopyFromDsl<crate::r2d2::PooledConnection<crate::r2d2::ConnectionManager<C>>>
+LL | / impl<T, A, C> ExecuteCopyFromDsl<crate::r2d2::PooledConnection<crate::r2d2::ConnectionMan...
 LL | |     for CopyFromQuery<T, A>
 LL | | where
 LL | |     A: CopyFromExpression<T>,
 LL | |     C: crate::r2d2::R2D2Connection<Backend = Pg> + 'static,
 LL | |     Self: ExecuteCopyFromDsl<C>,
-    | |________________________________^ `CopyFromQuery<T, A>` implements `diesel::ExecuteCopyFromDsl<PooledConnection<diesel::r2d2::ConnectionManager<C>>>`
+    | |________________________________^ `CopyFromQuery<T, A>` implements `ExecuteCopyFromDsl<PooledConnection<...>>`
  
     
-error[E0277]: the trait bound `diesel::MysqlConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
+error[E0277]: the trait bound `MysqlConnection: ExecuteCopyToConnection` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:56:48
     |
  LL |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
-    |                                   ----         ^ the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::MysqlConnection`
+    |                                   ----         ^ unsatisfied trait bound
     |                                   |
     |                                   required by a bound introduced by this call
     |
+    = help: the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::MysqlConnection`
 help: the following other types implement trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_to.rs
     |
 LL |   impl ExecuteCopyToConnection for crate::PgConnection {
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::PgConnection`
 ...
-LL | / impl<C> ExecuteCopyToConnection for crate::r2d2::PooledConnection<crate::r2d2::ConnectionManager<C>>
+LL | / impl<C> ExecuteCopyToConnection for crate::r2d2::PooledConnection<crate::r2d2::Connection...
 LL | | where
 LL | |     C: ExecuteCopyToConnection + crate::r2d2::R2D2Connection + 'static,
     | |_______________________________________________________________________^ `PooledConnection<diesel::r2d2::ConnectionManager<C>>`
 note: required by a bound in `CopyToQuery::<T, pg::query_builder::copy::copy_to::NotSet>::load`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_to.rs
     |
-LL |     pub fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
-    |            ---- required by a bound in this associated function
+LL | ...fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
+    |       ---- required by a bound in this associated function
 ...
-LL |         C: ExecuteCopyToConnection,
-    |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
-
-error[E0277]: the trait bound `diesel::MysqlConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
+LL | ...C: ExecuteCopyToConnection,
+    |       ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
+ 
+    
+error[E0277]: the trait bound `MysqlConnection: ExecuteCopyToConnection` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:56:5
     |
  LL |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::MysqlConnection`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
+    = help: the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::MysqlConnection`
 help: the following other types implement trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_to.rs
     |
 LL |   impl ExecuteCopyToConnection for crate::PgConnection {
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::PgConnection`
 ...
-LL | / impl<C> ExecuteCopyToConnection for crate::r2d2::PooledConnection<crate::r2d2::ConnectionManager<C>>
+LL | / impl<C> ExecuteCopyToConnection for crate::r2d2::PooledConnection<crate::r2d2::Connection...
 LL | | where
 LL | |     C: ExecuteCopyToConnection + crate::r2d2::R2D2Connection + 'static,
     | |_______________________________________________________________________^ `PooledConnection<diesel::r2d2::ConnectionManager<C>>`
 note: required by a bound in `CopyToQuery::<T, pg::query_builder::copy::copy_to::NotSet>::load`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_to.rs
     |
-LL |     pub fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
-    |            ---- required by a bound in this associated function
+LL | ...fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
+    |       ---- required by a bound in this associated function
 ...
-LL |         C: ExecuteCopyToConnection,
-    |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
-
+LL | ...C: ExecuteCopyToConnection,
+    |       ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
+ 
+    
 error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:65:18
     |
@@ -109,14 +114,15 @@ LL |     C: Connection<Backend = Pg>,
 LL |     fn execute(self, conn: &mut C) -> Result<usize, Self::Error>;
     |        ------- required by a bound in this associated function
 
-error[E0277]: the trait bound `CopyFromQuery<table, InsertableWrapper<...>>: ExecuteCopyFromDsl<...>` is not satisfied
+error[E0277]: the trait bound `CopyFromQuery<table, ...>: ExecuteCopyFromDsl<...>` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:65:18
     |
  LL |         .execute(conn)
-    |          ------- ^^^^ the trait `diesel::ExecuteCopyFromDsl<diesel::SqliteConnection>` is not implemented for `CopyFromQuery<table, InsertableWrapper<Vec<NewUser>>>`
+    |          ------- ^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
+    = help: the trait `diesel::ExecuteCopyFromDsl<diesel::SqliteConnection>` is not implemented for `CopyFromQuery<table, InsertableWrapper<Vec<...>>>`
 help: the following other types implement trait `diesel::ExecuteCopyFromDsl<C>`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_from.rs
     |
@@ -125,63 +131,66 @@ LL | | where
 LL | |     A: CopyFromExpression<T>,
     | |_____________________________^ `CopyFromQuery<T, A>` implements `diesel::ExecuteCopyFromDsl<diesel::PgConnection>`
 ...
-LL | / impl<T, A, C> ExecuteCopyFromDsl<crate::r2d2::PooledConnection<crate::r2d2::ConnectionManager<C>>>
+LL | / impl<T, A, C> ExecuteCopyFromDsl<crate::r2d2::PooledConnection<crate::r2d2::ConnectionMan...
 LL | |     for CopyFromQuery<T, A>
 LL | | where
 LL | |     A: CopyFromExpression<T>,
 LL | |     C: crate::r2d2::R2D2Connection<Backend = Pg> + 'static,
 LL | |     Self: ExecuteCopyFromDsl<C>,
-    | |________________________________^ `CopyFromQuery<T, A>` implements `diesel::ExecuteCopyFromDsl<PooledConnection<diesel::r2d2::ConnectionManager<C>>>`
+    | |________________________________^ `CopyFromQuery<T, A>` implements `ExecuteCopyFromDsl<PooledConnection<...>>`
  
     
-error[E0277]: the trait bound `diesel::SqliteConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
+error[E0277]: the trait bound `SqliteConnection: ExecuteCopyToConnection` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:69:48
     |
  LL |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
-    |                                   ----         ^ the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::SqliteConnection`
+    |                                   ----         ^ unsatisfied trait bound
     |                                   |
     |                                   required by a bound introduced by this call
     |
+    = help: the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::SqliteConnection`
 help: the following other types implement trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_to.rs
     |
 LL |   impl ExecuteCopyToConnection for crate::PgConnection {
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::PgConnection`
 ...
-LL | / impl<C> ExecuteCopyToConnection for crate::r2d2::PooledConnection<crate::r2d2::ConnectionManager<C>>
+LL | / impl<C> ExecuteCopyToConnection for crate::r2d2::PooledConnection<crate::r2d2::Connection...
 LL | | where
 LL | |     C: ExecuteCopyToConnection + crate::r2d2::R2D2Connection + 'static,
     | |_______________________________________________________________________^ `PooledConnection<diesel::r2d2::ConnectionManager<C>>`
 note: required by a bound in `CopyToQuery::<T, pg::query_builder::copy::copy_to::NotSet>::load`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_to.rs
     |
-LL |     pub fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
-    |            ---- required by a bound in this associated function
+LL | ...fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
+    |       ---- required by a bound in this associated function
 ...
-LL |         C: ExecuteCopyToConnection,
-    |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
-
-error[E0277]: the trait bound `diesel::SqliteConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
+LL | ...C: ExecuteCopyToConnection,
+    |       ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
+ 
+    
+error[E0277]: the trait bound `SqliteConnection: ExecuteCopyToConnection` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:69:5
     |
  LL |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::SqliteConnection`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
+    = help: the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::SqliteConnection`
 help: the following other types implement trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_to.rs
     |
 LL |   impl ExecuteCopyToConnection for crate::PgConnection {
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::PgConnection`
 ...
-LL | / impl<C> ExecuteCopyToConnection for crate::r2d2::PooledConnection<crate::r2d2::ConnectionManager<C>>
+LL | / impl<C> ExecuteCopyToConnection for crate::r2d2::PooledConnection<crate::r2d2::Connection...
 LL | | where
 LL | |     C: ExecuteCopyToConnection + crate::r2d2::R2D2Connection + 'static,
     | |_______________________________________________________________________^ `PooledConnection<diesel::r2d2::ConnectionManager<C>>`
 note: required by a bound in `CopyToQuery::<T, pg::query_builder::copy::copy_to::NotSet>::load`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_to.rs
     |
-LL |     pub fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
-    |            ---- required by a bound in this associated function
+LL | ...fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
+    |       ---- required by a bound in this associated function
 ...
-LL |         C: ExecuteCopyToConnection,
-    |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
+LL | ...C: ExecuteCopyToConnection,
+    |       ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`

@@ -30,8 +30,9 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
    --> tests/fail/filter_requires_bool_nonaggregate_expression.rs:17:26
     |
  LL |     let _ = users::table.filter(sum(users::id).eq(1));
-    |                          ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
+    |                          ^^^^^^ unsatisfied trait bound
     |
+    = help: the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
     = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
@@ -43,7 +44,7 @@ LL |     impl MixedAggregates<Yes> for Yes {
 ...
 LL |     impl MixedAggregates<Never> for Yes {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
-    = note: required for `Grouped<Eq<sum<Integer, id>, Bound<Nullable<BigInt>, i64>>>` to implement `NonAggregate`
-    = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Grouped<Eq<sum<Integer, id>, Bound<Nullable<BigInt>, i64>>>>`
+    = note: required for `Grouped<Eq<sum<Integer, id>, Bound<..., i64>>>` to implement `NonAggregate`
+    = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Grouped<Eq<sum<Integer, id>, ...>>>`
  
     For more information about this error, try `rustc --explain E0277`.

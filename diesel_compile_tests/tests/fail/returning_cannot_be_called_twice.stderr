@@ -1,4 +1,4 @@
-error[E0599]: no method named `returning` found for struct `DeleteStatement<table, WhereClause<Grouped<Eq<name, ...>>>, ...>` in the current scope
+error[E0599]: no method named `returning` found for struct `DeleteStatement<table, WhereClause<...>, ...>` in the current scope
   --> tests/fail/returning_cannot_be_called_twice.rs:22:11
    |
 LL |     query.returning(name);
@@ -6,7 +6,7 @@ LL |     query.returning(name);
    |
 
    
-error[E0599]: no method named `returning` found for struct `InsertStatement<table, ValuesClause<(...,), ...>, ..., ...>` in the current scope
+error[E0599]: no method named `returning` found for struct `InsertStatement<table, ..., ..., ...>` in the current scope
   --> tests/fail/returning_cannot_be_called_twice.rs:28:11
    |
 LL |     query.returning(name);
@@ -14,7 +14,7 @@ LL |     query.returning(name);
    |
 
    
-error[E0599]: no method named `returning` found for struct `UpdateStatement<table, NoWhereClause, Assign<..., ...>, ...>` in the current scope
+error[E0599]: no method named `returning` found for struct `UpdateStatement<table, NoWhereClause, ..., ...>` in the current scope
   --> tests/fail/returning_cannot_be_called_twice.rs:32:11
    |
 LL |     query.returning(name);

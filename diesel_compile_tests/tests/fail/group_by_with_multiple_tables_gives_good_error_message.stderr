@@ -33,7 +33,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<(users::colu
    |         ^^
    = note: 1 redundant requirement hidden
    = note: required for `(users::columns::id, posts::columns::user_id, CountStar)` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
-   = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(users::columns::id, posts::columns::user_id, CountStar)>`
+   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(id, user_id, CountStar)>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -67,7 +67,7 @@ LL |         user_id -> Integer,
    |         ^^^^^^^
    = note: 2 redundant requirements hidden
    = note: required for `(users::columns::id, posts::columns::user_id, CountStar)` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
-   = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(users::columns::id, posts::columns::user_id, CountStar)>`
+   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(id, user_id, CountStar)>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

@@ -51,11 +51,11 @@ fn main() {
         .from_insertable(vec![NewUser { name: "John" }])
         .execute(conn)
         //~^ ERROR: type mismatch resolving `<MysqlConnection as Connection>::Backend == Pg`
-        //~| ERROR: the trait bound `CopyFromQuery<table, InsertableWrapper<...>>: ExecuteCopyFromDsl<...>` is not satisfied
+        //~| ERROR: the trait bound `CopyFromQuery<table, ...>: ExecuteCopyFromDsl<...>` is not satisfied
         .unwrap();
     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
-    //~^ ERROR: the trait bound `diesel::MysqlConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
-    //~| ERROR: the trait bound `diesel::MysqlConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
+    //~^ ERROR: the trait bound `MysqlConnection: ExecuteCopyToConnection` is not satisfied
+    //~| ERROR: the trait bound `MysqlConnection: ExecuteCopyToConnection` is not satisfied
 
     let conn = &mut SqliteConnection::establish("_").unwrap();
 
@@ -64,9 +64,9 @@ fn main() {
         .from_insertable(vec![NewUser { name: "John" }])
         .execute(conn)
         //~^ ERROR: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
-        //~| ERROR: the trait bound `CopyFromQuery<table, InsertableWrapper<...>>: ExecuteCopyFromDsl<...>` is not satisfied
+        //~| ERROR: the trait bound `CopyFromQuery<table, ...>: ExecuteCopyFromDsl<...>` is not satisfied
         .unwrap();
     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
-    //~^ ERROR: the trait bound `diesel::SqliteConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
-    //~| ERROR: the trait bound `diesel::SqliteConnection: pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not satisfied
+    //~^ ERROR: the trait bound `SqliteConnection: ExecuteCopyToConnection` is not satisfied
+    //~| ERROR: the trait bound `SqliteConnection: ExecuteCopyToConnection` is not satisfied
 }
