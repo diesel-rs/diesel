@@ -22,7 +22,7 @@ note: required for `columns::id` to implement `ValidGrouping<columns::name>`
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `AliasedField<user1, columns::id>` to implement `ValidGrouping<AliasedField<user1, columns::name>>`
-   = note: required for `SelectStatement<FromClause<Alias<user1>>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, columns::id>>`
+   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, columns::id>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0271`.

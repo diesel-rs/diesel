@@ -2,10 +2,11 @@ error[E0277]: `ReturningClause<(columns::id, columns::name)>` is no valid SQL fr
     --> tests/fail/delete_statement_does_not_support_returning_methods_on_sqlite.rs:16:54
      |
   LL |     delete(users.filter(name.eq("Bill"))).get_result(&mut connection);
-     |                                           ---------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<(columns::id, columns::name)>`
+     |                                           ---------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
      |                                           |
      |                                           required by a bound introduced by this call
      |
+     = help: the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<(columns::id, columns::name)>`
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`
@@ -35,8 +36,8 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
      | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
      = note: required for `ReturningClause<(columns::id, columns::name)>` to implement `QueryFragment<Sqlite>`
      = note: 1 redundant requirement hidden
-     = note: required for `DeleteStatement<table, WhereClause<Grouped<Eq<name, ...>>>, ...>` to implement `QueryFragment<Sqlite>`
-     = note: required for `DeleteStatement<table, WhereClause<Grouped<Eq<name, Bound<..., ...>>>>>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
+     = note: required for `DeleteStatement<table, WhereClause<...>, ...>` to implement `QueryFragment<Sqlite>`
+     = note: required for `DeleteStatement<table, WhereClause<Grouped<...>>>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -51,10 +52,11 @@ error[E0277]: `ReturningClause<columns::name>` is no valid SQL fragment for the 
     --> tests/fail/delete_statement_does_not_support_returning_methods_on_sqlite.rs:21:21
      |
   LL |         .get_result(&mut connection);
-     |          ---------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<columns::name>`
+     |          ---------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
      |
+     = help: the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<columns::name>`
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`
@@ -84,8 +86,8 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
      | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
      = note: required for `ReturningClause<columns::name>` to implement `QueryFragment<Sqlite>`
      = note: 1 redundant requirement hidden
-     = note: required for `DeleteStatement<table, WhereClause<Grouped<Eq<name, ...>>>, ...>` to implement `QueryFragment<Sqlite>`
-     = note: required for `DeleteStatement<table, WhereClause<Grouped<Eq<name, ...>>>, ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
+     = note: required for `DeleteStatement<table, WhereClause<...>, ...>` to implement `QueryFragment<Sqlite>`
+     = note: required for `DeleteStatement<table, WhereClause<...>, ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

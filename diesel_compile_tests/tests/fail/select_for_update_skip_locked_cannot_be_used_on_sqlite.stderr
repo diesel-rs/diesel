@@ -2,10 +2,11 @@ error[E0277]: `diesel::query_builder::locking_clause::ForUpdate` is no valid SQL
     --> tests/fail/select_for_update_skip_locked_cannot_be_used_on_sqlite.rs:17:15
      |
   LL |         .load(&mut conn)
-     |          ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::ForUpdate`
+     |          ---- ^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
      |
+     = help: the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::ForUpdate`
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`
@@ -36,10 +37,11 @@ error[E0277]: `diesel::query_builder::locking_clause::SkipLocked` is no valid SQ
     --> tests/fail/select_for_update_skip_locked_cannot_be_used_on_sqlite.rs:17:15
      |
   LL |         .load(&mut conn)
-     |          ---- ^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::SkipLocked`
+     |          ---- ^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
      |
+     = help: the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::SkipLocked`
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`

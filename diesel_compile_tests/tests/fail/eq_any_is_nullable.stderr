@@ -25,7 +25,7 @@ help: the following other types implement trait `FromSql<A, DB>`
      = note: required for `bool` to implement `Queryable<diesel::sql_types::Nullable<Bool>, Pg>`
      = note: required for `bool` to implement `FromSqlRow<diesel::sql_types::Nullable<Bool>, Pg>`
      = note: required for `diesel::sql_types::Nullable<Bool>` to implement `load_dsl::private::CompatibleType<bool, Pg>`
-     = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<In<..., ...>>>>` to implement `LoadQuery<'_, diesel::PgConnection, bool>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, diesel::PgConnection, bool>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

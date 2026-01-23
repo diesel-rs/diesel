@@ -25,7 +25,7 @@ help: the following other types implement trait `FromSql<A, DB>`
      = note: required for `i32` to implement `Queryable<diesel::sql_types::Text, _>`
      = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, _>`
      = note: required for `diesel::sql_types::Text` to implement `load_dsl::private::CompatibleType<i32, _>`
-     = note: required for `SelectStatement<FromClause<table>, SelectClause<name>>` to implement `LoadQuery<'_, _, i32>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, _, i32>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -52,7 +52,7 @@ error[E0277]: cannot deserialize a value of the database type `diesel::sql_types
      = note: required for `std::string::String` to implement `Queryable<diesel::sql_types::Integer, _>`
      = note: required for `std::string::String` to implement `FromSqlRow<diesel::sql_types::Integer, _>`
      = note: required for `diesel::sql_types::Integer` to implement `load_dsl::private::CompatibleType<std::string::String, _>`
-     = note: required for `SelectStatement<FromClause<table>, SelectClause<id>>` to implement `LoadQuery<'_, _, std::string::String>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, _, std::string::String>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

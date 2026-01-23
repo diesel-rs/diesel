@@ -24,8 +24,8 @@ note: required for `columns::id` to implement `ValidGrouping<columns::name>`
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 1 redundant requirement hidden
      = note: required for `(columns::id, columns::name)` to implement `ValidGrouping<columns::name>`
-     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `Query`
-     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
+     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `Query`
+     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

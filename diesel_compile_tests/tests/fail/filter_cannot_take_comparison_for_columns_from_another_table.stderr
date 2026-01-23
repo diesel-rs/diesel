@@ -14,9 +14,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 2 redundant requirements hidden
      = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
-     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `Query`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `LoadQuery<'_, _, User>`
+     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `ValidWhereClause<FromClause<table>>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -42,18 +42,19 @@ LL |         id -> Integer,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, Pg>` to implement `FilterDsl<Grouped<Eq<id, Bound<Integer, i32>>>>`
+   = note: required for `BoxedSelectStatement<'_, (Integer, ...), ..., ...>` to implement `FilterDsl<Grouped<Eq<id, Bound<Integer, i32>>>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot box `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` for backend `Pg`
+error[E0277]: cannot box `SelectStatement<FromClause<table>, ..., ..., ...>` for backend `Pg`
    --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:37:50
     |
  LL |     let _ = users::table.filter(posts::id.eq(1)).into_boxed::<Pg>();
-    |                                                  ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
+    |                                                  ^^^^^^^^^^ unsatisfied trait bound
     |
-    = note: this either means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` is no valid SQL for `Pg`
-    = note: or this means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
+    = help: the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<table>, ..., ..., ...>`
+    = note: this either means `SelectStatement<FromClause<table>, ..., ..., ...>` is no valid SQL for `Pg`
+    = note: or this means `SelectStatement<FromClause<table>, ..., ..., ...>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
 help: the following other types implement trait `BoxedDsl<'a, DB>`
    --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
@@ -92,9 +93,9 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 2 redundant requirements hidden
      = note: required for `Grouped<Eq<name, title>>` to implement `AppearsOnTable<users::table>`
-     = note: required for `WhereClause<Grouped<Eq<name, title>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `Query`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `LoadQuery<'_, _, User>`
+     = note: required for `WhereClause<Grouped<Eq<name, title>>>` to implement `ValidWhereClause<FromClause<table>>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -120,18 +121,19 @@ LL |         title -> VarChar,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<name, title>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, Pg>` to implement `FilterDsl<Grouped<Eq<name, title>>>`
+   = note: required for `BoxedSelectStatement<'_, (Integer, ...), ..., ...>` to implement `FilterDsl<Grouped<Eq<name, title>>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot box `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` for backend `Pg`
+error[E0277]: cannot box `SelectStatement<FromClause<table>, ..., ..., ...>` for backend `Pg`
    --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:53:10
     |
  LL |         .into_boxed::<Pg>();
-    |          ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
+    |          ^^^^^^^^^^ unsatisfied trait bound
     |
-    = note: this either means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` is no valid SQL for `Pg`
-    = note: or this means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
+    = help: the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<table>, ..., ..., ...>`
+    = note: this either means `SelectStatement<FromClause<table>, ..., ..., ...>` is no valid SQL for `Pg`
+    = note: or this means `SelectStatement<FromClause<table>, ..., ..., ...>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
 help: the following other types implement trait `BoxedDsl<'a, DB>`
    --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
     |

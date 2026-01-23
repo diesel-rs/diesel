@@ -1,4 +1,4 @@
-error[E0277]: the trait bound `SelectStatement<FromClause<table>, ..., ..., ...>: AsInExpression<...>` is not satisfied
+error[E0277]: the trait bound `SelectStatement<..., ..., ..., ...>: AsInExpression<...>` is not satisfied
    --> tests/fail/subselect_requires_correct_type.rs:22:59
     |
  LL |     let query = posts::table.filter(posts::user_id.eq_any(subquery));
@@ -6,7 +6,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<table>, ..., ..., ...>
     |                                                    |
     |                                                    required by a bound introduced by this call
     |
-help: the trait `AsInExpression<diesel::sql_types::Integer>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
+help: the trait `AsInExpression<diesel::sql_types::Integer>` is not implemented for `SelectStatement<FromClause<table>, ..., ..., ...>`
       but trait `AsInExpression<(diesel::sql_types::Integer, diesel::sql_types::Text)>` is implemented for it
    --> DIESEL/diesel/diesel/src/expression/array_comparison.rs
     |

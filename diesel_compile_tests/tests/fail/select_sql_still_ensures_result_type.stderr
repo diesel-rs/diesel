@@ -14,7 +14,7 @@ error[E0277]: cannot deserialize a value of the database type `diesel::sql_types
      = note: required for `std::string::String` to implement `Queryable<diesel::sql_types::BigInt, _>`
      = note: required for `std::string::String` to implement `FromSqlRow<diesel::sql_types::BigInt, _>`
      = note: required for `diesel::sql_types::BigInt` to implement `load_dsl::private::CompatibleType<std::string::String, _>`
-     = note: required for `SelectStatement<FromClause<table>, SelectClause<SqlLiteral<BigInt>>>` to implement `LoadQuery<'_, _, std::string::String>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, _, std::string::String>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

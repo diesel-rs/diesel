@@ -44,7 +44,7 @@ LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
     = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `posts::table: DistinctOnDsl<(posts::columns::name, users::columns::name)>` is not satisfied
+error[E0277]: the trait bound `table: DistinctOnDsl<(name, name)>` is not satisfied
    --> tests/fail/distinct_on_allows_only_fields_of_table.rs:31:10
     |
  LL |         .distinct_on((posts::name, users::name))
@@ -80,5 +80,6 @@ LL | |     Selection: SelectableExpression<Self>,
 LL | |         Expression<SqlType = <Self as AsQuery>::SqlType> + ValidGrouping<()>,
 LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
     | |____________________________________________________^ `Alias<S>`
-    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

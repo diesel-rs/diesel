@@ -1,4 +1,4 @@
-error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertStatement<table, ValuesClause<..., ...>>, ...>`, but its trait bounds were not satisfied
+error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertStatement<..., ...>, ...>`, but its trait bounds were not satisfied
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:44:10
     |
  LL | /     insert_into(users)
@@ -6,7 +6,7 @@ error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertS
  LL | |         .on_conflict(id)
  LL | |         .do_update()
  LL | |         .execute(&mut connection);
-    | |         -^^^^^^^ method cannot be called due to unsatisfied trait bounds
+    | |         -^^^^^^^ method cannot be called on `IncompleteDoUpdate<InsertStatement<..., ...>, ...>` due to unsatisfied trait bounds
     | |_________|
     |
     |
@@ -24,7 +24,7 @@ LL |   pub struct IncompleteDoUpdate<Stmt, Target> {
             which is required by `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
  
     
-error[E0271]: type mismatch resolving `<Grouped<Eq<title, Bound<Text, &str>>> as AsChangeset>::Target == table`
+error[E0271]: type mismatch resolving `<Grouped<...> as AsChangeset>::Target == table`
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:52:14
     |
  LL |         .set(posts::title.eq("Sean"));
@@ -60,7 +60,8 @@ LL |     pub fn set<Changes>(
 ...
 LL |         Changes: AsChangeset<Target = T>,
     |                              ^^^^^^^^^^ required by this bound in `IncompleteDoUpdate::<InsertStatement<T, U, Op, Ret>, Target>::set`
-    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:60:10
@@ -74,8 +75,9 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
 LL |         title -> VarChar,
    |         ^^^^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>` to implement `AsChangeset`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: required for `Eq<name, title>` to implement `AsChangeset`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<title as Column>::Table == table`
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:68:10
@@ -114,9 +116,8 @@ error[E0277]: the trait bound `Excluded<id>: AsExpression<Text>` is not satisfie
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:76:19
    |
 LL |         .set(name.eq(excluded(id)));
-   |                   ^^ unsatisfied trait bound
+   |                   ^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `Excluded<id>`
    |
-   = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::query_builder::upsert::on_conflict_actions::Excluded<users::columns::id>`
    = help: the following other types implement trait `AsExpression<T>`:
              `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`

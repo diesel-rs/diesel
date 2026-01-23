@@ -12,7 +12,7 @@ help: the following other types implement trait `SelectQuery`
  LL | | where
  LL | |     Source: SelectQuery,
  LL | |     Rhs: SelectQuery<SqlType = Source::SqlType>,
-    | |________________________________________________^ `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
+    | |________________________________________________^ `CombinationClause<..., ..., ..., ..., ..., ...>`
     |
    ::: DIESEL/diesel/diesel/src/query_builder/select_statement/boxed.rs
     |
@@ -23,7 +23,7 @@ LL | |     DB: Backend,
     |
    ::: DIESEL/diesel/diesel/src/query_builder/select_statement/mod.rs
     |
-LL | / impl<F, S, D, W, O, LOf, G, H, LC> SelectQuery for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+LL | / impl<F, S, D, W, O, LOf, G, H, LC> SelectQuery for SelectStatement<F, S, D, W, O, LOf, G,...
 LL | | where
 LL | |     S: SelectClauseExpression<F>,
 LL | |     O: ValidOrderingForDistinct<D>,
@@ -53,7 +53,7 @@ help: the following other types implement trait `SelectQuery`
  LL | | where
  LL | |     Source: SelectQuery,
  LL | |     Rhs: SelectQuery<SqlType = Source::SqlType>,
-    | |________________________________________________^ `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
+    | |________________________________________________^ `CombinationClause<..., ..., ..., ..., ..., ...>`
     |
    ::: DIESEL/diesel/diesel/src/query_builder/select_statement/boxed.rs
     |
@@ -64,7 +64,7 @@ LL | |     DB: Backend,
     |
    ::: DIESEL/diesel/diesel/src/query_builder/select_statement/mod.rs
     |
-LL | / impl<F, S, D, W, O, LOf, G, H, LC> SelectQuery for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+LL | / impl<F, S, D, W, O, LOf, G, H, LC> SelectQuery for SelectStatement<F, S, D, W, O, LOf, G,...
 LL | | where
 LL | |     S: SelectClauseExpression<F>,
 LL | |     O: ValidOrderingForDistinct<D>,

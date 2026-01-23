@@ -8,15 +8,15 @@ LL |     int_primary_key::table.find("1");
              &T
              AliasedField<S, C>
              Box<T>
-             CaseWhen<CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
-             CaseWhen<CaseWhenConditionsLeaf<W, T>, ElseExpression<E>>
-             CaseWhen<CaseWhenConditionsLeaf<W, T>, NoElseExpression>
+             CaseWhen<..., ...>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
              Collate<T, C>
              Exists<T>
            and N others
    = note: required for `&str` to implement `diesel::Expression`
    = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::operators::Eq<int_primary_key::columns::id, &str>` to implement `diesel::Expression`
+   = note: required for `Eq<id, &str>` to implement `diesel::Expression`
    = note: required for `SelectStatement<FromClause<int_primary_key::table>>` to implement `FilterDsl<Grouped<Eq<id, &str>>>`
 
    
@@ -38,7 +38,7 @@ LL |     int_primary_key::table.find("1");
            and N others
    = note: required for `&str` to implement `ValidGrouping<()>`
    = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::operators::Eq<int_primary_key::columns::id, &str>` to implement `ValidGrouping<()>`
+   = note: required for `Eq<id, &str>` to implement `ValidGrouping<()>`
    = note: required for `Grouped<Eq<id, &str>>` to implement `NonAggregate`
    = note: required for `SelectStatement<FromClause<int_primary_key::table>>` to implement `FilterDsl<Grouped<Eq<id, &str>>>`
 
@@ -55,13 +55,13 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
               &T
               AliasedField<S, C>
               Box<T>
-              CaseWhen<CaseWhenConditionsIntermediateNode<W, T, Whens>, E>
-              CaseWhen<CaseWhenConditionsLeaf<W, T>, ElseExpression<E>>
-              CaseWhen<CaseWhenConditionsLeaf<W, T>, NoElseExpression>
+              CaseWhen<..., ...>
+              CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
+              CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
               Collate<T, C>
               Exists<T>
             and N others
-    = note: required for `diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>` to implement `diesel::Expression`
+    = note: required for `Eq<id, {integer}>` to implement `diesel::Expression`
 note: required for `string_primary_key::columns::id` to implement `EqAll<{integer}>`
    --> tests/fail/find_requires_correct_type.rs:13:9
     |
@@ -97,7 +97,7 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
               `(T, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
               `(T, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
             and N others
-    = note: required for `diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>` to implement `ValidGrouping<()>`
+    = note: required for `Eq<id, {integer}>` to implement `ValidGrouping<()>`
     = note: required for `Grouped<Eq<id, {integer}>>` to implement `NonAggregate`
     = note: required for `SelectStatement<FromClause<string_primary_key::table>>` to implement `FilterDsl<Grouped<Eq<id, {integer}>>>`
     = note: 1 redundant requirement hidden

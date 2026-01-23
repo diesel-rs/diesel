@@ -1,11 +1,12 @@
-error[E0277]: the trait bound `(Integer, Text, Nullable<Text>): CompatibleType<UserWithToFewFields, _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:58:54
      |
   LL |     let _ = users::table.load::<UserWithToFewFields>(conn);
-     |                          ----                        ^^^^ the trait `load_dsl::private::CompatibleType<UserWithToFewFields, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
+     |                          ----                        ^^^^ unsatisfied trait bound
      |                          |
      |                          required by a bound introduced by this call
      |
+     = help: the trait `load_dsl::private::CompatibleType<UserWithToFewFields, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
      = note: this is a mismatch between what your query returns and what your type expects the query to return
      = note: the fields in your struct need to match the fields returned by your query in count, order and type
      = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
@@ -31,14 +32,15 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: the trait bound `(Integer, Text, Nullable<Text>): CompatibleType<..., _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:61:55
      |
   LL |     let _ = users::table.load::<UserWithToManyFields>(conn);
-     |                          ----                         ^^^^ the trait `load_dsl::private::CompatibleType<UserWithToManyFields, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
+     |                          ----                         ^^^^ unsatisfied trait bound
      |                          |
      |                          required by a bound introduced by this call
      |
+     = help: the trait `load_dsl::private::CompatibleType<UserWithToManyFields, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
      = note: this is a mismatch between what your query returns and what your type expects the query to return
      = note: the fields in your struct need to match the fields returned by your query in count, order and type
      = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
@@ -64,14 +66,15 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: the trait bound `(Integer, Text, Nullable<Text>): CompatibleType<UserWrongOrder, _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:64:49
      |
   LL |     let _ = users::table.load::<UserWrongOrder>(conn);
-     |                          ----                   ^^^^ the trait `load_dsl::private::CompatibleType<UserWrongOrder, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
+     |                          ----                   ^^^^ unsatisfied trait bound
      |                          |
      |                          required by a bound introduced by this call
      |
+     = help: the trait `load_dsl::private::CompatibleType<UserWrongOrder, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
      = note: this is a mismatch between what your query returns and what your type expects the query to return
      = note: the fields in your struct need to match the fields returned by your query in count, order and type
      = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
@@ -97,14 +100,15 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: the trait bound `(Integer, Text, Nullable<Text>): CompatibleType<UserTypeMismatch, _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:67:51
      |
   LL |     let _ = users::table.load::<UserTypeMismatch>(conn);
-     |                          ----                     ^^^^ the trait `load_dsl::private::CompatibleType<UserTypeMismatch, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
+     |                          ----                     ^^^^ unsatisfied trait bound
      |                          |
      |                          required by a bound introduced by this call
      |
+     = help: the trait `load_dsl::private::CompatibleType<UserTypeMismatch, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
      = note: this is a mismatch between what your query returns and what your type expects the query to return
      = note: the fields in your struct need to match the fields returned by your query in count, order and type
      = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
@@ -130,14 +134,15 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: the trait bound `(Integer, Text, Nullable<Text>): CompatibleType<..., _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:70:59
      |
   LL |     let _ = users::table.load::<UserNullableTypeMismatch>(conn);
-     |                          ----                             ^^^^ the trait `load_dsl::private::CompatibleType<UserNullableTypeMismatch, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
+     |                          ----                             ^^^^ unsatisfied trait bound
      |                          |
      |                          required by a bound introduced by this call
      |
+     = help: the trait `load_dsl::private::CompatibleType<UserNullableTypeMismatch, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
      = note: this is a mismatch between what your query returns and what your type expects the query to return
      = note: the fields in your struct need to match the fields returned by your query in count, order and type
      = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 

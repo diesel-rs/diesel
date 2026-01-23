@@ -25,10 +25,10 @@ note: required for `columns::hair_color` to implement `AppearsOnTable<NoFromClau
      = note: 1 redundant requirement hidden
      = note: required for `&columns::hair_color` to implement `AppearsOnTable<NoFromClause>`
      = note: required for `ColumnInsertValue<columns::name, &columns::hair_color>` to implement `InsertValues<_, users::table>`
-     = note: required for `ValuesClause<ColumnInsertValue<name, &hair_color>, table>` to implement `QueryFragment<_>`
+     = note: required for `ValuesClause<ColumnInsertValue<name, &...>, ...>` to implement `QueryFragment<_>`
      = note: 1 redundant requirement hidden
-     = note: required for `InsertStatement<table, ValuesClause<ColumnInsertValue<name, ...>, ...>>` to implement `QueryFragment<_>`
-     = note: required for `InsertStatement<table, ValuesClause<ColumnInsertValue<name, ...>, ...>>` to implement `ExecuteDsl<_, _>`
+     = note: required for `InsertStatement<table, ValuesClause<..., ...>>` to implement `QueryFragment<_>`
+     = note: required for `InsertStatement<table, ValuesClause<..., ...>>` to implement `ExecuteDsl<_, _>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
