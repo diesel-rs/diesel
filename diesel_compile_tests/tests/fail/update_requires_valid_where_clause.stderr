@@ -1,24 +1,33 @@
 error[E0277]: the trait bound `SelectStatement<FromClause<table>, ..., ..., ...>: IntoUpdateTarget` is not satisfied
-  --> tests/fail/update_requires_valid_where_clause.rs:23:12
-   |
-LL |     update(users::table.filter(posts::id.eq(1)));
-   |     ------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `IntoUpdateTarget` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
-   |     |
-   |     required by a bound introduced by this call
-   |
-   = note: only tables or select statements with only the filter clause applied are valid update targets
-   = help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, DefaultSelectClause<...>, ..., ...>`
+   --> tests/fail/update_requires_valid_where_clause.rs:23:12
+    |
+ LL |     update(users::table.filter(posts::id.eq(1)));
+    |     ------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `IntoUpdateTarget` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
+    |     |
+    |     required by a bound introduced by this call
+    |
+    = note: only tables or select statements with only the filter clause applied are valid update targets
+help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, DefaultSelectClause<...>, ..., ...>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+    |
+LL | / impl<F, W> IntoUpdateTarget
+LL | |     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, NoDistinctClause, W>
+LL | | where
+LL | |     F: QuerySource,
+LL | |     Self: HasTable,
+LL | |     W: ValidWhereClause<F>,
+    | |___________________________^
 note: required by a bound in `diesel::update`
-  --> DIESEL/diesel/diesel/src/query_builder/functions.rs
-   |
-LL | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
-   |                  ^^^^^^^^^^^^^^^^ required by this bound in `update`
-
-   help: consider removing this method call, as the receiver has type `users::table` and `users::table: IntoUpdateTarget` trivially holds
-   |
-23 -     update(users::table.filter(posts::id.eq(1)));
-23 +     update(users::table);
-   |
+   --> DIESEL/diesel/diesel/src/query_builder/functions.rs
+    |
+ LL | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
+    |                  ^^^^^^^^^^^^^^^^ required by this bound in `update`
+ 
+    help: consider removing this method call, as the receiver has type `users::table` and `users::table: IntoUpdateTarget` trivially holds
+    |
+ 23 -     update(users::table.filter(posts::id.eq(1)));
+ 23 +     update(users::table);
+    |
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/update_requires_valid_where_clause.rs:27:26
@@ -57,10 +66,19 @@ LL |         id -> Integer,
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `SelectStatement<FromClause<table>, ..., ..., ...>: IntoUpdateTarget` is not satisfied
-  --> tests/fail/update_requires_valid_where_clause.rs:23:5
-   |
-LL |     update(users::table.filter(posts::id.eq(1)));
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `IntoUpdateTarget` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
-   |
-   = note: only tables or select statements with only the filter clause applied are valid update targets
-   = help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, DefaultSelectClause<...>, ..., ...>`
+   --> tests/fail/update_requires_valid_where_clause.rs:23:5
+    |
+ LL |     update(users::table.filter(posts::id.eq(1)));
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `IntoUpdateTarget` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
+    |
+    = note: only tables or select statements with only the filter clause applied are valid update targets
+help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, DefaultSelectClause<...>, ..., ...>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+    |
+LL | / impl<F, W> IntoUpdateTarget
+LL | |     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, NoDistinctClause, W>
+LL | | where
+LL | |     F: QuerySource,
+LL | |     Self: HasTable,
+LL | |     W: ValidWhereClause<F>,
+    | |___________________________^

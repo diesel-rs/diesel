@@ -1,14 +1,24 @@
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: DistinctOnDsl<_>` is not satisfied
-  --> tests/fail/reject_mixed_aggregates_via_distinct_on_clauses.rs:27:10
-   |
-LL |         .distinct_on(posts::id)
-   |          ^^^^^^^^^^^ the trait `DistinctOnDsl<_>` is not implemented for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>`
-   |
-   = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
-   = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
-   = help: the trait `DistinctOnDsl<Selection>` is implemented for `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>`
-
-   
+   --> tests/fail/reject_mixed_aggregates_via_distinct_on_clauses.rs:27:10
+    |
+ LL |         .distinct_on(posts::id)
+    |          ^^^^^^^^^^^ the trait `DistinctOnDsl<_>` is not implemented for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>`
+    |
+    = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
+    = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
+help: the trait `DistinctOnDsl<Selection>` is implemented for `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+LL | / impl<ST, F, S, D, W, O, LOf, G, H, Selection> DistinctOnDsl<Selection>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
+LL | | where
+LL | |     G: ValidGroupByClause,
+...   |
+LL | |     S: SelectClauseExpression<FromClause<F>>,
+LL | |     (Selection, S::Selection): ValidGrouping<G::Expressions>,
+    | |_____________________________________________________________^
+ 
+    
 error[E0282]: type annotations needed
   --> tests/fail/reject_mixed_aggregates_via_distinct_on_clauses.rs:24:13
    |
@@ -20,16 +30,33 @@ LL | |         .distinct_on(posts::id)
    | |_______________________________^ cannot infer type
 
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: SelectDsl<_>` is not satisfied
-  --> tests/fail/reject_mixed_aggregates_via_distinct_on_clauses.rs:36:10
-   |
-LL |         .select(posts::user_id)
-   |          ^^^^^^ the trait `SelectDsl<_>` is not implemented for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>`
-   |
-   = help: the following other types implement trait `SelectDsl<Selection>`:
-             SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
-             SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
-
-   
+   --> tests/fail/reject_mixed_aggregates_via_distinct_on_clauses.rs:36:10
+    |
+ LL |         .select(posts::user_id)
+    |          ^^^^^^ the trait `SelectDsl<_>` is not implemented for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>`
+    |
+help: the following other types implement trait `SelectDsl<Selection>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+    |
+LL | / impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
+LL | | where
+LL | |     G: ValidGroupByClause,
+...   |
+LL | |     SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: SelectQuery,
+LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    | |__________________________________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>`
+...
+LL | / impl<S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
+LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
+LL | | where
+LL | |     G: ValidGroupByClause,
+LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expressions>,
+LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: SelectQuery,
+LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    | |__________________________________________________________^ `SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>`
+ 
+    
 error[E0282]: type annotations needed
   --> tests/fail/reject_mixed_aggregates_via_distinct_on_clauses.rs:32:13
    |
@@ -52,9 +79,14 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
-    = help: the following other types implement trait `MixedAggregates<Other>`:
-              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
-              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
+help: the following other types implement trait `MixedAggregates<Other>`
+   --> DIESEL/diesel/diesel/src/expression/mod.rs
+    |
+LL |     impl MixedAggregates<No> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
+...
+LL |     impl MixedAggregates<Never> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `(user_id, count<Integer, id>)` to implement `ValidGrouping<()>`
     = note: required for `DistinctOnClause<columns::user_id>` to implement `ValidDistinctForGroupBy<count<Integer, id>, ()>`
     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `SelectDsl<count<Integer, id>>`
@@ -79,9 +111,14 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
-    = help: the following other types implement trait `MixedAggregates<Other>`:
-              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
-              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
+help: the following other types implement trait `MixedAggregates<Other>`
+   --> DIESEL/diesel/diesel/src/expression/mod.rs
+    |
+LL |     impl MixedAggregates<No> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
+...
+LL |     impl MixedAggregates<Never> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `(user_id, count<Integer, id>)` to implement `ValidGrouping<()>`
     = note: required for `SelectStatement<FromClause<table>, SelectClause<count<Integer, id>>>` to implement `DistinctOnDsl<columns::user_id>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
@@ -95,16 +132,33 @@ LL |         Self: methods::DistinctOnDsl<Expr>,
  
     
 error[E0277]: the trait bound `SelectStatement<FromClause<table>, ..., ...>: SelectDsl<...>` is not satisfied
-  --> tests/fail/reject_mixed_aggregates_via_distinct_on_clauses.rs:55:10
-   |
-LL |         .count()
-   |          ^^^^^ the trait `SelectDsl<CountStar>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>`
-   |
-   = help: the following other types implement trait `SelectDsl<Selection>`:
-             SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
-             SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
-
-   
+   --> tests/fail/reject_mixed_aggregates_via_distinct_on_clauses.rs:55:10
+    |
+ LL |         .count()
+    |          ^^^^^ the trait `SelectDsl<CountStar>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>`
+    |
+help: the following other types implement trait `SelectDsl<Selection>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+    |
+LL | / impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
+LL | | where
+LL | |     G: ValidGroupByClause,
+...   |
+LL | |     SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: SelectQuery,
+LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    | |__________________________________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>`
+...
+LL | / impl<S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
+LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
+LL | | where
+LL | |     G: ValidGroupByClause,
+LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expressions>,
+LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: SelectQuery,
+LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    | |__________________________________________________________^ `SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>`
+ 
+    
 error[E0282]: type annotations needed
   --> tests/fail/reject_mixed_aggregates_via_distinct_on_clauses.rs:52:13
    |
@@ -126,9 +180,14 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
-    = help: the following other types implement trait `MixedAggregates<Other>`:
-              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
-              `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
+help: the following other types implement trait `MixedAggregates<Other>`
+   --> DIESEL/diesel/diesel/src/expression/mod.rs
+    |
+LL |     impl MixedAggregates<No> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
+...
+LL |     impl MixedAggregates<Never> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `(columns::user_id, CountStar)` to implement `ValidGrouping<()>`
     = note: required for `SelectStatement<FromClause<table>, SelectClause<CountStar>>` to implement `DistinctOnDsl<columns::user_id>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`

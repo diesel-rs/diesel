@@ -1,4 +1,4 @@
-error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertStatement<table, ...>, ...>`, but its trait bounds were not satisfied
+error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertStatement<table, ValuesClause<..., ...>>, ...>`, but its trait bounds were not satisfied
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:44:10
     |
  LL | /     insert_into(users)

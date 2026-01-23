@@ -8,11 +8,27 @@ LL |     let _ = users::table.order_by(users::id).distinct_on(users::name);
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<columns::id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
-    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              diesel::query_builder::order_clause::OrderClause<(T,)>
-              diesel::query_builder::order_clause::OrderClause<T>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>
+help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Expression {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<T>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Asc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Desc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>`
     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ...>` to implement `DistinctOnDsl<columns::name>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
@@ -34,11 +50,27 @@ LL |         .distinct_on(users::name);
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
-    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              diesel::query_builder::order_clause::OrderClause<(T,)>
-              diesel::query_builder::order_clause::OrderClause<T>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>
+help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Expression {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<T>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Asc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Desc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>`
     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ...>` to implement `DistinctOnDsl<columns::name>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
@@ -60,11 +92,27 @@ LL |         .distinct_on(users::name);
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
-    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              diesel::query_builder::order_clause::OrderClause<(T,)>
-              diesel::query_builder::order_clause::OrderClause<T>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>
+help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Expression {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<T>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Asc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Desc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>`
     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ...>` to implement `DistinctOnDsl<columns::name>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
@@ -86,11 +134,27 @@ LL |     let _ = users::table.distinct_on(users::name).order_by(users::id);
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<columns::id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
-    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              diesel::query_builder::order_clause::OrderClause<(T,)>
-              diesel::query_builder::order_clause::OrderClause<T>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>
+help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Expression {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<T>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Asc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Desc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>`
     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `OrderDsl<columns::id>`
 note: required by a bound in `order_by`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
@@ -112,11 +176,27 @@ LL |         .distinct_on(users::name)
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<columns::id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
-    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              diesel::query_builder::order_clause::OrderClause<(T,)>
-              diesel::query_builder::order_clause::OrderClause<T>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>
+help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Expression {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<T>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Asc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Desc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>`
     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ...>` to implement `DistinctOnDsl<columns::name>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
@@ -138,11 +218,27 @@ LL |         .distinct_on(users::name)
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
-    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              diesel::query_builder::order_clause::OrderClause<(T,)>
-              diesel::query_builder::order_clause::OrderClause<T>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>
+help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Expression {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<T>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Asc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Desc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>`
     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ...>` to implement `DistinctOnDsl<columns::name>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
@@ -164,11 +260,27 @@ LL |         .distinct_on((users::name, users::id))
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(columns::name, columns::id)>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
-    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              diesel::query_builder::order_clause::OrderClause<(T,)>
-              diesel::query_builder::order_clause::OrderClause<T>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>
+help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Expression {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<T>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Asc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Desc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>`
     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ...>` to implement `DistinctOnDsl<(columns::name, columns::id)>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
@@ -190,11 +302,27 @@ LL |         .distinct_on((users::name, users::id))
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(columns::name, columns::id)>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<columns::id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
-    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              diesel::query_builder::order_clause::OrderClause<(T,)>
-              diesel::query_builder::order_clause::OrderClause<T>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>
+help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Expression {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<T>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Asc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Desc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>`
     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ...>` to implement `DistinctOnDsl<(columns::name, columns::id)>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
@@ -216,11 +344,27 @@ LL |         .distinct_on(users::name)
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
-    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              diesel::query_builder::order_clause::OrderClause<(T,)>
-              diesel::query_builder::order_clause::OrderClause<T>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>
+help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Expression {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<T>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Asc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Desc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>`
     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ...>` to implement `DistinctOnDsl<columns::name>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
@@ -242,11 +386,27 @@ LL |         .order_by(users::id)
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<columns::id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
-    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              diesel::query_builder::order_clause::OrderClause<(T,)>
-              diesel::query_builder::order_clause::OrderClause<T>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>
-              diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>
+help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
+ LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Expression {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<T>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Asc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>>`
+...
+ LL | / impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+ LL | |     for OrderClause<crate::expression::operators::Desc<T>>
+ LL | | where
+ LL | |     T: crate::Expression,
+ LL | |     T::SqlType: SingleValue,
+    | |____________________________^ `diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>>`
     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ...>` to implement `OrderDsl<columns::id>`
 note: required by a bound in `order_by`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
