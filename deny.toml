@@ -1,0 +1,32 @@
+[licenses]
+# We have to be careful on this part since we set 'unlicensed' to be allowed in order to minimize the output
+# (Only show unallowed licenses as error)
+#unlicensed = "allow"
+confidence-threshold = 0.90
+allow = [
+    "Apache-2.0",
+    "MIT",
+    "PostgreSQL",
+    "Apache-2.0 WITH LLVM-exception",
+    "Unicode-3.0",
+    "BSD-3-Clause",
+    "GPL-2.0-only",
+    "MPL-2.0",
+    "Zlib",
+]
+# ignore private packages
+private = { ignore = true }
+
+[bans]
+multiple-versions = "deny"
+skip-tree = [
+    "windows-targets",
+    "windows-sys",
+    "wasi",
+    "rand",
+]
+
+[bans.build]
+executables = "deny"
+#interpreted = "deny"
+#include-archives = true
