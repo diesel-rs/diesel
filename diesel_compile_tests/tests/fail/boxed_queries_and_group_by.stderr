@@ -112,11 +112,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-<<<<<<< HEAD
-error[E0277]: the trait bound `BoxedSelectStatement<'_, Text, FromClause<table>, _, name>: Table` is not satisfied
-=======
-error[E0277]: the trait bound `BoxedSelectStatement<'_, ..., ..., _, ...>: QueryRelation` is not satisfied
->>>>>>> be8ddc334cf (Fix the with of the diagnostics to get reproducible results everywhere)
+error[E0277]: the trait bound `BoxedSelectStatement<'_, Text, ..., _, ...>: Table` is not satisfied
   --> tests/fail/boxed_queries_and_group_by.rs:77:10
    |
 LL |         .inner_join(posts::table)
@@ -129,14 +125,8 @@ LL |         .inner_join(posts::table)
              pg::metadata_lookup::pg_type::table
              posts::table
              users::table
-<<<<<<< HEAD
-   = note: required for `BoxedSelectStatement<'_, Text, FromClause<table>, _, name>` to implement `JoinTo<query_source::joins::OnClauseWrapper<_, _>>`
-   = note: required for `BoxedSelectStatement<'_, Text, FromClause<table>, _, name>` to implement `JoinWithImplicitOnClause<query_source::joins::OnClauseWrapper<_, _>, Inner>`
-=======
-   = note: required for `BoxedSelectStatement<'_, Text, ..., _, ...>` to implement `QueryRelation`
    = note: required for `BoxedSelectStatement<'_, Text, ..., _, ...>` to implement `JoinTo<query_source::joins::OnClauseWrapper<_, _>>`
    = note: required for `BoxedSelectStatement<'_, Text, ..., _, ...>` to implement `JoinWithImplicitOnClause<OnClauseWrapper<_, _>, ...>`
->>>>>>> be8ddc334cf (Fix the with of the diagnostics to get reproducible results everywhere)
 
    
 error[E0308]: mismatched types
@@ -205,27 +195,7 @@ LL | |     <Self as AsQuery>::Query: GroupByDsl<Expr>,
     | |_______________________________________________^ `Alias<S>`
  
     
-<<<<<<< HEAD
-error[E0277]: the trait bound `BoxedSelectStatement<'_, (Integer, Text), FromClause<table>, _>: Table` is not satisfied
-=======
-error[E0277]: the trait bound `SelectStatement<FromClause<...>>: GroupByDsl<_>` is not satisfied
-   --> tests/fail/boxed_queries_and_group_by.rs:92:10
-    |
- LL |         .group_by(users::id)
-    |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<...>>`
-    |
-help: the trait `GroupByDsl<Expr>` is implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
-    |
-LL | / impl<F, S, D, W, O, LOf, G, H, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, ...
-LL | | where
-LL | |     SelectStatement<F, S, D, W, O, LOf, GroupByClause<Expr>, H>: SelectQuery,
-LL | |     Expr: Expression + AppearsOnTable<F>,
-    | |_________________________________________^
- 
-    
-error[E0277]: the trait bound `BoxedSelectStatement<'_, ..., ..., _>: QueryRelation` is not satisfied
->>>>>>> be8ddc334cf (Fix the with of the diagnostics to get reproducible results everywhere)
+error[E0277]: the trait bound `BoxedSelectStatement<'_, ..., ..., _>: Table` is not satisfied
    --> tests/fail/boxed_queries_and_group_by.rs:92:10
     |
  LL |         .group_by(users::id)
@@ -256,12 +226,12 @@ error[E0277]: the trait bound `SelectStatement<FromClause<...>>: GroupByDsl<_>` 
    --> tests/fail/boxed_queries_and_group_by.rs:92:10
     |
  LL |         .group_by(users::id)
-    |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<BoxedSelectStatement<'_, ..., ..., _>>>`
+    |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<...>>`
     |
 help: the trait `GroupByDsl<Expr>` is implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`
    --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
-LL | / impl<F, S, D, W, O, LOf, G, H, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, LOf, G, H>
+LL | / impl<F, S, D, W, O, LOf, G, H, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, ...
 LL | | where
 LL | |     SelectStatement<F, S, D, W, O, LOf, GroupByClause<Expr>, H>: SelectQuery,
 LL | |     Expr: Expression + AppearsOnTable<F>,
