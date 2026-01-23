@@ -12,6 +12,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.3.6] 2025-01-23
+
+* Added support for mysqlclient-sys 0.5.0
+* Fix generating valid schema if a column is named `table`
+* Fixed a regression with `#[derive(Insertable)]` if the same field type is used with different lifetime values
+
 ## [2.3.5] 2025-12-19
 
 * Fix another libmariadb related issue with time types
@@ -2310,3 +2316,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.3]: https://github.com/diesel-rs/diesel/compare/v2.3.2...v2.3.3
 [2.3.4]: https://github.com/diesel-rs/diesel/compare/v2.3.3...v2.3.4
 [2.3.5]: https://github.com/diesel-rs/diesel/compare/v2.3.4...v2.3.5
+[2.3.6]: https://github.com/diesel-rs/diesel/compare/v2.3.5...v2.3.6

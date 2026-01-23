@@ -21,9 +21,11 @@ jobs:
         backend: ["postgres", "sqlite", "mysql"]
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
       - name: cache
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
         with:
           key: metrics-${{matrix.backend}}-cargo-${{ hashFiles('diesel_bench/Cargo.toml')}}
       - name: Install postgres (Linux)
@@ -64,7 +66,9 @@ jobs:
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'127.0.0.1';" -uroot -proot
           echo 'DATABASE_URL=mysql://root:root@127.0.0.1/diesel_test' >> $GITHUB_ENV
       - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
+        with:
+          toolchain: stable
       - name: Run Benchmarks (Postgres)
         if: matrix.backend == 'postgres'
         run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "postgres sqlx-bench sqlx/postgres rand_chacha rust_postgres tokio_postgres futures futures-util sea-orm sea-orm/sqlx-postgres criterion/async_tokio serde diesel-async diesel-async/postgres wtx wtx/postgres"
