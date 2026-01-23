@@ -6,7 +6,7 @@ extern crate libsqlite3_sys as ffi;
 use sqlite_wasm_rs as ffi;
 
 use std::ffi::{CString, NulError};
-use std::io::{stderr, Write};
+use std::io::{Write, stderr};
 use std::os::raw as libc;
 use std::ptr::NonNull;
 use std::{mem, ptr, slice, str};
@@ -24,7 +24,7 @@ use crate::sql_types::HasSqlType;
 /// For use in FFI function, which cannot unwind.
 /// Print the message, ask to open an issue at Github and [`abort`](std::process::abort).
 macro_rules! assert_fail {
-    ($fmt:expr $(,$args:tt)*) => {
+    ($fmt:expr_2021 $(,$args:tt)*) => {
         eprint!(concat!(
             $fmt,
             "If you see this message, please open an issue at https://github.com/diesel-rs/diesel/issues/new.\n",

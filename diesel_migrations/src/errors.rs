@@ -109,7 +109,10 @@ impl fmt::Display for RunMigrationsError {
                 if let diesel::result::Error::DatabaseError(_, error_info) = err {
                     let message = error_info.message();
                     if message.ends_with("cannot run inside a transaction block") {
-                        write!(f, " (see https://docs.diesel.rs/master/diesel_migrations/struct.FileBasedMigrations.html#transactions)")?;
+                        write!(
+                            f,
+                            " (see https://docs.diesel.rs/master/diesel_migrations/struct.FileBasedMigrations.html#transactions)"
+                        )?;
                     }
                 }
 

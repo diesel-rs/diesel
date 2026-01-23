@@ -1,5 +1,5 @@
-use super::expand_with;
 use super::FunctionMacro;
+use super::expand_with;
 
 #[test]
 pub(crate) fn table_1() {

@@ -1,7 +1,7 @@
 use diesel_table_macro_syntax::{ColumnDef, TableDecl};
 use proc_macro2::{Span, TokenStream};
-use syn::parse_quote;
 use syn::Ident;
+use syn::parse_quote;
 
 const DEFAULT_PRIMARY_KEY_NAME: &str = "id";
 
@@ -25,7 +25,7 @@ pub fn query_source_macro(
     kind: QuerySourceMacroKind,
 ) -> proc_macro2::TokenStream {
     // include the input in the error output so that rust-analyzer is happy
-    let res = match syn::parse2::<TableDecl>(tokenstream2.clone()) {
+    match syn::parse2::<TableDecl>(tokenstream2.clone()) {
         Ok(input) => {
             if input.view.column_defs.len() > super::diesel_for_each_tuple::MAX_TUPLE_SIZE as usize
             {
@@ -71,8 +71,7 @@ pub fn query_source_macro(
                 #tokenstream2
             }
         }
-    };
-    res
+    }
 }
 
 fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {

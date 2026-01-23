@@ -1,6 +1,6 @@
+use crate::expression::Expression;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::RetrieveAsTextJson;
-use crate::expression::Expression;
 use crate::sql_types::SqlType;
 
 /// PostgreSQL specific methods present on JSON and JSONB expressions.
@@ -127,9 +127,9 @@ where
 
 pub(crate) mod private {
     use super::JsonIndex;
+    use crate::Expression;
     use crate::expression::IntoSql;
     use crate::sql_types::{Integer, Json, Jsonb, Nullable, Text};
-    use crate::Expression;
 
     pub trait Sealed {}
 

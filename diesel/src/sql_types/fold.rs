@@ -1,4 +1,4 @@
-use crate::sql_types::{self, is_nullable, SingleValue, SqlType};
+use crate::sql_types::{self, SingleValue, SqlType, is_nullable};
 
 /// Represents SQL types which can be used with `SUM` and `AVG`
 pub trait Foldable: SingleValue {

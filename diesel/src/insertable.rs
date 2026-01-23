@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::backend::{sql_dialect, Backend, DieselReserveSpecialization, SqlDialect};
+use crate::backend::{Backend, DieselReserveSpecialization, SqlDialect, sql_dialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::{AppearsOnTable, Expression};
 use crate::query_builder::{

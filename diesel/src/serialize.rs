@@ -6,8 +6,8 @@ use std::io::{self, Write};
 use std::result;
 
 use crate::backend::Backend;
-use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::BindCollector;
+use crate::query_builder::bind_collector::RawBytesBindCollector;
 
 #[doc(inline)]
 #[cfg(feature = "postgres_backend")]

@@ -41,19 +41,19 @@ macro_rules! err {
     () => {
         Err("invalid network address format".into())
     };
-    ($msg:expr) => {
+    ($msg:expr_2021) => {
         Err(format!("invalid network address format. {}", $msg).into())
     };
 }
 
 macro_rules! assert_or_error {
-    ($cond:expr) => {
+    ($cond:expr_2021) => {
         if !$cond {
             return err!();
         }
     };
 
-    ($cond:expr, $msg:expr) => {
+    ($cond:expr_2021, $msg:expr_2021) => {
         if !$cond {
             return err!($msg);
         }
@@ -61,7 +61,7 @@ macro_rules! assert_or_error {
 }
 
 macro_rules! impl_Sql {
-    ($ty: ty, $net_type: expr) => {
+    ($ty: ty, $net_type: expr_2021) => {
         #[cfg(all(feature = "postgres_backend", feature = "network-address"))]
         impl FromSql<$ty, Pg> for IpNetwork {
             fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {

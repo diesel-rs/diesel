@@ -1,6 +1,6 @@
 use crate::dsl::{AsExpr, AsExprOf, SqlTypeOf};
-use crate::expression::grouped::Grouped;
 use crate::expression::Expression;
+use crate::expression::grouped::Grouped;
 use crate::expression_methods::JsonIndex;
 use crate::pg::expression::expression_methods::private::JsonRemoveIndex;
 use crate::pg::types::sql_types::Array;

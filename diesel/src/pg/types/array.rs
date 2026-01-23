@@ -58,8 +58,8 @@ where
     }
 }
 
-use crate::expression::bound::Bound;
 use crate::expression::AsExpression;
+use crate::expression::bound::Bound;
 
 macro_rules! array_as_expression {
     ($ty:ty, $sql_type:ty) => {

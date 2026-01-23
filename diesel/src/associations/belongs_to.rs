@@ -1,7 +1,7 @@
 use super::HasTable;
 use crate::dsl::{Eq, EqAny, Filter, FindBy};
-use crate::expression::array_comparison::AsInExpression;
 use crate::expression::AsExpression;
+use crate::expression::array_comparison::AsInExpression;
 use crate::prelude::*;
 use crate::query_dsl::methods::FilterDsl;
 use crate::sql_types::SqlType;

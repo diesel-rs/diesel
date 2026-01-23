@@ -10,6 +10,7 @@ use self::cursor::*;
 use self::private::{ConnectionAndTransactionManager, CopyFromWrapper, QueryFragmentHelper};
 use self::raw::{PgTransactionStatus, RawConnection};
 use self::stmt::Statement;
+use crate::RunQueryDsl;
 use crate::connection::instrumentation::{DynInstrumentation, Instrumentation, StrQueryHelper};
 use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
@@ -22,7 +23,6 @@ use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::ConnectionError::CouldntSetupConfiguration;
 use crate::result::*;
-use crate::RunQueryDsl;
 use std::ffi::CString;
 use std::fmt::Debug;
 use std::os::raw as libc;
@@ -556,17 +556,15 @@ impl PgConnection {
                 Statement::prepare,
                 &mut *connection_and_transaction_manager.instrumentation,
             );
-            if !execute_returning_count {
-                if let Err(ref e) = query {
-                    source.instrumentation(&mut |query| {
-                        connection_and_transaction_manager
-                            .instrumentation
-                            .on_connection_event(InstrumentationEvent::FinishQuery {
-                                query,
-                                error: Some(e),
-                            });
-                    });
-                }
+            if !execute_returning_count && let Err(ref e) = query {
+                source.instrumentation(&mut |query| {
+                    connection_and_transaction_manager
+                        .instrumentation
+                        .on_connection_event(InstrumentationEvent::FinishQuery {
+                            query,
+                            error: Some(e),
+                        });
+                });
             }
             Ok((binds, query))
         }
@@ -901,9 +899,9 @@ mod tests {
 
     #[diesel_test_helper::test]
     fn transaction_manager_returns_an_error_when_attempting_to_commit_outside_of_a_transaction() {
+        use crate::PgConnection;
         use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::result::Error;
-        use crate::PgConnection;
 
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
@@ -918,9 +916,9 @@ mod tests {
 
     #[diesel_test_helper::test]
     fn transaction_manager_returns_an_error_when_attempting_to_rollback_outside_of_a_transaction() {
+        use crate::PgConnection;
         use crate::connection::{AnsiTransactionManager, TransactionManager};
         use crate::result::Error;
-        use crate::PgConnection;
 
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(

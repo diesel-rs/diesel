@@ -2,8 +2,8 @@ use std::process::{Command, Stdio};
 
 use cargo_metadata::MetadataCommand;
 
-use crate::clippy::ClippyArgs;
 use crate::Backend;
+use crate::clippy::ClippyArgs;
 
 #[derive(Debug, clap::Args)]
 pub struct TidyArgs {

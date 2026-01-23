@@ -4,10 +4,11 @@ mod stmt;
 mod url;
 
 use self::raw::RawConnection;
-use self::stmt::iterator::StatementIterator;
 use self::stmt::Statement;
+use self::stmt::iterator::StatementIterator;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
+use crate::RunQueryDsl;
 use crate::connection::instrumentation::{DebugQuery, DynInstrumentation, StrQueryHelper};
 use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
@@ -15,7 +16,6 @@ use crate::expression::QueryMetadata;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::*;
-use crate::RunQueryDsl;
 
 #[cfg(feature = "mysql")]
 #[allow(missing_debug_implementations, missing_copy_implementations)]

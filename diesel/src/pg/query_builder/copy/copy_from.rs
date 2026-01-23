@@ -7,21 +7,21 @@ use byteorder::WriteBytesExt;
 use super::CommonOptions;
 use super::CopyFormat;
 use super::CopyTarget;
+use crate::Connection;
+use crate::Insertable;
+use crate::QueryResult;
 use crate::expression::bound::Bound;
 use crate::insertable::ColumnInsertValue;
-use crate::pg::backend::FailedToLookupTypeError;
-use crate::pg::metadata_lookup::PgMetadataCacheKey;
 use crate::pg::Pg;
 use crate::pg::PgMetadataLookup;
+use crate::pg::backend::FailedToLookupTypeError;
+use crate::pg::metadata_lookup::PgMetadataCacheKey;
 use crate::query_builder::BatchInsert;
 use crate::query_builder::QueryFragment;
 use crate::query_builder::QueryId;
 use crate::query_builder::ValuesClause;
 use crate::serialize::IsNull;
 use crate::serialize::ToSql;
-use crate::Connection;
-use crate::Insertable;
-use crate::QueryResult;
 use crate::{Column, Table};
 
 /// Describes the different possible settings for the `HEADER` option

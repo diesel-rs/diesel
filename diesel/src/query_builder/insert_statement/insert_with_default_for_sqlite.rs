@@ -5,7 +5,7 @@ use crate::prelude::*;
 use crate::query_builder::upsert::on_conflict_clause::OnConflictValues;
 use crate::query_builder::{AstPass, QueryId, ValuesClause};
 use crate::query_builder::{DebugQuery, QueryFragment};
-use crate::query_dsl::{methods::ExecuteDsl, LoadQuery};
+use crate::query_dsl::{LoadQuery, methods::ExecuteDsl};
 use crate::sqlite::Sqlite;
 use std::fmt::{self, Debug, Display};
 

@@ -1,8 +1,8 @@
 use super::ValuesClause;
-use crate::backend::{sql_dialect, Backend, SqlDialect};
+use crate::QueryResult;
+use crate::backend::{Backend, SqlDialect, sql_dialect};
 use crate::insertable::CanInsertInSingleQuery;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
-use crate::QueryResult;
 use std::marker::PhantomData;
 
 /// This type represents a batch insert clause, which allows

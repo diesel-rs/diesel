@@ -1,3 +1,5 @@
+#[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
+use crate::Table;
 use crate::associations::HasTable;
 #[cfg(any(feature = "sqlite", feature = "mysql"))]
 use crate::associations::Identifiable;
@@ -7,15 +9,13 @@ use crate::dsl::Find;
 #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
 use crate::dsl::Update;
 #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
-use crate::expression::{is_aggregate, MixedAggregates, ValidGrouping};
+use crate::expression::{MixedAggregates, ValidGrouping, is_aggregate};
 use crate::query_builder::{AsChangeset, IntoUpdateTarget};
 #[cfg(any(feature = "sqlite", feature = "mysql"))]
 use crate::query_dsl::methods::{ExecuteDsl, FindDsl};
 #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
 use crate::query_dsl::{LoadQuery, RunQueryDsl};
 use crate::result::QueryResult;
-#[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
-use crate::Table;
 
 /// A trait defining how to update a record and fetch the updated entry
 /// on a certain backend.

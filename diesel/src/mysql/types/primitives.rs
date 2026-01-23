@@ -1,8 +1,8 @@
+use crate::Queryable;
 use crate::deserialize::{self, FromSql};
 use crate::mysql::{Mysql, MysqlValue, NumericRepresentation};
 use crate::result::Error::DeserializationError;
 use crate::sql_types::{BigInt, Binary, Double, Float, Integer, SmallInt, Text};
-use crate::Queryable;
 use std::error::Error;
 use std::str::{self, FromStr};
 

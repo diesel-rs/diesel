@@ -10,9 +10,9 @@
 
 use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::dsl::AsExprOf;
-use crate::expression::subselect::ValidSubselect;
 use crate::expression::IntoSql;
 use crate::expression::NonAggregate;
+use crate::expression::subselect::ValidSubselect;
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::limit_clause::{LimitClause, NoLimitClause};
 use crate::query_builder::limit_offset_clause::LimitOffsetClause;

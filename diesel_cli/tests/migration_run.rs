@@ -1,7 +1,7 @@
 use crate::support::{database, project};
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;
-use diesel::{select, RunQueryDsl};
+use diesel::{RunQueryDsl, select};
 use std::path::Path;
 
 #[test]
@@ -134,9 +134,11 @@ fn error_migrations_fails() {
     let result = p.command("migration").arg("run").run();
 
     assert!(!result.is_success());
-    assert!(result
-        .stderr()
-        .contains("Failed to run run_error_migrations_fails with: "));
+    assert!(
+        result
+            .stderr()
+            .contains("Failed to run run_error_migrations_fails with: ")
+    );
 }
 
 #[test]

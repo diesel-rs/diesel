@@ -5,7 +5,7 @@ use super::{Alias, AliasSource};
 use crate::backend::Backend;
 use crate::dsl;
 use crate::expression::{
-    is_aggregate, AppearsOnTable, AsExpression, Expression, SelectableExpression, ValidGrouping,
+    AppearsOnTable, AsExpression, Expression, SelectableExpression, ValidGrouping, is_aggregate,
 };
 use crate::expression_methods::{EqAll, ExpressionMethods};
 use crate::query_builder::{AstPass, FromClause, QueryFragment, QueryId, SelectStatement};

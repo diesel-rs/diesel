@@ -529,8 +529,8 @@ where
 mod test {
     // Mock connection.
     mod mock {
-        use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::Instrumentation;
+        use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::{
             Connection, ConnectionSealed, SimpleConnection, TransactionManager,
         };
@@ -613,10 +613,10 @@ mod test {
     #[diesel_test_helper::test]
     #[cfg(feature = "postgres")]
     fn transaction_manager_returns_an_error_when_attempting_to_commit_outside_of_a_transaction() {
+        use crate::PgConnection;
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
         use crate::result::Error;
-        use crate::PgConnection;
 
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
@@ -632,10 +632,10 @@ mod test {
     #[diesel_test_helper::test]
     #[cfg(feature = "postgres")]
     fn transaction_manager_returns_an_error_when_attempting_to_rollback_outside_of_a_transaction() {
+        use crate::PgConnection;
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
         use crate::result::Error;
-        use crate::PgConnection;
 
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
@@ -650,9 +650,9 @@ mod test {
 
     #[diesel_test_helper::test]
     fn transaction_manager_enters_broken_state_when_connection_is_broken() {
+        use crate::connection::TransactionManagerStatus;
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
-        use crate::connection::TransactionManagerStatus;
         use crate::result::{DatabaseErrorKind, Error};
         use crate::*;
 
@@ -913,7 +913,11 @@ mod test {
             .collect::<Vec<_>>();
         let second_trans_result =
             conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
-        assert!(second_trans_result.is_ok(), "Expected the main connection to have been rolled back or committed, but second transaction exited with {:?}", second_trans_result);
+        assert!(
+            second_trans_result.is_ok(),
+            "Expected the main connection to have been rolled back or committed, but second transaction exited with {:?}",
+            second_trans_result
+        );
 
         let mut results = threads
             .into_iter()
@@ -1022,7 +1026,11 @@ mod test {
             .collect::<Vec<_>>();
         let second_trans_result =
             conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
-        assert!(second_trans_result.is_ok(), "Expected the main connection to have been rolled back or committed, but second transaction exited with {:?}", second_trans_result);
+        assert!(
+            second_trans_result.is_ok(),
+            "Expected the main connection to have been rolled back or committed, but second transaction exited with {:?}",
+            second_trans_result
+        );
 
         let mut results = threads
             .into_iter()

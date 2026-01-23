@@ -4,8 +4,8 @@ use std::error::Error;
 use std::io::Write;
 
 use crate::deserialize::{self, Defaultable, FromSql, Queryable};
-use crate::expression::bound::Bound as SqlBound;
 use crate::expression::AsExpression;
+use crate::expression::bound::Bound as SqlBound;
 use crate::pg::{Pg, PgTypeMetadata, PgValue};
 use crate::query_builder::bind_collector::ByteWrapper;
 use crate::serialize::{self, IsNull, Output, ToSql};

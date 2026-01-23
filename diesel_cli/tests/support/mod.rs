@@ -30,7 +30,7 @@ mod postgres_database;
 #[cfg(rustfmt)]
 mod sqlite_database;
 
-pub use self::project_builder::{project, Project};
+pub use self::project_builder::{Project, project};
 
 pub fn database(url: &str) -> database::Database {
     database::Database::new(url)

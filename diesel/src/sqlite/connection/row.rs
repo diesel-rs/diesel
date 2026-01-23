@@ -352,11 +352,11 @@ mod tests {
     #[cfg(feature = "returning_clauses_for_sqlite_3_35")]
     #[allow(clippy::cast_sign_loss)]
     fn parallel_iter_with_error() {
+        use crate::SqliteConnection;
         use crate::connection::Connection;
         use crate::connection::LoadConnection;
         use crate::connection::SimpleConnection;
         use crate::expression_methods::ExpressionMethods;
-        use crate::SqliteConnection;
         use std::sync::{Arc, Barrier};
         use std::time::Duration;
 

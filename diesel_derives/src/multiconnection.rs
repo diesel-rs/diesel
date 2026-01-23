@@ -789,7 +789,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            Self::#ident(ref mut bc) => {
+            Self::#ident(bc) => {
                 let out = out.inner.expect("This inner value is set via our custom `ToSql` impls");
                 let callback = out.push_bound_value_to_collector;
                 let value = out.value;
@@ -809,7 +809,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         .map(|c| {
             let ident = c.name;
             quote::quote! {
-                (Self::#ident(ref mut bc), super::backend::MultiTypeMetadata{ #ident: Some(metadata), .. }) => {
+                (Self::#ident(bc), super::backend::MultiTypeMetadata{ #ident: Some(metadata), .. }) => {
                     bc.push_null_value(metadata)?;
                 }
             }
@@ -1375,10 +1375,10 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
                 &'b self,
                 mut pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
             ) -> diesel::QueryResult<()> {
-                if let Some(ref limit) = self.limit {
+                if let Some(limit) = &self.limit {
                     limit.walk_ast(pass.reborrow())?;
                 }
-                if let Some(ref offset) = self.offset {
+                if let Some(offset) = &self.offset {
                     offset.walk_ast(pass.reborrow())?;
                 }
                 Ok(())

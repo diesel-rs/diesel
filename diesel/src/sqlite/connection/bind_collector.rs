@@ -1,8 +1,8 @@
+use crate::QueryResult;
 use crate::query_builder::{BindCollector, MoveableBindCollector};
 use crate::serialize::{IsNull, Output};
 use crate::sql_types::HasSqlType;
 use crate::sqlite::{Sqlite, SqliteType};
-use crate::QueryResult;
 #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 use libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]

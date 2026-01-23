@@ -5,8 +5,8 @@ mod bigdecimal {
     use crate::deserialize::{self, FromSql};
     use crate::serialize::{self, IsNull, Output, ToSql};
     use crate::sql_types::{Double, Numeric};
-    use crate::sqlite::connection::SqliteValue;
     use crate::sqlite::Sqlite;
+    use crate::sqlite::connection::SqliteValue;
 
     #[cfg(all(feature = "sqlite", feature = "numeric"))]
     impl ToSql<Numeric, Sqlite> for BigDecimal {

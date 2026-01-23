@@ -8,17 +8,17 @@ pub(in crate::pg) use self::private::{
 };
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
+use crate::EscapeExpressionMethods;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::{Asc, Concat, Desc, Like, NotLike};
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
-use crate::expression_methods::json_expression_methods::private::JsonOrNullableJsonOrJsonbOrNullableJsonb;
-use crate::expression_methods::json_expression_methods::JsonIndex;
 use crate::expression_methods::AnyJsonExpressionMethods;
+use crate::expression_methods::json_expression_methods::JsonIndex;
+use crate::expression_methods::json_expression_methods::private::JsonOrNullableJsonOrJsonbOrNullableJsonb;
 use crate::pg::expression::expression_methods::private::BinaryOrNullableBinary;
 use crate::pg::expression::operators::RetrieveAsObjectJson;
 use crate::sql_types::{Array, Inet, Integer, Range, SqlType, Text, VarChar};
-use crate::EscapeExpressionMethods;
 
 /// PostgreSQL specific methods which are present on all expressions.
 #[cfg(feature = "postgres_backend")]

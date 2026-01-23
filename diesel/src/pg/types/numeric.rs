@@ -53,7 +53,7 @@ mod bigdecimal {
                     ref digits,
                 } => (Sign::Minus, weight, scale, digits),
                 PgNumeric::NaN => {
-                    return Err(Box::from("NaN is not (yet) supported in BigDecimal"))
+                    return Err(Box::from("NaN is not (yet) supported in BigDecimal"));
                 }
             };
 
