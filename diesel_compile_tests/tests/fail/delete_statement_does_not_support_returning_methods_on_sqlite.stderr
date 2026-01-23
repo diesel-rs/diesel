@@ -8,14 +8,35 @@ error[E0277]: `ReturningClause<(columns::id, columns::name)>` is no valid SQL fr
      |
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
-     = help: the following other types implement trait `QueryFragment<DB, SP>`:
-               `ReturningClause<Expr>` implements `QueryFragment<DB, PgLikeReturningClause>`
-               `ReturningClause<Expr>` implements `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
-               `ReturningClause<Expr>` implements `QueryFragment<DB>`
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/query_builder/returning_clause.rs
+     |
+  LL | / impl<Expr, DB> QueryFragment<DB> for ReturningClause<Expr>
+  LL | | where
+  LL | |     DB: Backend,
+  LL | |     Self: QueryFragment<DB, DB::ReturningClause>,
+     | |_________________________________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB>`
+...
+  LL | / impl<Expr, DB>
+  LL | |     QueryFragment<DB, crate::backend::sql_dialect::returning_clause::PgLikeReturningClause>
+  LL | |     for ReturningClause<Expr>
+  LL | | where
+...    |
+  LL | |     >,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, PgLikeReturningClause>`
+     |
+    ::: DIESEL/diesel/diesel/src/sqlite/query_builder/returning.rs
+     |
+   LL | / impl<Expr, DB> QueryFragment<DB, SqliteReturningClause> for ReturningClause<Expr>
+   LL | | where
+   LL | |     DB: Backend<ReturningClause = SqliteReturningClause>,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
      = note: required for `ReturningClause<(columns::id, columns::name)>` to implement `QueryFragment<Sqlite>`
      = note: 1 redundant requirement hidden
      = note: required for `DeleteStatement<table, WhereClause<Grouped<Eq<name, ...>>>, ...>` to implement `QueryFragment<Sqlite>`
-     = note: required for `DeleteStatement<table, WhereClause<Grouped<Eq<name, ...>>>>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
+     = note: required for `DeleteStatement<table, WhereClause<Grouped<Eq<name, Bound<..., ...>>>>>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -36,10 +57,31 @@ error[E0277]: `ReturningClause<columns::name>` is no valid SQL fragment for the 
      |
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
-     = help: the following other types implement trait `QueryFragment<DB, SP>`:
-               `ReturningClause<Expr>` implements `QueryFragment<DB, PgLikeReturningClause>`
-               `ReturningClause<Expr>` implements `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
-               `ReturningClause<Expr>` implements `QueryFragment<DB>`
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/query_builder/returning_clause.rs
+     |
+  LL | / impl<Expr, DB> QueryFragment<DB> for ReturningClause<Expr>
+  LL | | where
+  LL | |     DB: Backend,
+  LL | |     Self: QueryFragment<DB, DB::ReturningClause>,
+     | |_________________________________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB>`
+...
+  LL | / impl<Expr, DB>
+  LL | |     QueryFragment<DB, crate::backend::sql_dialect::returning_clause::PgLikeReturningClause>
+  LL | |     for ReturningClause<Expr>
+  LL | | where
+...    |
+  LL | |     >,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, PgLikeReturningClause>`
+     |
+    ::: DIESEL/diesel/diesel/src/sqlite/query_builder/returning.rs
+     |
+   LL | / impl<Expr, DB> QueryFragment<DB, SqliteReturningClause> for ReturningClause<Expr>
+   LL | | where
+   LL | |     DB: Backend<ReturningClause = SqliteReturningClause>,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
      = note: required for `ReturningClause<columns::name>` to implement `QueryFragment<Sqlite>`
      = note: 1 redundant requirement hidden
      = note: required for `DeleteStatement<table, WhereClause<Grouped<Eq<name, ...>>>, ...>` to implement `QueryFragment<Sqlite>`

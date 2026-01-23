@@ -372,9 +372,9 @@ note: required for `comments::columns::id` to implement `AppearsOnTable<Join<Joi
     = note: required for `((id, name), Nullable<(id, user_id, post_id, name)>, Nullable<...>)` to implement `AppearsOnTable<Join<JoinOn<Join<table, table, ...>, ...>, ..., ...>>`
     = note: required for `Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>` to implement `QuerySource`
     = note: 1 redundant requirement hidden
-    = note: required for `JoinOn<Join<JoinOn<Join<table, table, ...>, ...>, ..., ...>, ...>` to implement `QuerySource`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `InternalJoinDsl<SelectStatement<FromClause<...>>, ..., ...>`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `JoinWithImplicitOnClause<SelectStatement<FromClause<...>>, ...>`
+    = note: required for `JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, ...>, ..., ...>, ...>` to implement `QuerySource`
+    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, ...>>>` to implement `InternalJoinDsl<SelectStatement<FromClause<...>>, ..., ...>`
+    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, ...>>>` to implement `JoinWithImplicitOnClause<SelectStatement<FromClause<...>>, ...>`
 note: required by a bound in `left_join`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
     |

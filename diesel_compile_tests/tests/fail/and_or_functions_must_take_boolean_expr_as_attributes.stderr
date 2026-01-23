@@ -1,38 +1,46 @@
 error[E0277]: `diesel::sql_types::Integer` is neither `diesel::sql_types::Bool` nor `diesel::sql_types::Nullable<Bool>`
-  --> tests/fail/and_or_functions_must_take_boolean_expr_as_attributes.rs:15:33
-   |
-LL |         .filter(users::id.eq(1).and(users::id).or(users::id))
-   |                                 ^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Integer`
-   |
-   = note: try to provide an expression that produces one of the expected sql types
-   = help: the following other types implement trait `BoolOrNullableBool`:
-             Bool
-             Nullable<Bool>
+   --> tests/fail/and_or_functions_must_take_boolean_expr_as_attributes.rs:15:33
+    |
+ LL |         .filter(users::id.eq(1).and(users::id).or(users::id))
+    |                                 ^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Integer`
+    |
+    = note: try to provide an expression that produces one of the expected sql types
+help: the following other types implement trait `BoolOrNullableBool`
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
+    |
+LL | impl BoolOrNullableBool for Bool {}
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Bool`
+LL | impl BoolOrNullableBool for Nullable<Bool> {}
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Bool>`
 note: required by a bound in `diesel::BoolExpressionMethods::and`
-  --> DIESEL/diesel/diesel/src/expression_methods/bool_expression_methods.rs
-   |
-LL |     fn and<T, ST>(self, other: T) -> dsl::And<Self, T, ST>
-   |        --- required by a bound in this associated function
+   --> DIESEL/diesel/diesel/src/expression_methods/bool_expression_methods.rs
+    |
+ LL |     fn and<T, ST>(self, other: T) -> dsl::And<Self, T, ST>
+    |        --- required by a bound in this associated function
 ...
-LL |         ST: SqlType + TypedExpressionType + BoolOrNullableBool,
-   |                                             ^^^^^^^^^^^^^^^^^^ required by this bound in `BoolExpressionMethods::and`
+ LL |         ST: SqlType + TypedExpressionType + BoolOrNullableBool,
+    |                                             ^^^^^^^^^^^^^^^^^^ required by this bound in `BoolExpressionMethods::and`
 
 error[E0277]: `diesel::sql_types::Integer` is neither `diesel::sql_types::Bool` nor `diesel::sql_types::Nullable<Bool>`
-  --> tests/fail/and_or_functions_must_take_boolean_expr_as_attributes.rs:15:48
-   |
-LL |         .filter(users::id.eq(1).and(users::id).or(users::id))
-   |                                                ^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Integer`
-   |
-   = note: try to provide an expression that produces one of the expected sql types
-   = help: the following other types implement trait `BoolOrNullableBool`:
-             Bool
-             Nullable<Bool>
+   --> tests/fail/and_or_functions_must_take_boolean_expr_as_attributes.rs:15:48
+    |
+ LL |         .filter(users::id.eq(1).and(users::id).or(users::id))
+    |                                                ^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Integer`
+    |
+    = note: try to provide an expression that produces one of the expected sql types
+help: the following other types implement trait `BoolOrNullableBool`
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
+    |
+LL | impl BoolOrNullableBool for Bool {}
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Bool`
+LL | impl BoolOrNullableBool for Nullable<Bool> {}
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Bool>`
 note: required by a bound in `diesel::BoolExpressionMethods::or`
-  --> DIESEL/diesel/diesel/src/expression_methods/bool_expression_methods.rs
-   |
-LL |     fn or<T, ST>(self, other: T) -> dsl::Or<Self, T, ST>
-   |        -- required by a bound in this associated function
+   --> DIESEL/diesel/diesel/src/expression_methods/bool_expression_methods.rs
+    |
+ LL |     fn or<T, ST>(self, other: T) -> dsl::Or<Self, T, ST>
+    |        -- required by a bound in this associated function
 ...
-LL |         ST: SqlType + TypedExpressionType + BoolOrNullableBool,
-   |                                             ^^^^^^^^^^^^^^^^^^ required by this bound in `BoolExpressionMethods::or`
+ LL |         ST: SqlType + TypedExpressionType + BoolOrNullableBool,
+    |                                             ^^^^^^^^^^^^^^^^^^ required by this bound in `BoolExpressionMethods::or`
 For more information about this error, try `rustc --explain E0277`.

@@ -8,9 +8,20 @@ error[E0277]: `Groups` is no valid SQL fragment for the `Mysql` backend
      |
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-     = help: the following other types implement trait `QueryFragment<DB, SP>`:
-               `Groups` implements `QueryFragment<DB, IsoGroupWindowFrameUnit>`
-               `Groups` implements `QueryFragment<DB>`
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
+     |
+  LL | / simple_frame_expr_with_bound!(
+  LL | |     /// Groups frame mode
+  LL | |     ///
+ LL | |     /// This options specifies that the offset starts/ends
+...    |
+ LL | |     " GROUPS "
+ LL | | );
+     | | ^
+     | | |
+     | |_`Groups` implements `QueryFragment<DB, IsoGroupWindowFrameUnit>`
+     |   `Groups` implements `QueryFragment<DB>`
      = note: required for `Groups` to implement `QueryFragment<Mysql>`
      = note: 7 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, SelectClause<...>>` to implement `QueryFragment<Mysql>`
@@ -24,4 +35,5 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     For more information about this error, try `rustc --explain E0277`.
+          = note: this error originates in the macro `simple_frame_expr_with_bound` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.

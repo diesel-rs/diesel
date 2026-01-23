@@ -6,8 +6,15 @@ error[E0277]: the trait bound `Tablesample<table, SystemMethod>: LoadQuery<'_, S
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `Tablesample<users::table, pg::query_builder::tablesample::SystemMethod>`
-             but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `Tablesample<users::table, pg::query_builder::tablesample::SystemMethod>`
+      but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+    --> DIESEL/diesel/diesel/src/pg/query_builder/tablesample.rs
+     |
+ LL | / impl<S, TSM> QueryFragment<Pg> for Tablesample<S, TSM>
+ LL | | where
+ LL | |     S: QueryFragment<Pg>,
+ LL | |     TSM: TablesampleMethod,
+     | |___________________________^
      = help: for that trait implementation, expected `Pg`, found `Sqlite`
      = note: required for `FromClause<Tablesample<users::table, pg::query_builder::tablesample::SystemMethod>>` to implement `QueryFragment<Sqlite>`
      = note: 2 redundant requirements hidden

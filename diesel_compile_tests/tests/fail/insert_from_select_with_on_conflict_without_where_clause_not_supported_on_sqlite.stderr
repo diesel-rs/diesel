@@ -8,11 +8,37 @@ error[E0277]: `OnConflictSelectWrapper<SelectStatement<FromClause<table>, ...>>`
      |
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
-     = help: the following other types implement trait `QueryFragment<DB, SP>`:
-               `OnConflictSelectWrapper<BoxedSelectStatement<'_, ST, QS, Sqlite, GB>>` implements `QueryFragment<Sqlite>`
-               `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S>` implements `QueryFragment<Mysql>`
-               `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S>` implements `QueryFragment<Pg>`
-               `OnConflictSelectWrapper<...>` implements `QueryFragment<Sqlite>`
+help: the following other types implement trait `QueryFragment<DB, SP>`
+     |
+    ::: DIESEL/diesel/diesel/src/sqlite/query_builder/query_fragment_impls.rs
+     |
+  LL | / impl<F, S, D, W, O, LOf, G, H, LC> QueryFragment<crate::sqlite::Sqlite>
+  LL | |     for OnConflictSelectWrapper<SelectStatement<F, S, D, WhereClause<W>, O, LOf, G, H, LC>>
+  LL | | where
+  LL | |     SelectStatement<F, S, D, WhereClause<W>, O, LOf, G, H, LC>:
+  LL | |         QueryFragment<crate::sqlite::Sqlite>,
+     | |_____________________________________________^ `OnConflictSelectWrapper<...>` implements `QueryFragment<Sqlite>`
+...
+  LL | / impl<'a, ST, QS, GB> QueryFragment<crate::sqlite::Sqlite>
+  LL | |     for OnConflictSelectWrapper<BoxedSelectStatement<'a, ST, QS, crate::sqlite::Sqlite, GB>>
+  LL | | where
+  LL | |     BoxedSelectStatement<'a, ST, QS, crate::sqlite::Sqlite, GB>:
+  LL | |         QueryFragment<crate::sqlite::Sqlite>,
+  LL | |     QS: QueryFragment<crate::sqlite::Sqlite>,
+     | |_____________________________________________^ `OnConflictSelectWrapper<BoxedSelectStatement<'_, ST, QS, Sqlite, GB>>` implements `QueryFragment<Sqlite>`
+     |
+    ::: DIESEL/diesel/diesel/src/pg/query_builder/query_fragment_impls.rs
+     |
+ LL | / impl<S> QueryFragment<crate::pg::Pg> for OnConflictSelectWrapper<S>
+ LL | | where
+ LL | |     S: QueryFragment<crate::pg::Pg>,
+     | |____________________________________^ `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S>` implements `QueryFragment<Pg>`
+    --> DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
+     |
+ LL | / impl<S> QueryFragment<crate::mysql::Mysql> for OnConflictSelectWrapper<S>
+ LL | | where
+ LL | |     S: QueryFragment<crate::mysql::Mysql>,
+     | |__________________________________________^ `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S>` implements `QueryFragment<Mysql>`
      = note: required for `InsertFromSelect<OnConflictSelectWrapper<...>, ...>` to implement `QueryFragment<Sqlite>`
      = note: 3 redundant requirements hidden
      = note: required for `InsertStatement<table, OnConflictValues<..., ..., ...>>` to implement `QueryFragment<Sqlite>`

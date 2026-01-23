@@ -47,18 +47,35 @@ LL |         id -> Integer,
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot box `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` for backend `Pg`
-  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:37:50
-   |
-LL |     let _ = users::table.filter(posts::id.eq(1)).into_boxed::<Pg>();
-   |                                                  ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
-   |
-   = note: this either means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` is no valid SQL for `Pg`
-   = note: or this means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
-   = help: the following other types implement trait `BoxedDsl<'a, DB>`:
-             SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
-             SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>
-
-   
+   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:37:50
+    |
+ LL |     let _ = users::table.filter(posts::id.eq(1)).into_boxed::<Pg>();
+    |                                                  ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
+    |
+    = note: this either means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` is no valid SQL for `Pg`
+    = note: or this means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
+help: the following other types implement trait `BoxedDsl<'a, DB>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+    |
+LL | / impl<'a, F, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
+LL | | where
+LL | |     Self: AsQuery,
+...   |
+LL | |     G: ValidGroupByClause + QueryFragment<DB> + Send + 'a,
+LL | |     H: QueryFragment<DB> + Send + 'a,
+    | |_____________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>`
+...
+LL | / impl<'a, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
+LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>
+LL | | where
+LL | |     Self: AsQuery,
+...   |
+LL | |     G: ValidGroupByClause + QueryFragment<DB> + Send + 'a,
+LL | |     H: QueryFragment<DB> + Send + 'a,
+    | |_____________________________________^ `SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>`
+ 
+    
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
     --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:43:23
      |
@@ -108,13 +125,30 @@ LL |         title -> VarChar,
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot box `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` for backend `Pg`
-  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:53:10
-   |
-LL |         .into_boxed::<Pg>();
-   |          ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
-   |
-   = note: this either means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` is no valid SQL for `Pg`
-   = note: or this means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
-   = help: the following other types implement trait `BoxedDsl<'a, DB>`:
-             SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
-             SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>
+   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:53:10
+    |
+ LL |         .into_boxed::<Pg>();
+    |          ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>`
+    |
+    = note: this either means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` is no valid SQL for `Pg`
+    = note: or this means `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
+help: the following other types implement trait `BoxedDsl<'a, DB>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+    |
+LL | / impl<'a, F, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
+LL | | where
+LL | |     Self: AsQuery,
+...   |
+LL | |     G: ValidGroupByClause + QueryFragment<DB> + Send + 'a,
+LL | |     H: QueryFragment<DB> + Send + 'a,
+    | |_____________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>`
+...
+LL | / impl<'a, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
+LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>
+LL | | where
+LL | |     Self: AsQuery,
+...   |
+LL | |     G: ValidGroupByClause + QueryFragment<DB> + Send + 'a,
+LL | |     H: QueryFragment<DB> + Send + 'a,
+    | |_____________________________________^ `SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>`
