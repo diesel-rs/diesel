@@ -7,9 +7,13 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Bool` nor
     |                          required by a bound introduced by this call
     |
     = note: try to provide an expression that produces one of the expected sql types
-    = help: the following other types implement trait `BoolOrNullableBool`:
-              Bool
-              Nullable<Bool>
+help: the following other types implement trait `BoolOrNullableBool`
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
+    |
+LL | impl BoolOrNullableBool for Bool {}
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Bool`
+LL | impl BoolOrNullableBool for Nullable<Bool> {}
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Bool>`
     = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<columns::name>`
     = note: 1 redundant requirement hidden
     = note: required for `users::table` to implement `FilterDsl<columns::name>`
@@ -23,18 +27,23 @@ LL |         Self: methods::FilterDsl<Predicate>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::filter`
 
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
-  --> tests/fail/filter_requires_bool_nonaggregate_expression.rs:17:26
-   |
-LL |     let _ = users::table.filter(sum(users::id).eq(1));
-   |                          ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
-   |
-   = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
-   = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
-   = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
-   = help: the following other types implement trait `MixedAggregates<Other>`:
-             `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
-             `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Yes>`
-   = note: required for `Grouped<Eq<sum<Integer, id>, Bound<Nullable<BigInt>, i64>>>` to implement `NonAggregate`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Grouped<Eq<sum<Integer, id>, Bound<Nullable<BigInt>, i64>>>>`
-
-   For more information about this error, try `rustc --explain E0277`.
+   --> tests/fail/filter_requires_bool_nonaggregate_expression.rs:17:26
+    |
+ LL |     let _ = users::table.filter(sum(users::id).eq(1));
+    |                          ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
+    |
+    = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
+    = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
+    = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
+help: the following other types implement trait `MixedAggregates<Other>`
+   --> DIESEL/diesel/diesel/src/expression/mod.rs
+    |
+LL |     impl MixedAggregates<Yes> for Yes {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Yes>`
+...
+LL |     impl MixedAggregates<Never> for Yes {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
+    = note: required for `Grouped<Eq<sum<Integer, id>, Bound<Nullable<BigInt>, i64>>>` to implement `NonAggregate`
+    = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Grouped<Eq<sum<Integer, id>, Bound<Nullable<BigInt>, i64>>>>`
+ 
+    For more information about this error, try `rustc --explain E0277`.

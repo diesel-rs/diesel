@@ -16,8 +16,14 @@ error[E0277]: `Any<Bound<Array<Text>, Vec<String>>>` is no valid SQL fragment fo
      |
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
-     = help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `Any<Bound<Array<Text>, Vec<String>>>`
-             but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `Any<Bound<Array<Text>, Vec<String>>>`
+      but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+    --> DIESEL/diesel/diesel/src/pg/expression/array_comparison.rs
+     |
+  LL | / impl<Expr> QueryFragment<Pg> for Any<Expr>
+  LL | | where
+  LL | |     Expr: QueryFragment<Pg>,
+     | |____________________________^
      = help: for that trait implementation, expected `Pg`, found `Sqlite`
      = note: required for `Eq<name, Any<Bound<Array<Text>, Vec<String>>>>` to implement `QueryFragment<Sqlite>`
      = note: 4 redundant requirements hidden
@@ -43,8 +49,12 @@ error[E0277]: `IsNotDistinctFrom<name, Bound<Text, &str>>` is no valid SQL fragm
      |
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
-     = help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `IsNotDistinctFrom<name, Bound<Text, &str>>`
-             but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `IsNotDistinctFrom<name, Bound<Text, &str>>`
+      but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+    --> DIESEL/diesel/diesel/src/pg/expression/operators.rs
+     |
+  LL | __diesel_infix_operator!(IsNotDistinctFrom, " IS NOT DISTINCT FROM ", ConstantNullability Bool, backend: Pg);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      = help: for that trait implementation, expected `Pg`, found `Sqlite`
      = note: required for `Grouped<IsNotDistinctFrom<name, Bound<Text, &str>>>` to implement `QueryFragment<Sqlite>`
      = note: 3 redundant requirements hidden
@@ -59,7 +69,8 @@ LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
-     
+          = note: this error originates in the macro `$crate::__diesel_operator_body` which comes from the expansion of the macro `__diesel_infix_operator` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: `AtTimeZone<now, Bound<Text, &str>>` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:42:22
      |
@@ -70,8 +81,15 @@ error[E0277]: `AtTimeZone<now, Bound<Text, &str>>` is no valid SQL fragment for 
      |
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
-     = help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `AtTimeZone<now, Bound<Text, &str>>`
-             but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `AtTimeZone<now, Bound<Text, &str>>`
+      but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+    --> DIESEL/diesel/diesel/src/pg/expression/date_and_time.rs
+     |
+  LL | / impl<Ts, Tz> QueryFragment<Pg> for AtTimeZone<Ts, Tz>
+  LL | | where
+  LL | |     Ts: QueryFragment<Pg>,
+  LL | |     Tz: QueryFragment<Pg>,
+     | |__________________________^
      = help: for that trait implementation, expected `Pg`, found `Sqlite`
      = note: required for `Grouped<AtTimeZone<now, Bound<Text, &str>>>` to implement `QueryFragment<Sqlite>`
      = note: 5 redundant requirements hidden

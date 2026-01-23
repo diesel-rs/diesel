@@ -75,7 +75,7 @@ pub fn check(conn: &mut PgConnection) {
             //~^^^ ERROR: the trait bound `Alias<posts3>: AppearsInFromClause<Alias<posts2>>` is not satisfied
         )
         .select((post_alias.field(posts::id), post_alias_2.field(posts::id)))
-        //~^ ERROR:  the method `select` exists for struct `SelectStatement<FromClause<JoinOn<Join<Alias<...>, ..., ...>, ...>>>`, but its trait bounds were not satisfied
+        //~^ ERROR:  the method `select` exists for struct `SelectStatement<FromClause<JoinOn<Join<Alias<posts2>, ..., ...>, ...>>>`, but its trait bounds were not satisfied
         .load::<(i32, i32)>(conn)
         .unwrap();
 }

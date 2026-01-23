@@ -1,15 +1,25 @@
 error[E0277]: the trait bound `SelectStatement<FromClause<table>, SelectClause<name>>: HavingDsl<_>` is not satisfied
-  --> tests/fail/having_cant_be_used_without_group_by.rs:29:10
-   |
-LL |         .having(users::id.gt(1))
-   |          ^^^^^^ the trait `HavingDsl<_>` is not implemented for `SelectStatement<FromClause<table>, SelectClause<name>>`
-   |
-   = note: a `HAVING` clause requires setting a `GROUP BY` clause first
-   = help: the trait `HavingDsl<_>` is not implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, _>`
-           but it is implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::GroupByClause<_>, _, _>`
-   = help: for that trait implementation, expected `diesel::query_builder::group_by_clause::GroupByClause<_>`, found `diesel::query_builder::group_by_clause::NoGroupByClause`
-
-   
+   --> tests/fail/having_cant_be_used_without_group_by.rs:29:10
+    |
+ LL |         .having(users::id.gt(1))
+    |          ^^^^^^ the trait `HavingDsl<_>` is not implemented for `SelectStatement<FromClause<table>, SelectClause<name>>`
+    |
+    = note: a `HAVING` clause requires setting a `GROUP BY` clause first
+help: the trait `HavingDsl<_>` is not implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, _>`
+      but it is implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::GroupByClause<_>, _, _>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+    |
+LL | / impl<F, S, D, W, O, LOf, G, H, Predicate> HavingDsl<Predicate>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, GroupByClause<G>, H>
+LL | | where
+LL | |     F: QuerySource,
+LL | |     Predicate: AppearsOnTable<F>,
+LL | |     Predicate: Expression,
+LL | |     Predicate::SqlType: BoolOrNullableBool,
+    | |___________________________________________^
+    = help: for that trait implementation, expected `diesel::query_builder::group_by_clause::GroupByClause<_>`, found `diesel::query_builder::group_by_clause::NoGroupByClause`
+ 
+    
 error[E0282]: type annotations needed
   --> tests/fail/having_cant_be_used_without_group_by.rs:26:5
    |

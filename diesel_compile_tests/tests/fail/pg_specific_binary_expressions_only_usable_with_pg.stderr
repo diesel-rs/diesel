@@ -10,9 +10,16 @@ error[E0277]: cannot use the `LIKE` operator with expressions of the type `diese
              allowed for all backends
      = note: expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are 
              allowed for the PostgreSQL backend
-     = help: the following other types implement trait `diesel::expression::operators::LikeIsAllowedForType<ST>`:
-               `Pg` implements `diesel::expression::operators::LikeIsAllowedForType<Citext>`
-               `Pg` implements `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>`
+help: the following other types implement trait `diesel::expression::operators::LikeIsAllowedForType<ST>`
+    --> DIESEL/diesel/diesel/src/expression/operators.rs
+     |
+ LL | impl LikeIsAllowedForType<crate::pg::sql_types::Citext> for crate::pg::Pg {}
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Pg` implements `diesel::expression::operators::LikeIsAllowedForType<Citext>`
+     |
+    ::: DIESEL/diesel/diesel/src/pg/backend.rs
+     |
+ LL | impl LikeIsAllowedForType<crate::sql_types::Binary> for Pg {}
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Pg` implements `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>`
      = note: required for `Like<name, Bound<Binary, Vec<u8>>>` to implement `QueryFragment<Sqlite>`
      = note: 6 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, SelectClause<...>, ..., ...>` to implement `QueryFragment<Sqlite>`
@@ -39,9 +46,16 @@ error[E0277]: cannot use the `LIKE` operator with expressions of the type `diese
              allowed for all backends
      = note: expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are 
              allowed for the PostgreSQL backend
-     = help: the following other types implement trait `diesel::expression::operators::LikeIsAllowedForType<ST>`:
-               `Pg` implements `diesel::expression::operators::LikeIsAllowedForType<Citext>`
-               `Pg` implements `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>`
+help: the following other types implement trait `diesel::expression::operators::LikeIsAllowedForType<ST>`
+    --> DIESEL/diesel/diesel/src/expression/operators.rs
+     |
+ LL | impl LikeIsAllowedForType<crate::pg::sql_types::Citext> for crate::pg::Pg {}
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Pg` implements `diesel::expression::operators::LikeIsAllowedForType<Citext>`
+     |
+    ::: DIESEL/diesel/diesel/src/pg/backend.rs
+     |
+ LL | impl LikeIsAllowedForType<crate::sql_types::Binary> for Pg {}
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Pg` implements `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>`
      = note: required for `Like<name, Bound<Binary, Vec<u8>>>` to implement `QueryFragment<Mysql>`
      = note: 6 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, SelectClause<...>, ..., ...>` to implement `QueryFragment<Mysql>`

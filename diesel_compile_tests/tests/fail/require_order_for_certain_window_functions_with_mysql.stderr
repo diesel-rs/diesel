@@ -18,7 +18,7 @@ error[E0277]: the trait bound `OverClause<PartitionBy<id>>: WindowFunctionFragme
                `OverClause<__P, Order<__O, true>, __F>` implements `WindowFunctionFragment<lead_with_offset_and_default<..., ..., ..., ..., ...>, ...>`
              and N others
      = note: required for `OverClause<PartitionBy<id>>` to implement `WindowFunctionFragment<rank, Mysql>`
-     = note: required for `AggregateExpression<rank, NoPrefix, NoOrder, NoFilter, ...>` to implement `QueryFragment<Mysql>`
+     = note: required for `AggregateExpression<rank, NoPrefix, NoOrder, NoFilter, OverClause<...>>` to implement `QueryFragment<Mysql>`
      = note: 3 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, SelectClause<...>>` to implement `QueryFragment<Mysql>`
      = note: required for `SelectStatement<FromClause<table>, SelectClause<...>>` to implement `ExecuteDsl<diesel::MysqlConnection, Mysql>`
@@ -154,7 +154,7 @@ error[E0277]: the trait bound `OverClause<PartitionBy<id>>: WindowFunctionFragme
                `OverClause<__P, Order<__O, true>, __F>` implements `WindowFunctionFragment<lead_with_offset_and_default<..., ..., ..., ..., ...>, ...>`
              and N others
      = note: required for `OverClause<PartitionBy<id>>` to implement `WindowFunctionFragment<lag<Integer, id>, Mysql>`
-     = note: required for `AggregateExpression<lag<Integer, id>, NoPrefix, NoOrder, ..., ...>` to implement `QueryFragment<Mysql>`
+     = note: required for `AggregateExpression<lag<Integer, id>, NoPrefix, NoOrder, NoFilter, ...>` to implement `QueryFragment<Mysql>`
      = note: 3 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, SelectClause<...>>` to implement `QueryFragment<Mysql>`
      = note: required for `SelectStatement<FromClause<table>, SelectClause<...>>` to implement `ExecuteDsl<diesel::MysqlConnection, Mysql>`
@@ -188,7 +188,7 @@ error[E0277]: the trait bound `OverClause<PartitionBy<id>>: WindowFunctionFragme
                `OverClause<__P, Order<__O, true>, __F>` implements `WindowFunctionFragment<lead_with_offset_and_default<..., ..., ..., ..., ...>, ...>`
              and N others
      = note: required for `OverClause<PartitionBy<id>>` to implement `WindowFunctionFragment<lag_with_offset<Integer, id, ...>, ...>`
-     = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `QueryFragment<Mysql>`
+     = note: required for `AggregateExpression<lag_with_offset<..., ..., ...>, ..., ..., ..., ...>` to implement `QueryFragment<Mysql>`
      = note: 3 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, SelectClause<...>>` to implement `QueryFragment<Mysql>`
      = note: required for `SelectStatement<FromClause<table>, SelectClause<...>>` to implement `ExecuteDsl<diesel::MysqlConnection, Mysql>`

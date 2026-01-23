@@ -26,9 +26,13 @@ error[E0277]: `diesel::sql_types::Integer` is neither `diesel::sql_types::Bool` 
     |                          required by a bound introduced by this call
     |
     = note: try to provide an expression that produces one of the expected sql types
-    = help: the following other types implement trait `BoolOrNullableBool`:
-              Bool
-              Nullable<Bool>
+help: the following other types implement trait `BoolOrNullableBool`
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
+    |
+LL | impl BoolOrNullableBool for Bool {}
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Bool`
+LL | impl BoolOrNullableBool for Nullable<Bool> {}
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Bool>`
     = note: required for `JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, users::columns::id>` to implement `QuerySource`
     = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<posts::table, Inner, users::columns::id>`
     = note: 1 redundant requirement hidden

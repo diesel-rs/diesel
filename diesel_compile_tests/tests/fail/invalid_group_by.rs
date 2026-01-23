@@ -62,7 +62,7 @@ fn main() {
         .group_by(post_alias.field(posts::id))
         //~^ ERROR: type mismatch resolving `<FromClause<Alias<user1>> as AppearsInFromClause<Alias<post1>>>::Count == Once`
         .select(user_alias.field(users::id))
-        //~^ ERROR: the trait bound `AliasedField<user1, id>: ValidGrouping<AliasedField<post1, id>>` is not satisfied
+        //~^ ERROR: the trait bound `AliasedField<user1, users::columns::id>: ValidGrouping<AliasedField<post1, posts::columns::id>>` is not satisfied
         .execute(conn)
         .unwrap();
 

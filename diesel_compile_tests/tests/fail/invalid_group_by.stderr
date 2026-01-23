@@ -73,10 +73,23 @@ error[E0277]: the trait bound `AliasedField<user1, users::columns::id>: ValidGro
     |          |
     |          required by a bound introduced by this call
     |
-    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-              `AliasedField<S, C2>` implements `ValidGrouping<AliasedField<S, C1>>`
-              `AliasedField<S, C>` implements `ValidGrouping<()>`
-    = note: required for `SelectStatement<FromClause<Alias<...>>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, users::columns::id>>`
+help: the following other types implement trait `ValidGrouping<GroupByClause>`
+   --> DIESEL/diesel/diesel/src/query_source/aliasing/aliased_field.rs
+    |
+ LL | / impl<S, C> ValidGrouping<()> for AliasedField<S, C>
+ LL | | where
+ LL | |     S: AliasSource,
+ LL | |     C: Column<Table = S::Target>,
+    | |_________________________________^ `AliasedField<S, C>` implements `ValidGrouping<()>`
+...
+ LL | / impl<S, C1, C2> ValidGrouping<AliasedField<S, C1>> for AliasedField<S, C2>
+ LL | | where
+ LL | |     S: AliasSource,
+ LL | |     C1: Column<Table = S::Target>,
+ LL | |     C2: Column<Table = S::Target>,
+ LL | |     C2: ValidGrouping<C1, IsAggregate = is_aggregate::Yes>,
+    | |___________________________________________________________^ `AliasedField<S, C2>` implements `ValidGrouping<AliasedField<S, C1>>`
+    = note: required for `SelectStatement<FromClause<Alias<user1>>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, users::columns::id>>`
 note: required by a bound in `diesel::QueryDsl::select`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
     |
@@ -131,7 +144,7 @@ LL |         .group_by(post_alias.field(posts::id))
    = note: required for `AliasedField<post1, posts::columns::id>` to implement `AppearsOnTable<FromClause<Alias<user1>>>`
    = note: required for `SelectStatement<FromClause<Alias<user1>>>` to implement `GroupByDsl<AliasedField<post1, posts::columns::id>>`
 
-error[E0277]: the trait bound `AliasedField<user1, id>: ValidGrouping<AliasedField<post1, id>>` is not satisfied
+error[E0277]: the trait bound `AliasedField<user1, users::columns::id>: ValidGrouping<AliasedField<post1, posts::columns::id>>` is not satisfied
    --> tests/fail/invalid_group_by.rs:64:17
     |
  LL |         .select(user_alias.field(users::id))
@@ -139,10 +152,23 @@ error[E0277]: the trait bound `AliasedField<user1, id>: ValidGrouping<AliasedFie
     |          |
     |          required by a bound introduced by this call
     |
-    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-              `AliasedField<S, C2>` implements `ValidGrouping<AliasedField<S, C1>>`
-              `AliasedField<S, C>` implements `ValidGrouping<()>`
-    = note: required for `SelectStatement<FromClause<Alias<...>>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, users::columns::id>>`
+help: the following other types implement trait `ValidGrouping<GroupByClause>`
+   --> DIESEL/diesel/diesel/src/query_source/aliasing/aliased_field.rs
+    |
+ LL | / impl<S, C> ValidGrouping<()> for AliasedField<S, C>
+ LL | | where
+ LL | |     S: AliasSource,
+ LL | |     C: Column<Table = S::Target>,
+    | |_________________________________^ `AliasedField<S, C>` implements `ValidGrouping<()>`
+...
+ LL | / impl<S, C1, C2> ValidGrouping<AliasedField<S, C1>> for AliasedField<S, C2>
+ LL | | where
+ LL | |     S: AliasSource,
+ LL | |     C1: Column<Table = S::Target>,
+ LL | |     C2: Column<Table = S::Target>,
+ LL | |     C2: ValidGrouping<C1, IsAggregate = is_aggregate::Yes>,
+    | |___________________________________________________________^ `AliasedField<S, C2>` implements `ValidGrouping<AliasedField<S, C1>>`
+    = note: required for `SelectStatement<FromClause<Alias<user1>>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, users::columns::id>>`
 note: required by a bound in `diesel::QueryDsl::select`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
     |

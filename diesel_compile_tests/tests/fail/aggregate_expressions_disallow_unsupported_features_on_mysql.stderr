@@ -9,9 +9,23 @@ error[E0277]: `Filter<WhereClause<Grouped<Eq<name, Bound<Text, &str>>>>>` is no 
      = help: the trait `QueryFragment<Mysql, NoAggregateFunctionExpressions>` is not implemented for `Filter<WhereClause<Grouped<Eq<name, Bound<Text, &str>>>>>`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-     = help: the following other types implement trait `QueryFragment<DB, SP>`:
-               `diesel::expression::functions::aggregate_expressions::aggregate_filter::Filter<P>` implements `QueryFragment<DB, PostgresLikeAggregateFunctionExpressions>`
-               `diesel::expression::functions::aggregate_expressions::aggregate_filter::Filter<P>` implements `QueryFragment<DB>`
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/aggregate_filter.rs
+     |
+  LL | / impl<P, DB> QueryFragment<DB> for Filter<P>
+  LL | | where
+  LL | |     Self: QueryFragment<DB, DB::AggregateFunctionExpressions>,
+  LL | |     DB: Backend,
+     | |________________^ `diesel::expression::functions::aggregate_expressions::aggregate_filter::Filter<P>` implements `QueryFragment<DB>`
+...
+  LL | / impl<P, DB>
+  LL | |     QueryFragment<
+  LL | |         DB,
+  LL | |         sql_dialect::aggregate_function_expressions::PostgresLikeAggregateFunctionExpressions,
+...    |
+  LL | |     P: QueryFragment<DB>,
+  LL | |     DB: Backend + SqlDialect<AggregateFunctionExpressions = sql_dialect::aggregate_function_expressions::PostgresLikeAggregateFunctionExpressions>,
+     | |___________________________________________________________________________________________________________________________________________________^ `diesel::expression::functions::aggregate_expressions::aggregate_filter::Filter<P>` implements `QueryFragment<DB, PostgresLikeAggregateFunctionExpressions>`
      = note: required for `Filter<WhereClause<Grouped<Eq<name, Bound<Text, &str>>>>>` to implement `QueryFragment<Mysql>`
      = note: 4 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, SelectClause<...>>` to implement `QueryFragment<Mysql>`
@@ -36,10 +50,29 @@ error[E0277]: `Order<columns::name, false>` is no valid SQL fragment for the `My
      |
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-     = help: the following other types implement trait `QueryFragment<DB, SP>`:
-               `Order<E, false>` implements `QueryFragment<DB, PostgresLikeAggregateFunctionExpressions>`
-               `Order<E, false>` implements `QueryFragment<DB>`
-               `Order<E, true>` implements `QueryFragment<DB>`
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/aggregate_order.rs
+     |
+  LL | / impl<E, DB> QueryFragment<DB> for Order<E, false>
+  LL | | where
+  LL | |     Self: QueryFragment<DB, DB::AggregateFunctionExpressions>,
+  LL | |     DB: Backend,
+     | |________________^ `Order<E, false>` implements `QueryFragment<DB>`
+...
+  LL | / impl<E, DB>
+  LL | |     QueryFragment<
+  LL | |         DB,
+  LL | |         sql_dialect::aggregate_function_expressions::PostgresLikeAggregateFunctionExpressions,
+...    |
+  LL | |         AggregateFunctionExpressions = sql_dialect::aggregate_function_expressions::PostgresLikeAggregateFunctionExpressions
+  LL | |     >,
+     | |______^ `Order<E, false>` implements `QueryFragment<DB, PostgresLikeAggregateFunctionExpressions>`
+...
+  LL | / impl<E, DB> QueryFragment<DB> for Order<E, true>
+  LL | | where
+  LL | |     OrderClause<E>: QueryFragment<DB>,
+  LL | |     DB: Backend,
+     | |________________^ `Order<E, true>` implements `QueryFragment<DB>`
      = note: required for `Order<columns::name, false>` to implement `QueryFragment<Mysql>`
      = note: 4 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, SelectClause<...>>` to implement `QueryFragment<Mysql>`

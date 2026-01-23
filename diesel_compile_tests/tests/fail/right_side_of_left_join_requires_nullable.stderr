@@ -26,7 +26,7 @@ LL |         title -> Text,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -57,7 +57,7 @@ LL |         title -> Text,
    |         ^^^^^
    = note: 1 redundant requirement hidden
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -89,7 +89,7 @@ LL |         title -> Text,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -120,7 +120,7 @@ LL |         title -> Text,
    |         ^^^^^
    = note: 2 redundant requirements hidden
    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 

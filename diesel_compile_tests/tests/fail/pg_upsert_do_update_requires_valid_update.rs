@@ -42,7 +42,7 @@ fn main() {
         .on_conflict(id)
         .do_update()
         .execute(&mut connection);
-    //~^ ERROR: the method `execute` exists for struct `IncompleteDoUpdate<InsertStatement<table, ...>, ...>`, but its trait bounds were not satisfied
+    //~^ ERROR: the method `execute` exists for struct `IncompleteDoUpdate<InsertStatement<table, ValuesClause<..., ...>>, ...>`, but its trait bounds were not satisfied
 
     // Update column from other table
     insert_into(users)

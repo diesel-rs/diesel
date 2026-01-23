@@ -37,7 +37,11 @@ fn main() {
     //~| ERROR: the trait bound `SelectStatement<FromClause<...>>: LockingDsl<...>` is not satisfied
     //~| ERROR: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: LockingDsl<...>` is not satisfied
     users.into_boxed().for_update();
+<<<<<<< HEAD
     //~^ ERROR: the trait bound `BoxedSelectStatement<'_, (diesel::sql_types::Integer,), FromClause<users::table>, _>: Table` is not satisfied
+=======
+    //~^ ERROR: the trait bound `BoxedSelectStatement<'_, (Integer,), FromClause<...>, _>: QueryRelation` is not satisfied
+>>>>>>> cf0634367c6 (Bump rust to 1.93, fix a single new clippy warning and update the compile test output)
     //~| ERROR: the trait bound `SelectStatement<FromClause<...>>: LockingDsl<...>` is not satisfied
     //~| ERROR: the trait bound `BoxedSelectStatement<'_, (Integer,), ..., _>: LockingDsl<...>` is not satisfied
     users.for_update().into_boxed();
