@@ -40,6 +40,7 @@ mod associations;
 mod diesel_for_each_tuple;
 mod diesel_numeric_ops;
 mod diesel_public_if;
+mod enum_;
 mod from_sql_row;
 mod has_query;
 mod identifiable;
@@ -2771,5 +2772,26 @@ pub fn derive_has_query(input: TokenStream) -> TokenStream {
 fn derive_has_query_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     syn::parse2(input)
         .and_then(has_query::derive)
+        .unwrap_or_else(syn::Error::into_compile_error)
+}
+/// Implements `FromSql` and `ToSql` for enum types
+///
+/// This derive enables an enum (with unit-variants only) to be serialized to the database as a byte-string and deserialized from the same representation from the database. It requires one or more backends to be supplied so as to implement the required traits.
+///
+/// # Attributes
+///
+/// * `#[diesel(backend = diesel::pg::Pg)]`, specifies that
+///   the derive should generate `FromSql` and `ToSql` implementations for
+///   postgres. Equivalently, `#[diesel(backend = diesel::mysql::Mysql)]` generates
+///   these trait implementations for mysql.
+#[cfg_attr(docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/enum.md")))]
+#[proc_macro_derive(Enum, attributes(diesel))]
+pub fn derive_enum(input: TokenStream) -> TokenStream {
+    derive_enum_inner(input.into()).into()
+}
+
+fn derive_enum_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(enum_::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
 }
