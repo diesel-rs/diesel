@@ -31,8 +31,8 @@ fn connection() -> Conn {
     let connection_url = dotenvy::var("MYSQL_DATABASE_URL")
         .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    let opts = OptsBuilder::from_opts(Opts::from_url(&connection_url).unwrap())
-        .prefer_socket(false);
+    let opts =
+        OptsBuilder::from_opts(Opts::from_url(&connection_url).unwrap()).prefer_socket(false);
     let mut conn = Conn::new(opts).unwrap();
 
     for query in CLEANUP_QUERIES {

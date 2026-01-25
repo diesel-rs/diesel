@@ -5,7 +5,7 @@ use tokio::{net::TcpStream, runtime::Runtime};
 use wtx::{
     database::{Executor, Record},
     misc::{Either, UriRef, Wrapper},
-    rng::{ChaCha20, SeedableRng}
+    rng::{ChaCha20, SeedableRng},
 };
 
 #[cfg(feature = "mysql")]
@@ -184,9 +184,15 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
             _ => unimplemented!(),
         }
         #[cfg(feature = "postgres")]
-        let stmt_hash = conn.prepare(consts::postgres::MEDIUM_COMPLEX_QUERY_BY_ID).await.unwrap();
+        let stmt_hash = conn
+            .prepare(consts::postgres::MEDIUM_COMPLEX_QUERY_BY_ID)
+            .await
+            .unwrap();
         #[cfg(feature = "mysql")]
-        let stmt_hash = conn.prepare(consts::mysql::MEDIUM_COMPLEX_QUERY_BY_ID).await.unwrap();
+        let stmt_hash = conn
+            .prepare(consts::mysql::MEDIUM_COMPLEX_QUERY_BY_ID)
+            .await
+            .unwrap();
         (conn, stmt_hash)
     });
     b.iter(|| {
@@ -268,20 +274,18 @@ async fn connection() -> LocalExecutor<wtx::Error, ExecutorBuffer, TcpStream> {
         .expect("DATABASE_URL must be set in order to run tests");
     let uri = UriRef::new(url.as_str());
     let mut rng = ChaCha20::from_os().unwrap();
-    let stream = TcpStream::connect(uri.hostname_with_implied_port()).await.unwrap();
+    let stream = TcpStream::connect(uri.hostname_with_implied_port())
+        .await
+        .unwrap();
     stream.set_nodelay(true).unwrap();
     #[cfg(feature = "postgres")]
     let buffer = ExecutorBuffer::with_capacity((512, 8192, 512, 32), 32, &mut rng).unwrap();
     #[cfg(feature = "mysql")]
     let buffer = ExecutorBuffer::with_capacity((512, 512, 8192, 512, 32), 32, &mut rng).unwrap();
-    let mut conn = LocalExecutor::connect(
-        &Config::from_uri(&uri).unwrap(),
-        buffer,
-        &mut rng,
-        stream,
-    )
-    .await
-    .unwrap();
+    let mut conn =
+        LocalExecutor::connect(&Config::from_uri(&uri).unwrap(), buffer, &mut rng, stream)
+            .await
+            .unwrap();
     #[cfg(feature = "postgres")]
     conn.execute_ignored(&consts::postgres::CLEANUP_QUERIES.join(";"))
         .await
