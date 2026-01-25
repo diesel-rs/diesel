@@ -1,3 +1,4 @@
+use crate::consts::mysql::{CLEANUP_QUERIES, MEDIUM_COMPLEX_QUERY_BY_ID};
 use crate::Bencher;
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -37,15 +38,7 @@ async fn connection() -> Conn {
     opts.upgrade_to_unix_socket = false;
     let mut conn: Conn = Conn::new(opts).await.unwrap();
 
-    conn.query_drop(
-        "SET FOREIGN_KEY_CHECKS = 0; \
-         TRUNCATE TABLE comments; \
-         TRUNCATE TABLE posts; \
-         TRUNCATE TABLE users; \
-         SET FOREIGN_KEY_CHECKS = 1",
-    )
-    .await
-    .unwrap();
+    conn.query_drop(&CLEANUP_QUERIES.join("; ")).await.unwrap();
 
     conn
 }
@@ -133,13 +126,7 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
             Some(if i % 2 == 0 { "black" } else { "brown" })
         })
         .await;
-        let stmt = conn
-            .prepare(
-                "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
-                 FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = ?",
-            )
-            .await
-            .unwrap();
+        let stmt = conn.prepare(MEDIUM_COMPLEX_QUERY_BY_ID).await.unwrap();
         (conn, stmt)
     });
 

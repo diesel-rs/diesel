@@ -1,3 +1,6 @@
+use super::consts::postgres::{
+    CLEANUP_QUERIES, MEDIUM_COMPLEX_QUERY_BY_ID, MEDIUM_COMPLEX_QUERY_BY_NAME,
+};
 use super::Bencher;
 use rust_postgres::fallible_iterator::FallibleIterator;
 use rust_postgres::types::ToSql;
@@ -32,11 +35,9 @@ fn connection() -> Client {
         .expect("DATABASE_URL must be set in order to run tests");
     let mut client = Client::connect(&connection_url, NoTls).unwrap();
 
-    client
-        .execute("TRUNCATE TABLE comments CASCADE", &[])
-        .unwrap();
-    client.execute("TRUNCATE TABLE posts CASCADE", &[]).unwrap();
-    client.execute("TRUNCATE TABLE users CASCADE", &[]).unwrap();
+    for query in CLEANUP_QUERIES {
+        client.execute(*query, &[]).unwrap();
+    }
 
     client
 }
@@ -118,12 +119,7 @@ pub fn bench_medium_complex_query_by_id(b: &mut Bencher, size: usize) {
         Some(if i % 2 == 0 { "black" } else { "brown" }.into())
     });
 
-    let query = client
-        .prepare(
-            "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
-             FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = $1",
-        )
-        .unwrap();
+    let query = client.prepare(MEDIUM_COMPLEX_QUERY_BY_ID).unwrap();
 
     b.iter(|| {
         client
@@ -158,12 +154,7 @@ pub fn bench_medium_complex_query_by_name(b: &mut Bencher, size: usize) {
         Some(if i % 2 == 0 { "black" } else { "brown" }.into())
     });
 
-    let query = client
-        .prepare(
-            "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, p.user_id, p.title, p.body \
-             FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = $1",
-        )
-        .unwrap();
+    let query = client.prepare(MEDIUM_COMPLEX_QUERY_BY_NAME).unwrap();
 
     b.iter(|| {
         client

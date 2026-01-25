@@ -1,3 +1,4 @@
+use super::consts;
 use super::Bencher;
 use sea_orm::entity::*;
 use sea_orm::query::*;
@@ -28,11 +29,9 @@ fn connection() -> (sqlx::PgPool, DatabaseConnection, Runtime) {
     let (pool, db) = rt.block_on(async {
         use sqlx::Executor;
         let pool = sqlx::PgPool::connect(&connection_url).await.unwrap();
-        pool.execute("TRUNCATE TABLE comments CASCADE;")
-            .await
-            .unwrap();
-        pool.execute("TRUNCATE TABLE posts CASCADE;").await.unwrap();
-        pool.execute("TRUNCATE TABLE users CASCADE;").await.unwrap();
+        for query in consts::postgres::CLEANUP_QUERIES {
+            pool.execute(*query).await.unwrap();
+        }
 
         let db = SqlxPostgresConnector::from_sqlx_postgres_pool(pool.clone());
         (pool, db)
@@ -58,14 +57,8 @@ fn connection() -> (sqlx::MySqlPool, DatabaseConnection, Runtime) {
     let (pool, db) = rt.block_on(async {
         use sqlx::Executor;
         let pool = sqlx::MySqlPool::connect(&connection_url).await.unwrap();
-        let mut result_stream = pool.execute_many(
-            "SET FOREIGN_KEY_CHECKS = 0;\
-             TRUNCATE TABLE comments;\
-             TRUNCATE TABLE posts;\
-             TRUNCATE TABLE users;\
-             SET FOREIGN_KEY_CHECKS = 1;\
-             ",
-        );
+        let cleanup = consts::mysql::CLEANUP_QUERIES.join(";");
+        let mut result_stream = pool.execute_many(cleanup.as_str());
         while let Some(e) = result_stream.next().await {
             let _ = e.unwrap();
         }

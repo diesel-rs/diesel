@@ -1,3 +1,4 @@
+use crate::consts::postgres::{CLEANUP_QUERIES, MEDIUM_COMPLEX_QUERY_BY_ID};
 use crate::Bencher;
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -36,12 +37,7 @@ fn connection() -> Conn {
     opts.upgrade_to_unix_socket = false;
     let mut conn = Conn::new(opts).unwrap();
 
-    conn.query_drop(
-        "TRUNCATE TABLE comments CASCADE; \
-         TRUNCATE TABLE posts CASCADE; \
-         TRUNCATE TABLE users CASCADE",
-    )
-    .unwrap();
+    conn.query_drop(&CLEANUP_QUERIES.join("; ")).unwrap();
 
     conn
 }
@@ -114,12 +110,7 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
         Some(if i % 2 == 0 { "black" } else { "brown" })
     });
 
-    let stmt = conn
-        .prepare(
-            "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
-             FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = $1",
-        )
-        .unwrap();
+    let stmt = conn.prepare(MEDIUM_COMPLEX_QUERY_BY_ID).unwrap();
 
     b.iter(|| {
         let mut results = Vec::new();

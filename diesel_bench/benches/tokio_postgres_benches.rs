@@ -1,8 +1,11 @@
+use super::consts::postgres::{
+    CLEANUP_QUERIES, MEDIUM_COMPLEX_QUERY_BY_ID, MEDIUM_COMPLEX_QUERY_BY_NAME,
+};
 use super::Bencher;
-use std::collections::HashMap;
-use tokio_postgres::{types::ToSql, Client, NoTls};
-use tokio::runtime::Runtime;
 use futures_util::stream::StreamExt;
+use std::collections::HashMap;
+use tokio::runtime::Runtime;
+use tokio_postgres::{types::ToSql, Client, NoTls};
 
 const NO_PARAMS: Vec<&dyn ToSql> = Vec::new();
 
@@ -40,18 +43,9 @@ async fn connection() -> Client {
         }
     });
 
-    client
-        .execute("TRUNCATE TABLE comments CASCADE", &[])
-        .await
-        .unwrap();
-    client
-        .execute("TRUNCATE TABLE posts CASCADE", &[])
-        .await
-        .unwrap();
-    client
-        .execute("TRUNCATE TABLE users CASCADE", &[])
-        .await
-        .unwrap();
+    for query in CLEANUP_QUERIES {
+        client.execute(*query, &[]).await.unwrap();
+    }
 
     client
 }
@@ -157,13 +151,7 @@ pub fn bench_medium_complex_query_by_id(b: &mut Bencher, size: usize) {
         })
         .await;
 
-        let query = client
-            .prepare(
-                "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
-                 FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = $1",
-            )
-            .await
-            .unwrap();
+        let query = client.prepare(MEDIUM_COMPLEX_QUERY_BY_ID).await.unwrap();
         (client, query)
     });
 
@@ -206,13 +194,7 @@ pub fn bench_medium_complex_query_by_name(b: &mut Bencher, size: usize) {
             Some(if i % 2 == 0 { "black" } else { "brown" }.into())
         }).await;
 
-        let query = client
-            .prepare(
-                "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, p.user_id, p.title, p.body \
-                 FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = $1",
-            )
-            .await
-            .unwrap();
+        let query = client.prepare(MEDIUM_COMPLEX_QUERY_BY_NAME).await.unwrap();
         (client, query)
     });
 
