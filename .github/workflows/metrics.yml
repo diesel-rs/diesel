@@ -31,7 +31,7 @@ jobs:
       - name: Install postgres (Linux)
         if: matrix.backend == 'postgres'
         env:
-          PG_VERSION: 16
+          PG_VERSION: 18
         run: |
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get --purge remove postgresql\* -y
