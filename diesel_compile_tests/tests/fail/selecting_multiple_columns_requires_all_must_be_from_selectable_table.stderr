@@ -16,11 +16,12 @@ LL |         id -> Integer,
              `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
              `posts::columns::id` implements `SelectableExpression<posts::table>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+             `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
+             `posts::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::user_id` from `users::table`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
@@ -40,11 +41,12 @@ LL |         user_id -> Integer,
              `posts::columns::user_id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
              `posts::columns::user_id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
              `posts::columns::user_id` implements `SelectableExpression<posts::table>`
-             `posts::columns::user_id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::user_id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+             `posts::columns::user_id` implements `SelectableExpression<Join<Left, Right, Inner>>`
+             `posts::columns::user_id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
@@ -82,11 +84,12 @@ LL |         id -> Integer,
              `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
              `posts::columns::id` implements `SelectableExpression<posts::table>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+             `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
+             `posts::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
    = note: required for `(posts::columns::id, users::columns::name)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, users::columns::name)>`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:27:30

@@ -1,8 +1,8 @@
-error[E0277]: `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>` is no valid SQL fragment for the `Mysql` backend
+error[E0277]: `LimitOffsetClause<NoLimitClause, ...>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/mysql_does_not_support_offset_without_limit.rs:16:38
      |
   LL |         .get_result::<(i32, String)>(&mut connection);
-     |          ----------                  ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>`
+     |          ----------                  ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, ...>`
      |          |
      |          required by a bound introduced by this call
      |
@@ -17,10 +17,10 @@ error[E0277]: `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>
                `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `QueryFragment<Mysql>`
                `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `QueryFragment<Sqlite>`
                `LimitOffsetClause<NoLimitClause, OffsetClause<O>>` implements `QueryFragment<Sqlite>`
-     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ...>` to implement `QueryFragment<Mysql, AnsiSqlSelectStatement>`
+     = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `QueryFragment<Mysql, AnsiSqlSelectStatement>`
      = note: 1 redundant requirement hidden
-     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, (i32, std::string::String)>`
+     = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `QueryFragment<Mysql>`
+     = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, (i32, std::string::String)>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -31,13 +31,14 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
   
      
-error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, ...>: IntoBoxedClause<'_, ...>` is not satisfied
+error[E0277]: the trait bound `LimitOffsetClause<..., ...>: IntoBoxedClause<'_, ...>` is not satisfied
   --> tests/fail/mysql_does_not_support_offset_without_limit.rs:21:10
    |
 LL |         .into_boxed()
-   |          ^^^^^^^^^^ the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>`
+   |          ^^^^^^^^^^ unsatisfied trait bound
    |
-   = note: this usually means that `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>` is no valid SQL for `Mysql`
+   = help: the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, ...>`
+   = note: this usually means that `LimitOffsetClause<NoLimitClause, ...>` is no valid SQL for `Mysql`
    = help: the following other types implement trait `IntoBoxedClause<'a, DB>`:
              `LimitOffsetClause<L, O>` implements `IntoBoxedClause<'_, Pg>`
              `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'_, Mysql>`
@@ -47,16 +48,17 @@ LL |         .into_boxed()
              `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'_, Mysql>`
              `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'_, Sqlite>`
              `LimitOffsetClause<NoLimitClause, OffsetClause<O>>` implements `IntoBoxedClause<'_, Sqlite>`
-   = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ...>` to implement `BoxedDsl<'_, Mysql>`
+   = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `BoxedDsl<'_, Mysql>`
 
    
-error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, ...>: IntoBoxedClause<'_, ...>` is not satisfied
+error[E0277]: the trait bound `LimitOffsetClause<..., ...>: IntoBoxedClause<'_, ...>` is not satisfied
     --> tests/fail/mysql_does_not_support_offset_without_limit.rs:21:10
      |
   LL |         .into_boxed()
-     |          ^^^^^^^^^^ the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>`
+     |          ^^^^^^^^^^ unsatisfied trait bound
      |
-     = note: this usually means that `LimitOffsetClause<NoLimitClause, OffsetClause<Bound<BigInt, i64>>>` is no valid SQL for `Mysql`
+     = help: the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, ...>`
+     = note: this usually means that `LimitOffsetClause<NoLimitClause, ...>` is no valid SQL for `Mysql`
      = help: the following other types implement trait `IntoBoxedClause<'a, DB>`:
                `LimitOffsetClause<L, O>` implements `IntoBoxedClause<'_, Pg>`
                `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'_, Mysql>`
@@ -66,7 +68,7 @@ error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, ...>: IntoBoxedC
                `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'_, Mysql>`
                `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'_, Sqlite>`
                `LimitOffsetClause<NoLimitClause, OffsetClause<O>>` implements `IntoBoxedClause<'_, Sqlite>`
-     = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ...>` to implement `BoxedDsl<'_, Mysql>`
+     = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `BoxedDsl<'_, Mysql>`
 note: required by a bound in `diesel::QueryDsl::into_boxed`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

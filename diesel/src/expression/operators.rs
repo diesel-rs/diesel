@@ -853,3 +853,87 @@ impl<T, DB> LikeIsAllowedForType<crate::sql_types::Nullable<T>> for DB where
     DB: Backend + LikeIsAllowedForType<T>
 {
 }
+
+/// Represents the SQL `COLLATE` operator
+#[derive(Debug, Clone, DieselNumericOps)]
+pub struct Collate<T, C> {
+    pub(crate) expr: T,
+    pub(crate) collation: C,
+}
+
+impl<T, C> Collate<T, C> {
+    /// Creates a new `Collate` expression
+    pub fn new(expr: T, collation: C) -> Self {
+        Collate { expr, collation }
+    }
+}
+
+impl<T, C> crate::expression::Expression for Collate<T, C>
+where
+    T: crate::expression::Expression,
+{
+    type SqlType = T::SqlType;
+}
+
+impl<T, C, GB> crate::expression::ValidGrouping<GB> for Collate<T, C>
+where
+    T: crate::expression::ValidGrouping<GB>,
+{
+    type IsAggregate = T::IsAggregate;
+}
+
+impl<T, C, DB> crate::query_builder::QueryFragment<DB> for Collate<T, C>
+where
+    DB: crate::backend::Backend,
+    T: crate::query_builder::QueryFragment<DB>,
+    C: crate::query_builder::QueryFragment<DB>,
+{
+    fn walk_ast<'b>(
+        &'b self,
+        mut out: crate::query_builder::AstPass<'_, 'b, DB>,
+    ) -> crate::result::QueryResult<()> {
+        self.expr.walk_ast(out.reborrow())?;
+        out.push_sql(" COLLATE ");
+        self.collation.walk_ast(out.reborrow())?;
+        Ok(())
+    }
+}
+
+impl<T, C> crate::query_builder::QueryId for Collate<T, C>
+where
+    T: crate::query_builder::QueryId,
+    C: crate::query_builder::QueryId,
+{
+    type QueryId = (T::QueryId, C::QueryId);
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID && C::HAS_STATIC_QUERY_ID;
+}
+
+impl<T, C, QS> crate::expression::SelectableExpression<QS> for Collate<T, C>
+where
+    T: crate::expression::SelectableExpression<QS>,
+    Collate<T, C>: crate::expression::AppearsOnTable<QS>,
+{
+}
+
+impl<T, C, QS> crate::expression::AppearsOnTable<QS> for Collate<T, C>
+where
+    T: crate::expression::AppearsOnTable<QS>,
+    Collate<T, C>: crate::expression::Expression,
+{
+}
+
+impl<S, T, C> crate::internal::operators_macro::FieldAliasMapper<S> for Collate<T, C>
+where
+    S: crate::query_source::AliasSource,
+    T: crate::internal::operators_macro::FieldAliasMapper<S>,
+    C: Copy,
+{
+    type Out = Collate<<T as crate::internal::operators_macro::FieldAliasMapper<S>>::Out, C>;
+
+    fn map(self, alias: &crate::query_source::Alias<S>) -> Self::Out {
+        Collate {
+            expr: self.expr.map(alias),
+            collation: self.collation,
+        }
+    }
+}

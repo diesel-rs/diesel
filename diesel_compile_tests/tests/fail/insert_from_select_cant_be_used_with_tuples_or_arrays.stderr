@@ -41,7 +41,7 @@ note: expected this to be `diesel::query_builder::insert_statement::ValuesClause
 LL | | }
    | |_^
    = note: expected struct `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
-              found struct `InsertFromSelect<SelectStatement<FromClause<table>>, (..., ..., ...)>`
+              found struct `InsertFromSelect<SelectStatement<...>, ...>`
    = note: required for `(users::table, users::table)` to implement `diesel::Insertable<posts::table>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -65,7 +65,7 @@ note: expected this to be `diesel::query_builder::insert_statement::ValuesClause
  LL | | }
     | |_^
     = note: expected struct `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
-               found struct `InsertFromSelect<SelectStatement<FromClause<table>>, (..., ..., ...)>`
+               found struct `InsertFromSelect<SelectStatement<...>, ...>`
     = note: required for `(users::table, users::table)` to implement `diesel::Insertable<posts::table>`
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs

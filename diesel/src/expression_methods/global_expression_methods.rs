@@ -3,7 +3,7 @@ use crate::expression::array_comparison::{AsInExpression, In, NotIn};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::*;
 use crate::expression::{assume_not_null, cast, nullable, AsExpression, Expression};
-use crate::sql_types::{SingleValue, SqlType};
+use crate::sql_types::{SingleValue, SqlType, Untyped};
 
 /// Methods present on all expressions, except tuples
 pub trait ExpressionMethods: Expression + Sized {
@@ -588,6 +588,143 @@ where
     T::SqlType: SingleValue,
 {
 }
+
+/// Methods present on untyped expressions.
+///
+/// This trait is implemented for expressions where the sql type is [`Untyped`].
+/// This allows calling common operators on these expressions.
+///
+/// This trait is primarily meant to be used for untyped queries in
+/// [`diesel_dynamic_schema`](https://docs.rs/diesel-dynamic-schema/latest/diesel_dynamic_schema/).
+pub trait UntypedExpressionMethods: Sized {
+    /// Creates a SQL `IS NULL` expression.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::animals::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// use diesel::sql_types::Untyped;
+    /// use diesel::dsl::sql;
+    ///
+    /// let data = animals
+    ///     .select(species)
+    ///     .filter(sql::<Untyped>("name").is_null())
+    ///     .first::<String>(connection)?;
+    /// assert_eq!("spider", data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[allow(clippy::wrong_self_convention)]
+    fn is_null(self) -> dsl::IsNull<Self> {
+        Grouped(IsNull::new(self))
+    }
+
+    /// Creates a SQL `IS NOT NULL` expression.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::animals::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// use diesel::sql_types::Untyped;
+    /// use diesel::dsl::sql;
+    ///
+    /// let data = animals
+    ///     .select(species)
+    ///     .filter(sql::<Untyped>("name").is_not_null())
+    ///     .first::<String>(connection)?;
+    /// assert_eq!("dog", data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[allow(clippy::wrong_self_convention)]
+    fn is_not_null(self) -> dsl::IsNotNull<Self> {
+        Grouped(IsNotNull::new(self))
+    }
+
+    /// Creates a SQL `DESC` expression, representing this expression in
+    /// descending order.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// use diesel::sql_types::Untyped;
+    /// use diesel::dsl::sql;
+    ///
+    /// let data = users
+    ///     .select(name)
+    ///     .order(sql::<Untyped>("name").desc())
+    ///     .load::<String>(connection)?;
+    /// let expected = vec!["Tess", "Sean"];
+    /// assert_eq!(expected, data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn desc(self) -> dsl::Desc<Self> {
+        Desc::new(self)
+    }
+
+    /// Creates a SQL `ASC` expression, representing this expression in
+    /// ascending order.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// use diesel::sql_types::Untyped;
+    /// use diesel::dsl::sql;
+    ///
+    /// let data = users
+    ///     .select(name)
+    ///     .order(sql::<Untyped>("name").asc())
+    ///     .load::<String>(connection)?;
+    /// let expected = vec!["Sean", "Tess"];
+    /// assert_eq!(expected, data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn asc(self) -> dsl::Asc<Self> {
+        Asc::new(self)
+    }
+}
+
+impl<T> UntypedExpressionMethods for T where T: Expression<SqlType = Untyped> {}
 
 /// Methods present on all expressions
 pub trait NullableExpressionMethods: Expression + Sized {

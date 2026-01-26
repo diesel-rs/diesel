@@ -70,9 +70,9 @@ fn main() {
     users::table
         .group_by(users::id)
         .select(some_ungrouped_expression(true))
-        //~^ ERROR: the trait bound `dyn BoxableExpression<table, Pg, SqlType = Integer>: ValidGrouping<id>` is not satisfied
+        //~^ ERROR: the trait bound `dyn BoxableExpression<..., ..., SqlType = ...>: ValidGrouping<...>` is not satisfied
         .load::<i32>(&mut conn);
-    //~^ ERROR: the trait bound `dyn BoxableExpression<table, Pg, SqlType = Integer>: ValidGrouping<id>` is not satisfied
+    //~^ ERROR: the trait bound `dyn BoxableExpression<..., ..., SqlType = ...>: ValidGrouping<...>` is not satisfied
 
     // it's fine to pass this to some query without group by clause
     // rustc should infer the correct bounds here

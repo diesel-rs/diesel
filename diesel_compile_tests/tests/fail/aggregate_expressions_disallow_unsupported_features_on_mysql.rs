@@ -15,7 +15,7 @@ fn main() {
     users::table
         .select(dsl::count(users::id).aggregate_filter(users::name.eq("Sean")))
         .get_result::<i64>(&mut conn)
-        //~^ ERROR: `Filter<WhereClause<Grouped<Eq<name, Bound<Text, &str>>>>>` is no valid SQL fragment for the `Mysql` backend
+        //~^ ERROR: `Filter<WhereClause<Grouped<Eq<name, ...>>>>` is no valid SQL fragment for the `Mysql` backend
         .unwrap();
 
     // no support for aggregate order

@@ -255,14 +255,14 @@ fn main() {
     let _ = posts::table
         .select((Post::as_select(), posts::title))
         .load::<((i32, String), String)>(&mut conn)
-        //~^ ERROR: the trait bound `(SelectBy<Post, _>, Text): CompatibleType<((i32, String), String), _>` is not satisfied
+        //~^ ERROR: the trait bound `(SelectBy<Post, _>, Text): CompatibleType<..., _>` is not satisfied
         .unwrap();
     let _ = diesel::insert_into(posts::table)
         .values(posts::title.eq(""))
         .returning(Post::as_select())
         .load::<(i32, String, i32)>(&mut conn)
         //~^ ERROR: the trait bound `diesel::expression::select_by::SelectBy<Post, _>: SingleValue` is not satisfied
-        //~| ERROR: the trait bound `(i32, String, i32): Queryable<SelectBy<Post, _>, _>` is not satisfied
+        //~| ERROR: the trait bound `(i32, String, i32): Queryable<SelectBy<..., _>, _>` is not satisfied
         .unwrap();
 
     // cannot use backend specific selectable with other backend
