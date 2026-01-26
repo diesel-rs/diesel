@@ -699,6 +699,18 @@ pub mod helper_types {
     >;
 
     /// Represents the return type of
+    /// [`InsertStatement::on_conflict()`](crate::query_builder::InsertStatement::on_conflict)
+    pub type OnConflict<I, Target> = crate::upsert::IncompleteOnConflict<
+        crate::query_builder::InsertStatement<
+            <I as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Table,
+            <<I as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Values as crate::query_builder::IntoConflictValueClause>::ValueClause,
+            <I as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Op,
+            <I as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Ret,
+        >,
+        crate::query_builder::ConflictTarget<Target>,
+    >;
+
+    /// Represents the return type of
     /// [`UpdateStatement::set()`](crate::query_builder::UpdateStatement::set)
     pub type Set<U, V> = crate::query_builder::UpdateStatement<
         <U as crate::query_builder::update_statement::UpdateAutoTypeHelper>::Table,
