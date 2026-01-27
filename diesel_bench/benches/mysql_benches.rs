@@ -1,7 +1,7 @@
 use super::Bencher;
 use rust_mysql::params::Params;
 use rust_mysql::prelude::*;
-use rust_mysql::{Conn, Opts, Row};
+use rust_mysql::{Conn, Opts, OptsBuilder, Row};
 use std::collections::HashMap;
 
 pub struct User {
@@ -28,7 +28,8 @@ fn connection() -> Conn {
     let connection_url = dotenvy::var("MYSQL_DATABASE_URL")
         .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    let opts = Opts::from_url(&connection_url).unwrap();
+    let opts = OptsBuilder::from_opts(Opts::from_url(&connection_url).unwrap())
+        .prefer_socket(false);
     let mut conn = Conn::new(opts).unwrap();
 
     conn.query_drop("SET FOREIGN_KEY_CHECKS = 0;").unwrap();
