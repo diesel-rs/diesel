@@ -60,6 +60,9 @@ pub mod multiconnection {
     pub use crate::row::private::PartialRow;
 
     #[doc(hidden)]
+    pub use crate::query_builder::update_statement::batch_update::BatchUpdate;
+
+    #[doc(hidden)]
     pub use crate::query_builder::limit_clause::{LimitClause, NoLimitClause};
     #[doc(hidden)]
     pub use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
