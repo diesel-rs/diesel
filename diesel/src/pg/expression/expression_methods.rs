@@ -17,7 +17,6 @@ use crate::expression_methods::json_expression_methods::JsonIndex;
 use crate::expression_methods::AnyJsonExpressionMethods;
 use crate::pg::expression::expression_methods::private::BinaryOrNullableBinary;
 use crate::pg::expression::operators::RetrieveAsObjectJson;
-#[cfg(feature = "postgres_backend")]
 use crate::sql_types::Nullable;
 use crate::sql_types::{Array, Inet, Integer, Range, SqlType, Text, VarChar};
 use crate::EscapeExpressionMethods;

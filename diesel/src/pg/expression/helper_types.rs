@@ -4,7 +4,6 @@ use crate::expression::Expression;
 use crate::expression_methods::JsonIndex;
 use crate::pg::expression::expression_methods::private::JsonRemoveIndex;
 use crate::pg::types::sql_types::Array;
-#[cfg(feature = "postgres_backend")]
 use crate::sql_types::Nullable;
 use crate::sql_types::{Inet, Integer, VarChar};
 
