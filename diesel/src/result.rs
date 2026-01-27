@@ -226,7 +226,7 @@ impl DatabaseErrorInformation for String {
     }
 }
 
-impl DatabaseErrorInformation for std::convert::Infallible {
+impl DatabaseErrorInformation for core::convert::Infallible {
     fn message(&self) -> &str {
         match *self {}
     }
@@ -457,7 +457,7 @@ fn error_impls_send() {
 #[cfg(test)]
 #[allow(warnings)]
 fn infallible_impls_database_error_information() {
-    let err: std::convert::Infallible = unimplemented!();
+    let err: core::convert::Infallible = unimplemented!();
     let x: &dyn DatabaseErrorInformation = &err;
 }
 
