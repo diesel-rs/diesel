@@ -6,7 +6,7 @@ use diesel::sql_types;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::JsonValidFlag;
 #[cfg(feature = "postgres")]
-use std::ops::Bound;
+use {diesel::sql_types::Integer, std::ops::Bound};
 
 table! {
     users {
@@ -268,11 +268,20 @@ fn test_pg_net_expression_methods() -> _ {
 #[auto_type]
 fn test_pg_array_expression_methods() -> _ {
     let v = 42_i32;
+    let a = array::<Integer, (i32,)>((v,));
+
     pg_extras::array
         .overlaps_with(pg_extras::array)
         .and(pg_extras::array.contains(pg_extras::array))
         .and(pg_extras::array.is_contained_by(pg_extras::array))
         .and(pg_extras::array.index(v).eq(v))
+        .and(pg_extras::array.index_nullable(v).eq(v))
+        .and(pg_extras::array.slice(v, v).eq(a))
+        .and(pg_extras::array.slice_nullable(v, v).eq(a.nullable()))
+        .and(pg_extras::array.slice_from(v).eq(a))
+        .and(pg_extras::array.slice_from_nullable(v).eq(a.nullable()))
+        .and(pg_extras::array.slice_to(v).eq(a))
+        .and(pg_extras::array.slice_to_nullable(v).eq(a.nullable()))
         .and(
             pg_extras::array
                 .concat(pg_extras::array)

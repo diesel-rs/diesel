@@ -4,6 +4,7 @@ use crate::expression::grouped::Grouped;
 use crate::expression_methods::JsonIndex;
 use crate::pg::expression::expression_methods::private::JsonRemoveIndex;
 use crate::pg::types::sql_types::Array;
+use crate::sql_types::Nullable;
 use crate::sql_types::{Inet, Integer, VarChar};
 
 /// The return type of [`lhs.ilike(rhs)`](super::expression_methods::PgTextExpressionMethods::ilike)
@@ -260,6 +261,42 @@ pub type IsContainedByJsonb<Lhs, Rhs> = IsContainedBy<Lhs, Rhs>;
 /// The return type of [`lhs.index(rhs)`](super::expression_methods::PgArrayExpressionMethods::index)
 #[cfg(feature = "postgres_backend")]
 pub type Index<Lhs, Rhs> = super::operators::ArrayIndex<Lhs, AsExprOf<Rhs, Integer>>;
+
+/// The return type of [`lhs.index_nullable(rhs)`](super::expression_methods::PgArrayExpressionMethods::index_nullable)
+#[cfg(feature = "postgres_backend")]
+pub type IndexNullable<Lhs, Rhs> =
+    super::operators::ArrayIndex<Lhs, AsExprOf<Rhs, Nullable<Integer>>>;
+
+/// The return type of [`lhs.slice(rhs1, rhs2)`](super::expression_methods::PgArrayExpressionMethods::slice)
+#[cfg(feature = "postgres_backend")]
+pub type Slice<Lhs, Rhs1, Rhs2> =
+    super::operators::ArraySlice<Lhs, AsExprOf<Rhs1, Integer>, AsExprOf<Rhs2, Integer>>;
+
+/// The return type of [`lhs.slice_nullable(rhs1, rhs2)`](super::expression_methods::PgArrayExpressionMethods::slice_nullable)
+#[cfg(feature = "postgres_backend")]
+pub type SliceNullable<Lhs, Rhs1, Rhs2> = super::operators::ArraySlice<
+    Lhs,
+    AsExprOf<Rhs1, Nullable<Integer>>,
+    AsExprOf<Rhs2, Nullable<Integer>>,
+>;
+
+/// The return type of [`lhs.slice_from(rhs)`](super::expression_methods::PgArrayExpressionMethods::slice_from)
+#[cfg(feature = "postgres_backend")]
+pub type SliceFrom<Lhs, Rhs> = super::operators::ArraySliceFrom<Lhs, AsExprOf<Rhs, Integer>>;
+
+/// The return type of [`lhs.slice_from_nullable(rhs)`](super::expression_methods::PgArrayExpressionMethods::slice_from_nullable)
+#[cfg(feature = "postgres_backend")]
+pub type SliceFromNullable<Lhs, Rhs> =
+    super::operators::ArraySliceFrom<Lhs, AsExprOf<Rhs, Nullable<Integer>>>;
+
+/// The return type of [`lhs.slice_to(rhs)`](super::expression_methods::PgArrayExpressionMethods::slice_to)
+#[cfg(feature = "postgres_backend")]
+pub type SliceTo<Lhs, Rhs> = super::operators::ArraySliceTo<Lhs, AsExprOf<Rhs, Integer>>;
+
+/// The return type of [`lhs.slice_to_nullable(rhs)`](super::expression_methods::PgArrayExpressionMethods::slice_to_nullable)
+#[cfg(feature = "postgres_backend")]
+pub type SliceToNullable<Lhs, Rhs> =
+    super::operators::ArraySliceTo<Lhs, AsExprOf<Rhs, Nullable<Integer>>>;
 
 #[doc(hidden)]
 #[deprecated(note = "Use `Index` instead")]

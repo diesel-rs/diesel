@@ -53,6 +53,7 @@ help: the trait `Column` is not implemented for `lower_utils::lower<posts::colum
  LL | #[declare_sql_function]
     | ^^^^^^^^^^^^^^^^^^^^^^^
     = help: the following other types implement trait `Column`:
+              diesel::expression::assume_not_null::AssumeNotNull<T>
               pg::metadata_lookup::pg_namespace::columns::nspname
               pg::metadata_lookup::pg_namespace::columns::oid
               pg::metadata_lookup::pg_type::columns::oid
@@ -60,7 +61,6 @@ help: the trait `Column` is not implemented for `lower_utils::lower<posts::colum
               pg::metadata_lookup::pg_type::columns::typname
               pg::metadata_lookup::pg_type::columns::typnamespace
               posts::columns::id
-              posts::columns::title
             and N others
     = note: required for `ConflictTarget<lower<title>>` to implement `OnConflictTarget<table>`
 note: required by a bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
@@ -83,6 +83,7 @@ error[E0277]: the trait bound `&str: Column` is not satisfied
     |          required by a bound introduced by this call
     |
     = help: the following other types implement trait `Column`:
+              diesel::expression::assume_not_null::AssumeNotNull<T>
               pg::metadata_lookup::pg_namespace::columns::nspname
               pg::metadata_lookup::pg_namespace::columns::oid
               pg::metadata_lookup::pg_type::columns::oid
@@ -90,7 +91,6 @@ error[E0277]: the trait bound `&str: Column` is not satisfied
               pg::metadata_lookup::pg_type::columns::typname
               pg::metadata_lookup::pg_type::columns::typnamespace
               posts::columns::id
-              posts::columns::title
             and N others
     = note: required for `ConflictTarget<&str>` to implement `OnConflictTarget<table>`
 note: required by a bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`

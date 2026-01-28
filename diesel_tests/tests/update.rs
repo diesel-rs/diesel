@@ -521,8 +521,151 @@ fn update_array_index_expression() {
         .set(tags.index(1).eq("postgres"))
         .execute(connection)
         .unwrap();
-    let data = posts.select(tags).load(connection);
-    let expected_data = vec![vec!["postgres".to_string(), "rust".to_string()]];
+    update(posts)
+        .set(nullable_tags.index(1).eq("postgres"))
+        .execute(connection)
+        .unwrap();
+    let data = posts.select((tags, nullable_tags)).load(connection);
+    let expected_data = vec![(
+        vec!["postgres".to_string(), "rust".to_string()],
+        Some(vec!["postgres".to_string()]),
+    )];
+
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn update_array_slice_expression() {
+    use diesel::dsl::array;
+
+    use crate::schema::posts::dsl::*;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let sean = find_user_by_name("Sean", connection);
+    let new_post = sean.new_post("Hello", Some("world"));
+    insert_into(posts)
+        .values(&new_post)
+        .execute(connection)
+        .unwrap();
+    update(posts)
+        .set(tags.eq(vec!["programming", "in", "rust"]))
+        .execute(connection)
+        .unwrap();
+    update(posts)
+        .set(tags.slice(2, 3).eq(array(("sql", "postgres"))))
+        .execute(connection)
+        .unwrap();
+    update(posts)
+        .set((nullable_tags.slice(1, 2)).eq(array(("postgres", "rust")).nullable()))
+        .execute(connection)
+        .unwrap();
+    let data = posts.select((tags, nullable_tags)).load(connection);
+    let expected_data = vec![(
+        vec![
+            "programming".to_string(),
+            "sql".to_string(),
+            "postgres".to_string(),
+        ],
+        Some(vec!["postgres".to_string(), "rust".to_string()]),
+    )];
+
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn update_array_slice_from_expression() {
+    use diesel::dsl::array;
+
+    use crate::schema::posts::dsl::*;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let sean = find_user_by_name("Sean", connection);
+    let new_post = sean.new_post("Hello", Some("world"));
+    insert_into(posts)
+        .values(&new_post)
+        .execute(connection)
+        .unwrap();
+    update(posts)
+        .set(tags.eq(vec!["programming", "in", "rust"]))
+        .execute(connection)
+        .unwrap();
+    update(posts)
+        .set(nullable_tags.eq(vec!["programming", "in", "rust"]))
+        .execute(connection)
+        .unwrap();
+    update(posts)
+        .set(tags.slice_from(2).eq(array(("sql", "postgres"))))
+        .execute(connection)
+        .unwrap();
+    update(posts)
+        .set((nullable_tags.assume_not_null().slice_from(3)).eq(array(("postgres", "rust"))))
+        .execute(connection)
+        .unwrap();
+    let data = posts.select((tags, nullable_tags)).load(connection);
+    let expected_data = vec![(
+        vec![
+            "programming".to_string(),
+            "sql".to_string(),
+            "postgres".to_string(),
+        ],
+        Some(vec![
+            "programming".to_string(),
+            "in".to_string(),
+            "postgres".to_string(),
+        ]),
+    )];
+
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn update_array_slice_to_expression() {
+    use diesel::dsl::array;
+
+    use crate::schema::posts::dsl::*;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let sean = find_user_by_name("Sean", connection);
+    let new_post = sean.new_post("Hello", Some("world"));
+    insert_into(posts)
+        .values(&new_post)
+        .execute(connection)
+        .unwrap();
+    update(posts)
+        .set(tags.eq(vec!["programming", "in", "rust"]))
+        .execute(connection)
+        .unwrap();
+    update(posts)
+        .set(nullable_tags.eq(vec!["programming", "in", "rust"]))
+        .execute(connection)
+        .unwrap();
+    update(posts)
+        .set(tags.slice_to(2).eq(array(("sql", "postgres"))))
+        .execute(connection)
+        .unwrap();
+    update(posts)
+        .set((nullable_tags.assume_not_null().slice_to(2)).eq(array(("postgres", "rust"))))
+        .execute(connection)
+        .unwrap();
+    let data = posts.select((tags, nullable_tags)).load(connection);
+    let expected_data = vec![(
+        vec![
+            "sql".to_string(),
+            "postgres".to_string(),
+            "rust".to_string(),
+        ],
+        Some(vec![
+            "postgres".to_string(),
+            "rust".to_string(),
+            "rust".to_string(),
+        ]),
+    )];
 
     assert_eq!(Ok(expected_data), data);
 }
