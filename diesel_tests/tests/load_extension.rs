@@ -3,7 +3,7 @@ use diesel::sql_types::Text;
 use diesel::sqlite::{
     SqliteExtension, SqliteMathFunctionsExtension, SqliteSpellfix1Extension, SqliteUUIDExtension,
 };
-use diesel::{select, RunQueryDsl};
+use diesel::RunQueryDsl;
 
 #[test]
 fn test_load_all_extensions() {
@@ -11,7 +11,8 @@ fn test_load_all_extensions() {
     let restricted_build = std::env::var("DIESEL_TEST_SQLITE_EXTENSIONS_DISABLED").is_ok();
 
     test_extension::<SqliteUUIDExtension, _>(&mut conn, restricted_build, "uuid", |conn| {
-        let uuid_result = select(diesel::dsl::sql::<Text>("uuid()")).get_result::<String>(conn);
+        let uuid_result =
+            diesel::select(diesel::dsl::sql::<Text>("uuid()")).get_result::<String>(conn);
         assert!(uuid_result.is_ok(), "uuid() function should be available");
         let uuid_value = uuid_result.unwrap();
         assert_eq!(uuid_value.len(), 36);
@@ -22,8 +23,9 @@ fn test_load_all_extensions() {
         restricted_build,
         "extension-functions",
         |conn| {
-            let cos_result = select(diesel::dsl::sql::<diesel::sql_types::Double>("cos(0)"))
-                .get_result::<f64>(conn);
+            let cos_result =
+                diesel::select(diesel::dsl::sql::<diesel::sql_types::Double>("cos(0)"))
+                    .get_result::<f64>(conn);
             // If compiled with math functions, this works.
             if let Ok(val) = cos_result {
                 assert!((val - 1.0).abs() < 1e-6);
