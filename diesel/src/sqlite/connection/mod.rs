@@ -446,7 +446,6 @@ impl SqliteConnection {
     /// # Generic Parameter
     ///
     /// *   `E`: A type implementing [`SqliteExtension`], representing the extension to load.
-    ///     Examples include [`SqliteUUIDExtension`].
     ///
     /// # Returns
     ///
