@@ -299,7 +299,7 @@ impl RawConnection {
             let symbol = {
                 // We declare the necessary Windows API functions manually to avoid
                 // Adding a dependency on `windows-sys` or `winapi` just for this.
-                extern "system" {
+                unsafe extern "system" {
                     fn GetModuleHandleA(lpModuleName: *const libc::c_char) -> *mut libc::c_void;
                     fn GetProcAddress(
                         hModule: *mut libc::c_void,
