@@ -80,7 +80,9 @@ impl TestArgs {
                     if std::env::var("MYSQL_DATABASE_URL").is_err()
                         || std::env::var("MYSQL_UNIT_TEST_DATABASE_URL").is_err()
                     {
-                        println!("Remember to set `MYSQL_DATABASE_URL` and `MYSQL_UNIT_TEST_DATABASE_URL` for running the mysql tests");
+                        println!(
+                            "Remember to set `MYSQL_DATABASE_URL` and `MYSQL_UNIT_TEST_DATABASE_URL` for running the mysql tests"
+                        );
                     }
                 }
                 Backend::All => unreachable!(),

@@ -437,7 +437,7 @@ extern "SQL" {
     #[cfg(feature = "postgres_backend")]
     #[sql_name = "range_merge"]
     fn multirange_merge<R: MultirangeOrNullableMultirange + SingleValue>(multirange: R)
-        -> R::Range;
+    -> R::Range;
 
     /// Returns range of integer
     ///

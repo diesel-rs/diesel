@@ -19,8 +19,8 @@ use std::fmt::Debug;
 
 #[doc(inline)]
 pub use self::instrumentation::{
-    get_default_instrumentation, set_default_instrumentation, DebugQuery, Instrumentation,
-    InstrumentationEvent,
+    DebugQuery, Instrumentation, InstrumentationEvent, get_default_instrumentation,
+    set_default_instrumentation,
 };
 #[doc(inline)]
 pub use self::transaction_manager::{

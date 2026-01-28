@@ -9,8 +9,8 @@ macro_rules! operator_allowed {
         impl<Rhs> ::std::ops::$op<Rhs> for $tpe
         where
             Rhs: $crate::expression::AsExpression<
-                <<$tpe as $crate::Expression>::SqlType as $crate::sql_types::ops::$op>::Rhs,
-            >,
+                    <<$tpe as $crate::Expression>::SqlType as $crate::sql_types::ops::$op>::Rhs,
+                >,
         {
             type Output = $crate::internal::table_macro::ops::$op<Self, Rhs::Expression>;
 

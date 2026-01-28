@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::parse_quote;
 use syn::DeriveInput;
+use syn::parse_quote;
 
 use crate::util::wrap_in_dummy_mod;
 

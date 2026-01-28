@@ -172,7 +172,6 @@ impl<S, TSM> Table for Tablesample<S, TSM>
 where
     S: Table + Clone + AsQuery,
     TSM: TablesampleMethod,
-
     <S as Table>::PrimaryKey: SelectableExpression<Tablesample<S, TSM>>,
     <S as Table>::AllColumns: SelectableExpression<Tablesample<S, TSM>>,
     <S as QuerySource>::DefaultSelection:

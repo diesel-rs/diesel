@@ -13,11 +13,11 @@
 
 use crate::backend::Backend;
 use crate::connection::Connection;
-use crate::expression::count::CountStar;
 use crate::expression::Expression;
+use crate::expression::count::CountStar;
 use crate::helper_types::*;
 use crate::query_builder::locking_clause as lock;
-use crate::query_source::{joins, QueryRelation};
+use crate::query_source::{QueryRelation, joins};
 use crate::result::QueryResult;
 
 mod belonging_to_dsl;

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use diesel::result::Error::NotFound;
 
 use super::table_data::*;
-use super::{data_structures::*, SchemaResolverImpl};
+use super::{SchemaResolverImpl, data_structures::*};
 
 use crate::config::{Filtering, PrintSchema};
 
@@ -117,15 +117,11 @@ pub fn load_table_names(
 ) -> Result<Vec<(SupportedQueryRelationStructures, TableName)>, crate::errors::Error> {
     let tables = match connection {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref mut c) => super::sqlite::load_table_names(c, schema_name),
+        InferConnection::Sqlite(c) => super::sqlite::load_table_names(c, schema_name),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref mut c) => {
-            super::information_schema::load_table_names(c, schema_name)
-        }
+        InferConnection::Pg(c) => super::information_schema::load_table_names(c, schema_name),
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref mut c) => {
-            super::information_schema::load_table_names(c, schema_name)
-        }
+        InferConnection::Mysql(c) => super::information_schema::load_table_names(c, schema_name),
     }?;
 
     tracing::info!(?tables, "Loaded tables");
@@ -268,15 +264,13 @@ pub fn load_foreign_key_constraints(
 ) -> Result<Vec<ForeignKeyConstraint>, crate::errors::Error> {
     let constraints = match connection {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref mut c) => {
-            super::sqlite::load_foreign_key_constraints(c, schema_name)
-        }
+        InferConnection::Sqlite(c) => super::sqlite::load_foreign_key_constraints(c, schema_name),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref mut c) => {
+        InferConnection::Pg(c) => {
             super::pg::load_foreign_key_constraints(c, schema_name).map_err(Into::into)
         }
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref mut c) => {
+        InferConnection::Mysql(c) => {
             super::mysql::load_foreign_key_constraints(c, schema_name).map_err(Into::into)
         }
     };

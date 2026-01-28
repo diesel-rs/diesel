@@ -1,8 +1,8 @@
 use crate::deserialize::{self, FromSql};
 use crate::serialize::{self, Output, ToSql};
 use crate::sql_types;
-use crate::sqlite::connection::SqliteValue;
 use crate::sqlite::Sqlite;
+use crate::sqlite::connection::SqliteValue;
 
 #[cfg(feature = "chrono")]
 mod chrono;
@@ -103,8 +103,8 @@ mod tests {
         DateTime, Datelike, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Timelike, Utc,
     };
     use time::{
-        macros::{date, datetime, offset, time},
         Date, OffsetDateTime, PrimitiveDateTime, Time,
+        macros::{date, datetime, offset, time},
     };
 
     use crate::insert_into;

@@ -2,7 +2,7 @@ use diesel_table_macro_syntax::ColumnDef;
 use std::fmt::{self, Display};
 use std::str::FromStr;
 
-use super::{table_data::TableName, TableData, ViewData};
+use super::{TableData, ViewData, table_data::TableName};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ColumnInformation {

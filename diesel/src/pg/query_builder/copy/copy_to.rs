@@ -4,20 +4,20 @@ use std::marker::PhantomData;
 use super::CommonOptions;
 use super::CopyFormat;
 use super::CopyTarget;
-use crate::deserialize::FromSqlRow;
-#[cfg(feature = "postgres")]
-use crate::pg::value::TypeOidLookup;
-use crate::pg::Pg;
-use crate::query_builder::QueryFragment;
-use crate::query_builder::QueryId;
-use crate::row::Row;
-#[cfg(feature = "postgres")]
-use crate::row::{self, Field, PartialRow, RowIndex, RowSealed};
 use crate::AppearsOnTable;
 use crate::Connection;
 use crate::Expression;
 use crate::QueryResult;
 use crate::Selectable;
+use crate::deserialize::FromSqlRow;
+use crate::pg::Pg;
+#[cfg(feature = "postgres")]
+use crate::pg::value::TypeOidLookup;
+use crate::query_builder::QueryFragment;
+use crate::query_builder::QueryId;
+use crate::row::Row;
+#[cfg(feature = "postgres")]
+use crate::row::{self, Field, PartialRow, RowIndex, RowSealed};
 
 #[derive(Default, Debug)]
 pub struct CopyToOptions {
@@ -356,7 +356,7 @@ where
                 let tuple_count = match usize::try_from(tuple_count) {
                     Ok(o) => o,
                     Err(e) => {
-                        return Some(Err(crate::result::Error::DeserializationError(Box::new(e))))
+                        return Some(Err(crate::result::Error::DeserializationError(Box::new(e))));
                     }
                 };
                 let mut buffers = Vec::with_capacity(tuple_count);

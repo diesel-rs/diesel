@@ -1729,7 +1729,7 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 ///     // the inner connection. This allows us then to use
 ///     // backend specific methods.
 /// #    #[cfg(feature = "postgres")]
-///     if let AnyConnection::Postgresql(ref mut conn) = conn {
+///     if let AnyConnection::Postgresql(conn) = conn {
 ///         // perform a postgresql specific query here
 ///         let users = users::table.load::<(i32, String)>(conn)?;
 ///     }

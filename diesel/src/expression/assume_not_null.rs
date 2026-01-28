@@ -1,9 +1,9 @@
+use crate::Column;
 use crate::expression::*;
 use crate::query_builder::*;
 use crate::query_source::joins::ToInnerJoin;
 use crate::result::QueryResult;
 use crate::sql_types::{DieselNumericOps, IntoNotNullable};
-use crate::Column;
 
 #[derive(Default, Debug, Copy, Clone, DieselNumericOps, ValidGrouping)]
 pub struct AssumeNotNull<T>(T);

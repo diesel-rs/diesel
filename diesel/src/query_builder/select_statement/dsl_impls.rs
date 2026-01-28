@@ -5,6 +5,7 @@ use crate::dsl::AsExprOf;
 use crate::expression::nullable::Nullable;
 use crate::expression::*;
 use crate::insertable::Insertable;
+use crate::query_builder::NoFromClause;
 use crate::query_builder::combination_clause::*;
 use crate::query_builder::distinct_clause::*;
 use crate::query_builder::from_clause::AsQuerySource;
@@ -19,7 +20,6 @@ use crate::query_builder::order_clause::*;
 use crate::query_builder::select_clause::*;
 use crate::query_builder::update_statement::target::*;
 use crate::query_builder::where_clause::*;
-use crate::query_builder::NoFromClause;
 use crate::query_builder::{
     AsQuery, IntoBoxedClause, Query, QueryFragment, SelectQuery, SelectStatement,
 };
@@ -27,8 +27,8 @@ use crate::query_dsl::group_by_dsl::ValidDistinctForGroupBy;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::query_dsl::*;
-use crate::query_source::joins::{Join, JoinOn, JoinTo};
 use crate::query_source::QuerySource;
+use crate::query_source::joins::{Join, JoinOn, JoinTo};
 use crate::sql_types::{BigInt, BoolOrNullableBool};
 
 impl<F, D, W, O, LOf, G, H, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>

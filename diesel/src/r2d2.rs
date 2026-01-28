@@ -470,8 +470,8 @@ impl<C: Connection> CustomizeConnection<C, crate::r2d2::Error> for TestCustomize
 
 #[cfg(test)]
 mod tests {
-    use std::sync::mpsc;
     use std::sync::Arc;
+    use std::sync::mpsc;
     use std::thread;
     use std::time::Duration;
 

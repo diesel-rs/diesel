@@ -1,8 +1,8 @@
 use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::expression::expression_types::NotSelectable;
 use crate::expression::{Expression, TypedExpressionType, ValidGrouping};
-use crate::pg::expression::expression_methods::{ArrayOrNullableArray, IntegerOrNullableInteger};
 use crate::pg::Pg;
+use crate::pg::expression::expression_methods::{ArrayOrNullableArray, IntegerOrNullableInteger};
 use crate::query_builder::update_statement::changeset::AssignmentTarget;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::query_dsl::positional_order_dsl::{IntoPositionalOrderExpr, PositionalOrderExpr};

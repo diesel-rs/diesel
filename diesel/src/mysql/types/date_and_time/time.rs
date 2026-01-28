@@ -211,8 +211,8 @@ mod tests {
     extern crate time;
 
     use time::{
-        macros::{date, datetime, time},
         Date as NaiveDate, Duration, OffsetDateTime, Time as NaiveTime,
+        macros::{date, datetime, time},
     };
 
     use super::to_primitive_datetime;

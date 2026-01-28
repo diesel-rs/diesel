@@ -3,7 +3,7 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{Ident, LitInt, LitStr};
 
-use crate::util::{parse_eq, unknown_attribute, POSTGRES_TYPE_NOTE, POSTGRES_TYPE_NOTE_ID};
+use crate::util::{POSTGRES_TYPE_NOTE, POSTGRES_TYPE_NOTE_ID, parse_eq, unknown_attribute};
 
 enum Attr {
     Oid(Ident, LitInt),
@@ -90,7 +90,8 @@ impl PostgresType {
                 schema.span(),
                 format!(
                     "expected `name` to be also present\n\
-                     help: make sure `name` is present, `#[diesel(postgres_type(name = \"...\", schema = \"{}\"))]`", lit.value()
+                     help: make sure `name` is present, `#[diesel(postgres_type(name = \"...\", schema = \"{}\"))]`",
+                    lit.value()
                 ),
             ))
         } else if let (Some((_, oid)), Some((_, array_oid))) = (oid, array_oid) {

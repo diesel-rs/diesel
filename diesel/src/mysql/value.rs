@@ -1,5 +1,5 @@
-use super::types::date_and_time::MysqlTime;
 use super::MysqlType;
+use super::types::date_and_time::MysqlTime;
 
 use crate::deserialize;
 use std::error::Error;
@@ -178,9 +178,11 @@ pub enum NumericRepresentation<'a> {
 fn invalid_reads() {
     use crate::data_types::MysqlTimestampType;
 
-    assert!(MysqlValue::new_internal(&[1], MysqlType::Timestamp)
-        .time_value()
-        .is_err());
+    assert!(
+        MysqlValue::new_internal(&[1], MysqlType::Timestamp)
+            .time_value()
+            .is_err()
+    );
     let v = MysqlTime {
         year: 2025,
         month: 9,
@@ -205,31 +207,45 @@ fn invalid_reads() {
     }
     let offset = std::mem::offset_of!(MysqlTime, neg);
     bytes[offset] = 42;
-    assert!(MysqlValue::new_internal(&bytes, MysqlType::Timestamp)
-        .time_value()
-        .is_err());
+    assert!(
+        MysqlValue::new_internal(&bytes, MysqlType::Timestamp)
+            .time_value()
+            .is_err()
+    );
 
-    assert!(MysqlValue::new_internal(&[1, 2], MysqlType::Long)
-        .numeric_value()
-        .is_err());
+    assert!(
+        MysqlValue::new_internal(&[1, 2], MysqlType::Long)
+            .numeric_value()
+            .is_err()
+    );
 
-    assert!(MysqlValue::new_internal(&[1, 2, 3, 4], MysqlType::LongLong)
-        .numeric_value()
-        .is_err());
+    assert!(
+        MysqlValue::new_internal(&[1, 2, 3, 4], MysqlType::LongLong)
+            .numeric_value()
+            .is_err()
+    );
 
-    assert!(MysqlValue::new_internal(&[1], MysqlType::Short)
-        .numeric_value()
-        .is_err());
+    assert!(
+        MysqlValue::new_internal(&[1], MysqlType::Short)
+            .numeric_value()
+            .is_err()
+    );
 
-    assert!(MysqlValue::new_internal(&[1, 2, 3, 4], MysqlType::Double)
-        .numeric_value()
-        .is_err());
+    assert!(
+        MysqlValue::new_internal(&[1, 2, 3, 4], MysqlType::Double)
+            .numeric_value()
+            .is_err()
+    );
 
-    assert!(MysqlValue::new_internal(&[1, 2], MysqlType::Float)
-        .numeric_value()
-        .is_err());
+    assert!(
+        MysqlValue::new_internal(&[1, 2], MysqlType::Float)
+            .numeric_value()
+            .is_err()
+    );
 
-    assert!(MysqlValue::new_internal(&[1], MysqlType::Tiny)
-        .numeric_value()
-        .is_ok());
+    assert!(
+        MysqlValue::new_internal(&[1], MysqlType::Tiny)
+            .numeric_value()
+            .is_ok()
+    );
 }

@@ -13,9 +13,9 @@ use crate::result::{DatabaseErrorKind, Error, QueryResult};
 use crate::row::{Field, PartialRow, Row, RowIndex, RowSealed};
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
+use crate::sqlite::SqliteValue;
 use crate::sqlite::connection::bind_collector::InternalSqliteBindValue;
 use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
-use crate::sqlite::SqliteValue;
 use std::cell::{Ref, RefCell};
 use std::marker::PhantomData;
 use std::mem::ManuallyDrop;
@@ -136,16 +136,14 @@ struct FunctionRow<'a> {
 impl Drop for FunctionRow<'_> {
     #[allow(unsafe_code)] // manual drop calls
     fn drop(&mut self) {
-        if let Some(args) = Rc::get_mut(&mut self.args) {
-            if let PrivateSqliteRow::Duplicated { column_names, .. } =
+        if let Some(args) = Rc::get_mut(&mut self.args)
+            && let PrivateSqliteRow::Duplicated { column_names, .. } =
                 DerefMut::deref_mut(RefCell::get_mut(args))
-            {
-                if Rc::strong_count(column_names) == 1 {
-                    // According the https://doc.rust-lang.org/std/mem/struct.ManuallyDrop.html#method.drop
-                    // it's fine to just drop the values here
-                    unsafe { std::ptr::drop_in_place(column_names as *mut _) }
-                }
-            }
+            && Rc::strong_count(column_names) == 1
+        {
+            // According the https://doc.rust-lang.org/std/mem/struct.ManuallyDrop.html#method.drop
+            // it's fine to just drop the values here
+            unsafe { std::ptr::drop_in_place(column_names as *mut _) }
         }
     }
 }

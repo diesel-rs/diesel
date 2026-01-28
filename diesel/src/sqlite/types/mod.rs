@@ -3,8 +3,8 @@ mod date_and_time;
 mod json;
 mod numeric;
 
-use super::connection::SqliteValue;
 use super::Sqlite;
+use super::connection::SqliteValue;
 use crate::deserialize::{self, FromSql, Queryable};
 use crate::expression::AsExpression;
 use crate::query_builder::QueryId;

@@ -1,6 +1,6 @@
-use diesel::r2d2::R2D2Connection;
 use diesel::PgConnection;
-use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use diesel::r2d2::R2D2Connection;
+use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use std::error::Error;
 
 pub mod model;
