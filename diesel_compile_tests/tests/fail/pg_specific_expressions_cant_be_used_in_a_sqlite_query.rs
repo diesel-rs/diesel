@@ -45,5 +45,5 @@ fn main() {
         .values(&NewUser("Sean"))
         .on_conflict(on_constraint("name"))
         .execute(&mut connection);
-    //~^ ERROR: the method `execute` exists for struct `IncompleteOnConflict<InsertStatement<table, ...>, ...>`, but its trait bounds were not satisfied
+    //~^ ERROR: the method `execute` exists for struct `IncompleteOnConflict<..., ...>`, but its trait bounds were not satisfied
 }

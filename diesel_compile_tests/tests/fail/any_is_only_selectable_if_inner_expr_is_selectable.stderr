@@ -22,9 +22,9 @@ note: required for `more_stuff::columns::names` to implement `AppearsOnTable<stu
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 3 redundant requirements hidden
      = note: required for `Grouped<Eq<name, Any<names>>>` to implement `AppearsOnTable<stuff::table>`
-     = note: required for `WhereClause<Grouped<Eq<name, Any<names>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<stuff::table>>`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `Query`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `LoadQuery<'_, _, _>`
+     = note: required for `WhereClause<Grouped<Eq<name, Any<names>>>>` to implement `ValidWhereClause<FromClause<table>>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, _, _>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

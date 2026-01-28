@@ -14,4 +14,5 @@ LL |     insert_into(users).values(&name.eq(1));
              `&&i32` implements `AsExpression<Nullable<diesel::sql_types::Integer>>`
              `&&i32` implements `AsExpression<diesel::sql_types::Integer>`
            and N others
-For more information about this error, try `rustc --explain E0277`.
+
+   For more information about this error, try `rustc --explain E0277`.
