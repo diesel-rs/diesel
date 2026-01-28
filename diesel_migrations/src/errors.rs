@@ -111,7 +111,11 @@ impl fmt::Display for RunMigrationsError {
                     if message.ends_with("cannot run inside a transaction block") {
                         write!(
                             f,
-                            " (see https://docs.diesel.rs/master/diesel_migrations/struct.FileBasedMigrations.html#transactions)"
+                            " (see https://docs.diesel.rs/{}.x/diesel_migrations/struct.FileBasedMigrations.html#transactions)",
+                            env!("CARGO_PKG_VERSION")
+                                .rsplit_once('.')
+                                .expect("We get a semver version here")
+                                .0
                         )?;
                     }
                 }

@@ -66,7 +66,7 @@ pub fn query_source_macro(
             quote::quote! {
                 compile_error!(
                     concat!("invalid `", #kind, "!` syntax \nhelp: please see the `", #kind, "!` macro docs for more info\n\
-                             help: docs available at: `https://docs.diesel.rs/master/diesel/macro.", #kind, ".html`\n"
+                             help: docs available at: `https://docs.diesel.rs/", env!("CARGO_PKG_VERSION_MAJOR"), ".", env!("CARGO_PKG_VERSION_MINOR"), ".x/diesel/macro.", #kind, ".html`\n"
                     ));
                 #tokenstream2
             }
@@ -200,7 +200,11 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
                 "column `{column_name}` cannot be named the same as it's {kind_name}.\n\
                  you may use `#[sql_name = \"{column_name}\"]` to reference the {kind_name}'s \
                  `{column_name}` column \n\
-                 docs available at: `https://docs.diesel.rs/master/diesel/macro.{kind_name}.html`\n"
+                 docs available at: `https://docs.diesel.rs/{}.x/diesel/macro.{kind_name}.html`\n",
+                env!("CARGO_PKG_VERSION")
+                    .rsplit_once('.')
+                    .expect("This is a valid version")
+                    .0
             );
             quote::quote_spanned! { span =>
                 compile_error!(#message);
