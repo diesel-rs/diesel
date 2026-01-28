@@ -38,7 +38,7 @@ fn test_load_all_extensions() {
         restricted_build,
         "spellfix1",
         |conn| {
-            let dist = select(diesel::dsl::sql::<diesel::sql_types::Integer>(
+            let dist = diesel::select(diesel::dsl::sql::<diesel::sql_types::Integer>(
                 "editdist1('apple', 'apply')",
             ))
             .get_result::<i32>(conn);
