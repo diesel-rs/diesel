@@ -271,14 +271,14 @@ impl RawConnection {
                 std::ptr::null_mut::<std::os::raw::c_int>(),
             )
         };
-        if result != ffi::SQLITE_OK {
+        if result == ffi::SQLITE_OK {
+            Ok(())
+        } else {
             let error_message = super::error_message(result);
             Err(DatabaseError(
                 DatabaseErrorKind::Unknown,
                 Box::new(error_message.to_string()),
             ))
-        } else {
-            Ok(())
         }
     }
 }
