@@ -52,8 +52,12 @@ impl Database {
 
     fn split_url(&self) -> (String, String) {
         let mut split: Vec<&str> = self.url.split('/').collect();
-        let database = split.pop().unwrap();
-        let mysql_url = format!("{}/{}", split.join("/"), "information_schema");
+        let database_segment = split.pop().unwrap();
+        let (database, args) = match database_segment.find('?') {
+            Some(idx) => (&database_segment[..idx], &database_segment[idx..]),
+            None => (database_segment, ""),
+        };
+        let mysql_url = format!("{}/information_schema{}", split.join("/"), args);
         (database.into(), mysql_url)
     }
 }
