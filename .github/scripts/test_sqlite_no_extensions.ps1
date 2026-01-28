@@ -48,7 +48,7 @@ New-Item -ItemType Directory -Force -Path $InstallLib | Out-Null
 # /DSQLITE_API=__declspec(dllexport) = Ensure import lib is created
 Write-Host "Compiling SQLite DLL (DSQLITE_OMIT_LOAD_EXTENSION)..."
 
-cl.exe /O2 /LD /DSQLITE_OMIT_LOAD_EXTENSION /DSQLITE_API=__declspec(dllexport) sqlite3.c /Fe:sqlite3.dll
+cl.exe /O2 /LD /DSQLITE_OMIT_LOAD_EXTENSION "/DSQLITE_API=__declspec(dllexport)" sqlite3.c /Fe:sqlite3.dll
 
 if (-not (Test-Path "sqlite3.dll")) {
     Write-Error "Failed to build sqlite3.dll"
