@@ -3,7 +3,6 @@ use diesel::sql_types::Text;
 use diesel::sqlite::{
     SqliteExtension, SqliteMathFunctionsExtension, SqliteSpellfix1Extension, SqliteUUIDExtension,
 };
-use diesel::RunQueryDsl;
 
 #[test]
 fn test_load_all_extensions() {
@@ -11,6 +10,7 @@ fn test_load_all_extensions() {
     let restricted_build = std::env::var("DIESEL_TEST_SQLITE_EXTENSIONS_DISABLED").is_ok();
 
     test_extension::<SqliteUUIDExtension, _>(&mut conn, restricted_build, "uuid", |conn| {
+        use diesel::RunQueryDsl;
         let uuid_result =
             diesel::select(diesel::dsl::sql::<Text>("uuid()")).get_result::<String>(conn);
         assert!(uuid_result.is_ok(), "uuid() function should be available");
@@ -23,6 +23,7 @@ fn test_load_all_extensions() {
         restricted_build,
         "extension-functions",
         |conn| {
+            use diesel::RunQueryDsl;
             let cos_result =
                 diesel::select(diesel::dsl::sql::<diesel::sql_types::Double>("cos(0)"))
                     .get_result::<f64>(conn);
@@ -38,6 +39,7 @@ fn test_load_all_extensions() {
         restricted_build,
         "spellfix1",
         |conn| {
+            use diesel::RunQueryDsl;
             let dist = diesel::select(diesel::dsl::sql::<diesel::sql_types::Integer>(
                 "editdist1('apple', 'apply')",
             ))
