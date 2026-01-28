@@ -58,7 +58,7 @@ echo "----------------------------------------------------------------"
 echo "Running compilation check..."
 
 # Run cargo test
-# We set DIESEL_TEST_SQLITE_EXTENSIONS_DISABLED to tell the test suite 
+# We set DIESEL_TEST_SQLITE_EXTENSIONS_DISABLED=1 to tell the test suite 
 # that we expect "no such function: load_extension" instead of "not authorized".
 export DIESEL_TEST_SQLITE_EXTENSIONS_DISABLED=1
 

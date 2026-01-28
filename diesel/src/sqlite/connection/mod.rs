@@ -5,7 +5,6 @@ extern crate libsqlite3_sys as ffi;
 use sqlite_wasm_rs as ffi;
 
 mod bind_collector;
-mod extensions;
 mod functions;
 mod owned_row;
 mod raw;
@@ -17,7 +16,6 @@ mod stmt;
 
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
 pub use self::bind_collector::SqliteBindValue;
-pub use self::extensions::*;
 pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
 
@@ -37,6 +35,37 @@ use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::{HasSqlType, TypeMetadata};
 use crate::sqlite::Sqlite;
+
+/// Trait for identifying a SQLite extension.
+///
+/// This trait acts as a "marker" for known, trusted extensions. By implementing this trait
+/// for a zero-sized struct, you can use [`SqliteConnection::load_extension`] to safely load
+/// that extension.
+///
+/// This design enforces two safety properties:
+/// 1.  It prevents passing arbitrary user strings to the underlying loading mechanism, preventing
+///     potential injection if user input were somehow involved (though `load_extension` itself
+///     should never take user input).
+/// 2.  It creates a catalog of known extensions in the codebase.
+///
+/// # Example
+///
+/// ```rust
+/// use diesel::sqlite::SqliteExtension;
+///
+/// struct MyCryptoExtension;
+///
+/// impl SqliteExtension for MyCryptoExtension {
+///     // The extension filename without 'lib' prefix or .so/.dll suffix
+///     const FILENAME: &'static std::ffi::CStr = c"crypto";
+/// }
+/// ```
+pub trait SqliteExtension {
+    /// The name of the extension library file (without the platform-specific extension like .dll or .so).
+    /// We use a CStr here to ensure it is null-terminated for FFI calls, and we do not have to execute
+    /// the potentially fallible conversion at runtime.
+    const FILENAME: &'static std::ffi::CStr;
+}
 
 /// Connections for the SQLite backend. Unlike other backends, SQLite supported
 /// connection URLs are:
