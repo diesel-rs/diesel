@@ -372,7 +372,10 @@ impl RawConnection {
                 Ok(())
             } else {
                 // If there's an error message returned by SQLite...
-                let msg = if !error_msg.is_null() {
+                let msg = if error_msg.is_null() {
+                    // Fallback to generic error message if none provided.
+                    super::error_message(result).to_string()
+                } else {
                     // Convert C string to Rust string.
                     let s = std::ffi::CStr::from_ptr(error_msg)
                         .to_string_lossy()
@@ -380,9 +383,6 @@ impl RawConnection {
                     // Important: Free the memory allocated by SQLite.
                     ffi::sqlite3_free(error_msg as *mut _);
                     s
-                } else {
-                    // Fallback to generic error message if none provided.
-                    super::error_message(result).to_string()
                 };
 
                 Err(DatabaseError(DatabaseErrorKind::Unknown, Box::new(msg)))
