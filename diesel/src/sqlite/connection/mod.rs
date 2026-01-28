@@ -394,6 +394,27 @@ impl SqliteConnection {
         self.raw_connection.enable_load_extension(false)
     }
 
+    /// Enables the `load_extension` SQL function, loads the provided extensions,
+    /// and then disables the `load_extension` SQL function.
+    ///
+    /// This function will attempt to disable the extension loading even if
+    /// loading an extension fails.
+    pub fn load_extensions(&mut self, extensions: &[&str]) -> QueryResult<()> {
+        use crate::query_dsl::RunQueryDsl;
+
+        self.enable_load_extension()?;
+        let result = (|| {
+            for ext in extensions {
+                crate::sql_query("SELECT load_extension(?)")
+                    .bind::<crate::sql_types::Text, _>(ext)
+                    .execute(self)?;
+            }
+            Ok(())
+        })();
+        let disable_result = self.disable_load_extension();
+        result.and(disable_result)
+    }
+
     fn transaction_sql<T, E, F>(&mut self, f: F, sql: &str) -> Result<T, E>
     where
         F: FnOnce(&mut Self) -> Result<T, E>,
