@@ -1,11 +1,31 @@
-error[E0277]: the trait bound `diesel::query_builder::insert_statement::InsertOrIgnore: diesel::query_builder::QueryFragment<diesel::pg::Pg>` is not satisfied
-  --> $DIR/sqlite_insert_or_ignore_cannot_be_used_on_pg.rs:21:10
-   |
-21 |         .execute(&connection)
-   |          ^^^^^^^ the trait `diesel::query_builder::QueryFragment<diesel::pg::Pg>` is not implemented for `diesel::query_builder::insert_statement::InsertOrIgnore`
-   |
-   = help: the following implementations were found:
-             <diesel::query_builder::insert_statement::InsertOrIgnore as diesel::query_builder::QueryFragment<diesel::mysql::Mysql>>
-             <diesel::query_builder::insert_statement::InsertOrIgnore as diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>>
-   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::pg::Pg>` for `diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<diesel::insertable::ColumnInsertValue<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>, diesel::query_builder::insert_statement::InsertOrIgnore>`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::load_dsl::ExecuteDsl<diesel::PgConnection, diesel::pg::Pg>` for `diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<diesel::insertable::ColumnInsertValue<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>, diesel::query_builder::insert_statement::InsertOrIgnore>`
+error[E0277]: `diesel::query_builder::insert_statement::private::InsertOrIgnore` is no valid SQL fragment for the `Pg` backend
+    --> tests/fail/sqlite_insert_or_ignore_cannot_be_used_on_pg.rs:21:18
+     |
+  LL |         .execute(&mut connection)
+     |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = help: the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::insert_statement::private::InsertOrIgnore`
+     = note: this usually means that the `Pg` database system does not support 
+             this SQL syntax
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+     |
+ LL |     impl QueryFragment<crate::sqlite::Sqlite> for InsertOrIgnore {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::insert_statement::private::InsertOrIgnore` implements `QueryFragment<Sqlite>`
+...
+ LL |     impl QueryFragment<crate::mysql::Mysql> for InsertOrIgnore {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::insert_statement::private::InsertOrIgnore` implements `QueryFragment<Mysql>`
+     = note: required for `InsertStatement<table, ..., ...>` to implement `QueryFragment<Pg>`
+     = note: required for `InsertStatement<table, ..., ...>` to implement `ExecuteDsl<diesel::PgConnection, Pg>`
+note: required by a bound in `diesel::RunQueryDsl::execute`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
+     |        ------- required by a bound in this associated function
+...
+LL |         Self: methods::ExecuteDsl<Conn>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
+  
+     For more information about this error, try `rustc --explain E0277`.

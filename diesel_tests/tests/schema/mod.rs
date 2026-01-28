@@ -1,4 +1,4 @@
-use diesel::*;
+use diesel::{associations::HasTable, *};
 
 #[cfg(feature = "postgres")]
 mod custom_schemas;
@@ -11,9 +11,18 @@ include!("sqlite_schema.rs");
 include!("mysql_schema.rs");
 
 #[derive(
-    PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, QueryableByName,
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    Identifiable,
+    Insertable,
+    AsChangeset,
+    QueryableByName,
+    Selectable,
 )]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct User {
     pub id: i32,
     pub name: String,
@@ -23,7 +32,7 @@ pub struct User {
 impl User {
     pub fn new(id: i32, name: &str) -> Self {
         User {
-            id: id,
+            id,
             name: name.to_string(),
             hair_color: None,
         }
@@ -31,7 +40,7 @@ impl User {
 
     pub fn with_hair_color(id: i32, name: &str, hair_color: &str) -> Self {
         User {
-            id: id,
+            id,
             name: name.to_string(),
             hair_color: Some(hair_color.to_string()),
         }
@@ -42,29 +51,52 @@ impl User {
     }
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-#[belongs_to(Post)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable, Selectable)]
+#[diesel(table_name = users)]
+pub struct UserName(#[diesel(column_name = name)] pub String);
+
+impl UserName {
+    pub fn new(name: &str) -> Self {
+        UserName(name.to_string())
+    }
+}
+
+#[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    AsChangeset,
+    Insertable,
+    Identifiable,
+    Associations,
+    Selectable,
+)]
+#[diesel(belongs_to(Post), table_name = comments)]
 pub struct Comment {
-    id: i32,
-    post_id: i32,
-    text: String,
+    pub id: i32,
+    pub post_id: i32,
+    pub text: String,
 }
 
 impl Comment {
     pub fn new(id: i32, post_id: i32, text: &str) -> Self {
         Comment {
-            id: id,
-            post_id: post_id,
+            id,
+            post_id,
             text: text.into(),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Associations, Identifiable)]
-#[belongs_to(User)]
-#[belongs_to(Post)]
-#[table_name = "followings"]
-#[primary_key(user_id, post_id)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Associations, Identifiable, Selectable,
+)]
+#[diesel(belongs_to(User))]
+#[diesel(belongs_to(Post))]
+#[diesel(table_name = followings)]
+#[diesel(primary_key(user_id, post_id))]
 pub struct Following {
     pub user_id: i32,
     pub post_id: i32,
@@ -78,11 +110,19 @@ mod backend_specifics;
 
 pub use self::backend_specifics::*;
 
-#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]
-#[table_name = "users"]
+#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset, Selectable)]
+#[diesel(table_name = users)]
 pub struct NewUser {
     pub name: String,
     pub hair_color: Option<String>,
+}
+
+impl HasTable for NewUser {
+    type Table = users::table;
+
+    fn table() -> Self::Table {
+        users::table
+    }
 }
 
 impl NewUser {
@@ -95,7 +135,7 @@ impl NewUser {
 }
 
 #[derive(Debug, PartialEq, Eq, Insertable)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct DefaultColorUser {
     pub name: String,
     pub hair_color: Option<Option<String>>,
@@ -111,7 +151,7 @@ impl DefaultColorUser {
 }
 
 #[derive(Insertable)]
-#[table_name = "posts"]
+#[diesel(table_name = posts)]
 pub struct NewPost {
     user_id: i32,
     title: String,
@@ -121,7 +161,7 @@ pub struct NewPost {
 impl NewPost {
     pub fn new(user_id: i32, title: &str, body: Option<&str>) -> Self {
         NewPost {
-            user_id: user_id,
+            user_id,
             title: title.into(),
             body: body.map(|b| b.into()),
         }
@@ -129,14 +169,14 @@ impl NewPost {
 }
 
 #[derive(Debug, Clone, Copy, Insertable)]
-#[table_name = "comments"]
+#[diesel(table_name = comments)]
 pub struct NewComment<'a>(
-    #[column_name = "post_id"] pub i32,
-    #[column_name = "text"] pub &'a str,
+    #[diesel(column_name = post_id)] pub i32,
+    #[diesel(column_name = text)] pub &'a str,
 );
 
 #[derive(PartialEq, Eq, Debug, Clone, Insertable)]
-#[table_name = "fk_tests"]
+#[diesel(table_name = fk_tests)]
 pub struct FkTest {
     id: i32,
     fk_id: i32,
@@ -144,28 +184,27 @@ pub struct FkTest {
 
 impl FkTest {
     pub fn new(id: i32, fk_id: i32) -> Self {
-        FkTest {
-            id: id,
-            fk_id: fk_id,
-        }
+        FkTest { id, fk_id }
     }
 }
 
 #[derive(Queryable, Insertable)]
-#[table_name = "nullable_table"]
+#[diesel(table_name = nullable_table)]
 pub struct NullableColumn {
     id: i32,
     value: Option<i32>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Identifiable, Associations)]
-#[table_name = "likes"]
-#[primary_key(user_id, comment_id)]
-#[belongs_to(User)]
-#[belongs_to(Comment)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Identifiable, Associations, Selectable,
+)]
+#[diesel(table_name = likes)]
+#[diesel(primary_key(comment_id, user_id))]
+#[diesel(belongs_to(User))]
+#[diesel(belongs_to(Comment))]
 pub struct Like {
-    pub user_id: i32,
     pub comment_id: i32,
+    pub user_id: i32,
 }
 
 #[cfg(feature = "postgres")]
@@ -178,101 +217,161 @@ pub type TestConnection = MysqlConnection;
 pub type TestBackend = <TestConnection as Connection>::Backend;
 
 //Used to ensure cleanup of one-off tables, e.g. for a table created for a single test
+#[cfg(not(feature = "mysql"))]
 pub struct DropTable<'a> {
-    pub connection: &'a TestConnection,
+    pub connection: &'a mut TestConnection,
     pub table_name: &'static str,
+    pub can_drop: bool,
 }
 
-impl<'a> Drop for DropTable<'a> {
+#[cfg(not(feature = "mysql"))]
+impl Drop for DropTable<'_> {
     fn drop(&mut self) {
-        self.connection
-            .execute(&format!("DROP TABLE {}", self.table_name))
-            .unwrap();
+        if self.can_drop {
+            diesel::sql_query(format!("DROP TABLE {}", self.table_name))
+                .execute(self.connection)
+                .unwrap();
+        }
     }
 }
 
+#[cfg(feature = "sqlite")]
+const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
+    diesel_migrations::embed_migrations!("../migrations/sqlite");
+
+#[cfg(feature = "postgres")]
+const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
+    diesel_migrations::embed_migrations!("../migrations/postgres");
+
+#[cfg(feature = "mysql")]
+const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
+    diesel_migrations::embed_migrations!("../migrations/mysql");
+
 pub fn connection() -> TestConnection {
-    let result = connection_without_transaction();
-    #[cfg(feature = "sqlite")]
-    result.execute("PRAGMA foreign_keys = ON").unwrap();
+    let mut result = connection_without_transaction();
     result.begin_test_transaction().unwrap();
     result
 }
 
-#[cfg(feature = "postgres")]
 pub fn connection_without_transaction() -> TestConnection {
-    let connection_url = dotenv::var("PG_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    use diesel_migrations::MigrationHarness;
+    use std::sync::Once;
+    static MIGRATION_GUARD: Once = Once::new();
+
+    let mut result = backend_specific_connection();
+
+    if cfg!(feature = "sqlite") {
+        result.run_pending_migrations(MIGRATIONS).unwrap();
+    } else {
+        MIGRATION_GUARD.call_once(|| {
+            result.run_pending_migrations(MIGRATIONS).unwrap();
+        });
+    }
+
+    result
+}
+
+#[cfg(feature = "postgres")]
+pub fn backend_specific_connection() -> TestConnection {
+    let connection_url = dotenvy::var("PG_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    PgConnection::establish(&connection_url).unwrap()
+    let mut conn = PgConnection::establish(&connection_url).unwrap();
+
+    // we do match the error messages in some tests and depending on your
+    // operating system configuration postgres may return localized error messages
+    // This forces the language to english
+    diesel::sql_query("SET lc_messages TO 'en_US.UTF-8'")
+        .execute(&mut conn)
+        .unwrap();
+    conn
 }
 
 #[cfg(feature = "sqlite")]
-diesel_migrations::embed_migrations!("../migrations/sqlite");
-
-#[cfg(feature = "sqlite")]
-pub fn connection_without_transaction() -> TestConnection {
-    let connection = SqliteConnection::establish(":memory:").unwrap();
-    embedded_migrations::run(&connection).unwrap();
-    connection
+pub fn backend_specific_connection() -> TestConnection {
+    let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    diesel::sql_query("PRAGMA foreign_keys = ON")
+        .execute(&mut conn)
+        .unwrap();
+    conn
 }
 
 #[cfg(feature = "mysql")]
-pub fn connection_without_transaction() -> TestConnection {
-    let connection_url = dotenv::var("MYSQL_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+pub fn backend_specific_connection() -> TestConnection {
+    let connection_url = dotenvy::var("MYSQL_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     MysqlConnection::establish(&connection_url).unwrap()
 }
 
 #[cfg(feature = "postgres")]
-pub fn disable_foreign_keys(connection: &TestConnection) {
-    connection.execute("SET CONSTRAINTS ALL DEFERRED").unwrap();
+pub fn disable_foreign_keys(connection: &mut TestConnection) {
+    diesel::sql_query("SET CONSTRAINTS ALL DEFERRED")
+        .execute(connection)
+        .unwrap();
 }
 
 #[cfg(feature = "mysql")]
-pub fn disable_foreign_keys(connection: &TestConnection) {
-    connection.execute("SET FOREIGN_KEY_CHECKS = 0").unwrap();
-}
-
-#[cfg(feature = "sqlite")]
-pub fn disable_foreign_keys(connection: &TestConnection) {
-    connection
-        .execute("PRAGMA defer_foreign_keys = ON")
+pub fn disable_foreign_keys(connection: &mut TestConnection) {
+    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 0")
+        .execute(connection)
         .unwrap();
 }
 
 #[cfg(feature = "sqlite")]
-pub fn drop_table_cascade(connection: &TestConnection, table: &str) {
-    connection
-        .execute(&format!("DROP TABLE {}", table))
+pub fn disable_foreign_keys(connection: &mut TestConnection) {
+    diesel::sql_query("PRAGMA defer_foreign_keys = ON")
+        .execute(connection)
+        .unwrap();
+}
+
+#[cfg(feature = "sqlite")]
+pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
+    diesel::sql_query(format!("DROP TABLE {table}"))
+        .execute(connection)
         .unwrap();
 }
 
 #[cfg(feature = "postgres")]
-pub fn drop_table_cascade(connection: &TestConnection, table: &str) {
-    connection
-        .execute(&format!("DROP TABLE {} CASCADE", table))
+pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
+    diesel::sql_query(format!("DROP TABLE {table} CASCADE"))
+        .execute(connection)
         .unwrap();
 }
 
-sql_function!(fn nextval(a: sql_types::VarChar) -> sql_types::BigInt);
+#[declare_sql_function]
+extern "SQL" {
+    fn nextval(a: sql_types::VarChar) -> sql_types::BigInt;
+}
 
 pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
-    let connection = connection();
-    insert_sean_and_tess_into_users_table(&connection);
+    let mut connection = connection();
+    insert_sean_and_tess_into_users_table(&mut connection);
     connection
 }
 
-pub fn insert_sean_and_tess_into_users_table(connection: &TestConnection) {
-    connection
-        .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
+pub fn insert_sean_and_tess_into_users_table(connection: &mut TestConnection) {
+    diesel::sql_query("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
+        .execute(connection)
         .unwrap();
-    ensure_primary_key_seq_greater_than(2, &connection);
+    ensure_primary_key_seq_greater_than(2, connection);
+}
+
+pub fn connection_with_gilbert_and_jonathan_in_users_table() -> TestConnection {
+    let mut connection = connection();
+    insert_gilbert_and_jonathan_into_users_table(&mut connection);
+    connection
+}
+
+pub fn insert_gilbert_and_jonathan_into_users_table(connection: &mut TestConnection) {
+    diesel::sql_query("INSERT INTO users (id, name, hair_color) VALUES (1, 'Gilbert', 'brown'), (2, 'Jonathan', 'electric-blue')")
+        .execute(connection)
+        .unwrap();
+    ensure_primary_key_seq_greater_than(2, connection);
 }
 
 pub fn connection_with_nullable_table_data() -> TestConnection {
-    let connection = connection();
+    let mut connection = connection();
 
     let test_data = vec![
         NullableColumn { id: 1, value: None },
@@ -292,13 +391,13 @@ pub fn connection_with_nullable_table_data() -> TestConnection {
     ];
     insert_into(nullable_table::table)
         .values(&test_data)
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
 
     connection
 }
 
-fn ensure_primary_key_seq_greater_than(x: i64, connection: &TestConnection) {
+fn ensure_primary_key_seq_greater_than(x: i64, connection: &mut TestConnection) {
     if cfg!(feature = "postgres") {
         for _ in 0..x {
             select(nextval("users_id_seq")).execute(connection).unwrap();
@@ -306,7 +405,7 @@ fn ensure_primary_key_seq_greater_than(x: i64, connection: &TestConnection) {
     }
 }
 
-pub fn find_user_by_name(name: &str, connection: &TestConnection) -> User {
+pub fn find_user_by_name(name: &str, connection: &mut TestConnection) -> User {
     users::table
         .filter(users::name.eq(name))
         .first(connection)

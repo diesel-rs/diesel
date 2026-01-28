@@ -1,19 +1,100 @@
-error[E0277]: the trait bound `diesel::sqlite::Sqlite: diesel::backend::SupportsReturningClause` is not satisfied
-  --> $DIR/update_statement_does_not_support_returning_methods_on_sqlite.rs:18:10
-   |
-18 |         .get_result(&connection);
-   |          ^^^^^^^^^^ the trait `diesel::backend::SupportsReturningClause` is not implemented for `diesel::sqlite::Sqlite`
-   |
-   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::query_builder::returning_clause::ReturningClause<(users::columns::id, users::columns::name)>`
-   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::query_builder::UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<(users::columns::id, users::columns::name)>>`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::SqliteConnection, _>` for `diesel::query_builder::UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>`
-
-error[E0277]: the trait bound `diesel::sqlite::Sqlite: diesel::backend::SupportsReturningClause` is not satisfied
-  --> $DIR/update_statement_does_not_support_returning_methods_on_sqlite.rs:23:10
-   |
-23 |         .get_result(&connection);
-   |          ^^^^^^^^^^ the trait `diesel::backend::SupportsReturningClause` is not implemented for `diesel::sqlite::Sqlite`
-   |
-   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::query_builder::returning_clause::ReturningClause<users::columns::name>`
-   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::query_builder::UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<users::columns::name>>`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::SqliteConnection, _>` for `diesel::query_builder::UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<users::columns::name>>`
+error[E0277]: `ReturningClause<(columns::id, columns::name)>` is no valid SQL fragment for the `Sqlite` backend
+    --> tests/fail/update_statement_does_not_support_returning_methods_on_sqlite.rs:18:21
+     |
+  LL |         .get_result(&mut connection);
+     |          ---------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = help: the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<(columns::id, columns::name)>`
+     = note: this usually means that the `Sqlite` database system does not support 
+             this SQL syntax
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/query_builder/returning_clause.rs
+     |
+  LL | / impl<Expr, DB> QueryFragment<DB> for ReturningClause<Expr>
+  LL | | where
+  LL | |     DB: Backend,
+  LL | |     Self: QueryFragment<DB, DB::ReturningClause>,
+     | |_________________________________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB>`
+...
+  LL | / impl<Expr, DB>
+  LL | |     QueryFragment<DB, crate::backend::sql_dialect::returning_clause::PgLikeReturningClause>
+  LL | |     for ReturningClause<Expr>
+  LL | | where
+...    |
+  LL | |     >,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, PgLikeReturningClause>`
+     |
+    ::: DIESEL/diesel/diesel/src/sqlite/query_builder/returning.rs
+     |
+   LL | / impl<Expr, DB> QueryFragment<DB, SqliteReturningClause> for ReturningClause<Expr>
+   LL | | where
+   LL | |     DB: Backend<ReturningClause = SqliteReturningClause>,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
+     = note: required for `ReturningClause<(columns::id, columns::name)>` to implement `QueryFragment<Sqlite>`
+     = note: 1 redundant requirement hidden
+     = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `QueryFragment<Sqlite>`
+     = note: required for `UpdateStatement<table, WhereClause<...>, ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
+note: required by a bound in `get_result`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+     |        ---------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+  
+     
+error[E0277]: `ReturningClause<columns::name>` is no valid SQL fragment for the `Sqlite` backend
+    --> tests/fail/update_statement_does_not_support_returning_methods_on_sqlite.rs:24:21
+     |
+  LL |         .get_result(&mut connection);
+     |          ---------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = help: the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<columns::name>`
+     = note: this usually means that the `Sqlite` database system does not support 
+             this SQL syntax
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/query_builder/returning_clause.rs
+     |
+  LL | / impl<Expr, DB> QueryFragment<DB> for ReturningClause<Expr>
+  LL | | where
+  LL | |     DB: Backend,
+  LL | |     Self: QueryFragment<DB, DB::ReturningClause>,
+     | |_________________________________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB>`
+...
+  LL | / impl<Expr, DB>
+  LL | |     QueryFragment<DB, crate::backend::sql_dialect::returning_clause::PgLikeReturningClause>
+  LL | |     for ReturningClause<Expr>
+  LL | | where
+...    |
+  LL | |     >,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, PgLikeReturningClause>`
+     |
+    ::: DIESEL/diesel/diesel/src/sqlite/query_builder/returning.rs
+     |
+   LL | / impl<Expr, DB> QueryFragment<DB, SqliteReturningClause> for ReturningClause<Expr>
+   LL | | where
+   LL | |     DB: Backend<ReturningClause = SqliteReturningClause>,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
+     = note: required for `ReturningClause<columns::name>` to implement `QueryFragment<Sqlite>`
+     = note: 1 redundant requirement hidden
+     = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `QueryFragment<Sqlite>`
+     = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
+note: required by a bound in `get_result`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+     |        ---------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+  
+     For more information about this error, try `rustc --explain E0277`.

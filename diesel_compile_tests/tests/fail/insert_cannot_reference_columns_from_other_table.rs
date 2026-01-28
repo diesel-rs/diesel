@@ -1,7 +1,7 @@
 extern crate diesel;
 
-use diesel::*;
 use diesel::pg::PgConnection;
+use diesel::*;
 
 table! {
     users {
@@ -16,12 +16,14 @@ table! {
 }
 
 fn main() {
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
 
-    insert_into(users::table)
-        .values(&posts::id.eq(1));
+    insert_into(users::table).values(&posts::id.eq(1));
+    //~^ ERROR: type mismatch resolving `<id as Column>::Table == table`
 
-    insert_into(users::table)
-        .values(&(posts::id.eq(1), users::id.eq(2)));
-        //FIXME: Bad error on the second one
+    insert_into(users::table).values(&(posts::id.eq(1), users::id.eq(2)));
+    //~^ ERROR: type mismatch resolving `<&... as Insertable<...>>::Values == ValuesClause<..., ...>`
+    //~| ERROR: type mismatch resolving `<id as Column>::Table == table`
+    //~| ERROR: type mismatch resolving `<&... as Insertable<...>>::Values == ValuesClause<..., ...>`
+    //FIXME: Bad error on the second one
 }

@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-#[cfg(feature = "bigdecimal")]
+#[cfg(feature = "numeric")]
 mod bigdecimal {
     extern crate bigdecimal;
     use self::bigdecimal::BigDecimal;
@@ -10,6 +10,6 @@ mod bigdecimal {
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[sql_type = "Numeric"]
+    #[diesel(sql_type = Numeric)]
     struct BigDecimalProxy(BigDecimal);
 }

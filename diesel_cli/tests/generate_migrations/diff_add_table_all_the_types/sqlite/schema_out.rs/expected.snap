@@ -1,0 +1,43 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 354
+description: "Test: diff_add_table_all_the_types"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    all_the_types (id) {
+        id -> Integer,
+        bool_column -> Bool,
+        integer_column -> Integer,
+        small_int_col -> SmallInt,
+        big_int_col -> BigInt,
+        binary_col -> Binary,
+        text_col -> Text,
+        double_col -> Double,
+        float_col -> Float,
+        numeric_col -> Double,
+        date_col -> Date,
+        timestamp_col -> Timestamp,
+        time_col -> Time,
+        float4_col -> Float,
+        small_int2_col -> SmallInt,
+        int2_col -> SmallInt,
+        int4_col -> Integer,
+        int8_col -> BigInt,
+        big_int2_col -> BigInt,
+        float8_col -> Float,
+        decimal_col -> Double,
+        varchar_col -> Text,
+        varchar2_col -> Text,
+        char_col -> Text,
+        tinytext_col -> Text,
+        mediumtext_col -> Text,
+        tinyblob_col -> Binary,
+        blob_col -> Binary,
+        longblob_col -> Binary,
+        mediumblob_col -> Binary,
+        varbinary_col -> Binary,
+    }
+}
+

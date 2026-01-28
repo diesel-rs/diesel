@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use super::Query;
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::connection::Connection;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::query_dsl::RunQueryDsl;
@@ -17,8 +17,8 @@ use crate::sql_types::{HasSqlType, Untyped};
 /// rather than by index. This means that you cannot deserialize this query into
 /// a tuple, and any structs used must implement `QueryableByName`.
 ///
-/// See [`sql_query`](../fn.sql_query.html) for examples.
-pub struct SqlQuery<Inner = ()> {
+/// See [`sql_query`](crate::sql_query()) for examples.
+pub struct SqlQuery<Inner = self::private::Empty> {
     inner: Inner,
     query: String,
 }
@@ -34,6 +34,8 @@ impl<Inner> SqlQuery<Inner> {
     /// [PostgreSQL PREPARE syntax](https://www.postgresql.org/docs/current/sql-prepare.html),
     /// or [MySQL bind syntax](https://dev.mysql.com/doc/refman/8.0/en/mysql-stmt-bind-param.html).
     ///
+    /// For binding a variable number of values in a loop, use `into_boxed` first.
+    ///
     /// # Safety
     ///
     /// This function should be used with care, as Diesel cannot validate that
@@ -48,7 +50,6 @@ impl<Inner> SqlQuery<Inner> {
     /// # use schema::users;
     /// #
     /// # #[derive(QueryableByName, Debug, PartialEq)]
-    /// # #[table_name="users"]
     /// # struct User {
     /// #     id: i32,
     /// #     name: String,
@@ -58,22 +59,24 @@ impl<Inner> SqlQuery<Inner> {
     /// #     use diesel::sql_query;
     /// #     use diesel::sql_types::{Integer, Text};
     /// #
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     diesel::insert_into(users::table)
     /// #         .values(users::name.eq("Jim"))
-    /// #         .execute(&connection).unwrap();
+    /// #         .execute(connection).unwrap();
     /// # #[cfg(feature = "postgres")]
     /// # let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
     /// # #[cfg(not(feature = "postgres"))]
+    /// // sqlite/mysql bind syntax
     /// let users = sql_query("SELECT * FROM users WHERE id > ? AND name <> ?")
     /// # ;
     /// # let users = users
     ///     .bind::<Integer, _>(1)
     ///     .bind::<Text, _>("Tess")
-    ///     .get_results(&connection);
-    /// let expected_users = vec![
-    ///     User { id: 3, name: "Jim".into() },
-    /// ];
+    ///     .get_results(connection);
+    /// let expected_users = vec![User {
+    ///     id: 3,
+    ///     name: "Jim".into(),
+    /// }];
     /// assert_eq!(Ok(expected_users), users);
     /// # }
     /// ```
@@ -81,8 +84,56 @@ impl<Inner> SqlQuery<Inner> {
         UncheckedBind::new(self, value)
     }
 
-    /// Internally boxes future calls on `bind` and `sql` so that they don't
-    /// change the type.
+    /// Internally boxes the query, which allows to  calls `bind` and `sql` so that they don't
+    /// change the type nor the instance. This allows to call `bind` or `sql`
+    /// in a loop, e.g.:
+    ///
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # use schema::users;
+    /// #
+    /// # #[derive(QueryableByName, Debug, PartialEq)]
+    /// # struct User {
+    /// #     id: i32,
+    /// #     name: String,
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use diesel::sql_query;
+    /// #     use diesel::sql_types::{Integer};
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::insert_into(users::table)
+    /// #         .values(users::name.eq("Jim"))
+    /// #         .execute(connection).unwrap();
+    /// let mut q = diesel::sql_query("SELECT * FROM users WHERE id IN(").into_boxed();
+    /// for (idx, user_id) in [3, 4, 5].into_iter().enumerate() {
+    ///     if idx != 0 {
+    ///         q = q.sql(", ");
+    ///     }
+    /// # #[cfg(feature = "postgres")]
+    /// # {
+    ///     q = q
+    ///         // postgresql bind syntax
+    ///         .sql(format!("${}", idx + 1))
+    ///         .bind::<Integer, _>(user_id);
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # {
+    /// #   q = q
+    /// #       .sql(format!("?"))
+    /// #       .bind::<Integer, _>(user_id);
+    /// # }
+    /// }
+    /// let users = q.sql(");").get_results(connection);
+    /// let expected_users = vec![User {
+    ///     id: 3,
+    ///     name: "Jim".into(),
+    /// }];
+    /// assert_eq!(Ok(expected_users), users);
+    /// # }
+    /// ```
     ///
     /// This allows doing things you otherwise couldn't do, e.g. `bind`ing in a
     /// loop.
@@ -97,12 +148,21 @@ impl<Inner> SqlQuery<Inner> {
     }
 }
 
+impl SqlQuery {
+    pub(crate) fn from_sql(query: String) -> SqlQuery {
+        Self {
+            inner: self::private::Empty,
+            query,
+        }
+    }
+}
+
 impl<DB, Inner> QueryFragment<DB> for SqlQuery<Inner>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     Inner: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.inner.walk_ast(out.reborrow())?;
         out.push_sql(&self.query);
@@ -125,8 +185,6 @@ impl<Inner, Conn> RunQueryDsl<Conn> for SqlQuery<Inner> {}
 #[derive(Debug, Clone, Copy)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Returned by the [`SqlQuery::bind()`] method when binding a value to a fragment of SQL.
-///
-/// [`SqlQuery::bind()`]: ./struct.SqlQuery.html#method.bind
 pub struct UncheckedBind<Query, Value, ST> {
     query: Query,
     value: Value,
@@ -160,7 +218,7 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     ///
     /// This function is intended for use when you want to write the entire query
     /// using raw SQL. If you only need a small bit of raw SQL in your query, use
-    /// [`sql`](./dsl/fn.sql.html) instead.
+    /// [`sql`](dsl::sql()) instead.
     ///
     /// Query parameters can be bound into the raw query using [`SqlQuery::bind()`].
     ///
@@ -179,7 +237,6 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     /// # use schema::users;
     /// #
     /// # #[derive(QueryableByName, Debug, PartialEq)]
-    /// # #[table_name="users"]
     /// # struct User {
     /// #     id: i32,
     /// #     name: String,
@@ -189,26 +246,28 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     /// #     use diesel::sql_query;
     /// #     use diesel::sql_types::{Integer, Text};
     /// #
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     diesel::insert_into(users::table)
     /// #         .values(users::name.eq("Jim"))
-    /// #         .execute(&connection).unwrap();
+    /// #         .execute(connection).unwrap();
     /// # #[cfg(feature = "postgres")]
     /// # let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
     /// # #[cfg(not(feature = "postgres"))]
+    /// // sqlite/mysql bind syntax
     /// let users = sql_query("SELECT * FROM users WHERE id > ? AND name <> ?")
     /// # ;
     /// # let users = users
     ///     .bind::<Integer, _>(1)
     ///     .bind::<Text, _>("Tess")
-    ///     .get_results(&connection);
-    /// let expected_users = vec![
-    ///     User { id: 3, name: "Jim".into() },
-    /// ];
+    ///     .get_results(connection);
+    /// let expected_users = vec![User {
+    ///     id: 3,
+    ///     name: "Jim".into(),
+    /// }];
     /// assert_eq!(Ok(expected_users), users);
     /// # }
     /// ```
-    /// [`SqlQuery::bind()`]: query_builder/struct.SqlQuery.html#method.bind
+    /// [`SqlQuery::bind()`]: query_builder::SqlQuery::bind()
     pub fn sql<T: Into<String>>(self, sql: T) -> SqlQuery<Self> {
         SqlQuery::new(self, sql.into())
     }
@@ -226,11 +285,11 @@ where
 
 impl<Query, Value, ST, DB> QueryFragment<DB> for UncheckedBind<Query, Value, ST>
 where
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend + HasSqlType<ST> + DieselReserveSpecialization,
     Query: QueryFragment<DB>,
     Value: ToSql<ST, DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.query.walk_ast(out.reborrow())?;
         out.push_bind_param_value_only(&self.value)?;
         Ok(())
@@ -246,12 +305,27 @@ impl<Conn, Query, Value, ST> RunQueryDsl<Conn> for UncheckedBind<Query, Value, S
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
 /// See [`SqlQuery::into_boxed`].
 ///
-/// [`SqlQuery::into_boxed`]: ./struct.SqlQuery.html#method.into_boxed
+/// [`SqlQuery::into_boxed`]: SqlQuery::into_boxed()
 #[allow(missing_debug_implementations)]
 pub struct BoxedSqlQuery<'f, DB: Backend, Query> {
     query: Query,
     sql: String,
-    binds: Vec<Box<dyn Fn(AstPass<DB>) -> QueryResult<()> + 'f>>,
+    binds: Vec<Box<dyn QueryFragment<DB> + Send + 'f>>,
+}
+
+struct RawBind<ST, U> {
+    value: U,
+    p: PhantomData<ST>,
+}
+
+impl<ST, U, DB> QueryFragment<DB> for RawBind<ST, U>
+where
+    DB: Backend + HasSqlType<ST>,
+    U: ToSql<ST, DB>,
+{
+    fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        pass.push_bind_param_value_only(&self.value)
+    }
 }
 
 impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
@@ -265,20 +339,23 @@ impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
 
     /// See [`SqlQuery::bind`].
     ///
-    /// [`SqlQuery::bind`]: ./struct.SqlQuery.html#method.bind
+    /// [`SqlQuery::bind`]: SqlQuery::bind()
     pub fn bind<BindSt, Value>(mut self, b: Value) -> Self
     where
         DB: HasSqlType<BindSt>,
-        Value: ToSql<BindSt, DB> + 'f,
+        Value: ToSql<BindSt, DB> + Send + 'f,
+        BindSt: Send + 'f,
     {
-        self.binds
-            .push(Box::new(move |mut out| out.push_bind_param_value_only(&b)));
+        self.binds.push(Box::new(RawBind {
+            value: b,
+            p: PhantomData,
+        }) as Box<_>);
         self
     }
 
     /// See [`SqlQuery::sql`].
     ///
-    /// [`SqlQuery::sql`]: ./struct.SqlQuery.html#method.sql
+    /// [`SqlQuery::sql`]: SqlQuery::sql()
     pub fn sql<T: AsRef<str>>(mut self, sql: T) -> Self {
         self.sql += sql.as_ref();
         self
@@ -287,16 +364,16 @@ impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
 
 impl<DB, Query> QueryFragment<DB> for BoxedSqlQuery<'_, DB, Query>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     Query: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.query.walk_ast(out.reborrow())?;
         out.push_sql(&self.sql);
 
         for b in &self.binds {
-            b(out.reborrow())?;
+            b.walk_ast(out.reborrow())?;
         }
         Ok(())
     }
@@ -316,3 +393,37 @@ where
 }
 
 impl<Conn: Connection, Query> RunQueryDsl<Conn> for BoxedSqlQuery<'_, Conn::Backend, Query> {}
+
+mod private {
+    use crate::backend::{Backend, DieselReserveSpecialization};
+    use crate::query_builder::{QueryFragment, QueryId};
+
+    #[derive(Debug, Clone, Copy, QueryId)]
+    pub struct Empty;
+
+    impl<DB> QueryFragment<DB> for Empty
+    where
+        DB: Backend + DieselReserveSpecialization,
+    {
+        fn walk_ast<'b>(
+            &'b self,
+            _pass: crate::query_builder::AstPass<'_, 'b, DB>,
+        ) -> crate::QueryResult<()> {
+            Ok(())
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    fn assert_send<S: Send>(_: S) {}
+
+    #[diesel_test_helper::test]
+    fn check_boxed_sql_query_is_send() {
+        let query = crate::sql_query("SELECT 1")
+            .into_boxed::<<crate::test_helpers::TestConnection as crate::Connection>::Backend>(
+        );
+
+        assert_send(query);
+    }
+}

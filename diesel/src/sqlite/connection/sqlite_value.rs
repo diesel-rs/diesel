@@ -1,77 +1,189 @@
+#![allow(unsafe_code)] // ffi calls
+#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 extern crate libsqlite3_sys as ffi;
 
-use std::marker::PhantomData;
-use std::os::raw as libc;
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
+use sqlite_wasm_rs as ffi;
+
+use std::cell::Ref;
 use std::ptr::NonNull;
 use std::{slice, str};
 
-use crate::row::*;
-use crate::sqlite::{Sqlite, SqliteType};
+use crate::sqlite::SqliteType;
+
+use super::owned_row::OwnedSqliteRow;
+use super::row::PrivateSqliteRow;
 
 /// Raw sqlite value as received from the database
 ///
-/// Use existing `FromSql` implementations to convert this into
-/// rust values:
+/// Use the `read_*` functions to access the actual
+/// value or use existing `FromSql` implementations
+/// to convert this into rust values
 #[allow(missing_debug_implementations, missing_copy_implementations)]
-pub struct SqliteValue<'a> {
+pub struct SqliteValue<'row, 'stmt, 'query> {
+    // This field exists to ensure that nobody
+    // can modify the underlying row while we are
+    // holding a reference to some row value here
+    _row: Option<Ref<'row, PrivateSqliteRow<'stmt, 'query>>>,
+    // we extract the raw value pointer as part of the constructor
+    // to safe the match statements for each method
+    // According to benchmarks this leads to a ~20-30% speedup
+    //
+    // This is sound as long as nobody calls `stmt.step()`
+    // while holding this value. We ensure this by including
+    // a reference to the row above.
     value: NonNull<ffi::sqlite3_value>,
-    p: PhantomData<&'a ()>,
 }
 
-#[derive(Clone)]
-pub struct SqliteRow<'a> {
-    stmt: NonNull<ffi::sqlite3_stmt>,
-    next_col_index: libc::c_int,
-    p: PhantomData<&'a ()>,
+#[derive(Debug)]
+#[repr(transparent)]
+pub(super) struct OwnedSqliteValue {
+    pub(super) value: NonNull<ffi::sqlite3_value>,
 }
 
-impl<'a> SqliteValue<'a> {
-    pub(crate) unsafe fn new(inner: *mut ffi::sqlite3_value) -> Option<Self> {
-        NonNull::new(inner)
-            .map(|value| SqliteValue {
-                value,
-                p: PhantomData,
-            })
-            .and_then(|value| {
-                // We check here that the actual value represented by the inner
-                // `sqlite3_value` is not `NULL` (is sql meaning, not ptr meaning)
-                if value.is_null() {
-                    None
-                } else {
-                    Some(value)
-                }
-            })
+impl Drop for OwnedSqliteValue {
+    fn drop(&mut self) {
+        unsafe { ffi::sqlite3_value_free(self.value.as_ptr()) }
+    }
+}
+
+// Unsafe Send impl safe since sqlite3_value is built with sqlite3_value_dup
+// see https://www.sqlite.org/c3ref/value.html
+unsafe impl Send for OwnedSqliteValue {}
+
+impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
+    pub(super) fn new(
+        row: Ref<'row, PrivateSqliteRow<'stmt, 'query>>,
+        col_idx: usize,
+    ) -> Option<SqliteValue<'row, 'stmt, 'query>> {
+        let value = match &*row {
+            PrivateSqliteRow::Direct(stmt) => stmt.column_value(
+                col_idx
+                    .try_into()
+                    .expect("Diesel expects to run at least on a 32 bit platform"),
+            )?,
+            PrivateSqliteRow::Duplicated { values, .. } => {
+                values.get(col_idx).and_then(|v| v.as_ref())?.value
+            }
+        };
+
+        let ret = Self {
+            _row: Some(row),
+            value,
+        };
+        if ret.value_type().is_none() {
+            None
+        } else {
+            Some(ret)
+        }
     }
 
-    pub(crate) fn read_text(&self) -> &str {
-        unsafe {
+    pub(super) fn from_owned_row(
+        row: &'row OwnedSqliteRow,
+        col_idx: usize,
+    ) -> Option<SqliteValue<'row, 'stmt, 'query>> {
+        let value = row.values.get(col_idx).and_then(|v| v.as_ref())?.value;
+        let ret = Self { _row: None, value };
+        if ret.value_type().is_none() {
+            None
+        } else {
+            Some(ret)
+        }
+    }
+
+    pub(crate) fn parse_string<'value, R>(&'value mut self, f: impl FnOnce(&'value str) -> R) -> R {
+        let s = unsafe {
             let ptr = ffi::sqlite3_value_text(self.value.as_ptr());
             let len = ffi::sqlite3_value_bytes(self.value.as_ptr());
-            let bytes = slice::from_raw_parts(ptr as *const u8, len as usize);
+            let bytes = slice::from_raw_parts(
+                ptr,
+                len.try_into()
+                    .expect("Diesel expects to run at least on a 32 bit platform"),
+            );
             // The string is guaranteed to be utf8 according to
             // https://www.sqlite.org/c3ref/value_blob.html
             str::from_utf8_unchecked(bytes)
-        }
+        };
+        f(s)
     }
 
-    pub(crate) fn read_blob(&self) -> &[u8] {
+    /// Read the underlying value as string
+    ///
+    /// If the underlying value is not a string sqlite will convert it
+    /// into a string and return that value instead.
+    ///
+    /// Use the [`value_type()`](Self::value_type()) function to determine the actual
+    /// type of the value.
+    ///
+    /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
+    pub fn read_text(&mut self) -> &str {
+        self.parse_string(|s| s)
+    }
+
+    /// Read the underlying value as blob
+    ///
+    /// If the underlying value is not a blob sqlite will convert it
+    /// into a blob and return that value instead.
+    ///
+    /// Use the [`value_type()`](Self::value_type()) function to determine the actual
+    /// type of the value.
+    ///
+    /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
+    pub fn read_blob(&mut self) -> &[u8] {
         unsafe {
             let ptr = ffi::sqlite3_value_blob(self.value.as_ptr());
             let len = ffi::sqlite3_value_bytes(self.value.as_ptr());
-            slice::from_raw_parts(ptr as *const u8, len as usize)
+            if len == 0 {
+                // rusts std-lib has an debug_assert that prevents creating
+                // slices without elements from a pointer
+                &[]
+            } else {
+                slice::from_raw_parts(
+                    ptr as *const u8,
+                    len.try_into()
+                        .expect("Diesel expects to run at least on a 32 bit platform"),
+                )
+            }
         }
     }
 
-    pub(crate) fn read_integer(&self) -> i32 {
-        unsafe { ffi::sqlite3_value_int(self.value.as_ptr()) as i32 }
+    /// Read the underlying value as 32 bit integer
+    ///
+    /// If the underlying value is not an integer sqlite will convert it
+    /// into an integer and return that value instead.
+    ///
+    /// Use the [`value_type()`](Self::value_type()) function to determine the actual
+    /// type of the value.
+    ///
+    /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
+    pub fn read_integer(&mut self) -> i32 {
+        unsafe { ffi::sqlite3_value_int(self.value.as_ptr()) }
     }
 
-    pub(crate) fn read_long(&self) -> i64 {
-        unsafe { ffi::sqlite3_value_int64(self.value.as_ptr()) as i64 }
+    /// Read the underlying value as 64 bit integer
+    ///
+    /// If the underlying value is not a string sqlite will convert it
+    /// into a string and return that value instead.
+    ///
+    /// Use the [`value_type()`](Self::value_type()) function to determine the actual
+    /// type of the value.
+    ///
+    /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
+    pub fn read_long(&mut self) -> i64 {
+        unsafe { ffi::sqlite3_value_int64(self.value.as_ptr()) }
     }
 
-    pub(crate) fn read_double(&self) -> f64 {
-        unsafe { ffi::sqlite3_value_double(self.value.as_ptr()) as f64 }
+    /// Read the underlying value as 64 bit float
+    ///
+    /// If the underlying value is not a string sqlite will convert it
+    /// into a string and return that value instead.
+    ///
+    /// Use the [`value_type()`](Self::value_type()) function to determine the actual
+    /// type of the value.
+    ///
+    /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
+    pub fn read_double(&mut self) -> f64 {
+        unsafe { ffi::sqlite3_value_double(self.value.as_ptr()) }
     }
 
     /// Get the type of the value as returned by sqlite
@@ -83,107 +195,117 @@ impl<'a> SqliteValue<'a> {
             ffi::SQLITE_FLOAT => Some(SqliteType::Double),
             ffi::SQLITE_BLOB => Some(SqliteType::Binary),
             ffi::SQLITE_NULL => None,
-            _ => unreachable!("Sqlite docs saying this is not reachable"),
-        }
-    }
-
-    pub(crate) fn is_null(&self) -> bool {
-        self.value_type().is_none()
-    }
-}
-
-impl<'a> SqliteRow<'a> {
-    pub(crate) unsafe fn new(inner_statement: NonNull<ffi::sqlite3_stmt>) -> Self {
-        SqliteRow {
-            stmt: inner_statement,
-            next_col_index: 0,
-            p: PhantomData,
+            _ => unreachable!(
+                "Sqlite's documentation state that this case ({}) is not reachable. \
+                 If you ever see this error message please open an issue at \
+                 https://github.com/diesel-rs/diesel.",
+                tpe
+            ),
         }
     }
 }
 
-impl<'a> Row<'a, Sqlite> for SqliteRow<'a> {
-    type Field = SqliteField<'a>;
-    type InnerPartialRow = Self;
-
-    fn field_count(&self) -> usize {
-        column_count(self.stmt) as usize
-    }
-
-    fn get<I>(&self, idx: I) -> Option<Self::Field>
-    where
-        Self: RowIndex<I>,
-    {
-        let idx = self.idx(idx)?;
-        Some(SqliteField {
-            stmt: self.stmt,
-            col_idx: idx as i32,
-            p: PhantomData,
+impl OwnedSqliteValue {
+    pub(super) fn copy_from_ptr(ptr: NonNull<ffi::sqlite3_value>) -> Option<OwnedSqliteValue> {
+        let tpe = unsafe { ffi::sqlite3_value_type(ptr.as_ptr()) };
+        if ffi::SQLITE_NULL == tpe {
+            return None;
+        }
+        let value = unsafe { ffi::sqlite3_value_dup(ptr.as_ptr()) };
+        Some(Self {
+            value: NonNull::new(value)?,
         })
     }
 
-    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<Self::InnerPartialRow> {
-        PartialRow::new(self, range)
+    pub(super) fn duplicate(&self) -> OwnedSqliteValue {
+        // self.value is a `NonNull` ptr so this cannot be null
+        let value = unsafe { ffi::sqlite3_value_dup(self.value.as_ptr()) };
+        let value = NonNull::new(value).expect(
+            "Sqlite documentation states this returns only null if value is null \
+                 or OOM. If you ever see this panic message please open an issue at \
+                 https://github.com/diesel-rs/diesel.",
+        );
+        OwnedSqliteValue { value }
     }
 }
 
-impl<'a> RowIndex<usize> for SqliteRow<'a> {
-    fn idx(&self, idx: usize) -> Option<usize> {
-        if idx < self.field_count() {
-            Some(idx)
-        } else {
-            None
-        }
-    }
-}
+#[cfg(test)]
+mod tests {
+    use crate::connection::{LoadConnection, SimpleConnection};
+    use crate::row::Field;
+    use crate::row::Row;
+    use crate::sql_types::{Blob, Double, Int4, Text};
+    use crate::*;
 
-impl<'a, 'b> RowIndex<&'a str> for SqliteRow<'b> {
-    fn idx(&self, field_name: &'a str) -> Option<usize> {
-        (0..column_count(self.stmt))
-            .find(|idx| column_name(self.stmt, *idx) == Some(field_name))
-            .map(|a| a as usize)
-    }
-}
+    #[expect(clippy::approx_constant)] // we really want to use 3.14
+    #[diesel_test_helper::test]
+    fn can_convert_all_values() {
+        let mut conn = SqliteConnection::establish(":memory:").unwrap();
 
-pub struct SqliteField<'a> {
-    stmt: NonNull<ffi::sqlite3_stmt>,
-    col_idx: i32,
-    p: PhantomData<&'a ()>,
-}
+        conn.batch_execute("CREATE TABLE tests(int INTEGER, text TEXT, blob BLOB, float FLOAT)")
+            .unwrap();
 
-impl<'a> Field<'a, Sqlite> for SqliteField<'a> {
-    fn field_name(&self) -> Option<&'a str> {
-        column_name(self.stmt, self.col_idx)
-    }
+        diesel::sql_query("INSERT INTO tests(int, text, blob, float) VALUES(?, ?, ?, ?)")
+            .bind::<Int4, _>(42)
+            .bind::<Text, _>("foo")
+            .bind::<Blob, _>(b"foo")
+            .bind::<Double, _>(3.14)
+            .execute(&mut conn)
+            .unwrap();
 
-    fn is_null(&self) -> bool {
-        self.value().is_none()
-    }
-
-    fn value(&self) -> Option<crate::backend::RawValue<'a, Sqlite>> {
-        unsafe {
-            let ptr = ffi::sqlite3_column_value(self.stmt.as_ptr(), self.col_idx);
-            SqliteValue::new(ptr)
-        }
-    }
-}
-
-fn column_name<'a>(stmt: NonNull<ffi::sqlite3_stmt>, field_number: i32) -> Option<&'a str> {
-    unsafe {
-        let ptr = ffi::sqlite3_column_name(stmt.as_ptr(), field_number);
-        if ptr.is_null() {
-            None
-        } else {
-            Some(std::ffi::CStr::from_ptr(ptr).to_str().expect(
-                "The Sqlite documentation states that this is UTF8. \
-                 If you see this error message something has gone \
-                 horribliy wrong. Please open an issue at the \
-                 diesel repository.",
+        let mut res = conn
+            .load(diesel::sql_query(
+                "SELECT int, text, blob, float FROM tests",
             ))
-        }
-    }
-}
+            .unwrap();
+        let row = res.next().unwrap().unwrap();
+        let int_field = row.get(0).unwrap();
+        let text_field = row.get(1).unwrap();
+        let blob_field = row.get(2).unwrap();
+        let float_field = row.get(3).unwrap();
 
-fn column_count(stmt: NonNull<ffi::sqlite3_stmt>) -> i32 {
-    unsafe { ffi::sqlite3_column_count(stmt.as_ptr()) }
+        let mut int_value = int_field.value().unwrap();
+        assert_eq!(int_value.read_integer(), 42);
+        let mut int_value = int_field.value().unwrap();
+        assert_eq!(int_value.read_long(), 42);
+        let mut int_value = int_field.value().unwrap();
+        assert_eq!(int_value.read_double(), 42.0);
+        let mut int_value = int_field.value().unwrap();
+        assert_eq!(int_value.read_text(), "42");
+        let mut int_value = int_field.value().unwrap();
+        assert_eq!(int_value.read_blob(), b"42");
+
+        let mut text_value = text_field.value().unwrap();
+        assert_eq!(text_value.read_integer(), 0);
+        let mut text_value = text_field.value().unwrap();
+        assert_eq!(text_value.read_long(), 0);
+        let mut text_value = text_field.value().unwrap();
+        assert_eq!(text_value.read_double(), 0.0);
+        let mut text_value = text_field.value().unwrap();
+        assert_eq!(text_value.read_text(), "foo");
+        let mut text_value = text_field.value().unwrap();
+        assert_eq!(text_value.read_blob(), b"foo");
+
+        let mut blob_value = blob_field.value().unwrap();
+        assert_eq!(blob_value.read_integer(), 0);
+        let mut blob_value = blob_field.value().unwrap();
+        assert_eq!(blob_value.read_long(), 0);
+        let mut blob_value = blob_field.value().unwrap();
+        assert_eq!(blob_value.read_double(), 0.0);
+        let mut blob_value = blob_field.value().unwrap();
+        assert_eq!(blob_value.read_text(), "foo");
+        let mut blob_value = blob_field.value().unwrap();
+        assert_eq!(blob_value.read_blob(), b"foo");
+
+        let mut float_value = float_field.value().unwrap();
+        assert_eq!(float_value.read_integer(), 3);
+        let mut float_value = float_field.value().unwrap();
+        assert_eq!(float_value.read_long(), 3);
+        let mut float_value = float_field.value().unwrap();
+        assert_eq!(float_value.read_double(), 3.14);
+        let mut float_value = float_field.value().unwrap();
+        assert_eq!(float_value.read_text(), "3.14");
+        let mut float_value = float_field.value().unwrap();
+        assert_eq!(float_value.read_blob(), b"3.14");
+    }
 }

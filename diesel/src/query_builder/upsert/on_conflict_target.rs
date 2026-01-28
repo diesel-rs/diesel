@@ -1,21 +1,21 @@
-use crate::backend::{Backend, SupportsOnConflictClause};
+use crate::backend::sql_dialect;
 use crate::expression::SqlLiteral;
 use crate::query_builder::*;
 use crate::query_source::Column;
-use crate::result::QueryResult;
 
 #[doc(hidden)]
 pub trait OnConflictTarget<Table> {}
 
 #[doc(hidden)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct NoConflictTarget;
 
 impl<DB> QueryFragment<DB> for NoConflictTarget
 where
-    DB: Backend + SupportsOnConflictClause,
+    DB: Backend,
+    DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
 {
-    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, _: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -23,15 +23,26 @@ where
 impl<Table> OnConflictTarget<Table> for NoConflictTarget {}
 
 #[doc(hidden)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct ConflictTarget<T>(pub T);
 
 impl<DB, T> QueryFragment<DB> for ConflictTarget<T>
 where
-    DB: Backend + SupportsOnConflictClause,
+    DB: Backend,
+    Self: QueryFragment<DB, DB::OnConflictClause>,
+{
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::OnConflictClause>>::walk_ast(self, pass)
+    }
+}
+
+impl<DB, T, SP> QueryFragment<DB, SP> for ConflictTarget<T>
+where
+    DB: Backend<OnConflictClause = SP>,
+    SP: sql_dialect::on_conflict_clause::PgLikeOnConflictClause,
     T: Column,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" (");
         out.push_identifier(T::NAME)?;
         out.push_sql(")");
@@ -41,12 +52,13 @@ where
 
 impl<T> OnConflictTarget<T::Table> for ConflictTarget<T> where T: Column {}
 
-impl<DB, ST> QueryFragment<DB> for ConflictTarget<SqlLiteral<ST>>
+impl<DB, ST, SP> QueryFragment<DB, SP> for ConflictTarget<SqlLiteral<ST>>
 where
-    DB: Backend + SupportsOnConflictClause,
+    DB: Backend<OnConflictClause = SP>,
+    SP: sql_dialect::on_conflict_clause::PgLikeOnConflictClause,
     SqlLiteral<ST>: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" ");
         self.0.walk_ast(out.reborrow())?;
         Ok(())
@@ -55,12 +67,13 @@ where
 
 impl<Tab, ST> OnConflictTarget<Tab> for ConflictTarget<SqlLiteral<ST>> {}
 
-impl<DB, T> QueryFragment<DB> for ConflictTarget<(T,)>
+impl<DB, T, SP> QueryFragment<DB, SP> for ConflictTarget<(T,)>
 where
-    DB: Backend + SupportsOnConflictClause,
+    DB: Backend<OnConflictClause = SP>,
+    SP: sql_dialect::on_conflict_clause::PgLikeOnConflictClause,
     T: Column,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" (");
         out.push_identifier(T::NAME)?;
         out.push_sql(")");
@@ -77,12 +90,14 @@ macro_rules! on_conflict_tuples {
         }
     )+) => {
         $(
-            impl<_DB, _T, $($T),*> QueryFragment<_DB> for ConflictTarget<(_T, $($T),*)> where
-                _DB: Backend + SupportsOnConflictClause,
+            impl<_DB, _T, _SP, $($T),*> QueryFragment<_DB, _SP> for ConflictTarget<(_T, $($T),*)> where
+                _DB: Backend<OnConflictClause = _SP>,
+                _SP: sql_dialect::on_conflict_clause::PgLikeOnConflictClause,
                 _T: Column,
                 $($T: Column<Table=_T::Table>,)*
             {
-                fn walk_ast(&self, mut out: AstPass<_DB>) -> QueryResult<()> {
+                fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, _DB>) -> QueryResult<()>
+                {
                     out.push_sql(" (");
                     out.push_identifier(_T::NAME)?;
                     $(
@@ -103,4 +118,4 @@ macro_rules! on_conflict_tuples {
     }
 }
 
-__diesel_for_each_tuple!(on_conflict_tuples);
+diesel_derives::__diesel_for_each_tuple!(on_conflict_tuples);

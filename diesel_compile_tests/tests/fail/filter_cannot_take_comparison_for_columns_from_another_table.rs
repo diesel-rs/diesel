@@ -1,7 +1,7 @@
 extern crate diesel;
 
-use diesel::*;
 use diesel::pg::Pg;
+use diesel::*;
 
 table! {
     users {
@@ -26,28 +26,31 @@ struct User {
 }
 
 fn main() {
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
 
-    let _ = users::table.filter(posts::id.eq(1))
-        .load::<User>(&conn);
+    let _ = users::table.filter(posts::id.eq(1)).load::<User>(&mut conn);
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+
+    let _ = users::table.into_boxed::<Pg>().filter(posts::id.eq(1));
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+
+    let _ = users::table.filter(posts::id.eq(1)).into_boxed::<Pg>();
+    //~^ ERROR: cannot box `SelectStatement<FromClause<table>, ..., ..., ...>` for backend `Pg`
+    // FIXME: It'd be great if this mentioned `AppearsInFromClause` instead...
+
+    let _ = users::table
+        .filter(users::name.eq(posts::title))
+        .load::<User>(&mut conn);
+    //~^ ERROR: AppearsInFromClause
 
     let _ = users::table
         .into_boxed::<Pg>()
-        .filter(posts::id.eq(1));
-
-    let _ = users::table.filter(posts::id.eq(1))
-        .into_boxed::<Pg>();
-        // FIXME: It'd be great if this mentioned `AppearsInFromClause` instead...
-
-    let _ = users::table.filter(users::name.eq(posts::title))
-        .load::<User>(&conn);
-        //~^ ERROR AppearsInFromClause
-
-    let _ = users::table.into_boxed::<Pg>()
         .filter(users::name.eq(posts::title));
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
 
     let _ = users::table
         .filter(users::name.eq(posts::title))
         .into_boxed::<Pg>();
-        // FIXME: It'd be great if this mentioned `AppearsInFromClause` instead...
+    //~^ ERROR: cannot box `SelectStatement<FromClause<table>, ..., ..., ...>` for backend `Pg`
+    // FIXME: It'd be great if this mentioned `AppearsInFromClause` instead...
 }

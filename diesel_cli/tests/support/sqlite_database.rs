@@ -1,3 +1,4 @@
+#![allow(clippy::expect_fun_call)]
 use diesel::connection::SimpleConnection;
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;
@@ -34,7 +35,7 @@ impl Database {
              AND name = '{}')",
             table
         )))
-        .get_result(&self.conn())
+        .get_result(&mut self.conn())
         .unwrap()
     }
 

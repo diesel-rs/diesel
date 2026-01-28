@@ -1,21 +1,15 @@
 [package]
 name = "migrations_internals"
-version = "1.4.1"
-authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+version = "2.3.0"
 license = "MIT OR Apache-2.0"
 description = "Internal implementation of diesels migration mechanism"
 homepage = "https://diesel.rs"
+repository = "https://github.com/diesel-rs/diesel"
+rust-version.workspace = true
+include.workspace = true
+edition = "2021"
+keywords = ["diesel", "internal"]
 
 [dependencies]
-barrel = { version = ">= 0.5.0", optional = true, features = ["diesel"] }
-
-[dependencies.diesel]
-version = "~2.0.0"
-path = "../../diesel"
-default-features = false
-
-[dev-dependencies]
-tempfile = "3.1.0"
-
-[features]
-default = []
+serde = {version = "1.0.0", features = ["derive"]}
+toml = { version = "0.9", default-features = false, features = ["parse", "serde"] }

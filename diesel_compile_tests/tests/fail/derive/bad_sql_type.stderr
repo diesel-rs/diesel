@@ -1,0 +1,24 @@
+error: unexpected end of input, expected `=`
+       help: the correct format looks like `#[diesel(sql_type = Foo)]`
+ --> tests/fail/derive/bad_sql_type.rs:5:18
+  |
+LL | #[diesel(sql_type)]
+  |                  ^
+
+error: expected `=`
+  --> tests/fail/derive/bad_sql_type.rs:10:18
+   |
+LL | #[diesel(sql_type(Foo))]
+   |                  ^
+
+error: expected identifier
+  --> tests/fail/derive/bad_sql_type.rs:15:21
+   |
+LL | #[diesel(sql_type = "foo")]
+   |                     ^^^^^
+
+error: expected identifier
+  --> tests/fail/derive/bad_sql_type.rs:20:21
+   |
+LL | #[diesel(sql_type = 1omg)]
+   |                     ^^^^

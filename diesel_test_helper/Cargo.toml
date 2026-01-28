@@ -1,0 +1,14 @@
+[package]
+name = "diesel_test_helper"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+
+[lib]
+proc-macro = true
+doc = false
+
+[dependencies]
+proc-macro2 = "1.0.92"
+quote = "1.0.38"
+syn = "2.0.92"

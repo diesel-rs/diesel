@@ -5,7 +5,7 @@ use diesel::insert_into;
 #[cfg(test)]
 use diesel::mysql::Mysql;
 use diesel::prelude::*;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::error::Error;
 
 mod schema {
@@ -23,14 +23,14 @@ mod schema {
 use schema::users;
 
 #[derive(Deserialize, Insertable)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct UserForm<'a> {
     name: &'a str,
     hair_color: Option<&'a str>,
 }
 
 #[derive(Queryable, PartialEq, Debug)]
-struct User {
+pub struct User {
     id: i32,
     name: String,
     hair_color: Option<String>,
@@ -38,7 +38,7 @@ struct User {
     updated_at: NaiveDateTime,
 }
 
-pub fn insert_default_values(conn: &MysqlConnection) -> QueryResult<usize> {
+pub fn insert_default_values(conn: &mut MysqlConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
     insert_into(users).default_values().execute(conn)
@@ -53,7 +53,7 @@ fn examine_sql_from_insert_default_values() {
     assert_eq!(sql, debug_query::<Mysql, _>(&query).to_string());
 }
 
-pub fn insert_single_column(conn: &MysqlConnection) -> QueryResult<usize> {
+pub fn insert_single_column(conn: &mut MysqlConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
     insert_into(users).values(name.eq("Sean")).execute(conn)
@@ -69,7 +69,7 @@ fn examine_sql_from_insert_single_column() {
     assert_eq!(sql, debug_query::<Mysql, _>(&query).to_string());
 }
 
-pub fn insert_multiple_columns(conn: &MysqlConnection) -> QueryResult<usize> {
+pub fn insert_multiple_columns(conn: &mut MysqlConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
     insert_into(users)
@@ -87,7 +87,7 @@ fn examine_sql_from_insert_multiple_columns() {
     assert_eq!(sql, debug_query::<Mysql, _>(&query).to_string());
 }
 
-pub fn insert_insertable_struct(conn: &MysqlConnection) -> Result<(), Box<dyn Error>> {
+pub fn insert_insertable_struct(conn: &mut MysqlConnection) -> Result<(), Box<dyn Error>> {
     use schema::users::dsl::*;
 
     let json = r#"{ "name": "Sean", "hair_color": "Black" }"#;
@@ -110,7 +110,7 @@ fn examine_sql_from_insertable_struct() {
     assert_eq!(sql, debug_query::<Mysql, _>(&query).to_string());
 }
 
-pub fn insert_insertable_struct_option(conn: &MysqlConnection) -> Result<(), Box<dyn Error>> {
+pub fn insert_insertable_struct_option(conn: &mut MysqlConnection) -> Result<(), Box<dyn Error>> {
     use schema::users::dsl::*;
 
     let json = r#"{ "name": "Ruby", "hair_color": null }"#;
@@ -133,7 +133,7 @@ fn examine_sql_from_insertable_struct_option() {
     assert_eq!(sql, debug_query::<Mysql, _>(&query).to_string());
 }
 
-pub fn insert_single_column_batch(conn: &MysqlConnection) -> QueryResult<usize> {
+pub fn insert_single_column_batch(conn: &mut MysqlConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
     insert_into(users)
@@ -152,7 +152,7 @@ fn examine_sql_from_insert_single_column_batch() {
     assert_eq!(sql, debug_query::<Mysql, _>(&query).to_string());
 }
 
-pub fn insert_single_column_batch_with_default(conn: &MysqlConnection) -> QueryResult<usize> {
+pub fn insert_single_column_batch_with_default(conn: &mut MysqlConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
     insert_into(users)
@@ -171,7 +171,7 @@ fn examine_sql_from_insert_single_column_batch_with_default() {
     assert_eq!(sql, debug_query::<Mysql, _>(&query).to_string());
 }
 
-pub fn insert_tuple_batch(conn: &MysqlConnection) -> QueryResult<usize> {
+pub fn insert_tuple_batch(conn: &mut MysqlConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
     insert_into(users)
@@ -197,7 +197,7 @@ fn examine_sql_from_insert_tuple_batch() {
     assert_eq!(sql, debug_query::<Mysql, _>(&query).to_string());
 }
 
-pub fn insert_tuple_batch_with_default(conn: &MysqlConnection) -> QueryResult<usize> {
+pub fn insert_tuple_batch_with_default(conn: &mut MysqlConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
     insert_into(users)
@@ -223,7 +223,7 @@ fn examine_sql_from_insert_tuple_batch_with_default() {
     assert_eq!(sql, debug_query::<Mysql, _>(&query).to_string());
 }
 
-pub fn insert_insertable_struct_batch(conn: &MysqlConnection) -> Result<(), Box<dyn Error>> {
+pub fn insert_insertable_struct_batch(conn: &mut MysqlConnection) -> Result<(), Box<dyn Error>> {
     use schema::users::dsl::*;
 
     let json = r#"[
@@ -257,25 +257,25 @@ fn examine_sql_from_insertable_struct_batch() {
 fn insert_get_results_batch() {
     use diesel::result::Error;
 
-    let conn = establish_connection();
-    conn.test_transaction::<_, Error, _>(|| {
+    let conn = &mut establish_connection();
+    conn.test_transaction::<_, Error, _>(|conn| {
         use diesel::select;
         use schema::users::dsl::*;
 
-        let now = select(diesel::dsl::now).get_result::<NaiveDateTime>(&conn)?;
+        let now = select(diesel::dsl::now).get_result::<NaiveDateTime>(conn)?;
 
-        let inserted_users = conn.transaction::<_, Error, _>(|| {
+        let inserted_users = conn.transaction::<_, Error, _>(|conn| {
             let inserted_count = insert_into(users)
                 .values(&vec![
                     (id.eq(1), name.eq("Sean")),
                     (id.eq(2), name.eq("Tess")),
                 ])
-                .execute(&conn)?;
+                .execute(conn)?;
 
             Ok(users
                 .order(id.desc())
                 .limit(inserted_count as i64)
-                .load(&conn)?
+                .load(conn)?
                 .into_iter()
                 .rev()
                 .collect::<Vec<_>>())
@@ -329,19 +329,19 @@ fn examine_sql_from_insert_get_results_batch() {
 fn insert_get_result() {
     use diesel::result::Error;
 
-    let conn = establish_connection();
-    conn.test_transaction::<_, Error, _>(|| {
+    let conn = &mut establish_connection();
+    conn.test_transaction::<_, Error, _>(|conn| {
         use diesel::select;
         use schema::users::dsl::*;
 
-        let now = select(diesel::dsl::now).get_result::<NaiveDateTime>(&conn)?;
+        let now = select(diesel::dsl::now).get_result::<NaiveDateTime>(conn)?;
 
-        let inserted_user = conn.transaction::<_, Error, _>(|| {
+        let inserted_user = conn.transaction::<_, Error, _>(|conn| {
             insert_into(users)
                 .values((id.eq(3), name.eq("Ruby")))
-                .execute(&conn)?;
+                .execute(conn)?;
 
-            users.order(id.desc()).first(&conn)
+            users.order(id.desc()).first(conn)
         })?;
 
         let expected_user = User {
@@ -377,11 +377,11 @@ fn examine_sql_from_insert_get_result() {
     assert_eq!(load_sql, debug_query::<Mysql, _>(&load_query).to_string());
 }
 
-pub fn explicit_returning(conn: &MysqlConnection) -> QueryResult<i32> {
+pub fn explicit_returning(conn: &mut MysqlConnection) -> QueryResult<i32> {
     use diesel::result::Error;
     use schema::users::dsl::*;
 
-    conn.transaction::<_, Error, _>(|| {
+    conn.transaction::<_, Error, _>(|conn| {
         insert_into(users).values(name.eq("Ruby")).execute(conn)?;
 
         users.select(id).order(id.desc()).first(conn)
@@ -405,6 +405,22 @@ fn examine_sql_from_explicit_returning() {
 
 #[cfg(test)]
 fn establish_connection() -> MysqlConnection {
-    let url = ::std::env::var("DATABASE_URL").unwrap();
-    MysqlConnection::establish(&url).unwrap()
+    let url = std::env::var("MYSQL_DATABASE_URL")
+        .or_else(|_| std::env::var("DATABASE_URL"))
+        .unwrap();
+    let mut conn = MysqlConnection::establish(&url).unwrap();
+    diesel::sql_query(
+        "CREATE TEMPORARY TABLE users ( \
+            id INTEGER PRIMARY KEY AUTO_INCREMENT, \
+            name TEXT NOT NULL, \
+            hair_color TEXT, \
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP \
+        );\
+    ",
+    )
+    .execute(&mut conn)
+    .unwrap();
+    conn.begin_test_transaction().unwrap();
+    conn
 }

@@ -5,7 +5,7 @@ use crate::query_builder::combination_clause::{
 use crate::query_builder::{AsQuery, Query};
 use crate::Table;
 
-/// Extension trait to combine queries using a combinator like `UNION`, `INTERSECT` or `EXPECT`
+/// Extension trait to combine queries using a combinator like `UNION`, `INTERSECT` or `EXCEPT`
 /// with or without `ALL` rule for duplicates
 pub trait CombineDsl {
     /// What kind of query does this type represent?
@@ -19,15 +19,20 @@ pub trait CombineDsl {
     /// # include!("../doctest_setup.rs");
     /// # use schema::{users, animals};
     /// # use crate::diesel::query_dsl::positional_order_dsl::PositionalOrderDsl;
-    ///
+    /// #
     /// # fn main() {
     /// #     use self::users::dsl::{users, name as user_name};
     /// #     use self::animals::dsl::{animals, name as animal_name};
-    /// #     let connection = establish_connection();
-    /// let data = users.select(user_name.nullable())
-    ///     .union(animals.select(animal_name).filter(animal_name.is_not_null()))
+    /// #     let connection = &mut establish_connection();
+    /// let data = users
+    ///     .select(user_name.nullable())
+    ///     .union(
+    ///         animals
+    ///             .select(animal_name)
+    ///             .filter(animal_name.is_not_null()),
+    ///     )
     /// #   .positional_order_by(1)
-    ///     .load(&connection);
+    ///     .load(connection);
     ///
     /// let expected_data = vec![
     ///     Some(String::from("Jack")),

@@ -1,10 +1,15 @@
 [package]
 name = "diesel_compile_tests"
 version = "0.1.0"
-authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+edition = "2021"
 
-[dependencies]
-diesel = { version = "2.0.0", default-features = false, features = ["extras", "sqlite", "postgres", "mysql", "unstable"], path = "../diesel" }
-trybuild = "1.0.41"
+[dev-dependencies]
+ui_test = "0.30"
+regex = { version="1.0", default-features = false, features = ["perf", "std", "unicode"] }
+
+[[test]]
+name = "compile_tests"
+path = "tests/trybuild.rs"
+harness = false
 
 [workspace]

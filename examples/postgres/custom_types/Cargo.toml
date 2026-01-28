@@ -1,11 +1,13 @@
 [package]
-name = "custom-types"
+name = "custom_types"
 version = "0.1.0"
-authors = ["Kitsu <mail@kitsu.me>"]
-edition = "2018"
+edition.workspace = true
+publish = false
 
 [dependencies]
-diesel = { path = "../../../diesel", version = "2.0.0", features = ["postgres"] }
+diesel = { path = "../../../diesel", version = "2.3.0", features = ["postgres"] }
+pq-sys = { workspace = true, features = ["bundled"] }
+openssl-sys = { workspace = true, features = ["vendored"] }
 
 [[bin]]
 name = "custom-types"

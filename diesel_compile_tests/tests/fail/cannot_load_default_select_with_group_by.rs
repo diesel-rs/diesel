@@ -10,8 +10,9 @@ table! {
 }
 
 fn main() {
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
     let _ = users::table
         .group_by(users::name)
-        .load::<(i32, String)>(&conn);
+        .load::<(i32, String)>(&mut conn);
+    //~^ ERROR: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
 }

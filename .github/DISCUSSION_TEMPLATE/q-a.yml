@@ -1,0 +1,73 @@
+labels: [Q&A]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Welcome to the Diesel support forum. We prepared a list of questions that make it easier for us to help you with resolving your problem. By answering them as accurate as possible you increase the probability to get a quick and good answer.
+  - type: dropdown
+    attributes:
+      label: Backend
+      description: Which Database backend do you use?
+      options:
+        - "PostgreSQL"
+        - "MySQL"
+        - "SQLite"
+        - "Other"
+      multiple: true
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Diesel version
+      description: The Diesel version required to reproduce the bug. You can get that version from your `Cargo.lock` file.
+      placeholder: 2.3.0
+    validations:
+      required: true
+  - type: input
+    id: diesel-features
+    attributes:
+      label: Diesel Features
+      description: The Cargo features enabled for Diesel. You can get that information from your `Cargo.toml` file.
+      placeholder: sqlite extras
+    validations:
+      required: true
+  - type: input
+    id: os-version
+    attributes:
+      label: Operating System Version
+      description: Information about your operating system
+      placeholder: Fedora Linux 42 (Workstation Edition) x86_64 GNU/Linux
+  - type: input
+    id: third-party-libs
+    attributes:
+      label: Third party libraries
+      description: Information about third party libraries used
+      placeholder: serde="1.0.101", chrono="0.4.1"
+  - type: textarea
+    attributes:
+      label: What do you want to do?
+      description: Describe the problem you would like to solve with as many details as possible. The more details you add here the easier it becomes for others to help you.
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Compile time error
+      description: The error you encountered while compiling your code. Please make sure to include the complete error emitted by **rustc** and not by your IDE
+  - type: textarea
+    attributes:
+      label: What code do you already have?
+      description: Did you already write code to solve your problem? Please provide what you already tried to solve the problem.
+      render: rust
+  - type: textarea
+    attributes:
+      label: Additional details
+      description: Is there anything that doesn't fit any of the fields above? Or that might be relevant to understand your problem?
+  - type: checkboxes
+    id: Checklist
+    attributes:
+      label: Checklist
+      description:
+      options:
+        - label: |
+            I have already looked over the [issue tracker](https://github.com/diesel-rs/diesel/issues) and the [discussion forum](https://github.com/diesel-rs/diesel/discussions) for similar possible closed issues.

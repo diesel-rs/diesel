@@ -1,0 +1,32 @@
+error[E0277]: the trait bound `Tablesample<table, ...>: LoadQuery<'_, ..., ...>` is not satisfied
+    --> tests/fail/pg_specific_tablesample_cannot_be_used_on_sqlite.rs:20:32
+     |
+  LL |         .load::<(i32, String)>(&mut connection);
+     |          ----                  ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `Tablesample<table, SystemMethod>`
+     |          |
+     |          required by a bound introduced by this call
+     |
+help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `Tablesample<table, SystemMethod>`
+      but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+    --> DIESEL/diesel/diesel/src/pg/query_builder/tablesample.rs
+     |
+ LL | / impl<S, TSM> QueryFragment<Pg> for Tablesample<S, TSM>
+ LL | | where
+ LL | |     S: QueryFragment<Pg>,
+ LL | |     TSM: TablesampleMethod,
+     | |___________________________^
+     = help: for that trait implementation, expected `Pg`, found `Sqlite`
+     = note: required for `FromClause<Tablesample<table, SystemMethod>>` to implement `QueryFragment<Sqlite>`
+     = note: 2 redundant requirements hidden
+     = note: required for `SelectStatement<FromClause<Tablesample<..., ...>>>` to implement `QueryFragment<Sqlite>`
+     = note: required for `Tablesample<table, SystemMethod>` to implement `LoadQuery<'_, SqliteConnection, (i32, String)>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     For more information about this error, try `rustc --explain E0277`.

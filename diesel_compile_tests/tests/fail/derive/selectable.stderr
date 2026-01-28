@@ -1,0 +1,51 @@
+error: references are not supported in `Queryable` types
+       consider using `std::borrow::Cow<'a, str>` instead
+  --> tests/fail/derive/selectable.rs:55:11
+   |
+LL |     name: &'a str,
+   |           ^
+
+error[E0425]: cannot find type `non_existing` in module `users`
+  --> tests/fail/derive/selectable.rs:26:5
+   |
+LL |     non_existing: String,
+   |     ^^^^^^^^^^^^ not found in `users`
+
+error[E0425]: cannot find type `non_existing` in module `users`
+  --> tests/fail/derive/selectable.rs:32:41
+   |
+LL |         select_expression_type = users::non_existing
+   |                                         ^^^^^^^^^^^^ not found in `users`
+
+error[E0425]: cannot find type `non_existing` in module `users`
+  --> tests/fail/derive/selectable.rs:39:53
+   |
+LL |         select_expression_type = (users::id, users::non_existing)
+   |                                                     ^^^^^^^^^^^^ not found in `users`
+
+error[E0425]: cannot find value `non_existing` in module `users`
+  --> tests/fail/derive/selectable.rs:26:5
+   |
+LL |     non_existing: String,
+   |     ^^^^^^^^^^^^ not found in `users`
+
+error[E0425]: cannot find value `non_existing` in module `users`
+  --> tests/fail/derive/selectable.rs:30:36
+   |
+LL |         select_expression = users::non_existing,
+   |                                    ^^^^^^^^^^^^ not found in `users`
+
+error[E0425]: cannot find value `non_existing` in module `users`
+  --> tests/fail/derive/selectable.rs:37:48
+   |
+LL |         select_expression = (users::id, users::non_existing),
+   |                                                ^^^^^^^^^^^^ not found in `users`
+
+error[E0308]: mismatched types
+  --> tests/fail/derive/selectable.rs:44:29
+   |
+LL |         select_expression = (users::id + 45),
+   |                             ^^^^^^^^^^^^^^^^ expected `id`, found `Add<id, Bound<Integer, i32>>`
+   |
+   = note: expected struct `columns::id`
+              found struct `diesel::expression::ops::numeric::Add<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>`

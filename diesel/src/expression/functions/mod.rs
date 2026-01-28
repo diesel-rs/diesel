@@ -1,6 +1,13 @@
 //! Helper macros to define custom sql functions
 
 #[doc(inline)]
+pub use diesel_derives::declare_sql_function;
+
+#[doc(inline)]
+pub use diesel_derives::define_sql_function;
+
+#[doc(inline)]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 pub use diesel_derives::sql_function_proc as sql_function;
 
 #[macro_export]
@@ -11,11 +18,7 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
         #[allow(non_camel_case_types)]
         #[doc=$docs]
         #[derive(
-            Debug,
-            Clone,
-            Copy,
-            $crate::query_builder::QueryId,
-            $crate::expression::ValidGrouping
+            Debug, Clone, Copy, $crate::query_builder::QueryId, $crate::expression::ValidGrouping,
         )]
         pub struct $type_name;
 
@@ -39,7 +42,8 @@ macro_rules! no_arg_sql_function_body {
         impl<DB> $crate::query_builder::QueryFragment<DB> for $type_name where
             DB: $crate::backend::Backend + $($constraint)::+,
         {
-            fn walk_ast(&self, mut out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+            fn walk_ast<'b>(&'b self, mut out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
+            {
                 out.push_sql(concat!(stringify!($type_name), "()"));
                 Ok(())
             }
@@ -52,7 +56,7 @@ macro_rules! no_arg_sql_function_body {
         impl<DB> $crate::query_builder::QueryFragment<DB> for $type_name where
             DB: $crate::backend::Backend,
         {
-            fn walk_ast(&self, mut out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+            fn walk_ast<'b>(&'b self, mut out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()> {
                 out.push_sql(concat!(stringify!($type_name), "()"));
                 Ok(())
             }
@@ -63,12 +67,16 @@ macro_rules! no_arg_sql_function_body {
 #[macro_export]
 /// Declare a 0 argument SQL function for use in your code. This will generate a
 /// unit struct, which is an expression representing calling this function. See
-/// [`now`](expression/dsl/struct.now.html) for example output. `now` was
+/// [`now`](crate::expression::dsl::now) for example output. `now` was
 /// generated using:
 ///
 /// ```no_run
 /// # pub use diesel::*;
-/// no_arg_sql_function!(now, sql_types::Timestamp, "Represents the SQL NOW() function");
+/// no_arg_sql_function!(
+///     now,
+///     sql_types::Timestamp,
+///     "Represents the SQL NOW() function"
+/// );
 /// # fn main() {}
 /// ```
 ///
@@ -76,7 +84,7 @@ macro_rules! no_arg_sql_function_body {
 /// function.
 #[deprecated(
     since = "2.0.0",
-    note = "Use `sql_function!` instead. See `CHANGELOG.md` for migration instructions"
+    note = "Use `define_sql_function!` instead. See `CHANGELOG.md` for migration instructions"
 )]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 macro_rules! no_arg_sql_function {
@@ -93,11 +101,9 @@ macro_rules! no_arg_sql_function {
     };
 }
 
-#[doc(hidden)]
-pub mod aggregate_folding;
-#[doc(hidden)]
-pub mod aggregate_ordering;
-#[doc(hidden)]
-pub mod date_and_time;
-#[doc(hidden)]
-pub mod helper_types;
+pub(crate) mod aggregate_expressions;
+pub(crate) mod aggregate_folding;
+pub(crate) mod aggregate_ordering;
+pub(crate) mod date_and_time;
+pub(crate) mod helper_types;
+pub(crate) mod window_functions;

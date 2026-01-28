@@ -1,32 +1,32 @@
 [package]
 name = "migrations_macros"
-version = "1.4.2"
-authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+version = "2.3.0"
 license = "MIT OR Apache-2.0"
 description = "Codegeneration macros for diesels embedded migrations"
 homepage = "https://diesel.rs"
-edition = "2018"
+repository = "https://github.com/diesel-rs/diesel"
+edition = "2021"
+include.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 quote = "1"
 proc-macro2 = "1"
 
 [dependencies.migrations_internals]
-version = "~1.4.0"
+version = "~2.3.0"
 path = "../migrations_internals"
 
 [dev-dependencies]
 tempfile = "3.1.0"
-dotenv = "0.15"
-cfg-if = "0.1.10"
+dotenvy = "0.15"
+cfg-if = "1.0.0"
 
 [dev-dependencies.diesel]
-version = "~2.0.0"
 path = "../../diesel"
 default-features = false
 
 [dev-dependencies.diesel_migrations]
-version = "~1.4.0"
 path = "../"
 default-features = false
 

@@ -1,0 +1,29 @@
+error: expected `,`
+ --> tests/fail/derive/bad_foreign_derive.rs:7:25
+  |
+LL | #[diesel(foreign_derive = true)]
+  |                         ^
+
+error: foreign_derive requires at least one field
+  --> tests/fail/derive/bad_foreign_derive.rs:11:10
+   |
+LL | #[derive(ValidGrouping)]
+   |          ^^^^^^^^^^^^^
+   |
+   = note: this error originates in the derive macro `ValidGrouping` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: foreign_derive requires at least one field
+  --> tests/fail/derive/bad_foreign_derive.rs:16:10
+   |
+LL | #[derive(AsExpression)]
+   |          ^^^^^^^^^^^^
+   |
+   = note: this error originates in the derive macro `AsExpression` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: foreign_derive requires at least one field
+  --> tests/fail/derive/bad_foreign_derive.rs:22:10
+   |
+LL | #[derive(FromSqlRow)]
+   |          ^^^^^^^^^^
+   |
+   = note: this error originates in the derive macro `FromSqlRow` (in Nightly builds, run with -Z macro-backtrace for more info)

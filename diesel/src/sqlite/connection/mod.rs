@@ -1,13 +1,22 @@
+#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 extern crate libsqlite3_sys as ffi;
 
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
+use sqlite_wasm_rs as ffi;
+
+mod bind_collector;
 mod functions;
-#[doc(hidden)]
-pub mod raw;
-mod serialized_value;
+mod owned_row;
+mod raw;
+mod row;
+mod serialized_database;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
 
+pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
+pub use self::bind_collector::SqliteBindValue;
+pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
 
 use std::os::raw as libc;
@@ -16,14 +25,15 @@ use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use super::SqliteAggregateFunction;
+use crate::connection::instrumentation::{DynInstrumentation, StrQueryHelper};
+use crate::connection::statement_cache::StatementCache;
 use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::expression::QueryMetadata;
-use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::*;
 use crate::serialize::ToSql;
-use crate::sql_types::HasSqlType;
+use crate::sql_types::{HasSqlType, TypeMetadata};
 use crate::sqlite::Sqlite;
 
 /// Connections for the SQLite backend. Unlike other backends, SQLite supported
@@ -32,76 +42,276 @@ use crate::sqlite::Sqlite;
 /// - File paths (`test.db`)
 /// - [URIs](https://sqlite.org/uri.html) (`file://test.db`)
 /// - Special identifiers (`:memory:`)
+///
+/// # Supported loading model implementations
+///
+/// * [`DefaultLoadingMode`]
+///
+/// As `SqliteConnection` only supports a single loading mode implementation,
+/// it is **not required** to explicitly specify a loading mode
+/// when calling [`RunQueryDsl::load_iter()`] or [`LoadConnection::load`]
+///
+/// [`RunQueryDsl::load_iter()`]: crate::query_dsl::RunQueryDsl::load_iter
+///
+/// ## DefaultLoadingMode
+///
+/// `SqliteConnection` only supports a single loading mode, which loads
+/// values row by row from the result set.
+///
+/// ```rust
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     let connection = &mut establish_connection();
+/// use diesel::connection::DefaultLoadingMode;
+/// {
+///     // scope to restrict the lifetime of the iterator
+///     let iter1 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+///
+///     for r in iter1 {
+///         let (id, name) = r?;
+///         println!("Id: {} Name: {}", id, name);
+///     }
+/// }
+///
+/// // works without specifying the loading mode
+/// let iter2 = users::table.load_iter::<(i32, String), _>(connection)?;
+///
+/// for r in iter2 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+/// #   Ok(())
+/// # }
+/// ```
+///
+/// This mode does **not support** creating
+/// multiple iterators using the same connection.
+///
+/// ```compile_fail
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     let connection = &mut establish_connection();
+/// use diesel::connection::DefaultLoadingMode;
+///
+/// let iter1 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+/// let iter2 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+///
+/// for r in iter1 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+///
+/// for r in iter2 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+/// #   Ok(())
+/// # }
+/// ```
+///
+/// # Concurrency
+///
+/// By default, when running into a database lock, the operation will abort with a
+/// `Database locked` error. However, it's possible to configure it for greater concurrency,
+/// trading latency for not having to deal with retries yourself.
+///
+/// You can use this example as blue-print for which statements to run after establishing a connection.
+/// It is **important** to run each `PRAGMA` in a single statement to make sure all of them apply
+/// correctly. In addition the order of the `PRAGMA` statements is relevant to prevent timeout
+/// issues for the later `PRAGMA` statements.
+///
+/// ```rust
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// use diesel::connection::SimpleConnection;
+/// let conn = &mut establish_connection();
+/// // see https://fractaledmind.github.io/2023/09/07/enhancing-rails-sqlite-fine-tuning/
+/// // sleep if the database is busy, this corresponds to up to 2 seconds sleeping time.
+/// conn.batch_execute("PRAGMA busy_timeout = 2000;")?;
+/// // better write-concurrency
+/// conn.batch_execute("PRAGMA journal_mode = WAL;")?;
+/// // fsync only in critical moments
+/// conn.batch_execute("PRAGMA synchronous = NORMAL;")?;
+/// // write WAL changes back every 1000 pages, for an in average 1MB WAL file.
+/// // May affect readers if number is increased
+/// conn.batch_execute("PRAGMA wal_autocheckpoint = 1000;")?;
+/// // free some space by truncating possibly massive WAL files from the last run
+/// conn.batch_execute("PRAGMA wal_checkpoint(TRUNCATE);")?;
+/// #   Ok(())
+/// # }
+/// ```
 #[allow(missing_debug_implementations)]
+#[cfg(feature = "sqlite")]
 pub struct SqliteConnection {
+    // statement_cache needs to be before raw_connection
+    // otherwise we will get errors about open statements before closing the
+    // connection itself
     statement_cache: StatementCache<Sqlite, Statement>,
     raw_connection: RawConnection,
-    transaction_manager: AnsiTransactionManager,
+    transaction_state: AnsiTransactionManager,
+    // this exists for the sole purpose of implementing `WithMetadataLookup` trait
+    // and avoiding static mut which will be deprecated in 2024 edition
+    metadata_lookup: (),
+    instrumentation: DynInstrumentation,
 }
 
 // This relies on the invariant that RawConnection or Statement are never
 // leaked. If a reference to one of those was held on a different thread, this
 // would not be thread safe.
+#[allow(unsafe_code)]
 unsafe impl Send for SqliteConnection {}
 
 impl SimpleConnection for SqliteConnection {
-    fn batch_execute(&self, query: &str) -> QueryResult<()> {
-        self.raw_connection.exec(query)
+    fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
+        self.instrumentation
+            .on_connection_event(InstrumentationEvent::StartQuery {
+                query: &StrQueryHelper::new(query),
+            });
+        let resp = self.raw_connection.exec(query);
+        self.instrumentation
+            .on_connection_event(InstrumentationEvent::FinishQuery {
+                query: &StrQueryHelper::new(query),
+                error: resp.as_ref().err(),
+            });
+        resp
     }
 }
+
+impl ConnectionSealed for SqliteConnection {}
 
 impl Connection for SqliteConnection {
     type Backend = Sqlite;
     type TransactionManager = AnsiTransactionManager;
 
+    /// Establish a connection to the database specified by `database_url`.
+    ///
+    /// See [SqliteConnection] for supported `database_url`.
+    ///
+    /// If the database does not exist, this method will try to
+    /// create a new database and then establish a connection to it.
+    ///
+    /// ## WASM support
+    ///
+    /// If you plan to use this connection type on the `wasm32-unknown-unknown` target please
+    /// make sure to read the following notes:
+    ///
+    /// * The database is stored in memory by default.
+    /// * Persistent VFS (Virtual File Systems) is optional,
+    ///   see <https://github.com/Spxg/sqlite-wasm-rs> for details
     fn establish(database_url: &str) -> ConnectionResult<Self> {
-        use crate::result::ConnectionError::CouldntSetupConfiguration;
+        let mut instrumentation = DynInstrumentation::default_instrumentation();
+        instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
+            url: database_url,
+        });
 
-        let raw_connection = RawConnection::establish(database_url)?;
-        let conn = Self {
-            statement_cache: StatementCache::new(),
-            raw_connection,
-            transaction_manager: AnsiTransactionManager::new(),
-        };
-        conn.register_diesel_sql_functions()
-            .map_err(CouldntSetupConfiguration)?;
+        let establish_result = Self::establish_inner(database_url);
+        instrumentation.on_connection_event(InstrumentationEvent::FinishEstablishConnection {
+            url: database_url,
+            error: establish_result.as_ref().err(),
+        });
+        let mut conn = establish_result?;
+        conn.instrumentation = instrumentation;
         Ok(conn)
     }
 
-    #[doc(hidden)]
-    fn execute(&self, query: &str) -> QueryResult<usize> {
-        self.batch_execute(query)?;
-        Ok(self.raw_connection.rows_affected_by_last_query())
-    }
-
-    #[doc(hidden)]
-    fn load<T, U>(&self, source: T) -> QueryResult<Vec<U>>
-    where
-        T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId,
-        U: FromSqlRow<T::SqlType, Self::Backend>,
-        Self::Backend: QueryMetadata<T::SqlType>,
-    {
-        let mut statement = self.prepare_query(&source.as_query())?;
-        let statement_use = StatementUse::new(&mut statement);
-        let iter = StatementIterator::new(statement_use);
-        iter.collect()
-    }
-
-    #[doc(hidden)]
-    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
+    fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        let mut statement = self.prepare_query(source)?;
-        let mut statement_use = StatementUse::new(&mut statement);
-        statement_use.run()?;
-        Ok(self.raw_connection.rows_affected_by_last_query())
+        let statement_use = self.prepared_query(source)?;
+        statement_use.run().and_then(|_| {
+            self.raw_connection
+                .rows_affected_by_last_query()
+                .map_err(Error::DeserializationError)
+        })
     }
 
-    #[doc(hidden)]
-    fn transaction_manager(&self) -> &Self::TransactionManager {
-        &self.transaction_manager
+    fn transaction_state(&mut self) -> &mut AnsiTransactionManager
+    where
+        Self: Sized,
+    {
+        &mut self.transaction_state
+    }
+
+    fn instrumentation(&mut self) -> &mut dyn Instrumentation {
+        &mut *self.instrumentation
+    }
+
+    fn set_instrumentation(&mut self, instrumentation: impl Instrumentation) {
+        self.instrumentation = instrumentation.into();
+    }
+
+    fn set_prepared_statement_cache_size(&mut self, size: CacheSize) {
+        self.statement_cache.set_cache_size(size);
+    }
+}
+
+impl LoadConnection<DefaultLoadingMode> for SqliteConnection {
+    type Cursor<'conn, 'query> = StatementIterator<'conn, 'query>;
+    type Row<'conn, 'query> = self::row::SqliteRow<'conn, 'query>;
+
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
+        source: T,
+    ) -> QueryResult<Self::Cursor<'conn, 'query>>
+    where
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
+        Self::Backend: QueryMetadata<T::SqlType>,
+    {
+        let statement = self.prepared_query(source)?;
+
+        Ok(StatementIterator::new(statement))
+    }
+}
+
+impl WithMetadataLookup for SqliteConnection {
+    fn metadata_lookup(&mut self) -> &mut <Sqlite as TypeMetadata>::MetadataLookup {
+        &mut self.metadata_lookup
+    }
+}
+
+#[cfg(feature = "r2d2")]
+impl crate::r2d2::R2D2Connection for crate::sqlite::SqliteConnection {
+    fn ping(&mut self) -> QueryResult<()> {
+        use crate::RunQueryDsl;
+
+        crate::r2d2::CheckConnectionQuery.execute(self).map(|_| ())
+    }
+
+    fn is_broken(&mut self) -> bool {
+        AnsiTransactionManager::is_broken_transaction_manager(self)
+    }
+}
+
+impl MultiConnectionHelper for SqliteConnection {
+    fn to_any<'a>(
+        lookup: &mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup,
+    ) -> &mut (dyn std::any::Any + 'a) {
+        lookup
+    }
+
+    fn from_any(
+        lookup: &mut dyn std::any::Any,
+    ) -> Option<&mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup> {
+        lookup.downcast_mut()
     }
 }
 
@@ -120,16 +330,16 @@ impl SqliteConnection {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     let conn = SqliteConnection::establish(":memory:").unwrap();
-    /// conn.immediate_transaction(|| {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// conn.immediate_transaction(|conn| {
     ///     // Do stuff in a transaction
     ///     Ok(())
     /// })
     /// # }
     /// ```
-    pub fn immediate_transaction<T, E, F>(&self, f: F) -> Result<T, E>
+    pub fn immediate_transaction<T, E, F>(&mut self, f: F) -> Result<T, E>
     where
-        F: FnOnce() -> Result<T, E>,
+        F: FnOnce(&mut Self) -> Result<T, E>,
         E: From<Error>,
     {
         self.transaction_sql(f, "BEGIN IMMEDIATE")
@@ -149,16 +359,16 @@ impl SqliteConnection {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     let conn = SqliteConnection::establish(":memory:").unwrap();
-    /// conn.exclusive_transaction(|| {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// conn.exclusive_transaction(|conn| {
     ///     // Do stuff in a transaction
     ///     Ok(())
     /// })
     /// # }
     /// ```
-    pub fn exclusive_transaction<T, E, F>(&self, f: F) -> Result<T, E>
+    pub fn exclusive_transaction<T, E, F>(&mut self, f: F) -> Result<T, E>
     where
-        F: FnOnce() -> Result<T, E>,
+        F: FnOnce(&mut Self) -> Result<T, E>,
         E: From<Error>,
     {
         self.transaction_sql(f, "BEGIN EXCLUSIVE")
@@ -184,61 +394,69 @@ impl SqliteConnection {
         self.raw_connection.enable_load_extension(false)
     }
 
-    fn transaction_sql<T, E, F>(&self, f: F, sql: &str) -> Result<T, E>
+    fn transaction_sql<T, E, F>(&mut self, f: F, sql: &str) -> Result<T, E>
     where
-        F: FnOnce() -> Result<T, E>,
+        F: FnOnce(&mut Self) -> Result<T, E>,
         E: From<Error>,
     {
-        let transaction_manager = self.transaction_manager();
-
-        transaction_manager.begin_transaction_sql(self, sql)?;
-        match f() {
+        AnsiTransactionManager::begin_transaction_sql(&mut *self, sql)?;
+        match f(&mut *self) {
             Ok(value) => {
-                transaction_manager.commit_transaction(self)?;
+                AnsiTransactionManager::commit_transaction(&mut *self)?;
                 Ok(value)
             }
             Err(e) => {
-                transaction_manager.rollback_transaction(self)?;
+                AnsiTransactionManager::rollback_transaction(&mut *self)?;
                 Err(e)
             }
         }
     }
 
-    fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(
-        &self,
-        source: &T,
-    ) -> QueryResult<MaybeCached<Statement>> {
-        let mut statement = self.cached_prepared_statement(source)?;
+    fn prepared_query<'conn, 'query, T>(
+        &'conn mut self,
+        source: T,
+    ) -> QueryResult<StatementUse<'conn, 'query>>
+    where
+        T: QueryFragment<Sqlite> + QueryId + 'query,
+    {
+        self.instrumentation
+            .on_connection_event(InstrumentationEvent::StartQuery {
+                query: &crate::debug_query(&source),
+            });
+        let raw_connection = &self.raw_connection;
+        let cache = &mut self.statement_cache;
+        let statement = match cache.cached_statement(
+            &source,
+            &Sqlite,
+            &[],
+            raw_connection,
+            Statement::prepare,
+            &mut *self.instrumentation,
+        ) {
+            Ok(statement) => statement,
+            Err(e) => {
+                self.instrumentation
+                    .on_connection_event(InstrumentationEvent::FinishQuery {
+                        query: &crate::debug_query(&source),
+                        error: Some(&e),
+                    });
 
-        let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
-        source.collect_binds(&mut bind_collector, &())?;
-        let metadata = bind_collector.metadata;
-        let binds = bind_collector.binds;
-        for (tpe, value) in metadata.into_iter().zip(binds) {
-            statement.bind(tpe, value)?;
-        }
+                return Err(e);
+            }
+        };
 
-        Ok(statement)
-    }
-
-    fn cached_prepared_statement<T: QueryFragment<Sqlite> + QueryId>(
-        &self,
-        source: &T,
-    ) -> QueryResult<MaybeCached<Statement>> {
-        self.statement_cache.cached_statement(source, &[], |sql| {
-            Statement::prepare(&self.raw_connection, sql)
-        })
+        StatementUse::bind(statement, source, &mut *self.instrumentation)
     }
 
     #[doc(hidden)]
     pub fn register_sql_function<ArgsSqlType, RetSqlType, Args, Ret, F>(
-        &self,
+        &mut self,
         fn_name: &str,
         deterministic: bool,
         mut f: F,
     ) -> QueryResult<()>
     where
-        F: FnMut(Args) -> Ret + Send + 'static,
+        F: FnMut(Args) -> Ret + std::panic::UnwindSafe + Send + 'static,
         Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
@@ -252,17 +470,127 @@ impl SqliteConnection {
     }
 
     #[doc(hidden)]
-    pub fn register_aggregate_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
+    pub fn register_noarg_sql_function<RetSqlType, Ret, F>(
         &self,
+        fn_name: &str,
+        deterministic: bool,
+        f: F,
+    ) -> QueryResult<()>
+    where
+        F: FnMut() -> Ret + std::panic::UnwindSafe + Send + 'static,
+        Ret: ToSql<RetSqlType, Sqlite>,
+        Sqlite: HasSqlType<RetSqlType>,
+    {
+        functions::register_noargs(&self.raw_connection, fn_name, deterministic, f)
+    }
+
+    #[doc(hidden)]
+    pub fn register_aggregate_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
+        &mut self,
         fn_name: &str,
     ) -> QueryResult<()>
     where
-        A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
+        A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + std::panic::UnwindSafe,
         Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
         functions::register_aggregate::<_, _, _, _, A>(&self.raw_connection, fn_name)
+    }
+
+    /// Register a collation function.
+    ///
+    /// `collation` must always return the same answer given the same inputs.
+    /// If `collation` panics and unwinds the stack, the process is aborted, since it is used
+    /// across a C FFI boundary, which cannot be unwound across and there is no way to
+    /// signal failures via the SQLite interface in this case..
+    ///
+    /// If the name is already registered it will be overwritten.
+    ///
+    /// This method will return an error if registering the function fails, either due to an
+    /// out-of-memory situation or because a collation with that name already exists and is
+    /// currently being used in parallel by a query.
+    ///
+    /// The collation needs to be specified when creating a table:
+    /// `CREATE TABLE my_table ( str TEXT COLLATE MY_COLLATION )`,
+    /// where `MY_COLLATION` corresponds to name passed as `collation_name`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// // sqlite NOCASE only works for ASCII characters,
+    /// // this collation allows handling UTF-8 (barring locale differences)
+    /// conn.register_collation("RUSTNOCASE", |rhs, lhs| {
+    ///     rhs.to_lowercase().cmp(&lhs.to_lowercase())
+    /// })
+    /// # }
+    /// ```
+    pub fn register_collation<F>(&mut self, collation_name: &str, collation: F) -> QueryResult<()>
+    where
+        F: Fn(&str, &str) -> std::cmp::Ordering + Send + 'static + std::panic::UnwindSafe,
+    {
+        self.raw_connection
+            .register_collation_function(collation_name, collation)
+    }
+
+    /// Serialize the current SQLite database into a byte buffer.
+    ///
+    /// The serialized data is identical to the data that would be written to disk if the database
+    /// was saved in a file.
+    ///
+    /// # Returns
+    ///
+    /// This function returns a byte slice representing the serialized database.
+    pub fn serialize_database_to_buffer(&mut self) -> SerializedDatabase {
+        self.raw_connection.serialize()
+    }
+
+    /// Deserialize an SQLite database from a byte buffer.
+    ///
+    /// This function takes a byte slice and attempts to deserialize it into a SQLite database.
+    /// If successful, the database is loaded into the connection. If the deserialization fails,
+    /// an error is returned.
+    ///
+    /// The database is opened in READONLY mode.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use diesel::sqlite::SerializedDatabase;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// # use diesel::result::QueryResult;
+    /// # use diesel::sql_query;
+    /// # use diesel::Connection;
+    /// # use diesel::RunQueryDsl;
+    /// # fn main() {
+    /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+    ///
+    /// sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
+    ///     .execute(connection).unwrap();
+    /// sql_query("INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com'), ('Jane Doe', 'jane.doe@example.com')")
+    ///     .execute(connection).unwrap();
+    ///
+    /// // Serialize the database to a byte vector
+    /// let serialized_db: SerializedDatabase = connection.serialize_database_to_buffer();
+    ///
+    /// // Create a new in-memory SQLite database
+    /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+    ///
+    /// // Deserialize the byte vector into the new database
+    /// connection.deserialize_readonly_database_from_buffer(serialized_db.as_slice()).unwrap();
+    /// #
+    /// # }
+    /// ```
+    pub fn deserialize_readonly_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
+        self.raw_connection.deserialize(data)
     }
 
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
@@ -282,6 +610,21 @@ impl SqliteConnection {
             },
         )
     }
+
+    fn establish_inner(database_url: &str) -> Result<SqliteConnection, ConnectionError> {
+        use crate::result::ConnectionError::CouldntSetupConfiguration;
+        let raw_connection = RawConnection::establish(database_url)?;
+        let conn = Self {
+            statement_cache: StatementCache::new(),
+            raw_connection,
+            transaction_state: AnsiTransactionManager::default(),
+            metadata_lookup: (),
+            instrumentation: DynInstrumentation::none(),
+        };
+        conn.register_diesel_sql_functions()
+            .map_err(CouldntSetupConfiguration)?;
+        Ok(conn)
+    }
 }
 
 fn error_message(err_code: libc::c_int) -> &'static str {
@@ -293,64 +636,64 @@ mod tests {
     use super::*;
     use crate::dsl::sql;
     use crate::prelude::*;
-    use crate::sql_types::Integer;
+    use crate::sql_types::{Integer, Text};
 
-    #[test]
-    fn prepared_statements_are_cached_when_run() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        let query = crate::select(1.into_sql::<Integer>());
-
-        assert_eq!(Ok(1), query.get_result(&connection));
-        assert_eq!(Ok(1), query.get_result(&connection));
-        assert_eq!(1, connection.statement_cache.len());
+    fn connection() -> SqliteConnection {
+        SqliteConnection::establish(":memory:").unwrap()
     }
 
-    #[test]
-    fn sql_literal_nodes_are_not_cached() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        let query = crate::select(sql::<Integer>("1"));
+    #[declare_sql_function]
+    extern "SQL" {
+        fn fun_case(x: Text) -> Text;
+        fn my_add(x: Integer, y: Integer) -> Integer;
+        fn answer() -> Integer;
+        fn add_counter(x: Integer) -> Integer;
 
-        assert_eq!(Ok(1), query.get_result(&connection));
-        assert_eq!(0, connection.statement_cache.len());
+        #[aggregate]
+        fn my_sum(expr: Integer) -> Integer;
+        #[aggregate]
+        fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Nullable<Integer>;
     }
 
-    #[test]
-    fn queries_containing_sql_literal_nodes_are_not_cached() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        let one_as_expr = 1.into_sql::<Integer>();
-        let query = crate::select(one_as_expr.eq(sql::<Integer>("1")));
+    #[diesel_test_helper::test]
+    fn database_serializes_and_deserializes_successfully() {
+        let expected_users = vec![
+            (
+                1,
+                "John Doe".to_string(),
+                "john.doe@example.com".to_string(),
+            ),
+            (
+                2,
+                "Jane Doe".to_string(),
+                "jane.doe@example.com".to_string(),
+            ),
+        ];
 
-        assert_eq!(Ok(true), query.get_result(&connection));
-        assert_eq!(0, connection.statement_cache.len());
+        let conn1 = &mut connection();
+        let _ =
+            crate::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
+                .execute(conn1);
+        let _ = crate::sql_query("INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com'), ('Jane Doe', 'jane.doe@example.com')")
+            .execute(conn1);
+
+        let serialized_database = conn1.serialize_database_to_buffer();
+
+        let conn2 = &mut connection();
+        conn2
+            .deserialize_readonly_database_from_buffer(serialized_database.as_slice())
+            .unwrap();
+
+        let query = sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
+        let actual_users = query.load::<(i32, String, String)>(conn2).unwrap();
+
+        assert_eq!(expected_users, actual_users);
     }
 
-    #[test]
-    fn queries_containing_in_with_vec_are_not_cached() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        let one_as_expr = 1.into_sql::<Integer>();
-        let query = crate::select(one_as_expr.eq_any(vec![1, 2, 3]));
-
-        assert_eq!(Ok(true), query.get_result(&connection));
-        assert_eq!(0, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn queries_containing_in_with_subselect_are_cached() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        let one_as_expr = 1.into_sql::<Integer>();
-        let query = crate::select(one_as_expr.eq_any(crate::select(one_as_expr)));
-
-        assert_eq!(Ok(true), query.get_result(&connection));
-        assert_eq!(1, connection.statement_cache.len());
-    }
-
-    use crate::sql_types::Text;
-    sql_function!(fn fun_case(x: Text) -> Text);
-
-    #[test]
+    #[diesel_test_helper::test]
     fn register_custom_function() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        fun_case::register_impl(&connection, |x: String| {
+        let connection = &mut connection();
+        fun_case_utils::register_impl(connection, |x: String| {
             x.chars()
                 .enumerate()
                 .map(|(i, c)| {
@@ -365,44 +708,51 @@ mod tests {
         .unwrap();
 
         let mapped_string = crate::select(fun_case("foobar"))
-            .get_result::<String>(&connection)
+            .get_result::<String>(connection)
             .unwrap();
         assert_eq!("fOoBaR", mapped_string);
     }
 
-    sql_function!(fn my_add(x: Integer, y: Integer) -> Integer);
-
-    #[test]
+    #[diesel_test_helper::test]
     fn register_multiarg_function() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        my_add::register_impl(&connection, |x: i32, y: i32| x + y).unwrap();
+        let connection = &mut connection();
+        my_add_utils::register_impl(connection, |x: i32, y: i32| x + y).unwrap();
 
-        let added = crate::select(my_add(1, 2)).get_result::<i32>(&connection);
+        let added = crate::select(my_add(1, 2)).get_result::<i32>(connection);
         assert_eq!(Ok(3), added);
     }
 
-    sql_function!(fn add_counter(x: Integer) -> Integer);
+    #[diesel_test_helper::test]
+    fn register_noarg_function() {
+        let connection = &mut connection();
+        answer_utils::register_impl(connection, || 42).unwrap();
 
-    #[test]
+        let answer = crate::select(answer()).get_result::<i32>(connection);
+        assert_eq!(Ok(42), answer);
+    }
+
+    #[diesel_test_helper::test]
+    fn register_nondeterministic_noarg_function() {
+        let connection = &mut connection();
+        answer_utils::register_nondeterministic_impl(connection, || 42).unwrap();
+
+        let answer = crate::select(answer()).get_result::<i32>(connection);
+        assert_eq!(Ok(42), answer);
+    }
+
+    #[diesel_test_helper::test]
     fn register_nondeterministic_function() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut connection();
         let mut y = 0;
-        add_counter::register_nondeterministic_impl(&connection, move |x: i32| {
+        add_counter_utils::register_nondeterministic_impl(connection, move |x: i32| {
             y += 1;
             x + y
         })
         .unwrap();
 
         let added = crate::select((add_counter(1), add_counter(1), add_counter(1)))
-            .get_result::<(i32, i32, i32)>(&connection);
+            .get_result::<(i32, i32, i32)>(connection);
         assert_eq!(Ok((2, 3, 4)), added);
-    }
-
-    use crate::sqlite::SqliteAggregateFunction;
-
-    sql_function! {
-        #[aggregate]
-        fn my_sum(expr: Integer) -> Integer;
     }
 
     #[derive(Default)]
@@ -429,50 +779,45 @@ mod tests {
         }
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn register_aggregate_function() {
         use self::my_sum_example::dsl::*;
 
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        connection
-            .execute(
-                "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
-            )
-            .unwrap();
-        connection
-            .execute("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)")
+        let connection = &mut connection();
+        crate::sql_query(
+            "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
+        )
+        .execute(connection)
+        .unwrap();
+        crate::sql_query("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)")
+            .execute(connection)
             .unwrap();
 
-        my_sum::register_impl::<MySum, _>(&connection).unwrap();
+        my_sum_utils::register_impl::<MySum, _>(connection).unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
-            .get_result::<i32>(&connection);
+            .get_result::<i32>(connection);
         assert_eq!(Ok(6), result);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn register_aggregate_function_returns_finalize_default_on_empty_set() {
         use self::my_sum_example::dsl::*;
 
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        connection
-            .execute(
-                "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
-            )
-            .unwrap();
+        let connection = &mut connection();
+        crate::sql_query(
+            "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
+        )
+        .execute(connection)
+        .unwrap();
 
-        my_sum::register_impl::<MySum, _>(&connection).unwrap();
+        my_sum_utils::register_impl::<MySum, _>(connection).unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
-            .get_result::<i32>(&connection);
+            .get_result::<i32>(connection);
         assert_eq!(Ok(0), result);
-    }
-
-    sql_function! {
-        #[aggregate]
-        fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Nullable<Integer>;
     }
 
     #[derive(Default)]
@@ -513,28 +858,182 @@ mod tests {
         }
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn register_aggregate_multiarg_function() {
         use self::range_max_example::dsl::*;
 
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        connection
-            .execute(
-                r#"CREATE TABLE range_max_example (
+        let connection = &mut connection();
+        crate::sql_query(
+            r#"CREATE TABLE range_max_example (
                 id integer primary key autoincrement,
                 value1 integer,
                 value2 integer,
                 value3 integer
             )"#,
-            )
-            .unwrap();
-        connection.execute("INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1), (2, 2, 2)").unwrap();
+        )
+        .execute(connection)
+        .unwrap();
+        crate::sql_query(
+            "INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1), (2, 2, 2)",
+        )
+        .execute(connection)
+        .unwrap();
 
-        range_max::register_impl::<RangeMax<i32>, _, _, _>(&connection).unwrap();
+        range_max_utils::register_impl::<RangeMax<i32>, _, _, _>(connection).unwrap();
         let result = range_max_example
             .select(range_max(value1, value2, value3))
-            .get_result::<Option<i32>>(&connection)
+            .get_result::<Option<i32>>(connection)
             .unwrap();
         assert_eq!(Some(3), result);
+    }
+
+    table! {
+        my_collation_example {
+            id -> Integer,
+            value -> Text,
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn register_collation_function() {
+        use self::my_collation_example::dsl::*;
+
+        let connection = &mut connection();
+
+        connection
+            .register_collation("RUSTNOCASE", |rhs, lhs| {
+                rhs.to_lowercase().cmp(&lhs.to_lowercase())
+            })
+            .unwrap();
+
+        crate::sql_query(
+                "CREATE TABLE my_collation_example (id integer primary key autoincrement, value text collate RUSTNOCASE)",
+            ).execute(connection)
+            .unwrap();
+        crate::sql_query(
+            "INSERT INTO my_collation_example (value) VALUES ('foo'), ('FOo'), ('f00')",
+        )
+        .execute(connection)
+        .unwrap();
+
+        let result = my_collation_example
+            .filter(value.eq("foo"))
+            .select(value)
+            .load::<String>(connection);
+        assert_eq!(
+            Ok(&["foo".to_owned(), "FOo".to_owned()][..]),
+            result.as_ref().map(|vec| vec.as_ref())
+        );
+
+        let result = my_collation_example
+            .filter(value.eq("FOO"))
+            .select(value)
+            .load::<String>(connection);
+        assert_eq!(
+            Ok(&["foo".to_owned(), "FOo".to_owned()][..]),
+            result.as_ref().map(|vec| vec.as_ref())
+        );
+
+        let result = my_collation_example
+            .filter(value.eq("f00"))
+            .select(value)
+            .load::<String>(connection);
+        assert_eq!(
+            Ok(&["f00".to_owned()][..]),
+            result.as_ref().map(|vec| vec.as_ref())
+        );
+
+        let result = my_collation_example
+            .filter(value.eq("F00"))
+            .select(value)
+            .load::<String>(connection);
+        assert_eq!(
+            Ok(&["f00".to_owned()][..]),
+            result.as_ref().map(|vec| vec.as_ref())
+        );
+
+        let result = my_collation_example
+            .filter(value.eq("oof"))
+            .select(value)
+            .load::<String>(connection);
+        assert_eq!(Ok(&[][..]), result.as_ref().map(|vec| vec.as_ref()));
+    }
+
+    // regression test for https://github.com/diesel-rs/diesel/issues/3425
+    #[diesel_test_helper::test]
+    fn test_correct_serialization_of_owned_strings() {
+        use crate::prelude::*;
+
+        #[derive(Debug, crate::expression::AsExpression)]
+        #[diesel(sql_type = diesel::sql_types::Text)]
+        struct CustomWrapper(String);
+
+        impl crate::serialize::ToSql<Text, Sqlite> for CustomWrapper {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut crate::serialize::Output<'b, '_, Sqlite>,
+            ) -> crate::serialize::Result {
+                out.set_value(self.0.to_string());
+                Ok(crate::serialize::IsNull::No)
+            }
+        }
+
+        let connection = &mut connection();
+
+        let res = crate::select(
+            CustomWrapper("".into())
+                .into_sql::<crate::sql_types::Text>()
+                .nullable(),
+        )
+        .get_result::<Option<String>>(connection)
+        .unwrap();
+        assert_eq!(res, Some(String::new()));
+    }
+
+    #[diesel_test_helper::test]
+    fn test_correct_serialization_of_owned_bytes() {
+        use crate::prelude::*;
+
+        #[derive(Debug, crate::expression::AsExpression)]
+        #[diesel(sql_type = diesel::sql_types::Binary)]
+        struct CustomWrapper(Vec<u8>);
+
+        impl crate::serialize::ToSql<crate::sql_types::Binary, Sqlite> for CustomWrapper {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut crate::serialize::Output<'b, '_, Sqlite>,
+            ) -> crate::serialize::Result {
+                out.set_value(self.0.clone());
+                Ok(crate::serialize::IsNull::No)
+            }
+        }
+
+        let connection = &mut connection();
+
+        let res = crate::select(
+            CustomWrapper(Vec::new())
+                .into_sql::<crate::sql_types::Binary>()
+                .nullable(),
+        )
+        .get_result::<Option<Vec<u8>>>(connection)
+        .unwrap();
+        assert_eq!(res, Some(Vec::new()));
+    }
+
+    #[diesel_test_helper::test]
+    fn correctly_handle_empty_query() {
+        let check_empty_query_error = |r: crate::QueryResult<usize>| {
+            assert!(r.is_err());
+            let err = r.unwrap_err();
+            assert!(
+                matches!(err, crate::result::Error::QueryBuilderError(ref b) if b.is::<crate::result::EmptyQuery>()),
+                "Expected a query builder error, but got {err}"
+            );
+        };
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        check_empty_query_error(crate::sql_query("").execute(connection));
+        check_empty_query_error(crate::sql_query("   ").execute(connection));
+        check_empty_query_error(crate::sql_query("\n\t").execute(connection));
+        check_empty_query_error(crate::sql_query("-- SELECT 1;").execute(connection));
     }
 }

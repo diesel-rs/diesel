@@ -1,0 +1,37 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_custom_types_custom_schema"
+---
+// @generated automatically by Diesel CLI.
+
+pub mod v2 {
+    pub mod sql_types {
+        #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
+        #[diesel(postgres_type(name = "auto_test_frequency", schema = "v2"))]
+        pub struct AutoTestFrequency;
+
+        #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
+        #[diesel(postgres_type(name = "auto_test_status", schema = "v2"))]
+        pub struct AutoTestStatus;
+    }
+
+    diesel::table! {
+        use diesel::sql_types::*;
+        use super::sql_types::AutoTestStatus;
+        use super::sql_types::AutoTestFrequency;
+
+        v2.autotestsetting (hardware_id) {
+            hardware_id -> Text,
+            enabled -> Bool,
+            email_notifications -> Bool,
+            sms_notifications -> Bool,
+            push_notifications -> Bool,
+            start_hour -> Text,
+            status -> AutoTestStatus,
+            frequency -> AutoTestFrequency,
+            day -> Int4,
+            last_test -> Nullable<Timestamptz>,
+            next_test -> Nullable<Timestamptz>,
+        }
+    }
+}

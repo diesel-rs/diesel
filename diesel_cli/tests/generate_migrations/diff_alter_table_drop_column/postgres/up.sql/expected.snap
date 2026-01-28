@@ -1,0 +1,9 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 295
+description: "Test: diff_alter_table_drop_column"
+---
+-- Your SQL goes here
+ALTER TABLE "users" DROP COLUMN "name";
+
+

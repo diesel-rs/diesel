@@ -1,0 +1,14 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_comments_dont_fallback_on_generated"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    /// table comment
+    with_comments (id) {
+        /// column comment
+        id -> Int4,
+        column_without_comment -> Nullable<Int4>,
+    }
+}

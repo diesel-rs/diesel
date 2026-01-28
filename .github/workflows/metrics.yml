@@ -1,0 +1,128 @@
+on:
+  schedule:
+    - cron: "23 03 * * *"
+  push:
+    branches:
+      - try_to_fix_metrics_job
+name: Metrics
+permissions:
+  contents: "read"
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  RUSTUP_MAX_RETRIES: 10
+  RUSTFLAGS: "-C target-cpu=native"
+jobs:
+  metrics:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: ["postgres", "sqlite", "mysql"]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+      - name: cache
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+        with:
+          key: metrics-${{matrix.backend}}-cargo-${{ hashFiles('diesel_bench/Cargo.toml')}}
+      - name: Install postgres (Linux)
+        if: matrix.backend == 'postgres'
+        env:
+          PG_VERSION: 16
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get --purge remove postgresql\* -y
+          sudo apt-get install gnupg2 -y
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev postgresql-$PG_VERSION
+          sudo tee /etc/postgresql/$PG_VERSION/main/pg_hba.conf <<'EOF'
+          local   all             postgres                                peer
+          local   all             all                                     peer
+          host    all             all             127.0.0.1/32            trust
+          host    all             all             ::1/128                 trust
+          EOF
+          sudo service postgresql start $PG_VERSION && sleep 3
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+          sudo service postgresql restart $PG_VERSION && sleep 3
+          echo 'DATABASE_URL=postgres://postgres:postgres@localhost:5432/' >> $GITHUB_ENV
+      - name: Install sqlite (Linux)
+        if: matrix.backend == 'sqlite'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
+          echo 'SQLITE_DATABASE_URL=/tmp/test.db' >> $GITHUB_ENV
+          echo 'DATABASE_URL=sqlite:///tmp/test.db' >> $GITHUB_ENV
+      - name: Install mysql (Linux)
+        if: matrix.backend == 'mysql'
+        run: |
+          sudo systemctl start mysql.service
+          sudo apt-get update
+          sudo apt-get -y install libmysqlclient-dev
+          mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
+          echo 'DATABASE_URL=mysql://root:root@127.0.0.1/diesel_test' >> $GITHUB_ENV
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
+        with:
+          toolchain: stable
+      - name: Run Benchmarks (Postgres)
+        if: matrix.backend == 'postgres'
+        run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "postgres sqlx-bench sqlx/postgres rand_chacha rust_postgres tokio_postgres futures futures-util sea-orm sea-orm/sqlx-postgres criterion/async_tokio serde diesel-async diesel-async/postgres wtx wtx/postgres zero-postgres"
+      - name: Run Benchmarks (Sqlite)
+        if: matrix.backend == 'sqlite'
+        run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "sqlite sqlx-bench sqlx/sqlite tokio rusqlite futures sea-orm sea-orm/sqlx-sqlite criterion/async_tokio diesel-async diesel-async/sqlite"
+      - name: Run Benchmarks (Mysql)
+        if: matrix.backend == 'mysql'
+        run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "mysql sqlx-bench sqlx/mysql tokio rustorm rustorm/with-mysql rand_chacha rustorm_dao rust_mysql futures sea-orm sea-orm/sqlx-mysql criterion/async_tokio serde diesel-async diesel-async/mysql wtx wtx/mysql zero-mysql"
+      - name: Push metrics
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          sudo apt-get -y install git
+
+          mkdir ~/.ssh -p
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          echo "${{ secrets.METRIC_ACCESS_KEY }}" >> ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          df -h
+          rm diesel_bench/target/release -rf
+          # delete unwanted files from criterion
+          find diesel_bench/target/criterion/ -iname '*.json' -delete
+          find diesel_bench/target/criterion/ -type d -name "base" -exec rm -rv {} \; || true
+          find diesel_bench/target/criterion/ -type d -empty -delete
+          # free some space on the runner
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          df -h
+          sudo rm -rf /opt/ghc
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          df -h
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
+          pwd
+          git clone --depth 1 git@github.com:diesel-rs/metrics.git
+          df -h
+
+          cd metrics
+          export FOLDER_NAME=$(date +%Y%m%d-%H%M%S)
+          mkdir -p metrics/$FOLDER_NAME-$GITHUB_SHA-${{matrix.backend}}
+          mv ../diesel_bench/target/criterion/* metrics/$FOLDER_NAME-$GITHUB_SHA-${{matrix.backend}}
+
+          git add metrics/$FOLDER_NAME-$GITHUB_SHA-${{matrix.backend}}
+          git -c user.name=Bot -c user.email=dummy@example.com commit --message "📈"
+
+          git push origin master
+      - name: cleanup
+        if: always()
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          rm -rf diesel_bench/target/criterion
+          ssh-add -D
+          rm -Rf ~/.ssh

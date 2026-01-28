@@ -6,6 +6,12 @@ table! {
         ts -> Tsrange,
         tstz -> Tstzrange,
         date -> Daterange,
+        int4multi -> Int4multirange,
+        int8multi -> Int8multirange,
+        nummulti -> Nummultirange,
+        tsmulti -> Tsmultirange,
+        tstzmulti -> Tstzmultirange,
+        datemulti -> Datemultirange,
     }
 }
 
@@ -123,6 +129,7 @@ table! {
         title -> Varchar,
         body -> Nullable<Text>,
         tags -> Array<Text>,
+        nullable_tags -> Nullable<Array<Text>>,
     }
 }
 
@@ -172,6 +179,14 @@ table! {
 table! {
     users_with_name_pk (name) {
         name -> Varchar,
+    }
+}
+
+table! {
+    user_with_last_names (first_name) {
+        first_name -> Varchar,
+        last_name -> Varchar,
+        full_name -> Varchar,
     }
 }
 

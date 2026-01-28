@@ -1,9 +1,5 @@
-error: Invalid `table!` syntax. Please see the `table!` macro docs for more info.
- --> $DIR/table_invalid_syntax_2.rs:3:1
+error: expected one of `!` or `::`, found `wrong`
+ --> tests/fail/table_invalid_syntax_2.rs:5:11
   |
-3 | / table! {
-4 | |      some wrong syntax
-5 | | }
-  | |_^
-  |
-  = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+LL |      some wrong syntax
+  |           ^^^^^ expected one of `!` or `::`

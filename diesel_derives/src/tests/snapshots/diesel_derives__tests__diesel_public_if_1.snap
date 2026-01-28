@@ -1,0 +1,10 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[diesel_derives::__diesel_public_if(\n    feature = \"i-implement-a-third-party-backend-and-opt-into-breaking-changes\"\n)]\npub(crate) mod example;\n"
+---
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) mod example;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub mod example;

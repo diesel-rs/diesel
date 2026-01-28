@@ -1,0 +1,84 @@
+on:
+  workflow_run:
+    workflows: [Run and Cache Benchmarks]
+    types:
+      - completed
+
+name: Track Benchmarks
+permissions:
+  contents: "read"
+
+jobs:
+  track_benchmarks:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: ["postgres", "sqlite", "mysql"]
+    env:
+      BENCHER_PROJECT: diesel
+      BENCHER_ADAPTER: rust_criterion
+      BENCHER_TESTBED: ubuntu-latest-${{ matrix.backend }}
+      PR_BENCHMARK_RESULTS: pr_${{ matrix.backend }}.txt
+      BASE_BENCHMARK_RESULTS: base_${{ matrix.backend }}.txt
+      GITHUB_EVENT: event_${{ matrix.backend }}.json
+      # This is the percentage that the PR can be slower than the base benchmark
+      # Adjust this value to lower to make the test more sensitive to changes
+      # Adjust this value to higher to make the test less sensitive to changes
+      # https://bencher.dev/docs/explanation/thresholds/#percentage-upper-boundary
+      UPPER_BOUNDARY: 1.0
+    steps:
+      - name: Download PR Benchmark Results
+        uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
+        with:
+          name: ${{ env.PR_BENCHMARK_RESULTS }}
+          run_id: ${{ github.event.workflow_run.id }}
+      - name: Download Base Benchmark Results
+        uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
+        with:
+          name: ${{ env.BASE_BENCHMARK_RESULTS }}
+          run_id: ${{ github.event.workflow_run.id }}
+      - name: Download GitHub Event
+        uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
+        with:
+          name: ${{ env.GITHUB_EVENT }}
+          run_id: ${{ github.event.workflow_run.id }}
+      - name: Export GitHub Event Data
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          script: |
+            let fs = require('fs');
+            let githubEvent = JSON.parse(fs.readFileSync("event.json", {encoding: 'utf8'}));
+            console.log(githubEvent);
+            core.exportVariable("PR_HEAD", githubEvent.pull_request.head.ref);
+            core.exportVariable("PR_HEAD_SHA", githubEvent.pull_request.head.sha);
+            core.exportVariable("PR_BASE", githubEvent.pull_request.base.ref);
+            core.exportVariable("PR_BASE_SHA", githubEvent.pull_request.base.sha);
+            core.exportVariable("PR_NUMBER", githubEvent.number);
+      - uses: bencherdev/bencher@2f1532643adc0e69e52acaec936d227ff14da24f # v0.5.9
+      - name: Track PR Base Benchmarks
+        run: |
+          bencher run \
+          --token "${{ secrets.BENCHER_API_TOKEN }}" \
+          --branch "$PR_BASE" \
+          --hash "$PR_BASE_SHA" \
+          --start-point-reset \
+          --file "$BASE_BENCHMARK_RESULTS"
+      - name: Track PR Head Benchmarks
+        run: |
+          bencher run \
+          --token "${{ secrets.BENCHER_API_TOKEN }}" \
+          --branch "$PR_HEAD" \
+          --hash "$PR_HEAD_SHA" \
+          --start-point "$PR_BASE" \
+          --start-point-hash "$PR_BASE_SHA" \
+          --start-point-reset \
+          --threshold-measure latency \
+          --threshold-test percentage \
+          --threshold-upper-boundary ${{ env.UPPER_BOUNDARY }} \
+          --thresholds-reset \
+          --github-actions "${{ secrets.GITHUB_TOKEN }}" \
+          --ci-number "$PR_NUMBER" \
+          --err \
+          --file "$PR_BENCHMARK_RESULTS"

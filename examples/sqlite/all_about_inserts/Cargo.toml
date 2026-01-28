@@ -1,15 +1,15 @@
 [package]
 name = "all_about_inserts_sqlite"
 version = "0.1.0"
-authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
-edition = "2018"
+edition.workspace = true
+publish = false
 
 [dependencies]
-diesel = { version = "2.0.0", path = "../../../diesel", features = ["sqlite", "chrono"] }
-serde = "1.0"
-serde_derive = "1.0"
-serde_json = "1.0"
-chrono = { version = "0.4.19", default-features = false, features = ["clock", "std"] }
+diesel = { version = "2.3.0", path = "../../../diesel", features = ["sqlite", "chrono", "returning_clauses_for_sqlite_3_35"] }
+serde = { version = "1.0.130", features = ["derive"] }
+serde_json = "1.0.68"
+chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }
+libsqlite3-sys = { workspace = true, features = ["bundled"] }
 
 [lib]
 doc = false

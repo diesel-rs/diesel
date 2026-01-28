@@ -1,0 +1,170 @@
+error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+    --> tests/fail/derive/queryable_type_mismatch.rs:58:54
+     |
+  LL |     let _ = users::table.load::<UserWithToFewFields>(conn);
+     |                          ----                        ^^^^ unsatisfied trait bound
+     |                          |
+     |                          required by a bound introduced by this call
+     |
+     = help: the trait `load_dsl::private::CompatibleType<UserWithToFewFields, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
+     = note: this is a mismatch between what your query returns and what your type expects the query to return
+     = note: the fields in your struct need to match the fields returned by your query in count, order and type
+     = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
+             on your struct `UserWithToFewFields` and in your query `.select(UserWithToFewFields::as_select())` to get a better error message
+     = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
+               `Untyped` implements `load_dsl::private::CompatibleType<U, DB>`
+               `diesel::expression::select_by::SelectBy<U, DB>` implements `load_dsl::private::CompatibleType<U, DB>`
+               `diesel::sql_types::Nullable<(ST, ST1)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4, ST5)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+             and N others
+     = note: required for `users::table` to implement `LoadQuery<'_, _, UserWithToFewFields>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     
+error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+    --> tests/fail/derive/queryable_type_mismatch.rs:61:55
+     |
+  LL |     let _ = users::table.load::<UserWithToManyFields>(conn);
+     |                          ----                         ^^^^ unsatisfied trait bound
+     |                          |
+     |                          required by a bound introduced by this call
+     |
+     = help: the trait `load_dsl::private::CompatibleType<UserWithToManyFields, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
+     = note: this is a mismatch between what your query returns and what your type expects the query to return
+     = note: the fields in your struct need to match the fields returned by your query in count, order and type
+     = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
+             on your struct `UserWithToManyFields` and in your query `.select(UserWithToManyFields::as_select())` to get a better error message
+     = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
+               `Untyped` implements `load_dsl::private::CompatibleType<U, DB>`
+               `diesel::expression::select_by::SelectBy<U, DB>` implements `load_dsl::private::CompatibleType<U, DB>`
+               `diesel::sql_types::Nullable<(ST, ST1)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4, ST5)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+             and N others
+     = note: required for `users::table` to implement `LoadQuery<'_, _, UserWithToManyFields>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     
+error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+    --> tests/fail/derive/queryable_type_mismatch.rs:64:49
+     |
+  LL |     let _ = users::table.load::<UserWrongOrder>(conn);
+     |                          ----                   ^^^^ unsatisfied trait bound
+     |                          |
+     |                          required by a bound introduced by this call
+     |
+     = help: the trait `load_dsl::private::CompatibleType<UserWrongOrder, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
+     = note: this is a mismatch between what your query returns and what your type expects the query to return
+     = note: the fields in your struct need to match the fields returned by your query in count, order and type
+     = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
+             on your struct `UserWrongOrder` and in your query `.select(UserWrongOrder::as_select())` to get a better error message
+     = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
+               `Untyped` implements `load_dsl::private::CompatibleType<U, DB>`
+               `diesel::expression::select_by::SelectBy<U, DB>` implements `load_dsl::private::CompatibleType<U, DB>`
+               `diesel::sql_types::Nullable<(ST, ST1)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4, ST5)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+             and N others
+     = note: required for `users::table` to implement `LoadQuery<'_, _, UserWrongOrder>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     
+error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+    --> tests/fail/derive/queryable_type_mismatch.rs:67:51
+     |
+  LL |     let _ = users::table.load::<UserTypeMismatch>(conn);
+     |                          ----                     ^^^^ unsatisfied trait bound
+     |                          |
+     |                          required by a bound introduced by this call
+     |
+     = help: the trait `load_dsl::private::CompatibleType<UserTypeMismatch, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
+     = note: this is a mismatch between what your query returns and what your type expects the query to return
+     = note: the fields in your struct need to match the fields returned by your query in count, order and type
+     = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
+             on your struct `UserTypeMismatch` and in your query `.select(UserTypeMismatch::as_select())` to get a better error message
+     = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
+               `Untyped` implements `load_dsl::private::CompatibleType<U, DB>`
+               `diesel::expression::select_by::SelectBy<U, DB>` implements `load_dsl::private::CompatibleType<U, DB>`
+               `diesel::sql_types::Nullable<(ST, ST1)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4, ST5)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+             and N others
+     = note: required for `users::table` to implement `LoadQuery<'_, _, UserTypeMismatch>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     
+error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+    --> tests/fail/derive/queryable_type_mismatch.rs:70:59
+     |
+  LL |     let _ = users::table.load::<UserNullableTypeMismatch>(conn);
+     |                          ----                             ^^^^ unsatisfied trait bound
+     |                          |
+     |                          required by a bound introduced by this call
+     |
+     = help: the trait `load_dsl::private::CompatibleType<UserNullableTypeMismatch, _>` is not implemented for `(Integer, Text, Nullable<Text>)`
+     = note: this is a mismatch between what your query returns and what your type expects the query to return
+     = note: the fields in your struct need to match the fields returned by your query in count, order and type
+     = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
+             on your struct `UserNullableTypeMismatch` and in your query `.select(UserNullableTypeMismatch::as_select())` to get a better error message
+     = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
+               `Untyped` implements `load_dsl::private::CompatibleType<U, DB>`
+               `diesel::expression::select_by::SelectBy<U, DB>` implements `load_dsl::private::CompatibleType<U, DB>`
+               `diesel::sql_types::Nullable<(ST, ST1)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4, ST5)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+               `diesel::sql_types::Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6)>` implements `load_dsl::private::CompatibleType<Option<__T>, __DB>`
+             and N others
+     = note: required for `users::table` to implement `LoadQuery<'_, _, UserNullableTypeMismatch>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     For more information about this error, try `rustc --explain E0277`.

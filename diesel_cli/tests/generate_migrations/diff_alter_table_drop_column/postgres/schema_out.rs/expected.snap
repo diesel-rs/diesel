@@ -1,0 +1,13 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 323
+description: "Test: diff_alter_table_drop_column"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    users (id) {
+        id -> Int4,
+    }
+}
+

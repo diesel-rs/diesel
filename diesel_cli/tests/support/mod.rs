@@ -4,9 +4,8 @@ macro_rules! try_drop {
         match $e {
             Ok(x) => x,
             Err(e) => {
-                use std::io::{stderr, Write};
                 if ::std::thread::panicking() {
-                    write!(stderr(), "{}: {:?}", $msg, e).unwrap();
+                    eprintln!("{}: {:?}", $msg, e);
                     return;
                 } else {
                     panic!("{}: {:?}", $msg, e);
@@ -31,7 +30,7 @@ mod postgres_database;
 #[cfg(rustfmt)]
 mod sqlite_database;
 
-pub use self::project_builder::project;
+pub use self::project_builder::{project, Project};
 
 pub fn database(url: &str) -> database::Database {
     database::Database::new(url)

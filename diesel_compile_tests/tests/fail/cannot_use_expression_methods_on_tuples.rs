@@ -16,5 +16,7 @@ fn main() {
     users.filter(id.eq_any(users.select(id)));
 
     users.filter((id, name).is_not_null());
+    //~^ ERROR: the method `is_not_null` exists for tuple `(columns::id, columns::name)`, but its trait bounds were not satisfied
     users.filter((id, name).eq_any(users.find(1)));
+    //~^ ERROR: the method `eq_any` exists for tuple `(columns::id, columns::name)`, but its trait bounds were not satisfied
 }

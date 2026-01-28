@@ -1,0 +1,19 @@
+error: cannot find argument corresponding to the generic
+  --> tests/fail/derive/return_type_helper_errors.rs:19:14
+   |
+LL |         fn f<A: SingleValue>(a: <A as TypeWrapper>::Type);
+   |              ^
+
+error: cannot find argument corresponding to the generic
+  --> tests/fail/derive/return_type_helper_errors.rs:23:14
+   |
+LL |         fn g<A: SingleValue>(a: <A as TypeWrapper>::Type);
+   |              ^
+
+error: expected `=`, the correct format is `generate_return_type_helpers = true/false`
+  --> tests/fail/derive/return_type_helper_errors.rs:16:5
+   |
+LL |     #[declare_sql_function(generate_return_type_helpers)]
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)

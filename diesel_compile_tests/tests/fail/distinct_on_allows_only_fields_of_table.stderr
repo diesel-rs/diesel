@@ -1,49 +1,85 @@
-error[E0277]: the trait bound `posts::columns::id: diesel::SelectableExpression<users::table>` is not satisfied
-  --> $DIR/distinct_on_allows_only_fields_of_table.rs:23:30
-   |
-23 |     users::table.distinct_on(posts::id).get_results(&connection);
-   |                              ^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::id`
-   |
-   = help: the following implementations were found:
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
-             <posts::columns::id as diesel::SelectableExpression<posts::table>>
-   = note: required because of the requirements on the impl of `diesel::query_dsl::methods::DistinctOnDsl<posts::columns::id>` for `users::table`
+error[E0277]: the trait bound `users::table: DistinctOnDsl<posts::columns::id>` is not satisfied
+   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:26:22
+    |
+ LL |         .distinct_on(posts::id)
+    |                      ^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `DistinctOnDsl<posts::columns::id>` is not implemented for `users::table`
+   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:5:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
+    = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
+    = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
+help: the following other types implement trait `DistinctOnDsl<Selection>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+LL | / impl<ST, F, S, D, W, O, LOf, G, H, Selection> DistinctOnDsl<Selection>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
+LL | | where
+LL | |     G: ValidGroupByClause,
+...   |
+LL | |     S: SelectClauseExpression<FromClause<F>>,
+LL | |     (Selection, S::Selection): ValidGrouping<G::Expressions>,
+    | |_____________________________________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>`
+    |
+   ::: DIESEL/diesel/diesel/src/query_source/aliasing/dsl_impls.rs
+    |
+LL | / impl<S, Selection> DistinctOnDsl<Selection> for Alias<S>
+LL | | where
+LL | |     S: AliasSource,
+LL | |     Selection: SelectableExpression<Self>,
+...   |
+LL | |         Expression<SqlType = <Self as AsQuery>::SqlType> + ValidGrouping<()>,
+LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
+    | |____________________________________________________^ `Alias<S>`
+note: required by a bound in `diesel::QueryDsl::distinct_on`
+   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    |
+LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ----------- required by a bound in this associated function
+LL |     where
+LL |         Self: methods::DistinctOnDsl<Expr>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `(diesel::sql_types::Text, diesel::sql_types::Text): diesel::sql_types::SingleValue` is not satisfied
-  --> $DIR/distinct_on_allows_only_fields_of_table.rs:25:18
-   |
-25 |     posts::table.distinct_on((posts::name, users::name)).get_result(&connection);
-   |                  ^^^^^^^^^^^ the trait `diesel::sql_types::SingleValue` is not implemented for `(diesel::sql_types::Text, diesel::sql_types::Text)`
-   |
-   = note: required because of the requirements on the impl of `diesel::query_dsl::methods::DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `diesel::query_builder::SelectStatement<posts::table>`
-
-error[E0277]: the trait bound `users::columns::name: diesel::SelectableExpression<posts::table>` is not satisfied
-  --> $DIR/distinct_on_allows_only_fields_of_table.rs:25:30
-   |
-25 |     posts::table.distinct_on((posts::name, users::name)).get_result(&connection);
-   |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<posts::table>` is not implemented for `users::columns::name`
-   |
-   = help: the following implementations were found:
-             <users::columns::name as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
-             <users::columns::name as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
-             <users::columns::name as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
-             <users::columns::name as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
-             <users::columns::name as diesel::SelectableExpression<users::table>>
-   = note: required because of the requirements on the impl of `diesel::SelectableExpression<posts::table>` for `(posts::columns::name, users::columns::name)`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::methods::DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `posts::table`
-
-error[E0277]: the trait bound `posts::table: diesel::query_source::AppearsInFromClause<users::table>` is not satisfied
-  --> $DIR/distinct_on_allows_only_fields_of_table.rs:25:18
-   |
-25 |     posts::table.distinct_on((posts::name, users::name)).get_result(&connection);
-   |                  ^^^^^^^^^^^ the trait `diesel::query_source::AppearsInFromClause<users::table>` is not implemented for `posts::table`
-   |
-   = help: the following implementations were found:
-             <posts::table as diesel::query_source::AppearsInFromClause<posts::table>>
-   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<posts::table>` for `users::columns::name`
-   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<posts::table>` for `(posts::columns::name, users::columns::name)`
-   = note: required because of the requirements on the impl of `diesel::SelectableExpression<posts::table>` for `(posts::columns::name, users::columns::name)`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::methods::DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `posts::table`
+error[E0277]: the trait bound `table: DistinctOnDsl<(name, name)>` is not satisfied
+   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:31:10
+    |
+ LL |         .distinct_on((posts::name, users::name))
+    |          ^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `DistinctOnDsl<(posts::columns::name, users::columns::name)>` is not implemented for `posts::table`
+   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:12:1
+    |
+ LL | / table! {
+ LL | |     posts {
+    | |_________^
+    = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
+    = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
+help: the following other types implement trait `DistinctOnDsl<Selection>`
+   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+    |
+LL | / impl<ST, F, S, D, W, O, LOf, G, H, Selection> DistinctOnDsl<Selection>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
+LL | | where
+LL | |     G: ValidGroupByClause,
+...   |
+LL | |     S: SelectClauseExpression<FromClause<F>>,
+LL | |     (Selection, S::Selection): ValidGrouping<G::Expressions>,
+    | |_____________________________________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>`
+    |
+   ::: DIESEL/diesel/diesel/src/query_source/aliasing/dsl_impls.rs
+    |
+LL | / impl<S, Selection> DistinctOnDsl<Selection> for Alias<S>
+LL | | where
+LL | |     S: AliasSource,
+LL | |     Selection: SelectableExpression<Self>,
+...   |
+LL | |         Expression<SqlType = <Self as AsQuery>::SqlType> + ValidGrouping<()>,
+LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
+    | |____________________________________________________^ `Alias<S>`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.

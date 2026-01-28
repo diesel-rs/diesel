@@ -11,17 +11,18 @@ table! {
 }
 
 #[derive(Queryable, AsChangeset)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct User {
     name: String,
     hair_color: String,
 }
 
 fn main() {
-    let connection = PgConnection::establish("").unwrap();
+    let mut connection = PgConnection::establish("").unwrap();
     let mut user = User {
         name: "Sean".to_string(),
         hair_color: "black".to_string(),
     };
-    user.save_changes(&connection);
+    user.save_changes(&mut connection);
+    //~^ ERROR: the method `save_changes` exists for struct `User`, but its trait bounds were not satisfied
 }

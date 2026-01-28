@@ -1,11 +1,12 @@
 use crate::schema::*;
 use diesel::backend::Backend;
+use diesel::deserialize::FromSqlRow;
+use diesel::expression::AsExpression;
 use diesel::serialize::{Output, ToSql};
 use diesel::*;
-use std::io::Write;
 
 #[derive(Debug, FromSqlRow, AsExpression)]
-#[sql_type = "sql_types::Text"]
+#[diesel(sql_type = sql_types::Text)]
 struct UppercaseString(pub String);
 
 impl From<String> for UppercaseString {
@@ -19,22 +20,30 @@ where
     DB: Backend,
     String: ToSql<sql_types::Text, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         self.0.to_sql(out)
     }
 }
 
 #[derive(Insertable, PartialEq, Debug)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 struct InsertableUser {
-    #[diesel(serialize_as = "UppercaseString")]
+    #[diesel(serialize_as = UppercaseString)]
     name: String,
 }
 
-#[test]
-fn serialization_can_be_customized() {
+#[derive(Clone, Debug, AsChangeset, Identifiable)]
+#[diesel(table_name = users)]
+struct ChangeUser {
+    id: i32,
+    #[diesel(serialize_as = UppercaseString)]
+    name: String,
+}
+
+#[diesel_test_helper::test]
+fn insert_serialization_can_be_customized() {
     use crate::schema::users::dsl::*;
-    let connection = connection();
+    let connection = &mut connection();
 
     let user = InsertableUser {
         name: "thomas".to_string(),
@@ -42,11 +51,39 @@ fn serialization_can_be_customized() {
 
     diesel::insert_into(users)
         .values(user)
-        .execute(&connection)
+        .execute(connection)
         .unwrap();
 
     assert_eq!(
         Ok("THOMAS".to_string()),
-        users.select(name).first(&connection)
+        users.select(name).first(connection)
+    );
+}
+
+#[diesel_test_helper::test]
+fn update_serialization_can_be_customized() {
+    use crate::schema::users::dsl::*;
+    let connection = &mut connection();
+
+    let user = InsertableUser {
+        name: "thomas".to_string(),
+    };
+    diesel::insert_into(users)
+        .values(user)
+        .execute(connection)
+        .unwrap();
+
+    let user = ChangeUser {
+        id: users.select(id).first(connection).unwrap(),
+        name: "eizinger".to_string(),
+    };
+    diesel::update(&user)
+        .set(user.clone())
+        .execute(connection)
+        .unwrap();
+
+    assert_eq!(
+        Ok("EIZINGER".to_string()),
+        users.select(name).first(connection)
     );
 }

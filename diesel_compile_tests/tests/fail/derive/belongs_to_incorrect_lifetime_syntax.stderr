@@ -1,0 +1,18 @@
+error[E0261]: use of undeclared lifetime name `'a`
+  --> tests/fail/derive/belongs_to_incorrect_lifetime_syntax.rs:25:25
+   |
+LL | #[derive(Associations)]
+   |          ------------ lifetime `'a` is missing in item created through this procedural macro
+LL | #[diesel(belongs_to(Foo<'a>))]
+   |                         ^^ undeclared lifetime
+
+error[E0261]: use of undeclared lifetime name `'a`
+  --> tests/fail/derive/belongs_to_incorrect_lifetime_syntax.rs:25:25
+   |
+LL | #[derive(Associations)]
+   |          ------------ lifetime `'a` is missing in item created through this procedural macro
+LL | #[diesel(belongs_to(Foo<'a>))]
+   |                         ^^ undeclared lifetime
+   |
+   = note: for more information on higher-ranked polymorphism, visit https://doc.rust-lang.org/nomicon/hrtb.html
+For more information about this error, try `rustc --explain E0261`.

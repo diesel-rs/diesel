@@ -3,15 +3,13 @@
 Thanks for your interest in contributing to Diesel! We very much look forward to
 your suggestions, bug reports, and pull requests.
 
-We run an active [Gitter
-channel](https://gitter.im/diesel-rs/diesel) where you can ask Diesel-related questions and
+We run an active [discussion forum](https://github.com/diesel-rs/diesel/discussions) where you can ask Diesel-related questions and
 get help. Feel free to ask there before opening a GitHub issue or
 pull request.
 
 *Note:* Anyone who interacts with Diesel in any space, including but not
 limited to this GitHub repository, must follow our [code of
 conduct](https://github.com/diesel-rs/diesel/blob/master/code_of_conduct.md).
-
 
 ## Submitting bug reports
 
@@ -50,7 +48,19 @@ If you can't find thread describing your idea on our forum, create a new one. Ad
 
 Thank you! We'll try to respond as quickly as possible.
 
+## Improve the documentation
+
+We are welcoming contributions that improve the documentation, examples or the guides provided on the web page. 
+These contribution are as valuable as any code contribution. So if you notice something that could be documented
+in a better way or that is missing an example do not hesitate to open a PR to improve the documentation for all users.
+
+## Triaging issues & Reviewing changes
+
+The Diesel project receives a significant number of bug reports and pull requests. Any help reviewing and classifying these reports are highly welcome. For PR's you can just leave review comments. Otherwise you are welcome to join the [Diesel Reviewer team](https://github.com/orgs/diesel-rs/teams/reviewers) by requesting access [in this issue](https://github.com/diesel-rs/diesel/issues/1186). Members of this team get pinged on PR's that need a review and do have the right to triage issues. Especially PR reviews are a good place to become more familiar with certain Rust idioms and Diesel internals as they are a good place to ask questions about how something works.
+
 ## Contribute code to Diesel
+
+We try to keep a number of issues [marked as good first issue](https://github.com/diesel-rs/diesel/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22%20label%3A%22help%20wanted%22%20label%3A%22mentoring%20available%22) in our issue tracker. These are usually a good starting point if you are new to contribute to Diesel. We also keep a project to [plan](https://github.com/orgs/diesel-rs/projects/1) features for the next Diesel release. Feel free to grab any open issue in our tracker or project tracking by leaving a comment there. Also do not hesitate to ask for help if you are stuck trying to resolve a specific issue. Other contributors usually can help you around most problems.
 
 ### Setting up Diesel locally
 
@@ -65,8 +75,9 @@ Thank you! We'll try to respond as quickly as possible.
 
    *Shortcut:* On macOS, you don't need to install anything to work with SQLite.
    For PostgreSQL, you'll only need the server (`libpq` is installed by
-   default). To get started, `brew install postgresql mysql` and follow the
-   instructions shown to set up the database servers.
+   default). To get started, `brew install postgresql@17 mysql` and follow the
+   instructions shown to set up the database servers. Other versions of
+   PostgreSQL should work as well.
 3. Clone this repository and open it in your favorite editor.
 4. Create a `.env` file in this directory, and add the connection details for
    your databases.
@@ -107,10 +118,14 @@ Thank you! We'll try to respond as quickly as possible.
     ```bash
     $ docker-compose up
     ```
+    
+5. Install [cargo-nextest](https://nexte.st/) via `cargo install cargo-nextest`
 
-5. Now, try running the test suite to confirm everything works for you locally
-   by executing `bin/test`. (Initially, this will take a while to compile
-   everything.)
+6. Now, try running the test suite to confirm everything works for you locally
+   by executing `cargo xtask run-tests`. (Initially, this will take a while to compile
+   everything.) In addition, if you want to compile and test a crate separately, 
+   you can refer to the commands printed and executed by `cargo xtask run-tests`. Additionally you 
+   can check `cargo xtask run-tests --help` on how to further configure which tests are executed.
 
 [rustup]: https://rustup.rs/
 
@@ -124,41 +139,18 @@ To run rustfmt tests locally:
 
 2. Install the rustfmt and clippy by running
    ```
-   rustup component add rustfmt-preview
-   rustup component add clippy-preview
+   rustup component add rustfmt
+   rustup component add clippy
    ```
 
-3. Run clippy using cargo from the root of your diesel repo.
-   ```
-   cargo clippy
-   ```
-   Each PR needs to compile without warning.
+3. Install [typos](https://github.com/crate-ci/typos) via `cargo install typos-cli`
 
-4. Run rustfmt using cargo from the root of your diesel repo.
-
-   To see changes that need to be made, run
-
-   ```
-   cargo fmt --all -- --check
-   ```
-
-   If all code is properly formatted (e.g. if you have not made any changes),
-   this should run without error or output.
-   If your code needs to be reformatted,
-   you will see a diff between your code and properly formatted code.
-   If you see code here that you didn't make any changes to
-   then you are probably running the wrong version of rustfmt.
-   Once you are ready to apply the formatting changes, run
-
-   ```
-   cargo fmt --all
-   ```
-
-   You won't see any output, but all your files will be corrected.
+4. Use `cargo xtask tidy` to check if your changes follow the expected code style.
+   This will run `cargo fmt --check`, `typos` and `cargo clippy` internally. See `cargo xtask tidy --help`
+   for additional options.
 
 You can also use rustfmt to make corrections or highlight issues in your editor.
 Check out [their README](https://github.com/rust-lang/rustfmt) for details.
-
 
 ### Common Abbreviations
 
@@ -177,3 +169,19 @@ Check out [their README](https://github.com/rust-lang/rustfmt) for details.
 `Conn`: Connection
 
 Generally, we prefer to give our types meaningful names. `Lhs` and `Rhs` vs `T` and `U` for a binary expression, for example.
+
+### Compile Tests
+
+Diesel has an extensive suite of compile tests in the `diesel_compile_tests` crate. These test work by having a small test program for each test case and then verifying that the compilation of those tests fail with a specific error message. For that we use the [`ui_test`](https://docs.rs/ui_test/latest/ui_test/) also used by rustc.  
+Running these tests can done by simply running `cargo test` in the `diesel_compile_tests` directory. Adding new tests simply requires adding a new file to `diesel_compile_tests/tests/fail/` containing the source code you want to test.
+You can run these tests with the environment variable `BLESS` set to `1` to update the expected stderr output. You also need to update the inline error annotations in the source code to match on the error message. See the documentation of `ui_test` for how to do that. 
+
+### Snapshot tests
+
+Diesel's test suite is using [insta](https://docs.rs/insta/latest/insta/) for snapshot tests in various places. If you get an error in the test suite that some output of such a test changed you can use [cargo-insta](https://docs.rs/insta/latest/insta/) to review and accept these changes. You need to commit these changes as part of your changeset.
+
+Such snapshot tests are used by the following tests:
+
+* Expanded code tests in `diesel_derives`
+* Print-schema tests in `diesel_cli`
+* Generate-migration tests in `diesel_cli`

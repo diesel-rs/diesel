@@ -1,8 +1,8 @@
 use crate::deserialize::{self, FromSql};
-use crate::mysql::{Mysql, MysqlValue};
+use crate::mysql::{Mysql, MysqlValue, NumericRepresentation};
 use crate::result::Error::DeserializationError;
 use crate::sql_types::{BigInt, Binary, Double, Float, Integer, SmallInt, Text};
-use std::convert::TryInto;
+use crate::Queryable;
 use std::error::Error;
 use std::str::{self, FromStr};
 
@@ -12,19 +12,18 @@ where
     T::Err: Error + Send + Sync + 'static,
 {
     let string = str::from_utf8(bytes)?;
-    let mut splited = string.split('.');
-    let integer_portion = splited.next().unwrap_or_default();
-    let _decimal_portion = splited.next().unwrap_or_default();
-    if splited.next().is_some() {
-        Err(format!("Invalid decimal format: {:?}", string).into())
+    let mut split = string.split('.');
+    let integer_portion = split.next().unwrap_or_default();
+    let _decimal_portion = split.next().unwrap_or_default();
+    if split.next().is_some() {
+        Err(format!("Invalid decimal format: {string:?}").into())
     } else {
         Ok(integer_portion.parse()?)
     }
 }
 
+#[allow(clippy::cast_possible_truncation)] // that's what we want here
 fn f32_to_i64(f: f32) -> deserialize::Result<i64> {
-    use std::i64;
-
     if f <= i64::MAX as f32 && f >= i64::MIN as f32 {
         Ok(f.trunc() as i64)
     } else {
@@ -34,9 +33,8 @@ fn f32_to_i64(f: f32) -> deserialize::Result<i64> {
     }
 }
 
+#[allow(clippy::cast_possible_truncation)] // that's what we want here
 fn f64_to_i64(f: f64) -> deserialize::Result<i64> {
-    use std::i64;
-
     if f <= i64::MAX as f64 && f >= i64::MIN as f64 {
         Ok(f.trunc() as i64)
     } else {
@@ -46,126 +44,154 @@ fn f64_to_i64(f: f64) -> deserialize::Result<i64> {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<SmallInt, Mysql> for i16 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
-        use crate::mysql::NumericRepresentation::*;
-
         match value.numeric_value()? {
-            Tiny(x) => Ok(x.into()),
-            Small(x) => Ok(x),
-            Medium(x) => x.try_into().map_err(|_| {
+            NumericRepresentation::Tiny(x) => Ok(x.into()),
+            NumericRepresentation::Small(x) => Ok(x),
+            NumericRepresentation::Medium(x) => x.try_into().map_err(|_| {
                 Box::new(DeserializationError(
                     "Numeric overflow/underflow occurred".into(),
                 )) as _
             }),
-            Big(x) => x.try_into().map_err(|_| {
+            NumericRepresentation::Big(x) => x.try_into().map_err(|_| {
                 Box::new(DeserializationError(
-                    "Numeric overflow/underflow occured".into(),
+                    "Numeric overflow/underflow occurred".into(),
                 )) as _
             }),
-            Float(x) => f32_to_i64(x)?.try_into().map_err(|_| {
+            NumericRepresentation::Float(x) => f32_to_i64(x)?.try_into().map_err(|_| {
                 Box::new(DeserializationError(
-                    "Numeric overflow/underflow occured".into(),
+                    "Numeric overflow/underflow occurred".into(),
                 )) as _
             }),
-            Double(x) => f64_to_i64(x)?.try_into().map_err(|_| {
+            NumericRepresentation::Double(x) => f64_to_i64(x)?.try_into().map_err(|_| {
                 Box::new(DeserializationError(
-                    "Numeric overflow/underflow occured".into(),
+                    "Numeric overflow/underflow occurred".into(),
                 )) as _
             }),
-            Decimal(bytes) => decimal_to_integer(bytes),
+            NumericRepresentation::Decimal(bytes) => decimal_to_integer(bytes),
         }
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<Integer, Mysql> for i32 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
-        use crate::mysql::NumericRepresentation::*;
-
         match value.numeric_value()? {
-            Tiny(x) => Ok(x.into()),
-            Small(x) => Ok(x.into()),
-            Medium(x) => Ok(x),
-            Big(x) => x.try_into().map_err(|_| {
+            NumericRepresentation::Tiny(x) => Ok(x.into()),
+            NumericRepresentation::Small(x) => Ok(x.into()),
+            NumericRepresentation::Medium(x) => Ok(x),
+            NumericRepresentation::Big(x) => x.try_into().map_err(|_| {
                 Box::new(DeserializationError(
-                    "Numeric overflow/underflow occured".into(),
+                    "Numeric overflow/underflow occurred".into(),
                 )) as _
             }),
-            Float(x) => f32_to_i64(x).and_then(|i| {
+            NumericRepresentation::Float(x) => f32_to_i64(x).and_then(|i| {
                 i.try_into().map_err(|_| {
                     Box::new(DeserializationError(
-                        "Numeric overflow/underflow occured".into(),
+                        "Numeric overflow/underflow occurred".into(),
                     )) as _
                 })
             }),
-            Double(x) => f64_to_i64(x).and_then(|i| {
+            NumericRepresentation::Double(x) => f64_to_i64(x).and_then(|i| {
                 i.try_into().map_err(|_| {
                     Box::new(DeserializationError(
-                        "Numeric overflow/underflow occured".into(),
+                        "Numeric overflow/underflow occurred".into(),
                     )) as _
                 })
             }),
-            Decimal(bytes) => decimal_to_integer(bytes),
+            NumericRepresentation::Decimal(bytes) => decimal_to_integer(bytes),
         }
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<BigInt, Mysql> for i64 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
-        use crate::mysql::NumericRepresentation::*;
-
         match value.numeric_value()? {
-            Tiny(x) => Ok(x.into()),
-            Small(x) => Ok(x.into()),
-            Medium(x) => Ok(x.into()),
-            Big(x) => Ok(x),
-            Float(x) => f32_to_i64(x),
-            Double(x) => f64_to_i64(x),
-            Decimal(bytes) => decimal_to_integer(bytes),
+            NumericRepresentation::Tiny(x) => Ok(x.into()),
+            NumericRepresentation::Small(x) => Ok(x.into()),
+            NumericRepresentation::Medium(x) => Ok(x.into()),
+            NumericRepresentation::Big(x) => Ok(x),
+            NumericRepresentation::Float(x) => f32_to_i64(x),
+            NumericRepresentation::Double(x) => f64_to_i64(x),
+            NumericRepresentation::Decimal(bytes) => decimal_to_integer(bytes),
         }
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<Float, Mysql> for f32 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
-        use crate::mysql::NumericRepresentation::*;
-
         match value.numeric_value()? {
-            Tiny(x) => Ok(x.into()),
-            Small(x) => Ok(x.into()),
-            Medium(x) => Ok(x as Self),
-            Big(x) => Ok(x as Self),
-            Float(x) => Ok(x),
-            Double(x) => Ok(x as Self),
-            Decimal(bytes) => Ok(str::from_utf8(bytes)?.parse()?),
+            NumericRepresentation::Tiny(x) => Ok(x.into()),
+            NumericRepresentation::Small(x) => Ok(x.into()),
+            NumericRepresentation::Medium(x) => Ok(x as Self),
+            NumericRepresentation::Big(x) => Ok(x as Self),
+            NumericRepresentation::Float(x) => Ok(x),
+            // there is currently no way to do this in a better way
+            #[allow(clippy::cast_possible_truncation)]
+            NumericRepresentation::Double(x) => Ok(x as Self),
+            NumericRepresentation::Decimal(bytes) => Ok(str::from_utf8(bytes)?.parse()?),
         }
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<Double, Mysql> for f64 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
-        use crate::mysql::NumericRepresentation::*;
-
         match value.numeric_value()? {
-            Tiny(x) => Ok(x.into()),
-            Small(x) => Ok(x.into()),
-            Medium(x) => Ok(x.into()),
-            Big(x) => Ok(x as Self),
-            Float(x) => Ok(x.into()),
-            Double(x) => Ok(x),
-            Decimal(bytes) => Ok(str::from_utf8(bytes)?.parse()?),
+            NumericRepresentation::Tiny(x) => Ok(x.into()),
+            NumericRepresentation::Small(x) => Ok(x.into()),
+            NumericRepresentation::Medium(x) => Ok(x.into()),
+            NumericRepresentation::Big(x) => Ok(x as Self),
+            NumericRepresentation::Float(x) => Ok(x.into()),
+            NumericRepresentation::Double(x) => Ok(x),
+            NumericRepresentation::Decimal(bytes) => Ok(str::from_utf8(bytes)?.parse()?),
         }
     }
 }
 
-impl FromSql<Text, Mysql> for String {
+/// The returned pointer is *only* valid for the lifetime to the argument of
+/// `from_sql`. This impl is intended for uses where you want to write a new
+/// impl in terms of `String`, but don't want to allocate. We have to return a
+/// raw pointer instead of a reference with a lifetime due to the structure of
+/// `FromSql`
+#[cfg(feature = "mysql_backend")]
+impl FromSql<Text, Mysql> for *const str {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
-        String::from_utf8(value.as_bytes().into()).map_err(Into::into)
+        let string = str::from_utf8(value.as_bytes())?;
+        Ok(string as *const str)
     }
 }
 
-impl FromSql<Binary, Mysql> for Vec<u8> {
+#[cfg(feature = "mysql_backend")]
+impl Queryable<Text, Mysql> for *const str {
+    type Row = Self;
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
+    }
+}
+
+/// The returned pointer is *only* valid for the lifetime to the argument of
+/// `from_sql`. This impl is intended for uses where you want to write a new
+/// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a
+/// raw pointer instead of a reference with a lifetime due to the structure of
+/// `FromSql`
+#[cfg(feature = "mysql_backend")]
+impl FromSql<Binary, Mysql> for *const [u8] {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
-        Ok(value.as_bytes().into())
+        Ok(value.as_bytes() as *const [u8])
+    }
+}
+
+#[cfg(feature = "mysql_backend")]
+impl Queryable<Binary, Mysql> for *const [u8] {
+    type Row = Self;
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
     }
 }

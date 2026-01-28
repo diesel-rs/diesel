@@ -1,0 +1,57 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(HasQuery)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
+---
+const _: () = {
+    use diesel;
+    impl<__DB: diesel::backend::Backend> diesel::HasQuery<__DB> for User {
+        type BaseQuery = <users::table as diesel::query_builder::AsQuery>::Query;
+        fn base_query() -> Self::BaseQuery {
+            diesel::query_builder::AsQuery::as_query(users::table)
+        }
+    }
+};
+const _: () = {
+    use diesel;
+    use diesel::expression::Selectable;
+    impl<__DB: diesel::backend::Backend> Selectable<__DB> for User {
+        type SelectExpression = (users::r#id, users::r#name);
+        fn construct_selection() -> Self::SelectExpression {
+            (users::r#id, users::r#name)
+        }
+    }
+    fn _check_field_compatibility()
+    where
+        i32: diesel::deserialize::FromSqlRow<
+            diesel::dsl::SqlTypeOf<users::r#id>,
+            diesel::sqlite::Sqlite,
+        >,
+        String: diesel::deserialize::FromSqlRow<
+            diesel::dsl::SqlTypeOf<users::r#name>,
+            diesel::sqlite::Sqlite,
+        >,
+    {}
+};
+const _: () = {
+    use diesel;
+    use diesel::row::{Row as _, Field as _};
+    impl<
+        __DB: diesel::backend::Backend,
+        __ST0,
+        __ST1,
+    > diesel::deserialize::Queryable<(__ST0, __ST1), __DB> for User
+    where
+        (i32, String): diesel::deserialize::FromStaticSqlRow<(__ST0, __ST1), __DB>,
+    {
+        type Row = (i32, String);
+        fn build(row: (i32, String)) -> diesel::deserialize::Result<Self> {
+            use std::convert::TryInto;
+            diesel::deserialize::Result::Ok(Self {
+                id: row.0.try_into()?,
+                name: row.1.try_into()?,
+            })
+        }
+    }
+};

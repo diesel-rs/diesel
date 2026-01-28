@@ -1,0 +1,26 @@
+error: expect `last_arguments`, the correct format is `#[variadic(last_arguments = 3)]` or `#[variadic(last_arguments = 3, skip_zero_argument_variant = true)]`
+ --> tests/fail/derive/bad_variadic.rs:9:16
+  |
+LL |     #[variadic(not_a_literal_number)]
+  |                ^^^^^^^^^^^^^^^^^^^^
+
+error: invalid variadic argument count: not enough function arguments
+  --> tests/fail/derive/bad_variadic.rs:17:33
+   |
+LL |     #[variadic(last_arguments = 3)]
+   |                                 ^
+
+error: cannot find attribute `variadic` in this scope
+ --> tests/fail/derive/bad_variadic.rs:9:7
+  |
+LL |     #[variadic(not_a_literal_number)]
+  |       ^^^^^^^^
+
+error[E0703]: invalid ABI: found `SQL`
+ --> tests/fail/derive/bad_variadic.rs:6:8
+  |
+LL | extern "SQL" {
+  |        ^^^^^ invalid ABI
+  |
+  = note: invoke `rustc --print=calling-conventions` for a full list of supported calling conventions
+For more information about this error, try `rustc --explain E0703`.

@@ -1,0 +1,36 @@
+error[E0277]: `ExcludeGroup` is no valid SQL fragment for the `Mysql` backend
+   --> tests/fail/mysql_does_not_support_group_frame_clauses_boxed.rs:16:17
+    |
+ LL |           .select(Box::new(
+    |  _________________^
+ LL | |             dsl::count(users::id).frame_by(
+ LL | |                 dsl::frame::Rows
+ LL | |                     .frame_start_with_exclusion(dsl::frame::CurrentRow, dsl::frame::Exclu...
+ LL | |             ),
+ LL | |         ) as Box<dyn BoxableExpression<_, _, SqlType = _>>)
+    | |_________^ the trait `QueryFragment<Mysql, NoFrameFrameExclusionSupport>` is not implemented for `ExcludeGroup`
+    |
+    = note: this usually means that the `Mysql` database system does not support 
+            this SQL syntax
+help: the following other types implement trait `QueryFragment<DB, SP>`
+   --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
+    |
+LL | / simple_frame_expr_with_bound!(
+LL | |     /// Exclude the current peer group from the window frame
+LL | |     ///
+LL | |     /// A peer group is a set of rows with an equivalent `ORDER BY`
+...   |
+LL | |     "EXCLUDE GROUP "
+LL | | );
+    | | ^
+    | | |
+    | |_`ExcludeGroup` implements `QueryFragment<DB, FrameExclusionSupport>`
+    |   `ExcludeGroup` implements `QueryFragment<DB>`
+    = note: required for `ExcludeGroup` to implement `QueryFragment<Mysql>`
+    = note: 4 redundant requirements hidden
+    = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `QueryFragment<Mysql>`
+    = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `diesel::BoxableExpression<users::table, Mysql>`
+    = note: required for the cast from `Box<AggregateExpression<..., ..., ..., ..., ...>>` to `Box<...>`
+ 
+        = note: this error originates in the macro `simple_frame_expr_with_bound` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.

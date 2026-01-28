@@ -1,0 +1,15 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(QueryId)]\nstruct Query;\n"
+---
+const _: () = {
+    use diesel;
+    #[allow(non_camel_case_types)]
+    impl diesel::query_builder::QueryId for Query {
+        type QueryId = Query;
+        const HAS_STATIC_QUERY_ID: bool = true;
+        const IS_WINDOW_FUNCTION: bool = false;
+    }
+};

@@ -1,16 +1,16 @@
-use crate::backend::Backend;
-use crate::expression::TypedExpressionType;
+use crate::backend::DieselReserveSpecialization;
 use crate::expression::*;
 use crate::query_builder::*;
 use crate::query_source::joins::ToInnerJoin;
 use crate::result::QueryResult;
 use crate::sql_types::{DieselNumericOps, IntoNullable};
 
+#[doc(hidden)] // This is used by the `table!` macro internally
 #[derive(Debug, Copy, Clone, DieselNumericOps, ValidGrouping)]
-pub struct Nullable<T>(T);
+pub struct Nullable<T>(pub(crate) T);
 
 impl<T> Nullable<T> {
-    pub fn new(expr: T) -> Self {
+    pub(crate) fn new(expr: T) -> Self {
         Nullable(expr)
     }
 }
@@ -26,16 +26,14 @@ where
 
 impl<T, DB> QueryFragment<DB> for Nullable<T>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.0.walk_ast(pass)
     }
 }
 
-/// Nullable can be used in where clauses everywhere, but can only be used in
-/// select clauses for outer joins.
 impl<T, QS> AppearsOnTable<QS> for Nullable<T>
 where
     T: AppearsOnTable<QS>,
@@ -57,4 +55,4 @@ where
 {
 }
 
-impl<T> SelectableExpression<()> for Nullable<T> where Self: AppearsOnTable<()> {}
+impl<T> SelectableExpression<NoFromClause> for Nullable<T> where Self: AppearsOnTable<NoFromClause> {}

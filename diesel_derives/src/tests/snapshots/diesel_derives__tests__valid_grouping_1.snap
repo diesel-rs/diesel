@@ -1,0 +1,12 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(ValidGrouping)]\nstruct Query;\n"
+---
+const _: () = {
+    use diesel;
+    impl<__GroupByClause> diesel::expression::ValidGrouping<__GroupByClause> for Query {
+        type IsAggregate = diesel::expression::is_aggregate::Never;
+    }
+};

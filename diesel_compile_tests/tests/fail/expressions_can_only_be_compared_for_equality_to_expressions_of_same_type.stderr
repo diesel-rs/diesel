@@ -1,16 +1,41 @@
-error[E0277]: the trait bound `str: diesel::Expression` is not satisfied
-  --> $DIR/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:15:22
+error[E0277]: the trait bound `&str: AsExpression<diesel::sql_types::Integer>` is not satisfied
+  --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:15:19
    |
-15 |     let pred = id.eq("string");
-   |                      ^^^^^^^^ the trait `diesel::Expression` is not implemented for `str`
+LL |     let pred = id.eq("string");
+   |                   ^^ the trait `AsExpression<diesel::sql_types::Integer>` is not implemented for `&str`
    |
-   = note: required because of the requirements on the impl of `diesel::Expression` for `&str`
-   = note: required because of the requirements on the impl of `diesel::expression::AsExpression<diesel::sql_types::Integer>` for `&str`
+   = help: the following other types implement trait `AsExpression<T>`:
+             `&&str` implements `AsExpression<Citext>`
+             `&&str` implements `AsExpression<Nullable<Citext>>`
+             `&&str` implements `AsExpression<Nullable<diesel::sql_types::Date>>`
+             `&&str` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+             `&&str` implements `AsExpression<Nullable<diesel::sql_types::Time>>`
+             `&&str` implements `AsExpression<Nullable<diesel::sql_types::Timestamp>>`
+             `&&str` implements `AsExpression<diesel::sql_types::Date>`
+             `&&str` implements `AsExpression<diesel::sql_types::Text>`
+           and N others
 
-error[E0271]: type mismatch resolving `<users::columns::name as diesel::Expression>::SqlType == diesel::sql_types::Integer`
-  --> $DIR/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:16:19
+error[E0277]: the trait bound `columns::name: AsExpression<diesel::sql_types::Integer>` is not satisfied
+  --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:17:19
    |
-16 |     let pred = id.eq(name);
-   |                   ^^ expected struct `diesel::sql_types::Text`, found struct `diesel::sql_types::Integer`
+LL |     let pred = id.eq(name);
+   |                   ^^ unsatisfied trait bound
    |
-   = note: required because of the requirements on the impl of `diesel::expression::AsExpression<diesel::sql_types::Integer>` for `users::columns::name`
+help: the trait `AsExpression<diesel::sql_types::Integer>` is not implemented for `columns::name`
+  --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:8:9
+   |
+ LL |         name -> VarChar,
+   |         ^^^^
+   = help: the following other types implement trait `AsExpression<T>`:
+             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+             `&'__expr Cents` implements `AsExpression<Money>`
+             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+             `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+           and N others
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.

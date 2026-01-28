@@ -11,11 +11,13 @@ table! {
 
 fn main() {
     use self::users::dsl::*;
-    let sqlite_connection = SqliteConnection::establish(":memory:").unwrap();
+    let mut sqlite_connection = SqliteConnection::establish(":memory:").unwrap();
 
-    users.distinct_on(name).get_results(&sqlite_connection);
+    users.distinct_on(name).get_results(&mut sqlite_connection);
+    //~^ ERROR: `DistinctOnClause<columns::name>` is no valid SQL fragment for the `Sqlite` backend
 
-    let mysql_connection = MysqlConnection::establish("mysql://foo").unwrap();
+    let mut mysql_connection = MysqlConnection::establish("mysql://foo").unwrap();
 
-    users.distinct_on(name).get_results(&mysql_connection);
+    users.distinct_on(name).get_results(&mut mysql_connection);
+    //~^ ERROR: `DistinctOnClause<columns::name>` is no valid SQL fragment for the `Mysql` backend
 }

@@ -1,11 +1,18 @@
-#![allow(unused_parens)] // FIXME: Remove this attribute once false positive is resolved.
+// FIXME: Remove this attribute once false positive is resolved.
+#![allow(unused_parens)]
+// conditionally allow deprecated items to allow using the
+// "deprecated" table! macro
+#![cfg_attr(
+    any(feature = "huge-tables", feature = "large-tables"),
+    allow(deprecated)
+)]
 
 use super::backend::{FailedToLookupTypeError, InnerPgTypeMetadata};
 use super::{Pg, PgTypeMetadata};
+use crate::connection::{DefaultLoadingMode, LoadConnection};
 use crate::prelude::*;
 
 use std::borrow::Cow;
-use std::cell::RefCell;
 use std::collections::HashMap;
 
 /// Determines the OID of types at runtime
@@ -13,39 +20,68 @@ use std::collections::HashMap;
 /// Custom implementations of `Connection<Backend = Pg>` should not implement this trait directly.
 /// Instead `GetPgMetadataCache` should be implemented, afterwards the generic implementation will provide
 /// the necessary functions to perform the type lookup.
+#[cfg(feature = "postgres_backend")]
 pub trait PgMetadataLookup {
     /// Determine the type metadata for the given `type_name`
     ///
     /// This function should only be used for user defined types, or types which
     /// come from an extension. This function may perform a SQL query to look
     /// up the type. For built-in types, a static OID should be preferred.
-    fn lookup_type(&self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata;
+    fn lookup_type(&mut self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata;
+
+    /// Convert this lookup instance to a `std::any::Any` pointer
+    ///
+    /// Implementing this method is required to support `#[derive(MultiConnection)]`
+    // We provide a default implementation here, so that adding this method is no breaking
+    // change
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn as_any<'a>(&mut self) -> &mut (dyn std::any::Any + 'a)
+    where
+        Self: 'a,
+    {
+        unimplemented!()
+    }
 }
 
 impl<T> PgMetadataLookup for T
 where
-    T: Connection<Backend = Pg> + GetPgMetadataCache,
+    T: Connection<Backend = Pg> + GetPgMetadataCache + LoadConnection<DefaultLoadingMode>,
 {
-    fn lookup_type(&self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata {
-        let metadata_cache = self.get_metadata_cache();
+    fn lookup_type(&mut self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata {
         let cache_key = PgMetadataCacheKey {
             schema: schema.map(Cow::Borrowed),
             type_name: Cow::Borrowed(type_name),
         };
 
-        metadata_cache.lookup_type(&cache_key).unwrap_or_else(|| {
-            let r = lookup_type(&cache_key, self);
+        {
+            let metadata_cache = self.get_metadata_cache();
 
-            match r {
-                Ok(type_metadata) => {
-                    metadata_cache.store_type(cache_key, type_metadata);
-                    PgTypeMetadata(Ok(type_metadata))
-                }
-                Err(_e) => {
-                    PgTypeMetadata(Err(FailedToLookupTypeError::new(cache_key.into_owned())))
-                }
+            if let Some(metadata) = metadata_cache.lookup_type(&cache_key) {
+                return metadata;
             }
-        })
+        }
+
+        let r = lookup_type(&cache_key, self);
+
+        match r {
+            Ok(type_metadata) => {
+                self.get_metadata_cache()
+                    .store_type(cache_key, type_metadata);
+                PgTypeMetadata(Ok(type_metadata))
+            }
+            Err(_e) => PgTypeMetadata(Err(FailedToLookupTypeError::new_internal(
+                cache_key.into_owned(),
+            ))),
+        }
+    }
+
+    fn as_any<'a>(&mut self) -> &mut (dyn std::any::Any + 'a)
+    where
+        Self: 'a,
+    {
+        self
     }
 }
 
@@ -53,66 +89,69 @@ where
 /// so that the lookup of user defined types, or types which come from an extension can be cached.
 ///
 /// Implementing this trait for a `Connection<Backend=Pg>` will cause `PgMetadataLookup` to be auto implemented.
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
 pub trait GetPgMetadataCache {
     /// Get the `PgMetadataCache`
-    fn get_metadata_cache(&self) -> &PgMetadataCache;
+    fn get_metadata_cache(&mut self) -> &mut PgMetadataCache;
 }
 
-fn lookup_type<T: Connection<Backend = Pg>>(
+fn lookup_type<T: Connection<Backend = Pg> + LoadConnection<DefaultLoadingMode>>(
     cache_key: &PgMetadataCacheKey<'_>,
-    conn: &T,
+    conn: &mut T,
 ) -> QueryResult<InnerPgTypeMetadata> {
-    let search_path: String;
-    let mut search_path_has_temp_schema = false;
+    let metadata_query = pg_type::table.select((pg_type::oid, pg_type::typarray));
 
-    let search_schema = match cache_key.schema.as_deref() {
-        Some("pg_temp") => {
-            search_path_has_temp_schema = true;
-            Vec::new()
-        }
-        Some(schema) => vec![schema],
-        None => {
-            search_path = crate::dsl::sql("SHOW search_path").get_result::<String>(conn)?;
-
-            search_path
-                .split(',')
-                // skip the `$user` entry for now
-                .filter(|f| !f.starts_with("\"$"))
-                .map(|s| s.trim())
-                .filter(|&f| {
-                    let is_temp = f == "pg_temp";
-                    search_path_has_temp_schema |= is_temp;
-                    !is_temp
-                })
-                .collect()
-        }
-    };
-
-    let metadata_query = pg_type::table
-        .inner_join(pg_namespace::table)
-        .filter(pg_type::typname.eq(&cache_key.type_name))
-        .select((pg_type::oid, pg_type::typarray));
-    let nspname_filter = pg_namespace::nspname.eq(crate::dsl::any(search_schema));
-
-    let metadata = if search_path_has_temp_schema {
+    let metadata = if let Some(schema) = cache_key.schema.as_deref() {
+        // We have an explicit type name and schema given here
+        // that should resolve to an unique type
         metadata_query
-            .filter(nspname_filter.or(pg_namespace::oid.eq(pg_my_temp_schema())))
+            .inner_join(pg_namespace::table)
+            .filter(pg_type::typname.eq(&cache_key.type_name))
+            .filter(pg_namespace::nspname.eq(schema))
             .first(conn)?
     } else {
-        metadata_query.filter(nspname_filter).first(conn)?
+        // We don't have a schema here. A type with the same name could exists
+        // in more than one schema at once, even in more than one schema that
+        // is in the current search path. As we don't want to reimplement
+        // postgres name resolution here we just cast the time name to a concrete type
+        // and let postgres figure out the name resolution on it's own.
+        metadata_query
+            .filter(
+                pg_type::oid.eq(crate::dsl::sql("quote_ident(")
+                    .bind::<crate::sql_types::Text, _>(&cache_key.type_name)
+                    .sql(")::regtype::oid")),
+            )
+            .first(conn)?
     };
 
     Ok(metadata)
 }
 
+/// The key used to lookup cached type oid's inside of
+/// a [PgMetadataCache].
 #[derive(Hash, PartialEq, Eq, Debug, Clone)]
-pub(in crate::pg) struct PgMetadataCacheKey<'a> {
-    pub(crate) schema: Option<Cow<'a, str>>,
-    pub(crate) type_name: Cow<'a, str>,
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
+pub struct PgMetadataCacheKey<'a> {
+    pub(in crate::pg) schema: Option<Cow<'a, str>>,
+    pub(in crate::pg) type_name: Cow<'a, str>,
 }
 
 impl<'a> PgMetadataCacheKey<'a> {
-    fn into_owned(self) -> PgMetadataCacheKey<'static> {
+    /// Construct a new cache key from an optional schema name and
+    /// a type name
+    pub fn new(schema: Option<Cow<'a, str>>, type_name: Cow<'a, str>) -> Self {
+        Self { schema, type_name }
+    }
+
+    /// Convert the possibly borrowed version of this metadata cache key
+    /// into a lifetime independent owned version
+    pub fn into_owned(self) -> PgMetadataCacheKey<'static> {
         let PgMetadataCacheKey { schema, type_name } = self;
         PgMetadataCacheKey {
             schema: schema.map(|s| Cow::Owned(s.into_owned())),
@@ -126,8 +165,12 @@ impl<'a> PgMetadataCacheKey<'a> {
 /// [OIDs]: https://www.postgresql.org/docs/current/static/datatype-oid.html
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
 pub struct PgMetadataCache {
-    cache: RefCell<HashMap<PgMetadataCacheKey<'static>, InnerPgTypeMetadata>>,
+    cache: HashMap<PgMetadataCacheKey<'static>, InnerPgTypeMetadata>,
 }
 
 impl PgMetadataCache {
@@ -137,15 +180,18 @@ impl PgMetadataCache {
     }
 
     /// Lookup the OID of a custom type
-    fn lookup_type(&self, type_name: &PgMetadataCacheKey) -> Option<PgTypeMetadata> {
-        Some(PgTypeMetadata(Ok(*self.cache.borrow().get(type_name)?)))
+    pub fn lookup_type(&self, type_name: &PgMetadataCacheKey<'_>) -> Option<PgTypeMetadata> {
+        Some(PgTypeMetadata(Ok(*self.cache.get(type_name)?)))
     }
 
     /// Store the OID of a custom type
-    fn store_type(&self, type_name: PgMetadataCacheKey, type_metadata: InnerPgTypeMetadata) {
+    pub fn store_type(
+        &mut self,
+        type_name: PgMetadataCacheKey<'_>,
+        type_metadata: impl Into<InnerPgTypeMetadata>,
+    ) {
         self.cache
-            .borrow_mut()
-            .insert(type_name.into_owned(), type_metadata);
+            .insert(type_name.into_owned(), type_metadata.into());
     }
 }
 
@@ -168,4 +214,7 @@ table! {
 joinable!(pg_type -> pg_namespace(typnamespace));
 allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
 
-sql_function! { fn pg_my_temp_schema() -> Oid; }
+#[declare_sql_function]
+extern "SQL" {
+    fn pg_my_temp_schema() -> Oid;
+}

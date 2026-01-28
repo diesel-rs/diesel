@@ -1,0 +1,18 @@
+[package]
+name = "diesel_table_macro_syntax"
+version = "0.3.0"
+description = "Internal diesel crate"
+license = "MIT OR Apache-2.0"
+documentation = "https://diesel.rs/guides/"
+homepage = "https://diesel.rs"
+repository = "https://github.com/diesel-rs/diesel/"
+autotests = false
+include.workspace = true
+rust-version.workspace = true
+edition = "2021"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+syn = {version = "2", features = ["full"]}

@@ -1,16 +1,55 @@
-error[E0271]: type mismatch resolving `<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>> as diesel::AsChangeset>::Target == users::table`
-  --> $DIR/update_requires_column_be_from_same_table.rs:22:33
+error[E0271]: type mismatch resolving `<Grouped<...> as AsChangeset>::Target == table`
+  --> tests/fail/update_requires_column_be_from_same_table.rs:24:37
    |
-22 |     let command = update(users).set(posts::title.eq("Hello"));
-   |                                 ^^^ expected struct `posts::table`, found struct `users::table`
+LL |     let command = update(users).set(posts::title.eq("Hello"));
+   |                                 --- ^^^^^^^^^^^^^^^^^^^^^^^^ expected `users::table`, found `posts::table`
+   |                                 |
+   |                                 required by a bound introduced by this call
+   |
+   = note: `posts::table` and `users::table` have similar names, but are actually distinct types
+note: `posts::table` is defined in module `crate::posts` of the current crate
+  --> tests/fail/update_requires_column_be_from_same_table.rs:12:1
+   |
+LL | / table! {
+LL | |     posts {
+   | |_________^
+note: `users::table` is defined in module `crate::users` of the current crate
+  --> tests/fail/update_requires_column_be_from_same_table.rs:5:1
+   |
+ LL | / table! {
+ LL | |     users {
+   | |_________^
+note: the method call chain might not have had the expected associated types
+  --> tests/fail/update_requires_column_be_from_same_table.rs:24:50
+   |
+LL |     let command = update(users).set(posts::title.eq("Hello"));
+   |                                     ------------ ^^^^^^^^^^^ `AsChangeset::Target` is `table` here
+   |                                     |
+   |                                     this expression has type `title`
+note: required by a bound in `UpdateStatement::<T, U>::set`
+  --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+   |
+LL |     pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset>
+   |            --- required by a bound in this associated function
+...
+LL |         V: changeset::AsChangeset<Target = T>,
+   |                                   ^^^^^^^^^^ required by this bound in `UpdateStatement::<T, U>::set`
 
-error[E0277]: the trait bound `users::table: diesel::query_source::AppearsInFromClause<posts::table>` is not satisfied
-  --> $DIR/update_requires_column_be_from_same_table.rs:23:33
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+  --> tests/fail/update_requires_column_be_from_same_table.rs:26:33
    |
-23 |     let command = update(users).set(name.eq(posts::title));
-   |                                 ^^^ the trait `diesel::query_source::AppearsInFromClause<posts::table>` is not implemented for `users::table`
+LL |     let command = update(users).set(name.eq(posts::title));
+   |                                 ^^^ expected `Once`, found `Never`
    |
-   = help: the following implementations were found:
-             <users::table as diesel::query_source::AppearsInFromClause<users::table>>
-   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `posts::columns::title`
-   = note: required because of the requirements on the impl of `diesel::AsChangeset` for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>`
+note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
+  --> tests/fail/update_requires_column_be_from_same_table.rs:15:9
+   |
+LL |         title -> VarChar,
+   |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: required for `Eq<name, title>` to implement `AsChangeset`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0271`.

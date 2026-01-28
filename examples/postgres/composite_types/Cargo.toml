@@ -1,0 +1,16 @@
+[package]
+name = "composite_types"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+diesel = { version = "2.3.0", path = "../../../diesel", features = ["postgres" ] }
+pq-sys = { workspace = true, features = ["bundled"] }
+openssl-sys = { workspace = true, features = ["vendored"] }
+dotenvy = "0.15"
+
+[lib]
+doc = false

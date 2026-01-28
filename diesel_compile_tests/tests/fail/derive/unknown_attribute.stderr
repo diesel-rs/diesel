@@ -1,0 +1,11 @@
+error: unknown attribute, expected one of `aggregate`, `not_sized`, `foreign_derive`, `table_name`, `sql_type`, `treat_none_as_default_value`, `treat_none_as_null`, `belongs_to`, `mysql_type`, `sqlite_type`, `postgres_type`, `primary_key`, `check_for_backend`, `base_query`, `base_query_type`
+ --> tests/fail/derive/unknown_attribute.rs:5:10
+  |
+LL | #[diesel(what = true)]
+  |          ^^^^
+
+error: unknown attribute, expected one of `embed`, `skip_insertion`, `column_name`, `sql_type`, `treat_none_as_default_value`, `treat_none_as_null`, `serialize_as`, `deserialize_as`, `select_expression`, `select_expression_type`
+  --> tests/fail/derive/unknown_attribute.rs:13:14
+   |
+LL |     #[diesel(what = true)]
+   |              ^^^^

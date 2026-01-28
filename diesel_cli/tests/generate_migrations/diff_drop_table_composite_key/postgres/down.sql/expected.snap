@@ -1,0 +1,14 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 342
+description: "Test: diff_drop_table_composite_key"
+---
+-- This file should undo anything in `up.sql`
+CREATE TABLE "users"(
+	"id" INT4 NOT NULL,
+	"other_key" INT4 NOT NULL,
+	"name" TEXT NOT NULL,
+	PRIMARY KEY("id", "other_key")
+);
+
+

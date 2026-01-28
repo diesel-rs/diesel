@@ -70,12 +70,14 @@ macro_rules! __diesel_operator_body {
             $crate::expression::ValidGrouping
         )]
         #[doc(hidden)]
+        #[allow(unreachable_pub)]
         pub struct $name<$($ty_param,)+> {
             $(pub(crate) $field_name: $ty_param,)+
         }
 
         impl<$($ty_param,)+> $name<$($ty_param,)+> {
-            pub fn new($($field_name: $ty_param,)+) -> Self {
+            #[allow(dead_code)]
+            pub(crate) fn new($($field_name: $ty_param,)+) -> Self {
                 $name { $($field_name,)+ }
             }
         }
@@ -93,13 +95,32 @@ macro_rules! __diesel_operator_body {
                 $($ty_param: $crate::query_builder::QueryFragment<$backend_ty>,)+
                 $($backend_ty_param: $crate::backend::Backend,)*
         {
-            fn walk_ast(&self, mut out: $crate::query_builder::AstPass<$backend_ty>) -> $crate::result::QueryResult<()> {
+            fn walk_ast<'b>(
+                &'b self,
+                mut out: $crate::query_builder::AstPass<'_, 'b, $backend_ty>
+            ) -> $crate::result::QueryResult<()>
+            {
                 $crate::__diesel_operator_to_sql!(
                     notation = $notation,
                     operator_expr = out.push_sql($operator),
                     field_exprs = ($(self.$field_name.walk_ast(out.reborrow())?),+),
                 );
                 Ok(())
+            }
+        }
+
+        impl<S, $($ty_param,)+> $crate::internal::operators_macro::FieldAliasMapper<S> for $name<$($ty_param,)+>
+        where
+            S: $crate::query_source::AliasSource,
+            $($ty_param: $crate::internal::operators_macro::FieldAliasMapper<S>,)+
+        {
+            type Out = $name<
+                $(<$ty_param as $crate::internal::operators_macro::FieldAliasMapper<S>>::Out,)+
+            >;
+            fn map(self, alias: &$crate::query_source::Alias<S>) -> Self::Out {
+                $name {
+                    $($field_name: self.$field_name.map(alias),)+
+                }
             }
         }
     }
@@ -192,13 +213,14 @@ macro_rules! __diesel_operator_to_sql {
 /// #
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// diesel::infix_operator!(MyEq, " = ");
 ///
 /// use diesel::expression::AsExpression;
 ///
 /// // Normally you would put this on a trait instead
-/// fn my_eq<T, U, ST>(left: T, right: U) -> MyEq<T, U::Expression> where
+/// fn my_eq<T, U, ST>(left: T, right: U) -> MyEq<T, U::Expression>
+/// where
 ///     T: Expression<SqlType = ST>,
 ///     U: AsExpression<ST>,
 ///     ST: SqlType + TypedExpressionType,
@@ -208,7 +230,7 @@ macro_rules! __diesel_operator_to_sql {
 ///
 /// let users_with_name = users.select(id).filter(my_eq(name, "Sean"));
 ///
-/// assert_eq!(Ok(1), users_with_name.first(&connection));
+/// assert_eq!(Ok(1), users_with_name.first(connection));
 /// # }
 /// ```
 #[macro_export]
@@ -254,7 +276,24 @@ macro_rules! __diesel_infix_operator {
             backend_ty = DB,
         );
     };
-
+    ($name:ident, $operator:expr, __diesel_internal_SameResultAsInput) => {
+        $crate::__diesel_infix_operator!(
+            name = $name,
+            operator = $operator,
+            return_ty = (<T as $crate::expression::Expression>::SqlType),
+            backend_ty_params = (DB,),
+            backend_ty = DB,
+        );
+    };
+    ($name:ident, $operator:expr, __diesel_internal_SameResultAsInput, backend: $backend:ty) => {
+        $crate::__diesel_infix_operator!(
+            name = $name,
+            operator = $operator,
+            return_ty = (<T as $crate::expression::Expression>::SqlType),
+            backend_ty_params = (),
+            backend_ty = $backend,
+        );
+    };
     ($name:ident, $operator:expr, ConstantNullability $($return_ty:tt)::*, backend: $backend:ty) => {
         $crate::__diesel_infix_operator!(
             name = $name,
@@ -364,8 +403,6 @@ macro_rules! diesel_infix_operator {
 /// Similar to [`infix_operator!`], but the generated type will only take
 /// a single argument rather than two. The operator SQL will be placed after
 /// the single argument. See [`infix_operator!`] for example usage.
-///
-/// [`infix_operator!`]: macro.infix_operator.html
 #[macro_export]
 macro_rules! postfix_operator {
     ($name:ident, $operator:expr) => {
@@ -374,6 +411,80 @@ macro_rules! postfix_operator {
 
     ($name:ident, $operator:expr, backend: $backend:ty) => {
         $crate::postfix_operator!($name, $operator, $crate::sql_types::Bool, backend: $backend);
+    };
+
+    ($name:ident, $operator:expr, ConditionalNullability $($return_ty:tt)::*) => {
+        $crate::postfix_operator!(
+            name = $name,
+            operator = $operator,
+            return_ty = NullableBasedOnArgs ($($return_ty)::*),
+        );
+    };
+
+    ($name:ident, $operator:expr, ConditionalNullability $($return_ty:tt)::*, backend: $backend:ty) => {
+        $crate::postfix_operator!(
+            $name,
+            $operator,
+            return_ty = NullableBasedOnArgs ($($return_ty)::*),
+            backend: $backend
+        );
+    };
+
+    ($name:ident, $operator:expr, return_ty = NullableBasedOnArgs($return_ty:ty)) => {
+        $crate::__diesel_operator_body!(
+            notation = postfix,
+            struct_name = $name,
+            operator = $operator,
+            return_ty = (
+                $crate::sql_types::is_nullable::MaybeNullable<
+                    <<Expr as $crate::expression::Expression>::SqlType as $crate::sql_types::SqlType>::IsNull,
+                    $return_ty
+                >
+            ),
+            ty_params = (Expr,),
+            field_names = (expr,),
+            backend_ty_params = (DB,),
+            backend_ty = DB,
+            expression_ty_params = (),
+            expression_bounds = (
+                Expr: $crate::expression::Expression,
+                <Expr as $crate::expression::Expression>::SqlType: $crate::sql_types::SqlType,
+                $crate::sql_types::is_nullable::IsOneNullable<
+                    <Expr as $crate::expression::Expression>::SqlType,
+                    $return_ty
+                >: $crate::sql_types::MaybeNullableType<$return_ty>,
+            ),
+        );
+    };
+
+    ($name:ident, $operator:expr, return_ty = NullableBasedOnArgs($return_ty:ty), backend: $backend:ty) => {
+        $crate::__diesel_operator_body!(
+            notation = postfix,
+            struct_name = $name,
+            operator = $operator,
+            return_ty = (
+                $crate::sql_types::is_nullable::MaybeNullable<
+                    $crate::sql_types::is_nullable::IsOneNullable<
+                        <Expr as $crate::expression::Expression>::SqlType,
+                        $return_ty
+                    >,
+                    $return_ty
+                >
+            ),
+            ty_params = (Expr,),
+            field_names = (expr,),
+            backend_ty_params = (),
+            backend_ty = $backend,
+            expression_ty_params = (),
+            expression_bounds = (
+                Expr: $crate::expression::Expression,
+                <Expr as $crate::expression::Expression>::SqlType: $crate::sql_types::SqlType,
+                $crate::sql_types::is_nullable::IsOneNullable<
+                    <Expr as $crate::expression::Expression>::SqlType,
+                    $return_ty
+                >: $crate::sql_types::MaybeNullableType<$return_ty>,
+            ),
+        );
     };
 
     ($name:ident, $operator:expr, $return_ty:ty) => {
@@ -419,8 +530,6 @@ macro_rules! diesel_postfix_operator {
 /// Similar to [`infix_operator!`], but the generated type will only take
 /// a single argument rather than two. The operator SQL will be placed before
 /// the single argument. See [`infix_operator!`] for example usage.
-///
-/// [`infix_operator!`]: macro.infix_operator.html
 #[macro_export]
 macro_rules! prefix_operator {
     ($name:ident, $operator:expr) => {
@@ -504,7 +613,6 @@ infix_operator!(Escape, " ESCAPE ");
 infix_operator!(Eq, " = ");
 infix_operator!(Gt, " > ");
 infix_operator!(GtEq, " >= ");
-infix_operator!(Like, " LIKE ");
 infix_operator!(Lt, " < ");
 infix_operator!(LtEq, " <= ");
 infix_operator!(NotEq, " != ");
@@ -512,22 +620,24 @@ infix_operator!(NotLike, " NOT LIKE ");
 infix_operator!(Between, " BETWEEN ");
 infix_operator!(NotBetween, " NOT BETWEEN ");
 
+infix_operator!(RetrieveAsTextJson, " ->> ", crate::sql_types::Text);
+
 postfix_operator!(IsNull, " IS NULL");
 postfix_operator!(IsNotNull, " IS NOT NULL");
 postfix_operator!(
     Asc,
-    " ASC ",
+    " ASC",
     crate::expression::expression_types::NotSelectable
 );
 postfix_operator!(
     Desc,
-    " DESC ",
+    " DESC",
     crate::expression::expression_types::NotSelectable
 );
 
 prefix_operator!(Not, " NOT ");
 
-use crate::backend::Backend;
+use crate::backend::{sql_dialect, Backend, SqlDialect};
 use crate::expression::{TypedExpressionType, ValidGrouping};
 use crate::insertable::{ColumnInsertValue, Insertable};
 use crate::query_builder::{QueryFragment, QueryId, ValuesClause};
@@ -541,7 +651,7 @@ where
     type Values = ValuesClause<ColumnInsertValue<T, U>, T::Table>;
 
     fn values(self) -> Self::Values {
-        ValuesClause::new(ColumnInsertValue::Expression(self.left, self.right))
+        ValuesClause::new(ColumnInsertValue::new(self.right))
     }
 }
 
@@ -557,15 +667,21 @@ where
     }
 }
 
+/// This type represents a string concat operator
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    public_fields(left, right)
+)]
 #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
-#[doc(hidden)]
 pub struct Concat<L, R> {
+    /// The left side expression of the operator
     pub(crate) left: L,
+    /// The right side expression of the operator
     pub(crate) right: R,
 }
 
 impl<L, R> Concat<L, R> {
-    pub fn new(left: L, right: R) -> Self {
+    pub(crate) fn new(left: L, right: R) -> Self {
         Self { left, right }
     }
 }
@@ -583,21 +699,241 @@ impl_selectable_expression!(Concat<L, R>);
 
 impl<L, R, DB> QueryFragment<DB> for Concat<L, R>
 where
+    DB: Backend,
+    Self: QueryFragment<DB, DB::ConcatClause>,
+{
+    fn walk_ast<'b>(
+        &'b self,
+        pass: crate::query_builder::AstPass<'_, 'b, DB>,
+    ) -> crate::result::QueryResult<()> {
+        <Self as QueryFragment<DB, DB::ConcatClause>>::walk_ast(self, pass)
+    }
+}
+
+impl<L, R, DB> QueryFragment<DB, sql_dialect::concat_clause::ConcatWithPipesClause> for Concat<L, R>
+where
     L: QueryFragment<DB>,
     R: QueryFragment<DB>,
-    DB: Backend,
+    DB: Backend + SqlDialect<ConcatClause = sql_dialect::concat_clause::ConcatWithPipesClause>,
 {
-    fn walk_ast(
-        &self,
-        mut out: crate::query_builder::AstPass<DB>,
+    fn walk_ast<'b>(
+        &'b self,
+        mut out: crate::query_builder::AstPass<'_, 'b, DB>,
     ) -> crate::result::QueryResult<()> {
-        // Those brackets are required because mysql is broken
-        // https://github.com/diesel-rs/diesel/issues/2133#issuecomment-517432317
+        // Since popular MySQL scalability layer Vitess does not support pipes in query parsing
+        // CONCAT has been implemented separately for MySQL (see MysqlConcatClause)
         out.push_sql("(");
         self.left.walk_ast(out.reborrow())?;
         out.push_sql(" || ");
         self.right.walk_ast(out.reborrow())?;
         out.push_sql(")");
         Ok(())
+    }
+}
+
+// need an explicit impl here to control which types are allowed
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    crate::query_builder::QueryId,
+    crate::sql_types::DieselNumericOps,
+    crate::expression::ValidGrouping,
+)]
+#[doc(hidden)]
+pub struct Like<T, U> {
+    pub(crate) left: T,
+    pub(crate) right: U,
+}
+
+impl<T, U> Like<T, U> {
+    pub(crate) fn new(left: T, right: U) -> Self {
+        Like { left, right }
+    }
+}
+
+impl<T, U, QS> crate::expression::SelectableExpression<QS> for Like<T, U>
+where
+    Like<T, U>: crate::expression::AppearsOnTable<QS>,
+    T: crate::expression::SelectableExpression<QS>,
+    U: crate::expression::SelectableExpression<QS>,
+{
+}
+
+impl<T, U, QS> crate::expression::AppearsOnTable<QS> for Like<T, U>
+where
+    Like<T, U>: crate::expression::Expression,
+    T: crate::expression::AppearsOnTable<QS>,
+    U: crate::expression::AppearsOnTable<QS>,
+{
+}
+
+impl<T, U> crate::expression::Expression for Like<T, U>
+where
+    T: crate::expression::Expression,
+    U: crate::expression::Expression,
+    <T as crate::expression::Expression>::SqlType: crate::sql_types::SqlType,
+    <U as crate::expression::Expression>::SqlType: crate::sql_types::SqlType,
+    crate::sql_types::is_nullable::IsSqlTypeNullable<<T as crate::expression::Expression>::SqlType>:
+        crate::sql_types::OneIsNullable<
+            crate::sql_types::is_nullable::IsSqlTypeNullable<
+                <U as crate::expression::Expression>::SqlType,
+            >,
+        >,
+    crate::sql_types::is_nullable::IsOneNullable<
+        <T as crate::expression::Expression>::SqlType,
+        <U as crate::expression::Expression>::SqlType,
+    >: crate::sql_types::MaybeNullableType<crate::sql_types::Bool>,
+{
+    type SqlType = crate::sql_types::is_nullable::MaybeNullable<
+        crate::sql_types::is_nullable::IsOneNullable<
+            <T as crate::expression::Expression>::SqlType,
+            <U as crate::expression::Expression>::SqlType,
+        >,
+        crate::sql_types::Bool,
+    >;
+}
+
+impl<T, U, DB> crate::query_builder::QueryFragment<DB> for Like<T, U>
+where
+    T: crate::query_builder::QueryFragment<DB> + crate::Expression,
+    U: crate::query_builder::QueryFragment<DB>,
+    DB: crate::backend::Backend,
+    DB: LikeIsAllowedForType<T::SqlType>,
+{
+    fn walk_ast<'b>(
+        &'b self,
+        mut out: crate::query_builder::AstPass<'_, 'b, DB>,
+    ) -> crate::result::QueryResult<()> {
+        (self.left.walk_ast(out.reborrow())?);
+        (out.push_sql(" LIKE "));
+        (self.right.walk_ast(out.reborrow())?);
+        Ok(())
+    }
+}
+
+impl<S, T, U> crate::internal::operators_macro::FieldAliasMapper<S> for Like<T, U>
+where
+    S: crate::query_source::AliasSource,
+    T: crate::internal::operators_macro::FieldAliasMapper<S>,
+    U: crate::internal::operators_macro::FieldAliasMapper<S>,
+{
+    type Out = Like<
+        <T as crate::internal::operators_macro::FieldAliasMapper<S>>::Out,
+        <U as crate::internal::operators_macro::FieldAliasMapper<S>>::Out,
+    >;
+    fn map(self, alias: &crate::query_source::Alias<S>) -> Self::Out {
+        Like {
+            left: self.left.map(alias),
+            right: self.right.map(alias),
+        }
+    }
+}
+
+#[diagnostic::on_unimplemented(
+    message = "cannot use the `LIKE` operator with expressions of the type `{ST}` for the backend `{Self}`",
+    note = "expressions of the type `diesel::sql_types::Text` and `diesel::sql_types::Nullable<Text>` are \n\
+            allowed for all backends"
+)]
+#[cfg_attr(
+    feature = "postgres_backend",
+    diagnostic::on_unimplemented(
+        note = "expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are \n\
+            allowed for the PostgreSQL backend"
+    )
+)]
+pub trait LikeIsAllowedForType<ST>: Backend {}
+
+impl<DB> LikeIsAllowedForType<crate::sql_types::Text> for DB where DB: Backend {}
+
+#[cfg(feature = "postgres_backend")]
+impl LikeIsAllowedForType<crate::pg::sql_types::Citext> for crate::pg::Pg {}
+
+impl<T, DB> LikeIsAllowedForType<crate::sql_types::Nullable<T>> for DB where
+    DB: Backend + LikeIsAllowedForType<T>
+{
+}
+
+/// Represents the SQL `COLLATE` operator
+#[derive(Debug, Clone, DieselNumericOps)]
+pub struct Collate<T, C> {
+    pub(crate) expr: T,
+    pub(crate) collation: C,
+}
+
+impl<T, C> Collate<T, C> {
+    /// Creates a new `Collate` expression
+    pub fn new(expr: T, collation: C) -> Self {
+        Collate { expr, collation }
+    }
+}
+
+impl<T, C> crate::expression::Expression for Collate<T, C>
+where
+    T: crate::expression::Expression,
+{
+    type SqlType = T::SqlType;
+}
+
+impl<T, C, GB> crate::expression::ValidGrouping<GB> for Collate<T, C>
+where
+    T: crate::expression::ValidGrouping<GB>,
+{
+    type IsAggregate = T::IsAggregate;
+}
+
+impl<T, C, DB> crate::query_builder::QueryFragment<DB> for Collate<T, C>
+where
+    DB: crate::backend::Backend,
+    T: crate::query_builder::QueryFragment<DB>,
+    C: crate::query_builder::QueryFragment<DB>,
+{
+    fn walk_ast<'b>(
+        &'b self,
+        mut out: crate::query_builder::AstPass<'_, 'b, DB>,
+    ) -> crate::result::QueryResult<()> {
+        self.expr.walk_ast(out.reborrow())?;
+        out.push_sql(" COLLATE ");
+        self.collation.walk_ast(out.reborrow())?;
+        Ok(())
+    }
+}
+
+impl<T, C> crate::query_builder::QueryId for Collate<T, C>
+where
+    T: crate::query_builder::QueryId,
+    C: crate::query_builder::QueryId,
+{
+    type QueryId = (T::QueryId, C::QueryId);
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID && C::HAS_STATIC_QUERY_ID;
+}
+
+impl<T, C, QS> crate::expression::SelectableExpression<QS> for Collate<T, C>
+where
+    T: crate::expression::SelectableExpression<QS>,
+    Collate<T, C>: crate::expression::AppearsOnTable<QS>,
+{
+}
+
+impl<T, C, QS> crate::expression::AppearsOnTable<QS> for Collate<T, C>
+where
+    T: crate::expression::AppearsOnTable<QS>,
+    Collate<T, C>: crate::expression::Expression,
+{
+}
+
+impl<S, T, C> crate::internal::operators_macro::FieldAliasMapper<S> for Collate<T, C>
+where
+    S: crate::query_source::AliasSource,
+    T: crate::internal::operators_macro::FieldAliasMapper<S>,
+    C: Copy,
+{
+    type Out = Collate<<T as crate::internal::operators_macro::FieldAliasMapper<S>>::Out, C>;
+
+    fn map(self, alias: &crate::query_source::Alias<S>) -> Self::Out {
+        Collate {
+            expr: self.expr.map(alias),
+            collation: self.collation,
+        }
     }
 }

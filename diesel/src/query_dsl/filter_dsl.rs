@@ -8,7 +8,7 @@ use crate::query_source::*;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `filter` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait FilterDsl<Predicate> {
     /// The type returned by `.filter`.
     type Output;
@@ -19,7 +19,7 @@ pub trait FilterDsl<Predicate> {
 
 impl<T, Predicate> FilterDsl<Predicate> for T
 where
-    T: Table,
+    T: QueryRelation,
     T::Query: FilterDsl<Predicate>,
 {
     type Output = Filter<T::Query, Predicate>;
@@ -35,7 +35,7 @@ where
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `find` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait FindDsl<PK> {
     /// The type returned by `.find`.
     type Output;
@@ -63,7 +63,7 @@ where
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `or_filter` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait OrFilterDsl<Predicate> {
     /// The type returned by `.filter`.
     type Output;
@@ -74,7 +74,7 @@ pub trait OrFilterDsl<Predicate> {
 
 impl<T, Predicate> OrFilterDsl<Predicate> for T
 where
-    T: Table,
+    T: QueryRelation,
     T::Query: OrFilterDsl<Predicate>,
 {
     type Output = OrFilter<T::Query, Predicate>;

@@ -1,0 +1,35 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(AsChangeset)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
+---
+const _: () = {
+    use diesel;
+    impl diesel::query_builder::AsChangeset for User {
+        type Target = users::table;
+        type Changeset = <(
+            diesel::dsl::Eq<users::r#name, String>,
+        ) as diesel::query_builder::AsChangeset>::Changeset;
+        fn as_changeset(
+            self,
+        ) -> <Self as diesel::query_builder::AsChangeset>::Changeset {
+            diesel::query_builder::AsChangeset::as_changeset((
+                diesel::ExpressionMethods::eq(users::r#name, self.name),
+            ))
+        }
+    }
+    impl<'update> diesel::query_builder::AsChangeset for &'update User {
+        type Target = users::table;
+        type Changeset = <(
+            diesel::dsl::Eq<users::r#name, &'update String>,
+        ) as diesel::query_builder::AsChangeset>::Changeset;
+        fn as_changeset(
+            self,
+        ) -> <Self as diesel::query_builder::AsChangeset>::Changeset {
+            diesel::query_builder::AsChangeset::as_changeset((
+                diesel::ExpressionMethods::eq(users::r#name, &self.name),
+            ))
+        }
+    }
+};

@@ -1,0 +1,13 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_generated_columns_generated_always"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    generated (id) {
+        id -> Nullable<Integer>,
+        generated -> Nullable<Integer>,
+    }
+}
+

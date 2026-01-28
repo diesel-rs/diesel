@@ -1,0 +1,24 @@
+error: expected `=`
+  --> tests/fail/derive/bad_treat_none_as_default_value.rs:13:37
+   |
+LL | #[diesel(treat_none_as_default_value())]
+   |                                     ^
+
+error: unexpected end of input, expected `=`
+       help: the correct format looks like `#[diesel(treat_none_as_default_value = true)]`
+  --> tests/fail/derive/bad_treat_none_as_default_value.rs:22:37
+   |
+LL | #[diesel(treat_none_as_default_value)]
+   |                                     ^
+
+error: expected boolean literal
+  --> tests/fail/derive/bad_treat_none_as_default_value.rs:31:40
+   |
+LL | #[diesel(treat_none_as_default_value = "foo")]
+   |                                        ^^^^^
+
+error: expected `treat_none_as_default_value` field to be of type `Option<_>`
+  --> tests/fail/derive/bad_treat_none_as_default_value.rs:43:11
+   |
+LL |     name: String,
+   |           ^^^^^^

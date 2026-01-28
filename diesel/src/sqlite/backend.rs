@@ -1,14 +1,12 @@
 //! The SQLite backend
-use byteorder::NativeEndian;
 
-use super::connection::SqliteValue;
+use super::connection::{SqliteBindCollector, SqliteValue};
 use super::query_builder::SqliteQueryBuilder;
 use crate::backend::*;
-use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::sql_types::TypeMetadata;
 
 /// The SQLite backend
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Default)]
 pub struct Sqlite;
 
 /// Determines how a bind parameter is given to SQLite
@@ -40,12 +38,8 @@ pub enum SqliteType {
 
 impl Backend for Sqlite {
     type QueryBuilder = SqliteQueryBuilder;
-    type BindCollector = RawBytesBindCollector<Sqlite>;
-    type ByteOrder = NativeEndian;
-}
-
-impl<'a> HasRawValue<'a> for Sqlite {
-    type RawValue = SqliteValue<'a>;
+    type RawValue<'a> = SqliteValue<'a, 'a, 'a>;
+    type BindCollector<'a> = SqliteBindCollector<'a>;
 }
 
 impl TypeMetadata for Sqlite {
@@ -53,5 +47,51 @@ impl TypeMetadata for Sqlite {
     type MetadataLookup = ();
 }
 
-impl SupportsOnConflictClause for Sqlite {}
-impl UsesAnsiSavepointSyntax for Sqlite {}
+impl SqlDialect for Sqlite {
+    #[cfg(not(feature = "returning_clauses_for_sqlite_3_35"))]
+    type ReturningClause = sql_dialect::returning_clause::DoesNotSupportReturningClause;
+    #[cfg(feature = "returning_clauses_for_sqlite_3_35")]
+    type ReturningClause = SqliteReturningClause;
+
+    type OnConflictClause = SqliteOnConflictClause;
+
+    type InsertWithDefaultKeyword =
+        sql_dialect::default_keyword_for_insert::DoesNotSupportDefaultKeyword;
+    type BatchInsertSupport = SqliteBatchInsert;
+    type ConcatClause = sql_dialect::concat_clause::ConcatWithPipesClause;
+    type DefaultValueClauseForInsert = sql_dialect::default_value_clause::AnsiDefaultValueClause;
+
+    type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;
+    type SelectStatementSyntax = sql_dialect::select_statement_syntax::AnsiSqlSelectStatement;
+
+    type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
+    type ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison;
+    type AliasSyntax = sql_dialect::alias_syntax::AsAliasSyntax;
+
+    type WindowFrameClauseGroupSupport =
+        sql_dialect::window_frame_clause_group_support::IsoGroupWindowFrameUnit;
+    type WindowFrameExclusionSupport =
+        sql_dialect::window_frame_exclusion_support::FrameExclusionSupport;
+    type AggregateFunctionExpressions =
+        sql_dialect::aggregate_function_expressions::PostgresLikeAggregateFunctionExpressions;
+    type BuiltInWindowFunctionRequireOrder =
+        sql_dialect::built_in_window_function_require_order::NoOrderRequired;
+}
+
+impl DieselReserveSpecialization for Sqlite {}
+impl TrustedBackend for Sqlite {}
+
+#[derive(Debug, Copy, Clone)]
+pub struct SqliteOnConflictClause;
+
+impl sql_dialect::on_conflict_clause::SupportsOnConflictClause for SqliteOnConflictClause {}
+impl sql_dialect::on_conflict_clause::SupportsOnConflictClauseWhere for SqliteOnConflictClause {}
+impl sql_dialect::on_conflict_clause::PgLikeOnConflictClause for SqliteOnConflictClause {}
+
+#[derive(Debug, Copy, Clone)]
+pub struct SqliteBatchInsert;
+
+#[derive(Debug, Copy, Clone)]
+pub struct SqliteReturningClause;
+
+impl sql_dialect::returning_clause::SupportsReturningClause for SqliteReturningClause {}

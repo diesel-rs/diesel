@@ -1,0 +1,24 @@
+error: expected `=`
+  --> tests/fail/derive/bad_treat_none_as_null.rs:13:28
+   |
+LL | #[diesel(treat_none_as_null("true"))]
+   |                            ^
+
+error: unexpected end of input, expected `=`
+       help: the correct format looks like `#[diesel(treat_none_as_null = true)]`
+  --> tests/fail/derive/bad_treat_none_as_null.rs:22:28
+   |
+LL | #[diesel(treat_none_as_null)]
+   |                            ^
+
+error: expected boolean literal
+  --> tests/fail/derive/bad_treat_none_as_null.rs:31:31
+   |
+LL | #[diesel(treat_none_as_null = "foo")]
+   |                               ^^^^^
+
+error: expected `treat_none_as_null` field to be of type `Option<_>`
+  --> tests/fail/derive/bad_treat_none_as_null.rs:43:11
+   |
+LL |     name: String,
+   |           ^^^^^^

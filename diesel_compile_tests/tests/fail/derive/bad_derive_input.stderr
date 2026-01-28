@@ -1,0 +1,15 @@
+error: this derive can only be used on non-unit structs
+  --> tests/fail/derive/bad_derive_input.rs:12:10
+   |
+LL | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^
+   |
+   = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this derive can only be used on non-unit structs
+  --> tests/fail/derive/bad_derive_input.rs:17:10
+   |
+LL | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^
+   |
+   = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)

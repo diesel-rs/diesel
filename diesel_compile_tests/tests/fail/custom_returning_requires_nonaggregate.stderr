@@ -1,22 +1,64 @@
-error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: diesel::expression::MixedAggregates<diesel::expression::is_aggregate::No>` is not satisfied
-  --> $DIR/custom_returning_requires_nonaggregate.rs:22:68
-   |
-22 |     let stmt = update(users.filter(id.eq(1))).set(name.eq("Bill")).returning(count(id));
-   |                                                                    ^^^^^^^^^ the trait `diesel::expression::MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
-   |
-   = help: the following implementations were found:
-             <diesel::expression::is_aggregate::Yes as diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Never>>
-             <diesel::expression::is_aggregate::Yes as diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Yes>>
-   = note: required because of the requirements on the impl of `diesel::query_builder::Query` for `diesel::query_builder::UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<diesel::expression::count::count::count<diesel::sql_types::Integer, users::columns::id>>>`
-
-error[E0277]: the trait bound `diesel::expression::is_aggregate::No: diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
-  --> $DIR/custom_returning_requires_nonaggregate.rs:27:53
-   |
-27 |     let stmt = insert_into(users).values(&new_user).returning((name, count(name)));
-   |                                                     ^^^^^^^^^ the trait `diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
-   |
-   = help: the following implementations were found:
-             <diesel::expression::is_aggregate::No as diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Never>>
-             <diesel::expression::is_aggregate::No as diesel::expression::MixedAggregates<diesel::expression::is_aggregate::No>>
-   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<()>` for `(users::columns::name, diesel::expression::count::count::count<diesel::sql_types::Text, users::columns::name>)`
-   = note: required because of the requirements on the impl of `diesel::query_builder::Query` for `diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, diesel::expression::count::count::count<diesel::sql_types::Text, users::columns::name>)>>`
+error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
+   --> tests/fail/custom_returning_requires_nonaggregate.rs:24:20
+    |
+ LL |         .returning(count(id));
+    |          --------- ^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = help: the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
+    = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
+    = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
+    = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
+help: the following other types implement trait `MixedAggregates<Other>`
+   --> DIESEL/diesel/diesel/src/expression/mod.rs
+    |
+LL |     impl MixedAggregates<Yes> for Yes {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Yes>`
+...
+LL |     impl MixedAggregates<Never> for Yes {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
+    = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `Query`
+note: required by a bound in `UpdateStatement::<T, U, V>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+...
+LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
+    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
+ 
+    
+error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
+   --> tests/fail/custom_returning_requires_nonaggregate.rs:32:20
+    |
+ LL |         .returning((name, count(name)));
+    |          --------- ^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = help: the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
+    = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
+    = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
+    = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
+help: the following other types implement trait `MixedAggregates<Other>`
+   --> DIESEL/diesel/diesel/src/expression/mod.rs
+    |
+LL |     impl MixedAggregates<No> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
+...
+LL |     impl MixedAggregates<Never> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
+    = note: required for `(name, count<Text, name>)` to implement `ValidGrouping<()>`
+    = note: required for `(name, count<Text, name>)` to implement `NonAggregate`
+    = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
+note: required by a bound in `InsertStatement::<T, U, Op>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+LL |     where
+LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
+    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
+ 
+    For more information about this error, try `rustc --explain E0277`.

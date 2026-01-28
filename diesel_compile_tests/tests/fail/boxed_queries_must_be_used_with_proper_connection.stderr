@@ -1,7 +1,19 @@
-error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
-  --> $DIR/boxed_queries_must_be_used_with_proper_connection.rs:14:37
-   |
-14 |     users::table.into_boxed::<Pg>().load::<(i32,)>(&connection);
-   |                                     ^^^^ expected struct `diesel::sqlite::Sqlite`, found struct `diesel::pg::Pg`
-   |
-   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::SqliteConnection, (i32,)>` for `diesel::query_builder::BoxedSelectStatement<'_, (diesel::sql_types::Integer,), users::table, diesel::pg::Pg>`
+error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
+    --> tests/fail/boxed_queries_must_be_used_with_proper_connection.rs:16:25
+     |
+  LL |         .load::<(i32,)>(&mut connection);
+     |          ----           ^^^^^^^^^^^^^^^ expected `Pg`, found `Sqlite`
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = note: required for `BoxedSelectStatement<'_, (Integer,), ..., ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, (i32,)>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     For more information about this error, try `rustc --explain E0271`.

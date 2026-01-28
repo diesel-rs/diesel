@@ -2,6 +2,9 @@ use super::backend::Mysql;
 use crate::query_builder::QueryBuilder;
 use crate::result::QueryResult;
 
+#[doc(inline)]
+pub use self::query_fragment_impls::DuplicatedKeys;
+
 mod limit_offset;
 mod query_fragment_impls;
 
@@ -26,7 +29,7 @@ impl QueryBuilder<Mysql> for MysqlQueryBuilder {
 
     fn push_identifier(&mut self, identifier: &str) -> QueryResult<()> {
         self.push_sql("`");
-        self.push_sql(&identifier.replace("`", "``"));
+        self.push_sql(&identifier.replace('`', "``"));
         self.push_sql("`");
         Ok(())
     }

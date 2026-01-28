@@ -10,8 +10,8 @@ table! {
 }
 
 #[derive(Insertable)]
-#[table_name = "users"]
-pub struct NewUser(#[column_name = "name"] String);
+#[diesel(table_name = users)]
+pub struct NewUser(#[diesel(column_name = name)] String);
 
 table! {
     non_users {
@@ -21,16 +21,19 @@ table! {
 }
 
 fn main() {
-    let connection = PgConnection::establish("").unwrap();
+    let mut connection = PgConnection::establish("").unwrap();
 
     delete(users::table.filter(users::columns::name.eq("Bill")))
         .returning(non_users::columns::noname);
+    //~^ ERROR: cannot select `non_users::columns::noname` from `users::table`
 
     insert_into(users::table)
         .values(&NewUser("Hello".into()))
         .returning(non_users::columns::noname);
+    //~^ ERROR: cannot select `non_users::columns::noname` from `users::table`
 
     update(users::table)
         .set(users::columns::name.eq("Bill"))
         .returning(non_users::columns::noname);
+    //~^ ERROR: cannot select `non_users::columns::noname` from `users::table`
 }

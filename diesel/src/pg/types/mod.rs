@@ -2,18 +2,24 @@
 
 mod array;
 #[doc(hidden)]
-pub mod date_and_time;
+pub(in crate::pg) mod date_and_time;
 #[doc(hidden)]
-pub mod floats;
+pub(in crate::pg) mod floats;
 mod integers;
+#[cfg(feature = "ipnet-address")]
+mod ipnet_address;
 #[cfg(feature = "serde_json")]
 mod json;
+mod json_function_enum;
 mod mac_addr;
+mod mac_addr_8;
 #[doc(hidden)]
-pub mod money;
+pub(in crate::pg) mod money;
+mod multirange;
 #[cfg(feature = "network-address")]
 mod network_address;
 mod numeric;
+pub(in crate::pg) mod pg_lsn;
 mod primitives;
 mod ranges;
 mod record;
@@ -27,7 +33,7 @@ pub mod sql_types {
     use crate::query_builder::QueryId;
     use crate::sql_types::SqlType;
 
-    /// The `OID` SQL type. This is a PostgreSQL specific type.
+    /// The [`OID`] SQL type. This is a PostgreSQL specific type.
     ///
     /// ### [`ToSql`] impls
     ///
@@ -37,14 +43,16 @@ pub mod sql_types {
     ///
     /// - [`u32`]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     /// [`u32`]: https://doc.rust-lang.org/nightly/std/primitive.u32.html
+    /// [`OID`]: https://www.postgresql.org/docs/current/datatype-oid.html
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "26", array_oid = "1018")]
+    #[diesel(postgres_type(oid = 26, array_oid = 1028))]
     pub struct Oid;
 
-    /// The "timestamp with time zone" SQL type, which PostgreSQL abbreviates
+    /// The ["timestamp with time zone" SQL type][tz], which PostgreSQL abbreviates
     /// to `timestamptz`.
     ///
     /// ### [`ToSql`] impls
@@ -52,27 +60,59 @@ pub mod sql_types {
     /// - [`PgTimestamp`]
     /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
     /// - [`chrono::DateTime`] with `feature = "chrono"`
+    /// - [`time::PrimitiveDateTime`] with `feature = "time"`
+    /// - [`time::OffsetDateTime`] with `feature = "time"`
     ///
     /// ### [`FromSql`] impls
     ///
     /// - [`PgTimestamp`]
     /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
     /// - [`chrono::DateTime`] with `feature = "chrono"`
+    /// - [`time::PrimitiveDateTime`] with `feature = "time"`
+    /// - [`time::OffsetDateTime`] with `feature = "time"`
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [`PgTimestamp`]: ../../data_types/struct.PgTimestamp.html
-    /// [`chrono::NaiveDateTime`]: ../../../../chrono/naive/struct.NaiveDateTime.html
-    /// [`chrono::DateTime`]: ../../../../chrono/struct.DateTime.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [`PgTimestamp`]: super::super::data_types::PgTimestamp
+    /// [tz]: https://www.postgresql.org/docs/current/datatype-datetime.html
+    #[cfg_attr(
+        feature = "chrono",
+        doc = " [`chrono::NaiveDateTime`]: chrono::naive::NaiveDateTime"
+    )]
+    #[cfg_attr(
+        not(feature = "chrono"),
+        doc = " [`chrono::NaiveDateTime`]: https://docs.rs/chrono/0.4.19/chrono/naive/struct.NaiveDateTime.html"
+    )]
+    #[cfg_attr(feature = "chrono", doc = " [`chrono::DateTime`]: chrono::DateTime")]
+    #[cfg_attr(
+        not(feature = "chrono"),
+        doc = " [`chrono::DateTime`]: https://docs.rs/chrono/0.4.19/chrono/struct.DateTime.html"
+    )]
+    #[cfg_attr(
+        feature = "time",
+        doc = " [`time::PrimitiveDateTime`]: time::PrimitiveDateTime"
+    )]
+    #[cfg_attr(
+        not(feature = "time"),
+        doc = " [`time::PrimitiveDateTime`]: https://docs.rs/time/0.3.9/time/struct.PrimitiveDateTime.html"
+    )]
+    #[cfg_attr(
+        feature = "time",
+        doc = " [`time::OffsetDateTime`]: time::OffsetDateTime"
+    )]
+    #[cfg_attr(
+        not(feature = "time"),
+        doc = " [`time::OffsetDateTime`]: https://docs.rs/time/0.3.9/time/struct.OffsetDateTime.html"
+    )]
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "1184", array_oid = "1185")]
+    #[diesel(postgres_type(oid = 1184, array_oid = 1185))]
     pub struct Timestamptz;
 
-    /// The `Array` SQL type.
+    /// The [`Array`] SQL type.
     ///
     /// This wraps another type to represent a SQL array of that type.
-    /// Multidimensional arrays are not supported,
-    /// nor are arrays containing null.
+    /// Multidimensional arrays are not supported.
     ///
     /// ### [`ToSql`] impls
     ///
@@ -83,30 +123,44 @@ pub mod sql_types {
     ///
     /// - [`Vec<T>`][Vec] for any `T` which implements `ToSql<ST>`
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [Vec]: https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [Vec]: std::vec::Vec
     /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
+    /// [`Array`]: https://www.postgresql.org/docs/current/arrays.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    pub struct Array<ST>(ST);
+    #[cfg(feature = "postgres_backend")]
+    pub struct Array<ST: 'static>(ST);
 
-    /// The `Range` SQL type.
+    /// The [`Range`] SQL type.
     ///
     /// This wraps another type to represent a SQL range of that type.
     ///
     /// ### [`ToSql`] impls
     ///
     /// - [`(Bound<T>, Bound<T>)`][bound] for any `T` which implements `ToSql<ST>`.
+    /// - [`Range<T>`][std::range] (aka `start..end`) for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeInclusive<T>`] (aka `start..=end`) for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeFrom<T>`] (aka `start..`) for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeTo<T>`] (aka `..end`) for any `T` which implements `ToSql<ST>`.
+    /// - [`RangeToInclusive<T>`] (aka `..=end`) for any `T` which implements `ToSql<ST>`.
     ///
     /// ### [`FromSql`] impls
     ///
     /// - [`(Bound<T>, Bound<T>)`][bound] for any `T` which implements `FromSql<ST>`.
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [bound]: https://doc.rust-lang.org/std/collections/enum.Bound.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [bound]: std::collections::Bound
+    /// [std::range]: std::ops::Range
+    /// [`RangeInclusive<T>`]: std::ops::RangeInclusive
+    /// [`RangeFrom<T>`]: std::ops::RangeFrom
+    /// [`RangeTo<T>`]: std::ops::RangeTo
+    /// [`RangeToInclusive<T>`]: std::ops::RangeToInclusive
+    /// [`Range`]: https://www.postgresql.org/docs/current/rangetypes.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    pub struct Range<ST>(ST);
+    #[cfg(feature = "postgres_backend")]
+    pub struct Range<ST: 'static>(ST);
 
     #[doc(hidden)]
     pub type Int4range = Range<crate::sql_types::Int4>;
@@ -121,7 +175,90 @@ pub mod sql_types {
     #[doc(hidden)]
     pub type Tstzrange = Range<crate::sql_types::Timestamptz>;
 
-    /// The `Record` (a.k.a. tuple) SQL type.
+    /// The [`Multirange`] SQL type.
+    ///
+    /// This wraps another type to represent a SQL range of that type.
+    ///
+    /// ### [`ToSql`] impls
+    ///
+    /// - [`Vec<T>`][Vec] for any `T` which `Range<T>` implements `ToSql<ST>`
+    /// - [`&[T]`][slice] for any `T` which `Range<T>` implements `ToSql<ST>`
+    ///
+    /// ### [`FromSql`] impls
+    ///
+    /// - [`Vec<T>`][Vec] for any `T` which implements `ToSql<Range<ST>>`
+    ///
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [Vec]: std::vec::Vec
+    /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
+    /// [`Multirange`]: https://www.postgresql.org/docs/current/rangetypes.html
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[cfg(feature = "postgres_backend")]
+    pub struct Multirange<ST: 'static>(ST);
+
+    #[doc(hidden)]
+    pub type Int4multirange = Multirange<crate::sql_types::Int4>;
+    #[doc(hidden)]
+    pub type Int8multirange = Multirange<crate::sql_types::Int8>;
+    #[doc(hidden)]
+    pub type Datemultirange = Multirange<crate::sql_types::Date>;
+    #[doc(hidden)]
+    pub type Nummultirange = Multirange<crate::sql_types::Numeric>;
+    #[doc(hidden)]
+    pub type Tsmultirange = Multirange<crate::sql_types::Timestamp>;
+    #[doc(hidden)]
+    pub type Tstzmultirange = Multirange<crate::sql_types::Timestamptz>;
+
+    /// This is a wrapper for [`NullValueTreatment`] to represent null_value_treatment for jsonb_seet_lax:
+    ///     'raise_exception' 'use_json_null' 'delete_key' 'return_target'
+    /// used in functions jsonb_set_lax
+    #[derive(Debug, Clone, Copy, QueryId, SqlType)]
+    #[cfg(feature = "postgres_backend")]
+    #[diesel(postgres_type(name = "text"))]
+    pub struct NullValueTreatmentEnum;
+
+    /// Represent null_value_treatment for jsonb_seet_lax:
+    ///     'raise_exception' 'use_json_null' 'delete_key' 'return_target'
+    /// used in functions jsonb_seet_lax.
+    #[derive(Debug, Clone, Copy, diesel_derives::AsExpression)]
+    #[diesel(sql_type = NullValueTreatmentEnum)]
+    #[allow(clippy::enum_variant_names)]
+    pub enum NullValueTreatment {
+        /// postgres 'raise_exception'
+        RaiseException,
+        /// postgres 'use_json_null'
+        UseJsonNull,
+        /// postgres 'delete_key'
+        DeleteKey,
+        /// postgres 'return_target'
+        ReturnTarget,
+    }
+
+    /// This is a wrapper for [`RangeBound`] to represent range bounds: '[]', '(]', '[)', '()',
+    /// used in functions int4range, int8range, numrange, tsrange, tstzrange, daterange.
+    #[derive(Debug, Clone, Copy, QueryId, SqlType)]
+    #[cfg(feature = "postgres_backend")]
+    #[diesel(postgres_type(name = "text"))]
+    pub struct RangeBoundEnum;
+
+    /// Represent postgres range bounds: '[]', '(]', '[)', '()',
+    /// used in functions int4range, int8range, numrange, tsrange, tstzrange, daterange.
+    #[derive(Debug, Clone, Copy, diesel_derives::AsExpression)]
+    #[diesel(sql_type = RangeBoundEnum)]
+    #[allow(clippy::enum_variant_names)]
+    pub enum RangeBound {
+        /// postgres '[]'
+        LowerBoundInclusiveUpperBoundInclusive,
+        /// postgres '[)'
+        LowerBoundInclusiveUpperBoundExclusive,
+        /// postgres '(]'
+        LowerBoundExclusiveUpperBoundInclusive,
+        /// postgres '()'
+        LowerBoundExclusiveUpperBoundExclusive,
+    }
+
+    /// The [`Record`] (a.k.a. tuple) SQL type.
     ///
     /// ### [`ToSql`] impls
     ///
@@ -132,8 +269,8 @@ pub mod sql_types {
     ///
     /// - Any tuple which can be deserialized from each of the elements.
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     ///
     /// ### Caveats about serialization
     ///
@@ -157,22 +294,26 @@ pub mod sql_types {
     /// You can implement `ToSql` for named composite types. See [`WriteTuple`]
     /// for details.
     ///
-    /// [`WriteTuple`]: ../../../serialize/trait.WriteTuple.html
+    /// [`WriteTuple`]: super::super::super::serialize::WriteTuple
+    /// [`Record`]: https://www.postgresql.org/docs/current/rowtypes.html
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "2249", array_oid = "2287")]
-    pub struct Record<ST>(ST);
+    #[diesel(postgres_type(oid = 2249, array_oid = 2287))]
+    pub struct Record<ST: 'static>(ST);
 
-    /// Alias for `SmallInt`
+    /// Alias for [`SmallInt`](crate::sql_types::SmallInt)
+    #[cfg(feature = "postgres_backend")]
     pub type SmallSerial = crate::sql_types::SmallInt;
 
-    /// Alias for `Integer`
+    /// Alias for [`Integer`](crate::sql_types::Integer)
+    #[cfg(feature = "postgres_backend")]
     pub type Serial = crate::sql_types::Integer;
 
-    /// Alias for `BigInt`
+    /// Alias for [`BigInt`](crate::sql_types::BigInt)
+    #[cfg(feature = "postgres_backend")]
     pub type BigSerial = crate::sql_types::BigInt;
 
-    /// The `UUID` SQL type. This type can only be used with `feature = "uuid"`
-    /// (uuid <=0.6) or `feature = "uuidv07"` (uuid = 0.7)
+    /// The [`UUID`] SQL type. This type can only be used with `feature = "uuid"`
     ///
     /// ### [`ToSql`] impls
     ///
@@ -182,98 +323,22 @@ pub mod sql_types {
     ///
     /// - [`uuid::Uuid`][Uuid]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     /// [Uuid]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
+    /// [`UUID`]: https://www.postgresql.org/docs/current/datatype-uuid.html
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "2950", array_oid = "2951")]
+    #[diesel(postgres_type(oid = 2950, array_oid = 2951))]
     pub struct Uuid;
 
-    /// Alias for `Binary`, to ensure `infer_schema!` works
-    #[doc(hidden)]
+    /// Alias for `Binary`, to ensure `diesel print-schema` works
     pub type Bytea = crate::sql_types::Binary;
 
     #[doc(hidden)]
     pub type Bpchar = crate::sql_types::VarChar;
 
-    /// The `jsonb` SQL type.  This type can only be used with `feature =
-    /// "serde_json"`
-    ///
-    /// `jsonb` offers [several advantages][adv] over regular JSON:
-    ///
-    /// > There are two JSON data types: `json` and `jsonb`. They accept almost
-    /// > identical sets of values as input. The major practical difference
-    /// > is one of efficiency. The `json` data type stores an exact copy of
-    /// > the input text, which processing functions must reparse on each
-    /// > execution; while `jsonb` data is stored in a decomposed binary format
-    /// > that makes it slightly slower to input due to added conversion
-    /// > overhead, but significantly faster to process, since no reparsing
-    /// > is needed. `jsonb` also supports indexing, which can be a significant
-    /// > advantage.
-    /// >
-    /// > ...In general, most applications should prefer to store JSON data as
-    /// > `jsonb`, unless there are quite specialized needs, such as legacy
-    /// > assumptions about ordering of object keys.
-    ///
-    /// [adv]: https://www.postgresql.org/docs/9.6/static/datatype-json.html
-    ///
-    /// ### [`ToSql`] impls
-    ///
-    /// - [`serde_json::Value`]
-    ///
-    /// ### [`FromSql`] impls
-    ///
-    /// - [`serde_json::Value`]
-    ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [`serde_json::Value`]: ../../../../serde_json/value/enum.Value.html
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # #![allow(dead_code)]
-    /// # include!("../../doctest_setup.rs");
-    /// #
-    /// table! {
-    ///     contacts {
-    ///         id -> Integer,
-    ///         name -> VarChar,
-    ///         address -> Jsonb,
-    ///     }
-    /// }
-    ///
-    /// # #[cfg(feature = "serde_json")]
-    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// #     use diesel::insert_into;
-    /// #     use self::contacts::dsl::*;
-    /// #     let connection = connection_no_data();
-    /// #     diesel::sql_query("CREATE TABLE contacts (
-    /// #         id SERIAL PRIMARY KEY,
-    /// #         name VARCHAR NOT NULL,
-    /// #         address JSONB NOT NULL
-    /// #     )").execute(&connection)?;
-    /// let santas_address: serde_json::Value = serde_json::from_str(r#"{
-    ///     "street": "Article Circle Expressway 1",
-    ///     "city": "North Pole",
-    ///     "postcode": "99705",
-    ///     "state": "Alaska"
-    /// }"#)?;
-    /// let inserted_address = insert_into(contacts)
-    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
-    ///     .returning(address)
-    ///     .get_result::<serde_json::Value>(&connection)?;
-    /// assert_eq!(santas_address, inserted_address);
-    /// #     Ok(())
-    /// # }
-    /// # #[cfg(not(feature = "serde_json"))]
-    /// # fn main() {}
-    /// ```
-    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "3802", array_oid = "3807")]
-    pub struct Jsonb;
-
-    /// The PostgreSQL [Money](https://www.postgresql.org/docs/9.1/static/datatype-money.html) type.
+    /// The PostgreSQL [Money](https://www.postgresql.org/docs/current/static/datatype-money.html) type.
     ///
     /// ### [`ToSql`] impls
     ///
@@ -283,9 +348,9 @@ pub mod sql_types {
     ///
     /// - [`Cents` (also aliased as `PgMoney`)][PgMoney]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [PgMoney]: ../../data_types/struct.PgMoney.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [PgMoney]: crate::data_types::PgMoney
     ///
     /// # Examples
     ///
@@ -304,24 +369,25 @@ pub mod sql_types {
     /// # fn main() {
     /// #     use diesel::insert_into;
     /// #     use self::items::dsl::*;
-    /// #     let connection = connection_no_data();
-    /// #     connection.execute("CREATE TABLE items (
+    /// #     let connection = &mut connection_no_data();
+    /// #     diesel::sql_query("CREATE TABLE items (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         price MONEY NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(connection).unwrap();
     /// let inserted_price = insert_into(items)
     ///     .values((name.eq("Shiny Thing"), price.eq(Cents(123_456))))
     ///     .returning(price)
-    ///     .get_result(&connection);
+    ///     .get_result(connection);
     /// assert_eq!(Ok(Cents(123_456)), inserted_price);
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "790", array_oid = "791")]
+    #[diesel(postgres_type(oid = 790, array_oid = 791))]
     pub struct Money;
 
-    /// The [`MACADDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type.
+    /// The [`MACADDR`](https://www.postgresql.org/docs/current/static/datatype-net-types.html) SQL type.
     ///
     /// ### [`ToSql`] impls
     ///
@@ -331,8 +397,8 @@ pub mod sql_types {
     ///
     /// - `[u8; 6]`
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     ///
     /// # Examples
     ///
@@ -348,40 +414,109 @@ pub mod sql_types {
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// #     use diesel::insert_into;
     /// #     use self::devices::dsl::*;
-    /// #     let connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// #     diesel::sql_query("CREATE TABLE devices (
     /// #         id SERIAL PRIMARY KEY,
     /// #         macaddr MACADDR NOT NULL
-    /// #     )").execute(&connection)?;
+    /// #     )").execute(connection)?;
     /// let inserted_macaddr = insert_into(devices)
     ///     .values(macaddr.eq([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03]))
     ///     .returning(macaddr)
-    ///     .get_result::<[u8; 6]>(&connection)?;
+    ///     .get_result::<[u8; 6]>(connection)?;
     /// assert_eq!([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03], inserted_macaddr);
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "829", array_oid = "1040")]
+    #[diesel(postgres_type(oid = 829, array_oid = 1040))]
     pub struct MacAddr;
 
-    #[doc(hidden)]
-    /// Alias for `MacAddr` to be able to use it with `infer_schema`.
+    /// Alias for `MacAddr` to be able to use it with `diesel print-schema`.
     pub type Macaddr = MacAddr;
 
-    /// The [`INET`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
+    /// The [`MACADDR8`](https://www.postgresql.org/docs/current/static/datatype-net-types.html) SQL type.
     ///
     /// ### [`ToSql`] impls
     ///
-    /// - [`ipnetwork::IpNetwork`][IpNetwork]
+    /// - `[u8; 8]`
     ///
     /// ### [`FromSql`] impls
     ///
-    /// - [`ipnetwork::IpNetwork`][IpNetwork]
+    /// - `[u8; 8]`
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// table! {
+    ///     devices {
+    ///         id -> Integer,
+    ///         macaddr -> MacAddr8,
+    ///     }
+    /// }
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// #     use diesel::insert_into;
+    /// #     use self::devices::dsl::*;
+    /// #     let connection = &mut connection_no_data();
+    /// #     diesel::sql_query("CREATE TABLE devices (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         macaddr MACADDR8 NOT NULL
+    /// #     )").execute(connection)?;
+    /// let inserted_macaddr = insert_into(devices)
+    ///     .values(macaddr.eq([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05]))
+    ///     .returning(macaddr)
+    ///     .get_result::<[u8; 8]>(connection)?;
+    /// assert_eq!(
+    ///     [0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05],
+    ///     inserted_macaddr
+    /// );
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "postgres_backend")]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[diesel(postgres_type(oid = 774, array_oid = 775))]
+    pub struct MacAddr8;
+
+    /// Alias for `MacAddr` to be able to use it with `diesel print-schema`.
+    pub type Macaddr8 = MacAddr8;
+
+    /// The [`INET`](https://www.postgresql.org/docs/current/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"` or `feature = "ipnet-address"`.
+    ///
+    /// ### [`ToSql`] impls
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(
+        not(any(feature = "network-address", feature = "ipnet-address")),
+        doc = "N/A"
+    )]
+    ///
+    /// ### [`FromSql`] impls
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(
+        not(any(feature = "network-address", feature = "ipnet-address")),
+        doc = "N/A"
+    )]
+    ///
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " [IpNetwork]: ipnetwork::IpNetwork"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " [IpNet]: ipnet::IpNet")]
     ///
     /// # Examples
     ///
@@ -395,46 +530,65 @@ pub mod sql_types {
     ///     }
     /// }
     ///
-    /// # #[cfg(feature = "network-address")]
+    /// # #[cfg(any(feature = "network-address", feature = "ipnet-address"))]
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// use ipnetwork::IpNetwork;
     ///
     /// #     use diesel::insert_into;
     /// #     use self::clients::dsl::*;
-    /// #     let connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// #     diesel::sql_query("CREATE TABLE clients (
     /// #         id SERIAL PRIMARY KEY,
     /// #         ip_address INET NOT NULL
-    /// #     )").execute(&connection)?;
-    /// let addr = "10.1.9.32/32".parse::<IpNetwork>()?;
+    /// #     )").execute(connection)?;
+    /// // Parsing "ipnet::IpNet" would also work.
+    /// let addr = "10.1.9.32/32".parse::<ipnetwork::IpNetwork>()?;
     /// let inserted_address = insert_into(clients)
     ///     .values(ip_address.eq(&addr))
     ///     .returning(ip_address)
-    ///     .get_result(&connection)?;
+    ///     .get_result(connection)?;
     /// assert_eq!(addr, inserted_address);
     /// #     Ok(())
     /// # }
     /// #
-    /// # #[cfg(not(feature = "network-address"))]
+    /// # #[cfg(not(any(feature = "network-address", feature = "ipnet-address")))]
     /// # fn main() {}
     /// ```
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "869", array_oid = "1041")]
+    #[diesel(postgres_type(oid = 869, array_oid = 1041))]
     pub struct Inet;
 
-    /// The [`CIDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
+    /// The [`CIDR`](https://www.postgresql.org/docs/postgresql/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"` or `feature = "ipnet-address"`.
     ///
     /// ### [`ToSql`] impls
-    ///
-    /// - [`ipnetwork::IpNetwork`][IpNetwork]
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(
+        not(any(feature = "network-address", feature = "ipnet-address")),
+        doc = "N/A"
+    )]
     ///
     /// ### [`FromSql`] impls
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " - [`ipnetwork::IpNetwork`][IpNetwork]"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(
+        not(any(feature = "network-address", feature = "ipnet-address")),
+        doc = "N/A"
+    )]
     ///
-    /// - [`ipnetwork::IpNetwork`][IpNetwork]
-    ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    #[cfg_attr(
+        feature = "network-address",
+        doc = " [IpNetwork]: ipnetwork::IpNetwork"
+    )]
+    #[cfg_attr(feature = "ipnet-address", doc = " [IpNet]: ipnet::IpNet")]
     ///
     /// # Examples
     ///
@@ -448,37 +602,102 @@ pub mod sql_types {
     ///     }
     /// }
     ///
-    /// # #[cfg(feature = "network-address")]
+    /// # #[cfg(any(feature = "network-address", feature = "ipnet-address"))]
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// use ipnetwork::IpNetwork;
     ///
     /// #     use diesel::insert_into;
     /// #     use self::clients::dsl::*;
-    /// #     let connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// #     diesel::sql_query("CREATE TABLE clients (
     /// #         id SERIAL PRIMARY KEY,
     /// #         ip_address CIDR NOT NULL
-    /// #     )").execute(&connection)?;
-    /// let addr = "10.1.9.32/32".parse::<IpNetwork>()?;
+    /// #     )").execute(connection)?;
+    /// // Parsing "ipnet::IpNet" would also work.
+    /// let addr = "10.1.9.32/32".parse::<ipnetwork::IpNetwork>()?;
     /// let inserted_addr = insert_into(clients)
     ///     .values(ip_address.eq(&addr))
     ///     .returning(ip_address)
-    ///     .get_result(&connection)?;
+    ///     .get_result(connection)?;
     /// assert_eq!(addr, inserted_addr);
     /// #     Ok(())
     /// # }
-    /// # #[cfg(not(feature = "network-address"))]
+    /// # #[cfg(not(any(feature = "network-address", feature = "ipnet-address")))]
     /// # fn main() {}
     /// ```
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "650", array_oid = "651")]
+    #[diesel(postgres_type(oid = 650, array_oid = 651))]
     pub struct Cidr;
+
+    /// The [`"char"`] SQL type. This is a PostgreSQL specific type. Used for e.g. [setweight]. [Do not use in user tables].
+    ///
+    /// ### [`ToSql`] impls
+    ///
+    /// - [`u8`]
+    ///
+    /// ### [`FromSql`] impls
+    ///
+    /// - [`u8`]
+    ///
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [`u8`]: https://doc.rust-lang.org/nightly/std/primitive.u8.html
+    /// [`"char"`]: https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER-SPECIAL-TABLE
+    /// [setweight]: https://www.postgresql.org/docs/current/functions-textsearch.html
+    /// [Do not use in user tables]: https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER-SPECIAL-TABLE
+    #[cfg(feature = "postgres_backend")]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[diesel(postgres_type(oid = 18, array_oid = 1002))]
+    pub struct CChar;
+
+    /// The [`Citext`] SQL type. This is a PostgreSQL specific type.
+    ///
+    /// Strings must be valid UTF-8.
+    ///
+    /// ### [`ToSql`] impls
+    ///
+    /// - [`String`]
+    /// - [`&str`][str]
+    ///
+    /// ### [`FromSql`] impls
+    ///
+    /// - [`String`]
+    ///
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [`Citext`]: https://www.postgresql.org/docs/current/citext.html
+    #[cfg(feature = "postgres_backend")]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[diesel(postgres_type(name = "citext"))]
+    pub struct Citext;
+
+    /// The [`pg_lsn`] SQL type. This is a PostgreSQL specific type. Encodes a position in the PostgreSQL *Write Ahead Log* (WAL).
+    ///
+    /// ### [`ToSql`] impls
+    ///
+    /// - [`u64`]
+    ///
+    /// ### [`FromSql`] impls
+    ///
+    /// - [`u64`]
+    ///
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [`u64`]: https://doc.rust-lang.org/nightly/std/primitive.u64.html
+    /// [`pg_lsn`]: https://www.postgresql.org/docs/current/datatype-pg-lsn.html
+    #[cfg(feature = "postgres_backend")]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[diesel(postgres_type(oid = 3220, array_oid = 3221))]
+    pub struct PgLsn;
+
+    #[doc(inline)]
+    pub use crate::sql_types::Jsonb;
 }
 
 mod ops {
     use super::sql_types::*;
     use crate::sql_types::ops::*;
-    use crate::sql_types::{Bigint, Cidr, Inet, Interval};
+    use crate::sql_types::{Bigint, Interval};
 
     impl Add for Timestamptz {
         type Rhs = Interval;

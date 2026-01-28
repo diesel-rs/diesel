@@ -1,45 +1,90 @@
-error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::sql_types::SqlOrd` is not satisfied
-  --> $DIR/ordering_functions_require_ord.rs:13:38
+error[E0277]: the trait bound `Bool: SqlOrdAggregate` is not satisfied
+  --> tests/fail/ordering_functions_require_ord.rs:13:38
    |
-13 |     let source = stuff::table.select(max(stuff::b));
-   |                                      ^^^ the trait `diesel::sql_types::SqlOrd` is not implemented for `diesel::sql_types::Bool`
+LL |     let source = stuff::table.select(max(stuff::b));
+   |                                      ^^^^^^^^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
-  ::: $DIESEL/src/expression/functions/aggregate_ordering.rs
+   = help: the following other types implement trait `SqlOrd`:
+             Array<T>
+             Citext
+             Datetime
+             Interval
+             Nullable<T>
+             diesel::sql_types::BigInt
+             diesel::sql_types::Date
+             diesel::sql_types::Double
+           and N others
+   = note: required for `diesel::sql_types::Bool` to implement `SqlOrdAggregate`
+note: required by a bound in `diesel::dsl::max`
+  --> DIESEL/diesel/diesel/src/expression/functions/aggregate_ordering.rs
    |
-   |     fn max<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
-   |                --------------- required by this bound in `diesel::dsl::max`
-   |
-   = note: required because of the requirements on the impl of `diesel::dsl::SqlOrdAggregate` for `diesel::sql_types::Bool`
+LL |     fn max<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
+   |                ^^^^^^^^^^^^^^^ required by this bound in `max`
 
-error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::sql_types::SqlOrd` is not satisfied
-  --> $DIR/ordering_functions_require_ord.rs:13:38
+   
+error[E0277]: expressions of the type `diesel::sql_types::Bool` cannot be ordered by the database
+  --> tests/fail/ordering_functions_require_ord.rs:13:31
    |
-13 |     let source = stuff::table.select(max(stuff::b));
-   |                                      ^^^^^^^^^^^^^ the trait `diesel::sql_types::SqlOrd` is not implemented for `diesel::sql_types::Bool`
+LL |     let source = stuff::table.select(max(stuff::b));
+   |                               ^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
-   = note: required because of the requirements on the impl of `diesel::dsl::SqlOrdAggregate` for `diesel::sql_types::Bool`
-   = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Bool, stuff::columns::b>`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Bool, stuff::columns::b>>` for `stuff::table`
+   = help: the following other types implement trait `SqlOrd`:
+             Array<T>
+             Citext
+             Datetime
+             Interval
+             Nullable<T>
+             diesel::sql_types::BigInt
+             diesel::sql_types::Date
+             diesel::sql_types::Double
+           and N others
+   = note: required for `diesel::sql_types::Bool` to implement `SqlOrdAggregate`
+   = note: required for `max<Bool, b>` to implement `diesel::Expression`
+   = note: required for `stuff::table` to implement `SelectDsl<max<Bool, b>>`
 
-error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::sql_types::SqlOrd` is not satisfied
-  --> $DIR/ordering_functions_require_ord.rs:14:38
+   
+error[E0277]: the trait bound `Bool: SqlOrdAggregate` is not satisfied
+   --> tests/fail/ordering_functions_require_ord.rs:16:38
+    |
+ LL |     let source = stuff::table.select(min(stuff::b));
+    |                                      ^^^^^^^^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
+    |
+    = help: the following other types implement trait `SqlOrd`:
+              Array<T>
+              Citext
+              Datetime
+              Interval
+              Nullable<T>
+              diesel::sql_types::BigInt
+              diesel::sql_types::Date
+              diesel::sql_types::Double
+            and N others
+    = note: required for `diesel::sql_types::Bool` to implement `SqlOrdAggregate`
+note: required by a bound in `diesel::dsl::min`
+   --> DIESEL/diesel/diesel/src/expression/functions/aggregate_ordering.rs
+    |
+LL |     fn min<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
+    |                ^^^^^^^^^^^^^^^ required by this bound in `min`
+ 
+    
+error[E0277]: expressions of the type `diesel::sql_types::Bool` cannot be ordered by the database
+  --> tests/fail/ordering_functions_require_ord.rs:16:31
    |
-14 |     let source = stuff::table.select(min(stuff::b));
-   |                                      ^^^ the trait `diesel::sql_types::SqlOrd` is not implemented for `diesel::sql_types::Bool`
+LL |     let source = stuff::table.select(min(stuff::b));
+   |                               ^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
-  ::: $DIESEL/src/expression/functions/aggregate_ordering.rs
-   |
-   |     fn min<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
-   |                --------------- required by this bound in `diesel::dsl::min`
-   |
-   = note: required because of the requirements on the impl of `diesel::dsl::SqlOrdAggregate` for `diesel::sql_types::Bool`
+   = help: the following other types implement trait `SqlOrd`:
+             Array<T>
+             Citext
+             Datetime
+             Interval
+             Nullable<T>
+             diesel::sql_types::BigInt
+             diesel::sql_types::Date
+             diesel::sql_types::Double
+           and N others
+   = note: required for `diesel::sql_types::Bool` to implement `SqlOrdAggregate`
+   = note: required for `min<Bool, b>` to implement `diesel::Expression`
+   = note: required for `stuff::table` to implement `SelectDsl<min<Bool, b>>`
 
-error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::sql_types::SqlOrd` is not satisfied
-  --> $DIR/ordering_functions_require_ord.rs:14:38
-   |
-14 |     let source = stuff::table.select(min(stuff::b));
-   |                                      ^^^^^^^^^^^^^ the trait `diesel::sql_types::SqlOrd` is not implemented for `diesel::sql_types::Bool`
-   |
-   = note: required because of the requirements on the impl of `diesel::dsl::SqlOrdAggregate` for `diesel::sql_types::Bool`
-   = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Bool, stuff::columns::b>`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Bool, stuff::columns::b>>` for `stuff::table`
+   For more information about this error, try `rustc --explain E0277`.

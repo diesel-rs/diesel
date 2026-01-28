@@ -1,7 +1,7 @@
 extern crate diesel;
 
-use diesel::*;
 use diesel::sql_types::*;
+use diesel::*;
 
 table! {
     users {
@@ -17,23 +17,31 @@ table! {
     }
 }
 
+allow_tables_to_appear_in_same_query!(users, posts);
+
 #[derive(Queryable)]
 struct User {
     id: i32,
     name: String,
 }
 
-sql_function!(fn foo(x: Integer) -> Integer);
-sql_function!(fn bar(x: VarChar) -> VarChar);
+#[declare_sql_function]
+extern "SQL" {
+    fn foo(x: Integer) -> Integer;
+    fn bar(x: VarChar) -> VarChar;
+}
 
 fn main() {
-    use self::users::name;
     use self::posts::title;
+    use self::users::name;
 
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
 
     let _ = users::table.filter(name.eq(foo(1)));
+    //~^ ERROR: the trait bound `foo<Bound<Integer, i32>>: AsExpression<Text>` is not satisfied
 
-    let _ = users::table.filter(name.eq(bar(title)))
-        .load::<User>(&conn);
+    let _ = users::table
+        .filter(name.eq(bar(title)))
+        .load::<User>(&mut conn);
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
 }

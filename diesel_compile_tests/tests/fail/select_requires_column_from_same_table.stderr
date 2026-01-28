@@ -1,13 +1,36 @@
-error[E0277]: the trait bound `posts::columns::id: diesel::SelectableExpression<users::table>` is not satisfied
-  --> $DIR/select_requires_column_from_same_table.rs:20:41
-   |
-20 |     let select_id = users::table.select(posts::id);
-   |                                         ^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::id`
-   |
-   = help: the following implementations were found:
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
-             <posts::columns::id as diesel::SelectableExpression<posts::table>>
-   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<posts::columns::id>` for `diesel::query_builder::SelectStatement<users::table>`
+error[E0277]: cannot select `posts::columns::id` from `users::table`
+   --> tests/fail/select_requires_column_from_same_table.rs:20:41
+    |
+ LL |     let select_id = users::table.select(posts::id);
+    |                                  ------ ^^^^^^^^^ unsatisfied trait bound
+    |                                  |
+    |                                  required by a bound introduced by this call
+    |
+help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   --> tests/fail/select_requires_column_from_same_table.rs:14:9
+    |
+ LL |         id -> Integer,
+    |         ^^
+    = note: `posts::columns::id` is no valid selection for `users::table`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
+              `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
+              `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+              `posts::columns::id` implements `SelectableExpression<posts::table>`
+              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
+              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
+    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<posts::columns::id>`
+    = note: 1 redundant requirement hidden
+    = note: required for `users::table` to implement `SelectDsl<posts::columns::id>`
+note: required by a bound in `diesel::QueryDsl::select`
+   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    |
+LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Selection>
+    |        ------ required by a bound in this associated function
+...
+LL |         Self: methods::SelectDsl<Selection>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.

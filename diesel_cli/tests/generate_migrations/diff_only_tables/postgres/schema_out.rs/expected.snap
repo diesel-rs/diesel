@@ -1,0 +1,13 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: diff_only_tables"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    table_a (id) {
+        id -> Int4,
+        script -> Text,
+    }
+}
+

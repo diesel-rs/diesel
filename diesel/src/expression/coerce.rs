@@ -1,10 +1,8 @@
-use std::marker::PhantomData;
-
-use crate::backend::Backend;
 use crate::expression::*;
 use crate::query_builder::*;
 use crate::result::QueryResult;
-use crate::sql_types::{DieselNumericOps, SqlType};
+use crate::sql_types::DieselNumericOps;
+use std::marker::PhantomData;
 
 #[derive(Debug, Copy, Clone, QueryId, DieselNumericOps)]
 #[doc(hidden)]
@@ -60,7 +58,7 @@ where
     T: QueryFragment<DB>,
     DB: Backend,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.expr.walk_ast(pass)
     }
 }

@@ -1,8 +1,10 @@
-use criterion::Bencher;
+use super::Bencher;
 use rust_postgres::fallible_iterator::FallibleIterator;
 use rust_postgres::types::ToSql;
 use rust_postgres::{Client, NoTls};
 use std::collections::HashMap;
+
+const NO_PARAMS: Vec<&dyn ToSql> = Vec::new();
 
 pub struct User {
     pub id: i32,
@@ -24,9 +26,9 @@ pub struct Comment {
 }
 
 fn connection() -> Client {
-    dotenv::dotenv().ok();
-    let connection_url = dotenv::var("POSTGRES_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    dotenvy::dotenv().ok();
+    let connection_url = dotenvy::var("POSTGRES_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let mut client = Client::connect(&connection_url, NoTls).unwrap();
 
@@ -72,7 +74,7 @@ pub fn bench_trivial_query_by_id(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         client
-            .query_raw(&query, Vec::new())
+            .query_raw(&query, NO_PARAMS)
             .unwrap()
             .map(|row| {
                 Ok(User {
@@ -96,7 +98,7 @@ pub fn bench_trivial_query_by_name(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         client
-            .query_raw(&query, Vec::new())
+            .query_raw(&query, NO_PARAMS)
             .unwrap()
             .map(|row| {
                 Ok(User {
@@ -119,13 +121,13 @@ pub fn bench_medium_complex_query_by_id(b: &mut Bencher, size: usize) {
     let query = client
         .prepare(
             "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
-             FROM users as u LEFT JOIN posts as p on u.id = p.user_id",
+             FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = $1",
         )
         .unwrap();
 
     b.iter(|| {
         client
-            .query_raw(&query, Vec::new())
+            .query_raw(&query, &[&"black"])
             .unwrap()
             .map(|row| {
                 let user = User {
@@ -159,13 +161,13 @@ pub fn bench_medium_complex_query_by_name(b: &mut Bencher, size: usize) {
     let query = client
         .prepare(
             "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, p.user_id, p.title, p.body \
-             FROM users as u LEFT JOIN posts as p on u.id = p.user_id",
+             FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = $1",
         )
         .unwrap();
 
     b.iter(|| {
         client
-            .query_raw(&query, vec![])
+            .query_raw(&query, &[&"black"])
             .unwrap()
             .map(|row| {
                 let user = User {
@@ -208,7 +210,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
     });
 
     let user_ids = client
-        .query_raw("SELECT id FROM users", Vec::new())
+        .query_raw("SELECT id FROM users", NO_PARAMS)
         .unwrap()
         .map(|row| Ok(row.get("id")))
         .collect::<Vec<i32>>()
@@ -243,7 +245,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
     client.execute(&insert_query as &str, &data).unwrap();
 
     let all_posts = client
-        .query_raw("SELECT id FROM posts", Vec::new())
+        .query_raw("SELECT id FROM posts", NO_PARAMS)
         .unwrap()
         .map(|row| Ok(row.get("id")))
         .collect::<Vec<i32>>()
@@ -280,7 +282,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
 
     b.iter(|| {
         let users = client
-            .query_raw(&user_query, Vec::new())
+            .query_raw(&user_query, NO_PARAMS)
             .unwrap()
             .map(|row| {
                 Ok(User {
@@ -298,11 +300,11 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         let user_ids = users
             .iter()
             .enumerate()
-            .map(|(i, &User { ref id, .. })| {
+            .map(|(i, &User { id, .. })| {
                 posts_query += &format!("{}${}", if i == 0 { "" } else { "," }, i + 1);
-                id as _
+                id
             })
-            .collect::<Vec<_>>();
+            .collect::<Vec<i32>>();
 
         posts_query += ")";
 
@@ -326,11 +328,11 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         let post_ids = posts
             .iter()
             .enumerate()
-            .map(|(i, &Post { ref id, .. })| {
+            .map(|(i, &Post { id, .. })| {
                 comments_query += &format!("{}${}", if i == 0 { "" } else { "," }, i + 1);
-                id as _
+                id
             })
-            .collect::<Vec<_>>();
+            .collect::<Vec<i32>>();
 
         comments_query += ")";
 

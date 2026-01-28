@@ -6,6 +6,7 @@ use crate::sql_types;
 
 macro_rules! numeric_operation {
     ($name:ident, $op:expr) => {
+        #[doc(hidden)]
         #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
         pub struct $name<Lhs, Rhs> {
             lhs: Lhs,
@@ -13,6 +14,10 @@ macro_rules! numeric_operation {
         }
 
         impl<Lhs, Rhs> $name<Lhs, Rhs> {
+            // This function is used by `operator_allowed!`
+            // which is internally used by `table!`
+            // for "numeric" columns
+            #[doc(hidden)]
             pub fn new(left: Lhs, right: Rhs) -> Self {
                 $name {
                     lhs: left,
@@ -37,7 +42,8 @@ macro_rules! numeric_operation {
             Lhs: QueryFragment<DB>,
             Rhs: QueryFragment<DB>,
         {
-            fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+            fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+            {
                 out.push_sql("(");
                 self.lhs.walk_ast(out.reborrow())?;
                 out.push_sql($op);

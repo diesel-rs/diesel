@@ -1,19 +1,18 @@
-use std::io::Write;
-
-use crate::backend::{self, Backend};
+use crate::backend::Backend;
 use crate::deserialize::{self, FromSql, Queryable, QueryableByName};
 use crate::expression::bound::Bound;
 use crate::expression::*;
 use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{is_nullable, HasSqlType, Nullable, SingleValue, SqlType};
+use crate::NullableExpressionMethods;
 
 impl<T, DB> HasSqlType<Nullable<T>> for DB
 where
     DB: Backend + HasSqlType<T>,
     T: SqlType,
 {
-    fn metadata(lookup: &DB::MetadataLookup) -> DB::TypeMetadata {
+    fn metadata(lookup: &mut DB::MetadataLookup) -> DB::TypeMetadata {
         <DB as HasSqlType<T>>::metadata(lookup)
     }
 }
@@ -33,11 +32,11 @@ where
     DB: Backend,
     ST: SqlType<IsNull = is_nullable::NotNull>,
 {
-    fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
         T::from_sql(bytes).map(Some)
     }
 
-    fn from_nullable_sql(bytes: Option<backend::RawValue<DB>>) -> deserialize::Result<Self> {
+    fn from_nullable_sql(bytes: Option<DB::RawValue<'_>>) -> deserialize::Result<Self> {
         match bytes {
             Some(bytes) => T::from_sql(bytes).map(Some),
             None => Ok(None),
@@ -51,7 +50,7 @@ where
     DB: Backend,
     ST: SqlType<IsNull = is_nullable::NotNull>,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         if let Some(ref value) = *self {
             value.to_sql(out)
         } else {
@@ -72,7 +71,7 @@ where
     }
 }
 
-impl<'a, T, ST> AsExpression<Nullable<ST>> for &'a Option<T>
+impl<T, ST> AsExpression<Nullable<ST>> for &Option<T>
 where
     ST: SqlType<IsNull = is_nullable::NotNull>,
     Nullable<ST>: TypedExpressionType,
@@ -111,27 +110,49 @@ where
     }
 }
 
-#[cfg(all(test, feature = "postgres"))]
-use crate::pg::Pg;
-#[cfg(all(test, feature = "postgres"))]
-use crate::sql_types;
+impl<T, DB> Selectable<DB> for Option<T>
+where
+    DB: Backend,
+    T: Selectable<DB>,
+    crate::dsl::Nullable<T::SelectExpression>: Expression,
+{
+    type SelectExpression = crate::dsl::Nullable<T::SelectExpression>;
 
-#[test]
+    fn construct_selection() -> Self::SelectExpression {
+        T::construct_selection().nullable()
+    }
+}
+
+#[cfg(test)]
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn option_to_sql() {
+    use crate::pg::Pg;
+    use crate::query_builder::bind_collector::ByteWrapper;
+    use crate::sql_types;
+
     type Type = sql_types::Nullable<sql_types::VarChar>;
-    let mut bytes = Output::test();
 
-    let is_null = ToSql::<Type, Pg>::to_sql(&None::<String>, &mut bytes).unwrap();
+    let mut buffer = Vec::new();
+    let is_null = {
+        let mut bytes = Output::test(ByteWrapper(&mut buffer));
+        ToSql::<Type, Pg>::to_sql(&None::<String>, &mut bytes).unwrap()
+    };
     assert_eq!(IsNull::Yes, is_null);
-    assert!(bytes.is_empty());
+    assert!(buffer.is_empty());
 
-    let is_null = ToSql::<Type, Pg>::to_sql(&Some(""), &mut bytes).unwrap();
+    let is_null = {
+        let mut bytes = Output::test(ByteWrapper(&mut buffer));
+        ToSql::<Type, Pg>::to_sql(&Some(""), &mut bytes).unwrap()
+    };
     assert_eq!(IsNull::No, is_null);
-    assert!(bytes.is_empty());
+    assert!(buffer.is_empty());
 
-    let is_null = ToSql::<Type, Pg>::to_sql(&Some("Sean"), &mut bytes).unwrap();
-    let expectd_bytes = b"Sean".to_vec();
+    let is_null = {
+        let mut bytes = Output::test(ByteWrapper(&mut buffer));
+        ToSql::<Type, Pg>::to_sql(&Some("Sean"), &mut bytes).unwrap()
+    };
+    let expected_bytes = b"Sean".to_vec();
     assert_eq!(IsNull::No, is_null);
-    assert_eq!(bytes, expectd_bytes);
+    assert_eq!(buffer, expected_bytes);
 }

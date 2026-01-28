@@ -1,0 +1,27 @@
+error: expected a single table name attribute
+       note: remove this attribute
+  --> tests/fail/derive/multiple_table_names.rs:29:30
+   |
+LL | #[diesel(table_name = users, table_name = users_)]
+   |                              ^^^^^^^^^^
+
+error: expected a single table name attribute
+       note: remove this attribute
+  --> tests/fail/derive/multiple_table_names.rs:38:30
+   |
+LL | #[diesel(table_name = users, table_name = users_)]
+   |                              ^^^^^^^^^^
+
+error: expected a single table name attribute
+       note: remove this attribute
+  --> tests/fail/derive/multiple_table_names.rs:46:30
+   |
+LL | #[diesel(table_name = users, table_name = users_)]
+   |                              ^^^^^^^^^^
+
+error: expected a single table name attribute
+       note: remove this attribute
+  --> tests/fail/derive/multiple_table_names.rs:55:10
+   |
+LL | #[diesel(table_name = users_)]
+   |          ^^^^^^^^^^

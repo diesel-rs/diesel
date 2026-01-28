@@ -1,0 +1,120 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(AsExpression)]\n#[diesel(sql_type = diesel::sql_type::Integer)]\nenum Foo {\n    Bar,\n    Baz,\n}\n"
+---
+const _: () = {
+    use diesel;
+    impl<'__expr> diesel::expression::AsExpression<diesel::sql_type::Integer>
+    for &'__expr Foo {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_type::Integer,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_type::Integer,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    impl<
+        '__expr,
+    > diesel::expression::AsExpression<
+        diesel::sql_types::Nullable<diesel::sql_type::Integer>,
+    > for &'__expr Foo {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_types::Nullable<diesel::sql_type::Integer>,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_types::Nullable<diesel::sql_type::Integer>,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    impl<'__expr, '__expr2> diesel::expression::AsExpression<diesel::sql_type::Integer>
+    for &'__expr2 &'__expr Foo {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_type::Integer,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_type::Integer,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    impl<
+        '__expr,
+        '__expr2,
+    > diesel::expression::AsExpression<
+        diesel::sql_types::Nullable<diesel::sql_type::Integer>,
+    > for &'__expr2 &'__expr Foo {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_types::Nullable<diesel::sql_type::Integer>,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_types::Nullable<diesel::sql_type::Integer>,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    impl<
+        __DB,
+    > diesel::serialize::ToSql<
+        diesel::sql_types::Nullable<diesel::sql_type::Integer>,
+        __DB,
+    > for Foo
+    where
+        __DB: diesel::backend::Backend,
+        Self: diesel::serialize::ToSql<diesel::sql_type::Integer, __DB>,
+    {
+        fn to_sql<'__b>(
+            &'__b self,
+            out: &mut diesel::serialize::Output<'__b, '_, __DB>,
+        ) -> diesel::serialize::Result {
+            diesel::serialize::ToSql::<
+                diesel::sql_type::Integer,
+                __DB,
+            >::to_sql(self, out)
+        }
+    }
+    impl diesel::expression::AsExpression<diesel::sql_type::Integer> for Foo {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_type::Integer,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_type::Integer,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    impl diesel::expression::AsExpression<
+        diesel::sql_types::Nullable<diesel::sql_type::Integer>,
+    > for Foo {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_types::Nullable<diesel::sql_type::Integer>,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_types::Nullable<diesel::sql_type::Integer>,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+};

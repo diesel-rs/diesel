@@ -1,18 +1,33 @@
-extern crate mysqlclient_sys as ffi;
-
+#![allow(unsafe_code)] // module uses ffi
+use mysqlclient_sys as ffi;
 use std::ffi::CStr;
 use std::os::raw as libc;
 use std::ptr::{self, NonNull};
 use std::sync::Once;
 
+use super::statement_cache::PrepareForCache;
 use super::stmt::Statement;
 use super::url::ConnectionOptions;
+use crate::mysql::MysqlType;
 use crate::result::{ConnectionError, ConnectionResult, QueryResult};
 
-pub struct RawConnection(NonNull<ffi::MYSQL>);
+pub(super) struct RawConnection(NonNull<ffi::MYSQL>);
+
+// old versions of mysqlclient do not expose
+// ffi::FALSE, so we need to have our own compatibility
+// wrapper here
+//
+// Depending on the bindings version ffi::my_bool
+// might be an actual bool or a i8. For the former
+// case `default()` corresponds to `false` for the later
+// to `0` which is both interpreted as false
+#[inline(always)]
+pub(super) fn ffi_false() -> ffi::my_bool {
+    Default::default()
+}
 
 impl RawConnection {
-    pub fn new() -> Self {
+    pub(super) fn new() -> Self {
         perform_thread_unsafe_library_initialization();
         let raw_connection = unsafe { ffi::mysql_init(ptr::null_mut()) };
         // We're trusting https://dev.mysql.com/doc/refman/5.7/en/mysql-init.html
@@ -26,7 +41,7 @@ impl RawConnection {
             ffi::mysql_options(
                 result.0.as_ptr(),
                 ffi::mysql_option::MYSQL_SET_CHARSET_NAME,
-                b"utf8mb4\0".as_ptr() as *const libc::c_void,
+                c"utf8mb4".as_ptr() as *const libc::c_void,
             )
         };
         assert_eq!(
@@ -39,31 +54,39 @@ impl RawConnection {
         result
     }
 
-    pub fn connect(&self, connection_options: &ConnectionOptions) -> ConnectionResult<()> {
+    pub(super) fn connect(&self, connection_options: &ConnectionOptions) -> ConnectionResult<()> {
         let host = connection_options.host();
         let user = connection_options.user();
         let password = connection_options.password();
         let database = connection_options.database();
         let port = connection_options.port();
         let unix_socket = connection_options.unix_socket();
+        let client_flags = connection_options.client_flags();
+
+        if let Some(ssl_mode) = connection_options.ssl_mode() {
+            self.set_ssl_mode(ssl_mode)
+        }
+        if let Some(ssl_ca) = connection_options.ssl_ca() {
+            self.set_ssl_ca(ssl_ca)
+        }
+        if let Some(ssl_cert) = connection_options.ssl_cert() {
+            self.set_ssl_cert(ssl_cert)
+        }
+        if let Some(ssl_key) = connection_options.ssl_key() {
+            self.set_ssl_key(ssl_key)
+        }
 
         unsafe {
             // Make sure you don't use the fake one!
             ffi::mysql_real_connect(
                 self.0.as_ptr(),
-                host.map(CStr::as_ptr).unwrap_or_else(|| ptr::null_mut()),
+                host.map(CStr::as_ptr).unwrap_or_else(ptr::null),
                 user.as_ptr(),
-                password
-                    .map(CStr::as_ptr)
-                    .unwrap_or_else(|| ptr::null_mut()),
-                database
-                    .map(CStr::as_ptr)
-                    .unwrap_or_else(|| ptr::null_mut()),
+                password.map(CStr::as_ptr).unwrap_or_else(ptr::null),
+                database.map(CStr::as_ptr).unwrap_or_else(ptr::null),
                 u32::from(port.unwrap_or(0)),
-                unix_socket
-                    .map(CStr::as_ptr)
-                    .unwrap_or_else(|| ptr::null_mut()),
-                0,
+                unix_socket.map(CStr::as_ptr).unwrap_or_else(ptr::null),
+                client_flags.bits().into(),
             )
         };
 
@@ -75,13 +98,13 @@ impl RawConnection {
         }
     }
 
-    pub fn last_error_message(&self) -> String {
+    pub(super) fn last_error_message(&self) -> String {
         unsafe { CStr::from_ptr(ffi::mysql_error(self.0.as_ptr())) }
             .to_string_lossy()
             .into_owned()
     }
 
-    pub fn execute(&self, query: &str) -> QueryResult<()> {
+    pub(super) fn execute(&self, query: &str) -> QueryResult<()> {
         unsafe {
             // Make sure you don't use the fake one!
             ffi::mysql_real_query(
@@ -95,7 +118,7 @@ impl RawConnection {
         Ok(())
     }
 
-    pub fn enable_multi_statements<T, F>(&self, f: F) -> QueryResult<T>
+    pub(super) fn enable_multi_statements<T, F>(&self, f: F) -> QueryResult<T>
     where
         F: FnOnce() -> QueryResult<T>,
     {
@@ -120,12 +143,12 @@ impl RawConnection {
         result
     }
 
-    pub fn affected_rows(&self) -> usize {
-        let affected_rows = unsafe { ffi::mysql_affected_rows(self.0.as_ptr()) };
-        affected_rows as usize
-    }
-
-    pub fn prepare(&self, query: &str) -> QueryResult<Statement> {
+    pub(super) fn prepare(
+        &self,
+        query: &str,
+        _: PrepareForCache,
+        _: &[MysqlType],
+    ) -> QueryResult<Statement> {
         let stmt = unsafe { ffi::mysql_stmt_init(self.0.as_ptr()) };
         // It is documented that the only reason `mysql_stmt_init` will fail
         // is because of OOM.
@@ -145,7 +168,7 @@ impl RawConnection {
             Ok(())
         } else {
             Err(DatabaseError(
-                DatabaseErrorKind::__Unknown,
+                DatabaseErrorKind::Unknown,
                 Box::new(error_message),
             ))
         }
@@ -172,12 +195,55 @@ impl RawConnection {
     }
 
     fn more_results(&self) -> bool {
-        unsafe { ffi::mysql_more_results(self.0.as_ptr()) != 0 }
+        unsafe { ffi::mysql_more_results(self.0.as_ptr()) != ffi_false() }
     }
 
     fn next_result(&self) -> QueryResult<()> {
         unsafe { ffi::mysql_next_result(self.0.as_ptr()) };
         self.did_an_error_occur()
+    }
+
+    fn set_ssl_mode(&self, ssl_mode: mysqlclient_sys::mysql_ssl_mode) {
+        let v = ssl_mode as u32;
+        let v_ptr: *const u32 = &v;
+        let n = ptr::NonNull::new(v_ptr as *mut u32).expect("NonNull::new failed");
+        unsafe {
+            mysqlclient_sys::mysql_options(
+                self.0.as_ptr(),
+                mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_MODE,
+                n.as_ptr() as *const std::ffi::c_void,
+            )
+        };
+    }
+
+    fn set_ssl_ca(&self, ssl_ca: &CStr) {
+        unsafe {
+            mysqlclient_sys::mysql_options(
+                self.0.as_ptr(),
+                mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_CA,
+                ssl_ca.as_ptr() as *const std::ffi::c_void,
+            )
+        };
+    }
+
+    fn set_ssl_cert(&self, ssl_cert: &CStr) {
+        unsafe {
+            mysqlclient_sys::mysql_options(
+                self.0.as_ptr(),
+                mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_CERT,
+                ssl_cert.as_ptr() as *const std::ffi::c_void,
+            )
+        };
+    }
+
+    fn set_ssl_key(&self, ssl_key: &CStr) {
+        unsafe {
+            mysqlclient_sys::mysql_options(
+                self.0.as_ptr(),
+                mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_KEY,
+                ssl_key.as_ptr() as *const std::ffi::c_void,
+            )
+        };
     }
 }
 
@@ -197,7 +263,7 @@ impl Drop for RawConnection {
 /// > to protect the `mysql_library_init()` call. This should be done prior to
 /// > any other client library call.
 ///
-/// <https://dev.mysql.com/doc/refman/5.7/en/mysql-init.html>
+/// <https://dev.mysql.com/doc/c-api/8.4/en/mysql-init.html>
 static MYSQL_THREAD_UNSAFE_INIT: Once = Once::new();
 
 fn perform_thread_unsafe_library_initialization() {

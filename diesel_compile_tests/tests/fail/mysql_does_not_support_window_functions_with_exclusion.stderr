@@ -1,0 +1,158 @@
+error[E0277]: `ExcludeGroup` is no valid SQL fragment for the `Mysql` backend
+    --> tests/fail/mysql_does_not_support_window_functions_with_exclusion.rs:22:22
+     |
+  LL |         .load::<i64>(&mut connection)
+     |          ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql, NoFrameFrameExclusionSupport>` is not implemented for `ExcludeGroup`
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = note: this usually means that the `Mysql` database system does not support 
+             this SQL syntax
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
+     |
+ LL | / simple_frame_expr_with_bound!(
+ LL | |     /// Exclude the current peer group from the window frame
+ LL | |     ///
+ LL | |     /// A peer group is a set of rows with an equivalent `ORDER BY`
+...    |
+ LL | |     "EXCLUDE GROUP "
+ LL | | );
+     | | ^
+     | | |
+     | |_`ExcludeGroup` implements `QueryFragment<DB, FrameExclusionSupport>`
+     |   `ExcludeGroup` implements `QueryFragment<DB>`
+     = note: required for `ExcludeGroup` to implement `QueryFragment<Mysql>`
+     = note: 7 redundant requirements hidden
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, i64>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+          = note: this error originates in the macro `simple_frame_expr_with_bound` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: `ExcludeCurrentRow` is no valid SQL fragment for the `Mysql` backend
+    --> tests/fail/mysql_does_not_support_window_functions_with_exclusion.rs:34:26
+     |
+  LL |             .load::<i64>(&mut connection)
+     |              ----        ^^^^^^^^^^^^^^^ unsatisfied trait bound
+     |              |
+     |              required by a bound introduced by this call
+     |
+     = help: the trait `QueryFragment<Mysql, NoFrameFrameExclusionSupport>` is not implemented for `ExcludeCurrentRow`
+     = note: this usually means that the `Mysql` database system does not support 
+             this SQL syntax
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
+     |
+ LL | / simple_frame_expr_with_bound!(
+ LL | |     /// Exclude the current row from the window frame
+ LL | |     ExcludeCurrentRow,
+ LL | |     WindowFrameExclusionSupport,
+ LL | |     sql_dialect::window_frame_exclusion_support::FrameExclusionSupport,
+ LL | |     "EXCLUDE CURRENT ROW "
+ LL | | );
+     | | ^
+     | | |
+     | |_`ExcludeCurrentRow` implements `QueryFragment<DB, FrameExclusionSupport>`
+     |   `ExcludeCurrentRow` implements `QueryFragment<DB>`
+     = note: required for `ExcludeCurrentRow` to implement `QueryFragment<Mysql>`
+     = note: 7 redundant requirements hidden
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, i64>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+          = note: this error originates in the macro `simple_frame_expr_with_bound` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: `ExcludeTies` is no valid SQL fragment for the `Mysql` backend
+    --> tests/fail/mysql_does_not_support_window_functions_with_exclusion.rs:45:22
+     |
+  LL |         .load::<i64>(&mut connection)
+     |          ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql, NoFrameFrameExclusionSupport>` is not implemented for `ExcludeTies`
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = note: this usually means that the `Mysql` database system does not support 
+             this SQL syntax
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
+     |
+ LL | / simple_frame_expr_with_bound!(
+ LL | |     /// Exclude any peers, but not the current row from the window frame
+ LL | |     ///
+ LL | |     /// This excludes any row with an equivalent `ORDER BY` ordering
+...    |
+ LL | |     "EXCLUDE TIES "
+ LL | | );
+     | | ^
+     | | |
+     | |_`ExcludeTies` implements `QueryFragment<DB, FrameExclusionSupport>`
+     |   `ExcludeTies` implements `QueryFragment<DB>`
+     = note: required for `ExcludeTies` to implement `QueryFragment<Mysql>`
+     = note: 7 redundant requirements hidden
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, i64>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+          = note: this error originates in the macro `simple_frame_expr_with_bound` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: `ExcludeNoOthers` is no valid SQL fragment for the `Mysql` backend
+    --> tests/fail/mysql_does_not_support_window_functions_with_exclusion.rs:57:26
+     |
+  LL |             .load::<i64>(&mut connection)
+     |              ----        ^^^^^^^^^^^^^^^ unsatisfied trait bound
+     |              |
+     |              required by a bound introduced by this call
+     |
+     = help: the trait `QueryFragment<Mysql, NoFrameFrameExclusionSupport>` is not implemented for `ExcludeNoOthers`
+     = note: this usually means that the `Mysql` database system does not support 
+             this SQL syntax
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
+     |
+ LL | / simple_frame_expr_with_bound!(
+ LL | |     /// Exclude no rows from the frame windows
+ LL | |     ///
+ LL | |     /// This is the default behaviour if not specified
+...    |
+ LL | |     "EXCLUDE NO OTHERS "
+ LL | | );
+     | | ^
+     | | |
+     | |_`ExcludeNoOthers` implements `QueryFragment<DB, FrameExclusionSupport>`
+     |   `ExcludeNoOthers` implements `QueryFragment<DB>`
+     = note: required for `ExcludeNoOthers` to implement `QueryFragment<Mysql>`
+     = note: 7 redundant requirements hidden
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, i64>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+          = note: this error originates in the macro `simple_frame_expr_with_bound` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.

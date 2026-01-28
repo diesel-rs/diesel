@@ -1,8 +1,10 @@
-#[macro_use] extern crate diesel;
+#[macro_use]
+extern crate diesel;
 
 table! {
     12
+    //~^ ERROR: macro expansion ignores `12` and any tokens following
 }
-// error-pattern: Invalid `table!` syntax. Please see the `table!` macro docs for more info.
+//~^^^^ ERROR: invalid `table!` syntax
 
 fn main() {}

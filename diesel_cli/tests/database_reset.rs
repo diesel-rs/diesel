@@ -31,7 +31,8 @@ fn reset_runs_database_setup() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
+        None,
     );
 
     assert!(db.table_exists("posts"));
@@ -101,7 +102,8 @@ fn reset_works_with_migration_dir_by_arg() {
         "foo",
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
+        None,
     );
 
     assert!(db.table_exists("posts"));
@@ -132,7 +134,8 @@ fn reset_works_with_migration_dir_by_env() {
         "bar",
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
+        None,
     );
 
     assert!(db.table_exists("posts"));
@@ -148,6 +151,32 @@ fn reset_works_with_migration_dir_by_env() {
     assert!(!db.table_exists("posts"));
     assert!(db.table_exists("users"));
     assert!(db.table_exists("__diesel_schema_migrations"));
+}
+
+#[test]
+fn reset_works_with_no_default_migrations_arg() {
+    let p = project("reset_works_with_no_default_migrations_arg")
+        .folder("custom_migrations")
+        .file(
+            "diesel.toml",
+            r#"
+            [migrations_directory]
+            dir = "custom_migrations"
+            "#,
+        )
+        .build();
+    database(&p.database_url()).create();
+
+    let result = p
+        .command("database")
+        .arg("reset")
+        .arg("--no-default-migration")
+        .run();
+
+    use std::path::Path;
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file(Path::new("custom_migrations").join("00000000000000_diesel_initial_setup")));
 }
 
 #[test]
@@ -214,7 +243,8 @@ fn reset_respects_migrations_dir_from_diesel_toml() {
         "custom_migrations",
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
+        None,
     );
 
     assert!(db.table_exists("users"));

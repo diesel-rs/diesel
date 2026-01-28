@@ -1,4 +1,4 @@
-use criterion::Bencher;
+use super::Bencher;
 use diesel::*;
 
 #[cfg(feature = "postgres")]
@@ -42,7 +42,7 @@ allow_tables_to_appear_in_same_query!(users, posts, comments);
 #[derive(
     PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, QueryableByName,
 )]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct User {
     pub id: i32,
     pub name: String,
@@ -50,7 +50,8 @@ pub struct User {
 }
 
 #[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
+#[diesel(treat_none_as_default_value = false)]
 pub struct NewUser {
     pub name: String,
     pub hair_color: Option<String>,
@@ -66,8 +67,8 @@ impl NewUser {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations, QueryableByName)]
-#[belongs_to(User)]
-#[table_name = "posts"]
+#[diesel(belongs_to(User))]
+#[diesel(table_name = posts)]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,
@@ -76,7 +77,7 @@ pub struct Post {
 }
 
 #[derive(Insertable)]
-#[table_name = "posts"]
+#[diesel(table_name = posts)]
 pub struct NewPost {
     user_id: i32,
     title: String,
@@ -94,154 +95,259 @@ impl NewPost {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-#[belongs_to(Post)]
+#[diesel(belongs_to(Post))]
 pub struct Comment {
     id: i32,
     post_id: i32,
     text: String,
 }
 
-#[derive(Debug, Clone, Copy, Insertable)]
-#[table_name = "comments"]
-pub struct NewComment<'a>(
-    #[column_name = "post_id"] pub i32,
-    #[column_name = "text"] pub &'a str,
+#[derive(Debug, Clone, Insertable)]
+#[diesel(table_name = comments)]
+pub struct NewComment(
+    #[diesel(column_name = post_id)] pub i32,
+    #[diesel(column_name = text)] pub String,
 );
 
 #[cfg(feature = "mysql")]
 fn connection() -> TestConnection {
-    dotenv::dotenv().ok();
-    let connection_url = dotenv::var("MYSQL_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    dotenvy::dotenv().ok();
+    let connection_url = dotenvy::var("MYSQL_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    let conn = MysqlConnection::establish(&connection_url).unwrap();
-    conn.execute("SET FOREIGN_KEY_CHECKS = 0;").unwrap();
-    conn.execute("TRUNCATE TABLE comments").unwrap();
-    conn.execute("TRUNCATE TABLE posts").unwrap();
-    conn.execute("TRUNCATE TABLE users").unwrap();
-    conn.execute("SET FOREIGN_KEY_CHECKS = 1;").unwrap();
+    let mut conn = MysqlConnection::establish(&connection_url).unwrap();
+    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 0")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("TRUNCATE TABLE comments")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("TRUNCATE TABLE posts")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("TRUNCATE TABLE users")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 1")
+        .execute(&mut conn)
+        .unwrap();
     conn
 }
 
 #[cfg(feature = "postgres")]
 fn connection() -> TestConnection {
-    dotenv::dotenv().ok();
-    let connection_url = dotenv::var("PG_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    dotenvy::dotenv().ok();
+    let connection_url = dotenvy::var("PG_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    let conn = PgConnection::establish(&connection_url).unwrap();
-    conn.execute("TRUNCATE TABLE comments CASCADE").unwrap();
-    conn.execute("TRUNCATE TABLE posts CASCADE").unwrap();
-    conn.execute("TRUNCATE TABLE users CASCADE").unwrap();
+    let mut conn = PgConnection::establish(&connection_url).unwrap();
+    diesel::sql_query("TRUNCATE TABLE comments CASCADE")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("TRUNCATE TABLE posts CASCADE")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("TRUNCATE TABLE users CASCADE")
+        .execute(&mut conn)
+        .unwrap();
     conn
 }
 
 #[cfg(feature = "sqlite")]
 fn connection() -> TestConnection {
-    dotenv::dotenv().ok();
-    let conn = diesel::SqliteConnection::establish(":memory:").unwrap();
+    dotenvy::dotenv().ok();
+    let mut conn = diesel::SqliteConnection::establish(":memory:").unwrap();
     for migration in super::SQLITE_MIGRATION_SQL {
-        conn.execute(migration).unwrap();
+        diesel::sql_query(*migration).execute(&mut conn).unwrap();
     }
-    conn.execute("DELETE FROM comments").unwrap();
-    conn.execute("DELETE FROM posts").unwrap();
-    conn.execute("DELETE FROM users").unwrap();
+    diesel::sql_query("DELETE FROM comments")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("DELETE FROM posts")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("DELETE FROM users")
+        .execute(&mut conn)
+        .unwrap();
     conn
 }
 
-fn insert_users(
-    size: usize,
-    conn: &TestConnection,
-    hair_color_init: impl Fn(usize) -> Option<&'static str>,
+fn insert_users<F: Fn(usize) -> Option<&'static str>, const N: usize>(
+    conn: &mut TestConnection,
+    hair_color_init: F,
 ) {
-    let data: Vec<_> = (0..size)
-        .map(|i| NewUser::new(&format!("User {}", i), hair_color_init(i)))
-        .collect();
-    insert_into(users::table)
-        .values(&data)
-        .execute(conn)
-        .unwrap();
+    const DUMMY_USER: NewUser = NewUser {
+        name: String::new(),
+        hair_color: None,
+    };
+
+    // There are stackoverflows on windows otherwise
+    if N > 1_000 {
+        let mut data = Box::new([DUMMY_USER; N]);
+
+        for (idx, user) in data.iter_mut().enumerate() {
+            *user = NewUser::new(&format!("User {}", idx), hair_color_init(idx));
+        }
+
+        insert_into(users::table)
+            .values(data)
+            .execute(conn)
+            .unwrap();
+    } else {
+        let mut data = [DUMMY_USER; N];
+
+        for (idx, user) in data.iter_mut().enumerate() {
+            *user = NewUser::new(&format!("User {}", idx), hair_color_init(idx));
+        }
+
+        insert_into(users::table)
+            .values(data)
+            .execute(conn)
+            .unwrap();
+    }
 }
 
 pub fn bench_trivial_query(b: &mut Bencher, size: usize) {
-    let conn = connection();
-    insert_users(size, &conn, |_| None);
+    let mut conn = connection();
+    match size {
+        1 => insert_users::<_, 1>(&mut conn, |_| None),
+        10 => insert_users::<_, 10>(&mut conn, |_| None),
+        100 => insert_users::<_, 100>(&mut conn, |_| None),
+        1_000 => insert_users::<_, 1_000>(&mut conn, |_| None),
+        10_000 => insert_users::<_, 10_000>(&mut conn, |_| None),
+        _ => unimplemented!(),
+    }
 
-    b.iter(|| users::table.load::<User>(&conn).unwrap())
+    b.iter(|| users::table.load::<User>(&mut conn).unwrap())
 }
 
 pub fn bench_trivial_query_boxed(b: &mut Bencher, size: usize) {
-    let conn = connection();
+    let mut conn = connection();
 
-    insert_users(size, &conn, |_| None);
-    b.iter(|| users::table.into_boxed().load::<User>(&conn).unwrap())
+    match size {
+        1 => insert_users::<_, 1>(&mut conn, |_| None),
+        10 => insert_users::<_, 10>(&mut conn, |_| None),
+        100 => insert_users::<_, 100>(&mut conn, |_| None),
+        1_000 => insert_users::<_, 1_000>(&mut conn, |_| None),
+        10_000 => insert_users::<_, 10_000>(&mut conn, |_| None),
+        _ => unimplemented!(),
+    }
+    b.iter(|| users::table.into_boxed().load::<User>(&mut conn).unwrap())
 }
 
 pub fn bench_trivial_query_raw(b: &mut Bencher, size: usize) {
-    let conn = connection();
-    insert_users(size, &conn, |_| None);
-
+    let mut conn = connection();
+    match size {
+        1 => insert_users::<_, 1>(&mut conn, |_| None),
+        10 => insert_users::<_, 10>(&mut conn, |_| None),
+        100 => insert_users::<_, 100>(&mut conn, |_| None),
+        1_000 => insert_users::<_, 1_000>(&mut conn, |_| None),
+        10_000 => insert_users::<_, 10_000>(&mut conn, |_| None),
+        _ => unimplemented!(),
+    }
     b.iter(|| {
         diesel::sql_query("SELECT id, name, hair_color FROM users")
-            .load::<User>(&conn)
+            .load::<User>(&mut conn)
             .unwrap()
     })
 }
 
 pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
-    let conn = connection();
-
-    insert_users(size, &conn, |i| {
-        Some(if i % 2 == 0 { "black" } else { "brown" })
-    });
+    let mut conn = connection();
+    let hair_color_callback = |i| Some(if i % 2 == 0 { "black" } else { "brown" });
+    match size {
+        1 => insert_users::<_, 1>(&mut conn, hair_color_callback),
+        10 => insert_users::<_, 10>(&mut conn, hair_color_callback),
+        100 => insert_users::<_, 100>(&mut conn, hair_color_callback),
+        1_000 => insert_users::<_, 1_000>(&mut conn, hair_color_callback),
+        10_000 => insert_users::<_, 10_000>(&mut conn, hair_color_callback),
+        _ => unimplemented!(),
+    }
 
     b.iter(|| {
         use self::users::dsl::*;
         let target = users
             .left_outer_join(posts::table)
-            .filter(hair_color.eq("black"))
-            .order(name.desc());
-        target.load::<(User, Option<Post>)>(&conn).unwrap()
+            .filter(hair_color.eq("black"));
+        target.load::<(User, Option<Post>)>(&mut conn).unwrap()
     })
 }
 
 pub fn bench_medium_complex_query_boxed(b: &mut Bencher, size: usize) {
-    let conn = connection();
-    insert_users(size, &conn, |i| {
-        Some(if i % 2 == 0 { "black" } else { "brown" })
-    });
+    let mut conn = connection();
+    let hair_color_callback = |i| Some(if i % 2 == 0 { "black" } else { "brown" });
+    match size {
+        1 => insert_users::<_, 1>(&mut conn, hair_color_callback),
+        10 => insert_users::<_, 10>(&mut conn, hair_color_callback),
+        100 => insert_users::<_, 100>(&mut conn, hair_color_callback),
+        1_000 => insert_users::<_, 1_000>(&mut conn, hair_color_callback),
+        10_000 => insert_users::<_, 10_000>(&mut conn, hair_color_callback),
+        _ => unimplemented!(),
+    }
 
     b.iter(|| {
         use self::users::dsl::*;
         let target = users
             .left_outer_join(posts::table)
             .filter(hair_color.eq("black"))
-            .order(name.desc())
             .into_boxed();
-        target.load::<(User, Option<Post>)>(&conn).unwrap()
+        target.load::<(User, Option<Post>)>(&mut conn).unwrap()
     })
 }
 
 pub fn bench_medium_complex_query_queryable_by_name(b: &mut Bencher, size: usize) {
-    let conn = connection();
-    insert_users(size, &conn, |i| {
-        Some(if i % 2 == 0 { "black" } else { "brown" })
-    });
+    let mut conn = connection();
+
+    let hair_color_callback = |i| Some(if i % 2 == 0 { "black" } else { "brown" });
+    match size {
+        1 => insert_users::<_, 1>(&mut conn, hair_color_callback),
+        10 => insert_users::<_, 10>(&mut conn, hair_color_callback),
+        100 => insert_users::<_, 100>(&mut conn, hair_color_callback),
+        1_000 => insert_users::<_, 1_000>(&mut conn, hair_color_callback),
+        10_000 => insert_users::<_, 10_000>(&mut conn, hair_color_callback),
+        _ => unimplemented!(),
+    }
+    #[cfg(feature = "postgres")]
+    let bind = "$1";
+    #[cfg(any(feature = "mysql", feature = "sqlite"))]
+    let bind = "?";
+
+    let query = format!(
+        "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
+         FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = {bind}"
+    );
+    let query = &query;
 
     b.iter(|| {
-        diesel::sql_query(
-            "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
-             FROM users as u LEFT JOIN posts as p on u.id = p.user_id",
-        )
-        .load::<(User, Option<Post>)>(&conn)
-        .unwrap()
+        diesel::sql_query(query)
+            .bind::<diesel::sql_types::Text, _>("black")
+            .load::<(User, Option<Post>)>(&mut conn)
+            .unwrap()
     })
 }
 
 pub fn bench_insert(b: &mut Bencher, size: usize) {
-    let conn = connection();
+    let conn = &mut connection();
 
-    b.iter(|| insert_users(size, &conn, |_| Some("hair_color")))
+    #[inline(always)]
+    fn hair_color_callback(_: usize) -> Option<&'static str> {
+        Some("hair_color")
+    }
+
+    let insert: fn(&mut TestConnection) = match size {
+        1 => |conn| insert_users::<_, 1>(conn, hair_color_callback),
+        10 => |conn| insert_users::<_, 10>(conn, hair_color_callback),
+        25 => |conn| insert_users::<_, 25>(conn, hair_color_callback),
+        50 => |conn| insert_users::<_, 50>(conn, hair_color_callback),
+        100 => |conn| insert_users::<_, 100>(conn, hair_color_callback),
+        _ => unimplemented!(),
+    };
+    let insert = &insert;
+
+    b.iter(|| {
+        let insert = insert;
+        insert(conn)
+    })
 }
 
 pub fn loading_associations_sequentially(b: &mut Bencher) {
@@ -252,12 +358,14 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
     const USER_NUMBER: usize = 100;
 
     // SETUP A TON OF DATA
-    let conn = connection();
-    insert_users(USER_NUMBER, &conn, |i| {
+    let mut conn = connection();
+
+    insert_users::<_, USER_NUMBER>(&mut conn, |i| {
         Some(if i % 2 == 0 { "black" } else { "brown" })
     });
 
-    let all_users = users::table.load::<User>(&conn).unwrap();
+    let all_users = users::table.load::<User>(&mut conn).unwrap();
+    assert_eq!(USER_NUMBER, all_users.len());
     let data: Vec<_> = all_users
         .iter()
         .flat_map(|user| {
@@ -268,38 +376,49 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
             })
         })
         .collect();
+    assert_eq!(data.len(), USER_NUMBER * 10);
     insert_into(posts::table)
         .values(&data)
-        .execute(&conn)
+        .execute(&mut conn)
         .unwrap();
-    let all_posts = posts::table.load::<Post>(&conn).unwrap();
-    let data: Vec<_> = all_posts
+    let all_posts = posts::table.load::<Post>(&mut conn).unwrap();
+    assert_eq!(all_posts.len(), data.len());
+    let comment_data: Vec<_> = all_posts
         .iter()
         .flat_map(|post| {
             let post_id = post.id;
             (0..10).map(move |i| {
                 let title = format!("Comment {} on post {}", i, post_id);
-                (title, post_id)
+                NewComment(post_id, title)
             })
         })
         .collect();
-    let comment_data: Vec<_> = data
-        .iter()
-        .map(|&(ref title, post_id)| NewComment(post_id, &title))
-        .collect();
+    assert_eq!(comment_data.len(), all_posts.len() * 10);
+    assert_eq!(comment_data.len(), USER_NUMBER * 10 * 10);
     insert_into(comments::table)
         .values(&comment_data)
-        .execute(&conn)
+        .execute(&mut conn)
         .unwrap();
+    let count = comments::table
+        .count()
+        .get_result::<i64>(&mut conn)
+        .unwrap();
+    assert_eq!(count as usize, comment_data.len());
 
+    let user_count = all_users.len();
+    let post_count = all_posts.len();
+    let comment_count = count as usize;
     // ACTUAL BENCHMARK
     b.iter(|| {
-        let users = users::table.load::<User>(&conn).unwrap();
-        let posts = Post::belonging_to(&users).load::<Post>(&conn).unwrap();
+        let users = users::table.load::<User>(&mut conn).unwrap();
+        assert_eq!(users.len(), user_count);
+        let posts = Post::belonging_to(&users).load::<Post>(&mut conn).unwrap();
+        assert_eq!(posts.len(), post_count);
         let comments = Comment::belonging_to(&posts)
-            .load::<Comment>(&conn)
-            .unwrap()
-            .grouped_by(&posts);
+            .load::<Comment>(&mut conn)
+            .unwrap();
+        assert_eq!(comments.len(), comment_count);
+        let comments = comments.grouped_by(&posts);
         let posts_and_comments = posts.into_iter().zip(comments).grouped_by(&users);
         users
             .into_iter()

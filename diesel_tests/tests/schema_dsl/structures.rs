@@ -8,14 +8,11 @@ pub struct CreateTable<'a, Cols> {
 
 impl<'a, Cols> CreateTable<'a, Cols> {
     pub fn new(name: &'a str, columns: Cols) -> Self {
-        CreateTable {
-            name: name,
-            columns: columns,
-        }
+        CreateTable { name, columns }
     }
 }
 
-impl<'a, Cols, Conn> RunQueryDsl<Conn> for CreateTable<'a, Cols> {}
+impl<Cols, Conn> RunQueryDsl<Conn> for CreateTable<'_, Cols> {}
 
 pub struct Column<'a, T> {
     name: &'a str,
@@ -26,8 +23,8 @@ pub struct Column<'a, T> {
 impl<'a, T> Column<'a, T> {
     pub fn new(name: &'a str, type_name: &'a str) -> Self {
         Column {
-            name: name,
-            type_name: type_name,
+            name,
+            type_name,
             _marker: PhantomData,
         }
     }
@@ -36,7 +33,7 @@ impl<'a, T> Column<'a, T> {
         PrimaryKey(self)
     }
 
-    pub fn default(self, expr: &str) -> Default<Self> {
+    pub fn default(self, expr: &str) -> Default<'_, Self> {
         Default {
             column: self,
             value: expr,
@@ -60,8 +57,8 @@ pub struct AutoIncrement<Col>(Col);
 
 pub struct NotNull<Col>(Col);
 
-impl<'a, T> NotNull<Column<'a, T>> {
-    pub fn default(self, expr: &str) -> Default<Self> {
+impl<T> NotNull<Column<'_, T>> {
+    pub fn default(self, expr: &str) -> Default<'_, Self> {
         Default {
             column: self,
             value: expr,
@@ -84,12 +81,12 @@ use diesel::result::QueryResult;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
 
-impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols>
+impl<DB, Cols> QueryFragment<DB> for CreateTable<'_, Cols>
 where
     DB: Backend,
     Cols: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         out.push_sql("CREATE TABLE IF NOT EXISTS ");
         out.push_identifier(self.name)?;
@@ -100,17 +97,17 @@ where
     }
 }
 
-impl<'a, Cols> QueryId for CreateTable<'a, Cols> {
+impl<Cols> QueryId for CreateTable<'_, Cols> {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<'a, DB, T> QueryFragment<DB> for Column<'a, T>
+impl<DB, T> QueryFragment<DB> for Column<'_, T>
 where
     DB: Backend,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         out.push_identifier(self.name)?;
         out.push_sql(" ");
@@ -119,7 +116,7 @@ where
     }
 }
 
-impl<'a, Cols> QueryId for Column<'a, Cols> {
+impl<Cols> QueryId for Column<'_, Cols> {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
@@ -130,7 +127,7 @@ where
     DB: Backend,
     Col: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(" PRIMARY KEY");
@@ -149,7 +146,7 @@ impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col>
 where
     Col: QueryFragment<Sqlite>,
 {
-    fn walk_ast(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(" AUTOINCREMENT");
@@ -162,7 +159,7 @@ impl<Col> QueryFragment<Mysql> for AutoIncrement<Col>
 where
     Col: QueryFragment<Mysql>,
 {
-    fn walk_ast(&self, mut out: AstPass<Mysql>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(" AUTO_INCREMENT");
@@ -177,8 +174,8 @@ impl<Col> QueryId for AutoIncrement<Col> {
 }
 
 #[cfg(feature = "postgres")]
-impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, diesel::sql_types::Integer>>> {
-    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+impl QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'_, diesel::sql_types::Integer>>> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         out.push_identifier((self.0).0.name)?;
         out.push_sql(" SERIAL PRIMARY KEY");
@@ -191,7 +188,7 @@ where
     DB: Backend,
     Col: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(" NOT NULL");
@@ -205,12 +202,12 @@ impl<Col> QueryId for NotNull<Col> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col>
+impl<DB, Col> QueryFragment<DB> for Default<'_, Col>
 where
     DB: Backend,
     Col: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.column.walk_ast(out.reborrow())?;
         out.push_sql(" DEFAULT ");
@@ -219,7 +216,7 @@ where
     }
 }
 
-impl<'a, Col> QueryId for Default<'a, Col> {
+impl<Col> QueryId for Default<'_, Col> {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;

@@ -1,11 +1,18 @@
-error[E0277]: the trait bound `users::table: diesel::query_source::AppearsInFromClause<posts::table>` is not satisfied
-  --> $DIR/boxed_queries_require_selectable_expression_for_order.rs:21:37
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+  --> tests/fail/boxed_queries_require_selectable_expression_for_order.rs:23:37
    |
-21 |     users::table.into_boxed::<Pg>().order(posts::title.desc());
-   |                                     ^^^^^ the trait `diesel::query_source::AppearsInFromClause<posts::table>` is not implemented for `users::table`
+LL |     users::table.into_boxed::<Pg>().order(posts::title.desc());
+   |                                     ^^^^^ expected `Once`, found `Never`
    |
-   = help: the following implementations were found:
-             <users::table as diesel::query_source::AppearsInFromClause<users::table>>
-   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `posts::columns::title`
-   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `diesel::expression::operators::Desc<posts::columns::title>`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::methods::OrderDsl<diesel::expression::operators::Desc<posts::columns::title>>` for `diesel::query_builder::BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), users::table, diesel::pg::Pg>`
+note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
+  --> tests/fail/boxed_queries_require_selectable_expression_for_order.rs:16:9
+   |
+LL |         title -> VarChar,
+   |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 1 redundant requirement hidden
+   = note: required for `diesel::expression::operators::Desc<posts::columns::title>` to implement `AppearsOnTable<users::table>`
+   = note: required for `BoxedSelectStatement<'_, (Integer, ...), ..., ...>` to implement `OrderDsl<Desc<title>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0271`.

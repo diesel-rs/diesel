@@ -1,6 +1,0 @@
-#!/bin/sh
-set -e
-
-for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
-  (cd $dir && ./test_all)
-done

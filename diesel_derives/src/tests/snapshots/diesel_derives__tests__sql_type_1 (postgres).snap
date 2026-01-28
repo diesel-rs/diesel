@@ -1,0 +1,20 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(SqlType)]\n#[diesel(postgres_type(oid = 42, array_oid = 142))]\nstruct Integer;\n"
+---
+const _: () = {
+    use diesel;
+    impl diesel::sql_types::SqlType for Integer {
+        type IsNull = diesel::sql_types::is_nullable::NotNull;
+        const IS_ARRAY: bool = false;
+    }
+    impl diesel::sql_types::SingleValue for Integer {}
+    use diesel::pg::{PgMetadataLookup, PgTypeMetadata};
+    impl diesel::sql_types::HasSqlType<Integer> for diesel::pg::Pg {
+        fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
+            PgTypeMetadata::new(42, 142)
+        }
+    }
+};

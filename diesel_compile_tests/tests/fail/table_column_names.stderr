@@ -1,15 +1,10 @@
-error: Column `users` cannot be named the same as its table.
- You may use `#[sql_name = "users"]` to reference the table's `users` column.
- Docs available at: `https://docs.diesel.rs/diesel/macro.table.html`
-
- --> $DIR/table_column_names.rs:3:1
+error: column `users` cannot be named the same as it's table.
+       you may use `#[sql_name = "users"]` to reference the table's `users` column 
+       docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`
+       
+ --> tests/fail/table_column_names.rs:7:9
   |
-3 | / table! {
-4 | |     users {
-5 | |         id -> Integer,
-6 | |         users -> Integer,
-7 | |     }
-8 | | }
-  | |_^
+LL |         users -> Integer,
+  |         ^^^^^
   |
-  = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

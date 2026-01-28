@@ -3,9 +3,11 @@
 use std::error::Error;
 use std::result;
 
-use crate::backend::{self, Backend};
+use crate::backend::Backend;
+use crate::expression::select_by::SelectBy;
 use crate::row::{NamedRow, Row};
 use crate::sql_types::{SingleValue, SqlType, Untyped};
+use crate::Selectable;
 
 /// A specialized result type representing the result of deserializing
 /// a value from the database.
@@ -20,9 +22,32 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// trait is to convert from a tuple of Rust values that have been deserialized
 /// into your struct.
 ///
-/// This trait can be [derived](derive.Queryable.html)
+/// This trait can be [derived](derive@Queryable)
+///
+/// ## How to resolve compiler errors while loading data from the database
+///
+/// In case you getting uncomprehensable compiler errors while loading data
+/// from the database you might want to consider using
+/// [`#[derive(Selectable)]`](derive@crate::prelude::Selectable) +
+/// `#[diesel(check_for_backend(YourBackendType))]` to check for mismatching fields at compile
+/// time. This drastically improves the quality of the generated error messages by pointing
+/// to concrete mismatches at field level. You need to specify the concrete database backend
+/// this specific struct is indented to be used with, as otherwise rustc cannot correctly
+/// identify the required deserialization implementation.
+///
+/// ## Interaction with `NULL`/`Option`
+/// [`Nullable`][crate::sql_types::Nullable] types can be queried into `Option`.
+/// This is valid for single fields, tuples, and structures with `Queryable`.
+///
+/// With tuples and structs, the process for deserializing an `Option<(A,B,C)>` is
+/// to attempt to deserialize `A`, `B` and `C`, and if either of these return an
+/// [`UnexpectedNullError`](crate::result::UnexpectedNullError), the `Option` will be
+/// deserialized as `None`.
+/// If all succeed, the `Option` will be deserialized as `Some((a,b,c))`.
 ///
 /// # Examples
+///
+/// ## Simple mapping from query to struct
 ///
 /// If we just want to map a query to our struct, we can use `derive`.
 ///
@@ -41,13 +66,119 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// let first_user = users.first(&connection)?;
-/// let expected = User { id: 1, name: "Sean".into() };
+/// #     let connection = &mut establish_connection();
+/// let first_user = users.order_by(id).first(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "Sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
 /// ```
+///
+/// ## Interaction with `NULL`/`Option`
+///
+/// ### Single field
+/// ```rust
+/// # include!("doctest_setup.rs");
+/// # use diesel::sql_types::*;
+/// #
+/// table! {
+///     animals {
+///         id -> Integer,
+///         species -> VarChar,
+///         legs -> Integer,
+///         name -> Nullable<VarChar>,
+///     }
+/// }
+/// #
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct Animal {
+///     id: i32,
+///     name: Option<String>,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::animals::dsl::*;
+/// #     let connection = &mut establish_connection();
+/// let all_animals = animals.select((id, name)).order_by(id).load(connection)?;
+/// let expected = vec![
+///     Animal {
+///         id: 1,
+///         name: Some("Jack".to_owned()),
+///     },
+///     Animal { id: 2, name: None },
+/// ];
+/// assert_eq!(expected, all_animals);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// ### Multiple fields
+/// ```rust
+/// # include!("doctest_setup.rs");
+/// #
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct UserWithPost {
+///     id: i32,
+///     post: Option<Post>,
+/// }
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct Post {
+///     id: i32,
+///     title: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::{posts, users};
+/// #     let connection = &mut establish_connection();
+/// #     diesel::insert_into(users::table)
+/// #         .values(users::name.eq("Ruby"))
+/// #         .execute(connection)?;
+/// let all_posts = users::table
+///     .left_join(posts::table)
+///     .select((users::id, (posts::id, posts::title).nullable()))
+///     .order_by((users::id, posts::id))
+///     .load(connection)?;
+/// let expected = vec![
+///     UserWithPost {
+///         id: 1,
+///         post: Some(Post {
+///             id: 1,
+///             title: "My first post".to_owned(),
+///         }),
+///     },
+///     UserWithPost {
+///         id: 1,
+///         post: Some(Post {
+///             id: 2,
+///             title: "About Rust".to_owned(),
+///         }),
+///     },
+///     UserWithPost {
+///         id: 2,
+///         post: Some(Post {
+///             id: 3,
+///             title: "My first post too".to_owned(),
+///         }),
+///     },
+///     UserWithPost { id: 3, post: None },
+/// ];
+/// assert_eq!(expected, all_posts);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// ## `deserialize_as` attribute
 ///
 /// If we want to do additional work during deserialization, we can use
 /// `deserialize_as` to use a different implementation.
@@ -83,7 +214,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #[derive(Queryable, PartialEq, Debug)]
 /// struct User {
 ///     id: i32,
-///     #[diesel(deserialize_as = "LowercaseString")]
+///     #[diesel(deserialize_as = LowercaseString)]
 ///     name: String,
 /// }
 ///
@@ -93,26 +224,30 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// let first_user = users.first(&connection)?;
-/// let expected = User { id: 1, name: "sean".into() };
+/// #     let connection = &mut establish_connection();
+/// let first_user = users.first(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
 /// ```
+///
+/// ## Manual implementation
 ///
 /// Alternatively, we can implement the trait for our struct manually.
 ///
 /// ```rust
 /// # include!("doctest_setup.rs");
 /// #
-/// use schema::users;
 /// use diesel::deserialize::{self, Queryable};
+/// use schema::users;
 ///
 /// # /*
 /// type DB = diesel::sqlite::Sqlite;
 /// # */
-///
 /// #[derive(PartialEq, Debug)]
 /// struct User {
 ///     id: i32,
@@ -136,9 +271,12 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// let first_user = users.first(&connection)?;
-/// let expected = User { id: 1, name: "sean".into() };
+/// #     let connection = &mut establish_connection();
+/// let first_user = users.first(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -161,9 +299,9 @@ pub use diesel_derives::Queryable;
 
 /// Deserializes the result of a query constructed with [`sql_query`].
 ///
-/// This trait can be [derived](derive.QueryableByName.html)
+/// This trait can be [derived](derive@QueryableByName)
 ///
-/// [`sql_query`]: ../fn.sql_query.html
+/// [`sql_query`]: crate::sql_query()
 ///
 /// # Examples
 ///
@@ -175,7 +313,6 @@ pub use diesel_derives::Queryable;
 /// # use diesel::sql_query;
 /// #
 /// #[derive(QueryableByName, PartialEq, Debug)]
-/// #[table_name = "users"]
 /// struct User {
 ///     id: i32,
 ///     name: String,
@@ -186,10 +323,12 @@ pub use diesel_derives::Queryable;
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let connection = establish_connection();
-/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(&connection)?;
-/// let expected = User { id: 1, name: "Sean".into() };
+/// #     let connection = &mut establish_connection();
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1").get_result(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "Sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -218,17 +357,15 @@ pub use diesel_derives::Queryable;
 ///     DB: Backend,
 ///     String: FromSql<ST, DB>,
 /// {
-///     fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
-///         String::from_sql(bytes)
-///             .map(|s| LowercaseString(s.to_lowercase()))
+///     fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+///         String::from_sql(bytes).map(|s| LowercaseString(s.to_lowercase()))
 ///     }
 /// }
 ///
 /// #[derive(QueryableByName, PartialEq, Debug)]
-/// #[table_name = "users"]
 /// struct User {
 ///     id: i32,
-///     #[diesel(deserialize_as = "LowercaseString")]
+///     #[diesel(deserialize_as = LowercaseString)]
 ///     name: String,
 /// }
 ///
@@ -237,10 +374,12 @@ pub use diesel_derives::Queryable;
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let connection = establish_connection();
-/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(&connection)?;
-/// let expected = User { id: 1, name: "sean".into() };
+/// #     let connection = &mut establish_connection();
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1").get_result(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "sean".into(),
+/// };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -302,7 +441,7 @@ pub use diesel_derives::QueryableByName;
 ///     DB: Backend,
 ///     i32: FromSql<Integer, DB>,
 /// {
-///     fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
+///     fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
 ///         match i32::from_sql(bytes)? {
 ///             1 => Ok(MyEnum::A),
 ///             2 => Ok(MyEnum::B),
@@ -311,9 +450,13 @@ pub use diesel_derives::QueryableByName;
 ///     }
 /// }
 /// ```
+#[diagnostic::on_unimplemented(
+    message = "cannot deserialize a value of the database type `{A}` as `{Self}`",
+    note = "double check your type mappings via the documentation of `{A}`"
+)]
 pub trait FromSql<A, DB: Backend>: Sized {
     /// See the trait documentation.
-    fn from_sql(bytes: backend::RawValue<DB>) -> Result<Self>;
+    fn from_sql(bytes: DB::RawValue<'_>) -> Result<Self>;
 
     /// A specialized variant of `from_sql` for handling null values.
     ///
@@ -323,7 +466,7 @@ pub trait FromSql<A, DB: Backend>: Sized {
     /// If your custom type supports null values you need to provide a
     /// custom implementation.
     #[inline(always)]
-    fn from_nullable_sql(bytes: Option<backend::RawValue<DB>>) -> Result<Self> {
+    fn from_nullable_sql(bytes: Option<DB::RawValue<'_>>) -> Result<Self> {
         match bytes {
             Some(bytes) => Self::from_sql(bytes),
             None => Err(Box::new(crate::result::UnexpectedNullError)),
@@ -335,8 +478,13 @@ pub trait FromSql<A, DB: Backend>: Sized {
 ///
 /// Diesel provides wild card implementations of this trait for all types
 /// that implement one of the following traits:
-///    * [`Queryable`](trait.Queryable.html)
-///    * [`QueryableByName`](trait.QueryableByName.html)
+///    * [`Queryable`]
+///    * [`QueryableByName`]
+#[diagnostic::on_unimplemented(
+    note = "double check your type mappings via the documentation of `{ST}`",
+    note = "`diesel::sql_query` requires the loading target to column names for loading values.\n\
+             You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`"
+)]
 pub trait FromSqlRow<ST, DB: Backend>: Sized {
     /// See the trait documentation.
     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self>;
@@ -366,16 +514,15 @@ where
     }
 }
 
-/// A helper trait to deserialize a statically sized row into an tuple
+/// A helper trait to deserialize a statically sized row into a tuple
 ///
-/// **If you see an error message mentioning this trait you likly
-///   trying to map the result of an query to an struct with missmatching
-///   field types. Recheck your field order and the concrete field types**
+/// **If you see an error message mentioning this trait you are likely trying to
+/// map the result of a query to a struct with mismatching field types. Recheck
+/// your field order and the concrete field types.**
 ///
 /// You should not need to implement this trait directly.
 /// Diesel provides wild card implementations for any supported tuple size
 /// and for any type that implements `FromSql<ST, DB>`.
-///
 // This is a distinct trait from `FromSqlRow` because otherwise we
 // are getting conflicting implementation errors for our `FromSqlRow`
 // implementation for tuples and our wild card impl for all types
@@ -385,13 +532,29 @@ pub trait FromStaticSqlRow<ST, DB: Backend>: Sized {
     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self>;
 }
 
+#[doc(hidden)]
+pub trait SqlTypeOrSelectable {}
+
+impl<ST> SqlTypeOrSelectable for ST where ST: SqlType + SingleValue {}
+impl<U, DB> SqlTypeOrSelectable for SelectBy<U, DB>
+where
+    U: Selectable<DB>,
+    DB: Backend,
+{
+}
+
 impl<T, ST, DB> FromSqlRow<ST, DB> for T
 where
     T: Queryable<ST, DB>,
-    ST: SqlType,
+    ST: SqlTypeOrSelectable,
     DB: Backend,
     T::Row: FromStaticSqlRow<ST, DB>,
 {
+    // This inline(always) attribute is here as benchmarks have shown
+    // up to 5% reduction in instruction count of having it here
+    //
+    // A plain inline attribute does not show similar improvements
+    #[inline(always)]
     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self> {
         let row = <T::Row as FromStaticSqlRow<ST, DB>>::build_from_row(row)?;
         T::build(row)
@@ -408,7 +571,13 @@ where
         use crate::row::Field;
 
         let field = row.get(0).ok_or(crate::result::UnexpectedEndOfRow)?;
-        T::from_nullable_sql(field.value())
+        T::from_nullable_sql(field.value()).map_err(|e| {
+            if e.is::<crate::result::UnexpectedNullError>() {
+                e
+            } else {
+                Box::new(crate::result::DeserializeFieldError::new(field, e))
+            }
+        })
     }
 }
 
@@ -416,7 +585,7 @@ where
 // then complains in third party crates that
 // diesel may implement `SingleValue` for tuples
 // in the future. While that is theoretically true,
-// that will likly not happen in practice.
+// that will likely not happen in practice.
 // If we get negative trait impls at some point in time
 // it should be possible to make this work.
 /*impl<T, ST, DB> Queryable<ST, DB> for T
@@ -434,9 +603,32 @@ where
 
 impl<T, ST, DB> StaticallySizedRow<ST, DB> for T
 where
-    ST: SqlType + crate::util::TupleSize,
+    ST: SqlTypeOrSelectable + crate::util::TupleSize,
     T: Queryable<ST, DB>,
     DB: Backend,
 {
     const FIELD_COUNT: usize = <ST as crate::util::TupleSize>::SIZE;
 }
+
+/// A helper trait for giving a type a useful default value.
+///
+/// This is needed for types that can be used as range to represent the empty range as
+/// (Bound::Excluded(DEFAULT), Bound::Excluded(DEFAULT)).
+/// When possible, implementations of this trait should fall back to using std::default::Default.
+#[allow(dead_code)]
+pub(crate) trait Defaultable {
+    /// Returns the "default value" for a type.
+    fn default_value() -> Self;
+}
+
+// We cannot have this impl because rustc
+// then complains in third party crates that
+// diesel may implement `Default`in the future.
+// If we get negative trait impls at some point in time
+// it should be possible to make this work.
+//// Defaultable for types that has Default
+//impl<T: Default> Defaultable for T {
+//    fn default_value() -> Self {
+//        T::default()
+//    }
+//}

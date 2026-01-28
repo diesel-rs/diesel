@@ -1,6 +1,10 @@
-use crate::backend::Backend;
+//! This module contains the query dsl node definition
+//! for `EXISTS` expressions
+
+use crate::backend::{sql_dialect, Backend, SqlDialect};
 use crate::expression::subselect::Subselect;
 use crate::expression::{AppearsOnTable, Expression, SelectableExpression, ValidGrouping};
+use crate::helper_types;
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types::Bool;
@@ -19,21 +23,32 @@ use crate::sql_types::Bool;
 /// #     use schema::users::dsl::*;
 /// #     use diesel::select;
 /// #     use diesel::dsl::exists;
-/// #     let connection = establish_connection();
-/// let sean_exists = select(exists(users.filter(name.eq("Sean"))))
-///     .get_result(&connection);
-/// let jim_exists = select(exists(users.filter(name.eq("Jim"))))
-///     .get_result(&connection);
+/// #     let connection = &mut establish_connection();
+/// let sean_exists = select(exists(users.filter(name.eq("Sean")))).get_result(connection);
+/// let jim_exists = select(exists(users.filter(name.eq("Jim")))).get_result(connection);
 /// assert_eq!(Ok(true), sean_exists);
 /// assert_eq!(Ok(false), jim_exists);
 /// # }
 /// ```
-pub fn exists<T>(query: T) -> Exists<T> {
-    Exists(Subselect::new(query))
+pub fn exists<T>(query: T) -> helper_types::exists<T> {
+    Exists {
+        subselect: Subselect::new(query),
+    }
 }
 
+/// The query dsl node that represents a SQL `EXISTS (subselect)` expression.
+///
+/// Third party backend can customize the [`QueryFragment`]
+/// implementation of this query dsl node via
+/// [`SqlDialect::ExistsSyntax`]. A customized implementation
+/// is expected to provide the same semantics as an ANSI SQL
+/// `EXIST (subselect)` expression.
 #[derive(Clone, Copy, QueryId, Debug)]
-pub struct Exists<T>(pub Subselect<T, Bool>);
+#[non_exhaustive]
+pub struct Exists<T> {
+    /// The inner subselect
+    pub subselect: Subselect<T, Bool>,
+}
 
 impl<T> Expression for Exists<T>
 where
@@ -49,29 +64,24 @@ where
     type IsAggregate = <Subselect<T, Bool> as ValidGrouping<GB>>::IsAggregate;
 }
 
-#[cfg(not(feature = "unstable"))]
 impl<T, DB> QueryFragment<DB> for Exists<T>
 where
     DB: Backend,
-    T: QueryFragment<DB>,
+    Self: QueryFragment<DB, DB::ExistsSyntax>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        out.push_sql("EXISTS (");
-        self.0.walk_ast(out.reborrow())?;
-        out.push_sql(")");
-        Ok(())
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::ExistsSyntax>>::walk_ast(self, pass)
     }
 }
 
-#[cfg(feature = "unstable")]
-impl<T, DB> QueryFragment<DB> for Exists<T>
+impl<T, DB> QueryFragment<DB, sql_dialect::exists_syntax::AnsiSqlExistsSyntax> for Exists<T>
 where
-    DB: Backend,
+    DB: Backend + SqlDialect<ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax>,
     T: QueryFragment<DB>,
 {
-    default fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("EXISTS (");
-        self.0.walk_ast(out.reborrow())?;
+        self.subselect.walk_ast(out.reborrow())?;
         out.push_sql(")");
         Ok(())
     }

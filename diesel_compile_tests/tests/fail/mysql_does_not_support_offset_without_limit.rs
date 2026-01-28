@@ -9,11 +9,17 @@ table! {
     }
 }
 
-
-
 fn main() {
-    let connection = MysqlConnection::establish("").unwrap();
-    users::table.offset(42).get_result::<(i32, String)>(&connection);
+    let mut connection = MysqlConnection::establish("").unwrap();
+    users::table
+        .offset(42)
+        .get_result::<(i32, String)>(&mut connection);
+    //~^ ERROR: `LimitOffsetClause<NoLimitClause, ...>` is no valid SQL fragment for the `Mysql` backend
 
-    users::table.offset(42).into_boxed().get_result::<(i32, String)>(&connection);
+    users::table
+        .offset(42)
+        .into_boxed()
+        //~^ ERROR: the trait bound `LimitOffsetClause<..., ...>: IntoBoxedClause<'_, ...>` is not satisfied
+        //~| ERROR: the trait bound `LimitOffsetClause<..., ...>: IntoBoxedClause<'_, ...>` is not satisfied
+        .get_result::<(i32, String)>(&mut connection);
 }

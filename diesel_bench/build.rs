@@ -1,9 +1,9 @@
 extern crate diesel;
 extern crate diesel_migrations as migrations;
-extern crate dotenv;
+extern crate dotenvy;
 use self::diesel::*;
-use self::dotenv::dotenv;
-use std::{env, io};
+use self::dotenvy::dotenv;
+use std::env;
 
 #[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres")))]
 compile_error!(
@@ -32,7 +32,7 @@ fn connection() -> MysqlConnection {
 }
 
 #[cfg(feature = "postgres")]
-const MIGRATION_SUBDIR: &str = "postgresql";
+const MIGRATION_SUBDIR: &str = "postgres";
 
 #[cfg(feature = "sqlite")]
 const MIGRATION_SUBDIR: &str = "sqlite";
@@ -52,14 +52,17 @@ fn database_url_from_env(backend_specific_env_var: &str) -> String {
 }
 
 fn main() {
-    let migrations_dir = migrations::find_migrations_directory()
-        .unwrap()
+    use migrations::MigrationHarness;
+    use std::path::PathBuf;
+
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let migrations_dir = manifest_dir
+        .join("..")
+        .join("migrations")
         .join(MIGRATION_SUBDIR);
+    let migrations = migrations::FileBasedMigrations::from_path(&migrations_dir).unwrap();
+
     println!("cargo:rerun-if-changed={}", migrations_dir.display());
-    migrations::run_pending_migrations_in_directory(
-        &connection(),
-        &migrations_dir,
-        &mut io::sink(),
-    )
-    .unwrap();
+
+    connection().run_pending_migrations(migrations).unwrap();
 }

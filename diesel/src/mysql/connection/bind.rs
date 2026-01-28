@@ -1,21 +1,44 @@
+#![allow(unsafe_code)] // module uses ffi
 use mysqlclient_sys as ffi;
-use std::mem;
+use std::mem::MaybeUninit;
+use std::mem::{self, ManuallyDrop};
 use std::ops::Index;
 use std::os::raw as libc;
+use std::ptr::NonNull;
 
-use super::stmt::MysqlFieldMetadata;
-use super::stmt::Statement;
+use super::stmt::{MysqlFieldMetadata, StatementUse};
 use crate::mysql::connection::stmt::StatementMetadata;
-use crate::mysql::types::MYSQL_TIME;
+use crate::mysql::types::date_and_time::MysqlTime;
 use crate::mysql::{MysqlType, MysqlValue};
 use crate::result::QueryResult;
 
-pub struct Binds {
+fn bind_buffer(data: Vec<u8>) -> (Option<NonNull<u8>>, libc::c_ulong, usize) {
+    let mut data = ManuallyDrop::new(data);
+    (
+        NonNull::new(data.as_mut_ptr()),
+        data.len() as libc::c_ulong,
+        data.capacity(),
+    )
+}
+
+pub(super) struct PreparedStatementBinds(Binds);
+
+pub(super) struct OutputBinds(Binds);
+
+impl Clone for OutputBinds {
+    fn clone(&self) -> Self {
+        Self(Binds {
+            data: self.0.data.clone(),
+        })
+    }
+}
+
+struct Binds {
     data: Vec<BindData>,
 }
 
-impl Binds {
-    pub fn from_input_data<Iter>(input: Iter) -> QueryResult<Self>
+impl PreparedStatementBinds {
+    pub(super) fn from_input_data<Iter>(input: Iter) -> Self
     where
         Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
@@ -24,34 +47,34 @@ impl Binds {
             .map(BindData::for_input)
             .collect::<Vec<_>>();
 
-        Ok(Binds { data })
+        Self(Binds { data })
     }
 
-    pub fn from_output_types(types: Vec<Option<MysqlType>>, metadata: &StatementMetadata) -> Self {
-        let data = metadata
-            .fields()
-            .iter()
-            .zip(types.into_iter().chain(std::iter::repeat(None)))
-            .map(|(field, tpe)| BindData::for_output(tpe, field))
-            .collect();
-
-        Binds { data }
-    }
-
-    pub fn with_mysql_binds<F, T>(&mut self, f: F) -> T
+    pub(super) fn with_mysql_binds<F, T>(&mut self, f: F) -> T
     where
         F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
     {
-        let mut binds = self
-            .data
-            .iter_mut()
-            .map(|x| unsafe { x.mysql_bind() })
-            .collect::<Vec<_>>();
-        f(binds.as_mut_ptr())
+        self.0.with_mysql_binds(f)
+    }
+}
+
+impl OutputBinds {
+    pub(super) fn from_output_types(
+        types: &[Option<MysqlType>],
+        metadata: &StatementMetadata,
+    ) -> Self {
+        let data = metadata
+            .fields()
+            .iter()
+            .zip(types.iter().copied().chain(std::iter::repeat(None)))
+            .map(|(field, tpe)| BindData::for_output(tpe, field))
+            .collect();
+
+        Self(Binds { data })
     }
 
-    pub fn populate_dynamic_buffers(&mut self, stmt: &Statement) -> QueryResult<()> {
-        for (i, data) in self.data.iter_mut().enumerate() {
+    pub(super) fn populate_dynamic_buffers(&mut self, stmt: &StatementUse<'_>) -> QueryResult<()> {
+        for (i, data) in self.0.data.iter_mut().enumerate() {
             data.did_numeric_overflow_occur()?;
             // This is safe because we are re-binding the invalidated buffers
             // at the end of this function
@@ -67,28 +90,46 @@ impl Binds {
         unsafe { self.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr)) }
     }
 
-    pub fn update_buffer_lengths(&mut self) {
-        for data in &mut self.data {
+    pub(super) fn update_buffer_lengths(&mut self) {
+        for data in &mut self.0.data {
             data.update_buffer_length();
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.data.len()
+    pub(super) fn with_mysql_binds<F, T>(&mut self, f: F) -> T
+    where
+        F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
+    {
+        self.0.with_mysql_binds(f)
     }
 }
 
-impl Index<usize> for Binds {
+impl Binds {
+    fn with_mysql_binds<F, T>(&mut self, f: F) -> T
+    where
+        F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
+    {
+        let mut binds = self
+            .data
+            .iter_mut()
+            .map(|x| unsafe { x.mysql_bind() })
+            .collect::<Vec<_>>();
+        f(binds.as_mut_ptr())
+    }
+}
+
+impl Index<usize> for OutputBinds {
     type Output = BindData;
     fn index(&self, index: usize) -> &Self::Output {
-        &self.data[index]
+        &self.0.data[index]
     }
 }
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug)]
     pub(crate) struct Flags: u32 {
         const NOT_NULL_FLAG = 1;
-        const PRI_KEY_FAG = 2;
+        const PRI_KEY_FLAG = 2;
         const UNIQUE_KEY_FLAG = 4;
         const MULTIPLE_KEY_FLAG = 8;
         const BLOB_FLAG = 16;
@@ -114,7 +155,7 @@ bitflags::bitflags! {
 impl From<u32> for Flags {
     fn from(flags: u32) -> Self {
         Flags::from_bits(flags).expect(
-            "We encountered a unknown type flag while parsing \
+            "We encountered an unknown type flag while parsing \
              Mysql's type information. If you see this error message \
              please open an issue at diesels github page.",
         )
@@ -122,32 +163,85 @@ impl From<u32> for Flags {
 }
 
 #[derive(Debug)]
-pub struct BindData {
+pub(super) struct BindData {
     tpe: ffi::enum_field_types,
-    bytes: Vec<u8>,
+    bytes: Option<NonNull<u8>>,
     length: libc::c_ulong,
+    capacity: usize,
     flags: Flags,
     is_null: ffi::my_bool,
     is_truncated: Option<ffi::my_bool>,
 }
 
+// We need to write a manual clone impl
+// as we need to clone the underlying buffer
+// instead of just copying the pointer
+impl Clone for BindData {
+    fn clone(&self) -> Self {
+        let (ptr, len, capacity) = if let Some(ptr) = self.bytes {
+            let slice = unsafe {
+                // We know that this points to a slice and the pointer is not null at this
+                // location
+                // The length pointer is valid as long as none missuses `bind_for_truncated_data`
+                // as this is the only location that updates the length field before the corresponding data are
+                // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
+                // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
+                // invariant.
+                std::slice::from_raw_parts(
+                    ptr.as_ptr(),
+                    self.length.try_into().expect("usize is at least 32bit"),
+                )
+            };
+            bind_buffer(slice.to_owned())
+        } else {
+            (None, 0, 0)
+        };
+        Self {
+            tpe: self.tpe,
+            bytes: ptr,
+            length: len,
+            capacity,
+            flags: self.flags,
+            is_null: self.is_null,
+            is_truncated: self.is_truncated,
+        }
+    }
+}
+
+impl Drop for BindData {
+    fn drop(&mut self) {
+        if let Some(bytes) = self.bytes {
+            std::mem::drop(unsafe {
+                // We know that this buffer was allocated by a vector, so constructing a vector from it is fine
+                // We know the correct capacity here
+                // We use 0 as length to prevent situations where the length is already updated but
+                // no date are already written as we could touch uninitialized memory otherwise
+                // Using 0 as length is fine as we don't need to call drop for `u8`
+                // (as there is no drop impl for primitive types)
+                Vec::from_raw_parts(bytes.as_ptr(), 0, self.capacity)
+            });
+            self.bytes = None;
+        }
+    }
+}
+
 impl BindData {
     fn for_input((tpe, data): (MysqlType, Option<Vec<u8>>)) -> Self {
-        let is_null = if data.is_none() { 1 } else { 0 };
-        let bytes = data.unwrap_or_default();
-        let length = bytes.len() as libc::c_ulong;
         let (tpe, flags) = tpe.into();
-        BindData {
+        let is_null = ffi::my_bool::from(data.is_none());
+        let (ptr, len, capacity) = bind_buffer(data.unwrap_or_default());
+        Self {
             tpe,
-            bytes,
-            length,
+            bytes: ptr,
+            length: len,
+            capacity,
+            flags,
             is_null,
             is_truncated: None,
-            flags,
         }
     }
 
-    fn for_output(tpe: Option<MysqlType>, metadata: &MysqlFieldMetadata) -> Self {
+    fn for_output(tpe: Option<MysqlType>, metadata: &MysqlFieldMetadata<'_>) -> Self {
         let (tpe, flags) = if let Some(tpe) = tpe {
             match (tpe, metadata.field_type()) {
                 // Those are types where we handle the conversion in diesel itself
@@ -279,81 +373,137 @@ impl BindData {
         } else {
             (metadata.field_type(), metadata.flags())
         };
-
-        let bytes = known_buffer_size_for_ffi_type(tpe)
-            .map(|len| vec![0; len])
-            .unwrap_or_default();
-        let length = bytes.len() as libc::c_ulong;
-
-        BindData {
-            tpe,
-            bytes,
-            length,
-            is_null: 0,
-            is_truncated: Some(0),
-            flags,
-        }
+        Self::from_tpe_and_flags((tpe, flags))
     }
 
-    #[cfg(test)]
-    fn for_test_output((tpe, flags): (ffi::enum_field_types, Flags)) -> Self {
-        let bytes = known_buffer_size_for_ffi_type(tpe)
-            .map(|len| vec![0; len])
-            .unwrap_or_default();
-        let length = bytes.len() as libc::c_ulong;
+    fn from_tpe_and_flags((tpe, flags): (ffi::enum_field_types, Flags)) -> Self {
+        // newer mysqlclient versions do not accept a zero sized buffer
+        let len = known_buffer_size_for_ffi_type(tpe).unwrap_or(1);
+        // it's important to initialize the data with zeros here
+        // to make sure we don't expose any uninitialized memory if the underlying library
+        // (again…) skrews up something
+        let (ptr, length, capacity) = bind_buffer(vec![0; len]);
 
-        BindData {
+        Self {
             tpe,
-            bytes,
+            bytes: ptr,
             length,
-            is_null: 0,
-            is_truncated: Some(0),
+            capacity,
             flags,
+            is_null: super::raw::ffi_false(),
+            is_truncated: Some(super::raw::ffi_false()),
         }
     }
 
     fn is_truncated(&self) -> bool {
-        self.is_truncated.unwrap_or(0) != 0
+        self.is_truncated.unwrap_or(super::raw::ffi_false()) != super::raw::ffi_false()
     }
 
     fn is_fixed_size_buffer(&self) -> bool {
         known_buffer_size_for_ffi_type(self.tpe).is_some()
     }
 
-    pub fn value(&'_ self) -> Option<MysqlValue<'_>> {
+    pub(super) fn value(&'_ self) -> Option<MysqlValue<'_>> {
         if self.is_null() {
             None
         } else {
+            let data = self.bytes?;
             let tpe = (self.tpe, self.flags).into();
-            Some(MysqlValue::new(&self.bytes, tpe))
+
+            // Newer libmariadbclient versions overwrite the length field with zero values
+            // in some cases (mostly when we load a zero value). As we don't reset the length value
+            // and also reuse the underlying buffers for more than one row this is problematic
+            // for diesel. To workaround that issue we instead reset the length value
+            // for known statically sized types here.
+            //
+            // This is "safe" for all statically sized types as they are only "numeric" values
+            // that consider every possible byte pattern as valid. This also includes timestamps,
+            // but the MYSQL_TIME type consists only of numbers as well.
+            //
+            // To prevent a potential memory exposure we always initialize the buffer with
+            // zeros, so the worst thing that could happen is that you get the value from a previous
+            // row if the underlying library fails to reset the bytes
+            //
+            // We assert that we don't read more than capacity bytes below as that's
+            // the most important invariant to uphold here
+            let length = if let Some(length) = known_buffer_size_for_ffi_type(self.tpe) {
+                debug_assert!(
+                    length <= self.capacity
+                    && <usize as TryFrom<_>>::try_from(self.length).expect("32bit integer fits in a usize")  <= self.capacity,
+                    "Libmysqlclient reported a larger size for a fixed size buffer without setting the truncated flag. \n\
+                     This is a bug somewhere. Please open an issue with reproduction steps at \
+                     https://github.com/diesel-rs/diesel/issues/new \n\
+                     Calculated Length: {length}, Buffer Capacity: {}, Reported Length {}, Type: {:?}", self.capacity, self.length, self.tpe
+                );
+                length
+            } else {
+                self.length.try_into().expect("Usize is at least 32 bit")
+            };
+            assert!(
+                length <= self.capacity,
+                "Got a buffer size larger than the underlying allocation. \n\
+                 If you see this message, please open an issue at https://github.com/diesel-rs/diesel/issues/new.\n\
+                 Such an issue should contain exact reproduction steps how to trigger this message\n\
+                 Length: {length}, Capacity: {}, Type: {:?}", self.capacity, self.tpe
+            );
+
+            let slice = unsafe {
+                // We know that this points to a slice and the pointer is not null at this
+                // location
+                // The length pointer is valid as long as none missuses `bind_for_truncated_data`
+                // as this is the only location that updates the length field before the corresponding data are
+                // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
+                // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
+                // invariant.
+                std::slice::from_raw_parts(data.as_ptr(), length)
+            };
+            Some(MysqlValue::new_internal(slice, tpe))
         }
     }
 
-    pub fn is_null(&self) -> bool {
-        self.is_null != 0
+    pub(super) fn is_null(&self) -> bool {
+        self.is_null != ffi::my_bool::default()
     }
 
     fn update_buffer_length(&mut self) {
         use std::cmp::min;
 
-        let actual_bytes_in_buffer = min(self.bytes.capacity(), self.length as usize);
-        unsafe { self.bytes.set_len(actual_bytes_in_buffer) }
+        let actual_bytes_in_buffer = min(
+            self.capacity,
+            self.length.try_into().expect("Usize is at least 32 bit"),
+        );
+        self.length = actual_bytes_in_buffer as libc::c_ulong;
     }
 
+    // This function is marked as unsafe as it returns an owned value
+    // containing a pointer with a lifetime coupled to self.
+    // Callers need to ensure that the returned value cannot outlive `self`
     unsafe fn mysql_bind(&mut self) -> ffi::MYSQL_BIND {
-        let mut bind: ffi::MYSQL_BIND = mem::zeroed();
-        bind.buffer_type = self.tpe;
-        bind.buffer = self.bytes.as_mut_ptr() as *mut libc::c_void;
-        bind.buffer_length = self.bytes.capacity() as libc::c_ulong;
-        bind.length = &mut self.length;
-        bind.is_null = &mut self.is_null;
-        bind.is_unsigned = self.flags.contains(Flags::UNSIGNED_FLAG) as ffi::my_bool;
+        use std::ptr::addr_of_mut;
 
-        if let Some(ref mut is_truncated) = self.is_truncated {
-            bind.error = is_truncated;
+        let mut bind: MaybeUninit<ffi::MYSQL_BIND> = mem::MaybeUninit::zeroed();
+        let ptr = bind.as_mut_ptr();
+
+        unsafe {
+            addr_of_mut!((*ptr).buffer_type).write(self.tpe);
+            addr_of_mut!((*ptr).buffer).write(
+                self.bytes
+                    .map(|p| p.as_ptr())
+                    .unwrap_or(std::ptr::null_mut()) as *mut libc::c_void,
+            );
+            addr_of_mut!((*ptr).buffer_length).write(self.capacity as libc::c_ulong);
+            addr_of_mut!((*ptr).length).write(&mut self.length);
+            addr_of_mut!((*ptr).is_null).write(&mut self.is_null);
+            addr_of_mut!((*ptr).is_unsigned)
+                .write(self.flags.contains(Flags::UNSIGNED_FLAG) as ffi::my_bool);
+
+            if let Some(ref mut is_truncated) = self.is_truncated {
+                addr_of_mut!((*ptr).error).write(is_truncated);
+            }
+
+            // That's what the mysqlclient examples are doing
+            bind.assume_init()
         }
-
-        bind
     }
 
     /// Resizes the byte buffer to fit the value of `self.length`, and returns
@@ -364,22 +514,61 @@ impl BindData {
     /// this function is unsafe unless the binds are immediately rebound.
     unsafe fn bind_for_truncated_data(&mut self) -> Option<(ffi::MYSQL_BIND, usize)> {
         if self.is_truncated() {
-            let offset = self.bytes.capacity();
-            let truncated_amount = self.length as usize - offset;
+            if let Some(bytes) = self.bytes {
+                let mut bytes =
+                    unsafe { Vec::from_raw_parts(bytes.as_ptr(), self.capacity, self.capacity) };
+                self.bytes = None;
 
-            debug_assert!(
-                truncated_amount > 0,
-                "output buffers were invalidated \
-                 without calling `mysql_stmt_bind_result`"
-            );
-            self.bytes.set_len(offset);
-            self.bytes.reserve(truncated_amount);
-            self.bytes.set_len(self.length as usize);
+                let offset = self.capacity;
+                let length = usize::try_from(self.length).expect("Usize is at least 32 bit");
+                let truncated_amount = length - offset;
 
-            let mut bind = self.mysql_bind();
-            bind.buffer = self.bytes[offset..].as_mut_ptr() as *mut libc::c_void;
-            bind.buffer_length = truncated_amount as libc::c_ulong;
-            Some((bind, offset))
+                debug_assert!(
+                    truncated_amount > 0,
+                    "output buffers were invalidated \
+                     without calling `mysql_stmt_bind_result`"
+                );
+
+                // reserve space for any missing byte
+                // we know the exact size here
+                // We use resize instead reserve to initialize the whole memory
+                // to prevent exposing memory if libmariadb/libmysqlclient (again)
+                // returns a wrong size here
+                bytes.resize(length, 0);
+                let (ptr, _length, capacity) = bind_buffer(bytes);
+                self.capacity = capacity;
+                self.bytes = ptr;
+
+                let mut bind = unsafe { self.mysql_bind() };
+
+                if let Some(ptr) = self.bytes {
+                    // Using offset is safe here as we have a u8 array (where std::mem::size_of::<u8> == 1)
+                    // and we have a buffer that has at least
+                    bind.buffer = unsafe { ptr.as_ptr().add(offset) as *mut libc::c_void };
+                    bind.buffer_length = truncated_amount as libc::c_ulong;
+                } else {
+                    bind.buffer_length = 0;
+                }
+                Some((bind, offset))
+            } else {
+                // offset is zero here as we don't have a buffer yet
+                // we know the requested length here so we can just request
+                // the correct size
+                let (ptr, _length, capacity) = bind_buffer(vec![
+                    0_u8;
+                    self.length.try_into().expect(
+                        "usize is at least 32 bit"
+                    )
+                ]);
+                self.capacity = capacity;
+                self.bytes = ptr;
+
+                let bind = unsafe { self.mysql_bind() };
+                // As we did not have a buffer before
+                // we couldn't have loaded any data yet, therefore
+                // request everything
+                Some((bind, 0))
+            }
         } else {
             None
         }
@@ -400,46 +589,46 @@ impl BindData {
 
 impl From<MysqlType> for (ffi::enum_field_types, Flags) {
     fn from(tpe: MysqlType) -> Self {
-        use self::ffi::enum_field_types::*;
+        use self::ffi::enum_field_types;
         let mut flags = Flags::empty();
         let tpe = match tpe {
-            MysqlType::Tiny => MYSQL_TYPE_TINY,
-            MysqlType::Short => MYSQL_TYPE_SHORT,
-            MysqlType::Long => MYSQL_TYPE_LONG,
-            MysqlType::LongLong => MYSQL_TYPE_LONGLONG,
-            MysqlType::Float => MYSQL_TYPE_FLOAT,
-            MysqlType::Double => MYSQL_TYPE_DOUBLE,
-            MysqlType::Time => MYSQL_TYPE_TIME,
-            MysqlType::Date => MYSQL_TYPE_DATE,
-            MysqlType::DateTime => MYSQL_TYPE_DATETIME,
-            MysqlType::Timestamp => MYSQL_TYPE_TIMESTAMP,
-            MysqlType::String => MYSQL_TYPE_STRING,
-            MysqlType::Blob => MYSQL_TYPE_BLOB,
-            MysqlType::Numeric => MYSQL_TYPE_NEWDECIMAL,
-            MysqlType::Bit => MYSQL_TYPE_BIT,
+            MysqlType::Tiny => enum_field_types::MYSQL_TYPE_TINY,
+            MysqlType::Short => enum_field_types::MYSQL_TYPE_SHORT,
+            MysqlType::Long => enum_field_types::MYSQL_TYPE_LONG,
+            MysqlType::LongLong => enum_field_types::MYSQL_TYPE_LONGLONG,
+            MysqlType::Float => enum_field_types::MYSQL_TYPE_FLOAT,
+            MysqlType::Double => enum_field_types::MYSQL_TYPE_DOUBLE,
+            MysqlType::Time => enum_field_types::MYSQL_TYPE_TIME,
+            MysqlType::Date => enum_field_types::MYSQL_TYPE_DATE,
+            MysqlType::DateTime => enum_field_types::MYSQL_TYPE_DATETIME,
+            MysqlType::Timestamp => enum_field_types::MYSQL_TYPE_TIMESTAMP,
+            MysqlType::String => enum_field_types::MYSQL_TYPE_STRING,
+            MysqlType::Blob => enum_field_types::MYSQL_TYPE_BLOB,
+            MysqlType::Numeric => enum_field_types::MYSQL_TYPE_NEWDECIMAL,
+            MysqlType::Bit => enum_field_types::MYSQL_TYPE_BIT,
             MysqlType::UnsignedTiny => {
                 flags = Flags::UNSIGNED_FLAG;
-                MYSQL_TYPE_TINY
+                enum_field_types::MYSQL_TYPE_TINY
             }
             MysqlType::UnsignedShort => {
                 flags = Flags::UNSIGNED_FLAG;
-                MYSQL_TYPE_SHORT
+                enum_field_types::MYSQL_TYPE_SHORT
             }
             MysqlType::UnsignedLong => {
                 flags = Flags::UNSIGNED_FLAG;
-                MYSQL_TYPE_LONG
+                enum_field_types::MYSQL_TYPE_LONG
             }
             MysqlType::UnsignedLongLong => {
                 flags = Flags::UNSIGNED_FLAG;
-                MYSQL_TYPE_LONGLONG
+                enum_field_types::MYSQL_TYPE_LONGLONG
             }
             MysqlType::Set => {
                 flags = Flags::SET_FLAG;
-                MYSQL_TYPE_STRING
+                enum_field_types::MYSQL_TYPE_STRING
             }
             MysqlType::Enum => {
                 flags = Flags::ENUM_FLAG;
-                MYSQL_TYPE_STRING
+                enum_field_types::MYSQL_TYPE_STRING
             }
         };
         (tpe, flags)
@@ -448,7 +637,7 @@ impl From<MysqlType> for (ffi::enum_field_types, Flags) {
 
 impl From<(ffi::enum_field_types, Flags)> for MysqlType {
     fn from((tpe, flags): (ffi::enum_field_types, Flags)) -> Self {
-        use self::ffi::enum_field_types::*;
+        use self::ffi::enum_field_types;
 
         let is_unsigned = flags.contains(Flags::UNSIGNED_FLAG);
 
@@ -457,48 +646,60 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
         // https://dev.mysql.com/doc/internals/en/binary-protocol-value.html
         // https://mariadb.com/kb/en/packet_bindata/
         match tpe {
-            MYSQL_TYPE_TINY if is_unsigned => MysqlType::UnsignedTiny,
-            MYSQL_TYPE_YEAR | MYSQL_TYPE_SHORT if is_unsigned => MysqlType::UnsignedShort,
-            MYSQL_TYPE_INT24 | MYSQL_TYPE_LONG if is_unsigned => MysqlType::UnsignedLong,
-            MYSQL_TYPE_LONGLONG if is_unsigned => MysqlType::UnsignedLongLong,
-            MYSQL_TYPE_TINY => MysqlType::Tiny,
-            MYSQL_TYPE_SHORT => MysqlType::Short,
-            MYSQL_TYPE_INT24 | MYSQL_TYPE_LONG => MysqlType::Long,
-            MYSQL_TYPE_LONGLONG => MysqlType::LongLong,
-            MYSQL_TYPE_FLOAT => MysqlType::Float,
-            MYSQL_TYPE_DOUBLE => MysqlType::Double,
-            MYSQL_TYPE_DECIMAL | MYSQL_TYPE_NEWDECIMAL => MysqlType::Numeric,
-            MYSQL_TYPE_BIT => MysqlType::Bit,
+            enum_field_types::MYSQL_TYPE_TINY if is_unsigned => MysqlType::UnsignedTiny,
+            enum_field_types::MYSQL_TYPE_YEAR | enum_field_types::MYSQL_TYPE_SHORT
+                if is_unsigned =>
+            {
+                MysqlType::UnsignedShort
+            }
+            enum_field_types::MYSQL_TYPE_INT24 | enum_field_types::MYSQL_TYPE_LONG
+                if is_unsigned =>
+            {
+                MysqlType::UnsignedLong
+            }
+            enum_field_types::MYSQL_TYPE_LONGLONG if is_unsigned => MysqlType::UnsignedLongLong,
+            enum_field_types::MYSQL_TYPE_TINY => MysqlType::Tiny,
+            enum_field_types::MYSQL_TYPE_SHORT => MysqlType::Short,
+            enum_field_types::MYSQL_TYPE_INT24 | enum_field_types::MYSQL_TYPE_LONG => {
+                MysqlType::Long
+            }
+            enum_field_types::MYSQL_TYPE_LONGLONG => MysqlType::LongLong,
+            enum_field_types::MYSQL_TYPE_FLOAT => MysqlType::Float,
+            enum_field_types::MYSQL_TYPE_DOUBLE => MysqlType::Double,
+            enum_field_types::MYSQL_TYPE_DECIMAL | enum_field_types::MYSQL_TYPE_NEWDECIMAL => {
+                MysqlType::Numeric
+            }
+            enum_field_types::MYSQL_TYPE_BIT => MysqlType::Bit,
 
-            MYSQL_TYPE_TIME => MysqlType::Time,
-            MYSQL_TYPE_DATE => MysqlType::Date,
-            MYSQL_TYPE_DATETIME => MysqlType::DateTime,
-            MYSQL_TYPE_TIMESTAMP => MysqlType::Timestamp,
+            enum_field_types::MYSQL_TYPE_TIME => MysqlType::Time,
+            enum_field_types::MYSQL_TYPE_DATE => MysqlType::Date,
+            enum_field_types::MYSQL_TYPE_DATETIME => MysqlType::DateTime,
+            enum_field_types::MYSQL_TYPE_TIMESTAMP => MysqlType::Timestamp,
             // Treat json as string because even mysql 8.0
             // throws errors sometimes if we use json for json
-            MYSQL_TYPE_JSON => MysqlType::String,
+            enum_field_types::MYSQL_TYPE_JSON => MysqlType::String,
 
             // The documentation states that
             // MYSQL_TYPE_STRING is used for enums and sets
             // but experimentation has shown that
             // just any string like type works, so
             // better be safe here
-            MYSQL_TYPE_BLOB
-            | MYSQL_TYPE_TINY_BLOB
-            | MYSQL_TYPE_MEDIUM_BLOB
-            | MYSQL_TYPE_LONG_BLOB
-            | MYSQL_TYPE_VAR_STRING
-            | MYSQL_TYPE_STRING
+            enum_field_types::MYSQL_TYPE_BLOB
+            | enum_field_types::MYSQL_TYPE_TINY_BLOB
+            | enum_field_types::MYSQL_TYPE_MEDIUM_BLOB
+            | enum_field_types::MYSQL_TYPE_LONG_BLOB
+            | enum_field_types::MYSQL_TYPE_VAR_STRING
+            | enum_field_types::MYSQL_TYPE_STRING
                 if flags.contains(Flags::ENUM_FLAG) =>
             {
                 MysqlType::Enum
             }
-            MYSQL_TYPE_BLOB
-            | MYSQL_TYPE_TINY_BLOB
-            | MYSQL_TYPE_MEDIUM_BLOB
-            | MYSQL_TYPE_LONG_BLOB
-            | MYSQL_TYPE_VAR_STRING
-            | MYSQL_TYPE_STRING
+            enum_field_types::MYSQL_TYPE_BLOB
+            | enum_field_types::MYSQL_TYPE_TINY_BLOB
+            | enum_field_types::MYSQL_TYPE_MEDIUM_BLOB
+            | enum_field_types::MYSQL_TYPE_LONG_BLOB
+            | enum_field_types::MYSQL_TYPE_VAR_STRING
+            | enum_field_types::MYSQL_TYPE_STRING
                 if flags.contains(Flags::SET_FLAG) =>
             {
                 MysqlType::Set
@@ -508,33 +709,33 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
             // also "strings" can contain binary data
             // but all only if the binary flag is set
             // (see the check_all_the_types test case)
-            MYSQL_TYPE_BLOB
-            | MYSQL_TYPE_TINY_BLOB
-            | MYSQL_TYPE_MEDIUM_BLOB
-            | MYSQL_TYPE_LONG_BLOB
-            | MYSQL_TYPE_VAR_STRING
-            | MYSQL_TYPE_STRING
+            enum_field_types::MYSQL_TYPE_BLOB
+            | enum_field_types::MYSQL_TYPE_TINY_BLOB
+            | enum_field_types::MYSQL_TYPE_MEDIUM_BLOB
+            | enum_field_types::MYSQL_TYPE_LONG_BLOB
+            | enum_field_types::MYSQL_TYPE_VAR_STRING
+            | enum_field_types::MYSQL_TYPE_STRING
                 if flags.contains(Flags::BINARY_FLAG) =>
             {
                 MysqlType::Blob
             }
 
             // If the binary flag is not set consider everything as string
-            MYSQL_TYPE_BLOB
-            | MYSQL_TYPE_TINY_BLOB
-            | MYSQL_TYPE_MEDIUM_BLOB
-            | MYSQL_TYPE_LONG_BLOB
-            | MYSQL_TYPE_VAR_STRING
-            | MYSQL_TYPE_STRING => MysqlType::String,
+            enum_field_types::MYSQL_TYPE_BLOB
+            | enum_field_types::MYSQL_TYPE_TINY_BLOB
+            | enum_field_types::MYSQL_TYPE_MEDIUM_BLOB
+            | enum_field_types::MYSQL_TYPE_LONG_BLOB
+            | enum_field_types::MYSQL_TYPE_VAR_STRING
+            | enum_field_types::MYSQL_TYPE_STRING => MysqlType::String,
 
             // unsigned seems to be set for year in any case
-            MYSQL_TYPE_YEAR => unreachable!(
+            enum_field_types::MYSQL_TYPE_YEAR => unreachable!(
                 "The year type should have set the unsigned flag. If you ever \
                  see this error message, something has gone very wrong. Please \
-                 open an issue at the diesel githup repo in this case"
+                 open an issue at the diesel github repo in this case"
             ),
             // Null value
-            MYSQL_TYPE_NULL => unreachable!(
+            enum_field_types::MYSQL_TYPE_NULL => unreachable!(
                 "We ensure at the call side that we do not hit this type here. \
                  If you ever see this error, something has gone very wrong. \
                  Please open an issue at the diesel github repo in this case"
@@ -542,7 +743,10 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
             // Those exist in libmysqlclient
             // but are just not supported
             //
-            MYSQL_TYPE_VARCHAR | MYSQL_TYPE_ENUM | MYSQL_TYPE_SET | MYSQL_TYPE_GEOMETRY => {
+            enum_field_types::MYSQL_TYPE_VARCHAR
+            | enum_field_types::MYSQL_TYPE_ENUM
+            | enum_field_types::MYSQL_TYPE_SET
+            | enum_field_types::MYSQL_TYPE_GEOMETRY => {
                 unimplemented!(
                     "Hit a type that should be unsupported in libmysqlclient. If \
                      you ever see this error, they probably have added support for \
@@ -551,14 +755,23 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
                 )
             }
 
-            MYSQL_TYPE_NEWDATE
-            | MYSQL_TYPE_TIME2
-            | MYSQL_TYPE_DATETIME2
-            | MYSQL_TYPE_TIMESTAMP2 => unreachable!(
-                "The mysql documentation states that this types are \
-                 only used on server side, so if you see this error \
-                 something has gone wrong. Please open a issue at \
+            enum_field_types::MYSQL_TYPE_NEWDATE
+            | enum_field_types::MYSQL_TYPE_TIME2
+            | enum_field_types::MYSQL_TYPE_DATETIME2
+            | enum_field_types::MYSQL_TYPE_TIMESTAMP2 => unreachable!(
+                "The mysql documentation states that these types are \
+                 only used on the server side, so if you see this error \
+                 something has gone wrong. Please open an issue at \
                  the diesel github repo."
+            ),
+            // depending on the bindings version
+            // there might be no unlisted field type
+            #[allow(unreachable_patterns)]
+            t => unreachable!(
+                "Unsupported type encountered: {t:?}. \
+                 If you ever see this error, something has gone wrong. \
+                 Please open an issue at the diesel github \
+                 repo in this case."
             ),
         }
     }
@@ -576,42 +789,46 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
         t::MYSQL_TYPE_TIME
         | t::MYSQL_TYPE_DATE
         | t::MYSQL_TYPE_DATETIME
-        | t::MYSQL_TYPE_TIMESTAMP => Some(size_of::<MYSQL_TIME>()),
+        | t::MYSQL_TYPE_TIMESTAMP => Some(size_of::<MysqlTime>()),
         _ => None,
     }
 }
 
 #[cfg(test)]
 mod tests {
-    #[cfg(feature = "bigdecimal")]
-    use bigdecimal::FromPrimitive;
-
-    use super::MysqlValue;
     use super::*;
+    use crate::connection::statement_cache::{MaybeCached, PrepareForCache};
     use crate::deserialize::FromSql;
+    use crate::mysql::connection::stmt::Statement;
     use crate::prelude::*;
     use crate::sql_types::*;
+    #[cfg(feature = "numeric")]
+    use std::str::FromStr;
 
     fn to_value<ST, T>(
         bind: &BindData,
-    ) -> Result<T, Box<(dyn std::error::Error + Send + Sync + 'static)>>
+    ) -> Result<T, Box<dyn std::error::Error + Send + Sync + 'static>>
     where
         T: FromSql<ST, crate::mysql::Mysql> + std::fmt::Debug,
     {
         let meta = (bind.tpe, bind.flags).into();
         dbg!(meta);
-        let value = MysqlValue::new(&bind.bytes, meta);
+
+        let value = bind.value().expect("Is not null");
+        let value = MysqlValue::new_internal(value.as_bytes(), meta);
+
         dbg!(T::from_sql(value))
     }
 
     #[cfg(feature = "extras")]
-    #[test]
+    #[diesel_test_helper::test]
     fn check_all_the_types() {
-        let conn = crate::test_helpers::connection();
+        let conn = &mut crate::test_helpers::connection();
 
-        conn.execute("DROP TABLE IF EXISTS all_mysql_types CASCADE")
+        crate::sql_query("DROP TABLE IF EXISTS all_mysql_types CASCADE")
+            .execute(conn)
             .unwrap();
-        conn.execute(
+        crate::sql_query(
             "CREATE TABLE all_mysql_types (
                     tiny_int TINYINT NOT NULL,
                     small_int SMALLINT NOT NULL,
@@ -649,9 +866,9 @@ mod tests {
                     json_col JSON NOT NULL
             )",
         )
+        .execute(conn)
         .unwrap();
-        conn
-            .execute(
+        crate::sql_query(
                 "INSERT INTO all_mysql_types VALUES (
                     0, -- tiny_int
                     1, -- small_int
@@ -688,11 +905,11 @@ mod tests {
                     ST_GeomCollFromText('GEOMETRYCOLLECTION(POINT(1 1),LINESTRING(0 0,1 1,2 2,3 3,4 4))'), -- geometry_collection
                     '{\"key1\": \"value1\", \"key2\": \"value2\"}' -- json_col
 )",
-            )
+            ).execute(conn)
             .unwrap();
 
-        let mut stmt = conn
-            .prepare_query(&crate::sql_query(
+        let stmt = crate::mysql::connection::prepared_query(
+            &crate::sql_query(
                 "SELECT
                     tiny_int, small_int, medium_int, int_col,
                     big_int, unsigned_int, zero_fill_int,
@@ -703,29 +920,24 @@ mod tests {
                     ST_AsText(polygon_col), ST_AsText(multipoint_col), ST_AsText(multilinestring_col),
                     ST_AsText(multipolygon_col), ST_AsText(geometry_collection), json_col
                  FROM all_mysql_types",
-            ))
-            .unwrap();
+            ),
+            &mut conn.statement_cache,
+            &mut conn.raw_connection,
+            &mut *conn.instrumentation,
+        ).unwrap();
 
         let metadata = stmt.metadata().unwrap();
         let mut output_binds =
-            Binds::from_output_types(vec![None; metadata.fields().len()], &metadata);
-        stmt.execute_statement(&mut output_binds).unwrap();
+            OutputBinds::from_output_types(&vec![None; metadata.fields().len()], &metadata);
+        let stmt = stmt.execute_statement(&mut output_binds).unwrap();
         stmt.populate_row_buffers(&mut output_binds).unwrap();
 
         let results: Vec<(BindData, &_)> = output_binds
+            .0
             .data
             .into_iter()
             .zip(metadata.fields())
             .collect::<Vec<_>>();
-
-        macro_rules! matches {
-            ($expression:expr, $( $pattern:pat )|+ $( if $guard: expr )?) => {
-                match $expression {
-                    $( $pattern )|+ $( if $guard )? => true,
-                    _ => false
-                }
-            }
-        }
 
         let tiny_int_col = &results[0].0;
         assert_eq!(tiny_int_col.tpe, ffi::enum_field_types::MYSQL_TYPE_TINY);
@@ -784,7 +996,7 @@ mod tests {
         assert!(!numeric_col.flags.contains(Flags::UNSIGNED_FLAG));
         assert_eq!(
             to_value::<Numeric, bigdecimal::BigDecimal>(numeric_col).unwrap(),
-            bigdecimal::BigDecimal::from_f32(-999.999).unwrap()
+            bigdecimal::BigDecimal::from_str("-999.99900").unwrap()
         );
 
         let decimal_col = &results[8].0;
@@ -796,7 +1008,7 @@ mod tests {
         assert!(!decimal_col.flags.contains(Flags::UNSIGNED_FLAG));
         assert_eq!(
             to_value::<Numeric, bigdecimal::BigDecimal>(decimal_col).unwrap(),
-            bigdecimal::BigDecimal::from_f32(3.14).unwrap()
+            bigdecimal::BigDecimal::from_str("3.14000").unwrap()
         );
 
         let float_col = &results[9].0;
@@ -855,7 +1067,7 @@ mod tests {
         assert!(!time_col.flags.contains(Flags::NUM_FLAG));
         assert_eq!(
             to_value::<Time, chrono::NaiveTime>(time_col).unwrap(),
-            chrono::NaiveTime::from_hms(23, 01, 01)
+            chrono::NaiveTime::from_hms_opt(23, 1, 1).unwrap()
         );
 
         let year_col = &results[16].0;
@@ -1035,9 +1247,9 @@ mod tests {
         assert!(!polygon_col.flags.contains(Flags::ENUM_FLAG));
         assert!(!polygon_col.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(
-            to_value::<Text, String>(polygon_col).unwrap(),
-            "MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))"
-        );
+                to_value::<Text, String>(polygon_col).unwrap(),
+                "MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))"
+            );
 
         let geometry_collection = &results[32].0;
         assert_eq!(
@@ -1079,16 +1291,20 @@ mod tests {
         conn: &MysqlConnection,
         bind_tpe: impl Into<(ffi::enum_field_types, Flags)>,
     ) -> BindData {
-        let mut stmt: Statement = conn.raw_connection.prepare(query).unwrap();
+        let stmt: Statement = conn
+            .raw_connection
+            .prepare(query, PrepareForCache::No, &[])
+            .unwrap();
+        let stmt = MaybeCached::CannotCache(stmt);
 
-        let bind = BindData::for_test_output(bind_tpe.into());
+        let bind = BindData::from_tpe_and_flags(bind_tpe.into());
 
-        let mut binds = Binds { data: vec![bind] };
+        let mut binds = OutputBinds(Binds { data: vec![bind] });
 
-        stmt.execute_statement(&mut binds).unwrap();
+        let stmt = stmt.execute_statement(&mut binds).unwrap();
         stmt.populate_row_buffers(&mut binds).unwrap();
 
-        binds.data.remove(0)
+        binds.0.data.remove(0)
     }
 
     fn input_bind(
@@ -1097,45 +1313,49 @@ mod tests {
         id: i32,
         (field, tpe): (Vec<u8>, impl Into<(ffi::enum_field_types, Flags)>),
     ) {
-        let mut stmt = conn.raw_connection.prepare(query).unwrap();
+        let mut stmt = conn
+            .raw_connection
+            .prepare(query, PrepareForCache::No, &[])
+            .unwrap();
         let length = field.len() as _;
         let (tpe, flags) = tpe.into();
+        let (ptr, _length, capacity) = bind_buffer(field);
 
         let field_bind = BindData {
             tpe,
-            bytes: field,
+            bytes: ptr,
+            capacity,
             length,
             flags,
-            is_null: 0,
+            is_null: ffi::FALSE,
             is_truncated: None,
         };
 
-        let bytes = id.to_be_bytes().to_vec();
-        let length = bytes.len() as _;
+        let (ptr, length, capacity) = bind_buffer(id.to_be_bytes().to_vec());
 
         let id_bind = BindData {
             tpe: ffi::enum_field_types::MYSQL_TYPE_LONG,
-            bytes,
+            bytes: ptr,
+            capacity,
             length,
             flags: Flags::empty(),
-            is_null: 0,
+            is_null: ffi::FALSE,
             is_truncated: None,
         };
 
-        let binds = Binds {
+        let binds = PreparedStatementBinds(Binds {
             data: vec![id_bind, field_bind],
-        };
+        });
         stmt.input_bind(binds).unwrap();
         stmt.did_an_error_occur().unwrap();
+        let stmt = MaybeCached::CannotCache(stmt);
         unsafe {
             stmt.execute().unwrap();
         }
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn check_json_bind() {
-        let conn: MysqlConnection = crate::test_helpers::connection();
-
         table! {
             json_test {
                 id -> Integer,
@@ -1143,17 +1363,23 @@ mod tests {
             }
         }
 
-        conn.execute("DROP TABLE IF EXISTS json_test CASCADE")
+        let conn = &mut crate::test_helpers::connection();
+
+        crate::sql_query("DROP TABLE IF EXISTS json_test CASCADE")
+            .execute(conn)
             .unwrap();
 
-        conn.execute("CREATE TABLE json_test(id INTEGER PRIMARY KEY, json_field JSON NOT NULL)")
-            .unwrap();
+        crate::sql_query(
+            "CREATE TABLE json_test(id INTEGER PRIMARY KEY, json_field JSON NOT NULL)",
+        )
+        .execute(conn)
+        .unwrap();
 
-        conn.execute("INSERT INTO json_test(id, json_field) VALUES (1, '{\"key1\": \"value1\", \"key2\": \"value2\"}')").unwrap();
+        crate::sql_query("INSERT INTO json_test(id, json_field) VALUES (1, '{\"key1\": \"value1\", \"key2\": \"value2\"}')").execute(conn).unwrap();
 
         let json_col_as_json = query_single_table(
             "SELECT json_field FROM json_test",
-            &conn,
+            conn,
             (ffi::enum_field_types::MYSQL_TYPE_JSON, Flags::empty()),
         );
 
@@ -1170,7 +1396,7 @@ mod tests {
 
         let json_col_as_text = query_single_table(
             "SELECT json_field FROM json_test",
-            &conn,
+            conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
@@ -1184,13 +1410,18 @@ mod tests {
             to_value::<Text, String>(&json_col_as_text).unwrap(),
             "{\"key1\": \"value1\", \"key2\": \"value2\"}"
         );
-        assert_eq!(json_col_as_json.bytes, json_col_as_text.bytes);
+        assert_eq!(
+            json_col_as_json.value().unwrap().as_bytes(),
+            json_col_as_text.value().unwrap().as_bytes()
+        );
 
-        conn.execute("DELETE FROM json_test").unwrap();
+        crate::sql_query("DELETE FROM json_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO json_test(id, json_field) VALUES (?, ?)",
-            &conn,
+            conn,
             41,
             (
                 b"{\"abc\": 42}".to_vec(),
@@ -1201,7 +1432,7 @@ mod tests {
 
         let json_col_as_json = query_single_table(
             "SELECT json_field FROM json_test",
-            &conn,
+            conn,
             (ffi::enum_field_types::MYSQL_TYPE_JSON, Flags::empty()),
         );
 
@@ -1218,7 +1449,7 @@ mod tests {
 
         let json_col_as_text = query_single_table(
             "SELECT json_field FROM json_test",
-            &conn,
+            conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
@@ -1232,20 +1463,25 @@ mod tests {
             to_value::<Text, String>(&json_col_as_text).unwrap(),
             "{\"abc\": 42}"
         );
-        assert_eq!(json_col_as_json.bytes, json_col_as_text.bytes);
+        assert_eq!(
+            json_col_as_json.value().unwrap().as_bytes(),
+            json_col_as_text.value().unwrap().as_bytes()
+        );
 
-        conn.execute("DELETE FROM json_test").unwrap();
+        crate::sql_query("DELETE FROM json_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO json_test(id, json_field) VALUES (?, ?)",
-            &conn,
+            conn,
             41,
             (b"{\"abca\": 42}".to_vec(), MysqlType::String),
         );
 
         let json_col_as_json = query_single_table(
             "SELECT json_field FROM json_test",
-            &conn,
+            conn,
             (ffi::enum_field_types::MYSQL_TYPE_JSON, Flags::empty()),
         );
 
@@ -1262,7 +1498,7 @@ mod tests {
 
         let json_col_as_text = query_single_table(
             "SELECT json_field FROM json_test",
-            &conn,
+            conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
@@ -1276,24 +1512,29 @@ mod tests {
             to_value::<Text, String>(&json_col_as_text).unwrap(),
             "{\"abca\": 42}"
         );
-        assert_eq!(json_col_as_json.bytes, json_col_as_text.bytes);
+        assert_eq!(
+            json_col_as_json.value().unwrap().as_bytes(),
+            json_col_as_text.value().unwrap().as_bytes()
+        );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn check_enum_bind() {
-        let conn: MysqlConnection = crate::test_helpers::connection();
+        let conn = &mut crate::test_helpers::connection();
 
-        conn.execute("DROP TABLE IF EXISTS enum_test CASCADE")
+        crate::sql_query("DROP TABLE IF EXISTS enum_test CASCADE")
+            .execute(conn)
             .unwrap();
 
-        conn.execute("CREATE TABLE enum_test(id INTEGER PRIMARY KEY, enum_field ENUM('red', 'green', 'blue') NOT NULL)")
+        crate::sql_query("CREATE TABLE enum_test(id INTEGER PRIMARY KEY, enum_field ENUM('red', 'green', 'blue') NOT NULL)").execute(conn)
             .unwrap();
 
-        conn.execute("INSERT INTO enum_test(id, enum_field) VALUES (1, 'green')")
+        crate::sql_query("INSERT INTO enum_test(id, enum_field) VALUES (1, 'green')")
+            .execute(conn)
             .unwrap();
 
         let enum_col_as_enum: BindData =
-            query_single_table("SELECT enum_field FROM enum_test", &conn, MysqlType::Enum);
+            query_single_table("SELECT enum_field FROM enum_test", conn, MysqlType::Enum);
 
         assert_eq!(
             enum_col_as_enum.tpe,
@@ -1318,7 +1559,7 @@ mod tests {
         ] {
             let enum_col_as_text = query_single_table(
                 "SELECT enum_field FROM enum_test",
-                &conn,
+                conn,
                 (*tpe, Flags::ENUM_FLAG),
             );
 
@@ -1332,12 +1573,15 @@ mod tests {
                 to_value::<Text, String>(&enum_col_as_text).unwrap(),
                 "green"
             );
-            assert_eq!(enum_col_as_enum.bytes, enum_col_as_text.bytes);
+            assert_eq!(
+                enum_col_as_enum.value().unwrap().as_bytes(),
+                enum_col_as_text.value().unwrap().as_bytes()
+            );
         }
 
         let enum_col_as_text = query_single_table(
             "SELECT enum_field FROM enum_test",
-            &conn,
+            conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
@@ -1351,19 +1595,24 @@ mod tests {
             to_value::<Text, String>(&enum_col_as_text).unwrap(),
             "green"
         );
-        assert_eq!(enum_col_as_enum.bytes, enum_col_as_text.bytes);
+        assert_eq!(
+            enum_col_as_enum.value().unwrap().as_bytes(),
+            enum_col_as_text.value().unwrap().as_bytes()
+        );
 
-        conn.execute("DELETE FROM enum_test").unwrap();
+        crate::sql_query("DELETE FROM enum_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO enum_test(id, enum_field) VALUES (?, ?)",
-            &conn,
+            conn,
             41,
             (b"blue".to_vec(), MysqlType::Enum),
         );
 
         let enum_col_as_enum =
-            query_single_table("SELECT enum_field FROM enum_test", &conn, MysqlType::Enum);
+            query_single_table("SELECT enum_field FROM enum_test", conn, MysqlType::Enum);
 
         assert_eq!(
             enum_col_as_enum.tpe,
@@ -1378,7 +1627,7 @@ mod tests {
 
         let enum_col_as_text = query_single_table(
             "SELECT enum_field FROM enum_test",
-            &conn,
+            conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::ENUM_FLAG),
         );
 
@@ -1389,11 +1638,14 @@ mod tests {
         assert!(enum_col_as_text.flags.contains(Flags::ENUM_FLAG));
         assert!(!enum_col_as_text.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(to_value::<Text, String>(&enum_col_as_text).unwrap(), "blue");
-        assert_eq!(enum_col_as_enum.bytes, enum_col_as_text.bytes);
+        assert_eq!(
+            enum_col_as_enum.value().unwrap().as_bytes(),
+            enum_col_as_text.value().unwrap().as_bytes()
+        );
 
         let enum_col_as_text = query_single_table(
             "SELECT enum_field FROM enum_test",
-            &conn,
+            conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::ENUM_FLAG),
         );
 
@@ -1404,13 +1656,18 @@ mod tests {
         assert!(enum_col_as_text.flags.contains(Flags::ENUM_FLAG));
         assert!(!enum_col_as_text.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(to_value::<Text, String>(&enum_col_as_text).unwrap(), "blue");
-        assert_eq!(enum_col_as_enum.bytes, enum_col_as_text.bytes);
+        assert_eq!(
+            enum_col_as_enum.value().unwrap().as_bytes(),
+            enum_col_as_text.value().unwrap().as_bytes()
+        );
 
-        conn.execute("DELETE FROM enum_test").unwrap();
+        crate::sql_query("DELETE FROM enum_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO enum_test(id, enum_field) VALUES (?, ?)",
-            &conn,
+            conn,
             41,
             (
                 b"red".to_vec(),
@@ -1419,7 +1676,7 @@ mod tests {
         );
 
         let enum_col_as_enum =
-            query_single_table("SELECT enum_field FROM enum_test", &conn, MysqlType::Enum);
+            query_single_table("SELECT enum_field FROM enum_test", conn, MysqlType::Enum);
 
         assert_eq!(
             enum_col_as_enum.tpe,
@@ -1434,7 +1691,7 @@ mod tests {
 
         let enum_col_as_text = query_single_table(
             "SELECT enum_field FROM enum_test",
-            &conn,
+            conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::ENUM_FLAG),
         );
 
@@ -1445,24 +1702,29 @@ mod tests {
         assert!(enum_col_as_text.flags.contains(Flags::ENUM_FLAG));
         assert!(!enum_col_as_text.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(to_value::<Text, String>(&enum_col_as_text).unwrap(), "red");
-        assert_eq!(enum_col_as_enum.bytes, enum_col_as_text.bytes);
+        assert_eq!(
+            enum_col_as_enum.value().unwrap().as_bytes(),
+            enum_col_as_text.value().unwrap().as_bytes()
+        );
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn check_set_bind() {
-        let conn: MysqlConnection = crate::test_helpers::connection();
+        let conn = &mut crate::test_helpers::connection();
 
-        conn.execute("DROP TABLE IF EXISTS set_test CASCADE")
+        crate::sql_query("DROP TABLE IF EXISTS set_test CASCADE")
+            .execute(conn)
             .unwrap();
 
-        conn.execute("CREATE TABLE set_test(id INTEGER PRIMARY KEY, set_field SET('red', 'green', 'blue') NOT NULL)")
+        crate::sql_query("CREATE TABLE set_test(id INTEGER PRIMARY KEY, set_field SET('red', 'green', 'blue') NOT NULL)").execute(conn)
             .unwrap();
 
-        conn.execute("INSERT INTO set_test(id, set_field) VALUES (1, 'green')")
+        crate::sql_query("INSERT INTO set_test(id, set_field) VALUES (1, 'green')")
+            .execute(conn)
             .unwrap();
 
         let set_col_as_set: BindData =
-            query_single_table("SELECT set_field FROM set_test", &conn, MysqlType::Set);
+            query_single_table("SELECT set_field FROM set_test", conn, MysqlType::Set);
 
         assert_eq!(set_col_as_set.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
         assert!(!set_col_as_set.flags.contains(Flags::NUM_FLAG));
@@ -1481,7 +1743,7 @@ mod tests {
         ] {
             let set_col_as_text = query_single_table(
                 "SELECT set_field FROM set_test",
-                &conn,
+                conn,
                 (*tpe, Flags::SET_FLAG),
             );
 
@@ -1492,11 +1754,14 @@ mod tests {
             assert!(!set_col_as_text.flags.contains(Flags::ENUM_FLAG));
             assert!(!set_col_as_text.flags.contains(Flags::BINARY_FLAG));
             assert_eq!(to_value::<Text, String>(&set_col_as_text).unwrap(), "green");
-            assert_eq!(set_col_as_set.bytes, set_col_as_text.bytes);
+            assert_eq!(
+                set_col_as_set.value().unwrap().as_bytes(),
+                set_col_as_text.value().unwrap().as_bytes()
+            );
         }
         let set_col_as_text = query_single_table(
             "SELECT set_field FROM set_test",
-            &conn,
+            conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
@@ -1507,19 +1772,24 @@ mod tests {
         assert!(!set_col_as_text.flags.contains(Flags::ENUM_FLAG));
         assert!(!set_col_as_text.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(to_value::<Text, String>(&set_col_as_text).unwrap(), "green");
-        assert_eq!(set_col_as_set.bytes, set_col_as_text.bytes);
+        assert_eq!(
+            set_col_as_set.value().unwrap().as_bytes(),
+            set_col_as_text.value().unwrap().as_bytes()
+        );
 
-        conn.execute("DELETE FROM set_test").unwrap();
+        crate::sql_query("DELETE FROM set_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO set_test(id, set_field) VALUES (?, ?)",
-            &conn,
+            conn,
             41,
             (b"blue".to_vec(), MysqlType::Set),
         );
 
         let set_col_as_set =
-            query_single_table("SELECT set_field FROM set_test", &conn, MysqlType::Set);
+            query_single_table("SELECT set_field FROM set_test", conn, MysqlType::Set);
 
         assert_eq!(set_col_as_set.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
         assert!(!set_col_as_set.flags.contains(Flags::NUM_FLAG));
@@ -1531,7 +1801,7 @@ mod tests {
 
         let set_col_as_text = query_single_table(
             "SELECT set_field FROM set_test",
-            &conn,
+            conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::SET_FLAG),
         );
 
@@ -1542,19 +1812,24 @@ mod tests {
         assert!(!set_col_as_text.flags.contains(Flags::ENUM_FLAG));
         assert!(!set_col_as_text.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(to_value::<Text, String>(&set_col_as_text).unwrap(), "blue");
-        assert_eq!(set_col_as_set.bytes, set_col_as_text.bytes);
+        assert_eq!(
+            set_col_as_set.value().unwrap().as_bytes(),
+            set_col_as_text.value().unwrap().as_bytes()
+        );
 
-        conn.execute("DELETE FROM set_test").unwrap();
+        crate::sql_query("DELETE FROM set_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO set_test(id, set_field) VALUES (?, ?)",
-            &conn,
+            conn,
             41,
             (b"red".to_vec(), MysqlType::String),
         );
 
         let set_col_as_set =
-            query_single_table("SELECT set_field FROM set_test", &conn, MysqlType::Set);
+            query_single_table("SELECT set_field FROM set_test", conn, MysqlType::Set);
 
         assert_eq!(set_col_as_set.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
         assert!(!set_col_as_set.flags.contains(Flags::NUM_FLAG));
@@ -1566,7 +1841,7 @@ mod tests {
 
         let set_col_as_text = query_single_table(
             "SELECT set_field FROM set_test",
-            &conn,
+            conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::SET_FLAG),
         );
 
@@ -1577,6 +1852,9 @@ mod tests {
         assert!(!set_col_as_text.flags.contains(Flags::ENUM_FLAG));
         assert!(!set_col_as_text.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(to_value::<Text, String>(&set_col_as_text).unwrap(), "red");
-        assert_eq!(set_col_as_set.bytes, set_col_as_text.bytes);
+        assert_eq!(
+            set_col_as_set.value().unwrap().as_bytes(),
+            set_col_as_text.value().unwrap().as_bytes()
+        );
     }
 }

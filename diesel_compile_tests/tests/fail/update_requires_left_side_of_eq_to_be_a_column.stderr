@@ -1,7 +1,21 @@
-error[E0277]: the trait bound `diesel::expression::bound::Bound<diesel::sql_types::Text, &str>: diesel::Column` is not satisfied
-  --> $DIR/update_requires_left_side_of_eq_to_be_a_column.rs:16:37
+error[E0277]: the trait bound `Bound<Text, &str>: Column` is not satisfied
+  --> tests/fail/update_requires_left_side_of_eq_to_be_a_column.rs:16:33
    |
-16 |     let command = update(users).set(foo.eq(name));
-   |                                     ^^^^^^^^^^^^ the trait `diesel::Column` is not implemented for `diesel::expression::bound::Bound<diesel::sql_types::Text, &str>`
+LL |     let command = update(users).set(foo.eq(name));
+   |                                 ^^^ unsatisfied trait bound
    |
-   = note: required because of the requirements on the impl of `diesel::AsChangeset` for `diesel::expression::operators::Eq<diesel::expression::bound::Bound<diesel::sql_types::Text, &str>, users::columns::name>`
+   = help: the trait `Column` is not implemented for `diesel::expression::bound::Bound<diesel::sql_types::Text, &str>`
+   = help: the following other types implement trait `Column`:
+             columns::id
+             columns::name
+             diesel::expression::assume_not_null::AssumeNotNull<T>
+             pg::metadata_lookup::pg_namespace::columns::nspname
+             pg::metadata_lookup::pg_namespace::columns::oid
+             pg::metadata_lookup::pg_type::columns::oid
+             pg::metadata_lookup::pg_type::columns::typarray
+             pg::metadata_lookup::pg_type::columns::typname
+             pg::metadata_lookup::pg_type::columns::typnamespace
+   = note: required for `diesel::expression::bound::Bound<diesel::sql_types::Text, &str>` to implement `AssignmentTarget`
+   = note: required for `Eq<Bound<Text, &str>, name>` to implement `AsChangeset`
+
+   For more information about this error, try `rustc --explain E0277`.

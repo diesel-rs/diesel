@@ -1,0 +1,30 @@
+error: unexpected end of input, expected `=`
+       help: the correct format looks like `#[diesel(sqlite_type(name = "foo"))]`
+ --> tests/fail/derive_deprecated/deprecated_sqlite_type.rs:6:3
+  |
+LL | #[sqlite_type]
+  |   ^^^^^^^^^^^
+
+error: expected `=`
+  --> tests/fail/derive_deprecated/deprecated_sqlite_type.rs:11:14
+   |
+LL | #[sqlite_type()]
+   |              ^^
+
+error: expected string literal
+  --> tests/fail/derive_deprecated/deprecated_sqlite_type.rs:16:17
+   |
+LL | #[sqlite_type = 1]
+   |                 ^
+
+warning: #[sqlite_type] attribute form is deprecated
+  = help: use `#[diesel(sqlite_type(name = "foo"))]` instead
+
+error[E0599]: no variant or associated item named `foo` found for enum `SqliteType` in the current scope
+  --> tests/fail/derive_deprecated/deprecated_sqlite_type.rs:20:10
+   |
+LL | #[derive(SqlType)]
+   |          ^^^^^^^ variant or associated item not found in `SqliteType`
+   |
+   = note: this error originates in the derive macro `SqlType` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0599`.

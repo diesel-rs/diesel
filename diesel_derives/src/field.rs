@@ -1,122 +1,202 @@
-use proc_macro2::{self, Ident, Span};
-use quote::ToTokens;
-use std::borrow::Cow;
-use syn;
+use proc_macro2::{Span, TokenStream};
 use syn::spanned::Spanned;
+use syn::{Expr, Field as SynField, Ident, Index, Result, Type};
 
-use meta::*;
-use util::*;
+use crate::attrs::{parse_attributes, AttributeSpanWrapper, FieldAttr, SqlIdentifier};
 
 pub struct Field {
-    pub ty: syn::Type,
-    pub name: FieldName,
+    pub ty: Type,
     pub span: Span,
-    pub sql_type: Option<syn::Type>,
-    pub flags: MetaItem,
-    column_name_from_attribute: Option<syn::Ident>,
+    pub name: FieldName,
+    column_name: Option<AttributeSpanWrapper<SqlIdentifier>>,
+    pub sql_type: Option<AttributeSpanWrapper<Type>>,
+    pub treat_none_as_default_value: Option<AttributeSpanWrapper<bool>>,
+    pub treat_none_as_null: Option<AttributeSpanWrapper<bool>>,
+    pub serialize_as: Option<AttributeSpanWrapper<Type>>,
+    pub deserialize_as: Option<AttributeSpanWrapper<Type>>,
+    pub select_expression: Option<AttributeSpanWrapper<Expr>>,
+    pub select_expression_type: Option<AttributeSpanWrapper<Type>>,
+    pub embed: Option<AttributeSpanWrapper<bool>>,
+    pub skip_insertion: Option<AttributeSpanWrapper<bool>>,
+    pub skip_update: Option<AttributeSpanWrapper<bool>>,
 }
 
 impl Field {
-    pub fn from_struct_field(field: &syn::Field, index: usize) -> Self {
-        let column_name_from_attribute =
-            MetaItem::with_name(&field.attrs, "column_name").map(|m| m.expect_ident_value());
-        let name = match field.ident.clone() {
-            Some(mut x) => {
-                // https://github.com/rust-lang/rust/issues/47983#issuecomment-362817105
-                let span = x.span();
-                x.set_span(fix_span(span, Span::call_site()));
-                FieldName::Named(x)
-            }
-            None => FieldName::Unnamed(syn::Index {
-                index: index as u32,
-                // https://github.com/rust-lang/rust/issues/47312
-                span: Span::call_site(),
-            }),
-        };
-        let sql_type = MetaItem::with_name(&field.attrs, "sql_type")
-            .and_then(|m| m.ty_value().map_err(Diagnostic::emit).ok());
-        let flags = MetaItem::with_name(&field.attrs, "diesel")
-            .unwrap_or_else(|| MetaItem::empty("diesel"));
-        let span = field.span();
+    pub fn from_struct_field(field: &SynField, index: usize) -> Result<Self> {
+        let SynField {
+            ident, attrs, ty, ..
+        } = field;
 
-        Self {
-            ty: field.ty.clone(),
-            column_name_from_attribute,
-            name,
-            sql_type,
-            flags,
-            span,
-        }
-    }
+        let mut column_name = None;
+        let mut sql_type = None;
+        let mut serialize_as = None;
+        let mut deserialize_as = None;
+        let mut embed = None;
+        let mut skip_insertion = None;
+        let mut skip_update = None;
+        let mut select_expression = None;
+        let mut select_expression_type = None;
+        let mut treat_none_as_default_value = None;
+        let mut treat_none_as_null = None;
 
-    pub fn column_name(&self) -> syn::Ident {
-        self.column_name_from_attribute
-            .clone()
-            .unwrap_or_else(|| match self.name {
-                FieldName::Named(ref x) => x.clone(),
-                _ => {
-                    self.span
-                        .error(
-                            "All fields of tuple structs must be annotated with `#[column_name]`",
-                        )
-                        .emit();
-                    Ident::new("unknown_column", self.span)
+        for attr in parse_attributes(attrs)? {
+            let attribute_span = attr.attribute_span;
+            let ident_span = attr.ident_span;
+            match attr.item {
+                FieldAttr::ColumnName(_, value) => {
+                    column_name = Some(AttributeSpanWrapper {
+                        item: value,
+                        attribute_span,
+                        ident_span,
+                    })
                 }
-            })
+                FieldAttr::SqlType(_, value) => {
+                    sql_type = Some(AttributeSpanWrapper {
+                        item: Type::Path(value),
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::TreatNoneAsDefaultValue(_, value) => {
+                    treat_none_as_default_value = Some(AttributeSpanWrapper {
+                        item: value.value,
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::TreatNoneAsNull(_, value) => {
+                    treat_none_as_null = Some(AttributeSpanWrapper {
+                        item: value.value,
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::SerializeAs(_, value) => {
+                    serialize_as = Some(AttributeSpanWrapper {
+                        item: Type::Path(value),
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::DeserializeAs(_, value) => {
+                    deserialize_as = Some(AttributeSpanWrapper {
+                        item: Type::Path(value),
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::SelectExpression(_, value) => {
+                    select_expression = Some(AttributeSpanWrapper {
+                        item: value,
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::SelectExpressionType(_, value) => {
+                    select_expression_type = Some(AttributeSpanWrapper {
+                        item: value,
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::Embed(_) => {
+                    embed = Some(AttributeSpanWrapper {
+                        item: true,
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::SkipInsertion(_) => {
+                    skip_insertion = Some(AttributeSpanWrapper {
+                        item: true,
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::SkipUpdate(_) => {
+                    skip_update = Some(AttributeSpanWrapper {
+                        item: true,
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+            }
+        }
+
+        let name = match ident.clone() {
+            Some(x) => FieldName::Named(x),
+            None => FieldName::Unnamed(index.into()),
+        };
+        let span = match name {
+            FieldName::Named(ref ident) => ident.span(),
+            FieldName::Unnamed(_) => ty.span(),
+        };
+        let span = Span::mixed_site().located_at(span);
+
+        Ok(Self {
+            ty: ty.clone(),
+            span,
+            name,
+            column_name,
+            sql_type,
+            treat_none_as_default_value,
+            treat_none_as_null,
+            serialize_as,
+            deserialize_as,
+            select_expression,
+            select_expression_type,
+            embed,
+            skip_insertion,
+            skip_update,
+        })
     }
 
-    pub fn has_flag(&self, flag: &str) -> bool {
-        self.flags.has_flag(flag)
-    }
-
-    pub fn ty_for_serialize(&self) -> Result<Option<syn::Type>, Diagnostic> {
-        if let Some(meta) = self.flags.nested_item("serialize_as")? {
-            let ty = meta.ty_value()?;
-            Ok(Some(ty))
+    pub fn column_name(&self) -> Result<SqlIdentifier> {
+        let identifier = self.column_name.as_ref().map(|a| a.item.clone());
+        if let Some(identifier) = identifier {
+            Ok(identifier)
         } else {
-            Ok(None)
+            match self.name {
+                FieldName::Named(ref x) => Ok(x.into()),
+                FieldName::Unnamed(ref x) => Err(syn::Error::new(
+                    x.span(),
+                    "all fields of tuple structs must be annotated with `#[diesel(column_name)]`",
+                )),
+            }
         }
     }
 
-    pub fn ty_for_deserialize(&self) -> Result<Cow<syn::Type>, Diagnostic> {
-        if let Some(meta) = self.flags.nested_item("deserialize_as")? {
-            meta.ty_value().map(Cow::Owned)
+    pub fn ty_for_deserialize(&self) -> &Type {
+        if let Some(AttributeSpanWrapper { item: value, .. }) = &self.deserialize_as {
+            value
         } else {
-            Ok(Cow::Borrowed(&self.ty))
+            &self.ty
         }
+    }
+
+    pub(crate) fn embed(&self) -> bool {
+        self.embed.as_ref().map(|a| a.item).unwrap_or(false)
+    }
+
+    pub(crate) fn skip_insertion(&self) -> bool {
+        self.skip_insertion
+            .as_ref()
+            .map(|a| a.item)
+            .unwrap_or(false)
+    }
+
+    pub(crate) fn skip_update(&self) -> bool {
+        self.skip_update.as_ref().map(|a| a.item).unwrap_or(false)
     }
 }
 
 pub enum FieldName {
-    Named(syn::Ident),
-    Unnamed(syn::Index),
+    Named(Ident),
+    Unnamed(Index),
 }
 
-impl FieldName {
-    pub fn assign(&self, expr: syn::Expr) -> syn::FieldValue {
-        let span = self.span();
-        // Parens are to work around https://github.com/rust-lang/rust/issues/47311
-        let tokens = quote_spanned!(span=> #self: (#expr));
-        parse_quote!(#tokens)
-    }
-
-    pub fn access(&self) -> proc_macro2::TokenStream {
-        let span = self.span();
-        // Span of the dot is important due to
-        // https://github.com/rust-lang/rust/issues/47312
-        quote_spanned!(span=> .#self)
-    }
-
-    pub fn span(&self) -> Span {
-        match *self {
-            FieldName::Named(ref x) => x.span(),
-            FieldName::Unnamed(ref x) => x.span,
-        }
-    }
-}
-
-impl ToTokens for FieldName {
-    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+impl quote::ToTokens for FieldName {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         match *self {
             FieldName::Named(ref x) => x.to_tokens(tokens),
             FieldName::Unnamed(ref x) => x.to_tokens(tokens),

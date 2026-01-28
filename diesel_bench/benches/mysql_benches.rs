@@ -1,7 +1,7 @@
-use criterion::Bencher;
+use super::Bencher;
 use rust_mysql::params::Params;
 use rust_mysql::prelude::*;
-use rust_mysql::{Conn, Opts, Row};
+use rust_mysql::{Conn, Opts, OptsBuilder, Row};
 use std::collections::HashMap;
 
 pub struct User {
@@ -24,11 +24,12 @@ pub struct Comment {
 }
 
 fn connection() -> Conn {
-    dotenv::dotenv().ok();
-    let connection_url = dotenv::var("MYSQL_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    dotenvy::dotenv().ok();
+    let connection_url = dotenvy::var("MYSQL_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    let opts = Opts::from_url(&connection_url).unwrap();
+    let opts = OptsBuilder::from_opts(Opts::from_url(&connection_url).unwrap())
+        .prefer_socket(false);
     let mut conn = Conn::new(opts).unwrap();
 
     conn.query_drop("SET FOREIGN_KEY_CHECKS = 0;").unwrap();
@@ -102,29 +103,33 @@ pub fn bench_medium_complex_query_by_id(b: &mut Bencher, size: usize) {
     let query = conn
         .prep(
             "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
-             FROM users as u LEFT JOIN posts as p on u.id = p.user_id",
+             FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = ?",
         )
         .unwrap();
 
     b.iter(|| {
-        conn.exec_map(&query, Params::Empty, |mut row: Row| {
-            let user = User {
-                id: row.take(0).unwrap(),
-                name: row.take(1).unwrap(),
-                hair_color: row.take(2).unwrap(),
-            };
-            let post = if let Some(id) = row.take(3).unwrap() {
-                Some(Post {
-                    id,
-                    user_id: row.take(4).unwrap(),
-                    title: row.take(5).unwrap(),
-                    body: row.take(6).unwrap(),
-                })
-            } else {
-                None
-            };
-            (user, post)
-        })
+        conn.exec_map(
+            &query,
+            Params::Positional(vec!["black".into()]),
+            |mut row: Row| {
+                let user = User {
+                    id: row.take(0).unwrap(),
+                    name: row.take(1).unwrap(),
+                    hair_color: row.take(2).unwrap(),
+                };
+                let post = if let Some(id) = row.take(3).unwrap() {
+                    Some(Post {
+                        id,
+                        user_id: row.take(4).unwrap(),
+                        title: row.take(5).unwrap(),
+                        body: row.take(6).unwrap(),
+                    })
+                } else {
+                    None
+                };
+                (user, post)
+            },
+        )
         .unwrap()
     })
 }
@@ -138,29 +143,33 @@ pub fn bench_medium_complex_query_by_name(b: &mut Bencher, size: usize) {
     let query = conn
         .prep(
             "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, p.user_id, p.title, p.body \
-             FROM users as u LEFT JOIN posts as p on u.id = p.user_id",
+             FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = ?",
         )
         .unwrap();
 
     b.iter(|| {
-        conn.exec_map(&query, Params::Empty, |mut row: Row| {
-            let user = User {
-                id: row.take("myuser_id").unwrap(),
-                name: row.take("name").unwrap(),
-                hair_color: row.take("hair_color").unwrap(),
-            };
-            let post = if let Some(id) = row.take("post_id").unwrap() {
-                Some(Post {
-                    id,
-                    user_id: row.take("user_id").unwrap(),
-                    title: row.take("title").unwrap(),
-                    body: row.take("body").unwrap(),
-                })
-            } else {
-                None
-            };
-            (user, post)
-        })
+        conn.exec_map(
+            &query,
+            Params::Positional(vec!["black".into()]),
+            |mut row: Row| {
+                let user = User {
+                    id: row.take("myuser_id").unwrap(),
+                    name: row.take("name").unwrap(),
+                    hair_color: row.take("hair_color").unwrap(),
+                };
+                let post = if let Some(id) = row.take("post_id").unwrap() {
+                    Some(Post {
+                        id,
+                        user_id: row.take("user_id").unwrap(),
+                        title: row.take("title").unwrap(),
+                        body: row.take("body").unwrap(),
+                    })
+                } else {
+                    None
+                };
+                (user, post)
+            },
+        )
         .unwrap()
     })
 }

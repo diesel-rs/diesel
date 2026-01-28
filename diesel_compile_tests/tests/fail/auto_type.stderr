@@ -1,0 +1,71 @@
+error: literals must have type suffix for auto_type, e.g. `2_i64`
+  --> tests/fail/auto_type.rs:46:13
+   |
+LL |     let n = 2;
+   |             ^
+
+error: can't infer generic argument because there is no function argument to infer from (less function arguments than generic arguments)
+  --> tests/fail/auto_type.rs:59:25
+   |
+LL |     posts::user_id.eq::<_>()
+   |                         ^
+
+error: literals must have type suffix for auto_type, e.g. `2_i64`
+  --> tests/fail/auto_type.rs:72:34
+   |
+LL |             .filter(posts::id.gt(2)),
+   |                                  ^
+
+error[E0107]: type alias takes 0 generic arguments but 1 generic argument was supplied
+  --> tests/fail/auto_type.rs:36:17
+   |
+LL |   #[dsl::auto_type]
+   |  __________________-
+LL | | fn users_with_posts_with_id_greater_than(id_greater_than: i32) -> _ {
+...  |
+LL | |     users::table
+LL | |         .filter(user_has_post_with_id_greater_than(id_greater_than))
+   | |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+   | |_________________|________________________________|
+   |                   |                                help: remove the unnecessary generics
+   |                   expected 0 generic arguments
+   |
+note: type alias defined here, with 0 generic parameters
+  --> tests/fail/auto_type.rs:22:4
+   |
+LL | fn user_has_post_with_id_greater_than(id_greater_than: i32) -> _ {
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0121]: the placeholder `_` is not allowed within types on item signatures for type aliases
+  --> tests/fail/auto_type.rs:46:13
+   |
+LL |     let n = 2;
+   |             ^ not allowed in type signatures
+
+error[E0121]: the placeholder `_` is not allowed within types on item signatures for type aliases
+  --> tests/fail/auto_type.rs:59:25
+   |
+LL |     posts::user_id.eq::<_>()
+   |                         ^ not allowed in type signatures
+
+error[E0121]: the placeholder `_` is not allowed within types on item signatures for associated types
+  --> tests/fail/auto_type.rs:72:34
+   |
+LL |             .filter(posts::id.gt(2)),
+   |                                  ^ not allowed in type signatures
+
+error[E0061]: this method takes 1 argument but 0 arguments were supplied
+  --> tests/fail/auto_type.rs:59:20
+   |
+LL |     posts::user_id.eq::<_>()
+   |                    ^^^^^^^-- argument #1 is missing
+   |
+note: method defined here
+  --> DIESEL/diesel/diesel/src/expression_methods/global_expression_methods.rs
+   |
+LL |     fn eq<T>(self, other: T) -> dsl::Eq<Self, T>
+   |        ^^
+help: provide the argument
+   |
+LL |     posts::user_id.eq::<_>(/* other */)
+   |                            +++++++++++

@@ -1,40 +1,101 @@
-error[E0277]: the trait bound `non_users::columns::noname: diesel::SelectableExpression<users::table>` is not satisfied
-  --> $DIR/returning_clause_requires_selectable_expression.rs:27:20
-   |
-27 |         .returning(non_users::columns::noname);
-   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
-   |
-   = help: the following implementations were found:
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
-             <non_users::columns::noname as diesel::SelectableExpression<non_users::table>>
+error[E0277]: cannot select `non_users::columns::noname` from `users::table`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:27:20
+    |
+ LL |         .returning(non_users::columns::noname);
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
+    |
+help: the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: `non_users::columns::noname` is no valid selection for `users::table`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              `non_users::columns::noname` implements `SelectableExpression<JoinOn<Join, On>>`
+              `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
+              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+              `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+              `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
+note: required by a bound in `DeleteStatement::<T, U>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+LL |     where
+LL |         E: SelectableExpression<T>,
+    |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `non_users::columns::noname: diesel::SelectableExpression<users::table>` is not satisfied
-  --> $DIR/returning_clause_requires_selectable_expression.rs:31:20
-   |
-31 |         .returning(non_users::columns::noname);
-   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
-   |
-   = help: the following implementations were found:
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
-             <non_users::columns::noname as diesel::SelectableExpression<non_users::table>>
-   = note: required because of the requirements on the impl of `diesel::query_builder::Query` for `diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<non_users::columns::noname>>`
+error[E0277]: cannot select `non_users::columns::noname` from `users::table`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:32:20
+    |
+ LL |         .returning(non_users::columns::noname);
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
+    |
+help: the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: `non_users::columns::noname` is no valid selection for `users::table`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              `non_users::columns::noname` implements `SelectableExpression<JoinOn<Join, On>>`
+              `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
+              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+              `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+              `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
+    = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
+note: required by a bound in `InsertStatement::<T, U, Op>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+LL |     where
+LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
+    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `non_users::columns::noname: diesel::SelectableExpression<users::table>` is not satisfied
-  --> $DIR/returning_clause_requires_selectable_expression.rs:35:20
-   |
-35 |         .returning(non_users::columns::noname);
-   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
-   |
-   = help: the following implementations were found:
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
-             <non_users::columns::noname as diesel::SelectableExpression<non_users::table>>
-   = note: required because of the requirements on the impl of `diesel::query_builder::Query` for `diesel::query_builder::UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<non_users::columns::noname>>`
+error[E0277]: cannot select `non_users::columns::noname` from `users::table`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:37:20
+    |
+ LL |         .returning(non_users::columns::noname);
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
+    |
+help: the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: `non_users::columns::noname` is no valid selection for `users::table`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              `non_users::columns::noname` implements `SelectableExpression<JoinOn<Join, On>>`
+              `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
+              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
+              `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+              `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
+    = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
+note: required by a bound in `UpdateStatement::<T, U, V>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+...
+LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
+    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.

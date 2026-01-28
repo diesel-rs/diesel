@@ -1,15 +1,15 @@
 //! The MySQL backend
 
-use byteorder::NativeEndian;
-
 use super::query_builder::MysqlQueryBuilder;
 use super::MysqlValue;
+use crate::backend::sql_dialect::on_conflict_clause::SupportsOnConflictClause;
 use crate::backend::*;
+use crate::internal::derives::multiconnection::sql_dialect;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::sql_types::TypeMetadata;
 
 /// The MySQL backend
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Default)]
 pub struct Mysql;
 
 #[allow(missing_debug_implementations)]
@@ -64,12 +64,8 @@ pub enum MysqlType {
 
 impl Backend for Mysql {
     type QueryBuilder = MysqlQueryBuilder;
-    type BindCollector = RawBytesBindCollector<Self>;
-    type ByteOrder = NativeEndian;
-}
-
-impl<'a> HasRawValue<'a> for Mysql {
-    type RawValue = MysqlValue<'a>;
+    type RawValue<'a> = MysqlValue<'a>;
+    type BindCollector<'a> = RawBytesBindCollector<Self>;
 }
 
 impl TypeMetadata for Mysql {
@@ -77,5 +73,49 @@ impl TypeMetadata for Mysql {
     type MetadataLookup = ();
 }
 
-impl SupportsDefaultKeyword for Mysql {}
-impl UsesAnsiSavepointSyntax for Mysql {}
+impl SqlDialect for Mysql {
+    type ReturningClause = sql_dialect::returning_clause::DoesNotSupportReturningClause;
+
+    type OnConflictClause = MysqlOnConflictClause;
+
+    type InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword;
+    type BatchInsertSupport = sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport;
+    type DefaultValueClauseForInsert = MysqlStyleDefaultValueClause;
+
+    type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;
+    type SelectStatementSyntax = sql_dialect::select_statement_syntax::AnsiSqlSelectStatement;
+
+    type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
+    type ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison;
+
+    type ConcatClause = MysqlConcatClause;
+    type AliasSyntax = sql_dialect::alias_syntax::AsAliasSyntax;
+
+    type WindowFrameClauseGroupSupport =
+        sql_dialect::window_frame_clause_group_support::NoGroupWindowFrameUnit;
+
+    type WindowFrameExclusionSupport =
+        sql_dialect::window_frame_exclusion_support::NoFrameFrameExclusionSupport;
+
+    type AggregateFunctionExpressions =
+        sql_dialect::aggregate_function_expressions::NoAggregateFunctionExpressions;
+
+    type BuiltInWindowFunctionRequireOrder = MysqlRequiresOrderForWindowFunctions;
+}
+
+impl DieselReserveSpecialization for Mysql {}
+impl TrustedBackend for Mysql {}
+
+#[derive(Debug, Clone, Copy)]
+pub struct MysqlStyleDefaultValueClause;
+
+#[derive(Debug, Clone, Copy)]
+pub struct MysqlConcatClause;
+
+#[derive(Debug, Clone, Copy)]
+pub struct MysqlOnConflictClause;
+
+#[derive(Debug, Clone, Copy)]
+pub struct MysqlRequiresOrderForWindowFunctions;
+
+impl SupportsOnConflictClause for MysqlOnConflictClause {}

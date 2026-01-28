@@ -1,0 +1,463 @@
+error[E0425]: cannot find type `name` in module `posts`
+  --> tests/fail/derive/has_query.rs:29:5
+   |
+LL |     name: String,
+   |     ^^^^ not found in `posts`
+   |
+help: consider importing this struct through its public re-export
+   |
+ 1 + use crate::users::name;
+   |
+help: if you import `name`, refer to it directly
+   |
+26 - #[diesel(table_name = posts)]
+27 - struct UserMixedUp {
+28 -     id: i32,
+29 -     name: String,
+26 + #[diesel(table_name = name: String,
+   |
+
+error[E0425]: cannot find value `name` in module `posts`
+  --> tests/fail/derive/has_query.rs:29:5
+   |
+LL |     name: String,
+   |     ^^^^ not found in `posts`
+   |
+help: consider importing this unit struct through its public re-export
+   |
+ 1 + use crate::users::name;
+   |
+help: if you import `name`, refer to it directly
+   |
+26 - #[diesel(table_name = posts)]
+27 - struct UserMixedUp {
+28 -     id: i32,
+29 -     name: String,
+26 + #[diesel(table_name = name: String,
+   |
+
+error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Mysql>` is not satisfied
+  --> tests/fail/derive/has_query.rs:41:11
+   |
+LL | #[derive(HasQuery)]
+   |          -------- in this derive macro expansion
+...
+LL |     name: i32,
+   |           ^^^ the trait `FromSql<diesel::sql_types::Text, Mysql>` is not implemented for `i32`
+   |
+   = note: double check your type mappings via the documentation of `diesel::sql_types::Text`
+   = note: `diesel::sql_query` requires the loading target to column names for loading values.
+           You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
+help: the following other types implement trait `FromSql<A, DB>`
+  --> DIESEL/diesel/diesel/src/sqlite/types/mod.rs
+   |
+LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Sqlite>`
+   |
+  ::: DIESEL/diesel/diesel/src/pg/types/integers.rs
+   |
+LL | impl FromSql<sql_types::Integer, Pg> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Pg>`
+   |
+  ::: DIESEL/diesel/diesel/src/mysql/types/primitives.rs
+   |
+LL | impl FromSql<Integer, Mysql> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Mysql>`
+   = note: required for `i32` to implement `Queryable<diesel::sql_types::Text, Mysql>`
+   = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Mysql>`
+   = help: see issue #48214
+   = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Sqlite>` is not satisfied
+  --> tests/fail/derive/has_query.rs:41:11
+   |
+LL | #[derive(HasQuery)]
+   |          -------- in this derive macro expansion
+...
+LL |     name: i32,
+   |           ^^^ the trait `FromSql<diesel::sql_types::Text, Sqlite>` is not implemented for `i32`
+   |
+   = note: double check your type mappings via the documentation of `diesel::sql_types::Text`
+   = note: `diesel::sql_query` requires the loading target to column names for loading values.
+           You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
+help: the following other types implement trait `FromSql<A, DB>`
+  --> DIESEL/diesel/diesel/src/sqlite/types/mod.rs
+   |
+LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Sqlite>`
+   |
+  ::: DIESEL/diesel/diesel/src/pg/types/integers.rs
+   |
+LL | impl FromSql<sql_types::Integer, Pg> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Pg>`
+   |
+  ::: DIESEL/diesel/diesel/src/mysql/types/primitives.rs
+   |
+LL | impl FromSql<Integer, Mysql> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Mysql>`
+   = note: required for `i32` to implement `Queryable<diesel::sql_types::Text, Sqlite>`
+   = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Sqlite>`
+   = help: see issue #48214
+   = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is not satisfied
+  --> tests/fail/derive/has_query.rs:41:11
+   |
+LL | #[derive(HasQuery)]
+   |          -------- in this derive macro expansion
+...
+LL |     name: i32,
+   |           ^^^ the trait `FromSql<diesel::sql_types::Text, Pg>` is not implemented for `i32`
+   |
+   = note: double check your type mappings via the documentation of `diesel::sql_types::Text`
+   = note: `diesel::sql_query` requires the loading target to column names for loading values.
+           You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
+help: the following other types implement trait `FromSql<A, DB>`
+  --> DIESEL/diesel/diesel/src/sqlite/types/mod.rs
+   |
+LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Sqlite>`
+   |
+  ::: DIESEL/diesel/diesel/src/pg/types/integers.rs
+   |
+LL | impl FromSql<sql_types::Integer, Pg> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Pg>`
+   |
+  ::: DIESEL/diesel/diesel/src/mysql/types/primitives.rs
+   |
+LL | impl FromSql<Integer, Mysql> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Mysql>`
+   = note: required for `i32` to implement `Queryable<diesel::sql_types::Text, Pg>`
+   = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Pg>`
+   = help: see issue #48214
+   = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `std::string::String: FromSqlRow<diesel::sql_types::Integer, Mysql>` is not satisfied
+  --> tests/fail/derive/has_query.rs:37:9
+   |
+LL | #[derive(HasQuery)]
+   |          -------- in this derive macro expansion
+...
+LL |     id: String,
+   |         ^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Mysql>` is not implemented for `std::string::String`
+   |
+   = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`
+   = note: `diesel::sql_query` requires the loading target to column names for loading values.
+           You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
+   = help: the following other types implement trait `FromSql<A, DB>`:
+             `std::string::String` implements `FromSql<Citext, Pg>`
+             `std::string::String` implements `FromSql<TimestamptzSqlite, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Date, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Time, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Timestamp, Sqlite>`
+   = note: required for `std::string::String` to implement `Queryable<diesel::sql_types::Integer, Mysql>`
+   = note: required for `std::string::String` to implement `FromSqlRow<diesel::sql_types::Integer, Mysql>`
+   = help: see issue #48214
+   = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `String: FromSqlRow<Integer, Sqlite>` is not satisfied
+  --> tests/fail/derive/has_query.rs:37:9
+   |
+LL | #[derive(HasQuery)]
+   |          -------- in this derive macro expansion
+...
+LL |     id: String,
+   |         ^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Sqlite>` is not implemented for `std::string::String`
+   |
+   = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`
+   = note: `diesel::sql_query` requires the loading target to column names for loading values.
+           You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
+   = help: the following other types implement trait `FromSql<A, DB>`:
+             `std::string::String` implements `FromSql<Citext, Pg>`
+             `std::string::String` implements `FromSql<TimestamptzSqlite, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Date, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Time, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Timestamp, Sqlite>`
+   = note: required for `std::string::String` to implement `Queryable<diesel::sql_types::Integer, Sqlite>`
+   = note: required for `std::string::String` to implement `FromSqlRow<diesel::sql_types::Integer, Sqlite>`
+   = help: see issue #48214
+
+      = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `std::string::String: FromSqlRow<diesel::sql_types::Integer, Pg>` is not satisfied
+  --> tests/fail/derive/has_query.rs:37:9
+   |
+LL | #[derive(HasQuery)]
+   |          -------- in this derive macro expansion
+...
+LL |     id: String,
+   |         ^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `std::string::String`
+   |
+   = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`
+   = note: `diesel::sql_query` requires the loading target to column names for loading values.
+           You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
+   = help: the following other types implement trait `FromSql<A, DB>`:
+             `std::string::String` implements `FromSql<Citext, Pg>`
+             `std::string::String` implements `FromSql<TimestamptzSqlite, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Date, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Time, Sqlite>`
+             `std::string::String` implements `FromSql<diesel::sql_types::Timestamp, Sqlite>`
+   = note: required for `std::string::String` to implement `Queryable<diesel::sql_types::Integer, Pg>`
+   = note: required for `std::string::String` to implement `FromSqlRow<diesel::sql_types::Integer, Pg>`
+   = help: see issue #48214
+   = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `SelectStatement<FromClause<table>>: SelectDsl<...>` is not satisfied
+   --> tests/fail/derive/has_query.rs:47:10
+    |
+ LL | #[derive(HasQuery)]
+    |          ^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `SelectDsl<diesel::expression::select_by::SelectBy<RequiresValidSelect, __DB>>` is not implemented for `SelectStatement<FromClause<users::table>>`
+help: the following other types implement trait `SelectDsl<Selection>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+    |
+LL | / impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
+LL | | where
+LL | |     G: ValidGroupByClause,
+...   |
+LL | |     SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Sele...
+LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    | |__________________________________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>`
+...
+LL | / impl<S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
+LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
+LL | | where
+LL | |     G: ValidGroupByClause,
+LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expressions>,
+LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
+LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    | |__________________________________________________________^ `SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>`
+ 
+        = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+   --> tests/fail/derive/has_query.rs:47:10
+    |
+ LL | #[derive(HasQuery)]
+    |          ^^^^^^^^ expected `Once`, found `Never`
+    |
+note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
+   --> tests/fail/derive/has_query.rs:12:9
+    |
+ LL |         id -> Integer,
+    |         ^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 1 redundant requirement hidden
+    = note: required for `(posts::columns::id,)` to implement `AppearsOnTable<users::table>`
+note: required by a bound in `diesel::HasQuery`
+   --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
+    |
+ LL | pub trait HasQuery<DB: Backend>:
+    |           -------- required by a bound in this trait
+...
+LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
+    = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
+   --> tests/fail/derive/has_query.rs:47:10
+    |
+ LL | #[derive(HasQuery)]
+    |          ^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+   --> tests/fail/derive/has_query.rs:3:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
+    = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
+            call if both are tables
+help: the following other types implement trait `TableNotEqual<T>`
+   --> DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
+    |
+LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    | |
+    | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
+    | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
+    = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
+   --> tests/fail/derive/has_query.rs:12:9
+    |
+ LL |         id -> Integer,
+    |         ^^
+    = note: 1 redundant requirement hidden
+    = note: required for `(posts::columns::id,)` to implement `AppearsOnTable<users::table>`
+note: required by a bound in `diesel::HasQuery`
+   --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
+    |
+ LL | pub trait HasQuery<DB: Backend>:
+    |           -------- required by a bound in this trait
+...
+LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
+    = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `SelectStatement<..., ..., ..., ...>: SelectDsl<...>` is not satisfied
+   --> tests/fail/derive/has_query.rs:57:10
+    |
+ LL | #[derive(HasQuery)]
+    |          ^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `SelectDsl<diesel::expression::select_by::SelectBy<BaseQueryStillRequiresValidSelect, __DB>>` is not implemented for `SelectStatement<FromClause<table>, ..., ..., ...>`
+help: the following other types implement trait `SelectDsl<Selection>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+    |
+LL | / impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
+LL | | where
+LL | |     G: ValidGroupByClause,
+...   |
+LL | |     SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Sele...
+LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    | |__________________________________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>`
+...
+LL | / impl<S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
+LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
+LL | | where
+LL | |     G: ValidGroupByClause,
+LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expressions>,
+LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
+LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    | |__________________________________________________________^ `SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>`
+ 
+        = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+   --> tests/fail/derive/has_query.rs:57:10
+    |
+ LL | #[derive(HasQuery)]
+    |          ^^^^^^^^ expected `Once`, found `Never`
+    |
+note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
+   --> tests/fail/derive/has_query.rs:12:9
+    |
+ LL |         id -> Integer,
+    |         ^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 1 redundant requirement hidden
+    = note: required for `(posts::columns::id,)` to implement `AppearsOnTable<users::table>`
+note: required by a bound in `diesel::HasQuery`
+   --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
+    |
+ LL | pub trait HasQuery<DB: Backend>:
+    |           -------- required by a bound in this trait
+...
+LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
+    = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
+   --> tests/fail/derive/has_query.rs:57:10
+    |
+ LL | #[derive(HasQuery)]
+    |          ^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+   --> tests/fail/derive/has_query.rs:3:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
+    = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
+            call if both are tables
+help: the following other types implement trait `TableNotEqual<T>`
+   --> DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
+    |
+LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    | |
+    | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
+    | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
+    = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
+   --> tests/fail/derive/has_query.rs:12:9
+    |
+ LL |         id -> Integer,
+    |         ^^
+    = note: 1 redundant requirement hidden
+    = note: required for `(posts::columns::id,)` to implement `AppearsOnTable<users::table>`
+note: required by a bound in `diesel::HasQuery`
+   --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
+    |
+ LL | pub trait HasQuery<DB: Backend>:
+    |           -------- required by a bound in this trait
+...
+LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
+    = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: SelectDsl<...>` is not satisfied
+   --> tests/fail/derive/has_query.rs:67:10
+    |
+ LL | #[derive(HasQuery)]
+    |          ^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `SelectDsl<diesel::expression::select_by::SelectBy<GroupByIsRespected, __DB>>` is not implemented for `SelectStatement<..., ..., ..., ..., ..., ..., ...>`
+help: the following other types implement trait `SelectDsl<Selection>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+    |
+LL | / impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
+LL | | where
+LL | |     G: ValidGroupByClause,
+...   |
+LL | |     SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Sele...
+LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    | |__________________________________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>`
+...
+LL | / impl<S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
+LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
+LL | | where
+LL | |     G: ValidGroupByClause,
+LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expressions>,
+LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
+LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    | |__________________________________________________________^ `SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>`
+ 
+        = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+   --> tests/fail/derive/has_query.rs:67:10
+    |
+ LL | #[derive(HasQuery)]
+    |          ^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+    |
+note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
+   --> tests/fail/derive/has_query.rs:3:1
+    |
+  LL | / table! {
+  LL | |     users {
+  LL | |         id -> Integer,
+  LL | |         name -> Text,
+  LL | |     }
+  LL | | }
+    | |_^
+note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
+   --> tests/fail/derive/has_query.rs:5:9
+    |
+  LL |         id -> Integer,
+    |         ^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 1 redundant requirement hidden
+    = note: required for `(users::columns::id,)` to implement `ValidGrouping<users::columns::name>`
+note: required by a bound in `diesel::HasQuery`
+   --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
+    |
+ LL | pub trait HasQuery<DB: Backend>:
+    |           -------- required by a bound in this trait
+...
+LL |                           + ValidGrouping<<Self::BaseQuery as AcceptedQueries>::GroupBy>,
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
+    = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `user1s`
+  --> tests/fail/derive/has_query.rs:19:8
+   |
+LL | struct User1 {
+   |        ^^^^^ use of unresolved module or unlinked crate `user1s`
+   |
+   = help: you might be missing a crate named `user1s`

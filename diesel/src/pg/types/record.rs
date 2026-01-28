@@ -8,6 +8,7 @@ use crate::expression::{
     ValidGrouping,
 };
 use crate::pg::{Pg, PgValue};
+use crate::query_builder::bind_collector::ByteWrapper;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::result::QueryResult;
 use crate::serialize::{self, IsNull, Output, ToSql, WriteTuple};
@@ -19,6 +20,7 @@ macro_rules! tuple_impls {
             $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
         }
     )+) => {$(
+        #[cfg(feature = "postgres_backend")]
         impl<$($T,)+ $($ST,)+> FromSql<Record<($($ST,)+)>, Pg> for ($($T,)+)
         where
             $($T: FromSql<$ST, Pg>,)+
@@ -26,7 +28,7 @@ macro_rules! tuple_impls {
             // Yes, we're relying on the order of evaluation of subexpressions
             // but the only other option would be to use `mem::uninitialized`
             // and `ptr::write`.
-            #[allow(clippy::eval_order_dependence)]
+            #[allow(clippy::mixed_read_write_in_expression)]
             fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
                 let mut bytes = value.as_bytes();
                 let num_elements = bytes.read_i32::<NetworkEndian>()?;
@@ -50,11 +52,11 @@ macro_rules! tuple_impls {
                     if num_bytes == -1 {
                         $T::from_nullable_sql(None)?
                     } else {
-                        let (elem_bytes, new_bytes) = bytes.split_at(num_bytes as usize);
+                        let (elem_bytes, new_bytes) = bytes.split_at(num_bytes.try_into()?);
                         bytes = new_bytes;
-                        $T::from_sql(PgValue::new(
+                        $T::from_sql(PgValue::new_internal(
                             elem_bytes,
-                            oid,
+                            &oid,
                         ))?
                     }
                 },)+);
@@ -68,6 +70,7 @@ macro_rules! tuple_impls {
             }
         }
 
+        #[cfg(feature = "postgres_backend")]
         impl<$($T,)+ $($ST,)+> Queryable<Record<($($ST,)+)>, Pg> for ($($T,)+)
         where Self: FromSql<Record<($($ST,)+)>, Pg>
         {
@@ -78,6 +81,7 @@ macro_rules! tuple_impls {
             }
         }
 
+        #[cfg(feature = "postgres_backend")]
         impl<$($T,)+ $($ST,)+> AsExpression<Record<($($ST,)+)>> for ($($T,)+)
         where
             $($ST: SqlType + TypedExpressionType,)+
@@ -93,22 +97,27 @@ macro_rules! tuple_impls {
             }
         }
 
+        #[cfg(feature = "postgres_backend")]
         impl<$($T,)+ $($ST,)+> WriteTuple<($($ST,)+)> for ($($T,)+)
         where
             $($T: ToSql<$ST, Pg>,)+
             $(Pg: HasSqlType<$ST>),+
         {
-            fn write_tuple<_W: Write>(&self, out: &mut Output<_W, Pg>) -> serialize::Result {
-                let mut buffer = out.with_buffer(Vec::new());
+            fn write_tuple(&self, out: &mut Output<'_, '_, Pg>) -> serialize::Result {
+                let mut buffer = Vec::new();
                 out.write_i32::<NetworkEndian>($Tuple)?;
 
                 $(
                     let oid = <Pg as HasSqlType<$ST>>::metadata(out.metadata_lookup()).oid()?;
                     out.write_u32::<NetworkEndian>(oid)?;
-                    let is_null = self.$idx.to_sql(&mut buffer)?;
+                    let is_null = {
+                        let mut temp_buffer = Output::new(ByteWrapper(&mut buffer), out.metadata_lookup());
+                        let is_null = self.$idx.to_sql(&mut temp_buffer)?;
+                        is_null
+                    };
 
                     if let IsNull::No = is_null {
-                        out.write_i32::<NetworkEndian>(buffer.len() as i32)?;
+                        out.write_i32::<NetworkEndian>(buffer.len().try_into()?)?;
                         out.write_all(&buffer)?;
                         buffer.clear();
                     } else {
@@ -122,7 +131,7 @@ macro_rules! tuple_impls {
     )+}
 }
 
-__diesel_for_each_tuple!(tuple_impls);
+diesel_derives::__diesel_for_each_tuple!(tuple_impls);
 
 #[derive(Debug, Clone, Copy, QueryId, ValidGrouping)]
 pub struct PgTuple<T>(T);
@@ -131,8 +140,8 @@ impl<T> QueryFragment<Pg> for PgTuple<T>
 where
     T: QueryFragment<Pg>,
 {
-    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
-        out.push_sql("(");
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+        out.push_sql("ROW(");
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(")");
         Ok(())
@@ -142,6 +151,7 @@ where
 impl<T> Expression for PgTuple<T>
 where
     T: Expression,
+    T::SqlType: 'static,
 {
     type SqlType = Record<T::SqlType>;
 }
@@ -168,16 +178,16 @@ mod tests {
     use crate::sql_types::*;
     use crate::test_helpers::*;
 
-    #[test]
+    #[diesel_test_helper::test]
     fn record_deserializes_correctly() {
-        let conn = pg_connection();
+        let conn = &mut pg_connection();
 
         let tup =
-            sql::<Record<(Integer, Text)>>("SELECT (1, 'hi')").get_result::<(i32, String)>(&conn);
+            sql::<Record<(Integer, Text)>>("SELECT (1, 'hi')").get_result::<(i32, String)>(conn);
         assert_eq!(Ok((1, String::from("hi"))), tup);
 
         let tup = sql::<Record<(Record<(Integer, Text)>, Integer)>>("SELECT ((2, 'bye'), 3)")
-            .get_result::<((i32, String), i32)>(&conn);
+            .get_result::<((i32, String), i32)>(conn);
         assert_eq!(Ok(((2, String::from("bye")), 3)), tup);
 
         let tup = sql::<
@@ -186,20 +196,27 @@ mod tests {
                 Nullable<Integer>,
             )>,
         >("SELECT ((4, NULL), NULL)")
-        .get_result::<((Option<i32>, Option<String>), Option<i32>)>(&conn);
+        .get_result::<((Option<i32>, Option<String>), Option<i32>)>(conn);
         assert_eq!(Ok(((Some(4), None), None)), tup);
+
+        let tup = sql::<Record<(Integer,)>>("SELECT ROW(1)").get_result::<(i32,)>(conn);
+        assert_eq!(Ok((1,)), tup);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn record_kinda_sorta_not_really_serializes_correctly() {
-        let conn = pg_connection();
+        let conn = &mut pg_connection();
 
         let tup = sql::<Record<(Integer, Text)>>("(1, 'hi')");
-        let res = crate::select(tup.eq((1, "hi"))).get_result(&conn);
+        let res = crate::select(tup.eq((1, "hi"))).get_result(conn);
         assert_eq!(Ok(true), res);
 
         let tup = sql::<Record<(Record<(Integer, Text)>, Integer)>>("((2, 'bye'::text), 3)");
-        let res = crate::select(tup.eq(((2, "bye"), 3))).get_result(&conn);
+        let res = crate::select(tup.eq(((2, "bye"), 3))).get_result(conn);
+        assert_eq!(Ok(true), res);
+
+        let tup = sql::<Record<(Integer,)>>("ROW(3)");
+        let res = crate::select(tup.eq((3,))).get_result(conn);
         assert_eq!(Ok(true), res);
 
         let tup = sql::<
@@ -209,33 +226,33 @@ mod tests {
             )>,
         >("((4, NULL::text), NULL::int4)");
         let res = crate::select(tup.is_not_distinct_from(((Some(4), None::<&str>), None::<i32>)))
-            .get_result(&conn);
+            .get_result(conn);
         assert_eq!(Ok(true), res);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn serializing_named_composite_types() {
         #[derive(SqlType, QueryId, Debug, Clone, Copy)]
-        #[postgres(type_name = "my_type")]
+        #[diesel(postgres_type(name = "my_type"))]
         struct MyType;
 
         #[derive(Debug, AsExpression)]
-        #[sql_type = "MyType"]
+        #[diesel(sql_type = MyType)]
         struct MyStruct<'a>(i32, &'a str);
 
-        impl<'a> ToSql<MyType, Pg> for MyStruct<'a> {
-            fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+        impl ToSql<MyType, Pg> for MyStruct<'_> {
+            fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
                 WriteTuple::<(Integer, Text)>::write_tuple(&(self.0, self.1), out)
             }
         }
 
-        let conn = pg_connection();
+        let conn = &mut pg_connection();
 
         crate::sql_query("CREATE TYPE my_type AS (i int4, t text)")
-            .execute(&conn)
+            .execute(conn)
             .unwrap();
         let sql = sql::<Bool>("(1, 'hi')::my_type = ").bind::<MyType, _>(MyStruct(1, "hi"));
-        let res = crate::select(sql).get_result(&conn);
+        let res = crate::select(sql).get_result(conn);
         assert_eq!(Ok(true), res);
     }
 }

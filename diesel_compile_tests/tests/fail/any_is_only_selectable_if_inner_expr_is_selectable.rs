@@ -16,6 +16,8 @@ table! {
     }
 }
 
+allow_tables_to_appear_in_same_query!(stuff, more_stuff);
+
 #[derive(Queryable)]
 struct Stuff {
     id: i32,
@@ -25,8 +27,10 @@ struct Stuff {
 fn main() {
     use self::stuff::dsl::*;
 
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
 
-    let _ = stuff.filter(name.eq(any(more_stuff::names)))
-        .load(&conn);
+    let _ = stuff
+        .filter(name.eq(any(more_stuff::names)))
+        .load(&mut conn);
+    //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
 }

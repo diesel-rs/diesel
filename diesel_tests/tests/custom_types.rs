@@ -1,8 +1,10 @@
 use crate::schema::*;
 use diesel::connection::SimpleConnection;
-use diesel::deserialize::{self, FromSql};
+use diesel::deserialize::{FromSql, FromSqlRow};
+use diesel::expression::AsExpression;
 use diesel::pg::{Pg, PgValue};
-use diesel::serialize::{self, IsNull, Output, ToSql};
+use diesel::serialize::{IsNull, Output, ToSql};
+use diesel::sql_types::SqlType;
 use diesel::*;
 use std::io::Write;
 
@@ -16,18 +18,18 @@ table! {
 }
 
 #[derive(SqlType)]
-#[postgres(type_name = "my_type")]
+#[diesel(postgres_type(name = "My_Type"))]
 pub struct MyType;
 
-#[derive(Debug, PartialEq, FromSqlRow, AsExpression)]
-#[sql_type = "MyType"]
+#[derive(Debug, PartialEq, FromSqlRow, AsExpression, Eq)]
+#[diesel(sql_type = MyType)]
 pub enum MyEnum {
     Foo,
     Bar,
 }
 
 impl ToSql<MyType, Pg> for MyEnum {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         match *self {
             MyEnum::Foo => out.write_all(b"foo")?,
             MyEnum::Bar => out.write_all(b"bar")?,
@@ -47,13 +49,13 @@ impl FromSql<MyType, Pg> for MyEnum {
 }
 
 #[derive(Insertable, Queryable, Identifiable, Debug, PartialEq)]
-#[table_name = "custom_types"]
+#[diesel(table_name = custom_types)]
 struct HasCustomTypes {
     id: i32,
     custom_enum: MyEnum,
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn custom_types_round_trip() {
     let data = vec![
         HasCustomTypes {
@@ -65,14 +67,14 @@ fn custom_types_round_trip() {
             custom_enum: MyEnum::Bar,
         },
     ];
-    let connection = connection();
+    let connection = &mut connection();
     connection
         .batch_execute(
             r#"
-        CREATE TYPE my_type AS ENUM ('foo', 'bar');
+        CREATE TYPE "My_Type" AS ENUM ('foo', 'bar');
         CREATE TABLE custom_types (
             id SERIAL PRIMARY KEY,
-            custom_enum my_type NOT NULL
+            custom_enum "My_Type" NOT NULL
         );
     "#,
         )
@@ -80,7 +82,7 @@ fn custom_types_round_trip() {
 
     let inserted = insert_into(custom_types::table)
         .values(&data)
-        .get_results(&connection)
+        .get_results(connection)
         .unwrap();
     assert_eq!(data, inserted);
 }
@@ -95,18 +97,18 @@ table! {
 }
 
 #[derive(SqlType)]
-#[postgres(type_name = "my_type", type_schema = "custom_schema")]
+#[diesel(postgres_type(name = "My_Type", schema = "custom_schema"))]
 pub struct MyTypeInCustomSchema;
 
-#[derive(Debug, PartialEq, FromSqlRow, AsExpression)]
-#[sql_type = "MyTypeInCustomSchema"]
+#[derive(Debug, PartialEq, FromSqlRow, AsExpression, Eq)]
+#[diesel(sql_type = MyTypeInCustomSchema)]
 pub enum MyEnumInCustomSchema {
     Foo,
     Bar,
 }
 
 impl ToSql<MyTypeInCustomSchema, Pg> for MyEnumInCustomSchema {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         match *self {
             MyEnumInCustomSchema::Foo => out.write_all(b"foo")?,
             MyEnumInCustomSchema::Bar => out.write_all(b"bar")?,
@@ -126,13 +128,13 @@ impl FromSql<MyTypeInCustomSchema, Pg> for MyEnumInCustomSchema {
 }
 
 #[derive(Insertable, Queryable, Identifiable, Debug, PartialEq)]
-#[table_name = "custom_types_with_custom_schema"]
+#[diesel(table_name = custom_types_with_custom_schema)]
 struct HasCustomTypesInCustomSchema {
     id: i32,
     custom_enum: MyEnumInCustomSchema,
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn custom_types_in_custom_schema_round_trip() {
     let data = vec![
         HasCustomTypesInCustomSchema {
@@ -144,15 +146,15 @@ fn custom_types_in_custom_schema_round_trip() {
             custom_enum: MyEnumInCustomSchema::Bar,
         },
     ];
-    let connection = connection();
+    let connection = &mut connection();
     connection
         .batch_execute(
             r#"
         CREATE SCHEMA IF NOT EXISTS custom_schema;
-        CREATE TYPE custom_schema.my_type AS ENUM ('foo', 'bar');
+        CREATE TYPE custom_schema."My_Type" AS ENUM ('foo', 'bar');
         CREATE TABLE custom_schema.custom_types_with_custom_schema (
             id SERIAL PRIMARY KEY,
-            custom_enum custom_schema.my_type NOT NULL
+            custom_enum custom_schema."My_Type" NOT NULL
         );
     "#,
         )
@@ -160,7 +162,53 @@ fn custom_types_in_custom_schema_round_trip() {
 
     let inserted = insert_into(custom_types_with_custom_schema::table)
         .values(&data)
-        .get_results(&connection)
+        .get_results(connection)
         .unwrap();
     assert_eq!(data, inserted);
+}
+
+#[derive(SqlType)]
+#[diesel(postgres_type(name = "ty", schema = "other"))]
+struct OtherTy;
+
+#[derive(SqlType)]
+#[diesel(postgres_type(name = "ty", schema = "public"))]
+struct PublicTy;
+
+#[derive(SqlType)]
+#[diesel(postgres_type(name = "ty"))]
+struct InferredTy;
+
+#[diesel_test_helper::test]
+fn custom_type_schema_inference() {
+    use diesel::sql_types::HasSqlType;
+
+    let conn = &mut connection();
+    conn.batch_execute(
+        "
+        CREATE SCHEMA IF NOT EXISTS other;
+        -- Clear leftovers from the previous execution
+        DROP TABLE IF EXISTS other.foo;
+        DROP TYPE IF EXISTS public.ty CASCADE;
+        DROP TYPE IF EXISTS other.ty CASCADE;
+        -- Create types on *both* schemas
+        CREATE TYPE public.ty AS (field int);
+        CREATE TYPE other.ty AS (field int);
+        -- Create a table on the other schema referencing the created type
+        CREATE TABLE other.foo (bar other.ty PRIMARY KEY);
+        -- Include both in the search path
+        SET search_path TO other, public;
+        ",
+    )
+    .unwrap();
+
+    let other_ty = <Pg as HasSqlType<OtherTy>>::metadata(conn);
+    let public_ty = <Pg as HasSqlType<PublicTy>>::metadata(conn);
+    let inferred_ty = <Pg as HasSqlType<InferredTy>>::metadata(conn);
+    let _ = dbg!(other_ty.oid());
+    let _ = dbg!(public_ty.oid());
+    let _ = dbg!(inferred_ty.oid());
+
+    assert_eq!(other_ty.oid().unwrap(), inferred_ty.oid().unwrap());
+    assert_ne!(public_ty.oid().unwrap(), other_ty.oid().unwrap());
 }

@@ -1,9 +1,14 @@
 on:
   push:
     branches:
-      - master
-      - '0.[0-9]+.x'
-      - '1.[0-9]+.x'
+      - main
+      - "0.[0-9]+.x"
+      - "1.[0-9]+.x"
+      - "2.[0-9]+.x"
+
+permissions:
+  contents: "write"
+  pages: "write"
 
 name: Publish Docs
 jobs:
@@ -12,43 +17,41 @@ jobs:
     name: Publish Docs
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout sources
-      uses: actions/checkout@v2
-    - name: Cache cargo registry
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-        key: cargo-doc-cargo-${{ hashFiles('**/Cargo.toml') }}
-    - name: Get the branch name
-      id: current_branch
-      shell: bash
-      run: |
-        echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
-        override: true
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install libmysqlclient-dev libsqlite3-dev libpq-dev
-    - name: Build documentation
-      uses: actions-rs/cargo@v1
-      with:
-        command: doc
-        args: --manifest-path diesel/Cargo.toml --features "postgres sqlite mysql extras" --workspace --exclude=diesel_compile_tests
+      - name: Checkout sources
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+      - name: Cache cargo registry
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+        with:
+          key: cargo-doc-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - name: Get the branch name
+        id: current_branch
+        shell: bash
+        run: |
+          echo "branch=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_OUTPUT
+      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
+        with:
+          toolchain: nightly
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libmysqlclient-dev libsqlite3-dev libpq-dev libtirpc-dev
+      - name: Build documentation
+        env:
+          RUSTFLAGS: "--cfg diesel_docsrs"
+          RUSTDOCFLAGS: "--cfg diesel_docsrs  -Z unstable-options --generate-link-to-definition --generate-macro-expansion"
+        run: cargo +nightly doc --manifest-path diesel/Cargo.toml --features "postgres sqlite mysql extras i-implement-a-third-party-backend-and-opt-into-breaking-changes" --workspace
 
-    - name: Publish documentation
-      if: success()
-      uses: JamesIves/github-pages-deploy-action@releases/v3
-      with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        BRANCH: gh-pages # The branch the action should deploy to.
-        FOLDER: target/doc # The folder the action should deploy.
-        # Store documentation for each branch in a different folder
-        # This allows us to differentiate between docs for master
-        # and docs for already released versions
-        TARGET_FOLDER: ${{ steps.current_branch.outputs.branch }}
+      - name: Publish documentation
+        if: success()
+        uses: JamesIves/github-pages-deploy-action@9d877eea73427180ae43cf98e8914934fe157a1a # v4.7.6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages # The branch the action should deploy to.
+          folder: target/doc # The folder the action should deploy.
+          # Store documentation for each branch in a different folder
+          # This allows us to differentiate between docs for master
+          # and docs for already released versions
+          target-folder: ${{ steps.current_branch.outputs.branch }}
+          single-commit: true

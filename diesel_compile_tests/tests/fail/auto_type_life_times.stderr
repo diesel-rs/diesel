@@ -1,0 +1,35 @@
+error: `#[auto_type]` requires named lifetimes
+  --> tests/fail/auto_type_life_times.rs:12:25
+   |
+LL | fn with_lifetime(name: &'_ str) -> _ {
+   |                         ^^
+
+error: `#[auto_type]` requires named lifetimes
+  --> tests/fail/auto_type_life_times.rs:19:25
+   |
+LL | fn with_lifetime2(name: &str) -> _ {
+   |                         ^^^^
+
+error[E0106]: missing lifetime specifier
+  --> tests/fail/auto_type_life_times.rs:12:25
+   |
+LL | fn with_lifetime(name: &'_ str) -> _ {
+   |                         ^^ expected named lifetime parameter
+   |
+help: consider introducing a named lifetime parameter
+   |
+12 - fn with_lifetime(name: &'_ str) -> _ {
+12 + fn with_lifetime<'a>(name: &'a str) -> _ {
+   |
+
+error[E0106]: missing lifetime specifier
+  --> tests/fail/auto_type_life_times.rs:19:25
+   |
+LL | fn with_lifetime2(name: &str) -> _ {
+   |                         ^ expected named lifetime parameter
+   |
+help: consider introducing a named lifetime parameter
+   |
+LL | fn with_lifetime2<'a>(name: &'a str) -> _ {
+   |                  ++++        ++
+For more information about this error, try `rustc --explain E0106`.

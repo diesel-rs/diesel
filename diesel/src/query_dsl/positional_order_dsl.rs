@@ -1,9 +1,11 @@
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::expression::helper_types::{Asc, Desc};
-use crate::query_builder::combination_clause::CombinationClause;
-use crate::query_builder::{AstPass, Query, QueryFragment, QueryId};
-use crate::{QueryResult, RunQueryDsl};
+use crate::expression::Expression;
+use crate::query_builder::{AstPass, QueryFragment, QueryId};
+use crate::QueryResult;
 
+/// The `positional_order_by` method
+///
 /// This trait is not yet part of Diesel's public API. It may change in the
 /// future without a major version bump.
 ///
@@ -11,54 +13,60 @@ use crate::{QueryResult, RunQueryDsl};
 /// in their queries, so that they are not forced to drop entirely to raw SQL. The
 /// arguments to `positional_order_by` are not checked, nor is the select statement
 /// forced to be valid.
-pub trait PositionalOrderDsl<Expr: Order>: Sized {
-    fn positional_order_by(self, expr: Expr) -> PositionalOrderClause<Self, Expr::Fragment> {
-        PositionalOrderClause {
-            source: self,
-            expr: expr.into_fragment(),
-        }
+pub trait PositionalOrderDsl<Expr: IntoPositionalOrderExpr> {
+    /// The type returned by `.positional_order_by`
+    type Output;
+
+    /// See the trait documentation.
+    fn positional_order_by(self, expr: Expr) -> Self::Output;
+}
+
+pub trait PositionalOrderExpr: Expression {}
+
+impl PositionalOrderExpr for OrderColumn {}
+impl<T: PositionalOrderExpr> PositionalOrderExpr for Asc<T> {}
+impl<T: PositionalOrderExpr> PositionalOrderExpr for Desc<T> {}
+
+pub trait IntoPositionalOrderExpr {
+    type Output: PositionalOrderExpr;
+
+    fn into_positional_expr(self) -> Self::Output;
+}
+
+impl IntoPositionalOrderExpr for u32 {
+    type Output = OrderColumn;
+
+    fn into_positional_expr(self) -> Self::Output {
+        self.into()
+    }
+}
+impl<T: PositionalOrderExpr> IntoPositionalOrderExpr for Asc<T> {
+    type Output = Asc<T>;
+
+    fn into_positional_expr(self) -> Self::Output {
+        self
+    }
+}
+impl<T: PositionalOrderExpr> IntoPositionalOrderExpr for Desc<T> {
+    type Output = Desc<T>;
+
+    fn into_positional_expr(self) -> Self::Output {
+        self
     }
 }
 
 #[derive(Debug, Clone, Copy, QueryId)]
-pub struct PositionalOrderClause<Source, Expr> {
-    source: Source,
-    expr: Expr,
+pub struct OrderColumn(pub u32);
+
+impl Expression for OrderColumn {
+    type SqlType = crate::sql_types::Integer;
 }
 
-impl<Combinator, Rule, Source, Rhs, Expr: Order> PositionalOrderDsl<Expr>
-    for CombinationClause<Combinator, Rule, Source, Rhs>
-{
-}
-
-impl<Source, Expr> Query for PositionalOrderClause<Source, Expr>
+impl<DB> QueryFragment<DB> for OrderColumn
 where
-    Source: Query,
+    DB: Backend + DieselReserveSpecialization,
 {
-    type SqlType = Source::SqlType;
-}
-
-impl<Source, Expr, Conn> RunQueryDsl<Conn> for PositionalOrderClause<Source, Expr> {}
-
-impl<Source, Expr, DB> QueryFragment<DB> for PositionalOrderClause<Source, Expr>
-where
-    DB: Backend,
-    Source: QueryFragment<DB>,
-    Expr: Order,
-    Expr::Fragment: QueryFragment<DB>,
-{
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        self.source.walk_ast(pass.reborrow())?;
-        pass.push_sql(" ORDER BY ");
-        self.expr.into_fragment().walk_ast(pass)
-    }
-}
-
-#[derive(Debug, Clone, Copy, QueryId)]
-pub struct OrderColumn(u32);
-
-impl<DB: Backend> QueryFragment<DB> for OrderColumn {
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         pass.push_sql(&self.0.to_string());
         Ok(())
     }
@@ -70,63 +78,28 @@ impl From<u32> for OrderColumn {
     }
 }
 
-pub trait IntoOrderColumn: Into<OrderColumn> {
-    fn asc(self) -> Asc<OrderColumn> {
-        Asc { expr: self.into() }
-    }
-    fn desc(self) -> Desc<OrderColumn> {
-        Desc { expr: self.into() }
-    }
-}
-
-impl<T> IntoOrderColumn for T where T: Into<OrderColumn> {}
-
-pub trait Order: Copy {
-    type Fragment;
-
-    fn into_fragment(self) -> Self::Fragment;
-}
-
-impl<T: Into<OrderColumn> + Copy> Order for T {
-    type Fragment = OrderColumn;
-
-    fn into_fragment(self) -> Self::Fragment {
-        self.into()
-    }
-}
-
-impl Order for Asc<OrderColumn> {
-    type Fragment = Asc<OrderColumn>;
-
-    fn into_fragment(self) -> Self::Fragment {
-        self
-    }
-}
-
-impl Order for Desc<OrderColumn> {
-    type Fragment = Desc<OrderColumn>;
-
-    fn into_fragment(self) -> Self::Fragment {
-        self
-    }
-}
-
-macro_rules! impl_order_for_all_tuples {
+macro_rules! impl_positional_order_expr_for_all_tuples {
     ($(
         $unused1:tt {
-            $(($idx:tt) -> $T:ident, $unused2:ident, $unused3:tt,)+
+            $(($idx:tt) -> $T:ident, $U:ident, $unused3:tt,)+
         }
     )+) => {
         $(
-            impl<$($T: Order),+> Order for ($($T,)+) {
-                type Fragment = ($(<$T as Order>::Fragment,)+);
+            impl<$($T: PositionalOrderExpr),+> PositionalOrderExpr for ($($T,)+) { }
 
-                fn into_fragment(self) -> Self::Fragment {
-                    ($(self.$idx.into_fragment(),)+)
+            impl<$($T, $U,)+> IntoPositionalOrderExpr for ($($T,)+)
+            where
+                $($T: IntoPositionalOrderExpr<Output = $U>,)+
+                $($U: PositionalOrderExpr,)+
+            {
+                type Output = ($($U,)+);
+
+                fn into_positional_expr(self) -> Self::Output {
+                    ($(self.$idx.into_positional_expr(),)+)
                 }
             }
         )+
     };
 }
 
-__diesel_for_each_tuple!(impl_order_for_all_tuples);
+diesel_derives::__diesel_for_each_tuple!(impl_positional_order_expr_for_all_tuples);

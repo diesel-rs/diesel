@@ -1,0 +1,7 @@
+error: at least one `belongs_to` is needed for deriving `Associations` on a structure.
+ --> tests/fail/derive/associations_without_belongs_to.rs:4:10
+  |
+LL | #[derive(Associations)]
+  |          ^^^^^^^^^^^^
+  |
+  = note: this error originates in the derive macro `Associations` (in Nightly builds, run with -Z macro-backtrace for more info)

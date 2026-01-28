@@ -1,0 +1,14 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 323
+description: "Test: diff_add_table"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    users (id) {
+        id -> Int4,
+        name -> Text,
+    }
+}
+

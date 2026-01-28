@@ -46,14 +46,16 @@ impl TestCommand {
             .build_command()
             .output()
             .expect("failed to execute process");
-        CommandResult { output: output }
+        println!("STDOUT: {}", String::from_utf8_lossy(&output.stdout));
+        println!("STDERR: {}", String::from_utf8_lossy(&output.stderr));
+        CommandResult { output }
     }
 
     fn build_command(&self) -> Command {
         let mut command = Command::new(path_to_diesel_cli());
         command.args(&self.args).current_dir(&self.cwd);
-        for &(ref k, ref v) in self.env_vars.iter() {
-            command.env(&k, &v);
+        for (k, v) in self.env_vars.iter() {
+            command.env(k, v);
         }
         command
     }

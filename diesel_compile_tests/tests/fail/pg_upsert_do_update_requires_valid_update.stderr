@@ -1,54 +1,130 @@
-error[E0599]: no method named `execute` found for struct `diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>` in the current scope
-   --> $DIR/pg_upsert_do_update_requires_valid_update.rs:37:10
+error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertStatement<..., ...>, ...>`, but its trait bounds were not satisfied
+   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:44:10
     |
-37  |         .execute(&connection);
-    |          ^^^^^^^ method not found in `diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>`
+ LL | /     insert_into(users)
+ LL | |         .values(&NewUser("Sean"))
+ LL | |         .on_conflict(id)
+ LL | |         .do_update()
+ LL | |         .execute(&mut connection);
+    | |         -^^^^^^^ method cannot be called on `IncompleteDoUpdate<InsertStatement<..., ...>, ...>` due to unsatisfied trait bounds
+    | |_________|
     |
-   ::: $DIESEL/src/upsert/on_conflict_extension.rs
     |
-    | pub struct IncompleteDoUpdate<Stmt, Target> {
-    | -------------------------------------------
-    | |
-    | doesn't satisfy `_: diesel::RunQueryDsl<_>`
-    | doesn't satisfy `_: diesel::Table`
+   ::: DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
     |
-    = note: the method `execute` exists but the following trait bounds were not satisfied:
-            `diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::Table`
-            which is required by `diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
-            `&diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::Table`
-            which is required by `&diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
-            `&mut diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::Table`
-            which is required by `&mut diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
+LL |   pub struct IncompleteDoUpdate<Stmt, Target> {
+    |   ------------------------------------------- doesn't satisfy `_: QueryRelation` or `_: RunQueryDsl<_>`
+    |
+    = note: the following trait bounds were not satisfied:
+            `IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: QueryRelation`
+            which is required by `IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
+            `&IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: QueryRelation`
+            which is required by `&IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
+            `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: QueryRelation`
+            which is required by `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
+ 
+    
+error[E0271]: type mismatch resolving `<Grouped<...> as AsChangeset>::Target == table`
+   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:52:14
+    |
+ LL |         .set(posts::title.eq("Sean"));
+    |          --- ^^^^^^^^^^^^^^^^^^^^^^^ expected `users::table`, found `posts::table`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = note: `posts::table` and `users::table` have similar names, but are actually distinct types
+note: `posts::table` is defined in module `crate::posts` of the current crate
+   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:13:1
+    |
+ LL | / table! {
+ LL | |     posts {
+    | |_________^
+note: `users::table` is defined in module `crate::users` of the current crate
+   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:6:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
+note: the method call chain might not have had the expected associated types
+   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:52:27
+    |
+ LL |         .set(posts::title.eq("Sean"));
+    |              ------------ ^^^^^^^^^^ `AsChangeset::Target` is `table` here
+    |              |
+    |              this expression has type `title`
+note: required by a bound in `IncompleteDoUpdate::<InsertStatement<T, U, Op, Ret>, Target>::set`
+   --> DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
+    |
+LL |     pub fn set<Changes>(
+    |            --- required by a bound in this associated function
+...
+LL |         Changes: AsChangeset<Target = T>,
+    |                              ^^^^^^^^^^ required by this bound in `IncompleteDoUpdate::<InsertStatement<T, U, Op, Ret>, Target>::set`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>> as diesel::AsChangeset>::Target == users::table`
-  --> $DIR/pg_upsert_do_update_requires_valid_update.rs:44:10
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:60:10
    |
-44 |         .set(posts::title.eq("Sean"));
-   |          ^^^ expected struct `posts::table`, found struct `users::table`
+LL |         .set(name.eq(posts::title));
+   |          ^^^ expected `Once`, found `Never`
+   |
+note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:16:9
+   |
+LL |         title -> VarChar,
+   |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: required for `Eq<name, title>` to implement `AsChangeset`
 
-error[E0277]: the trait bound `users::table: diesel::query_source::AppearsInFromClause<posts::table>` is not satisfied
-  --> $DIR/pg_upsert_do_update_requires_valid_update.rs:52:10
-   |
-52 |         .set(name.eq(posts::title));
-   |          ^^^ the trait `diesel::query_source::AppearsInFromClause<posts::table>` is not implemented for `users::table`
-   |
-   = help: the following implementations were found:
-             <users::table as diesel::query_source::AppearsInFromClause<users::table>>
-   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `posts::columns::title`
-   = note: required because of the requirements on the impl of `diesel::AsChangeset` for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>`
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<posts::columns::title as diesel::Column>::Table == users::table`
-  --> $DIR/pg_upsert_do_update_requires_valid_update.rs:59:10
+error[E0271]: type mismatch resolving `<title as Column>::Table == table`
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:68:10
    |
-59 |         .set(name.eq(excluded(posts::title)));
-   |          ^^^ expected struct `posts::table`, found struct `users::table`
+LL |         .set(name.eq(excluded(posts::title)));
+   |          ^^^ type mismatch resolving `<title as Column>::Table == table`
    |
-   = note: required because of the requirements on the impl of `diesel::AsChangeset` for `diesel::expression::operators::Eq<users::columns::name, diesel::query_builder::upsert::on_conflict_actions::Excluded<posts::columns::title>>`
+note: expected this to be `users::table`
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:13:1
+   |
+LL | / table! {
+LL | |     posts {
+LL | |         id -> Integer,
+LL | |         title -> VarChar,
+LL | |     }
+LL | | }
+   | |_^
+   = note: `posts::table` and `users::table` have similar names, but are actually distinct types
+note: `posts::table` is defined in module `crate::posts` of the current crate
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:13:1
+   |
+LL | / table! {
+LL | |     posts {
+   | |_________^
+note: `users::table` is defined in module `crate::users` of the current crate
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:6:1
+   |
+ LL | / table! {
+ LL | |     users {
+   | |_________^
+   = note: required for `Eq<name, Excluded<title>>` to implement `AsChangeset`
 
-error[E0271]: type mismatch resolving `<diesel::query_builder::upsert::on_conflict_actions::Excluded<users::columns::id> as diesel::Expression>::SqlType == diesel::sql_types::Text`
-  --> $DIR/pg_upsert_do_update_requires_valid_update.rs:66:19
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `Excluded<id>: AsExpression<Text>` is not satisfied
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:76:19
    |
-66 |         .set(name.eq(excluded(id)));
-   |                   ^^ expected struct `diesel::sql_types::Integer`, found struct `diesel::sql_types::Text`
+LL |         .set(name.eq(excluded(id)));
+   |                   ^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `Excluded<id>`
    |
-   = note: required because of the requirements on the impl of `diesel::expression::AsExpression<diesel::sql_types::Text>` for `diesel::query_builder::upsert::on_conflict_actions::Excluded<users::columns::id>`
+   = help: the following other types implement trait `AsExpression<T>`:
+             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
+             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
+             `&'__expr Cents` implements `AsExpression<Money>`
+             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+             `&'__expr JsonValidFlag` implements `AsExpression<Nullable<JsonValidFlags>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+           and N others

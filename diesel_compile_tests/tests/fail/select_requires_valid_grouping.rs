@@ -43,7 +43,7 @@ fn main() {
     use diesel::dsl;
     // cases thas should compile
 
-    // A column appering in the group by clause should be considered valid for the select clause
+    // A column appearing in the group by clause should be considered valid for the select clause
     let source = users::table.group_by(users::name).select(users::name);
     // If the column appearing in the group by clause is the primary key, any column of that table is a
     // valid group by clause
@@ -83,21 +83,28 @@ fn main() {
 
     // cases that should fail to compile
     let source = users::table.group_by(users::name).select(users::id);
+    //~^ ERROR: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
     let source = users::table
         .group_by((users::name, users::hair_color))
         .select(users::id);
+    //~^ ERROR: type mismatch resolving `<(name, hair_color) as IsContainedInGroupBy<id>>::Output == Yes`
     let source = users::table
         .group_by(users::name)
         .select((users::name, users::id));
+    //~^ ERROR: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
     let source = users::table
         .group_by((users::name, users::hair_color))
         .select(users::id);
+    //~^ ERROR: type mismatch resolving `<(name, hair_color) as IsContainedInGroupBy<id>>::Output == Yes`
     let source = users::table
         .inner_join(posts::table)
         .group_by((users::id, posts::title))
         .select((users::all_columns, posts::id));
+    //~^ ERROR: type mismatch resolving `<(id, title) as IsContainedInGroupBy<id>>::Output == Yes`
     let source = users::table
         .inner_join(posts::table.inner_join(comments::table))
         .group_by((users::id, posts::id))
         .select((users::all_columns, posts::all_columns, comments::id));
+    //~^ ERROR: the trait bound `users::columns::id: IsContainedInGroupBy<comments::columns::id>` is not satisfied
+    //~| ERROR: the trait bound `posts::columns::id: IsContainedInGroupBy<comments::columns::id>` is not satisfied
 }

@@ -1,0 +1,86 @@
+error: unexpected end of input, expected parentheses
+       help: the correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
+  --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:29:3
+   |
+LL | #[belongs_to]
+   |   ^^^^^^^^^^
+
+error: expected parentheses
+  --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:37:14
+   |
+LL | #[belongs_to = Bar]
+   |              ^
+
+error: unexpected end of input, expected identifier
+  --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:46:13
+   |
+LL | #[belongs_to()]
+   |             ^^
+
+error: expected identifier
+  --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:54:14
+   |
+LL | #[belongs_to("what")]
+   |              ^^^^^^
+
+error: unexpected end of input, expected `=`
+       help: the correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
+  --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:62:14
+   |
+LL | #[belongs_to(parent)]
+   |              ^^^^^^
+
+error: expected `=`
+  --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:70:20
+   |
+LL | #[belongs_to(parent())]
+   |                    ^
+
+error: expected string literal
+  --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:78:23
+   |
+LL | #[belongs_to(parent = 1)]
+   |                       ^
+
+error: expected identifier
+  --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:86:23
+   |
+LL | #[belongs_to(parent = "1")]
+   |                       ^^^
+
+warning: #[belongs_to] attribute form is deprecated
+  = help: use `#[diesel(belongs_to(Bar))]` instead
+
+error: expected `foreign_key`
+   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:101:19
+    |
+LL | #[belongs_to(Bar, what)]
+    |                   ^^^^
+
+error: unexpected end of input, expected `=`
+       help: the correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
+   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:109:19
+    |
+LL | #[belongs_to(Bar, foreign_key)]
+    |                   ^^^^^^^^^^^
+
+error: expected string literal
+   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:117:33
+    |
+LL | #[belongs_to(Bar, foreign_key = 1)]
+    |                                 ^
+
+error: expected identifier
+   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:125:33
+    |
+LL | #[belongs_to(Bar, foreign_key = "1")]
+    |                                 ^^^
+
+warning: #[belongs_to] attribute form is deprecated
+  = help: use `#[diesel(belongs_to(Baz, foreign_key = bar_id))]` instead
+
+error: attribute value must be a literal
+  --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:37:16
+   |
+LL | #[belongs_to = Bar]
+   |                ^^^

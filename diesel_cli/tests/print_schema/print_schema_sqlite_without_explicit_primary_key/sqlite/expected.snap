@@ -1,0 +1,91 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_sqlite_without_explicit_primary_key"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    no_explicit (rowid) {
+        rowid -> Integer,
+        name -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    with_explicit_aliased_rowid (id) {
+        id -> Nullable<Integer>,
+        name -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    with_explicit_aliased_rowid_not_null (id) {
+        id -> Integer,
+        name -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    with_explicit_pk_rowid (rowid) {
+        rowid -> Nullable<Integer>,
+        name -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    with_explicit_pk_rowid_autoincrement (rowid) {
+        rowid -> Nullable<Integer>,
+        name -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    with_explicit_pk_rowid_autoincrement_not_null (rowid) {
+        rowid -> Integer,
+        name -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    with_explicit_pk_rowid_not_null (rowid) {
+        rowid -> Integer,
+        name -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    with_explicit_rowid (oid) {
+        oid -> Integer,
+        name -> Nullable<Text>,
+        rowid -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    with_explicit_rowid_oid (_rowid_) {
+        _rowid_ -> Integer,
+        name -> Nullable<Text>,
+        rowid -> Nullable<Text>,
+        oid -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    without_rowid (word) {
+        word -> Text,
+        cnt -> Nullable<Integer>,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(
+    no_explicit,
+    with_explicit_aliased_rowid,
+    with_explicit_aliased_rowid_not_null,
+    with_explicit_pk_rowid,
+    with_explicit_pk_rowid_autoincrement,
+    with_explicit_pk_rowid_autoincrement_not_null,
+    with_explicit_pk_rowid_not_null,
+    with_explicit_rowid,
+    with_explicit_rowid_oid,
+    without_rowid,
+);

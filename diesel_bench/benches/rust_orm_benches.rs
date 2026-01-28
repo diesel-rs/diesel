@@ -79,21 +79,21 @@ mod for_load {
 
 fn connect() -> EntityManager {
     let mut pool = Pool::new();
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
 
     let db_url = if cfg!(feature = "sqlite") {
-        let url = dotenv::var("SQLITE_DATABASE_URL")
-            .or_else(|_| dotenv::var("DATABASE_URL"))
+        let url = dotenvy::var("SQLITE_DATABASE_URL")
+            .or_else(|_| dotenvy::var("DATABASE_URL"))
             .expect("DATABASE_URL must be set in order to run tests");
 
         url.replace("sqlite:", "sqlite://")
     } else if cfg!(feature = "postgres") {
-        dotenv::var("POSTGRES_DATABASE_URL")
-            .or_else(|_| dotenv::var("DATABASE_URL"))
+        dotenvy::var("POSTGRES_DATABASE_URL")
+            .or_else(|_| dotenvy::var("DATABASE_URL"))
             .expect("DATABASE_URL must be set in order to run tests")
     } else if cfg!(feature = "mysql") {
-        dotenv::var("MYSQL_DATABASE_URL")
-            .or_else(|_| dotenv::var("DATABASE_URL"))
+        dotenvy::var("MYSQL_DATABASE_URL")
+            .or_else(|_| dotenvy::var("DATABASE_URL"))
             .expect("DATABASE_URL must be set in order to run tests")
     } else {
         unimplemented!()
@@ -214,14 +214,20 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
         Some(if i % 2 == 0 { "black" } else { "brown" }.into())
     });
 
+    #[cfg(feature = "postgres")]
+    let bind = "$";
+    #[cfg(any(feature = "sqlite", feature = "mysql"))]
+    let bind = "?";
+
+    let query = format!(
+        "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, \
+         p.user_id, p.title, p.body FROM users as u \
+         LEFT JOIN posts as p ON u.id = p.user_id WHERE u.name = {bind}"
+    );
+
     b.iter(|| {
-        em.execute_sql_with_return::<for_load::UserWithPost>(
-            "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, \
-             p.user_id, p.title, p.body FROM users as u \
-             LEFT JOIN posts as p ON u.id = p.user_id",
-            &[],
-        )
-        .unwrap()
+        em.execute_sql_with_return::<for_load::UserWithPost>(&query, &[&"black"])
+            .unwrap()
     });
 }
 

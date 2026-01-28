@@ -1,10 +1,10 @@
 #[cfg(not(feature = "sqlite"))]
-extern crate dotenv;
+extern crate dotenvy;
 #[cfg(not(feature = "sqlite"))]
 extern crate url;
 
-use std::fs::{self, File};
-use std::io::prelude::*;
+use std::fs::{self, File, ReadDir};
+use std::io::{self, prelude::*};
 use std::path::{Path, PathBuf};
 use tempfile::{Builder, TempDir};
 
@@ -45,7 +45,7 @@ impl ProjectBuilder {
         File::create(tempdir.path().join("Cargo.toml")).unwrap();
 
         for folder in self.folders {
-            fs::create_dir(tempdir.path().join(folder)).unwrap();
+            fs::create_dir_all(tempdir.path().join(folder)).unwrap();
         }
 
         for (file, contents) in self.files {
@@ -58,6 +58,7 @@ impl ProjectBuilder {
         Project {
             directory: tempdir,
             name: self.name,
+            skip_drop_db: false,
         }
     }
 }
@@ -65,6 +66,7 @@ impl ProjectBuilder {
 pub struct Project {
     directory: TempDir,
     pub name: String,
+    skip_drop_db: bool,
 }
 
 impl Project {
@@ -83,8 +85,13 @@ impl Project {
             .join("migrations")
             .read_dir()
             .expect("Error reading directory")
-            .map(|e| Migration {
-                path: e.expect("error reading entry").path().into(),
+            .filter_map(|e| {
+                if let Ok(e) = e {
+                    if e.path().is_dir() {
+                        return Some(Migration { path: e.path() });
+                    }
+                }
+                None
             })
             .collect()
     }
@@ -96,12 +103,12 @@ impl Project {
 
     #[cfg(any(feature = "postgres", feature = "mysql"))]
     fn database_url_from_env(&self, var: &str) -> url::Url {
-        use self::dotenv::dotenv;
+        use self::dotenvy::dotenv;
         use std::env;
         dotenv().ok();
 
-        let mut db_url =
-            url::Url::parse(&env::var_os(var).unwrap().into_string().unwrap()).unwrap();
+        let var_os = env::var(var).or_else(|_| env::var("DATABASE_URL")).unwrap();
+        let mut db_url = url::Url::parse(&var_os).unwrap();
         db_url.set_path(&format!("/diesel_{}", &self.name));
         db_url
     }
@@ -113,15 +120,7 @@ impl Project {
 
     #[cfg(feature = "mysql")]
     pub fn database_url(&self) -> String {
-        use std::env;
-
-        let mut db_url = self.database_url_from_env("MYSQL_DATABASE_URL");
-        if env::var_os("APPVEYOR").is_some() {
-            db_url
-                .set_password(Some(&env::var("MYSQL_PWD").unwrap()))
-                .unwrap();
-        }
-        db_url.to_string()
+        self.database_url_from_env("MYSQL_DATABASE_URL").to_string()
     }
 
     #[cfg(feature = "sqlite")]
@@ -136,6 +135,10 @@ impl Project {
 
     pub fn has_file<P: AsRef<Path>>(&self, path: P) -> bool {
         self.directory.path().join(path).exists()
+    }
+
+    pub fn directory_entries<P: AsRef<Path>>(&self, path: P) -> Result<ReadDir, io::Error> {
+        fs::read_dir(self.directory.path().join(path))
     }
 
     pub fn file_contents<P: AsRef<Path>>(&self, path: P) -> String {
@@ -156,29 +159,53 @@ impl Project {
         migration_path.display().to_string()
     }
 
-    pub fn create_migration(&self, name: &str, up: &str, down: &str) {
-        self.create_migration_in_directory("migrations", name, up, down);
+    pub fn create_migration(&self, name: &str, up: &str, down: Option<&str>, config: Option<&str>) {
+        self.create_migration_in_directory("migrations", name, up, down, config);
     }
 
-    pub fn create_migration_in_directory(&self, directory: &str, name: &str, up: &str, down: &str) {
+    pub fn create_migration_in_directory(
+        &self,
+        directory: &str,
+        name: &str,
+        up: &str,
+        down: Option<&str>,
+        config: Option<&str>,
+    ) {
         let migration_path = self.directory.path().join(directory).join(name);
         fs::create_dir(&migration_path)
             .expect("Migrations folder must exist to create a migration");
-        let mut up_file = fs::File::create(&migration_path.join("up.sql")).unwrap();
+        let mut up_file = fs::File::create(migration_path.join("up.sql")).unwrap();
         up_file.write_all(up.as_bytes()).unwrap();
 
-        let mut down_file = fs::File::create(&migration_path.join("down.sql")).unwrap();
-        down_file.write_all(down.as_bytes()).unwrap();
+        if let Some(down) = down {
+            let mut down_file = fs::File::create(migration_path.join("down.sql")).unwrap();
+            down_file.write_all(down.as_bytes()).unwrap();
+        }
+
+        if let Some(config) = config {
+            let mut metadata_file = fs::File::create(migration_path.join("metadata.toml")).unwrap();
+            metadata_file.write_all(config.as_bytes()).unwrap();
+        }
+    }
+
+    pub fn skip_drop_db(&mut self) {
+        self.skip_drop_db = true;
+    }
+
+    pub fn directory_path(&self) -> &Path {
+        self.directory.path()
     }
 }
 
 #[cfg(not(feature = "sqlite"))]
 impl Drop for Project {
     fn drop(&mut self) {
-        try_drop!(
-            self.command("database").arg("drop").run().result(),
-            "Couldn't drop database"
-        );
+        if !self.skip_drop_db {
+            try_drop!(
+                self.command("database").arg("drop").run().result(),
+                "Couldn't drop database"
+            );
+        }
     }
 }
 

@@ -1,16 +1,13 @@
 use diesel::backend::Backend;
-use diesel::expression::{
-    is_aggregate, AppearsOnTable, Expression, SelectableExpression, TypedExpressionType,
-    ValidGrouping,
-};
+use diesel::expression::{is_aggregate, TypedExpressionType, ValidGrouping};
 use diesel::prelude::*;
 use diesel::query_builder::*;
 use std::borrow::Borrow;
 use std::marker::PhantomData;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 /// A database table column.
-/// This type is created by the [`column`](struct.Table.html#method.column) function.
+/// This type is created by the [`column`](crate::Table::column()) function.
 pub struct Column<T, U, ST> {
     table: T,
     name: U,
@@ -63,7 +60,7 @@ where
     T: QueryFragment<DB>,
     U: Borrow<str>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.table.walk_ast(out.reborrow())?;
         out.push_sql(".");

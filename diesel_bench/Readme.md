@@ -21,6 +21,8 @@ and the following crates:
 * [Postgres](https://github.com/sfackler/rust-postgres)
 * [Rusqlite](https://github.com/rusqlite/rusqlite)
 * [Mysql](https://github.com/blackbeam/rust-mysql-simple)
+* [diesel-async](https://github.com/weiznich/diesel_async)
+* [wtx](https://github.com/c410-f3r/wtx)
 
 By default only diesels own benchmarks are executed. To run the benchmark do the following:
 
@@ -31,12 +33,15 @@ $ DATABASE_URL=your://database/url cargo bench --features "$backend"
 
 To enable other crates add the following features:
 
-* `SQLx: ` `sqlx sqlx/$backend async-std`
-* `Rustorm`: `rustorm rustorm/with-$backend rustorm_dao`
-* `Quaint`: `quaint quaint/$backend tokio quaint/serde-support serde`
-* `Postgres`: `rust-postgres`
-* `Rusqlite`: `rusqlite`
-* `Mysql`: `rust-mysql`
+* `SQLx: ` `sqlx-bench sqlx/$backend $backend`
+* `Rustorm`: `rustorm rustorm/with-$backend rustorm_dao $backend`
+* `SeaORM`: `sea-orm sea-orm/sqlx-$backend sqlx tokio criterion/tokio futures $backend`
+* `Quaint`: `quaint quaint/$backend tokio quaint/serde-support serde $backend`
+* `Postgres`: `rust_postgres $backend`
+* `Rusqlite`: `rusqlite $backend`
+* `Mysql`: `rust-mysql $backend`
+* `diesel-async`: `diesel-async diesel-async/$backend $backend tokio`
+* `wtx`: `$backend tokio/rt-multi-thread wtx`
 
 ## Benchmarks
 
@@ -45,6 +50,7 @@ To enable other crates add the following features:
 #### Table definitions
 
 The following schema definition was used. (For Mysql/Sqlite postgres specific types where replaced by their equivalent type).
+
 ```sql
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
@@ -64,11 +70,7 @@ CREATE TABLE comments (
   post_id INTEGER NOT NULL,
   text TEXT NOT NULL
 );
-
 ```
-
-
-
 
 #### Struct definitions
 
@@ -97,12 +99,11 @@ Field types are allowed to differ, to whatever type is expected compatible by th
 
 ### `bench_trivial_query`
 
-
 This benchmark tests how entities from a single table are loaded. Before starting the benchmark 1, 10, 100, 1000 or 10000 entries are inserted into the `users` table. For this the `id` of the user is provided by the autoincrementing id, the `name` is set to `User {id}` and the `hair_color` is set to `Null`. An implementation of this benchmark is expected to return a list of the type `User.
 
 ### `bench_medium_complex_query`
 
-This benchmark tests how entities from more than one table are loaded. Before starting the benchmark 1, 10, 1000, 10000 entries are inserted into the `users` table.  For this the `id` of the user is provided by the autoincrementing id, the `name` is set to `User {id}` and the `hair_color` is set to `"black"` for even id's, to `"brown"` otherwise. An implementation of this benchmark is expected to return a list of the type `(User, Option<Post>)` so that matching pairs of `User` and `Option<Post>` are returned. Though the `posts` table is empty the corresponding implementation needs to query both tables. 
+This benchmark tests how entities from more than one table are loaded. Before starting the benchmark 1, 10, 1000, 10000 entries are inserted into the `users` table.  For this the `id` of the user is provided by the autoincrementing id, the `name` is set to `User {id}` and the `hair_color` is set to `"black"` for even id's, to `"brown"` otherwise. An implementation of this benchmark is expected to return a list of the type `(User, Option<Post>)` filtered by `hair_color = "black"` so that matching pairs of `User` and `Option<Post>` are returned. Though the `posts` table is empty the corresponding implementation needs to query both tables. 
 
 ### `bench_insert`
 

@@ -9,7 +9,7 @@
 //! To see which SQL type can be used with a given Rust type,
 //! see the "Implementors" section of [`FromSql`].
 //!
-//! [`FromSql`]: ../deserialize/trait.FromSql.html
+//! [`FromSql`]: super::deserialize::FromSql
 //!
 //! Any backend specific types are re-exported through this module
 
@@ -28,19 +28,19 @@ use crate::query_builder::QueryId;
 /// On backends without a native boolean type,
 /// this is emulated with the smallest supported integer.
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`bool`][bool]
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`bool`][bool]
 ///
 /// [bool]: https://doc.rust-lang.org/nightly/std/primitive.bool.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "16", array_oid = "1000")]
-#[sqlite_type = "Integer"]
-#[mysql_type = "Tiny"]
+#[diesel(postgres_type(oid = 16, array_oid = 1000))]
+#[diesel(sqlite_type(name = "Integer"))]
+#[diesel(mysql_type(name = "Tiny"))]
 pub struct Bool;
 
 /// The tiny integer SQL type.
@@ -49,36 +49,36 @@ pub struct Bool;
 /// Keep in mind that `diesel print-schema` will see `TINYINT(1)` as `Bool`,
 /// not `TinyInt`.
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`i8`][i8]
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`i8`][i8]
 ///
 /// [i8]: https://doc.rust-lang.org/nightly/std/primitive.i8.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[mysql_type = "Tiny"]
+#[diesel(mysql_type(name = "Tiny"))]
 pub struct TinyInt;
 #[doc(hidden)]
 pub type Tinyint = TinyInt;
 
 /// The small integer SQL type.
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`i16`][i16]
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`i16`][i16]
 ///
 /// [i16]: https://doc.rust-lang.org/nightly/std/primitive.i16.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "21", array_oid = "1005")]
-#[sqlite_type = "SmallInt"]
-#[mysql_type = "Short"]
+#[diesel(postgres_type(oid = 21, array_oid = 1005))]
+#[diesel(sqlite_type(name = "SmallInt"))]
+#[diesel(mysql_type(name = "Short"))]
 pub struct SmallInt;
 #[doc(hidden)]
 pub type Int2 = SmallInt;
@@ -87,38 +87,38 @@ pub type Smallint = SmallInt;
 
 /// The integer SQL type.
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`i32`][i32]
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`i32`][i32]
 ///
 /// [i32]: https://doc.rust-lang.org/nightly/std/primitive.i32.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "23", array_oid = "1007")]
-#[sqlite_type = "Integer"]
-#[mysql_type = "Long"]
+#[diesel(postgres_type(oid = 23, array_oid = 1007))]
+#[diesel(sqlite_type(name = "Integer"))]
+#[diesel(mysql_type(name = "Long"))]
 pub struct Integer;
 #[doc(hidden)]
 pub type Int4 = Integer;
 
 /// The big integer SQL type.
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`i64`][i64]
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`i64`][i64]
 ///
 /// [i64]: https://doc.rust-lang.org/nightly/std/primitive.i64.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "20", array_oid = "1016")]
-#[sqlite_type = "Long"]
-#[mysql_type = "LongLong"]
+#[diesel(postgres_type(oid = 20, array_oid = 1016))]
+#[diesel(sqlite_type(name = "Long"))]
+#[diesel(mysql_type(name = "LongLong"))]
 pub struct BigInt;
 #[doc(hidden)]
 pub type Int8 = BigInt;
@@ -127,38 +127,38 @@ pub type Bigint = BigInt;
 
 /// The float SQL type.
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`f32`][f32]
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`f32`][f32]
 ///
 /// [f32]: https://doc.rust-lang.org/nightly/std/primitive.f32.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "700", array_oid = "1021")]
-#[sqlite_type = "Float"]
-#[mysql_type = "Float"]
+#[diesel(postgres_type(oid = 700, array_oid = 1021))]
+#[diesel(sqlite_type(name = "Float"))]
+#[diesel(mysql_type(name = "Float"))]
 pub struct Float;
 #[doc(hidden)]
 pub type Float4 = Float;
 
 /// The double precision float SQL type.
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`f64`][f64]
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`f64`][f64]
 ///
 /// [f64]: https://doc.rust-lang.org/nightly/std/primitive.f64.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "701", array_oid = "1022")]
-#[sqlite_type = "Double"]
-#[mysql_type = "Double"]
+#[diesel(postgres_type(oid = 701, array_oid = 1022))]
+#[diesel(sqlite_type(name = "Double"))]
+#[diesel(mysql_type(name = "Double"))]
 pub struct Double;
 #[doc(hidden)]
 pub type Float8 = Double;
@@ -166,21 +166,21 @@ pub type Float8 = Double;
 /// The arbitrary precision numeric SQL type.
 ///
 /// This type is only supported on PostgreSQL and MySQL.
-/// On SQLite, [`Double`](struct.Double.html) should be used instead.
+/// On SQLite, [`Double`] should be used instead.
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`bigdecimal::BigDecimal`] with `feature = ["numeric"]`
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`bigdecimal::BigDecimal`] with `feature = ["numeric"]`
 ///
 /// [`bigdecimal::BigDecimal`]: /bigdecimal/struct.BigDecimal.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1700", array_oid = "1231")]
-#[mysql_type = "Numeric"]
-#[sqlite_type = "Double"]
+#[diesel(postgres_type(oid = 1700, array_oid = 1231))]
+#[diesel(mysql_type(name = "Numeric"))]
+#[diesel(sqlite_type(name = "Double"))]
 pub struct Numeric;
 
 /// Alias for `Numeric`
@@ -194,21 +194,20 @@ pub type Decimal = Numeric;
 /// Schema inference will treat all variants of `TEXT` as this type (e.g.
 /// `VARCHAR`, `MEDIUMTEXT`, etc).
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
-/// - [`String`][String]
+/// - [`String`]
 /// - [`&str`][str]
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
-/// - [`String`][String]
+/// - [`String`]
 ///
-/// [String]: https://doc.rust-lang.org/nightly/std/string/struct.String.html
 /// [str]: https://doc.rust-lang.org/nightly/std/primitive.str.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "25", array_oid = "1009")]
-#[sqlite_type = "Text"]
-#[mysql_type = "String"]
+#[diesel(postgres_type(oid = 25, array_oid = 1009))]
+#[diesel(sqlite_type(name = "Text"))]
+#[diesel(mysql_type(name = "String"))]
 pub struct Text;
 
 /// The SQL `VARCHAR` type
@@ -237,21 +236,21 @@ pub type Longtext = Text;
 /// Schema inference will treat all variants of `BLOB` as this type (e.g.
 /// `VARBINARY`, `MEDIUMBLOB`, etc).
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`Vec<u8>`][Vec]
 /// - [`&[u8]`][slice]
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`Vec<u8>`][Vec]
 ///
-/// [Vec]: https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html
+/// [Vec]: std::vec::Vec
 /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "17", array_oid = "1001")]
-#[sqlite_type = "Binary"]
-#[mysql_type = "Blob"]
+#[diesel(postgres_type(oid = 17, array_oid = 1001))]
+#[diesel(sqlite_type(name = "Binary"))]
+#[diesel(mysql_type(name = "Blob"))]
 pub struct Binary;
 
 #[doc(hidden)]
@@ -269,77 +268,114 @@ pub type Bit = Binary;
 
 /// The date SQL type.
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
+/// - [`time::Date`][Date] with `feature = "time"`
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
+/// - [`time::Date`][Date] with `feature = "time"`
 ///
-/// [NaiveDate]: /chrono/naive/date/struct.NaiveDate.html
+/// [NaiveDate]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDate.html
+/// [Date]: https://docs.rs/time/0.3.9/time/struct.Date.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1082", array_oid = "1182")]
-#[sqlite_type = "Text"]
-#[mysql_type = "Date"]
+#[diesel(postgres_type(oid = 1082, array_oid = 1182))]
+#[diesel(sqlite_type(name = "Text"))]
+#[diesel(mysql_type(name = "Date"))]
 pub struct Date;
 
 /// The interval SQL type.
 ///
 /// This type is currently only implemented for PostgreSQL.
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
+/// - [`chrono::Duration`][Duration] with `feature = "chrono"`
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
+/// - [`chrono::Duration`][Duration] with `feature = "chrono"`
+///   (There might be some information loss due to special behavior for literal `month` (or longer) intervals;
+///   Please read official documentation of [PostgreSQL Interval].)
 ///
 /// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
 /// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
+/// [Duration]: https://docs.rs/chrono/*/chrono/type.Duration.html
+/// [PostgreSQL Interval]: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1186", array_oid = "1187")]
+#[diesel(postgres_type(oid = 1186, array_oid = 1187))]
 pub struct Interval;
 
 /// The time SQL type.
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
+/// - [`time::Time`][Time] with `feature = "time"`
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
+/// - [`time::Time`][Time] with `feature = "time"`
 ///
 /// [NaiveTime]: /chrono/naive/time/struct.NaiveTime.html
+/// [Time]: /time/struct.Time.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1083", array_oid = "1183")]
-#[sqlite_type = "Text"]
-#[mysql_type = "Time"]
+#[diesel(postgres_type(oid = 1083, array_oid = 1183))]
+#[diesel(sqlite_type(name = "Text"))]
+#[diesel(mysql_type(name = "Time"))]
 pub struct Time;
 
 /// The timestamp SQL type.
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`std::time::SystemTime`][SystemTime] (PG only)
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
-/// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
+/// - [`time::PrimitiveDateTime`] with `feature = "time"`
+/// - [`time::OffsetDateTime`] with `feature = "time"` (MySQL only)
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`std::time::SystemTime`][SystemTime] (PG only)
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
-/// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
+/// - [`time::PrimitiveDateTime`] with `feature = "time"`
+/// - [`time::OffsetDateTime`] with `feature = "time"` (MySQL only)
 ///
-/// [SystemTime]: https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html
-/// [NaiveDateTime]: /chrono/naive/datetime/struct.NaiveDateTime.html
+/// [SystemTime]: std::time::SystemTime
+#[cfg_attr(
+    feature = "chrono",
+    doc = " [NaiveDateTime]: chrono::naive::NaiveDateTime"
+)]
+#[cfg_attr(
+    not(feature = "chrono"),
+    doc = " [NaiveDateTime]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDateTime.html"
+)]
+#[cfg_attr(
+    feature = "time",
+    doc = " [`time::PrimitiveDateTime`]: time::PrimitiveDateTime"
+)]
+#[cfg_attr(
+    not(feature = "time"),
+    doc = " [`time::PrimitiveDateTime`]: https://docs.rs/time/0.3.9/time/struct.PrimitiveDateTime.html"
+)]
+#[cfg_attr(
+    feature = "time",
+    doc = " [`time::OffsetDateTime`]: time::OffsetDateTime"
+)]
+#[cfg_attr(
+    not(feature = "time"),
+    doc = " [`time::OffsetDateTime`]: https://docs.rs/time/0.3.9/time/struct.OffsetDateTime.html"
+)]
 /// [Timespec]: /time/struct.Timespec.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1114", array_oid = "1115")]
-#[sqlite_type = "Text"]
-#[mysql_type = "Timestamp"]
+#[diesel(postgres_type(oid = 1114, array_oid = 1115))]
+#[diesel(sqlite_type(name = "Text"))]
+#[diesel(mysql_type(name = "Timestamp"))]
 pub struct Timestamp;
 
 /// The JSON SQL type.  This type can only be used with `feature =
@@ -360,21 +396,147 @@ pub struct Timestamp;
 /// [`FromSql`]: /deserialize/trait.FromSql.html
 /// [`serde_json::Value`]: /../serde_json/value/enum.Value.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "114", array_oid = "199")]
-#[mysql_type = "String"]
+#[diesel(postgres_type(oid = 114, array_oid = 199))]
+#[diesel(mysql_type(name = "String"))]
+#[diesel(sqlite_type(name = "Text"))]
 pub struct Json;
+
+/// The [`jsonb`] SQL type.  This type can only be used with `feature =
+/// "serde_json"`
+///
+/// In SQLite, `jsonb` brings mainly [performance improvements][sqlite-adv] over
+/// regular JSON:
+///
+/// > The advantage of JSONB in SQLite is that it is smaller and faster than
+/// > text JSON - potentially several times faster. There is space in the
+/// > on-disk JSONB format to add enhancements and future versions of SQLite
+/// > might include options to provide O(1) lookup of elements in JSONB, but no
+/// > such capability is currently available.
+///
+/// <div class="warning">
+/// In SQLite, JSONB is intended for internal use by SQLite only. Thus, future
+/// SQLite updates might break our JSONB implementation. And one might have to
+/// wait and then upgrade <code>diesel</code> for those changes to be  accounted
+/// for. If you do not want this, prefer the regular
+/// <a href="./struct.Json.html"><code>Json</code></a> type.
+/// </div>
+///
+/// In PostgreSQL, `jsonb` offers [several advantages][pg-adv] over regular JSON:
+///
+/// > There are two JSON data types: `json` and `jsonb`. They accept almost
+/// > identical sets of values as input. The major practical difference
+/// > is one of efficiency. The `json` data type stores an exact copy of
+/// > the input text, which processing functions must reparse on each
+/// > execution; while `jsonb` data is stored in a decomposed binary format
+/// > that makes it slightly slower to input due to added conversion
+/// > overhead, but significantly faster to process, since no reparsing
+/// > is needed. `jsonb` also supports indexing, which can be a significant
+/// > advantage.
+/// >
+/// > ...In general, most applications should prefer to store JSON data as
+/// > `jsonb`, unless there are quite specialized needs, such as legacy
+/// > assumptions about ordering of object keys.
+///
+/// [pg-adv]: https://www.postgresql.org/docs/current/static/datatype-json.html
+/// [sqlite-adv]: https://sqlite.org/draft/jsonb.html
+///
+/// ### [`ToSql`] impls
+///
+/// - [`serde_json::Value`]
+///
+/// ### [`FromSql`] impls
+///
+/// - [`serde_json::Value`]
+///
+/// [`ToSql`]: crate::serialize::ToSql
+/// [`FromSql`]: crate::deserialize::FromSql
+/// [`jsonb`]: https://www.postgresql.org/docs/current/datatype-json.html
+#[cfg_attr(
+    feature = "serde_json",
+    doc = "[`serde_json::Value`]: serde_json::value::Value"
+)]
+#[cfg_attr(
+    not(feature = "serde_json"),
+    doc = "[`serde_json::Value`]: https://docs.rs/serde_json/1.0.64/serde_json/value/enum.Value.html"
+)]
+///
+/// ## Examples
+///
+/// ```rust
+/// # #![allow(dead_code)]
+/// # include!("../doctest_setup.rs");
+/// #
+/// table! {
+///     contacts {
+///         id -> Integer,
+///         name -> Text,
+///         address -> Jsonb,
+///     }
+/// }
+///
+/// # #[cfg(all(
+/// #   feature = "serde_json",
+/// #   any(
+/// #       feature = "postgres_backend",
+/// #       feature = "returning_clauses_for_sqlite_3_35",
+/// #   )
+/// # ))]
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// #     use diesel::insert_into;
+/// #     use self::contacts::dsl::*;
+/// #     let connection = &mut connection_no_data();
+/// # #[cfg(feature = "postgres_backend")]
+/// #     diesel::sql_query("CREATE TABLE contacts (
+/// #         id SERIAL PRIMARY KEY,
+/// #         name VARCHAR NOT NULL,
+/// #         address JSONB NOT NULL
+/// #     )").execute(connection)?;
+/// # #[cfg(feature = "sqlite")]
+/// #     diesel::sql_query("CREATE TABLE contacts (
+/// #         id INT PRIMARY KEY,
+/// #         name TEXT NOT NULL,
+/// #         address BLOB NOT NULL
+/// #     )").execute(connection)?;
+/// let santas_address: serde_json::Value = serde_json::from_str(
+///     r#"{
+///     "street": "Article Circle Expressway 1",
+///     "city": "North Pole",
+///     "postcode": "99705",
+///     "state": "Alaska"
+/// }"#,
+/// )?;
+/// let inserted_address = insert_into(contacts)
+///     .values((name.eq("Claus"), address.eq(&santas_address)))
+///     .returning(address)
+///     .get_result::<serde_json::Value>(connection)?;
+/// assert_eq!(santas_address, inserted_address);
+/// #     Ok(())
+/// # }
+/// # #[cfg(not(all(
+/// #   feature = "serde_json",
+/// #   any(
+/// #       feature = "postgres_backend",
+/// #       feature = "returning_clauses_for_sqlite_3_35",
+/// #   )
+/// # )))]
+/// # fn main() {}
+/// ```
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[diesel(postgres_type(oid = 3802, array_oid = 3807))]
+#[diesel(sqlite_type(name = "Binary"))]
+pub struct Jsonb;
 
 /// The nullable SQL type.
 ///
 /// This wraps another SQL type to indicate that it can be null.
 /// By default all values are assumed to be `NOT NULL`.
 ///
-/// ### [`ToSql`](../serialize/trait.ToSql.html) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - Any `T` which implements `ToSql<ST>`
 /// - `Option<T>` for any `T` which implements `ToSql<ST>`
 ///
-/// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - `Option<T>` for any `T` which implements `FromSql<ST>`
 #[derive(Debug, Clone, Copy, Default)]
@@ -387,23 +549,29 @@ where
     type IsNull = is_nullable::IsNullable;
 }
 
-#[cfg(feature = "postgres")]
-pub use crate::pg::types::sql_types::*;
+#[doc(inline)]
+#[cfg(feature = "postgres_backend")]
+pub use crate::pg::sql_types::*;
 
-#[cfg(feature = "mysql")]
-pub use crate::mysql::types::*;
+#[doc(inline)]
+#[cfg(feature = "mysql_backend")]
+pub use crate::mysql::sql_types::{Datetime, Unsigned};
+
+#[doc(inline)]
+#[cfg(feature = "sqlite")]
+pub use crate::sqlite::sql_types::Timestamptz as TimestamptzSqlite;
 
 /// Indicates that a SQL type exists for a backend.
 ///
-/// This trait can be derived using the [`SqlType` derive](derive.SqlType.html)
+/// This trait can be derived using the [`SqlType` derive](derive@SqlType)
 ///
 /// # Example
 ///
 /// ```rust
 /// #[derive(diesel::sql_types::SqlType)]
-/// #[postgres(oid = "23", array_oid = "1007")]
-/// #[sqlite_type = "Integer"]
-/// #[mysql_type = "Long"]
+/// #[diesel(postgres_type(oid = 23, array_oid = 1007))]
+/// #[diesel(sqlite_type(name = "Integer"))]
+/// #[diesel(mysql_type(name = "Long"))]
 /// pub struct Integer;
 /// ```
 pub trait HasSqlType<ST>: TypeMetadata {
@@ -411,7 +579,7 @@ pub trait HasSqlType<ST>: TypeMetadata {
     ///
     /// This method may use `lookup` to do dynamic runtime lookup. Implementors
     /// of this method should not do dynamic lookup unless absolutely necessary
-    fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata;
+    fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata;
 }
 
 /// Information about how a backend stores metadata about given SQL types
@@ -484,9 +652,7 @@ where
 ///
 /// # Deriving
 ///
-/// This trait is automatically implemented by [`#[derive(SqlType)]`]
-///
-/// [`#[derive(SqlType)]`]: derive.SqlType.html
+/// This trait is automatically implemented by [`#[derive(SqlType)]`](derive@SqlType)
 pub trait SingleValue: SqlType {}
 
 impl<T: SqlType + SingleValue> SingleValue for Nullable<T> {}
@@ -500,19 +666,19 @@ pub use diesel_derives::SqlType;
 ///
 /// # Deriving
 ///
-/// This trait is automatically implemented by [`#[derive(SqlType)]`]
+/// This trait is automatically implemented by [`#[derive(SqlType)]`](derive@SqlType)
 /// which sets `IsNull` to [`is_nullable::NotNull`]
-///
-/// [`#[derive(SqlType)]`]: derive.SqlType.html
-/// [`is_nullable::NotNull`]: is_nullable/struct.NotNull.html
-pub trait SqlType {
+pub trait SqlType: 'static {
     /// Is this type nullable?
     ///
     /// This type should always be one of the structs in the ['is_nullable`]
     /// module. See the documentation of those structs for more details.
     ///
-    /// ['is_nullable`]: is_nullable/index.html
+    /// ['is_nullable`]: is_nullable
     type IsNull: OneIsNullable<is_nullable::IsNullable> + OneIsNullable<is_nullable::NotNull>;
+
+    #[doc(hidden)]
+    const IS_ARRAY: bool = false;
 }
 
 /// Is one value of `IsNull` nullable?
@@ -544,7 +710,7 @@ pub mod is_nullable {
 
     /// No, this type cannot be null as it is marked as `NOT NULL` at database level
     ///
-    /// This should be choosen for basically all manual impls of `SqlType`
+    /// This should be chosen for basically all manual impls of `SqlType`
     /// beside implementing your own `Nullable<>` wrapper type
     #[derive(Debug, Clone, Copy)]
     pub struct NotNull;
@@ -553,7 +719,7 @@ pub mod is_nullable {
     ///
     /// The only diesel provided `SqlType` that uses this value is [`Nullable<T>`]
     ///
-    /// [`Nullable<T>`]: ../struct.Nullable.html
+    /// [`Nullable<T>`]: Nullable
     #[derive(Debug, Clone, Copy)]
     pub struct IsNullable;
 
@@ -604,15 +770,17 @@ pub mod is_nullable {
         type Out = Nullable<O>;
     }
 
-    /// Represents the output type of [`MaybeNullableType`](../trait.MaybeNullableType.html)
+    /// Represents the output type of [`MaybeNullableType`]
     pub type MaybeNullable<N, T> = <N as MaybeNullableType<T>>::Out;
 
-    /// Represents the output type of [`OneIsNullable`](../trait.OneIsNullable.html)
-    /// for two given SQL types
-    pub type IsOneNullable<S1, S2> =
-        <IsSqlTypeNullable<S1> as OneIsNullable<IsSqlTypeNullable<S2>>>::Out;
+    /// Represents the output type of [`OneIsNullable`]
+    pub type OneNullable<T1, T2> = <T1 as OneIsNullable<T2>>::Out;
 
-    /// Represents the output type of [`AllAreNullable`](../trait.AllAreNullable.html)
+    /// Represents the output type of [`OneIsNullable`]
+    /// for two given SQL types
+    pub type IsOneNullable<S1, S2> = OneNullable<IsSqlTypeNullable<S1>, IsSqlTypeNullable<S2>>;
+
+    /// Represents the output type of [`AllAreNullable`]
     /// for two given SQL types
     pub type AreAllNullable<S1, S2> =
         <IsSqlTypeNullable<S1> as AllAreNullable<IsSqlTypeNullable<S2>>>::Out;
@@ -623,6 +791,10 @@ pub mod is_nullable {
 
 /// A marker trait for accepting expressions of the type `Bool` and
 /// `Nullable<Bool>` in the same place
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is neither `diesel::sql_types::Bool` nor `diesel::sql_types::Nullable<Bool>`",
+    note = "try to provide an expression that produces one of the expected sql types"
+)]
 pub trait BoolOrNullableBool {}
 
 impl BoolOrNullableBool for Bool {}
@@ -630,3 +802,22 @@ impl BoolOrNullableBool for Nullable<Bool> {}
 
 #[doc(inline)]
 pub use crate::expression::expression_types::Untyped;
+
+pub(crate) mod helper {
+    use super::{MaybeNullableType, OneIsNullable, SingleValue};
+
+    pub trait CombinedNullableValue<O, Out>: SingleValue {
+        type Out: SingleValue;
+    }
+
+    impl<T, O, Out> CombinedNullableValue<O, Out> for T
+    where
+        T: SingleValue,
+        O: SingleValue,
+        T::IsNull: OneIsNullable<O::IsNull>,
+        <T::IsNull as OneIsNullable<O::IsNull>>::Out: MaybeNullableType<Out>,
+        <<T::IsNull as OneIsNullable<O::IsNull>>::Out as MaybeNullableType<Out>>::Out: SingleValue,
+    {
+        type Out = <<T::IsNull as OneIsNullable<O::IsNull>>::Out as MaybeNullableType<Out>>::Out;
+    }
+}

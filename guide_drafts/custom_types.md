@@ -81,11 +81,11 @@ Thus, we need to create a separate type `LanguageType` and use it in a generated
 
 ```rust
 #[derive(SqlType)]
-#[postgres(type_name = "Language")]
+#[diesel(postgres_type(name = "Language"))]
 pub struct LanguageType;
 
 #[derive(Debug, FromSqlRow, AsExpression)]
-#[sql_type = "LanguageType"]
+#[diesel(sql_type = LanguageType)]
 pub enum Language {
     En,
     Ru,
@@ -97,7 +97,7 @@ pub mod exports {
 }
 ```
 
-`#[postgres(type_name = "..")]` provides a name of the type as declared in our SQL, similarly `#[mysql_type = ".."]` can be used for MySql and `#[sqlite_type = ".."]` for sqlite. `FromSqlRow` derives internal types that are necessary for querying and `AsExpression` for querying. `#[sql_type = "LanguageType"]` creates a relation between a type marker and a "high-level" type for insertions as well.
+`#[diesel(postgres_type(name = ".."))]` provides a name of the type as declared in our SQL, similarly `#[diesel(mysql_type(name = ".."))]` can be used for MySql and `#[diesel(sqlite_type(name = ".."))]` for sqlite. `FromSqlRow` derives internal types that are necessary for querying and `AsExpression` for querying. `#[diesel(sql_type = LanguageType)]` creates a relation between a type marker and a "high-level" type for insertions as well.
 
 We are ready to implement real conversions. The first one is `ToSql`, that performs conversion to the bytes. Since it can convert our type to SQL, it allows to only make queries.
 

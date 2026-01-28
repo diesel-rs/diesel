@@ -1,25 +1,70 @@
-error[E0277]: the trait bound `diesel::query_builder::locking_clause::ForUpdate: diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` is not satisfied
-  --> $DIR/select_for_update_cannot_be_used_on_sqlite.rs:16:10
-   |
-16 |         .load(&conn)
-   |          ^^^^ the trait `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` is not implemented for `diesel::query_builder::locking_clause::ForUpdate`
-   |
-   = help: the following implementations were found:
-             <diesel::query_builder::locking_clause::ForUpdate as diesel::query_builder::QueryFragment<diesel::mysql::Mysql>>
-             <diesel::query_builder::locking_clause::ForUpdate as diesel::query_builder::QueryFragment<diesel::pg::Pg>>
-   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::query_builder::locking_clause::LockingClause`
-   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::locking_clause::LockingClause>`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::SqliteConnection, _>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::locking_clause::LockingClause>`
-
-error[E0277]: the trait bound `diesel::query_builder::locking_clause::NoModifier: diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` is not satisfied
-  --> $DIR/select_for_update_cannot_be_used_on_sqlite.rs:16:10
-   |
-16 |         .load(&conn)
-   |          ^^^^ the trait `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` is not implemented for `diesel::query_builder::locking_clause::NoModifier`
-   |
-   = help: the following implementations were found:
-             <diesel::query_builder::locking_clause::NoModifier as diesel::query_builder::QueryFragment<diesel::mysql::Mysql>>
-             <diesel::query_builder::locking_clause::NoModifier as diesel::query_builder::QueryFragment<diesel::pg::Pg>>
-   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::query_builder::locking_clause::LockingClause`
-   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::locking_clause::LockingClause>`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::SqliteConnection, _>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::locking_clause::LockingClause>`
+error[E0277]: `diesel::query_builder::locking_clause::ForUpdate` is no valid SQL fragment for the `Sqlite` backend
+    --> tests/fail/select_for_update_cannot_be_used_on_sqlite.rs:16:15
+     |
+  LL |         .load(&mut conn)
+     |          ---- ^^^^^^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = help: the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::ForUpdate`
+     = note: this usually means that the `Sqlite` database system does not support 
+             this SQL syntax
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/pg/query_builder/query_fragment_impls.rs
+     |
+  LL | impl QueryFragment<Pg> for ForUpdate {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::locking_clause::ForUpdate` implements `QueryFragment<Pg>`
+     |
+    ::: DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
+     |
+  LL | impl QueryFragment<Mysql> for ForUpdate {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::locking_clause::ForUpdate` implements `QueryFragment<Mysql>`
+     = note: required for `diesel::query_builder::locking_clause::LockingClause` to implement `QueryFragment<Sqlite>`
+     = note: 2 redundant requirements hidden
+     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>` to implement `QueryFragment<Sqlite>`
+     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>` to implement `LoadQuery<'_, SqliteConnection, _>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     
+error[E0277]: `diesel::query_builder::locking_clause::NoModifier` is no valid SQL fragment for the `Sqlite` backend
+    --> tests/fail/select_for_update_cannot_be_used_on_sqlite.rs:16:15
+     |
+  LL |         .load(&mut conn)
+     |          ---- ^^^^^^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = help: the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::NoModifier`
+     = note: this usually means that the `Sqlite` database system does not support 
+             this SQL syntax
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/pg/query_builder/query_fragment_impls.rs
+     |
+  LL | impl QueryFragment<Pg> for NoModifier {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::locking_clause::NoModifier` implements `QueryFragment<Pg>`
+     |
+    ::: DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
+     |
+  LL | impl QueryFragment<Mysql> for NoModifier {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::locking_clause::NoModifier` implements `QueryFragment<Mysql>`
+     = note: required for `diesel::query_builder::locking_clause::LockingClause` to implement `QueryFragment<Sqlite>`
+     = note: 2 redundant requirements hidden
+     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>` to implement `QueryFragment<Sqlite>`
+     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>` to implement `LoadQuery<'_, SqliteConnection, _>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     For more information about this error, try `rustc --explain E0277`.

@@ -3,14 +3,15 @@
 use std::error::Error;
 use std::fmt;
 use std::io::{self, Write};
-use std::ops::{Deref, DerefMut};
 use std::result;
 
 use crate::backend::Backend;
-use crate::sql_types::TypeMetadata;
+use crate::query_builder::bind_collector::RawBytesBindCollector;
+use crate::query_builder::BindCollector;
 
-#[cfg(feature = "postgres")]
-pub use crate::pg::serialize::*;
+#[doc(inline)]
+#[cfg(feature = "postgres_backend")]
+pub use crate::pg::serialize::WriteTuple;
 
 /// A specialized result type representing the result of serializing
 /// a value for the database.
@@ -31,105 +32,118 @@ pub enum IsNull {
 
 /// Wraps a buffer to be written by `ToSql` with additional backend specific
 /// utilities.
-#[derive(Clone, Copy)]
-pub struct Output<'a, T, DB>
+pub struct Output<'a, 'b, DB>
 where
-    DB: TypeMetadata,
+    DB: Backend,
     DB::MetadataLookup: 'a,
 {
-    out: T,
-    metadata_lookup: Option<&'a DB::MetadataLookup>,
+    out: <DB::BindCollector<'a> as BindCollector<'a, DB>>::Buffer,
+    metadata_lookup: Option<&'b mut DB::MetadataLookup>,
 }
 
-impl<'a, T, DB: TypeMetadata> Output<'a, T, DB> {
+impl<'a, 'b, DB: Backend> Output<'a, 'b, DB> {
     /// Construct a new `Output`
-    pub fn new(out: T, metadata_lookup: &'a DB::MetadataLookup) -> Self {
+    pub fn new(
+        out: <DB::BindCollector<'a> as BindCollector<'a, DB>>::Buffer,
+        metadata_lookup: &'b mut DB::MetadataLookup,
+    ) -> Self {
         Output {
             out,
             metadata_lookup: Some(metadata_lookup),
         }
     }
 
-    /// Create a new `Output` with the given buffer
-    pub fn with_buffer<U>(&self, new_out: U) -> Output<'a, U, DB> {
-        Output {
-            out: new_out,
-            metadata_lookup: self.metadata_lookup,
-        }
-    }
-
-    /// Return the raw buffer this type is wrapping
-    pub fn into_inner(self) -> T {
+    /// Consume the current `Output` structure to access the inner buffer type
+    ///
+    /// This function is only useful for people implementing their own Backend.
+    pub fn into_inner(self) -> <DB::BindCollector<'a> as BindCollector<'a, DB>>::Buffer {
         self.out
     }
 
     /// Returns the backend's mechanism for dynamically looking up type
     /// metadata at runtime, if relevant for the given backend.
-    pub fn metadata_lookup(&self) -> &'a DB::MetadataLookup {
-        self.metadata_lookup.expect("Lookup is there")
+    pub fn metadata_lookup(&mut self) -> &mut DB::MetadataLookup {
+        self.metadata_lookup.as_mut().expect("Lookup is there")
+    }
+
+    /// Set the inner buffer to a specific value
+    ///
+    /// Checkout the documentation of the type of `BindCollector::Buffer`
+    /// for your specific backend for supported types.
+    pub fn set_value<V>(&mut self, value: V)
+    where
+        V: Into<<DB::BindCollector<'a> as BindCollector<'a, DB>>::Buffer>,
+    {
+        self.out = value.into();
     }
 }
 
 #[cfg(test)]
-impl<DB: TypeMetadata> Output<'static, Vec<u8>, DB> {
+impl<'a, DB: Backend> Output<'a, 'static, DB> {
     /// Returns a `Output` suitable for testing `ToSql` implementations.
     /// Unsafe to use for testing types which perform dynamic metadata lookup.
-    pub fn test() -> Self {
+    pub fn test(buffer: <DB::BindCollector<'a> as BindCollector<'a, DB>>::Buffer) -> Self {
         Self {
-            out: Vec::new(),
+            out: buffer,
             metadata_lookup: None,
         }
     }
 }
 
-impl<'a, T: Write, DB: TypeMetadata> Write for Output<'a, T, DB> {
+impl<DB> Write for Output<'_, '_, DB>
+where
+    for<'c> DB: Backend<BindCollector<'c> = RawBytesBindCollector<DB>>,
+{
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.out.write(buf)
+        self.out.0.write(buf)
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.out.flush()
+        self.out.0.flush()
     }
 
     fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
-        self.out.write_all(buf)
+        self.out.0.write_all(buf)
     }
 
-    fn write_fmt(&mut self, fmt: fmt::Arguments) -> io::Result<()> {
-        self.out.write_fmt(fmt)
-    }
-}
-
-impl<'a, T, DB: TypeMetadata> Deref for Output<'a, T, DB> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.out
+    fn write_fmt(&mut self, fmt: fmt::Arguments<'_>) -> io::Result<()> {
+        self.out.0.write_fmt(fmt)
     }
 }
 
-impl<'a, T, DB: TypeMetadata> DerefMut for Output<'a, T, DB> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.out
-    }
-}
-
-impl<'a, T, U, DB> PartialEq<U> for Output<'a, T, DB>
+impl<'a, DB> Output<'a, '_, DB>
 where
-    DB: TypeMetadata,
-    T: PartialEq<U>,
+    for<'c> DB: Backend<BindCollector<'c> = RawBytesBindCollector<DB>>,
 {
-    fn eq(&self, rhs: &U) -> bool {
-        self.out == *rhs
+    /// Call this method whenever you pass an instance of `Output<DB>` by value.
+    ///
+    /// Effectively copies `self`, with a narrower lifetime. When passing a
+    /// reference or a mutable reference, this is normally done by rust
+    /// implicitly. This is why you can pass `&mut Foo` to multiple functions,
+    /// even though mutable references are not `Copy`. However, this is only
+    /// done implicitly for references. For structs with lifetimes it must be
+    /// done explicitly. This method matches the semantics of what Rust would do
+    /// implicitly if you were passing a mutable reference
+    pub fn reborrow<'c>(&'c mut self) -> Output<'c, 'c, DB>
+    where
+        'a: 'c,
+    {
+        Output {
+            out: RawBytesBindCollector::<DB>::reborrow_buffer(&mut self.out),
+            metadata_lookup: match &mut self.metadata_lookup {
+                None => None,
+                Some(m) => Some(&mut **m),
+            },
+        }
     }
 }
 
-impl<'a, T, DB> fmt::Debug for Output<'a, T, DB>
+impl<'a, DB> fmt::Debug for Output<'a, '_, DB>
 where
-    T: fmt::Debug,
-    DB: TypeMetadata,
+    <DB::BindCollector<'a> as BindCollector<'a, DB>>::Buffer: fmt::Debug,
+    DB: Backend,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.out.fmt(f)
     }
 }
@@ -143,9 +157,10 @@ where
 /// implementation, rather than writing to `out` directly. (For example, if you
 /// are implementing this for an enum, which is represented as an integer in the
 /// database, you should use `i32::to_sql(x, out)` instead of writing to `out`
-/// yourself.
+/// yourself.)
 ///
-/// Any types which implement this trait should also [`#[derive(AsExpression)]`].
+/// Any types which implement this trait should also
+/// [`#[derive(AsExpression)]`](derive@crate::expression::AsExpression).
 ///
 /// ### Backend specific details
 ///
@@ -157,7 +172,6 @@ where
 /// - For third party backends, consult that backend's documentation.
 ///
 /// [`MysqlType`]: ../mysql/enum.MysqlType.html
-/// [`#[derive(AsExpression)]`]: ../expression/derive.AsExpression.html;
 ///
 /// ### Examples
 ///
@@ -173,7 +187,7 @@ where
 /// #
 /// #[repr(i32)]
 /// #[derive(Debug, Clone, Copy, AsExpression)]
-/// #[sql_type = "Integer"]
+/// #[diesel(sql_type = Integer)]
 /// pub enum MyEnum {
 ///     A = 1,
 ///     B = 2,
@@ -184,22 +198,137 @@ where
 ///     DB: Backend,
 ///     i32: ToSql<Integer, DB>,
 /// {
-///     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
-///         (*self as i32).to_sql(out)
+///     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+///         match self {
+///             MyEnum::A => 1.to_sql(out),
+///             MyEnum::B => 2.to_sql(out),
+///         }
 ///     }
 /// }
 /// ```
+///
+/// Example of creating a custom type mapping based on a MySQL [enum type](https://dev.mysql.com/doc/refman/8.0/en/enum.html)
+///
+/// This is designed to reuse the SQL type definition generated by diesel-cli
+///
+/// ```rust
+/// # use diesel::backend::Backend;
+/// # use diesel::expression::AsExpression;
+/// # use diesel::sql_types::*;
+/// # use diesel::serialize::{self, ToSql, Output, IsNull};
+/// # use std::io::Write;
+/// #
+/// pub mod sql_types {
+///     #[derive(diesel::sql_types::SqlType)]
+///     #[diesel(mysql_type(name = "Enum"))]
+///     pub struct PostEnum; //<- generated by diesel cli
+/// }
+/// #[derive(Debug, AsExpression, PartialEq, Clone)]
+/// #[diesel(sql_type = sql_types::PostEnum)]
+/// pub enum Post {
+///     FirstValue,
+///     SecondValue,
+/// }
+///
+/// # #[cfg(feature = "mysql")]
+/// impl ToSql<sql_types::PostEnum, diesel::mysql::Mysql> for Post {
+///     fn to_sql<'b>(
+///         &'b self,
+///         out: &mut Output<'b, '_, diesel::mysql::Mysql>,
+///     ) -> serialize::Result {
+///         match *self {
+///             // these string values need to match the labels used in your
+///             // enum definition in SQL. So this expects that you defined the
+///             /// relevant enum type as`ENUM('one', 'two')` in your `CREATE TABLE` statement
+///             Post::FirstValue => out.write_all(b"one")?,
+///             Post::SecondValue => out.write_all(b"two")?,
+///         }
+///         Ok(IsNull::No)
+///     }
+/// }
+/// ```
+///
+/// Using temporary values as part of the `ToSql` implementation requires additional
+/// work.
+///
+/// Backends using [`RawBytesBindCollector`] as [`BindCollector`] copy the serialized values as part
+/// of `Write` implementation. This includes the `Mysql` and the `Pg` backend provided by diesel.
+/// This means existing `ToSql` implementations can be used even with
+/// temporary values. For these it is required to call
+/// [`Output::reborrow`] to shorten the lifetime of the `Output` type correspondingly.
+///
+/// ```
+/// # use diesel::backend::Backend;
+/// # use diesel::expression::AsExpression;
+/// # use diesel::sql_types::*;
+/// # use diesel::serialize::{self, ToSql, Output};
+/// # use std::io::Write;
+/// #
+/// #[repr(i32)]
+/// #[derive(Debug, Clone, Copy, AsExpression)]
+/// #[diesel(sql_type = Integer)]
+/// pub enum MyEnum {
+///     A = 1,
+///     B = 2,
+/// }
+///
+/// # #[cfg(feature = "postgres")]
+/// impl ToSql<Integer, diesel::pg::Pg> for MyEnum
+/// where
+///     i32: ToSql<Integer, diesel::pg::Pg>,
+/// {
+///     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, diesel::pg::Pg>) -> serialize::Result {
+///         let v = *self as i32;
+///         <i32 as ToSql<Integer, diesel::pg::Pg>>::to_sql(&v, &mut out.reborrow())
+///     }
+/// }
+/// ````
+///
+/// For any other backend the [`Output::set_value`] method provides a way to
+/// set the output value directly. Checkout the documentation of the corresponding
+/// `BindCollector::Buffer` type for provided `From<T>` implementations for a list
+/// of accepted types. For the `Sqlite` backend see `SqliteBindValue`.
+///
+/// ```
+/// # use diesel::backend::Backend;
+/// # use diesel::expression::AsExpression;
+/// # use diesel::sql_types::*;
+/// # use diesel::serialize::{self, ToSql, Output, IsNull};
+/// # use std::io::Write;
+/// #
+/// #[repr(i32)]
+/// #[derive(Debug, Clone, Copy, AsExpression)]
+/// #[diesel(sql_type = Integer)]
+/// pub enum MyEnum {
+///     A = 1,
+///     B = 2,
+/// }
+///
+/// # #[cfg(feature = "sqlite")]
+/// impl ToSql<Integer, diesel::sqlite::Sqlite> for MyEnum
+/// where
+///     i32: ToSql<Integer, diesel::sqlite::Sqlite>,
+/// {
+///     fn to_sql<'b>(
+///         &'b self,
+///         out: &mut Output<'b, '_, diesel::sqlite::Sqlite>,
+///     ) -> serialize::Result {
+///         out.set_value(*self as i32);
+///         Ok(IsNull::No)
+///     }
+/// }
+/// ````
 pub trait ToSql<A, DB: Backend>: fmt::Debug {
     /// See the trait documentation.
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> Result;
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> Result;
 }
 
-impl<'a, A, T, DB> ToSql<A, DB> for &'a T
+impl<A, T, DB> ToSql<A, DB> for &T
 where
     DB: Backend,
     T: ToSql<A, DB> + ?Sized,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> Result {
         (*self).to_sql(out)
     }
 }

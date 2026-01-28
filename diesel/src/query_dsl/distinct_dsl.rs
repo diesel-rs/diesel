@@ -1,10 +1,11 @@
 use crate::dsl;
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 use crate::expression::SelectableExpression;
 use crate::expression::TypedExpressionType;
 use crate::expression::ValidGrouping;
+use crate::query_builder::FromClause;
 use crate::query_builder::{AsQuery, SelectStatement};
-use crate::query_source::Table;
+use crate::query_source::QueryRelation;
 use crate::Expression;
 
 /// The `distinct` method
@@ -13,7 +14,10 @@ use crate::Expression;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `distinct` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
+#[diagnostic::on_unimplemented(
+    note = "a `DISTINCT` clause is not compatible with various other clauses like `LOCKING` clauses"
+)]
 pub trait DistinctDsl {
     /// The type returned by `.distinct`
     type Output;
@@ -22,15 +26,16 @@ pub trait DistinctDsl {
     fn distinct(self) -> dsl::Distinct<Self>;
 }
 
+#[diagnostic::do_not_recommend]
 impl<T> DistinctDsl for T
 where
-    T: Table + AsQuery<Query = SelectStatement<T>>,
+    T: QueryRelation + AsQuery<Query = SelectStatement<FromClause<T>>>,
     T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
     T::SqlType: TypedExpressionType,
 {
-    type Output = dsl::Distinct<SelectStatement<T>>;
+    type Output = dsl::Distinct<SelectStatement<FromClause<T>>>;
 
-    fn distinct(self) -> dsl::Distinct<SelectStatement<T>> {
+    fn distinct(self) -> dsl::Distinct<SelectStatement<FromClause<T>>> {
         self.as_query().distinct()
     }
 }
@@ -41,8 +46,12 @@ where
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `distinct_on` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
-#[cfg(feature = "postgres")]
+/// [`QueryDsl`]: crate::QueryDsl
+#[cfg(feature = "postgres_backend")]
+#[diagnostic::on_unimplemented(
+    note = "a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses",
+    note = "a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause"
+)]
 pub trait DistinctOnDsl<Selection> {
     /// The type returned by `.distinct_on`
     type Output;
@@ -51,16 +60,17 @@ pub trait DistinctOnDsl<Selection> {
     fn distinct_on(self, selection: Selection) -> dsl::DistinctOn<Self, Selection>;
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
+#[diagnostic::do_not_recommend]
 impl<T, Selection> DistinctOnDsl<Selection> for T
 where
     Selection: SelectableExpression<T>,
-    T: Table + AsQuery<Query = SelectStatement<T>>,
-    SelectStatement<T>: DistinctOnDsl<Selection>,
+    T: QueryRelation + AsQuery<Query = SelectStatement<FromClause<T>>>,
+    SelectStatement<FromClause<T>>: DistinctOnDsl<Selection>,
     T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
     T::SqlType: TypedExpressionType,
 {
-    type Output = dsl::DistinctOn<SelectStatement<T>, Selection>;
+    type Output = dsl::DistinctOn<SelectStatement<FromClause<T>>, Selection>;
 
     fn distinct_on(self, selection: Selection) -> dsl::DistinctOn<Self, Selection> {
         self.as_query().distinct_on(selection)

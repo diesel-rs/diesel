@@ -1,0 +1,7 @@
+error: all fields of tuple structs must be annotated with `#[diesel(column_name)]`
+  --> tests/fail/derive/tuple_struct.rs:12:10
+   |
+LL | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^
+   |
+   = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)

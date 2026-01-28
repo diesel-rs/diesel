@@ -1,6 +1,7 @@
+use crate::helper_types;
 use crate::query_builder::AsQuery;
 use crate::query_source::joins::OnClauseWrapper;
-use crate::query_source::{JoinTo, QuerySource, Table};
+use crate::query_source::{JoinTo, QueryRelation, QuerySource};
 
 #[doc(hidden)]
 /// `JoinDsl` support trait to emulate associated type constructors
@@ -12,7 +13,7 @@ pub trait InternalJoinDsl<Rhs, Kind, On> {
 
 impl<T, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for T
 where
-    T: Table + AsQuery,
+    T: QueryRelation + AsQuery,
     T::Query: InternalJoinDsl<Rhs, Kind, On>,
 {
     type Output = <T::Query as InternalJoinDsl<Rhs, Kind, On>>::Output;
@@ -47,7 +48,7 @@ where
 /// Specify the `ON` clause for a join statement. This will override
 /// any implicit `ON` clause that would come from [`joinable!`]
 ///
-/// [`joinable!`]: ../macro.joinable.html
+/// [`joinable!`]: crate::joinable!
 ///
 /// # Example
 ///
@@ -56,14 +57,14 @@ where
 /// # use schema::{users, posts};
 /// #
 /// # fn main() {
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let data = users::table
 ///     .left_join(posts::table.on(
 ///         users::id.eq(posts::user_id).and(
 ///             posts::title.eq("My first post"))
 ///     ))
 ///     .select((users::name, posts::title.nullable()))
-///     .load(&connection);
+///     .load(connection);
 /// let expected = vec![
 ///     ("Sean".to_string(), Some("My first post".to_string())),
 ///     ("Tess".to_string(), None),
@@ -72,7 +73,7 @@ where
 /// # }
 pub trait JoinOnDsl: Sized {
     /// See the trait documentation.
-    fn on<On>(self, on: On) -> OnClauseWrapper<Self, On> {
+    fn on<On>(self, on: On) -> helper_types::On<Self, On> {
         OnClauseWrapper::new(self, on)
     }
 }

@@ -1,0 +1,74 @@
+warning: #[sql_type] attribute form is deprecated
+  = help: use `#[diesel(sql_type = foo)]` instead
+
+error: unexpected end of input, expected `=`
+       help: the correct format looks like `#[diesel(sql_type = Foo)]`
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:11:3
+   |
+LL | #[sql_type]
+   |   ^^^^^^^^
+
+error: expected `=`
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:16:11
+   |
+LL | #[sql_type()]
+   |           ^^
+
+error: expected string literal
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:21:14
+   |
+LL | #[sql_type = 1]
+   |              ^
+
+warning: #[sql_type] attribute form is deprecated
+  = help: use `#[diesel(sql_type = 1)]` instead
+
+error: expected identifier
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:26:14
+   |
+LL | #[sql_type = "1"]
+   |              ^^^
+
+warning: #[sql_type] attribute form is deprecated
+  = help: use `#[diesel(sql_type = foo)]` instead
+
+error: unexpected end of input, expected `=`
+       help: the correct format looks like `#[diesel(sql_type = Foo)]`
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:39:7
+   |
+LL |     #[sql_type]
+   |       ^^^^^^^^
+
+error: expected `=`
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:46:15
+   |
+LL |     #[sql_type()]
+   |               ^^
+
+error: expected string literal
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:53:18
+   |
+LL |     #[sql_type = 1]
+   |                  ^
+
+warning: #[sql_type] attribute form is deprecated
+  = help: use `#[diesel(sql_type = 1)]` instead
+
+error: expected identifier
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:60:18
+   |
+LL |     #[sql_type = "1"]
+   |                  ^^^
+
+error[E0425]: cannot find type `foo` in this scope
+ --> tests/fail/derive_deprecated/deprecated_sql_type.rs:6:14
+  |
+LL | #[sql_type = "foo"]
+  |              ^^^^^ not found in this scope
+
+error[E0425]: cannot find type `foo` in this scope
+  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:32:18
+   |
+LL |     #[sql_type = "foo"]
+   |                  ^^^^^ not found in this scope
+For more information about this error, try `rustc --explain E0425`.

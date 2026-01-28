@@ -27,7 +27,14 @@ pub struct Post {
     pub visit_count: i32,
 }
 
-pub fn publish_all_posts(conn: &PgConnection) -> QueryResult<usize> {
+#[derive(AsChangeset)]
+#[diesel(table_name = posts)]
+struct PostForm<'a> {
+    title: Option<&'a str>,
+    body: Option<&'a str>,
+}
+
+pub fn publish_all_posts(conn: &mut PgConnection) -> QueryResult<usize> {
     use crate::posts::dsl::*;
 
     diesel::update(posts).set(draft.eq(false)).execute(conn)
@@ -43,7 +50,7 @@ fn examine_sql_from_publish_all_posts() {
     );
 }
 
-pub fn publish_pending_posts(conn: &PgConnection) -> QueryResult<usize> {
+pub fn publish_pending_posts(conn: &mut PgConnection) -> QueryResult<usize> {
     use crate::posts::dsl::*;
     use diesel::dsl::now;
 
@@ -69,7 +76,7 @@ fn examine_sql_from_publish_pending_posts() {
     );
 }
 
-pub fn publish_post(post: &Post, conn: &PgConnection) -> QueryResult<usize> {
+pub fn publish_post(post: &Post, conn: &mut PgConnection) -> QueryResult<usize> {
     diesel::update(post)
         .set(posts::draft.eq(false))
         .execute(conn)
@@ -92,7 +99,7 @@ fn examine_sql_from_publish_post() {
     );
 }
 
-pub fn increment_visit_counts(conn: &PgConnection) -> QueryResult<usize> {
+pub fn increment_visit_counts(conn: &mut PgConnection) -> QueryResult<usize> {
     use crate::posts::dsl::*;
 
     diesel::update(posts)
@@ -112,7 +119,7 @@ fn examine_sql_from_increment_visit_counts() {
     );
 }
 
-pub fn hide_everything(conn: &PgConnection) -> QueryResult<usize> {
+pub fn hide_everything(conn: &mut PgConnection) -> QueryResult<usize> {
     use crate::posts::dsl::*;
 
     diesel::update(posts)
@@ -138,7 +145,7 @@ fn examine_sql_from_hide_everything() {
     );
 }
 
-pub fn update_from_post_fields(post: &Post, conn: &PgConnection) -> QueryResult<usize> {
+pub fn update_from_post_fields(post: &Post, conn: &mut PgConnection) -> QueryResult<usize> {
     diesel::update(posts::table).set(post).execute(conn)
 }
 
@@ -164,10 +171,9 @@ fn examine_sql_from_update_post_fields() {
          \"\", \
          \"\", \
          false, \
-         {:?}, \
+         {now:?}, \
          0\
-         ]",
-        now
+         ]"
     );
     assert_eq!(
         sql,
@@ -175,14 +181,7 @@ fn examine_sql_from_update_post_fields() {
     );
 }
 
-pub fn update_with_option(conn: &PgConnection) -> QueryResult<usize> {
-    #[derive(AsChangeset)]
-    #[table_name = "posts"]
-    struct PostForm<'a> {
-        title: Option<&'a str>,
-        body: Option<&'a str>,
-    }
-
+pub fn update_with_option(conn: &mut PgConnection) -> QueryResult<usize> {
     diesel::update(posts::table)
         .set(&PostForm {
             title: None,
@@ -194,7 +193,7 @@ pub fn update_with_option(conn: &PgConnection) -> QueryResult<usize> {
 #[test]
 fn examine_sql_from_update_with_option() {
     #[derive(AsChangeset)]
-    #[table_name = "posts"]
+    #[diesel(table_name = posts)]
     struct PostForm<'a> {
         title: Option<&'a str>,
         body: Option<&'a str>,

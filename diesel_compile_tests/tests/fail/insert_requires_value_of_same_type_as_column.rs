@@ -1,7 +1,7 @@
 extern crate diesel;
 
-use diesel::*;
 use diesel::pg::PgConnection;
+use diesel::*;
 
 table! {
     users {
@@ -13,8 +13,8 @@ table! {
 
 fn main() {
     use self::users::dsl::*;
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
 
-    insert_into(users)
-        .values(&name.eq(1));
+    insert_into(users).values(&name.eq(1));
+    //~^ ERROR: the trait bound `{integer}: AsExpression<diesel::sql_types::Text>` is not satisfied
 }

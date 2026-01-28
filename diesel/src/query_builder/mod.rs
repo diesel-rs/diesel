@@ -9,63 +9,136 @@ mod query_id;
 #[macro_use]
 mod clause_macro;
 
-mod ast_pass;
+pub(crate) mod ast_pass;
 pub mod bind_collector;
+mod collected_query;
 pub(crate) mod combination_clause;
 mod debug_query;
 mod delete_statement;
 mod distinct_clause;
-#[doc(hidden)]
-pub mod functions;
-mod group_by_clause;
-mod insert_statement;
+pub(crate) mod from_clause;
+pub(crate) mod functions;
+pub(crate) mod group_by_clause;
+mod having_clause;
+pub(crate) mod insert_statement;
 pub(crate) mod limit_clause;
 pub(crate) mod limit_offset_clause;
 pub(crate) mod locking_clause;
-#[doc(hidden)]
-pub mod nodes;
+pub(crate) mod nodes;
 pub(crate) mod offset_clause;
 pub(crate) mod order_clause;
-mod returning_clause;
+pub(crate) mod returning_clause;
 pub(crate) mod select_clause;
-mod select_statement;
+pub(crate) mod select_statement;
 mod sql_query;
-mod update_statement;
+pub(crate) mod update_statement;
 pub(crate) mod upsert;
-mod where_clause;
+pub(crate) mod where_clause;
 
+#[doc(inline)]
 pub use self::ast_pass::AstPass;
-pub use self::bind_collector::BindCollector;
+#[doc(inline)]
+pub use self::bind_collector::{BindCollector, MoveableBindCollector};
+#[doc(inline)]
+pub use self::collected_query::CollectedQuery;
+#[doc(inline)]
 pub use self::debug_query::DebugQuery;
+#[doc(inline)]
 pub use self::delete_statement::{BoxedDeleteStatement, DeleteStatement};
 #[doc(inline)]
 pub use self::insert_statement::{
-    IncompleteInsertStatement, InsertStatement, UndecoratedInsertRecord, ValuesClause,
+    IncompleteInsertOrIgnoreStatement, IncompleteInsertStatement, IncompleteReplaceStatement,
+    InsertOrIgnoreStatement, InsertStatement, ReplaceStatement,
 };
+#[doc(inline)]
 pub use self::query_id::QueryId;
 #[doc(inline)]
-pub use self::select_clause::{
-    IntoBoxedSelectClause, SelectClauseExpression, SelectClauseQueryFragment,
-};
-#[doc(hidden)]
-pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
 pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
 #[doc(inline)]
-pub use self::update_statement::{
-    AsChangeset, BoxedUpdateStatement, IntoUpdateTarget, UpdateStatement, UpdateTarget,
-};
 pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 
+#[doc(inline)]
+pub use self::update_statement::changeset::AsChangeset;
+#[doc(inline)]
+pub use self::update_statement::target::{IntoUpdateTarget, UpdateTarget};
+#[doc(inline)]
+pub use self::update_statement::{BoxedUpdateStatement, UpdateStatement};
+
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::combination_clause::{
+    All, Distinct, Except, Intersect, ParenthesisWrapper, SupportsCombinationClause, Union,
+};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::limit_clause::{LimitClause, NoLimitClause};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::offset_clause::{NoOffsetClause, OffsetClause};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::order_clause::{NoOrderClause, OrderClause};
+
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+#[doc(inline)]
+pub(crate) use self::insert_statement::batch_insert::BatchInsert;
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::insert_statement::{UndecoratedInsertRecord, ValuesClause};
+
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+#[doc(inline)]
+pub use self::insert_statement::{DefaultValues, InsertOrIgnore, Replace};
+
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+#[doc(inline)]
+pub use self::returning_clause::ReturningClause;
+
+#[doc(inline)]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::ast_pass::AstPassToSqlOptions;
+
+#[doc(inline)]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::select_clause::SelectClauseExpression;
+
+#[doc(inline)]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::from_clause::{FromClause, NoFromClause};
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+#[doc(inline)]
+pub(crate) use self::select_statement::BoxedSelectStatement;
+
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+#[doc(inline)]
+pub(crate) use self::select_statement::SelectStatement;
 
 pub(crate) use self::insert_statement::ColumnList;
 
-use std::error::Error;
+#[cfg(feature = "postgres_backend")]
+pub use crate::pg::query_builder::only::Only;
 
+#[cfg(feature = "postgres_backend")]
+pub use crate::pg::query_builder::tablesample::{Tablesample, TablesampleMethod};
+
+#[cfg(feature = "postgres_backend")]
+pub(crate) use self::bind_collector::ByteWrapper;
 use crate::backend::Backend;
 use crate::result::QueryResult;
+use std::error::Error;
+
+pub(crate) use self::private::NotSpecialized;
 
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
@@ -78,8 +151,6 @@ pub type BuildQueryResult = Result<(), Box<dyn Error + Send + Sync>>;
 /// are extending Diesel with support for a new backend. Plugins which extend
 /// the query builder with new capabilities will interact with [`AstPass`]
 /// instead.
-///
-/// [`AstPass`]: struct.AstPass.html
 pub trait QueryBuilder<DB: Backend> {
     /// Add `sql` to the end of the query being constructed.
     fn push_sql(&mut self, sql: &str);
@@ -110,7 +181,7 @@ pub trait QueryBuilder<DB: Backend> {
 /// query. For example, an `INSERT` statement without a `RETURNING` clause will
 /// not implement this trait, but can still be executed.
 ///
-/// [`Expression`]: ../expression/trait.Expression.html
+/// [`Expression`]: crate::expression::Expression
 pub trait Query {
     /// The SQL type that this query represents.
     ///
@@ -120,7 +191,7 @@ pub trait Query {
     type SqlType;
 }
 
-impl<'a, T: Query> Query for &'a T {
+impl<T: Query> Query for &T {
     type SqlType = T::SqlType;
 }
 
@@ -144,23 +215,30 @@ pub trait SelectQuery {
 /// represent a `WHERE` clause). Implementations of [`ExecuteDsl`] and
 /// [`LoadQuery`] will generally require that this trait be implemented.
 ///
-/// [`ExecuteDsl`]: ../query_dsl/methods/trait.ExecuteDsl.html
-/// [`LoadQuery`]: ../query_dsl/methods/trait.LoadQuery.html
-pub trait QueryFragment<DB: Backend> {
+/// [`ExecuteDsl`]: crate::query_dsl::methods::ExecuteDsl
+/// [`LoadQuery`]: crate::query_dsl::methods::LoadQuery
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is no valid SQL fragment for the `{DB}` backend",
+    note = "this usually means that the `{DB}` database system does not support \n\
+            this SQL syntax"
+)]
+pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     /// Walk over this `QueryFragment` for all passes.
     ///
     /// This method is where the actual behavior of an AST node is implemented.
     /// This method will contain the behavior required for all possible AST
     /// passes. See [`AstPass`] for more details.
-    ///
-    /// [`AstPass`]: struct.AstPass.html
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()>;
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>;
 
     /// Converts this `QueryFragment` to its SQL representation.
     ///
     /// This method should only be called by implementations of `Connection`.
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
-        self.walk_ast(AstPass::to_sql(out))
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn to_sql(&self, out: &mut DB::QueryBuilder, backend: &DB) -> QueryResult<()> {
+        let mut options = AstPassToSqlOptions::default();
+        self.walk_ast(AstPass::to_sql(out, &mut options, backend))
     }
 
     /// Serializes all bind parameters in this query.
@@ -169,12 +247,16 @@ pub trait QueryFragment<DB: Backend> {
     /// itself. It is represented in SQL with a placeholder such as `?` or `$1`.
     ///
     /// This method should only be called by implementations of `Connection`.
-    fn collect_binds(
-        &self,
-        out: &mut DB::BindCollector,
-        metadata_lookup: &DB::MetadataLookup,
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn collect_binds<'b>(
+        &'b self,
+        out: &mut DB::BindCollector<'b>,
+        metadata_lookup: &mut DB::MetadataLookup,
+        backend: &'b DB,
     ) -> QueryResult<()> {
-        self.walk_ast(AstPass::collect_binds(out, metadata_lookup))
+        self.walk_ast(AstPass::collect_binds(out, metadata_lookup, backend))
     }
 
     /// Is this query safe to store in the prepared statement cache?
@@ -192,17 +274,22 @@ pub trait QueryFragment<DB: Backend> {
     ///   placeholder)
     ///
     /// This method should only be called by implementations of `Connection`.
-    fn is_safe_to_cache_prepared(&self) -> QueryResult<bool> {
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn is_safe_to_cache_prepared(&self, backend: &DB) -> QueryResult<bool> {
         let mut result = true;
-        self.walk_ast(AstPass::is_safe_to_cache_prepared(&mut result))?;
+        self.walk_ast(AstPass::is_safe_to_cache_prepared(&mut result, backend))?;
         Ok(result)
     }
 
-    #[doc(hidden)]
     /// Does walking this AST have any effect?
-    fn is_noop(&self) -> QueryResult<bool> {
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn is_noop(&self, backend: &DB) -> QueryResult<bool> {
         let mut result = true;
-        self.walk_ast(AstPass::is_noop(&mut result))?;
+        self.walk_ast(AstPass::is_noop(&mut result, backend))?;
         Ok(result)
     }
 }
@@ -212,23 +299,23 @@ where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         QueryFragment::walk_ast(&**self, pass)
     }
 }
 
-impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T
+impl<T: ?Sized, DB> QueryFragment<DB> for &T
 where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         QueryFragment::walk_ast(&**self, pass)
     }
 }
 
 impl<DB: Backend> QueryFragment<DB> for () {
-    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, _: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -238,7 +325,7 @@ where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         match *self {
             Some(ref c) => c.walk_ast(out),
             None => Ok(()),
@@ -249,6 +336,9 @@ where
 /// A trait used to construct type erased boxed variant of the current query node
 ///
 /// Mainly useful for implementing third party backends
+#[diagnostic::on_unimplemented(
+    note = "this usually means that `{Self}` is no valid SQL for `{DB}`"
+)]
 pub trait IntoBoxedClause<'a, DB> {
     /// Resulting type
     type BoxedClause;
@@ -272,14 +362,19 @@ pub trait AsQuery {
 
     /// Converts a type which semantically represents a SQL query into the
     /// actual query being executed. See the trait level docs for more.
+    // This method is part of our public API,
+    // so we won't change the name to just appease clippy
+    // (Also the trait is literally named `AsQuery` so
+    // naming the method similarity is fine)
+    #[allow(clippy::wrong_self_convention)]
     fn as_query(self) -> Self::Query;
 }
 
 impl<T: Query> AsQuery for T {
-    type SqlType = <Self as Query>::SqlType;
-    type Query = Self;
+    type SqlType = <T as Query>::SqlType;
+    type Query = T;
 
-    fn as_query(self) -> Self::Query {
+    fn as_query(self) -> <T as AsQuery>::Query {
         self
     }
 }
@@ -317,8 +412,11 @@ impl<T: Query> AsQuery for T {
 /// #     assert_eq!(debug.to_string(), "SELECT \"users\".\"id\", \"users\".\"name\" \
 /// #         FROM \"users\" WHERE (\"users\".\"id\" = $1) -- binds: [1]");
 /// # } else {
-/// assert_eq!(debug.to_string(), "SELECT `users`.`id`, `users`.`name` FROM `users` \
-///     WHERE (`users`.`id` = ?) -- binds: [1]");
+/// assert_eq!(
+///     debug.to_string(),
+///     "SELECT `users`.`id`, `users`.`name` FROM `users` \
+///     WHERE (`users`.`id` = ?) -- binds: [1]"
+/// );
 /// # }
 ///
 /// let debug = format!("{:?}", debug);
@@ -332,6 +430,13 @@ impl<T: Query> AsQuery for T {
 /// # }
 /// # }
 /// ```
-pub fn debug_query<DB, T>(query: &T) -> DebugQuery<T, DB> {
+pub fn debug_query<DB, T>(query: &T) -> DebugQuery<'_, T, DB> {
     DebugQuery::new(query)
 }
+
+mod private {
+    #[allow(missing_debug_implementations, missing_copy_implementations)]
+    pub struct NotSpecialized;
+}
+
+pub(crate) mod has_query;

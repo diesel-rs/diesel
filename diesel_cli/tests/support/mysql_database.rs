@@ -1,3 +1,4 @@
+#![allow(clippy::expect_fun_call)]
 use diesel::connection::SimpleConnection;
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;
@@ -14,8 +15,9 @@ impl Database {
 
     pub fn create(self) -> Self {
         let (database, mysql_url) = self.split_url();
-        let conn = MysqlConnection::establish(&mysql_url).unwrap();
-        conn.execute(&format!("CREATE DATABASE `{}`", database))
+        let mut conn = MysqlConnection::establish(&mysql_url).unwrap();
+        diesel::sql_query(format!("CREATE DATABASE `{}`", database))
+            .execute(&mut conn)
             .unwrap();
         self
     }
@@ -33,7 +35,7 @@ impl Database {
                  AND table_schema = DATABASE())",
             table
         )))
-        .get_result(&self.conn())
+        .get_result(&mut self.conn())
         .unwrap()
     }
 
@@ -49,7 +51,7 @@ impl Database {
     }
 
     fn split_url(&self) -> (String, String) {
-        let mut split: Vec<&str> = self.url.split("/").collect();
+        let mut split: Vec<&str> = self.url.split('/').collect();
         let database = split.pop().unwrap();
         let mysql_url = format!("{}/{}", split.join("/"), "information_schema");
         (database.into(), mysql_url)
@@ -59,12 +61,12 @@ impl Database {
 impl Drop for Database {
     fn drop(&mut self) {
         let (database, mysql_url) = self.split_url();
-        let conn = try_drop!(
+        let mut conn = try_drop!(
             MysqlConnection::establish(&mysql_url),
             "Couldn't connect to database"
         );
         try_drop!(
-            conn.execute(&format!("DROP DATABASE IF EXISTS `{}`", database)),
+            diesel::sql_query(format!("DROP DATABASE IF EXISTS `{}`", database)).execute(&mut conn),
             "Couldn't drop database"
         );
     }

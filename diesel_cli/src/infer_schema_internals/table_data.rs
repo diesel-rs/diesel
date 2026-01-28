@@ -6,7 +6,7 @@ use std::str::FromStr;
 use super::data_structures::ColumnDefinition;
 use super::inference;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TableName {
     pub sql_name: String,
     pub rust_name: String,
@@ -40,7 +40,7 @@ impl TableName {
 
     #[cfg(feature = "uses_information_schema")]
     pub fn strip_schema_if_matches(&mut self, schema: &str) {
-        if self.schema.as_ref().map(|s| &**s) == Some(schema) {
+        if self.schema.as_deref() == Some(schema) {
             self.schema = None;
         }
     }
@@ -95,7 +95,16 @@ pub struct TableData {
     pub name: TableName,
     pub primary_key: Vec<String>,
     pub column_data: Vec<ColumnDefinition>,
-    pub docs: String,
+    pub comment: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct ViewData {
+    pub name: TableName,
+    pub column_data: Vec<ColumnDefinition>,
+    pub comment: Option<String>,
+    #[expect(dead_code, reason = "Will be used later")]
+    pub sql_definition: String,
 }
 
 mod serde_impls {
@@ -113,7 +122,7 @@ mod serde_impls {
         {
             struct TableNameVisitor;
 
-            impl<'de> Visitor<'de> for TableNameVisitor {
+            impl Visitor<'_> for TableNameVisitor {
                 type Value = TableName;
 
                 fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

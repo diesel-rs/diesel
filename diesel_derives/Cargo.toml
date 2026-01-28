@@ -1,26 +1,30 @@
 [package]
 name = "diesel_derives"
-version = "2.0.0"
-authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+version = "2.3.7"
 license = "MIT OR Apache-2.0"
 description = "You should not use this crate directly, it is internal to Diesel."
 documentation = "https://diesel.rs/guides/"
 homepage = "https://diesel.rs"
-repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
+repository = "https://github.com/diesel-rs/diesel/"
 autotests = false
-include = ["src/**/*", "LICENSE-*"]
+rust-version.workspace = true
+edition = "2021"
+include = ["src/**/*.rs", "src/tests/snapshots/*", "LICENSE-*", "README.md", "build.rs"]
 
 [dependencies]
-syn = { version = "1.0.1", features = ["full", "fold"] }
-quote = "1"
-proc-macro2 = "1"
+syn = { version = "2.0", features = ["derive", "fold", "full", "visit-mut"] }
+quote = "1.0.9"
+proc-macro2 = "1.0.27"
+diesel_table_macro_syntax = {version = "0.3", path = "../diesel_table_macro_syntax"}
+dsl_auto_type = { version = "0.2", path = "../dsl_auto_type" }
 
 [dev-dependencies]
-cfg-if = "0.1.10"
-dotenv = "0.15"
+cfg-if = "1"
+dotenvy = "0.15"
+insta = "1.21"
+prettyplease = "0.2"
 
 [dev-dependencies.diesel]
-version = "~2.0.0"
 path = "../diesel"
 
 [lib]
@@ -35,3 +39,21 @@ nightly = ["proc-macro2/nightly"]
 postgres = []
 sqlite = []
 mysql = []
+32-column-tables = []
+64-column-tables = ["32-column-tables"]
+128-column-tables = ["64-column-tables"]
+without-deprecated = []
+with-deprecated = []
+r2d2 = []
+chrono = []
+time = []
+numeric = []
+
+[package.metadata.docs.rs]
+features = ["postgres", "mysql", "sqlite", "chrono", "numeric", "time", "r2d2"]
+no-default-features = true
+rustc-args = ["--cfg", "diesel_docs"]
+rustdoc-args = ["--cfg", "diesel_docs", "-Z", "unstable-options", "--generate-link-to-definition", "--generate-macro-expansion"]
+
+[lints]
+workspace = true

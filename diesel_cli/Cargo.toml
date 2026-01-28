@@ -1,7 +1,6 @@
 [package]
 name = "diesel_cli"
-version = "1.4.0"
-authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+version = "2.3.6"
 license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
 readme = "README.md"
@@ -10,8 +9,23 @@ homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
 keywords = ["diesel", "migrations", "cli"]
 autotests = false
-edition = "2018"
-include = ["src/**/*", "LICENSE-*", "README.md"]
+edition = "2021"
+rust-version.workspace = true
+
+include = [
+    "src/**/*.rs",
+    "tests/**/*.rs",
+    "LICENSE-*",
+    "README.md",
+    "src/default_files/diesel.toml",
+    "src/infer_schema_internals/load_foreign_keys.sql",
+    "src/setup_sql/postgres/initial_setup/down.sql",
+    "src/setup_sql/postgres/initial_setup/up.sql",
+]
+
+[package.metadata.wix]
+upgrade-guid = "AC330981-F4F8-4D8A-AD78-F8B7ECC32DF3"
+path-guid = "1730337B-A19D-4DDE-AFA5-983752956861"
 
 [[bin]]
 name = "diesel"
@@ -19,42 +33,63 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-chrono = { version = "0.4.19", default-features = false, features = ["clock", "std"] }
-clap = "2.27"
-dotenv = "0.15"
-heck = "0.3.1"
-serde = { version = "1.0.0", features = ["derive"] }
-toml = "0.4.6"
-url = { version = "2.1.0", optional = true }
-barrel = { version = ">= 0.5.0", optional = true, features = ["diesel"] }
-libsqlite3-sys = { version = ">=0.8.0, <0.21.0", optional = true, features = ["min_sqlite_version_3_7_16"] }
-diffy = "0.2.0"
+chrono = { version = "0.4.20", default-features = false, features = [
+    "clock",
+    "std",
+] }
+clap = { version = "4.4.14", features = ["cargo", "string"] }
+clap_complete = "4"
+dotenvy = "0.15"
+dunce = "1.0.5"
+heck = "0.5.0"
+serde = { version = "1.0.193", features = ["derive", "std"] }
+toml = { version = "0.9", default-features = false, features = ["parse", "serde"] }
+url = "2.2.2"
+libsqlite3-sys = { workspace = true, optional = true }
+pq-sys = { workspace = true, optional = true }
+openssl-sys = { workspace = true, features = ["vendored"], optional = true }
+mysqlclient-sys = { workspace = true, optional = true }
+diffy = "0.4.0"
 regex = "1.0.6"
-serde_regex = "0.3.1"
+serde_regex = "1.1"
+diesel_table_macro_syntax = { version = "0.3", path = "../diesel_table_macro_syntax" }
+syn = { version = "2", features = ["visit"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3.10", features = ["env-filter"] }
+thiserror = "2.0.0"
+similar-asserts = "1.6.0"
+fd-lock = "4.0.2"
 
 [dependencies.diesel]
-version = "~2.0.0"
+version = "~2.3.0"
 path = "../diesel"
 default-features = false
 
-[dependencies.migrations_internals]
-version = "~1.4.0"
-path = "../diesel_migrations/migrations_internals"
+[dependencies.diesel_migrations]
+version = "~2.3.0"
+path = "../diesel_migrations/"
+
+[dependencies.diesel_infer_query]
+version = "0.1.0"
+path = "../diesel_infer_query"
 
 [dev-dependencies]
-difference = "2.0"
 tempfile = "3.1.0"
 regex = "1.3.9"
-url = { version = "2.1.0" }
+insta = "1.21"
 
 [features]
 default = ["postgres", "sqlite", "mysql"]
-postgres = ["diesel/postgres", "url", "uses_information_schema"]
+postgres = ["diesel/postgres", "uses_information_schema"]
 sqlite = ["diesel/sqlite"]
-mysql = ["diesel/mysql", "url", "uses_information_schema"]
-barrel-migrations = ["migrations_internals/barrel", "barrel"]
-sqlite-bundled = ["sqlite", "libsqlite3-sys/bundled"]
+mysql = ["diesel/mysql", "uses_information_schema"]
+sqlite-bundled = ["sqlite", "dep:libsqlite3-sys", "libsqlite3-sys/bundled"]
+postgres-bundled = ["postgres", "dep:pq-sys", "pq-sys/bundled", "dep:openssl-sys"]
+mysql-bundled = ["mysql", "dep:mysqlclient-sys", "mysqlclient-sys/bundled", "dep:openssl-sys"]
 uses_information_schema = []
 
 [[test]]
 name = "tests"
+
+[package.metadata.dist]
+features = ["sqlite-bundled", "postgres-bundled", "mysql-bundled"]

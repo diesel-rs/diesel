@@ -1,0 +1,44 @@
+error: unexpected end of input, expected parentheses
+       help: the correct format looks like `#[diesel(mysql_type(name = "foo"))]`
+ --> tests/fail/derive/bad_mysql_type.rs:6:20
+  |
+LL | #[diesel(mysql_type)]
+  |                    ^
+
+error: expected attribute `name`
+       help: the correct format looks like #[diesel(mysql_type(name = "foo"))]
+  --> tests/fail/derive/bad_mysql_type.rs:11:21
+   |
+LL | #[diesel(mysql_type())]
+   |                     ^
+
+error: expected parentheses
+  --> tests/fail/derive/bad_mysql_type.rs:16:21
+   |
+LL | #[diesel(mysql_type = "foo")]
+   |                     ^
+
+error: unexpected end of input, expected `=`
+       help: the correct format looks like `#[diesel(mysql_type(name = "foo"))]`
+  --> tests/fail/derive/bad_mysql_type.rs:21:25
+   |
+LL | #[diesel(mysql_type(name))]
+   |                         ^
+
+error: expected `=`
+  --> tests/fail/derive/bad_mysql_type.rs:26:25
+   |
+LL | #[diesel(mysql_type(name()))]
+   |                         ^
+
+error: expected string literal
+  --> tests/fail/derive/bad_mysql_type.rs:31:28
+   |
+LL | #[diesel(mysql_type(name = Foo))]
+   |                            ^^^
+
+error: unknown attribute, expected `name`
+  --> tests/fail/derive/bad_mysql_type.rs:36:21
+   |
+LL | #[diesel(mysql_type(what))]
+   |                     ^^^^

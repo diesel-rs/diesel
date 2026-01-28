@@ -12,10 +12,12 @@ table! {
 fn main() {
     use self::users::dsl::*;
 
-    let connection = PgConnection::establish("").unwrap();
+    let mut connection = PgConnection::establish("").unwrap();
     let select_id = users.select(id);
     let select_name = users.select(name);
 
-    let ids = select_name.load::<i32>(&connection);
-    let names = select_id.load::<String>(&connection);
+    let ids = select_name.load::<i32>(&mut connection);
+    //~^ ERROR: cannot deserialize a value of the database type `diesel::sql_types::Text` as `i32`
+    let names = select_id.load::<String>(&mut connection);
+    //~^ ERROR: cannot deserialize a value of the database type `diesel::sql_types::Integer` as `std::string::String`
 }

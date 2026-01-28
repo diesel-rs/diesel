@@ -1,0 +1,39 @@
+warning: #[table_name] attribute form is deprecated
+  = help: use `#[diesel(table_name = users)]` instead
+
+error: unexpected end of input, expected `=`
+       help: the correct format looks like `#[diesel(table_name = foo)]`
+  --> tests/fail/derive_deprecated/deprecated_table_name.rs:13:3
+   |
+LL | #[table_name]
+   |   ^^^^^^^^^^
+
+error: expected `=`
+  --> tests/fail/derive_deprecated/deprecated_table_name.rs:21:13
+   |
+LL | #[table_name()]
+   |             ^^
+
+error: expected string literal
+  --> tests/fail/derive_deprecated/deprecated_table_name.rs:28:16
+   |
+LL | #[table_name = 1]
+   |                ^
+
+warning: #[table_name] attribute form is deprecated
+  = help: use `#[diesel(table_name = 1)]` instead
+
+error: expected identifier
+  --> tests/fail/derive_deprecated/deprecated_table_name.rs:36:16
+   |
+LL | #[table_name = "1"]
+   |                ^^^
+
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `users`
+ --> tests/fail/derive_deprecated/deprecated_table_name.rs:5:16
+  |
+LL | #[table_name = "users"]
+  |                ^^^^^^^ use of unresolved module or unlinked crate `users`
+  |
+  = help: you might be missing a crate named `users`
+For more information about this error, try `rustc --explain E0433`.

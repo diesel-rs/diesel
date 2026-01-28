@@ -1,0 +1,57 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_fk_related_tables"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    bikes (id) {
+        id -> Int4,
+    }
+}
+
+diesel::table! {
+    cars (id) {
+        id -> Int4,
+    }
+}
+
+diesel::table! {
+    comments (id) {
+        id -> Int4,
+        post_id -> Int4,
+        post_id_2 -> Int4,
+    }
+}
+
+diesel::table! {
+    posts (id) {
+        id -> Int4,
+        user_id -> Int4,
+    }
+}
+
+diesel::table! {
+    sessions (id) {
+        id -> Int4,
+    }
+}
+
+diesel::table! {
+    transactions (id) {
+        id -> Int4,
+        session_id -> Int4,
+    }
+}
+
+diesel::table! {
+    users (id) {
+        id -> Int4,
+    }
+}
+
+diesel::joinable!(posts -> users (user_id));
+diesel::joinable!(transactions -> sessions (session_id));
+
+diesel::allow_tables_to_appear_in_same_query!(comments, posts, users,);
+diesel::allow_tables_to_appear_in_same_query!(sessions, transactions,);

@@ -5,6 +5,8 @@ use crate::query_builder::QueryBuilder;
 use crate::result::QueryResult;
 
 mod limit_offset;
+mod query_fragment_impls;
+mod returning;
 
 /// Constructs SQL queries for use with the SQLite backend
 #[allow(missing_debug_implementations)]
@@ -27,7 +29,7 @@ impl QueryBuilder<Sqlite> for SqliteQueryBuilder {
 
     fn push_identifier(&mut self, identifier: &str) -> QueryResult<()> {
         self.push_sql("`");
-        self.push_sql(&identifier.replace("`", "``"));
+        self.push_sql(&identifier.replace('`', "``"));
         self.push_sql("`");
         Ok(())
     }

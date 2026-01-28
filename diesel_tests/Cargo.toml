@@ -1,40 +1,49 @@
 [package]
 name = "diesel_tests"
 version = "0.1.0"
-authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
-build = "build.rs"
 autotests = false
 autobenches = false
-edition = "2018"
-
-[build-dependencies]
-diesel = { path = "../diesel", default-features = false }
-diesel_migrations = { path = "../diesel_migrations" }
-dotenv = "0.15"
+edition = "2021"
+publish = false
 
 [dependencies]
 assert_matches = "1.0.1"
-chrono = { version = "0.4.19", default-features = false, features = ["clock", "std"] }
-diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "network-address", "numeric", "with-deprecated"] }
+chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }
+diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "ipnet-address", "network-address", "numeric", "with-deprecated"] }
 diesel_migrations = { path = "../diesel_migrations" }
-dotenv = "0.15"
-quickcheck = "0.9"
-uuid = { version = ">=0.7.0, <0.9.0" }
+dotenvy = "0.15"
+quickcheck = "1.0.3"
+uuid = { version = "1.0.0" }
 serde_json = { version=">=0.9, <2.0" }
-ipnetwork = ">=0.12.2, <0.18.0"
-bigdecimal = ">= 0.0.13, < 0.3.0"
-rand = "0.7"
+ipnet = { version = "2.5.0" }
+ipnetwork = ">=0.12.2, <0.22.0"
+bigdecimal = ">= 0.0.13, < 0.5.0"
+libsqlite3-sys = { workspace = true, optional = true }
+rand = "0.9.0"
+pq-sys = { workspace = true, optional = true }
+pq-src = { version = "0.3", optional = true }
+mysqlclient-sys = { workspace = true, optional = true }
+mysqlclient-src = { version = "0.2.0", optional = true }
+diesel_test_helper = { path = "../diesel_test_helper" }
+
+[target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
+# Something is dependent on it, so we use feature to override it.
+getrandom = { version = "0.3", features = ["wasm_js"] }
+getrandom_02 = { version = "0.2", package = "getrandom", features = ["js"] }
+wasm-bindgen-test = "0.3.49"
+sqlite-wasm-rs = "0.5.1"
 
 [features]
 default = []
 unstable = ["diesel/unstable"]
-postgres = ["diesel/postgres"]
+postgres = ["diesel/postgres", "diesel/network-address", "diesel/ipnet-address"]
 sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql"]
+returning_clauses_for_sqlite_3_35 = ["diesel/returning_clauses_for_sqlite_3_35"]
 
 [[test]]
 name = "integration_tests"
 path = "tests/lib.rs"
 harness = true
-

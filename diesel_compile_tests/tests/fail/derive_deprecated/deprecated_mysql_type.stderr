@@ -1,0 +1,30 @@
+error: unexpected end of input, expected `=`
+       help: the correct format looks like `#[diesel(mysql_type(name = "foo"))]`
+ --> tests/fail/derive_deprecated/deprecated_mysql_type.rs:6:3
+  |
+LL | #[mysql_type]
+  |   ^^^^^^^^^^
+
+error: expected `=`
+  --> tests/fail/derive_deprecated/deprecated_mysql_type.rs:11:13
+   |
+LL | #[mysql_type()]
+   |             ^^
+
+error: expected string literal
+  --> tests/fail/derive_deprecated/deprecated_mysql_type.rs:16:16
+   |
+LL | #[mysql_type = 1]
+   |                ^
+
+warning: #[mysql_type] attribute form is deprecated
+  = help: use `#[diesel(mysql_type(name = "foo"))]` instead
+
+error[E0599]: no variant or associated item named `foo` found for enum `MysqlType` in the current scope
+  --> tests/fail/derive_deprecated/deprecated_mysql_type.rs:20:10
+   |
+LL | #[derive(SqlType)]
+   |          ^^^^^^^ variant or associated item not found in `MysqlType`
+   |
+   = note: this error originates in the derive macro `SqlType` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0599`.

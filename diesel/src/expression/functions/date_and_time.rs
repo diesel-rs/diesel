@@ -1,6 +1,6 @@
 use crate::backend::Backend;
 use crate::expression::coerce::Coerce;
-use crate::expression::functions::sql_function;
+use crate::expression::functions::declare_sql_function;
 use crate::expression::{AsExpression, Expression, ValidGrouping};
 use crate::query_builder::*;
 use crate::result::QueryResult;
@@ -17,7 +17,7 @@ impl Expression for now {
 }
 
 impl<DB: Backend> QueryFragment<DB> for now {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("CURRENT_TIMESTAMP");
         Ok(())
     }
@@ -27,20 +27,26 @@ impl_selectable_expression!(now);
 
 operator_allowed!(now, Add, add);
 operator_allowed!(now, Sub, sub);
-sql_function! {
+
+#[declare_sql_function]
+extern "SQL" {
     /// Represents the SQL `DATE` function. The argument should be a Timestamp
     /// expression, and the return value will be an expression of type Date.
-
+    ///
     /// # Examples
-
-    /// ```ignore
-    /// # extern crate chrono;
+    ///
+    /// ```
     /// # include!("../../doctest_setup.rs");
-    /// # use diesel::dsl::*;
+    /// # use diesel::dsl::{now, date};
+    /// # use diesel::deserialize::Queryable;
     /// #
+    /// # fn test<R: Queryable<diesel::sql_types::Date, DB> + 'static>() -> QueryResult<R> {
+    /// #     let connection = &mut establish_connection();
+    /// let today = diesel::select(date(now)).first(connection)?;
+    /// #     Ok(today)
+    /// # }
     /// # fn main() {
-    /// #     let connection = establish_connection();
-    /// let today: chrono::NaiveDate = diesel::select(date(now)).first(&connection).unwrap();
+    /// #
     /// # }
     /// ```
     fn date(expr: Timestamp) -> Date;
@@ -54,7 +60,7 @@ impl AsExpression<Nullable<Timestamp>> for now {
     }
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 impl AsExpression<Timestamptz> for now {
     type Expression = Coerce<now, Timestamptz>;
 
@@ -63,9 +69,27 @@ impl AsExpression<Timestamptz> for now {
     }
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 impl AsExpression<Nullable<Timestamptz>> for now {
     type Expression = Coerce<now, Nullable<Timestamptz>>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(self)
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl AsExpression<TimestamptzSqlite> for now {
+    type Expression = Coerce<now, TimestamptzSqlite>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(self)
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl AsExpression<Nullable<TimestamptzSqlite>> for now {
+    type Expression = Coerce<now, Nullable<TimestamptzSqlite>>;
 
     fn as_expression(self) -> Self::Expression {
         Coerce::new(self)
@@ -82,7 +106,7 @@ impl Expression for today {
 }
 
 impl<DB: Backend> QueryFragment<DB> for today {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("CURRENT_DATE");
         Ok(())
     }

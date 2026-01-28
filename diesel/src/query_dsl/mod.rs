@@ -8,10 +8,8 @@
 //!
 //! See also [`expression_methods`][expression_methods] and [`dsl`][dsl].
 //!
-//! [expression_methods]: ../expression_methods/index.html
-//! [dsl]: ../dsl/index.html
-//! [`QueryDsl`]: trait.QueryDsl.html
-//! [`RunQueryDsl`]: trait.RunQueryDsl.html
+//! [expression_methods]: super::expression_methods
+//! [dsl]: super::dsl
 
 use crate::backend::Backend;
 use crate::connection::Connection;
@@ -19,8 +17,8 @@ use crate::expression::count::CountStar;
 use crate::expression::Expression;
 use crate::helper_types::*;
 use crate::query_builder::locking_clause as lock;
-use crate::query_source::{joins, Table};
-use crate::result::{first_or_not_found, QueryResult};
+use crate::query_source::{joins, QueryRelation};
+use crate::result::QueryResult;
 
 mod belonging_to_dsl;
 #[doc(hidden)]
@@ -29,7 +27,8 @@ mod combine_dsl;
 mod distinct_dsl;
 #[doc(hidden)]
 pub mod filter_dsl;
-mod group_by_dsl;
+pub(crate) mod group_by_dsl;
+mod having_dsl;
 mod join_dsl;
 #[doc(hidden)]
 pub mod limit_dsl;
@@ -49,6 +48,8 @@ mod single_value_dsl;
 pub use self::belonging_to_dsl::BelongingToDsl;
 pub use self::combine_dsl::CombineDsl;
 pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::load_dsl::CompatibleType;
 #[doc(hidden)]
 pub use self::load_dsl::LoadQuery;
 pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
@@ -65,6 +66,7 @@ pub mod methods {
     #[doc(inline)]
     pub use super::filter_dsl::*;
     pub use super::group_by_dsl::GroupByDsl;
+    pub use super::having_dsl::HavingDsl;
     pub use super::limit_dsl::LimitDsl;
     pub use super::load_dsl::{ExecuteDsl, LoadQuery};
     pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
@@ -73,6 +75,12 @@ pub mod methods {
     pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;
     pub use super::single_value_dsl::SingleValueDsl;
+
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    #[doc(hidden)]
+    #[allow(deprecated)]
+    #[deprecated(note = "Use `LoadQuery::RowIter` directly")]
+    pub use super::load_dsl::LoadRet;
 }
 
 /// Methods used to construct select statements.
@@ -94,13 +102,13 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
-    /// #     connection.execute("DELETE FROM users").unwrap();
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::sql_query("DELETE FROM users").execute(connection).unwrap();
     /// diesel::insert_into(users)
     ///     .values(&vec![name.eq("Sean"); 3])
-    ///     .execute(&connection)?;
-    /// let names = users.select(name).load::<String>(&connection)?;
-    /// let distinct_names = users.select(name).distinct().load::<String>(&connection)?;
+    ///     .execute(connection)?;
+    /// let names = users.select(name).load::<String>(connection)?;
+    /// let distinct_names = users.select(name).distinct().load::<String>(connection)?;
     ///
     /// assert_eq!(vec!["Sean"; 3], names);
     /// assert_eq!(vec!["Sean"; 1], distinct_names);
@@ -141,30 +149,41 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn main() {
     /// #     use self::animals::dsl::*;
-    /// #     let connection = establish_connection();
-    /// #     connection.execute("DELETE FROM animals").unwrap();
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::sql_query("DELETE FROM animals").execute(connection).unwrap();
     /// diesel::insert_into(animals)
     ///     .values(&vec![
     ///         (species.eq("dog"), name.eq(Some("Jack")), legs.eq(4)),
     ///         (species.eq("dog"), name.eq(None), legs.eq(4)),
     ///         (species.eq("spider"), name.eq(None), legs.eq(8)),
     ///     ])
-    ///     .execute(&connection)
+    ///     .execute(connection)
     ///     .unwrap();
-    /// let all_animals = animals.select((species, name, legs)).load(&connection);
+    /// let all_animals = animals.select((species, name, legs)).load(connection);
     /// let distinct_animals = animals
     ///     .select((species, name, legs))
     ///     .order_by((species, legs))
-    ///     .distinct_on(species).load(&connection);
+    ///     .distinct_on(species)
+    ///     .load(connection);
     ///
-    /// assert_eq!(Ok(vec![Animal::new("dog", Some("Jack"), 4),
-    ///                    Animal::new("dog", None, 4),
-    ///                    Animal::new("spider", None, 8)]), all_animals);
-    /// assert_eq!(Ok(vec![Animal::new("dog", Some("Jack"), 4),
-    ///                    Animal::new("spider", None, 8)]), distinct_animals);
+    /// assert_eq!(
+    ///     Ok(vec![
+    ///         Animal::new("dog", Some("Jack"), 4),
+    ///         Animal::new("dog", None, 4),
+    ///         Animal::new("spider", None, 8)
+    ///     ]),
+    ///     all_animals
+    /// );
+    /// assert_eq!(
+    ///     Ok(vec![
+    ///         Animal::new("dog", Some("Jack"), 4),
+    ///         Animal::new("spider", None, 8)
+    ///     ]),
+    ///     distinct_animals
+    /// );
     /// # }
     /// ```
-    #[cfg(feature = "postgres")]
+    #[cfg(feature = "postgres_backend")]
     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
     where
         Self: methods::DistinctOnDsl<Expr>,
@@ -190,6 +209,19 @@ pub trait QueryDsl: Sized {
     /// column. `title.nullable()`, `lower(title).nullable()`, and `(id,
     /// title).nullable()` would all be valid.
     ///
+    /// In order to use this method with columns from different tables
+    /// a method like [`.inner_join`] or [`.left_join`] needs to be called before
+    /// calling [`.select`] (See examples below).
+    /// This is because you can only access columns from tables
+    /// that appear in your query before that function call.
+    ///
+    /// **Note:** When using `select` with `group_by`, the `group_by` call must appear
+    /// before the `select` call in the query chain.
+    ///
+    /// [`.inner_join`]: QueryDsl::inner_join()
+    /// [`.left_join`]: QueryDsl::left_join()
+    /// [`.select`]: QueryDsl::select()
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -202,12 +234,15 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// // By default, all columns will be selected
-    /// let all_users = users.load::<(i32, String)>(&connection)?;
-    /// assert_eq!(vec![(1, String::from("Sean")), (2, String::from("Tess"))], all_users);
+    /// let all_users = users.load::<(i32, String)>(connection)?;
+    /// assert_eq!(
+    ///     vec![(1, String::from("Sean")), (2, String::from("Tess"))],
+    ///     all_users
+    /// );
     ///
-    /// let all_names = users.select(name).load::<String>(&connection)?;
+    /// let all_names = users.select(name).load::<String>(connection)?;
     /// assert_eq!(vec!["Sean", "Tess"], all_names);
     /// #     Ok(())
     /// # }
@@ -256,27 +291,33 @@ pub trait QueryDsl: Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     let connection = establish_connection();
-    /// #     connection.execute("DELETE FROM posts")?;
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::sql_query("DELETE FROM posts").execute(connection)?;
     /// #     diesel::insert_into(posts::table)
     /// #         .values((posts::user_id.eq(1), posts::title.eq("Sean's Post")))
-    /// #         .execute(&connection)?;
+    /// #         .execute(connection)?;
     /// #     let post_id = posts::table.select(posts::id)
-    /// #         .first::<i32>(&connection)?;
+    /// #         .first::<i32>(connection)?;
     /// let join = users::table.left_join(posts::table);
     ///
-    /// // By default, all columns from both tables are selected
-    /// let all_data = join.load::<(User, Option<Post>)>(&connection)?;
+    /// // By default, all columns from both tables are selected.
+    /// // If no explicit select clause is used this means that the result
+    /// // type of this query must contain all fields from the original schema in order.
+    /// let all_data = join.load::<(User, Option<Post>)>(connection)?;
     /// let expected_data = vec![
-    ///     (User::new(1, "Sean"), Some(Post::new(post_id, 1, "Sean's Post"))),
+    ///     (
+    ///         User::new(1, "Sean"),
+    ///         Some(Post::new(post_id, 1, "Sean's Post")),
+    ///     ),
     ///     (User::new(2, "Tess"), None),
     /// ];
     /// assert_eq!(expected_data, all_data);
     ///
     /// // Since `posts` is on the right side of a left join, `.nullable` is
     /// // needed.
-    /// let names_and_titles = join.select((users::name, posts::title.nullable()))
-    ///     .load::<(String, Option<String>)>(&connection)?;
+    /// let names_and_titles = join
+    ///     .select((users::name, posts::title.nullable()))
+    ///     .load::<(String, Option<String>)>(connection)?;
     /// let expected_data = vec![
     ///     (String::from("Sean"), Some(String::from("Sean's Post"))),
     ///     (String::from("Tess"), None),
@@ -302,8 +343,8 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
-    /// let count = users.count().get_result(&connection);
+    /// #     let connection = &mut establish_connection();
+    /// let count = users.count().get_result(connection);
     /// assert_eq!(Ok(2), count);
     /// # }
     /// ```
@@ -322,14 +363,13 @@ pub trait QueryDsl: Sized {
     /// table directly.  Otherwise you will need to use [`.on`] to specify the `ON`
     /// clause.
     ///
-    /// [`joinable!`]: ../macro.joinable.html
-    /// [`.on`]: trait.JoinOnDsl.html#method.on
+    /// [`joinable!`]: crate::joinable!
+    /// [`.on`]: JoinOnDsl::on()
     ///
     /// You can join to as many tables as you'd like in a query, with the
-    /// restriction that no table can appear in the query more than once. The reason
-    /// for this restriction is that one of the appearances would require aliasing,
-    /// and we do not currently have a fleshed out story for dealing with table
-    /// aliases.
+    /// restriction that no table can appear in the query more than once. For
+    /// tables that appear more than once in a single query the usage of [`alias!`](crate::alias!)
+    /// is required.
     ///
     /// You will also need to call [`allow_tables_to_appear_in_same_query!`].
     /// If you are using `diesel print-schema`, this will
@@ -345,8 +385,10 @@ pub trait QueryDsl: Sized {
     ///
     /// ```sql
     /// SELECT * FROM users
-    ///     INNER JOIN posts ON posts.user_id = users.id
-    ///     INNER JOIN comments ON comments.post_id = posts.id
+    ///     INNER JOIN (
+    ///         posts
+    ///         INNER JOIN comments ON comments.post_id = posts.id
+    ///     ) ON posts.user_id = users.id
     /// ```
     ///
     /// While the second query would deserialize into `(User, Post, Comment)` and
@@ -358,8 +400,22 @@ pub trait QueryDsl: Sized {
     ///     INNER JOIN comments ON comments.user_id = users.id
     /// ```
     ///
-    /// [associations]: ../associations/index.html
-    /// [`allow_tables_to_appear_in_same_query!`]: ../macro.allow_tables_to_appear_in_same_query.html
+    /// The exact generated SQL may change in future diesel version as long as the
+    /// generated query continues to produce same results. The currently generated
+    /// SQL is referred as ["explicit join"](https://www.postgresql.org/docs/current/explicit-joins.html)
+    /// by the PostgreSQL documentation and may have implications on the chosen query plan
+    /// for large numbers of joins in the same query. Checkout the documentation of the
+    /// [`join_collapse_limit` parameter](https://www.postgresql.org/docs/current/runtime-config-query.html#GUC-JOIN-COLLAPSE-LIMIT)
+    /// to control this behaviour.
+    ///
+    /// [associations]: crate::associations
+    /// [`allow_tables_to_appear_in_same_query!`]: crate::allow_tables_to_appear_in_same_query!
+    ///
+    /// Note that in order to use this method with [`.select`], you will need to use it before calling
+    /// [`.select`] (See examples below). This is because you can only access columns from tables
+    /// that appear in your query before the call to [`.select`].
+    ///
+    /// [`.select`]: QueryDsl::select()
     ///
     /// # Examples
     ///
@@ -376,10 +432,10 @@ pub trait QueryDsl: Sized {
     /// # fn main() {
     /// #     use self::users::dsl::{users, name};
     /// #     use self::posts::dsl::{posts, user_id, title};
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let data = users.inner_join(posts)
     ///     .select((name, title))
-    ///     .load(&connection);
+    ///     .load(connection);
     ///
     /// let expected_data = vec![
     ///     (String::from("Sean"), String::from("My first post")),
@@ -399,26 +455,94 @@ pub trait QueryDsl: Sized {
     /// # /*
     /// allow_tables_to_appear_in_same_query!(users, posts);
     /// # */
-    ///
     /// # fn main() {
     /// #     use self::users::dsl::{users, name};
     /// #     use self::posts::dsl::{posts, user_id, title};
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// diesel::insert_into(posts)
     ///     .values(&vec![
     ///         (user_id.eq(1), title.eq("Sean's post")),
     ///         (user_id.eq(2), title.eq("Sean is a jerk")),
     ///     ])
-    ///     .execute(&connection)
+    ///     .execute(connection)
     ///     .unwrap();
     ///
     /// let data = users
     ///     .inner_join(posts.on(title.like(name.concat("%"))))
     ///     .select((name, title))
-    ///     .load(&connection);
+    ///     .load(connection);
     /// let expected_data = vec![
     ///     (String::from("Sean"), String::from("Sean's post")),
     ///     (String::from("Sean"), String::from("Sean is a jerk")),
+    /// ];
+    /// assert_eq!(Ok(expected_data), data);
+    /// # }
+    /// ```
+    ///
+    /// ### With explicit `ON` clause (struct)
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::{users, posts};
+    /// #
+    /// # /*
+    /// allow_tables_to_appear_in_same_query!(users, posts);
+    /// # */
+    /// # fn main() {
+    /// #     use self::users::dsl::{users, name};
+    /// #     use self::posts::dsl::{posts, user_id, title};
+    /// #     let connection = &mut establish_connection();
+    /// #[derive(Debug, PartialEq, Queryable)]
+    /// struct User {
+    ///     id: i32,
+    ///     name: String,
+    /// }
+    ///
+    /// #[derive(Debug, PartialEq, Queryable)]
+    /// struct Post {
+    ///     id: i32,
+    ///     user_id: i32,
+    ///     title: String,
+    /// }
+    ///
+    /// diesel::insert_into(posts)
+    ///     .values(&vec![
+    ///         (user_id.eq(1), title.eq("Sean's post")),
+    ///         (user_id.eq(2), title.eq("Sean is a jerk")),
+    ///     ])
+    ///     .execute(connection)
+    ///     .unwrap();
+    ///
+    /// // By default, all columns from both tables are selected.
+    /// // If no explicit select clause is used this means that the
+    /// // result type of this query must contain all fields from the
+    /// // original schema in order.
+    /// let data = users
+    ///     .inner_join(posts.on(title.like(name.concat("%"))))
+    ///     .load::<(User, Post)>(connection); // type could be elided
+    /// let expected_data = vec![
+    ///     (
+    ///         User {
+    ///             id: 1,
+    ///             name: String::from("Sean"),
+    ///         },
+    ///         Post {
+    ///             id: 4,
+    ///             user_id: 1,
+    ///             title: String::from("Sean's post"),
+    ///         },
+    ///     ),
+    ///     (
+    ///         User {
+    ///             id: 1,
+    ///             name: String::from("Sean"),
+    ///         },
+    ///         Post {
+    ///             id: 5,
+    ///             user_id: 2,
+    ///             title: String::from("Sean is a jerk"),
+    ///         },
+    ///     ),
     /// ];
     /// assert_eq!(Ok(expected_data), data);
     /// # }
@@ -435,7 +559,77 @@ pub trait QueryDsl: Sized {
     /// Behaves similarly to [`inner_join`], but will produce a left join
     /// instead. See [`inner_join`] for usage examples.
     ///
-    /// [`inner_join`]: #method.inner_join
+    /// [`inner_join`]: QueryDsl::inner_join()
+    ///
+    /// Columns in the right hand table will become `Nullable` which means
+    /// you must call `nullable()` on the corresponding fields in the select
+    /// clause:
+    ///
+    /// ### Selecting after a left join
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::{users, posts};
+    /// #
+    /// # #[derive(Queryable, PartialEq, Eq, Debug)]
+    /// # struct User {
+    /// #     id: i32,
+    /// #     name: String,
+    /// # }
+    /// #
+    /// # impl User {
+    /// #     fn new(id: i32, name: &str) -> Self {
+    /// #         User {
+    /// #             id,
+    /// #             name: name.into(),
+    /// #         }
+    /// #     }
+    /// # }
+    /// #
+    /// # #[derive(Queryable, PartialEq, Eq, Debug)]
+    /// # struct Post {
+    /// #     id: i32,
+    /// #     user_id: i32,
+    /// #     title: String,
+    /// # }
+    /// #
+    /// # impl Post {
+    /// #     fn new(id: i32, user_id: i32, title: &str) -> Self {
+    /// #         Post {
+    /// #             id,
+    /// #             user_id,
+    /// #             title: title.into(),
+    /// #         }
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::sql_query("DELETE FROM posts").execute(connection)?;
+    /// #     diesel::insert_into(posts::table)
+    /// #         .values((posts::user_id.eq(1), posts::title.eq("Sean's Post")))
+    /// #         .execute(connection)?;
+    /// #     let post_id = posts::table.select(posts::id)
+    /// #         .first::<i32>(connection)?;
+    /// let join = users::table.left_join(posts::table);
+    ///
+    /// // Since `posts` is on the right side of a left join, `.nullable` is
+    /// // needed.
+    /// let names_and_titles = join
+    ///     .select((users::name, posts::title.nullable()))
+    ///     .load::<(String, Option<String>)>(connection)?;
+    /// let expected_data = vec![
+    ///     (String::from("Sean"), Some(String::from("Sean's Post"))),
+    ///     (String::from("Tess"), None),
+    /// ];
+    /// assert_eq!(expected_data, names_and_titles);
+    /// #     Ok(())
+    /// # }
+    /// ```
     fn left_outer_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
@@ -445,7 +639,7 @@ pub trait QueryDsl: Sized {
 
     /// Alias for [`left_outer_join`].
     ///
-    /// [`left_outer_join`]: #method.left_outer_join
+    /// [`left_outer_join`]: QueryDsl::left_outer_join()
     fn left_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
@@ -457,6 +651,15 @@ pub trait QueryDsl: Sized {
     ///
     /// If there is already a `WHERE` clause, the result will be `old AND new`.
     ///
+    /// Note that in order to use this method with columns from different tables, you need to call
+    ///  [`.inner_join`] or [`.left_join`] beforehand.
+    /// This is because you can only access columns from tables
+    /// that appear in your query before the call to [`.filter`].
+    ///
+    /// [`.inner_join`]: QueryDsl::inner_join()
+    /// [`.left_join`]: QueryDsl::left_join()
+    /// [`.filter`]: QueryDsl::filter()
+    ///
     /// # Example:
     ///
     /// ```rust
@@ -464,15 +667,14 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
-    /// let seans_id = users.filter(name.eq("Sean")).select(id)
-    ///     .first(&connection);
+    /// #     let connection = &mut establish_connection();
+    /// let seans_id = users.filter(name.eq("Sean")).select(id).first(connection);
     /// assert_eq!(Ok(1), seans_id);
-    /// let tess_id = users.filter(name.eq("Tess")).select(id)
-    ///     .first(&connection);
+    /// let tess_id = users.filter(name.eq("Tess")).select(id).first(connection);
     /// assert_eq!(Ok(2), tess_id);
     /// # }
     /// ```
+    #[doc(alias = "where")]
     fn filter<Predicate>(self, predicate: Predicate) -> Filter<Self, Predicate>
     where
         Self: methods::FilterDsl<Predicate>,
@@ -498,29 +700,27 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let connection = establish_connection();
-    /// #     diesel::delete(animals).execute(&connection)?;
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::delete(animals).execute(connection)?;
     /// diesel::insert_into(animals)
     ///     .values(&vec![
     ///         (species.eq("cat"), legs.eq(4), name.eq("Sinatra")),
     ///         (species.eq("dog"), legs.eq(3), name.eq("Fido")),
     ///         (species.eq("spider"), legs.eq(8), name.eq("Charlotte")),
     ///     ])
-    ///     .execute(&connection)?;
+    ///     .execute(connection)?;
     ///
     /// let good_animals = animals
     ///     .filter(name.eq("Fido"))
     ///     .or_filter(legs.eq(4))
     ///     .select(name)
-    ///     .get_results::<Option<String>>(&connection)?;
-    /// let expected = vec![
-    ///     Some(String::from("Sinatra")),
-    ///     Some(String::from("Fido")),
-    /// ];
+    ///     .get_results::<Option<String>>(connection)?;
+    /// let expected = vec![Some(String::from("Sinatra")), Some(String::from("Fido"))];
     /// assert_eq!(expected, good_animals);
     /// #     Ok(())
     /// # }
     /// ```
+    #[doc(alias = "where")]
     fn or_filter<Predicate>(self, predicate: Predicate) -> OrFilter<Self, Predicate>
     where
         Self: methods::OrFilterDsl<Predicate>,
@@ -538,12 +738,15 @@ pub trait QueryDsl: Sized {
     /// # fn main() {
     /// #     use schema::users::dsl::*;
     /// #     use diesel::result::Error::NotFound;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let sean = (1, "Sean".to_string());
     /// let tess = (2, "Tess".to_string());
-    /// assert_eq!(Ok(sean), users.find(1).first(&connection));
-    /// assert_eq!(Ok(tess), users.find(2).first(&connection));
-    /// assert_eq!(Err::<(i32, String), _>(NotFound), users.find(3).first(&connection));
+    /// assert_eq!(Ok(sean), users.find(1).first(connection));
+    /// assert_eq!(Ok(tess), users.find(2).first(connection));
+    /// assert_eq!(
+    ///     Err::<(i32, String), _>(NotFound),
+    ///     users.find(3).first(connection)
+    /// );
     /// # }
     /// ```
     fn find<PK>(self, id: PK) -> Find<Self, PK>
@@ -557,14 +760,14 @@ pub trait QueryDsl: Sized {
     ///
     /// If there was already an order clause, it will be overridden. See
     /// also:
-    /// [`.desc()`](../expression_methods/trait.ExpressionMethods.html#method.desc)
+    /// [`.desc()`](crate::expression_methods::ExpressionMethods::desc())
     /// and
-    /// [`.asc()`](../expression_methods/trait.ExpressionMethods.html#method.asc)
+    /// [`.asc()`](crate::expression_methods::ExpressionMethods::asc())
     ///
     /// Ordering by multiple columns can be achieved by passing a tuple of those
     /// columns.
     /// To construct an order clause of an unknown number of columns,
-    /// see [`QueryDsl::then_order_by`](#method.then_order_by)
+    /// see [`QueryDsl::then_order_by`](QueryDsl::then_order_by())
     ///
     /// # Examples
     ///
@@ -577,26 +780,26 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
-    /// #     connection.execute("DELETE FROM users")?;
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::sql_query("DELETE FROM users").execute(connection)?;
     /// diesel::insert_into(users)
-    ///     .values(&vec![
-    ///         name.eq("Saul"),
-    ///         name.eq("Steve"),
-    ///         name.eq("Stan"),
-    ///     ])
-    ///     .execute(&connection)?;
+    ///     .values(&vec![name.eq("Saul"), name.eq("Steve"), name.eq("Stan")])
+    ///     .execute(connection)?;
     ///
-    /// let ordered_names = users.select(name)
+    /// let ordered_names = users
+    ///     .select(name)
     ///     .order(name.desc())
-    ///     .load::<String>(&connection)?;
+    ///     .load::<String>(connection)?;
     /// assert_eq!(vec!["Steve", "Stan", "Saul"], ordered_names);
     ///
-    /// diesel::insert_into(users).values(name.eq("Stan")).execute(&connection)?;
+    /// diesel::insert_into(users)
+    ///     .values(name.eq("Stan"))
+    ///     .execute(connection)?;
     ///
-    /// let data = users.select((name, id))
+    /// let data = users
+    ///     .select((name, id))
     ///     .order((name.asc(), id.desc()))
-    ///     .load(&connection)?;
+    ///     .load(connection)?;
     /// let expected_data = vec![
     ///     (String::from("Saul"), 3),
     ///     (String::from("Stan"), 6),
@@ -616,7 +819,7 @@ pub trait QueryDsl: Sized {
     }
 
     /// Alias for `order`
-    fn order_by<Expr>(self, expr: Expr) -> Order<Self, Expr>
+    fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
     where
         Expr: Expression,
         Self: methods::OrderDsl<Expr>,
@@ -644,8 +847,8 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
-    /// #     connection.execute("DELETE FROM users")?;
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::sql_query("DELETE FROM users").execute(connection)?;
     /// diesel::insert_into(users)
     ///     .values(&vec![
     ///         name.eq("Saul"),
@@ -653,12 +856,13 @@ pub trait QueryDsl: Sized {
     ///         name.eq("Stan"),
     ///         name.eq("Stan"),
     ///     ])
-    ///     .execute(&connection)?;
+    ///     .execute(connection)?;
     ///
-    /// let data = users.select((name, id))
+    /// let data = users
+    ///     .select((name, id))
     ///     .order_by(name.asc())
     ///     .then_order_by(id.desc())
-    ///     .load(&connection)?;
+    ///     .load(connection)?;
     /// let expected_data = vec![
     ///     (String::from("Saul"), 3),
     ///     (String::from("Stan"), 6),
@@ -692,26 +896,25 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::users::dsl::*;
-    /// #     let connection = establish_connection();
-    /// #     diesel::delete(users).execute(&connection)?;
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::delete(users).execute(connection)?;
     /// #     diesel::insert_into(users)
     /// #        .values(&vec![
     /// #            name.eq("Sean"),
     /// #            name.eq("Bastien"),
     /// #            name.eq("Pascal"),
     /// #        ])
-    /// #        .execute(&connection)?;
+    /// #        .execute(connection)?;
     /// #
     /// // Using a limit
-    /// let limited = users.select(name)
+    /// let limited = users
+    ///     .select(name)
     ///     .order(id)
     ///     .limit(1)
-    ///     .load::<String>(&connection)?;
+    ///     .load::<String>(connection)?;
     ///
     /// // Without a limit
-    /// let no_limit = users.select(name)
-    ///     .order(id)
-    ///     .load::<String>(&connection)?;
+    /// let no_limit = users.select(name).order(id).load::<String>(connection)?;
     ///
     /// assert_eq!(vec!["Sean"], limited);
     /// assert_eq!(vec!["Sean", "Bastien", "Pascal"], no_limit);
@@ -741,28 +944,30 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::users::dsl::*;
-    /// #     let connection = establish_connection();
-    /// #     diesel::delete(users).execute(&connection)?;
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::delete(users).execute(connection)?;
     /// #     diesel::insert_into(users)
     /// #        .values(&vec![
     /// #            name.eq("Sean"),
     /// #            name.eq("Bastien"),
     /// #            name.eq("Pascal"),
     /// #        ])
-    /// #        .execute(&connection)?;
+    /// #        .execute(connection)?;
     /// #
     /// // Using an offset
-    /// let offset = users.select(name)
+    /// let offset = users
+    ///     .select(name)
     ///     .order(id)
     ///     .limit(2)
     ///     .offset(1)
-    ///     .load::<String>(&connection)?;
+    ///     .load::<String>(connection)?;
     ///
     /// // No Offset
-    /// let no_offset = users.select(name)
+    /// let no_offset = users
+    ///     .select(name)
     ///     .order(id)
     ///     .limit(2)
-    ///     .load::<String>(&connection)?;
+    ///     .load::<String>(connection)?;
     ///
     /// assert_eq!(vec!["Bastien", "Pascal"], offset);
     /// assert_eq!(vec!["Sean", "Bastien"], no_offset);
@@ -779,22 +984,25 @@ pub trait QueryDsl: Sized {
     /// Sets the `group by` clause of a query.
     ///
     /// **Note:** Queries having a `group by` clause require a custom select clause.
-    /// Use `QueryDsl::select()` to specify one
+    /// Use [`QueryDsl::select()`] to specify one.
+    ///
+    /// **Note:** When using `group_by` with `select`, the `group_by` call must appear
+    /// before the `select` call in the query chain.
     ///
     /// If there was already a group by clause, it will be overridden.
-    /// Ordering by multiple columns can be achieved by passing a tuple of those
+    /// Grouping by multiple columns can be achieved by passing a tuple of those
     /// columns.
     ///
     /// Diesel follows postgresql's group by semantic, this means any column
     /// appearing in a group by clause is considered to be aggregated. If a
     /// primary key is part of the group by clause every column from the
-    /// corresponding table is considerd to be aggregated. Select clauses
+    /// corresponding table is considered to be aggregated. Select clauses
     /// cannot mix aggregated and non aggregated expressions.
     ///
     /// For group by clauses containing columns from more than one table it
     /// is required to call [`allow_columns_to_appear_in_same_group_by_clause!`]
     ///
-    /// [`allow_columns_to_appear_in_same_group_by_clause!`]: ../macro.allow_columns_to_appear_in_same_group_by_clause.html
+    /// [`allow_columns_to_appear_in_same_group_by_clause!`]: crate::allow_columns_to_appear_in_same_group_by_clause!
     ///
     /// # Examples
     /// ```rust
@@ -806,14 +1014,18 @@ pub trait QueryDsl: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use crate::schema::{users, posts};
     /// #     use diesel::dsl::count;
-    /// #     let connection = establish_connection();
-    /// let data = users::table.inner_join(posts::table)
+    /// #     let connection = &mut establish_connection();
+    /// let data = users::table
+    ///     .inner_join(posts::table)
     ///     .group_by(users::id)
     ///     .select((users::name, count(posts::id)))
     /// #   .order_by(users::id.asc())
-    ///     .load::<(String, i64)>(&connection)?;
+    ///     .load::<(String, i64)>(connection)?;
     ///
-    /// assert_eq!(vec![(String::from("Sean"), 2), (String::from("Tess"), 1)], data);
+    /// assert_eq!(
+    ///     vec![(String::from("Sean"), 2), (String::from("Tess"), 1)],
+    ///     data
+    /// );
     /// # Ok(())
     /// # }
     /// ```
@@ -823,6 +1035,37 @@ pub trait QueryDsl: Sized {
         Self: methods::GroupByDsl<GB>,
     {
         methods::GroupByDsl::group_by(self, group_by)
+    }
+
+    /// Adds to the `HAVING` clause of a query.
+    ///
+    /// # Examples
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::{users, posts};
+    /// #     use diesel::dsl::count;
+    /// #     let connection = &mut establish_connection();
+    /// let data = users::table
+    ///     .inner_join(posts::table)
+    ///     .group_by(users::id)
+    ///     .having(count(posts::id).gt(1))
+    ///     .select((users::name, count(posts::id)))
+    ///     .load::<(String, i64)>(connection)?;
+    ///
+    /// assert_eq!(vec![(String::from("Sean"), 2)], data);
+    /// # Ok(())
+    /// # }
+    /// ```
+    fn having<Predicate>(self, predicate: Predicate) -> Having<Self, Predicate>
+    where
+        Self: methods::HavingDsl<Predicate>,
+    {
+        methods::HavingDsl::having(self, predicate)
     }
 
     /// Adds `FOR UPDATE` to the end of the select statement.
@@ -836,9 +1079,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(any(feature = "mysql", feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR UPDATE`
-    /// users.for_update().load(&connection)
+    /// let users_for_update = users::table.for_update().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_for_update;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(feature = "sqlite")]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn for_update(self) -> ForUpdate<Self>
     where
@@ -859,9 +1116,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "postgres")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR NO KEY UPDATE`
-    /// users.for_no_key_update().load(&connection)
+    /// let users_for_no_key_update = users::table.for_no_key_update().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_for_no_key_update;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn for_no_key_update(self) -> ForNoKeyUpdate<Self>
     where
@@ -881,9 +1152,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(any(feature = "mysql", feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR SHARE`
-    /// users.for_share().load(&connection)
+    /// let users_for_share = users::table.for_share().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_for_share;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(feature = "sqlite")]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn for_share(self) -> ForShare<Self>
     where
@@ -904,9 +1189,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    ///
+    /// # #[cfg(feature = "postgres")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR KEY SHARE`
-    /// users.for_key_share().load(&connection)
+    /// let users_for_key_share = users::table.for_key_share().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_for_key_share;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn for_key_share(self) -> ForKeyShare<Self>
     where
@@ -921,9 +1220,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR UPDATE SKIP LOCKED`
-    /// users.for_update().skip_locked().load(&connection)
+    /// let user_skipped_locked = users::table.for_update().skip_locked().load(connection)?;
+    /// # let u: Vec<(i32, String)> = user_skipped_locked;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(feature = "sqlite")]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn skip_locked(self) -> SkipLocked<Self>
     where
@@ -938,9 +1251,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(any(feature = "mysql", feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR UPDATE NOWAIT`
-    /// users.for_update().no_wait().load(&connection)
+    /// let users_no_wait = users::table.for_update().no_wait().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_no_wait;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(feature = "sqlite")]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn no_wait(self) -> NoWait<Self>
     where
@@ -968,27 +1295,26 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn main() {
     /// #     use std::collections::HashMap;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     let mut params = HashMap::new();
     /// #     params.insert("name", "Sean");
     /// let mut query = users::table.into_boxed();
     /// if let Some(name) = params.get("name") {
     ///     query = query.filter(users::name.eq(name));
     /// }
-    /// let users = query.load(&connection);
+    /// let users = query.load(connection);
     /// #     let expected = vec![(1, String::from("Sean"))];
     /// #     assert_eq!(Ok(expected), users);
     /// # }
     /// ```
     ///
-    /// Diesel queries also have a similar problem to [`Iterator`][iterator], where
+    /// Diesel queries also have a similar problem to [`Iterator`], where
     /// returning them from a function requires exposing the implementation of that
     /// function. The [`helper_types`][helper_types] module exists to help with this,
     /// but you might want to hide the return type or have it conditionally change.
     /// Boxing can achieve both.
     ///
-    /// [iterator]: https://doc.rust-lang.org/stable/std/iter/trait.Iterator.html
-    /// [helper_types]: ../helper_types/index.html
+    /// [helper_types]: crate::helper_types
     ///
     /// ### Example
     ///
@@ -997,13 +1323,19 @@ pub trait QueryDsl: Sized {
     /// # use schema::users;
     /// #
     /// # fn main() {
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// fn users_by_name(name: &str) -> users::BoxedQuery<DB> {
     ///     users::table.filter(users::name.eq(name)).into_boxed()
     /// }
     ///
-    /// assert_eq!(Ok(1), users_by_name("Sean").select(users::id).first(&connection));
-    /// assert_eq!(Ok(2), users_by_name("Tess").select(users::id).first(&connection));
+    /// assert_eq!(
+    ///     Ok(1),
+    ///     users_by_name("Sean").select(users::id).first(connection)
+    /// );
+    /// assert_eq!(
+    ///     Ok(2),
+    ///     users_by_name("Tess").select(users::id).first(connection)
+    /// );
     /// # }
     /// ```
     fn into_boxed<'a, DB>(self) -> IntoBoxed<'a, Self, DB>
@@ -1038,15 +1370,18 @@ pub trait QueryDsl: Sized {
     /// #     use diesel::insert_into;
     /// #     use schema::users::dsl::*;
     /// #     use schema::posts;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// insert_into(posts::table)
     ///     .values(posts::user_id.eq(1))
-    ///     .execute(&connection)?;
-    /// let last_post = posts::table
-    ///     .order(posts::id.desc());
-    /// let most_recently_active_user = users.select(name)
-    ///     .filter(id.nullable().eq(last_post.select(posts::user_id).single_value()))
-    ///     .first::<String>(&connection)?;
+    ///     .execute(connection)?;
+    /// let last_post = posts::table.order(posts::id.desc());
+    /// let most_recently_active_user = users
+    ///     .select(name)
+    ///     .filter(
+    ///         id.nullable()
+    ///             .eq(last_post.select(posts::user_id).single_value()),
+    ///     )
+    ///     .first::<String>(connection)?;
     /// assert_eq!("Sean", most_recently_active_user);
     /// #     Ok(())
     /// # }
@@ -1060,7 +1395,7 @@ pub trait QueryDsl: Sized {
 
     /// Coerce the SQL type of the select clause to it's nullable equivalent.
     ///
-    /// This is use full for writing queries that contain subselects on non null
+    /// This is useful for writing queries that contain subselects on non null
     /// fields comparing them to nullable fields.
     /// ```rust
     /// # include!("../doctest_setup.rs");
@@ -1070,7 +1405,7 @@ pub trait QueryDsl: Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// table! {
     ///     users {
     ///         id -> Integer,
@@ -1085,10 +1420,12 @@ pub trait QueryDsl: Sized {
     ///     }
     /// }
     ///
+    /// allow_tables_to_appear_in_same_query!(users, posts);
+    ///
     /// # let _: Vec<(i32, Option<String>)> =
     /// posts::table.filter(
     ///    posts::by_user.eq_any(users::table.select(users::name).nullable())
-    /// ).load(&connection)?;
+    /// ).load(connection)?;
     /// #     Ok(())
     /// # }
     fn nullable(self) -> NullableSelect<Self>
@@ -1099,17 +1436,18 @@ pub trait QueryDsl: Sized {
     }
 }
 
-impl<T: Table> QueryDsl for T {}
+#[diagnostic::do_not_recommend]
+impl<T: QueryRelation> QueryDsl for T {}
 
 /// Methods used to execute queries.
 pub trait RunQueryDsl<Conn>: Sized {
     /// Executes the given command, returning the number of rows affected.
     ///
-    /// `execute` is usually used in conjunction with [`insert_into`](../fn.insert_into.html),
-    /// [`update`](../fn.update.html) and [`delete`](../fn.delete.html) where the number of
+    /// `execute` is usually used in conjunction with [`insert_into`](crate::insert_into()),
+    /// [`update`](crate::update()) and [`delete`](crate::delete()) where the number of
     /// affected rows is often enough information.
     ///
-    /// When asking the database to return data from a query, [`load`](#method.load) should
+    /// When asking the database to return data from a query, [`load`](crate::query_dsl::RunQueryDsl::load()) should
     /// probably be used instead.
     ///
     /// # Example
@@ -1124,20 +1462,20 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::insert_into;
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let inserted_rows = insert_into(users)
     ///     .values(name.eq("Ruby"))
-    ///     .execute(&connection)?;
+    ///     .execute(connection)?;
     /// assert_eq!(1, inserted_rows);
     ///
     /// let inserted_rows = insert_into(users)
     ///     .values(&vec![name.eq("Jim"), name.eq("James")])
-    ///     .execute(&connection)?;
+    ///     .execute(connection)?;
     /// assert_eq!(2, inserted_rows);
     /// #     Ok(())
     /// # }
     /// ```
-    fn execute(self, conn: &Conn) -> QueryResult<usize>
+    fn execute(self, conn: &mut Conn) -> QueryResult<usize>
     where
         Conn: Connection,
         Self: methods::ExecuteDsl<Conn>,
@@ -1145,12 +1483,10 @@ pub trait RunQueryDsl<Conn>: Sized {
         methods::ExecuteDsl::execute(self, conn)
     }
 
-    /// Executes the given query, returning a `Vec` with the returned rows.
+    /// Executes the given query, returning a [`Vec`] with the returned rows.
     ///
-    /// When using the query builder,
-    /// the return type can be
-    /// a tuple of the values,
-    /// or a struct which implements [`Queryable`].
+    /// When using the query builder, the return type can be
+    /// a tuple of the values, or a struct which implements [`Queryable`].
     ///
     /// When this method is called on [`sql_query`],
     /// the return type can only be a struct which implements [`QueryableByName`]
@@ -1158,10 +1494,23 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// For insert, update, and delete operations where only a count of affected is needed,
     /// [`execute`] should be used instead.
     ///
-    /// [`Queryable`]: ../deserialize/trait.Queryable.html
-    /// [`QueryableByName`]: ../deserialize/trait.QueryableByName.html
-    /// [`execute`]: fn.execute.html
-    /// [`sql_query`]: ../fn.sql_query.html
+    /// [`Queryable`]: crate::deserialize::Queryable
+    /// [`QueryableByName`]: crate::deserialize::QueryableByName
+    /// [`execute`]: crate::query_dsl::RunQueryDsl::execute()
+    /// [`sql_query`]: crate::sql_query()
+    ///
+    /// ## How to resolve compiler errors while loading data from the database
+    ///
+    /// In case you getting uncomprehensable compiler errors while loading data
+    /// from the database into a type using [`#[derive(Queryable)]`](derive@crate::prelude::Queryable)
+    /// you might want to consider
+    /// using  [`#[derive(Selectable)]`](derive@crate::prelude::Selectable) +
+    /// `#[diesel(check_for_backend(YourBackendType))]`
+    /// to check for mismatching fields at compile time. This drastically improves
+    /// the quality of the generated error messages by pointing to concrete type mismatches at
+    /// field level.You need to specify the concrete database backend
+    /// this specific struct is indented to be used with, as otherwise rustc cannot correctly
+    /// identify the required deserialization implementation.
     ///
     /// # Examples
     ///
@@ -1177,9 +1526,8 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::insert_into;
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
-    /// let data = users.select(name)
-    ///     .load::<String>(&connection)?;
+    /// #     let connection = &mut establish_connection();
+    /// let data = users.select(name).load::<String>(connection)?;
     /// assert_eq!(vec!["Sean", "Tess"], data);
     /// #     Ok(())
     /// # }
@@ -1197,13 +1545,9 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::insert_into;
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
-    /// let data = users
-    ///     .load::<(i32, String)>(&connection)?;
-    /// let expected_data = vec![
-    ///     (1, String::from("Sean")),
-    ///     (2, String::from("Tess")),
-    /// ];
+    /// #     let connection = &mut establish_connection();
+    /// let data = users.load::<(i32, String)>(connection)?;
+    /// let expected_data = vec![(1, String::from("Sean")), (2, String::from("Tess"))];
     /// assert_eq!(expected_data, data);
     /// #     Ok(())
     /// # }
@@ -1227,20 +1571,157 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::insert_into;
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
-    /// let data = users
-    ///     .load::<User>(&connection)?;
+    /// #     let connection = &mut establish_connection();
+    /// let data = users.load::<User>(connection)?;
     /// let expected_data = vec![
-    ///     User { id: 1, name: String::from("Sean"), },
-    ///     User { id: 2, name: String::from("Tess"), },
+    ///     User {
+    ///         id: 1,
+    ///         name: String::from("Sean"),
+    ///     },
+    ///     User {
+    ///         id: 2,
+    ///         name: String::from("Tess"),
+    ///     },
     /// ];
     /// assert_eq!(expected_data, data);
     /// #     Ok(())
     /// # }
     /// ```
-    fn load<U>(self, conn: &Conn) -> QueryResult<Vec<U>>
+    fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
     where
-        Self: LoadQuery<Conn, U>,
+        Self: LoadQuery<'query, Conn, U>,
+    {
+        self.internal_load(conn)?.collect()
+    }
+
+    /// Executes the given query, returning an [`Iterator`] with the returned rows.
+    ///
+    /// The iterator's item is [`QueryResult<U>`](crate::result::QueryResult).
+    ///
+    /// You should normally prefer to use [`RunQueryDsl::load`] instead. This method
+    /// is provided for situations where the result needs to be collected into a different
+    /// container than a [`Vec`]
+    ///
+    /// When using the query builder, the return type can be
+    /// a tuple of the values, or a struct which implements [`Queryable`].
+    /// This type is specified by the first generic type of this function.
+    ///
+    /// The second generic type parameter specifies the so called loading mode,
+    /// which describes how the connection implementation loads data from the database.
+    /// All connections should provide a implementation for
+    /// [`DefaultLoadingMode`](crate::connection::DefaultLoadingMode).
+    ///
+    /// They may provide additional modes. Checkout the documentation of the concrete
+    /// connection types for details. For connection implementations that provide
+    /// more than one loading mode it is **required** to specify this generic parameter.
+    /// This is currently true for `PgConnection`.
+    ///
+    /// When this method is called on [`sql_query`],
+    /// the return type can only be a struct which implements [`QueryableByName`]
+    ///
+    /// For insert, update, and delete operations where only a count of affected is needed,
+    /// [`execute`] should be used instead.
+    ///
+    /// [`Queryable`]: crate::deserialize::Queryable
+    /// [`QueryableByName`]: crate::deserialize::QueryableByName
+    /// [`execute`]: crate::query_dsl::RunQueryDsl::execute()
+    /// [`sql_query`]: crate::sql_query()
+    ///
+    /// # Examples
+    ///
+    /// ## Returning a single field
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::insert_into;
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// use diesel::connection::DefaultLoadingMode;
+    ///
+    /// let data = users
+    ///     .select(name)
+    ///     .load_iter::<String, DefaultLoadingMode>(connection)?
+    ///     .collect::<QueryResult<Vec<_>>>()?;
+    /// assert_eq!(vec!["Sean", "Tess"], data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    ///
+    /// ## Returning a tuple
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::insert_into;
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// use diesel::connection::DefaultLoadingMode;
+    ///
+    /// let data = users
+    ///     .load_iter::<(i32, String), DefaultLoadingMode>(connection)?
+    ///     .collect::<QueryResult<Vec<_>>>()?;
+    /// let expected_data = vec![(1, String::from("Sean")), (2, String::from("Tess"))];
+    /// assert_eq!(expected_data, data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    ///
+    /// ## Returning a struct
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// #[derive(Queryable, PartialEq, Debug)]
+    /// struct User {
+    ///     id: i32,
+    ///     name: String,
+    /// }
+    ///
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::insert_into;
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// use diesel::connection::DefaultLoadingMode;
+    ///
+    /// let data = users
+    ///     .load_iter::<User, DefaultLoadingMode>(connection)?
+    ///     .collect::<QueryResult<Vec<_>>>()?;
+    /// let expected_data = vec![
+    ///     User {
+    ///         id: 1,
+    ///         name: String::from("Sean"),
+    ///     },
+    ///     User {
+    ///         id: 2,
+    ///         name: String::from("Tess"),
+    ///     },
+    /// ];
+    /// assert_eq!(expected_data, data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn load_iter<'conn, 'query: 'conn, U, B>(
+        self,
+        conn: &'conn mut Conn,
+    ) -> QueryResult<Self::RowIter<'conn>>
+    where
+        U: 'conn,
+        Self: LoadQuery<'query, Conn, U, B> + 'conn,
     {
         self.internal_load(conn)
     }
@@ -1271,16 +1752,16 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::{insert_into, update};
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let inserted_row = insert_into(users)
     ///     .values(name.eq("Ruby"))
-    ///     .get_result(&connection)?;
+    ///     .get_result(connection)?;
     /// assert_eq!((3, String::from("Ruby")), inserted_row);
     ///
     /// // This will return `NotFound`, as there is no user with ID 4
     /// let update_result = update(users.find(4))
     ///     .set(name.eq("Jim"))
-    ///     .get_result::<(i32, String)>(&connection);
+    ///     .get_result::<(i32, String)>(connection);
     /// assert_eq!(Err(diesel::NotFound), update_result);
     /// #     Ok(())
     /// # }
@@ -1290,11 +1771,14 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn get_result<U>(self, conn: &Conn) -> QueryResult<U>
+    fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
     where
-        Self: LoadQuery<Conn, U>,
+        Self: LoadQuery<'query, Conn, U>,
     {
-        first_or_not_found(self.load(conn))
+        match self.internal_load(conn)?.next() {
+            Some(v) => v,
+            None => Err(crate::result::Error::NotFound),
+        }
     }
 
     /// Runs the command, returning an `Vec` with the affected rows.
@@ -1302,10 +1786,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// This method is an alias for [`load`], but with a name that makes more
     /// sense for insert, update, and delete statements.
     ///
-    /// [`load`]: #method.load
-    fn get_results<U>(self, conn: &Conn) -> QueryResult<Vec<U>>
+    /// [`load`]: crate::query_dsl::RunQueryDsl::load()
+    fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
     where
-        Self: LoadQuery<Conn, U>,
+        Self: LoadQuery<'query, Conn, U>,
     {
         self.load(conn)
     }
@@ -1328,25 +1812,25 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// diesel::insert_into(users)
     ///     .values(&vec![name.eq("Sean"), name.eq("Pascal")])
-    ///     .execute(&connection)?;
+    ///     .execute(connection)?;
     ///
-    /// let first_name = users.order(id).select(name).first(&connection);
+    /// let first_name = users.order(id).select(name).first(connection);
     /// assert_eq!(Ok(String::from("Sean")), first_name);
     ///
     /// let not_found = users
     ///     .filter(name.eq("Foo"))
-    ///     .first::<(i32, String)>(&connection);
+    ///     .first::<(i32, String)>(connection);
     /// assert_eq!(Err(diesel::NotFound), not_found);
     /// #     Ok(())
     /// # }
     /// ```
-    fn first<U>(self, conn: &Conn) -> QueryResult<U>
+    fn first<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
     where
         Self: methods::LimitDsl,
-        Limit<Self>: LoadQuery<Conn, U>,
+        Limit<Self>: LoadQuery<'query, Conn, U>,
     {
         methods::LimitDsl::limit(self, 1).get_result(conn)
     }
@@ -1358,4 +1842,4 @@ pub trait RunQueryDsl<Conn>: Sized {
 // resolution. Otherwise our users will get an error saying `<3 page long type>:
 // ExecuteDsl is not satisfied` instead of a specific error telling them what
 // part of their query is wrong.
-impl<T, Conn> RunQueryDsl<Conn> for T where T: Table {}
+impl<T, Conn> RunQueryDsl<Conn> for T where T: QueryRelation {}

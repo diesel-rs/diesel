@@ -69,6 +69,17 @@ fn setup_creates_default_migration_file_if_project_is_otherwise_setup() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn setup_no_default_migration() {
+    let p = project("setup_no_default_migration").build();
+
+    let result = p.command("setup").arg("--no-default-migration").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file(Path::new("migrations").join("00000000000000_diesel_initial_setup")));
+}
+
+#[test]
 fn setup_creates_schema_table() {
     let p = project("setup_creates_schema_table").build();
     let db = database(&p.database_url());
@@ -88,7 +99,8 @@ fn setup_runs_migrations_if_no_schema_table() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
+        None,
     );
 
     // sanity check
@@ -116,7 +128,8 @@ fn setup_doesnt_run_migrations_if_schema_table_exists() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
+        None,
     );
 
     let result = p.command("setup").run();
@@ -166,6 +179,41 @@ fn setup_works_with_migration_dir_by_arg() {
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(!p.has_file("migrations"));
     assert!(p.has_file("foo"));
+}
+
+#[test]
+fn setup_writes_migration_dir_by_arg_to_config_file() {
+    let p = project("setup_writes_migration_dir_by_arg_to_config_file").build();
+
+    // make sure the project builder doesn't create it for us
+    assert!(!p.has_file("migrations"));
+    assert!(!p.has_file("foo"));
+
+    let result = p.command("setup").arg("--migration-dir=foo").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file("migrations"));
+    assert!(p.has_file("foo"));
+    assert!(p.file_contents("diesel.toml").contains("dir = \"foo\""));
+}
+
+#[test]
+#[cfg(windows)]
+fn setup_writes_migration_dir_by_arg_to_config_file_win() {
+    let p = project("setup_writes_migration_dir_by_arg_to_config_file_win").build();
+
+    // make sure the project builder doesn't create it for us
+    assert!(!p.has_file("migrations"));
+    assert!(!p.has_file("foo"));
+
+    let result = p.command("setup").arg("--migration-dir=foo\\bar").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file("migrations"));
+    assert!(p.has_file("foo"));
+    assert!(p
+        .file_contents("diesel.toml")
+        .contains("dir = \"foo\\\\bar\""));
 }
 
 #[test]
@@ -259,4 +307,41 @@ fn setup_respects_migrations_dir_from_diesel_toml() {
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(p.has_file("custom_migrations"));
+}
+
+#[test]
+fn setup_writes_migration_dir_as_relative_path() {
+    let p = project("setup_writes_migration_dir_as_relative_path").build();
+
+    let result = p.command("setup").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(p
+        .file_contents("diesel.toml")
+        .contains("dir = \"migrations\""));
+}
+
+#[test]
+fn setup_writes_migration_dir_as_arg_as_relative_path() {
+    let p = project("setup_writes_migration_dir_as_arg_as_relative_path").build();
+
+    let migrations_dir_arg = dunce::canonicalize(p.directory_path())
+        .unwrap()
+        .join("foo")
+        .display()
+        .to_string();
+    let result = p
+        .command("setup")
+        .arg(format!("--migration-dir={}", migrations_dir_arg))
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    let file_contents = p.file_contents("diesel.toml");
+    assert!(
+        file_contents.contains("dir = \"foo\""),
+        "Migrations directory {:?} not relative in diesel.toml:\n{}",
+        migrations_dir_arg,
+        file_contents
+    );
 }

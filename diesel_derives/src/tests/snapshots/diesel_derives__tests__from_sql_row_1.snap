@@ -1,0 +1,20 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(FromSqlRow)]\nenum Foo {\n    Bar,\n    Baz,\n}\n"
+---
+const _: () = {
+    use diesel;
+    impl<__DB, __ST> diesel::deserialize::Queryable<__ST, __DB> for Foo
+    where
+        __DB: diesel::backend::Backend,
+        __ST: diesel::sql_types::SingleValue,
+        Self: diesel::deserialize::FromSql<__ST, __DB>,
+    {
+        type Row = Self;
+        fn build(row: Self) -> diesel::deserialize::Result<Self> {
+            diesel::deserialize::Result::Ok(row)
+        }
+    }
+};

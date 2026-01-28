@@ -9,7 +9,7 @@ table! {
 }
 
 fn main() {
-    let conn = SqliteConnection::establish(":memory:").unwrap();
-    update(users::table)
-        .execute(&conn);
+    let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    update(users::table).execute(&mut conn);
+    //~^ ERROR: `diesel::query_builder::update_statement::SetNotCalled` is no valid SQL fragment for the `_` backend
 }

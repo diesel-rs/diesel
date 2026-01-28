@@ -1,11 +1,10 @@
-use crate::backend::Backend;
 use crate::expression::{Expression, NonAggregate, SelectableExpression};
 use crate::insertable::*;
 use crate::query_builder::*;
 use crate::query_source::Table;
 
 /// Represents `(Columns) SELECT FROM ...` for use in an `INSERT` statement
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct InsertFromSelect<Select, Columns> {
     pub(in crate::query_builder) query: Select,
     pub(in crate::query_builder) columns: Columns,
@@ -49,7 +48,7 @@ where
     Columns: ColumnList + Expression,
     Select: Query<SqlType = Columns::SqlType> + QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("(");
         self.columns.walk_ast(out.reborrow())?;
         out.push_sql(") ");

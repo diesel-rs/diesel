@@ -5,32 +5,39 @@
 //! kept separate purely for documentation purposes.
 
 pub(crate) mod array;
-#[doc(hidden)]
-pub mod array_comparison;
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+pub(crate) mod array_comparison;
 pub(crate) mod expression_methods;
 pub mod extensions;
 pub mod functions;
-#[doc(hidden)]
-pub mod helper_types;
-#[doc(hidden)]
-pub mod operators;
+pub(crate) mod helper_types;
+pub(crate) mod operators;
 
 mod date_and_time;
+
+mod return_type_helpers {
+    #[allow(unused_imports)]
+    #[doc(inline)]
+    pub use super::functions::return_type_helpers_reexported::*;
+}
 
 /// PostgreSQL specific expression DSL methods.
 ///
 /// This module will be glob imported by
-/// [`diesel::dsl`](../../../dsl/index.html) when compiled with the `feature =
+/// [`diesel::dsl`](crate::dsl) when compiled with the `feature =
 /// "postgres"` flag.
 pub mod dsl {
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
     #[doc(inline)]
+    #[allow(deprecated)]
     pub use super::array_comparison::{all, any};
 
     #[doc(inline)]
-    pub use super::array::array;
+    pub use super::array::{array, IntoArrayExpression};
 
+    #[doc(inline)]
     pub use super::extensions::*;
 
-    #[cfg(not(feature = "sqlite"))]
+    #[doc(inline)]
     pub use super::functions::*;
 }

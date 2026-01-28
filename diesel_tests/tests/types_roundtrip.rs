@@ -1,84 +1,89 @@
-#[cfg(any(feature = "postgres", feature = "mysql"))]
-extern crate bigdecimal;
-extern crate chrono;
-
-use self::chrono::*;
+use chrono::*;
+use diesel::query_dsl::LoadQuery;
 pub use quickcheck::quickcheck;
 
 pub use crate::schema::{connection_without_transaction, TestConnection};
+#[cfg(not(feature = "sqlite"))]
 pub use diesel::data_types::*;
 pub use diesel::result::Error;
-pub use diesel::serialize::ToSql;
 pub use diesel::sql_types::{HasSqlType, SingleValue, SqlType};
 pub use diesel::*;
 
 use deserialize::FromSqlRow;
-use diesel::expression::{AsExpression, NonAggregate, TypedExpressionType};
-use diesel::query_builder::{QueryFragment, QueryId};
+use diesel::expression::{AsExpression, TypedExpressionType};
+use diesel::query_builder::{AsQuery, QueryId};
 #[cfg(feature = "postgres")]
 use std::collections::Bound;
 
-thread_local! {
-    static CONN: TestConnection = connection_without_transaction();
-}
-
-pub fn test_type_round_trips<ST, T>(value: T) -> bool
+pub fn test_type_round_trips<ST, T, F>(value: T, cmp: F) -> bool
 where
+    F: Fn(&T, &T) -> bool,
     ST: QueryId + SqlType + TypedExpressionType + SingleValue,
     <TestConnection as Connection>::Backend: HasSqlType<ST>,
     T: AsExpression<ST>
         + FromSqlRow<ST, <TestConnection as Connection>::Backend>
-        + PartialEq
+        + Queryable<ST, <TestConnection as Connection>::Backend>
         + Clone
-        + ::std::fmt::Debug,
-    <T as AsExpression<ST>>::Expression: SelectableExpression<(), SqlType = ST>
-        + NonAggregate
-        + QueryFragment<<TestConnection as Connection>::Backend>
-        + QueryId,
+        + ::std::fmt::Debug
+        + 'static,
+    for<'a> dsl::select<<T as AsExpression<ST>>::Expression>:
+        AsQuery + LoadQuery<'a, TestConnection, T>,
 {
-    CONN.with(|connection| {
-        let query = select(value.clone().into_sql::<ST>());
-        let result = query.get_result::<T>(connection);
-        match result {
-            Ok(res) => {
-                if value != res {
-                    println!("{:?}, {:?}", value, res);
-                    false
-                } else {
-                    true
-                }
-            }
-            Err(Error::DatabaseError(_, ref e))
-                if e.message() == "invalid byte sequence for encoding \"UTF8\": 0x00" =>
-            {
+    let connection = &mut connection_without_transaction();
+    let query = select(value.clone().into_sql::<ST>());
+    let result = query.get_result::<T>(connection);
+    match result {
+        Ok(res) => {
+            if cmp(&value, &res) {
+                println!("{value:?}, {res:?}");
+                false
+            } else {
                 true
             }
-            Err(e) => panic!("Query failed: {:?}", e),
         }
-    })
+        Err(Error::DatabaseError(_, ref e))
+            if e.message() == "invalid byte sequence for encoding \"UTF8\": 0x00" =>
+        {
+            true
+        }
+        Err(e) => {
+            panic!("Query failed: {e:?} -> value: {value:?}")
+        }
+    }
 }
 
 pub fn id<A>(a: A) -> A {
     a
 }
 
+pub fn ne<A: PartialEq<A>>(a: &A, b: &A) -> bool {
+    a != b
+}
+
 macro_rules! test_round_trip {
     ($test_name:ident, $sql_type:ty, $tpe:ty) => {
         test_round_trip!($test_name, $sql_type, $tpe, id);
     };
-
-    ($test_name:ident, $sql_type:ty, $tpe:ty, $map_fn:ident) => {
-        #[test]
+    ($test_name: ident, $sql_type: ty, $tpe: ty, $map_fn: ident) => {
+        test_round_trip!($test_name, $sql_type, $tpe, $map_fn, ne);
+    };
+    ($test_name:ident, $sql_type:ty, $tpe:ty, $map_fn:ident, $cmp: expr) => {
+        #[diesel_test_helper::test]
+        #[allow(clippy::type_complexity)]
         fn $test_name() {
             use diesel::sql_types::*;
 
             fn round_trip(val: $tpe) -> bool {
-                test_type_round_trips::<$sql_type, _>($map_fn(val))
+                test_type_round_trips::<$sql_type, _, _>($map_fn(val), $cmp)
             }
 
             fn option_round_trip(val: Option<$tpe>) -> bool {
                 let val = val.map($map_fn);
-                test_type_round_trips::<Nullable<$sql_type>, _>(val)
+                test_type_round_trips::<Nullable<$sql_type>, _, _>(val, |a, b| match (a, b) {
+                    (None, None) => false,
+                    (_, None) | (None, _) => true,
+                    (Some(a), Some(b)) => $cmp(a, b),
+                })
             }
 
             quickcheck(round_trip as fn($tpe) -> bool);
@@ -87,11 +92,29 @@ macro_rules! test_round_trip {
     };
 }
 
+#[allow(clippy::float_cmp)]
+pub fn f32_ne(a: &f32, b: &f32) -> bool {
+    if a.is_nan() && b.is_nan() {
+        false
+    } else {
+        a != b
+    }
+}
+
+#[allow(clippy::float_cmp)]
+pub fn f64_ne(a: &f64, b: &f64) -> bool {
+    if a.is_nan() && b.is_nan() {
+        false
+    } else {
+        a != b
+    }
+}
+
 test_round_trip!(i16_roundtrips, SmallInt, i16);
 test_round_trip!(i32_roundtrips, Integer, i32);
 test_round_trip!(i64_roundtrips, BigInt, i64);
-test_round_trip!(f32_roundtrips, Float, f32);
-test_round_trip!(f64_roundtrips, Double, f64);
+test_round_trip!(f32_roundtrips, Float, FloatWrapper, mk_f32, f32_ne);
+test_round_trip!(f64_roundtrips, Double, DoubleWrapper, mk_f64, f64_ne);
 test_round_trip!(string_roundtrips, VarChar, String);
 test_round_trip!(text_roundtrips, Text, String);
 test_round_trip!(binary_roundtrips, Binary, Vec<u8>);
@@ -119,8 +142,8 @@ mod pg_types {
     extern crate ipnetwork;
     extern crate uuid;
 
-    use self::bigdecimal::BigDecimal;
     use super::*;
+    use bigdecimal::BigDecimal;
 
     test_round_trip!(date_roundtrips, Date, PgDate);
     test_round_trip!(time_roundtrips, Time, PgTime);
@@ -132,16 +155,16 @@ mod pg_types {
         naive_datetime_roundtrips,
         Timestamp,
         (i64, u32),
-        mk_naive_datetime
+        mk_pg_naive_datetime
     );
-    test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
+    test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_pg_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
     test_round_trip!(datetime_roundtrips, Timestamptz, (i64, u32), mk_datetime);
     test_round_trip!(
         naive_datetime_roundtrips_tz,
         Timestamptz,
         (i64, u32),
-        mk_naive_datetime
+        mk_pg_naive_datetime
     );
     test_round_trip!(
         uuid_roundtrips,
@@ -163,19 +186,49 @@ mod pg_types {
         (u8, u8, u8, u8, u8, u8),
         mk_macaddr
     );
+    test_round_trip!(
+        macaddr8_roundtrips,
+        MacAddr8,
+        (u8, u8, u8, u8, u8, u8, u8, u8),
+        mk_macaddr8
+    );
     test_round_trip!(cidr_v4_roundtrips, Cidr, (u8, u8, u8, u8), mk_ipv4);
+    test_round_trip!(
+        cidr_v4_roundtrips_ipnet,
+        Cidr,
+        (u8, u8, u8, u8),
+        mk_ipv4_ipnet
+    );
     test_round_trip!(
         cidr_v6_roundtrips,
         Cidr,
         (u16, u16, u16, u16, u16, u16, u16, u16),
         mk_ipv6
     );
+    test_round_trip!(
+        cidr_v6_roundtrips_ipnet,
+        Cidr,
+        (u16, u16, u16, u16, u16, u16, u16, u16),
+        mk_ipv6_ipnet
+    );
     test_round_trip!(inet_v4_roundtrips, Inet, (u8, u8, u8, u8), mk_ipv4);
+    test_round_trip!(
+        inet_v4_roundtrips_ipnet,
+        Inet,
+        (u8, u8, u8, u8),
+        mk_ipv4_ipnet
+    );
     test_round_trip!(
         inet_v6_roundtrips,
         Inet,
         (u16, u16, u16, u16, u16, u16, u16, u16),
         mk_ipv6
+    );
+    test_round_trip!(
+        inet_v6_roundtrips_ipnet,
+        Inet,
+        (u16, u16, u16, u16, u16, u16, u16, u16),
+        mk_ipv6_ipnet
     );
     test_round_trip!(bigdecimal_roundtrips, Numeric, (i64, u64), mk_bigdecimal);
     test_round_trip!(int4range_roundtrips, Range<Int4>, (i32, i32), mk_bounds);
@@ -204,18 +257,65 @@ mod pg_types {
         (i64, u32, i64, u32),
         mk_tstz_bounds
     );
+    test_round_trip!(
+        int4multirange_roundtrips,
+        Multirange<Int4>,
+        Vec<(i32, i32)>,
+        mk_bound_list
+    );
+    test_round_trip!(
+        int8multirange_roundtrips,
+        Multirange<Int8>,
+        Vec<(i64, i64)>,
+        mk_bound_list
+    );
+    test_round_trip!(
+        datemultirange_roundtrips,
+        Multirange<Date>,
+        (u32, u32), // if we use Vec here we receive a weird values which postgres don't accept
+        mk_date_bound_lists
+    );
+    test_round_trip!(
+        numrange_multirangetrips,
+        Multirange<Numeric>,
+        Vec<(i64, u64, i64, u64)>,
+        mk_num_bound_lists
+    );
+    test_round_trip!(
+        tsrange_multirangetrips,
+        Multirange<Timestamp>,
+        (i64, u32, i64, u32), // if we use Vec here we receive a weird values which postgres don't accept
+        mk_ts_bound_lists
+    );
+    test_round_trip!(
+        tstzrange_multirangetrips,
+        Multirange<Timestamptz>,
+        (i64, u32, i64, u32), // if we use Vec here we receive a weird values which postgres don't accept
+        mk_tstz_bound_lists
+    );
 
     test_round_trip!(json_roundtrips, Json, SerdeWrapper, mk_serde_json);
     test_round_trip!(jsonb_roundtrips, Jsonb, SerdeWrapper, mk_serde_json);
 
+    test_round_trip!(char_roundtrips, CChar, u8);
+
+    test_round_trip!(pg_lsn_roundtrips, PgLsn, u64, mk_pg_lsn);
+
+    #[allow(clippy::type_complexity)]
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
         let a = data.3;
         let b = [a.0, a.1, a.2, a.3, a.4, a.5, a.6, a.7];
-        uuid::Uuid::from_fields(data.0, data.1, data.2, &b).unwrap()
+        uuid::Uuid::from_fields(data.0, data.1, data.2, &b)
     }
 
     fn mk_macaddr(data: (u8, u8, u8, u8, u8, u8)) -> [u8; 6] {
         [data.0, data.1, data.2, data.3, data.4, data.5]
+    }
+
+    fn mk_macaddr8(data: (u8, u8, u8, u8, u8, u8, u8, u8)) -> [u8; 8] {
+        [
+            data.0, data.1, data.2, data.3, data.4, data.5, data.6, data.7,
+        ]
     }
 
     fn mk_ipv4(data: (u8, u8, u8, u8)) -> ipnetwork::IpNetwork {
@@ -224,12 +324,26 @@ mod pg_types {
         ipnetwork::IpNetwork::V4(ipnetwork::Ipv4Network::new(ip, 32).unwrap())
     }
 
+    fn mk_ipv4_ipnet(data: (u8, u8, u8, u8)) -> ipnet::IpNet {
+        use std::net::Ipv4Addr;
+        let ip = Ipv4Addr::new(data.0, data.1, data.2, data.3);
+        ipnet::IpNet::V4(ipnet::Ipv4Net::new(ip, 32).unwrap())
+    }
+
     fn mk_ipv6(data: (u16, u16, u16, u16, u16, u16, u16, u16)) -> ipnetwork::IpNetwork {
         use std::net::Ipv6Addr;
         let ip = Ipv6Addr::new(
             data.0, data.1, data.2, data.3, data.4, data.5, data.6, data.7,
         );
         ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::new(ip, 128).unwrap())
+    }
+
+    fn mk_ipv6_ipnet(data: (u16, u16, u16, u16, u16, u16, u16, u16)) -> ipnet::IpNet {
+        use std::net::Ipv6Addr;
+        let ip = Ipv6Addr::new(
+            data.0, data.1, data.2, data.3, data.4, data.5, data.6, data.7,
+        );
+        ipnet::IpNet::V6(ipnet::Ipv6Net::new(ip, 128).unwrap())
     }
 
     fn mk_bounds<T: Ord + PartialEq>(data: (T, T)) -> (Bound<T>, Bound<T>) {
@@ -258,8 +372,8 @@ mod pg_types {
     }
 
     fn mk_ts_bounds(data: (i64, u32, i64, u32)) -> (Bound<NaiveDateTime>, Bound<NaiveDateTime>) {
-        let ts1 = mk_naive_datetime((data.0, data.1));
-        let ts2 = mk_naive_datetime((data.2, data.3));
+        let ts1 = mk_pg_naive_datetime((data.0, data.1));
+        let ts2 = mk_pg_naive_datetime((data.2, data.3));
         mk_bounds((ts1, ts2))
     }
 
@@ -269,8 +383,100 @@ mod pg_types {
         mk_bounds((tstz1, tstz2))
     }
 
+    fn is_sorted2<T>(data: &[(T, T)]) -> bool
+    where
+        T: Ord,
+    {
+        data.windows(2).all(|w| w[0].1 < w[1].0)
+    }
+
+    fn is_sorted4<T, U>(data: &[(T, U, T, U)]) -> bool
+    where
+        T: Ord,
+    {
+        data.windows(2).all(|w| w[0].2 < w[1].0)
+    }
+
+    fn mk_bound_list<T: Ord + PartialEq>(data: Vec<(T, T)>) -> Vec<(Bound<T>, Bound<T>)> {
+        let data: Vec<_> = data.into_iter().filter(|d| d.0 < d.1).collect();
+
+        if !is_sorted2(&data) {
+            // This is invalid but we don't have a way to say that to quickcheck
+            return vec![];
+        }
+
+        data.into_iter().map(mk_bounds).collect()
+    }
+
+    fn mk_date_bound_lists(data: (u32, u32)) -> Vec<(Bound<NaiveDate>, Bound<NaiveDate>)> {
+        vec![mk_date_bounds(data)]
+    }
+
+    fn mk_num_bound_lists(
+        data: Vec<(i64, u64, i64, u64)>,
+    ) -> Vec<(Bound<BigDecimal>, Bound<BigDecimal>)> {
+        let data: Vec<_> = data.into_iter().filter(|d| d.0 < d.2).collect();
+
+        if !is_sorted4(&data) {
+            // This is invalid but we don't have a way to say that to quickcheck
+            return vec![];
+        }
+
+        data.into_iter().map(mk_num_bounds).collect()
+    }
+
+    fn mk_ts_bound_lists(
+        data: (i64, u32, i64, u32),
+    ) -> Vec<(Bound<NaiveDateTime>, Bound<NaiveDateTime>)> {
+        vec![mk_ts_bounds(data)]
+    }
+
+    #[allow(clippy::type_complexity)]
+    fn mk_tstz_bound_lists(
+        data: (i64, u32, i64, u32),
+    ) -> Vec<(Bound<DateTime<Utc>>, Bound<DateTime<Utc>>)> {
+        vec![mk_tstz_bounds(data)]
+    }
+
+    pub fn mk_pg_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
+        // https://www.postgresql.org/docs/current/datatype-datetime.html
+        let earliest_pg_date = NaiveDate::from_ymd_opt(-4713, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 1)
+            .unwrap();
+        // chrono cannot even represent that, so don't worry for now
+        //let latest_pg_date = NaiveDate::from_ymd(294276, 31,12).and_hms(23,59,59);
+        let mut r = mk_naive_datetime(data);
+
+        loop {
+            if r < earliest_pg_date {
+                let diff = earliest_pg_date - r;
+                r = earliest_pg_date + diff;
+            } else {
+                break;
+            }
+        }
+        // Strip of nano second precision as postgres
+        // does not accurately handle them
+        let nanos = (r.nanosecond() / 1000) * 1000;
+        r.with_nanosecond(nanos).unwrap()
+    }
+
+    pub fn mk_pg_naive_time(data: (u32, u32)) -> NaiveTime {
+        let time = mk_naive_time(data);
+
+        // Strip of nano second precision as postgres
+        // does not accurately handle them
+        let nanos = (time.nanosecond() / 1000) * 1000;
+        time.with_nanosecond(nanos).unwrap()
+    }
+
     pub fn mk_datetime(data: (i64, u32)) -> DateTime<Utc> {
-        DateTime::from_utc(mk_naive_datetime(data), Utc)
+        Utc.from_utc_datetime(&mk_pg_naive_datetime(data))
+    }
+
+    pub fn mk_pg_lsn(data: u64) -> PgLsn {
+        PgLsn(data)
     }
 }
 
@@ -289,44 +495,253 @@ mod mysql_types {
         naive_datetime_roundtrips_to_datetime,
         Datetime,
         (i64, u32),
-        mk_naive_datetime
+        mk_mysql_naive_datetime
     );
-    test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
+    test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_mysql_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
+    test_round_trip!(
+        mysql_time_time_roundtrips,
+        Time,
+        (u32, u32),
+        mk_mysql_time_for_time,
+        cmp_mysql_time
+    );
+    test_round_trip!(
+        mysql_time_date_roundtrips,
+        Date,
+        u32,
+        mk_mysql_time_for_date,
+        cmp_mysql_time
+    );
+    test_round_trip!(
+        mysql_time_date_time_roundtrips,
+        Datetime,
+        (i64, u32),
+        mk_mysql_time_for_date_time,
+        cmp_mysql_time
+    );
+    test_round_trip!(
+        mysql_time_timestamp_roundtrips,
+        Timestamp,
+        (i64, u32),
+        mk_mysql_time_for_timestamp,
+        cmp_mysql_time
+    );
     test_round_trip!(bigdecimal_roundtrips, Numeric, (i64, u64), mk_bigdecimal);
     test_round_trip!(u16_roundtrips, Unsigned<SmallInt>, u16);
     test_round_trip!(u32_roundtrips, Unsigned<Integer>, u32);
     test_round_trip!(u64_roundtrips, Unsigned<BigInt>, u64);
     test_round_trip!(json_roundtrips, Json, SerdeWrapper, mk_serde_json);
+
+    pub fn mk_mysql_time_for_time(data: (u32, u32)) -> MysqlTime {
+        let t = mk_mysql_naive_time(data);
+        MysqlTime::new(
+            0,
+            0,
+            0,
+            t.hour(),
+            t.minute(),
+            t.second(),
+            t.nanosecond() as _,
+            false,
+            MysqlTimestampType::MYSQL_TIMESTAMP_TIME,
+            0,
+        )
+    }
+
+    pub fn mk_mysql_time_for_date(data: u32) -> MysqlTime {
+        let date = mk_naive_date(data);
+        MysqlTime::new(
+            date.year() as _,
+            date.month(),
+            date.day(),
+            0,
+            0,
+            0,
+            0,
+            false,
+            MysqlTimestampType::MYSQL_TIMESTAMP_DATE,
+            0,
+        )
+    }
+
+    pub fn mk_mysql_time_for_date_time(data: (i64, u32)) -> MysqlTime {
+        let t = mk_mysql_naive_datetime(data);
+        MysqlTime::new(
+            t.year() as _,
+            t.month(),
+            t.day(),
+            t.hour(),
+            t.minute(),
+            t.second(),
+            t.and_utc().timestamp_subsec_micros() as _,
+            false,
+            MysqlTimestampType::MYSQL_TIMESTAMP_DATETIME,
+            0,
+        )
+    }
+
+    pub fn mk_mysql_time_for_timestamp(data: (i64, u32)) -> MysqlTime {
+        let t = mk_naive_timestamp(data);
+        MysqlTime::new(
+            t.year() as _,
+            t.month(),
+            t.day(),
+            t.hour(),
+            t.minute(),
+            t.second(),
+            t.and_utc().timestamp_subsec_micros() as _,
+            false,
+            MysqlTimestampType::MYSQL_TIMESTAMP_DATETIME,
+            0,
+        )
+    }
+
+    pub fn mk_mysql_naive_time(data: (u32, u32)) -> NaiveTime {
+        let time = mk_naive_time(data);
+
+        // Strip of nano second precision as mysql
+        // does not handle them at all
+        time.with_nanosecond(0).unwrap()
+    }
+
+    pub fn mk_naive_timestamp((mut seconds, nanos): (i64, u32)) -> NaiveDateTime {
+        // https://dev.mysql.com/doc/refman/8.0/en/datetime.html
+        let earliest_mysql_date = NaiveDate::from_ymd_opt(1970, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 1)
+            .unwrap();
+        let latest_mysql_date = NaiveDate::from_ymd_opt(2038, 1, 19)
+            .unwrap()
+            .and_hms_opt(3, 14, 7)
+            .unwrap();
+
+        if seconds != 0 {
+            seconds = earliest_mysql_date.and_utc().timestamp()
+                + ((latest_mysql_date.and_utc().timestamp()
+                    - earliest_mysql_date.and_utc().timestamp())
+                    % seconds);
+        } else {
+            seconds = earliest_mysql_date.and_utc().timestamp();
+        }
+
+        let r = mk_naive_datetime((seconds, nanos));
+
+        // Strip of nano second precision as mysql
+        // does not accurately handle them
+        let nanos = (r.nanosecond() / 1000) * 1000;
+        r.with_nanosecond(nanos).unwrap()
+    }
+
+    pub fn mk_mysql_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
+        // https://dev.mysql.com/doc/refman/8.0/en/datetime.html
+        let earliest_mysql_date = NaiveDate::from_ymd_opt(1000, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 1)
+            .unwrap();
+        let latest_mysql_date = NaiveDate::from_ymd_opt(9999, 12, 31)
+            .unwrap()
+            .and_hms_opt(23, 59, 59)
+            .unwrap();
+        let mut r = mk_naive_datetime(data);
+
+        loop {
+            if r < earliest_mysql_date {
+                let diff = earliest_mysql_date - r;
+                r = earliest_mysql_date + diff;
+            } else if r > latest_mysql_date {
+                let diff = r - latest_mysql_date;
+                r = earliest_mysql_date + diff;
+            } else {
+                break;
+            }
+        }
+
+        // Strip of nano second precision as mysql
+        // does not accurately handle them
+        let nanos = (r.nanosecond() / 1000) * 1000;
+        r.with_nanosecond(nanos).unwrap()
+    }
+
+    fn cmp_mysql_time(this: &MysqlTime, other: &MysqlTime) -> bool {
+        let is_eq = this.year == other.year
+            && this.month == other.month
+            && this.day == other.day
+            && this.hour == other.hour
+            && this.minute == other.minute
+            && this.second == other.second
+            && this.second_part == other.second_part
+            && this.neg == other.neg
+            && this.time_zone_displacement == other.time_zone_displacement;
+
+        !is_eq
+    }
 }
 
-#[cfg(feature = "mysql")]
-pub fn mk_naive_timestamp(data: (i64, u32)) -> NaiveDateTime {
-    let earliest_mysql_date = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 1);
-    let latest_mysql_date = NaiveDate::from_ymd(2038, 1, 19).and_hms(03, 14, 7);
-    let mut r = mk_naive_datetime(data);
+pub fn mk_naive_datetime((mut secs, mut nano): (i64, u32)) -> NaiveDateTime {
+    const MAX_SECONDS: i64 = 86_400;
+    const MAX_NANO: u32 = 2_000_000_000;
+    const MAX_YEAR: i64 = (i32::MAX >> 13) as i64;
+    const MIN_YEAR: i64 = (i32::MIN >> 13) as i64;
+
+    nano /= 1000;
 
     loop {
-        if r < earliest_mysql_date {
-            let diff = earliest_mysql_date - r;
-            r = earliest_mysql_date + diff;
-        } else if r > latest_mysql_date {
-            let diff = r - latest_mysql_date;
-            r = earliest_mysql_date + diff;
-        } else {
-            break;
+        let days = secs / MAX_SECONDS;
+        let seconds = secs - (days * MAX_SECONDS);
+        let years = (days + 719_163) / 365;
+
+        if days + 719_163 > i32::MAX as i64 {
+            secs -= ((days + 719_163) - i32::MAX as i64) * MAX_SECONDS;
+            continue;
+        }
+
+        if years >= MAX_YEAR {
+            secs -= (((years - MAX_YEAR) * 365 - 719_163) * MAX_SECONDS).abs();
+            continue;
+        }
+
+        if years <= MIN_YEAR {
+            secs += (((years - MIN_YEAR) * 365 - 719_163) * MAX_SECONDS).abs();
+            continue;
+        }
+
+        if seconds >= MAX_SECONDS {
+            secs -= MAX_SECONDS;
+            continue;
+        }
+
+        if nano >= MAX_NANO {
+            nano -= MAX_NANO;
+            continue;
+        }
+        break;
+    }
+
+    DateTime::from_timestamp(secs, nano).unwrap().naive_utc()
+}
+
+pub fn mk_naive_time((mut seconds, mut nano): (u32, u32)) -> NaiveTime {
+    const MAX_SECONDS: u32 = 86_400;
+    const MAX_NANO: u32 = 2_000_000_000;
+
+    nano /= 1000;
+
+    loop {
+        match (seconds >= MAX_SECONDS, nano >= MAX_NANO) {
+            (true, true) => {
+                seconds -= MAX_SECONDS;
+                nano -= MAX_NANO;
+            }
+            (true, false) => {
+                seconds -= MAX_SECONDS;
+            }
+            (false, true) => nano -= MAX_NANO,
+            (false, false) => break,
         }
     }
 
-    r
-}
-
-pub fn mk_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
-    NaiveDateTime::from_timestamp(data.0, data.1 / 1000)
-}
-
-pub fn mk_naive_time(data: (u32, u32)) -> NaiveTime {
-    NaiveTime::from_num_seconds_from_midnight(data.0, data.1 / 1000)
+    NaiveTime::from_num_seconds_from_midnight_opt(seconds, nano).unwrap()
 }
 
 #[cfg(any(feature = "postgres", feature = "mysql"))]
@@ -338,36 +753,66 @@ fn mk_bigdecimal(data: (i64, u64)) -> bigdecimal::BigDecimal {
 
 #[cfg(feature = "postgres")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
-    use self::chrono::naive::MAX_DATE;
-
-    let earliest_pg_date = NaiveDate::from_ymd(-4713, 11, 24);
-    let latest_chrono_date = MAX_DATE;
+    let earliest_pg_date = NaiveDate::from_ymd_opt(-4713, 11, 24).unwrap();
+    let latest_chrono_date = NaiveDate::MAX;
     let num_days_representable = latest_chrono_date
         .signed_duration_since(earliest_pg_date)
         .num_days();
-    earliest_pg_date + Duration::days(days as i64 % num_days_representable)
+    earliest_pg_date + Duration::try_days(days as i64 % num_days_representable).unwrap()
 }
 
 #[cfg(feature = "mysql")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
-    let earliest_mysql_date = NaiveDate::from_ymd(1000, 01, 01);
-    let latest_mysql_date = NaiveDate::from_ymd(9999, 12, 31);
+    let earliest_mysql_date = NaiveDate::from_ymd_opt(1000, 1, 1).unwrap();
+    let latest_mysql_date = NaiveDate::from_ymd_opt(9999, 12, 31).unwrap();
     let num_days_representable = latest_mysql_date
         .signed_duration_since(earliest_mysql_date)
         .num_days();
-    earliest_mysql_date + Duration::days(days as i64 % num_days_representable)
+    earliest_mysql_date + Duration::try_days(days as i64 % num_days_representable).unwrap()
 }
 
 #[cfg(feature = "sqlite")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
-    use self::chrono::naive::{MAX_DATE, MIN_DATE};
-
-    let earliest_sqlite_date = MIN_DATE;
-    let latest_sqlite_date = MAX_DATE;
+    let earliest_sqlite_date = NaiveDate::MIN;
+    let latest_sqlite_date = NaiveDate::MAX;
     let num_days_representable = latest_sqlite_date
         .signed_duration_since(earliest_sqlite_date)
         .num_days();
-    earliest_sqlite_date + Duration::days(days as i64 % num_days_representable)
+    earliest_sqlite_date + Duration::try_days(days as i64 % num_days_representable).unwrap()
+}
+
+#[derive(Debug, Clone, Copy)]
+struct FloatWrapper(f32);
+
+fn mk_f32(f: FloatWrapper) -> f32 {
+    f.0
+}
+
+impl quickcheck::Arbitrary for FloatWrapper {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
+        let mut f = f32::arbitrary(g);
+        while (cfg!(feature = "sqlite") || cfg!(feature = "mysql")) && f.is_nan() {
+            f = f32::arbitrary(g);
+        }
+        FloatWrapper(f)
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct DoubleWrapper(f64);
+
+fn mk_f64(f: DoubleWrapper) -> f64 {
+    f.0
+}
+
+impl quickcheck::Arbitrary for DoubleWrapper {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
+        let mut f = f64::arbitrary(g);
+        while (cfg!(feature = "sqlite") || cfg!(feature = "mysql")) && f.is_nan() {
+            f = f64::arbitrary(g);
+        }
+        DoubleWrapper(f)
+    }
 }
 
 #[cfg(any(feature = "postgres", feature = "mysql"))]
@@ -376,40 +821,55 @@ struct SerdeWrapper(serde_json::Value);
 
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 impl quickcheck::Arbitrary for SerdeWrapper {
-    fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         SerdeWrapper(arbitrary_serde(g, 0))
     }
 }
 
 #[cfg(any(feature = "postgres", feature = "mysql"))]
-fn arbitrary_serde<G: quickcheck::Gen>(g: &mut G, depth: usize) -> serde_json::Value {
-    use rand::distributions::Alphanumeric;
-    use rand::Rng;
-    match g.gen_range(0, if depth > 0 { 4 } else { 6 }) {
+fn arbitrary_serde(g: &mut quickcheck::Gen, depth: usize) -> serde_json::Value {
+    use quickcheck::Arbitrary;
+
+    let variant = if depth > 1 {
+        &[0, 1, 2, 3] as &[_]
+    } else {
+        &[0, 1, 2, 3, 4, 5] as &[_]
+    };
+    match g.choose(variant).expect("Slice is not empty") {
         0 => serde_json::Value::Null,
-        1 => serde_json::Value::Bool(g.gen()),
+        1 => serde_json::Value::Bool(bool::arbitrary(g)),
         2 => {
             // don't use floats here
             // comparing floats is complicated
-            let n: i32 = g.gen();
+            let n = i32::arbitrary(g);
             serde_json::Value::Number(n.into())
         }
         3 => {
-            let len = g.gen_range(0, 15);
-            let s: String = g.sample_iter(Alphanumeric).take(len).collect();
+            let s = String::arbitrary(g)
+                .chars()
+                .filter(|c| c.is_ascii_alphabetic())
+                .collect();
             serde_json::Value::String(s)
         }
         4 => {
-            let len = g.gen_range(0, 15);
-            let values = (0..len).map(|_| arbitrary_serde(g, depth + 1)).collect();
+            let len = g
+                .choose(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15_i8])
+                .expect("Slice is not empty");
+            let values = (0..*len).map(|_| arbitrary_serde(g, depth + 1)).collect();
             serde_json::Value::Array(values)
         }
         5 => {
-            let fields = g.gen_range(1, 5);
-            let map = (0..fields)
+            let fields = g
+                .choose(&[0, 1, 2, 3, 4, 5, 6_i8])
+                .expect("Slice is not empty");
+            let map = (0..*fields)
                 .map(|_| {
-                    let len = g.gen_range(0, 5);
-                    let name = g.sample_iter(Alphanumeric).take(len).collect();
+                    let len = g.choose(&[1, 2, 3, 4, 5]).expect("Slice is not empty");
+                    let name = String::arbitrary(g)
+                        .chars()
+                        .filter(|c| c.is_ascii_alphabetic())
+                        .take(*len)
+                        .collect();
                     (name, arbitrary_serde(g, depth + 1))
                 })
                 .collect();
@@ -426,7 +886,7 @@ fn mk_serde_json(data: SerdeWrapper) -> serde_json::Value {
 
 #[cfg(feature = "postgres")]
 mod unstable_types {
-    use super::{quickcheck, test_type_round_trips};
+    use super::{ne, quickcheck, test_type_round_trips};
     use std::time::*;
 
     fn strip_nanosecond_precision(time: SystemTime) -> SystemTime {

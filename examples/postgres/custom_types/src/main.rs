@@ -5,7 +5,7 @@ mod model;
 mod schema;
 
 #[derive(Debug, Queryable, Insertable)]
-#[table_name = "translations"]
+#[diesel(table_name = translations)]
 pub struct Translation {
     word_id: i32,
     translation_id: i32,
@@ -14,8 +14,8 @@ pub struct Translation {
 
 fn main() {
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let conn = PgConnection::establish(&database_url)
-        .unwrap_or_else(|e| panic!("Error connecting to {}: {}", database_url, e));
+    let conn = &mut PgConnection::establish(&database_url)
+        .unwrap_or_else(|e| panic!("Failed to connect, error: {e}"));
 
     let _ = diesel::insert_into(translations::table)
         .values(&Translation {
@@ -23,7 +23,7 @@ fn main() {
             translation_id: 1,
             language: model::Language::En,
         })
-        .execute(&conn);
+        .execute(conn);
 
     let t = translations::table
         .select((
@@ -31,7 +31,7 @@ fn main() {
             translations::translation_id,
             translations::language,
         ))
-        .get_results::<Translation>(&conn)
+        .get_results::<Translation>(conn)
         .expect("select");
-    println!("{:?}", t);
+    println!("{t:?}");
 }

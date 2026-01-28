@@ -1,4 +1,4 @@
-use crate::query_source::Table;
+use crate::query_source::QueryRelation;
 
 /// The `limit` method
 ///
@@ -6,8 +6,8 @@ use crate::query_source::Table;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `limit` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
-pub trait LimitDsl {
+/// [`QueryDsl`]: crate::QueryDsl
+pub trait LimitDsl<DummyArgForAutoType = i64> {
     /// The type returned by `.limit`
     type Output;
 
@@ -17,7 +17,7 @@ pub trait LimitDsl {
 
 impl<T> LimitDsl for T
 where
-    T: Table,
+    T: QueryRelation,
     T::Query: LimitDsl,
 {
     type Output = <T::Query as LimitDsl>::Output;

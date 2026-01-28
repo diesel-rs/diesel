@@ -1,54 +1,62 @@
 //! AST types representing various typed SQL expressions.
 //!
-//! Almost all types implement either [`Expression`](trait.Expression.html) or
-//! [`AsExpression`](trait.AsExpression.html).
+//! Almost all types implement either [`Expression`] or
+//! [`AsExpression`].
 //!
 //! The most common expression to work with is a
-//! [`Column`](../query_source/trait.Column.html). There are various methods
+//! [`Column`](crate::query_source::Column). There are various methods
 //! that you can call on these, found in
-//! [`expression_methods`](../expression_methods).
+//! [`expression_methods`](crate::expression_methods).
 //!
 //! You can also use numeric operators such as `+` on expressions of the
 //! appropriate type.
 //!
-//! Any primitive which implements [`ToSql`](../serialize/trait.ToSql.html) will
-//! also implement [`AsExpression`](trait.AsExpression.html), allowing it to be
+//! Any primitive which implements [`ToSql`](crate::serialize::ToSql) will
+//! also implement [`AsExpression`], allowing it to be
 //! used as an argument to any of the methods described here.
 #[macro_use]
-#[doc(hidden)]
-pub mod ops;
+pub(crate) mod ops;
 pub mod functions;
 
-#[doc(hidden)]
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) mod array_comparison;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub mod array_comparison;
-#[doc(hidden)]
-pub mod bound;
-#[doc(hidden)]
-pub mod coerce;
-#[doc(hidden)]
-pub mod count;
-#[doc(hidden)]
+pub(crate) mod assume_not_null;
+pub(crate) mod bound;
+mod coerce;
+pub(crate) mod count;
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) mod exists;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub mod exists;
-#[doc(hidden)]
-pub mod grouped;
-#[doc(hidden)]
-pub mod helper_types;
+pub(crate) mod grouped;
+pub(crate) mod helper_types;
 mod not;
-#[doc(hidden)]
-pub mod nullable;
-#[doc(hidden)]
+pub(crate) mod nullable;
 #[macro_use]
-pub mod operators;
-#[doc(hidden)]
-pub mod sql_literal;
-#[doc(hidden)]
-pub mod subselect;
+pub(crate) mod operators;
+mod case_when;
+pub(crate) mod cast;
+pub(crate) mod select_by;
+mod sql_literal;
+pub(crate) mod subselect;
 
-#[doc(hidden)]
-#[allow(non_camel_case_types)]
-pub mod dsl {
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::operators::Concat;
+
+pub use self::operators::Collate;
+
+// we allow unreachable_pub here
+// as rustc otherwise shows false positives
+// for every item in this module. We reexport
+// everything from `crate::helper_types::`
+#[allow(non_camel_case_types, unreachable_pub)]
+pub(crate) mod dsl {
     use crate::dsl::SqlTypeOf;
 
+    #[doc(inline)]
+    pub use super::case_when::case_when;
     #[doc(inline)]
     pub use super::count::*;
     #[doc(inline)]
@@ -60,36 +68,65 @@ pub mod dsl {
     #[doc(inline)]
     pub use super::functions::date_and_time::*;
     #[doc(inline)]
+    pub use super::functions::window_functions::*;
+    #[doc(inline)]
     pub use super::not::not;
     #[doc(inline)]
     pub use super::sql_literal::sql;
 
-    #[cfg(feature = "postgres")]
+    #[cfg(feature = "postgres_backend")]
     pub use crate::pg::expression::dsl::*;
 
-    /// The return type of [`count(expr)`](../dsl/fn.count.html)
-    pub type count<Expr> = super::count::count::HelperType<SqlTypeOf<Expr>, Expr>;
+    #[cfg(feature = "sqlite")]
+    pub use crate::sqlite::expression::dsl::*;
 
-    /// The return type of [`count_star()`](../dsl/fn.count_star.html)
+    /// The return type of [`count(expr)`](crate::dsl::count())
+    pub type count<Expr> = super::count::count<SqlTypeOf<Expr>, Expr>;
+
+    /// The return type of [`count_star()`](crate::dsl::count_star())
     pub type count_star = super::count::CountStar;
 
-    /// The return type of [`date(expr)`](../dsl/fn.date.html)
-    pub type date<Expr> = super::functions::date_and_time::date::HelperType<Expr>;
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    #[deprecated]
+    #[doc(hidden)]
+    pub type count_distinct<Expr> = super::count::CountDistinct<SqlTypeOf<Expr>, Expr>;
+
+    /// The return type of [`date(expr)`](crate::dsl::date())
+    pub type date<Expr> = super::functions::date_and_time::date<Expr>;
+
+    #[cfg(feature = "mysql_backend")]
+    pub use crate::mysql::query_builder::DuplicatedKeys;
+
+    pub use super::functions::aggregate_expressions::frame_clause::{
+        FrameBoundDsl, FrameClauseDsl,
+    };
+
+    /// Different frame clause specifications for window functions
+    pub mod frame {
+        pub use super::super::functions::aggregate_expressions::frame_clause::{
+            CurrentRow, ExcludeCurrentRow, ExcludeGroup, ExcludeNoOthers, ExcludeTies, Groups,
+            Range, Rows, UnboundedFollowing, UnboundedPreceding,
+        };
+    }
 }
 
+#[doc(inline)]
+pub use self::case_when::CaseWhen;
+#[doc(inline)]
+pub use self::cast::{CastsTo, FallibleCastsTo, KnownCastSqlTypeName};
 #[doc(inline)]
 pub use self::sql_literal::{SqlLiteral, UncheckedBind};
 
 use crate::backend::Backend;
-use crate::dsl::AsExprOf;
+use crate::dsl::{AsExprOf, AsSelect};
 use crate::sql_types::{HasSqlType, SingleValue, SqlType};
 
 /// Represents a typed fragment of SQL.
 ///
 /// Apps should not need to implement this type directly, but it may be common
 /// to use this in where clauses. Libraries should consider using
-/// [`infix_operator!`](../macro.infix_operator.html) or
-/// [`postfix_operator!`](../macro.postfix_operator.html) instead of
+/// [`infix_operator!`](crate::infix_operator!) or
+/// [`postfix_operator!`](crate::postfix_operator!) instead of
 /// implementing this directly.
 pub trait Expression {
     /// The type that this expression represents in SQL
@@ -97,13 +134,9 @@ pub trait Expression {
 }
 
 /// Marker trait for possible types of [`Expression::SqlType`]
-///
-/// [`Expression::SqlType`]: trait.Expression.html#associatedtype.SqlType
 pub trait TypedExpressionType {}
 
 /// Possible types for []`Expression::SqlType`]
-///
-/// [`Expression::SqlType`]: trait.Expression.html#associatedtype.SqlType
 pub mod expression_types {
     use super::{QueryMetadata, TypedExpressionType};
     use crate::backend::Backend;
@@ -116,16 +149,18 @@ pub mod expression_types {
     /// we do not know which fields are returned from such a query at compile time.
     ///
     /// For loading values from queries returning a type of this expression, consider
-    /// using [`#[derive(QueryableByName)]`] on the corresponding result type.
-    ///
-    /// [`#[derive(QueryableByName)]`]: ../deserialize/derive.QueryableByName.html
+    /// using [`#[derive(QueryableByName)]`](derive@crate::deserialize::QueryableByName)
+    /// on the corresponding result type.
     #[derive(Clone, Copy, Debug)]
     pub struct Untyped;
 
-    /// Query nodes witch cannot be part of a select clause.
+    /// Query nodes which cannot be part of a select clause.
     ///
     /// If you see an error message containing `FromSqlRow` and this type
     /// recheck that you have written a valid select clause
+    ///
+    /// These may notably be used as intermediate Expression nodes of the query builder
+    /// which do not map to actual SQL expressions (for implementation simplicity).
     #[derive(Debug, Clone, Copy)]
     pub struct NotSelectable;
 
@@ -135,7 +170,7 @@ pub mod expression_types {
     impl<ST> TypedExpressionType for ST where ST: SingleValue {}
 
     impl<DB: Backend> QueryMetadata<Untyped> for DB {
-        fn row_metadata(_: &DB::MetadataLookup, row: &mut Vec<Option<DB::TypeMetadata>>) {
+        fn row_metadata(_: &mut DB::MetadataLookup, row: &mut Vec<Option<DB::TypeMetadata>>) {
             row.push(None)
         }
     }
@@ -145,7 +180,7 @@ impl<T: Expression + ?Sized> Expression for Box<T> {
     type SqlType = T::SqlType;
 }
 
-impl<'a, T: Expression + ?Sized> Expression for &'a T {
+impl<T: Expression + ?Sized> Expression for &T {
     type SqlType = T::SqlType;
 }
 
@@ -155,10 +190,10 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
 /// If you do not implement a custom backend implementation
 /// this trait is likely not relevant for you.
 pub trait QueryMetadata<T>: Backend {
-    /// The exact return value of this function is considerded to be a
+    /// The exact return value of this function is considered to be a
     /// backend specific implementation detail. You should not rely on those
     /// values if you not own the corresponding backend
-    fn row_metadata(lookup: &Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>);
+    fn row_metadata(lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>);
 }
 
 impl<T, DB> QueryMetadata<T> for DB
@@ -166,7 +201,7 @@ where
     DB: Backend + HasSqlType<T>,
     T: SingleValue,
 {
-    fn row_metadata(lookup: &Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
+    fn row_metadata(lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
         out.push(Some(<DB as HasSqlType<T>>::metadata(lookup)))
     }
 }
@@ -184,14 +219,13 @@ where
 ///   query. This is generally referred as a "bind parameter". Types which
 ///   implement [`ToSql`] will generally implement `AsExpression` this way.
 ///
-///   [`IntoSql`]: trait.IntoSql.html
-///   [`now`]: ../dsl/struct.now.html
-///   [`Timestamp`]: ../sql_types/struct.Timestamp.html
+///   [`IntoSql`]: crate::IntoSql
+///   [`now`]: crate::dsl::now
+///   [`Timestamp`]: crate::sql_types::Timestamp
 ///   [`Timestamptz`]: ../pg/types/sql_types/struct.Timestamptz.html
-///   [`ToSql`]: ../serialize/trait.ToSql.html
+///   [`ToSql`]: crate::serialize::ToSql
 ///
-///  This trait could be [derived](derive.AsExpression.html)
-
+///  This trait could be [derived](derive@AsExpression)
 pub trait AsExpression<T>
 where
     T: SqlType + TypedExpressionType,
@@ -200,20 +234,23 @@ where
     type Expression: Expression<SqlType = T>;
 
     /// Perform the conversion
+    #[allow(clippy::wrong_self_convention)]
+    // That's public API we cannot change it to appease clippy
     fn as_expression(self) -> Self::Expression;
 }
 
 #[doc(inline)]
 pub use diesel_derives::AsExpression;
 
+#[diagnostic::do_not_recommend]
 impl<T, ST> AsExpression<ST> for T
 where
     T: Expression<SqlType = ST>,
     ST: SqlType + TypedExpressionType,
 {
-    type Expression = Self;
+    type Expression = T;
 
-    fn as_expression(self) -> Self {
+    fn as_expression(self) -> T {
         self
     }
 }
@@ -233,10 +270,10 @@ where
 /// #
 /// # fn main() {
 /// use diesel::sql_types::Text;
-/// #   let conn = establish_connection();
+/// #   let conn = &mut establish_connection();
 /// let names = users::table
 ///     .select("The Amazing ".into_sql::<Text>().concat(users::name))
-///     .load(&conn);
+///     .load(conn);
 /// let expected_names = vec![
 ///     "The Amazing Sean".to_string(),
 ///     "The Amazing Tess".to_string(),
@@ -304,6 +341,10 @@ where
 /// Notably, columns will not implement this trait for the right side of a left
 /// join. To select a column or expression using a column from the right side of
 /// a left join, you must call `.nullable()` on it.
+#[diagnostic::on_unimplemented(
+    message = "cannot select `{Self}` from `{QS}`",
+    note = "`{Self}` is no valid selection for `{QS}`"
+)]
 pub trait SelectableExpression<QS: ?Sized>: AppearsOnTable<QS> {}
 
 impl<T: ?Sized, QS> SelectableExpression<QS> for Box<T>
@@ -320,12 +361,361 @@ where
 {
 }
 
+/// Trait indicating that a record can be selected and queried from the database.
+///
+/// Types which implement `Selectable` represent the select clause of a SQL query.
+/// Use [`SelectableHelper::as_select()`] to construct the select clause. Once you
+/// called `.select(YourType::as_select())` we enforce at the type system level that you
+/// use the same type to load the query result into.
+///
+/// The constructed select clause can contain arbitrary expressions coming from different
+/// tables. The corresponding [derive](derive@Selectable) provides a simple way to
+/// construct a select clause matching fields to the corresponding table columns.
+///
+/// # Examples
+///
+/// If you just want to construct a select clause using an existing struct, you can use
+/// `#[derive(Selectable)]`, See [`#[derive(Selectable)]`](derive@Selectable) for details.
+///
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// #
+/// use schema::users;
+///
+/// #[derive(Queryable, PartialEq, Debug, Selectable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = &mut establish_connection();
+/// let first_user = users.select(User::as_select()).first(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "Sean".into(),
+/// };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// Alternatively, we can implement the trait for our struct manually.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// #
+/// use diesel::backend::Backend;
+/// use diesel::prelude::{Queryable, Selectable};
+/// use schema::users;
+///
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// impl<DB> Selectable<DB> for User
+/// where
+///     DB: Backend,
+/// {
+///     type SelectExpression = (users::id, users::name);
+///
+///     fn construct_selection() -> Self::SelectExpression {
+///         (users::id, users::name)
+///     }
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = &mut establish_connection();
+/// let first_user = users.select(User::as_select()).first(connection)?;
+/// let expected = User {
+///     id: 1,
+///     name: "Sean".into(),
+/// };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// When selecting from joined tables, you can select from a
+/// composition of types that implement `Selectable`. The simplest way
+/// is to use a tuple of all the types you wish to select.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use schema::{posts, users};
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// struct Post {
+///     id: i32,
+///     user_id: i32,
+///     title: String,
+/// }
+///
+/// # fn main() -> QueryResult<()> {
+/// #     let connection = &mut establish_connection();
+/// #
+/// let (first_user, first_post) = users::table
+///     .inner_join(posts::table)
+///     .select(<(User, Post)>::as_select())
+///     .first(connection)?;
+///
+/// let expected_user = User {
+///     id: 1,
+///     name: "Sean".into(),
+/// };
+/// assert_eq!(expected_user, first_user);
+///
+/// let expected_post = Post {
+///     id: 1,
+///     user_id: 1,
+///     title: "My first post".into(),
+/// };
+/// assert_eq!(expected_post, first_post);
+/// #
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// If you want to load only a subset of fields, you can create types
+/// with those fields and use them in the composition.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use schema::{posts, users};
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// #[diesel(table_name = posts)]
+/// struct PostTitle {
+///     title: String,
+/// }
+///
+/// # fn main() -> QueryResult<()> {
+/// #     let connection = &mut establish_connection();
+/// #
+/// let (first_user, first_post_title) = users::table
+///     .inner_join(posts::table)
+///     .select(<(User, PostTitle)>::as_select())
+///     .first(connection)?;
+///
+/// let expected_user = User {
+///     id: 1,
+///     name: "Sean".into(),
+/// };
+/// assert_eq!(expected_user, first_user);
+///
+/// let expected_post_title = PostTitle {
+///     title: "My first post".into(),
+/// };
+/// assert_eq!(expected_post_title, first_post_title);
+/// #
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// You are not limited to using only tuples to build the composed
+/// type. The [`Selectable`](derive@Selectable) derive macro allows
+/// you to *embed* other types. This is useful when you want to
+/// implement methods or traits on the composed type.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use schema::{posts, users};
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// #[diesel(table_name = posts)]
+/// struct PostTitle {
+///     title: String,
+/// }
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// struct UserPost {
+///     #[diesel(embed)]
+///     user: User,
+///     #[diesel(embed)]
+///     post_title: PostTitle,
+/// }
+///
+/// # fn main() -> QueryResult<()> {
+/// #     let connection = &mut establish_connection();
+/// #
+/// let first_user_post = users::table
+///     .inner_join(posts::table)
+///     .select(UserPost::as_select())
+///     .first(connection)?;
+///
+/// let expected_user_post = UserPost {
+///     user: User {
+///         id: 1,
+///         name: "Sean".into(),
+///     },
+///     post_title: PostTitle {
+///         title: "My first post".into(),
+///     },
+/// };
+/// assert_eq!(expected_user_post, first_user_post);
+/// #
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// It is also possible to specify an entirely custom select expression
+/// for fields when deriving [`Selectable`](derive@Selectable).
+/// This is useful for example to
+///
+///  * avoid nesting types, or to
+///  * populate fields with values other than table columns, such as
+///    the result of an SQL function like `CURRENT_TIMESTAMP()`
+///    or a custom SQL function.
+///
+/// The select expression is specified via the `select_expression` parameter.
+///
+/// Query fragments created using [`dsl::auto_type`](crate::dsl::auto_type) are supported, which
+/// may be useful as the select expression gets large: it may not be practical to inline it in
+/// the attribute then.
+///
+/// The type of the expression is usually inferred. If it can't be fully inferred automatically,
+/// one may either:
+/// - Put type annotations in inline blocks in the query fragment itself
+/// - Use a dedicated [`dsl::auto_type`](crate::dsl::auto_type) function as `select_expression`
+///   and use [`dsl::auto_type`'s type annotation features](crate::dsl::auto_type)
+/// - Specify the type of the expression using the `select_expression_type` attribute
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use diesel::dsl;
+/// use schema::{posts, users};
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// #[diesel(table_name = posts)]
+/// struct PostTitle {
+///     title: String,
+/// }
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// struct UserPost {
+///     #[diesel(select_expression = users::columns::id)]
+///     #[diesel(select_expression_type = users::columns::id)]
+///     id: i32,
+///     #[diesel(select_expression = users::columns::name)]
+///     name: String,
+///     #[diesel(select_expression = complex_fragment_for_title())]
+///     title: String,
+/// #   #[cfg(feature = "chrono")]
+///     #[diesel(select_expression = diesel::dsl::now)]
+///     access_time: chrono::NaiveDateTime,
+///     #[diesel(select_expression = users::columns::id.eq({let id: i32 = FOO; id}))]
+///     user_id_is_foo: bool,
+/// }
+/// const FOO: i32 = 42; // Type of FOO can't be inferred automatically in the select_expression
+/// #[dsl::auto_type]
+/// fn complex_fragment_for_title() -> _ {
+///     // See the `#[dsl::auto_type]` documentation for examples of more complex usage
+///     posts::columns::title
+/// }
+///
+/// # fn main() -> QueryResult<()> {
+/// #     let connection = &mut establish_connection();
+/// #
+/// let first_user_post = users::table
+///     .inner_join(posts::table)
+///     .select(UserPost::as_select())
+///     .first(connection)?;
+///
+/// let expected_user_post = UserPost {
+///     id: 1,
+///     name: "Sean".into(),
+///     title: "My first post".into(),
+/// #   #[cfg(feature = "chrono")]
+///     access_time: first_user_post.access_time,
+///     user_id_is_foo: false,
+/// };
+/// assert_eq!(expected_user_post, first_user_post);
+/// #
+/// #     Ok(())
+/// # }
+/// ```
+pub trait Selectable<DB: Backend> {
+    /// The expression you'd like to select.
+    ///
+    /// This is typically a tuple of corresponding to the table columns of your struct's fields.
+    type SelectExpression: Expression;
+
+    /// Construct an instance of the expression
+    fn construct_selection() -> Self::SelectExpression;
+}
+
+#[doc(inline)]
+pub use diesel_derives::Selectable;
+
+/// This helper trait provides several methods for
+/// constructing a select or returning clause based on a
+/// [`Selectable`] implementation.
+pub trait SelectableHelper<DB: Backend>: Selectable<DB> + Sized {
+    /// Construct a select clause based on a [`Selectable`] implementation.
+    ///
+    /// The returned select clause enforces that you use the same type
+    /// for constructing the select clause and for loading the query result into.
+    fn as_select() -> AsSelect<Self, DB>;
+
+    /// An alias for `as_select` that can be used with returning clauses
+    fn as_returning() -> AsSelect<Self, DB> {
+        Self::as_select()
+    }
+}
+
+impl<T, DB> SelectableHelper<DB> for T
+where
+    T: Selectable<DB>,
+    DB: Backend,
+{
+    fn as_select() -> AsSelect<Self, DB> {
+        select_by::SelectBy::new()
+    }
+}
+
 /// Is this expression valid for a given group by clause?
 ///
 /// Implementations of this trait must ensure that aggregate expressions are
 /// not mixed with non-aggregate expressions.
 ///
-/// For generic types, you can determine if your sub-expresssions can appear
+/// For generic types, you can determine if your sub-expressions can appear
 /// together using the [`MixedAggregates`] trait.
 ///
 /// `GroupByClause` will be a tuple containing the set of expressions appearing
@@ -334,15 +724,12 @@ where
 ///
 /// This trait can be [derived]
 ///
-/// [derived]: derive.ValidGrouping.html
-/// [`MixedAggregates`]: trait.MixedAggregates.html
+/// [derived]: derive@ValidGrouping
 pub trait ValidGrouping<GroupByClause> {
     /// Is this expression aggregate?
     ///
     /// This type should always be one of the structs in the [`is_aggregate`]
     /// module. See the documentation of those structs for more details.
-    ///
-    /// [`is_aggregate`]: is_aggregate/index.html
     type IsAggregate;
 }
 
@@ -350,14 +737,23 @@ impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for Box<T> {
     type IsAggregate = T::IsAggregate;
 }
 
-impl<'a, T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for &'a T {
+impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for &T {
     type IsAggregate = T::IsAggregate;
+}
+
+impl<GB> ValidGrouping<GB> for () {
+    type IsAggregate = is_aggregate::Never;
 }
 
 #[doc(inline)]
 pub use diesel_derives::ValidGrouping;
 
 #[doc(hidden)]
+#[diagnostic::on_unimplemented(
+    note = "if your query contains columns from several tables in your group by or select \
+            clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` \
+            with these columns"
+)]
 pub trait IsContainedInGroupBy<T> {
     type Output;
 }
@@ -393,10 +789,12 @@ pub mod is_contained_in_group_by {
 /// [`is_aggregate::Yes`] and [`is_aggregate::No`] can only appear with
 /// themselves or [`is_aggregate::Never`]. [`is_aggregate::Never`] can appear
 /// with anything.
-///
-/// [`is_aggregate::Yes`]: is_aggregate/struct.Yes.html
-/// [`is_aggregate::No`]: is_aggregate/struct.No.html
-/// [`is_aggregate::Never`]: is_aggregate/struct.Never.html
+#[diagnostic::on_unimplemented(
+    message = "mixing aggregate and not aggregate expressions is not allowed in SQL",
+    note = "you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column",
+    note = "try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause",
+    note = "also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all"
+)]
 pub trait MixedAggregates<Other> {
     /// What is the resulting `IsAggregate` type?
     type Output;
@@ -443,30 +841,14 @@ pub mod is_aggregate {
     }
 }
 
-// Note that these docs are similar to but slightly different than the stable
-// docs below. Make sure if you change these that you also change the docs
-// below.
-/// Trait alias to represent an expression that isn't aggregate by default.
-///
-/// This alias represents a type which is not aggregate if there is no group by
-/// clause. More specifically, it represents for types which implement
-/// [`ValidGrouping<()>`] where `IsAggregate` is [`is_aggregate::No`] or
-/// [`is_aggregate::Yes`].
-///
-/// While this trait is a useful stand-in for common cases, `T: NonAggregate`
-/// cannot always be used when `T: ValidGrouping<(), IsAggregate = No>` or
-/// `T: ValidGrouping<(), IsAggregate = Never>` could be. For that reason,
-/// unless you need to abstract over both columns and literals, you should
-/// prefer to use [`ValidGrouping<()>`] in your bounds instead.
-///
-/// [`ValidGrouping<()>`]: trait.ValidGrouping.html
-/// [`is_aggregate::Yes`]: is_aggregate/struct.Yes.html
-/// [`is_aggregate::No`]: is_aggregate/struct.No.html
 #[cfg(feature = "unstable")]
-pub trait NonAggregate = ValidGrouping<()>
-where
-    <Self as ValidGrouping<()>>::IsAggregate:
-        MixedAggregates<is_aggregate::No, Output = is_aggregate::No>;
+// this needs to be a separate module for the reasons given in
+// https://github.com/rust-lang/rust/issues/65860
+mod unstable;
+
+#[cfg(feature = "unstable")]
+#[doc(inline)]
+pub use self::unstable::NonAggregate;
 
 // Note that these docs are similar to but slightly different than the unstable
 // docs above. Make sure if you change these that you also change the docs
@@ -487,9 +869,7 @@ where
 /// unless you need to abstract over both columns and literals, you should
 /// prefer to use [`ValidGrouping<()>`] in your bounds instead.
 ///
-/// [`ValidGrouping<()>`]: trait.ValidGrouping.html
-/// [`is_aggregate::Yes`]: is_aggregate/struct.Yes.html
-/// [`is_aggregate::No`]: is_aggregate/struct.No.html
+/// [`ValidGrouping<()>`]: ValidGrouping
 #[cfg(not(feature = "unstable"))]
 pub trait NonAggregate: ValidGrouping<()> {}
 
@@ -517,7 +897,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// For cases where you want to dynamically construct a query,
 /// [boxing the query] is usually more ergonomic.
 ///
-/// [boxing the query]: ../query_dsl/trait.QueryDsl.html#method.into_boxed
+/// [boxing the query]: crate::query_dsl::QueryDsl::into_boxed()
 ///
 /// # Examples
 ///
@@ -533,7 +913,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let conn = establish_connection();
+/// #     let conn = &mut establish_connection();
 /// enum Search {
 ///     Id(i32),
 ///     Name(String),
@@ -542,7 +922,6 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// # /*
 /// type DB = diesel::sqlite::Sqlite;
 /// # */
-///
 /// fn find_user(search: Search) -> Box<dyn BoxableExpression<users::table, DB, SqlType = Bool>> {
 ///     match search {
 ///         Search::Id(id) => Box::new(users::id.eq(id)),
@@ -550,14 +929,12 @@ use crate::query_builder::{QueryFragment, QueryId};
 ///     }
 /// }
 ///
-/// let user_one = users::table
-///     .filter(find_user(Search::Id(1)))
-///     .first(&conn)?;
+/// let user_one = users::table.filter(find_user(Search::Id(1))).first(conn)?;
 /// assert_eq!((1, String::from("Sean")), user_one);
 ///
 /// let tess = users::table
 ///     .filter(find_user(Search::Name("Tess".into())))
-///     .first(&conn)?;
+///     .first(conn)?;
 /// assert_eq!((2, String::from("Tess")), tess);
 /// #     Ok(())
 /// # }
@@ -569,16 +946,16 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// # include!("../doctest_setup.rs");
 ///
 /// # use schema::users;
-/// use diesel::sql_types::Text;
 /// use diesel::dsl;
 /// use diesel::expression::ValidGrouping;
+/// use diesel::sql_types::Text;
 ///
 /// # fn main() {
 /// #     run_test().unwrap();
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let conn = establish_connection();
+/// #     let conn = &mut establish_connection();
 /// enum NameOrConst {
 ///     Name,
 ///     Const(String),
@@ -587,17 +964,16 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// # /*
 /// type DB = diesel::sqlite::Sqlite;
 /// # */
-///
 /// fn selection<GB>(
-///     selection: NameOrConst
+///     selection: NameOrConst,
 /// ) -> Box<
 ///     dyn BoxableExpression<
 ///         users::table,
 ///         DB,
 ///         GB,
 ///         <users::name as ValidGrouping<GB>>::IsAggregate,
-///         SqlType = Text
-///     >
+///         SqlType = Text,
+///     >,
 /// >
 /// where
 ///     users::name: BoxableExpression<
@@ -605,7 +981,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 ///             DB,
 ///             GB,
 ///             <users::name as ValidGrouping<GB>>::IsAggregate,
-///             SqlType = Text
+///             SqlType = Text,
 ///         > + ValidGrouping<GB>,
 /// {
 ///     match selection {
@@ -616,34 +992,36 @@ use crate::query_builder::{QueryFragment, QueryId};
 ///
 /// let user_one = users::table
 ///     .select(selection(NameOrConst::Name))
-///     .first::<String>(&conn)?;
+///     .first::<String>(conn)?;
 /// assert_eq!(String::from("Sean"), user_one);
 ///
 /// let with_name = users::table
 ///     .group_by(users::name)
 ///     .select(selection(NameOrConst::Const("Jane Doe".into())))
-///     .first::<String>(&conn)?;
+///     .first::<String>(conn)?;
 /// assert_eq!(String::from("Jane Doe"), with_name);
 /// #     Ok(())
 /// # }
 /// ```
 ///
 /// ## More advanced query source
+///
 /// This example is a bit contrived, but in general, if you want to for example filter based on
 /// different criteria on a joined table, you can use `InnerJoinQuerySource` and
 /// `LeftJoinQuerySource` in the QS parameter of `BoxableExpression`.
+///
 /// ```rust
 /// # include!("../doctest_setup.rs");
 /// # use schema::{users, posts};
-/// use diesel::sql_types::Bool;
 /// use diesel::dsl::InnerJoinQuerySource;
+/// use diesel::sql_types::Bool;
 ///
 /// # fn main() {
 /// #     run_test().unwrap();
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let conn = establish_connection();
+/// #     let conn = &mut establish_connection();
 /// enum UserPostFilter {
 ///     User(i32),
 ///     Post(i32),
@@ -652,11 +1030,11 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// # /*
 /// type DB = diesel::sqlite::Sqlite;
 /// # */
-///
 /// fn filter_user_posts(
 ///     filter: UserPostFilter,
-/// ) -> Box<dyn BoxableExpression<InnerJoinQuerySource<users::table, posts::table>, DB, SqlType = Bool>>
-/// {
+/// ) -> Box<
+///     dyn BoxableExpression<InnerJoinQuerySource<users::table, posts::table>, DB, SqlType = Bool>,
+/// > {
 ///     match filter {
 ///         UserPostFilter::User(user_id) => Box::new(users::id.eq(user_id)),
 ///         UserPostFilter::Post(post_id) => Box::new(posts::id.eq(post_id)),
@@ -667,7 +1045,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 ///     .inner_join(posts::table)
 ///     .filter(filter_user_posts(UserPostFilter::User(2)))
 ///     .select((posts::title, users::name))
-///     .first::<(String, String)>(&conn)?;
+///     .first::<(String, String)>(conn)?;
 ///
 /// assert_eq!(
 ///     ("My first post too".to_string(), "Tess".to_string()),
@@ -698,30 +1076,45 @@ where
 {
 }
 
-impl<'a, QS, ST, DB, GB, IsAggregate> QueryId
-    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a
+impl<QS, ST, DB, GB, IsAggregate> QueryId
+    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + '_
 {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<'a, QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
-    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a
+impl<QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
+    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + '_
 {
     type IsAggregate = IsAggregate;
 }
 
 /// Converts a tuple of values into a tuple of Diesel expressions.
-///
-/// This trait is similar to [`AsExpression`], but it operates on tuples.
-/// The expressions must all be of the same SQL type.
-///
-/// [`AsExpression`]: trait.AsExpression.html
+#[deprecated(note = "Use `IntoArrayExpression` instead")]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 pub trait AsExpressionList<ST> {
     /// The final output expression
     type Expression;
 
     /// Perform the conversion
+    // That's public API, we cannot change
+    // that to appease clippy
+    #[allow(clippy::wrong_self_convention)]
     fn as_expression_list(self) -> Self::Expression;
+}
+
+#[cfg(feature = "postgres_backend")]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+#[allow(deprecated)]
+impl<T, ST> AsExpressionList<ST> for T
+where
+    T: crate::pg::expression::array::IntoArrayExpression<ST>,
+    ST: SqlType + TypedExpressionType,
+{
+    type Expression = <T as crate::pg::expression::array::IntoArrayExpression<ST>>::ArrayExpression;
+
+    fn as_expression_list(self) -> Self::Expression {
+        self.into_array_expression()
+    }
 }

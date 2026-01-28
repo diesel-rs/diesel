@@ -1,3 +1,4 @@
+#![allow(clippy::expect_fun_call)]
 use diesel::connection::SimpleConnection;
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;
@@ -14,8 +15,9 @@ impl Database {
 
     pub fn create(self) -> Self {
         let (database, postgres_url) = self.split_url();
-        let conn = PgConnection::establish(&postgres_url).unwrap();
-        conn.execute(&format!(r#"CREATE DATABASE "{}""#, database))
+        let mut conn = PgConnection::establish(&postgres_url).unwrap();
+        diesel::sql_query(format!(r#"CREATE DATABASE "{}""#, database))
+            .execute(&mut conn)
             .unwrap();
         self
     }
@@ -32,7 +34,7 @@ impl Database {
              WHERE table_name = '{}')",
             table
         )))
-        .get_result(&self.conn())
+        .get_result(&mut self.conn())
         .unwrap()
     }
 
@@ -48,7 +50,7 @@ impl Database {
     }
 
     fn split_url(&self) -> (String, String) {
-        let mut split: Vec<&str> = self.url.split("/").collect();
+        let mut split: Vec<&str> = self.url.split('/').collect();
         let database = split.pop().unwrap();
         let postgres_url = format!("{}/{}", split.join("/"), "postgres");
         (database.into(), postgres_url)
@@ -58,12 +60,13 @@ impl Database {
 impl Drop for Database {
     fn drop(&mut self) {
         let (database, postgres_url) = self.split_url();
-        let conn = try_drop!(
+        let mut conn = try_drop!(
             PgConnection::establish(&postgres_url),
             "Couldn't connect to database"
         );
         try_drop!(
-            conn.execute(&format!(r#"DROP DATABASE IF EXISTS "{}""#, database)),
+            diesel::sql_query(format!(r#"DROP DATABASE IF EXISTS "{}""#, database))
+                .execute(&mut conn),
             "Couldn't drop database"
         );
     }

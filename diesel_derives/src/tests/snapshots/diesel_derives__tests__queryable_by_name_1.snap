@@ -1,0 +1,38 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(QueryableByName)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
+---
+const _: () = {
+    use diesel;
+    impl<__DB: diesel::backend::Backend> diesel::deserialize::QueryableByName<__DB>
+    for User
+    where
+        i32: diesel::deserialize::FromSql<diesel::dsl::SqlTypeOf<users::r#id>, __DB>,
+        String: diesel::deserialize::FromSql<
+            diesel::dsl::SqlTypeOf<users::r#name>,
+            __DB,
+        >,
+    {
+        fn build<'__a>(
+            row: &impl diesel::row::NamedRow<'__a, __DB>,
+        ) -> diesel::deserialize::Result<Self> {
+            let mut id = {
+                let field = diesel::row::NamedRow::get::<
+                    diesel::dsl::SqlTypeOf<users::r#id>,
+                    i32,
+                >(row, "id")?;
+                <i32 as std::convert::Into<i32>>::into(field)
+            };
+            let mut name = {
+                let field = diesel::row::NamedRow::get::<
+                    diesel::dsl::SqlTypeOf<users::r#name>,
+                    String,
+                >(row, "name")?;
+                <String as std::convert::Into<String>>::into(field)
+            };
+            diesel::deserialize::Result::Ok(Self { id: id, name: name })
+        }
+    }
+};

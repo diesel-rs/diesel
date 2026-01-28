@@ -31,9 +31,9 @@ fn derive_identifiable_on_simple_struct() {
 fn derive_identifiable_on_tuple_struct() {
     #[derive(Identifiable)]
     struct Foo(
-        #[column_name = "id"] i32,
+        #[diesel(column_name = id)] i32,
         #[allow(dead_code)]
-        #[column_name = "lol"]
+        #[diesel(column_name = lol)]
         i32,
     );
 
@@ -61,7 +61,7 @@ fn derive_identifiable_when_id_is_not_first_field() {
 #[test]
 fn derive_identifiable_on_struct_with_non_integer_pk() {
     #[derive(Identifiable)]
-    #[table_name = "bars"]
+    #[diesel(table_name = bars)]
     struct Foo {
         id: &'static str,
         #[allow(dead_code)]
@@ -80,7 +80,7 @@ fn derive_identifiable_on_struct_with_non_integer_pk() {
 #[test]
 fn derive_identifiable_on_struct_with_lifetime() {
     #[derive(Identifiable)]
-    #[table_name = "bars"]
+    #[diesel(table_name = bars)]
     struct Foo<'a> {
         id: &'a str,
         #[allow(dead_code)]
@@ -100,8 +100,8 @@ fn derive_identifiable_on_struct_with_lifetime() {
 fn derive_identifiable_with_non_standard_pk() {
     #[allow(dead_code)]
     #[derive(Identifiable)]
-    #[table_name = "bars"]
-    #[primary_key(foo_id)]
+    #[diesel(table_name = bars)]
+    #[diesel(primary_key(foo_id))]
     struct Foo<'a> {
         id: i32,
         foo_id: &'a str,
@@ -126,8 +126,8 @@ fn derive_identifiable_with_non_standard_pk() {
 fn derive_identifiable_with_composite_pk() {
     #[allow(dead_code)]
     #[derive(Identifiable)]
-    #[table_name = "bars"]
-    #[primary_key(foo_id, bar_id)]
+    #[diesel(table_name = bars)]
+    #[diesel(primary_key(foo_id, bar_id))]
     struct Foo {
         id: i32,
         foo_id: i32,
@@ -149,4 +149,50 @@ fn derive_identifiable_with_composite_pk() {
     };
     assert_eq!((&2, &3), foo1.id());
     assert_eq!((&6, &7), foo2.id());
+}
+
+#[test]
+fn derive_identifiable_with_pk_serialize_as() {
+    #[derive(Debug, PartialEq, Eq, Hash)]
+    struct MyI32(i32);
+
+    impl From<i32> for MyI32 {
+        fn from(value: i32) -> Self {
+            MyI32(value)
+        }
+    }
+
+    #[derive(Identifiable)]
+    struct Foo {
+        #[diesel(serialize_as = MyI32)]
+        id: i32,
+    }
+
+    let foo1 = Foo { id: 1 };
+    let foo2 = Foo { id: 2 };
+    assert_eq!(MyI32(1), foo1.id());
+    assert_eq!(MyI32(2), foo2.id());
+}
+
+#[test]
+fn derive_identifiable_with_non_copy_pk_serialize() {
+    #[derive(Debug, PartialEq, Eq, Hash)]
+    struct MyString(String);
+
+    impl From<String> for MyString {
+        fn from(value: String) -> Self {
+            MyString(value)
+        }
+    }
+
+    #[derive(Identifiable)]
+    struct Foo {
+        #[diesel(serialize_as = MyString)]
+        id: String,
+    }
+
+    let foo1 = Foo { id: "1".to_owned() };
+    let foo2 = Foo { id: "2".to_owned() };
+    assert_eq!(MyString("1".to_owned()), foo1.id());
+    assert_eq!(MyString("2".to_owned()), foo2.id());
 }

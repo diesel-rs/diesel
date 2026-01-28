@@ -23,17 +23,24 @@ use crate::data_types::PgInterval;
 /// #
 /// # fn main() {
 /// #     use self::users::dsl::*;
-/// #     let connection = connection_no_data();
-/// #     connection.execute("CREATE TABLE users (id serial primary key, name
-/// #        varchar not null, created_at timestamp not null)").unwrap();
-/// connection.execute("INSERT INTO users (name, created_at) VALUES
+/// #     let connection = &mut connection_no_data();
+/// #     diesel::sql_query("CREATE TABLE users (id serial primary key, name
+/// #        varchar not null, created_at timestamp not null)")
+/// #     .execute(connection)
+/// #     .unwrap();
+/// diesel::sql_query(
+///     "INSERT INTO users (name, created_at) VALUES
 ///     ('Sean', NOW()), ('Tess', NOW() - '5 minutes'::interval),
-///     ('Jim', NOW() - '10 minutes'::interval)").unwrap();
+///     ('Jim', NOW() - '10 minutes'::interval)",
+/// )
+/// .execute(connection)
+/// .unwrap();
 ///
 /// let mut data: Vec<String> = users
 ///     .select(name)
 ///     .filter(created_at.gt(now - 7.minutes()))
-///     .load(&connection).unwrap();
+///     .load(connection)
+///     .unwrap();
 /// assert_eq!(2, data.len());
 /// assert_eq!("Sean".to_string(), data[0]);
 /// assert_eq!("Tess".to_string(), data[1]);
@@ -54,22 +61,30 @@ use crate::data_types::PgInterval;
 /// #
 /// # fn main() {
 /// #     use self::users::dsl::*;
-/// #     let connection = connection_no_data();
-/// #     connection.execute("CREATE TABLE users (id serial primary key, name
-/// #        varchar not null, created_at timestamp not null)").unwrap();
-/// connection.execute("INSERT INTO users (name, created_at) VALUES
+/// #     let connection = &mut connection_no_data();
+/// #     diesel::sql_query("CREATE TABLE users (id serial primary key, name
+/// #        varchar not null, created_at timestamp not null)")
+/// #     .execute(connection)
+/// #     .unwrap();
+/// diesel::sql_query(
+///     "INSERT INTO users (name, created_at) VALUES
 ///     ('Sean', NOW()), ('Tess', NOW() - '5 days'::interval),
-///     ('Jim', NOW() - '10 days'::interval)").unwrap();
+///     ('Jim', NOW() - '10 days'::interval)",
+/// )
+/// .execute(connection)
+/// .unwrap();
 ///
 /// let mut data: Vec<String> = users
 ///     .select(name)
 ///     .filter(created_at.gt(now - 7.days()))
-///     .load(&connection).unwrap();
+///     .load(connection)
+///     .unwrap();
 /// assert_eq!(2, data.len());
 /// assert_eq!("Sean".to_string(), data[0]);
 /// assert_eq!("Tess".to_string(), data[1]);
 /// # }
 /// ```
+#[cfg(feature = "postgres_backend")]
 pub trait IntervalDsl: Sized + From<i32> + Mul<Self, Output = Self> {
     /// Returns a PgInterval representing `self` as microseconds
     fn microseconds(self) -> PgInterval;
@@ -115,7 +130,7 @@ pub trait IntervalDsl: Sized + From<i32> + Mul<Self, Output = Self> {
     ///
     /// ```rust
     /// # use diesel::dsl::*;
-    /// assert_eq!(1.08.years(), 1.year());
+    /// assert_eq!(1.04.years(), 1.year());
     /// assert_eq!(1.09.years(), 1.year() + 1.month());
     /// ```
     fn years(self) -> PgInterval {
@@ -204,14 +219,19 @@ impl IntervalDsl for i64 {
     }
 
     fn days(self) -> PgInterval {
-        (self as i32).days()
+        i32::try_from(self)
+            .expect("Maximal supported day interval size is 32 bit")
+            .days()
     }
 
     fn months(self) -> PgInterval {
-        (self as i32).months()
+        i32::try_from(self)
+            .expect("Maximal supported month interval size is 32 bit")
+            .months()
     }
 }
 
+#[allow(clippy::cast_possible_truncation)] // we want to truncate
 impl IntervalDsl for f64 {
     fn microseconds(self) -> PgInterval {
         (self.round() as i64).microseconds()
@@ -228,93 +248,112 @@ impl IntervalDsl for f64 {
     }
 
     fn years(self) -> PgInterval {
-        ((self * 12.0).trunc() as i32).months()
+        ((self * 12.0).round() as i32).months()
     }
 }
 
 #[cfg(test)]
+// those macros define nested function
+// that's fine for this test code
+#[allow(clippy::items_after_statements)]
 mod tests {
-    extern crate dotenv;
+    extern crate dotenvy;
     extern crate quickcheck;
 
-    use self::dotenv::dotenv;
     use self::quickcheck::quickcheck;
 
     use super::*;
-    use crate::data_types::PgInterval;
     use crate::dsl::sql;
     use crate::prelude::*;
+    use crate::test_helpers::*;
     use crate::{select, sql_types};
 
-    thread_local! {
-        static CONN: PgConnection = {
-            dotenv().ok();
-
-            let connection_url = ::std::env::var("PG_DATABASE_URL")
-                .or_else(|_| ::std::env::var("DATABASE_URL"))
-                .expect("DATABASE_URL must be set in order to run tests");
-            PgConnection::establish(&connection_url).unwrap()
-        }
-    }
-
     macro_rules! test_fn {
-        ($tpe:ty, $test_name:ident, $units:ident) => {
+        ($tpe:ty, $test_name:ident, $units: ident, $max_range: expr) => {
+            test_fn!($tpe, $test_name, $units, $max_range, 1, 0);
+        };
+        ($tpe:ty, $test_name:ident, $units:ident, $max_range: expr, $max_diff: expr) => {
+            test_fn!($tpe, $test_name, $units, $max_range, $max_diff, 0);
+        };
+        ($tpe:ty, $test_name:ident, $units:ident, $max_range: expr, $max_diff: expr, $max_month_diff: expr) => {
             fn $test_name(val: $tpe) -> bool {
-                CONN.with(|connection| {
-                    let sql_str = format!(concat!("'{} ", stringify!($units), "'::interval"), val);
-                    let query = select(sql::<sql_types::Interval>(&sql_str));
-                    let val = val.$units();
-                    query
-                        .get_result::<PgInterval>(connection)
-                        .map(|res| {
-                            val.months == res.months
-                                && val.days == res.days
-                                && val.microseconds - res.microseconds.abs() <= 1
-                        })
-                        .unwrap_or(false)
-                })
+                if val > $max_range || val < (-1 as $tpe) * $max_range || (val as f64).is_nan() {
+                    return true;
+                }
+                let conn = &mut pg_connection();
+                let sql_str = format!(concat!("'{} ", stringify!($units), "'::interval"), val);
+                let query = select(sql::<sql_types::Interval>(&sql_str));
+                let value = val.$units();
+                query
+                    .get_result::<PgInterval>(conn)
+                    .map(|res| {
+                        (value.months - res.months).abs() <= $max_month_diff
+                            && value.days == res.days
+                            && (value.microseconds - res.microseconds).abs() <= $max_diff
+                    })
+                    .unwrap_or(false)
             }
 
             quickcheck($test_name as fn($tpe) -> bool);
         };
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn intervals_match_pg_values_i32() {
-        test_fn!(i32, test_microseconds, microseconds);
-        test_fn!(i32, test_milliseconds, milliseconds);
-        test_fn!(i32, test_seconds, seconds);
-        test_fn!(i32, test_minutes, minutes);
-        test_fn!(i32, test_hours, hours);
-        test_fn!(i32, test_days, days);
-        test_fn!(i32, test_weeks, weeks);
-        test_fn!(i32, test_months, months);
-        test_fn!(i32, test_years, years);
+        test_fn!(i32, test_microseconds, microseconds, i32::MAX);
+        test_fn!(i32, test_milliseconds, milliseconds, i32::MAX);
+        test_fn!(i32, test_seconds, seconds, i32::MAX);
+        test_fn!(i32, test_minutes, minutes, i32::MAX);
+        test_fn!(i32, test_hours, hours, i32::MAX);
+        test_fn!(i32, test_days, days, i32::MAX);
+        test_fn!(i32, test_weeks, weeks, i32::MAX / 7);
+        test_fn!(i32, test_months, months, i32::MAX);
+        test_fn!(i32, test_years, years, i32::MAX / 12);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn intervals_match_pg_values_i64() {
-        test_fn!(i64, test_microseconds, microseconds);
-        test_fn!(i64, test_milliseconds, milliseconds);
-        test_fn!(i64, test_seconds, seconds);
-        test_fn!(i64, test_minutes, minutes);
-        test_fn!(i64, test_hours, hours);
-        test_fn!(i64, test_days, days);
-        test_fn!(i64, test_weeks, weeks);
-        test_fn!(i64, test_months, months);
-        test_fn!(i64, test_years, years);
+        // postgres does not really support intervals with more than i32::MAX microseconds
+        // https://www.postgresql.org/message-id/20140126025049.GL9750@momjian.us
+        test_fn!(i64, test_microseconds, microseconds, i32::MAX as i64);
+        test_fn!(i64, test_milliseconds, milliseconds, i32::MAX as i64);
+        test_fn!(i64, test_seconds, seconds, i32::MAX as i64);
+        test_fn!(i64, test_minutes, minutes, i32::MAX as i64);
+        test_fn!(i64, test_hours, hours, i32::MAX as i64);
+        test_fn!(i64, test_days, days, i32::MAX as i64);
+        test_fn!(i64, test_weeks, weeks, (i32::MAX / 7) as i64);
+        test_fn!(i64, test_months, months, i32::MAX as i64);
+        test_fn!(i64, test_years, years, (i32::MAX / 12) as i64);
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn intervals_match_pg_values_f64() {
-        test_fn!(f64, test_microseconds, microseconds);
-        test_fn!(f64, test_milliseconds, milliseconds);
-        test_fn!(f64, test_seconds, seconds);
-        test_fn!(f64, test_minutes, minutes);
-        test_fn!(f64, test_hours, hours);
-        test_fn!(f64, test_days, days);
-        test_fn!(f64, test_weeks, weeks);
-        test_fn!(f64, test_months, months);
-        test_fn!(f64, test_years, years);
+        const MAX_DIFF: i64 = 1_000_000;
+        // postgres does not really support intervals with more than i32::MAX microseconds
+        // https://www.postgresql.org/message-id/20140126025049.GL9750@momjian.us
+        test_fn!(
+            f64,
+            test_microseconds,
+            microseconds,
+            i32::MAX as f64,
+            MAX_DIFF
+        );
+        test_fn!(
+            f64,
+            test_milliseconds,
+            milliseconds,
+            i32::MAX as f64,
+            MAX_DIFF
+        );
+        test_fn!(f64, test_seconds, seconds, i32::MAX as f64, MAX_DIFF);
+        test_fn!(f64, test_minutes, minutes, i32::MAX as f64, MAX_DIFF);
+        test_fn!(f64, test_hours, hours, i32::MAX as f64, MAX_DIFF);
+        test_fn!(f64, test_days, days, i32::MAX as f64, MAX_DIFF);
+        test_fn!(f64, test_weeks, weeks, (i32::MAX / 7) as f64, MAX_DIFF);
+        test_fn!(f64, test_months, months, i32::MAX as f64, MAX_DIFF);
+        // different postgres versions seem to round intervals with years differently
+        // -1681.9781874756495 years is reported as -20183 months for postgres 14
+        // and as -20184 months for postgres 16
+        test_fn!(f64, test_years, years, (i32::MAX / 12) as f64, MAX_DIFF, 1);
     }
 }

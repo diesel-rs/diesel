@@ -1,10 +1,63 @@
-use crate::backend::Backend;
+use super::from_clause::AsQuerySource;
 use crate::expression::{Expression, SelectableExpression};
 use crate::query_builder::*;
 use crate::query_source::QuerySource;
 
-#[derive(Debug, Clone, Copy, QueryId)]
-pub struct DefaultSelectClause;
+#[doc(hidden)]
+pub struct DefaultSelectClause<QS: AsQuerySource> {
+    default_selection: <QS::QuerySource as QuerySource>::DefaultSelection,
+}
+
+impl<QS> std::fmt::Debug for DefaultSelectClause<QS>
+where
+    QS: AsQuerySource,
+    <QS::QuerySource as QuerySource>::DefaultSelection: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DefaultSelectClause")
+            .field("default_selection", &self.default_selection)
+            .finish()
+    }
+}
+
+impl<QS> Clone for DefaultSelectClause<QS>
+where
+    QS: AsQuerySource,
+    <QS::QuerySource as QuerySource>::DefaultSelection: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            default_selection: self.default_selection.clone(),
+        }
+    }
+}
+
+impl<QS> Copy for DefaultSelectClause<QS>
+where
+    QS: AsQuerySource,
+    <QS::QuerySource as QuerySource>::DefaultSelection: Copy,
+{
+}
+
+impl<QS: AsQuerySource> DefaultSelectClause<QS> {
+    pub(crate) fn new(qs: &QS) -> Self {
+        Self {
+            default_selection: qs.as_query_source().default_selection(),
+        }
+    }
+}
+
+impl<QS> QueryId for DefaultSelectClause<QS>
+where
+    QS: AsQuerySource,
+    <QS::QuerySource as QuerySource>::DefaultSelection: QueryId,
+{
+    type QueryId = <<QS::QuerySource as QuerySource>::DefaultSelection as QueryId>::QueryId;
+
+    const HAS_STATIC_QUERY_ID: bool =
+        <<QS::QuerySource as QuerySource>::DefaultSelection as QueryId>::HAS_STATIC_QUERY_ID;
+}
+
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct SelectClause<T>(pub T);
 
@@ -12,99 +65,59 @@ pub struct SelectClause<T>(pub T);
 ///
 /// The difference to the normal `Expression` trait is the query source (`QS`)
 /// generic type parameter. This allows to access the query source in generic code.
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
 pub trait SelectClauseExpression<QS> {
     /// The expression represented by the given select clause
-    type Selection: SelectableExpression<QS>;
+    type Selection;
     /// SQL type of the select clause
     type SelectClauseSqlType;
 }
 
-impl<T, QS> SelectClauseExpression<QS> for SelectClause<T>
+impl<T, QS> SelectClauseExpression<FromClause<QS>> for SelectClause<T>
 where
+    QS: QuerySource,
     T: SelectableExpression<QS>,
 {
     type Selection = T;
     type SelectClauseSqlType = T::SqlType;
 }
 
-impl<QS> SelectClauseExpression<QS> for DefaultSelectClause
+impl<T> SelectClauseExpression<NoFromClause> for SelectClause<T>
+where
+    T: SelectableExpression<NoFromClause>,
+{
+    type Selection = T;
+    type SelectClauseSqlType = T::SqlType;
+}
+
+impl<QS> SelectClauseExpression<FromClause<QS>> for DefaultSelectClause<FromClause<QS>>
 where
     QS: QuerySource,
 {
     type Selection = QS::DefaultSelection;
-    type SelectClauseSqlType = <QS::DefaultSelection as Expression>::SqlType;
+    type SelectClauseSqlType = <Self::Selection as Expression>::SqlType;
 }
 
-/// Specialised variant of `QueryFragment` for select clause types
-///
-/// The difference to the normal `QueryFragment` trait is the query source (`QS`)
-/// generic type parameter.
-pub trait SelectClauseQueryFragment<QS, DB: Backend> {
-    /// Walk over this `SelectClauseQueryFragment` for all passes.
-    ///
-    /// This method is where the actual behavior of an select clause is implemented.
-    /// This method will contain the behavior required for all possible AST
-    /// passes. See [`AstPass`] for more details.
-    ///
-    /// [`AstPass`]: struct.AstPass.html
-    fn walk_ast(&self, source: &QS, pass: AstPass<DB>) -> QueryResult<()>;
-}
-
-impl<T, QS, DB> SelectClauseQueryFragment<QS, DB> for SelectClause<T>
+impl<T, DB> QueryFragment<DB> for SelectClause<T>
 where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, _: &QS, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.0.walk_ast(pass)
     }
 }
 
-impl<QS, DB> SelectClauseQueryFragment<QS, DB> for DefaultSelectClause
+impl<QS, DB> QueryFragment<DB> for DefaultSelectClause<QS>
 where
     DB: Backend,
-    QS: QuerySource,
-    QS::DefaultSelection: QueryFragment<DB>,
+    QS: AsQuerySource,
+    <QS::QuerySource as QuerySource>::DefaultSelection: QueryFragment<DB>,
 {
-    fn walk_ast(&self, source: &QS, pass: AstPass<DB>) -> QueryResult<()> {
-        source.default_selection().walk_ast(pass)
-    }
-}
-
-/// An internal helper trait to convert different select clauses
-/// into their boxed counter part.
-///
-/// You normally don't need this trait, at least as long as you
-/// don't implement your own select clause representation
-pub trait IntoBoxedSelectClause<'a, DB, QS> {
-    /// The sql type of the select clause
-    type SqlType;
-
-    /// Convert the select clause into a the boxed representation
-    fn into_boxed(self, source: &QS) -> Box<dyn QueryFragment<DB> + Send + 'a>;
-}
-
-impl<'a, DB, T, QS> IntoBoxedSelectClause<'a, DB, QS> for SelectClause<T>
-where
-    T: QueryFragment<DB> + SelectableExpression<QS> + Send + 'a,
-    DB: Backend,
-{
-    type SqlType = T::SqlType;
-
-    fn into_boxed(self, _source: &QS) -> Box<dyn QueryFragment<DB> + Send + 'a> {
-        Box::new(self.0)
-    }
-}
-
-impl<'a, DB, QS> IntoBoxedSelectClause<'a, DB, QS> for DefaultSelectClause
-where
-    QS: QuerySource,
-    QS::DefaultSelection: QueryFragment<DB> + Send + 'a,
-    DB: Backend,
-{
-    type SqlType = <QS::DefaultSelection as Expression>::SqlType;
-
-    fn into_boxed(self, source: &QS) -> Box<dyn QueryFragment<DB> + Send + 'a> {
-        Box::new(source.default_selection())
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.default_selection.walk_ast(pass)
     }
 }

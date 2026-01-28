@@ -18,18 +18,20 @@ pub struct User {
 }
 
 #[derive(Insertable)]
-#[table_name = "users"]
-pub struct NewUser(#[column_name = "name"] String);
+#[diesel(table_name = users)]
+pub struct NewUser(#[diesel(column_name = name)] String);
 
 fn main() {
-    let connection = SqliteConnection::establish(":memory:").unwrap();
+    let mut connection = SqliteConnection::establish(":memory:").unwrap();
 
     insert_into(users::table)
         .values(&NewUser("Hello".into()))
-        .get_result::<User>(&connection);
+        .get_result::<User>(&mut connection);
+    //~^ ERROR: `ReturningClause<(columns::id, columns::name)>` is no valid SQL fragment for the `Sqlite` backend
 
     insert_into(users::table)
         .values(&NewUser("Hello".into()))
         .returning(users::name)
-        .get_result::<String>(&connection);
+        .get_result::<String>(&mut connection);
+    //~^ ERROR: `ReturningClause<columns::name>` is no valid SQL fragment for the `Sqlite` backend
 }

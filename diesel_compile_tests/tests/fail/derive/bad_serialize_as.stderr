@@ -1,0 +1,24 @@
+error: unexpected end of input, expected `=`
+       help: the correct format looks like `#[diesel(serialize_as = Foo)]`
+  --> tests/fail/derive/bad_serialize_as.rs:15:26
+   |
+LL |     #[diesel(serialize_as)]
+   |                          ^
+
+error: expected `=`
+  --> tests/fail/derive/bad_serialize_as.rs:24:26
+   |
+LL |     #[diesel(serialize_as(Foo))]
+   |                          ^
+
+error: expected identifier
+  --> tests/fail/derive/bad_serialize_as.rs:33:29
+   |
+LL |     #[diesel(serialize_as = "foo")]
+   |                             ^^^^^
+
+error: expected identifier
+  --> tests/fail/derive/bad_serialize_as.rs:42:29
+   |
+LL |     #[diesel(serialize_as = 1omg)]
+   |                             ^^^^

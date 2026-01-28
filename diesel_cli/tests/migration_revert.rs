@@ -10,7 +10,8 @@ fn migration_revert_runs_the_last_migration_down() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
+        None,
     );
 
     // Make sure the project is setup
@@ -38,7 +39,8 @@ fn migration_revert_respects_migration_dir_var() {
         "foo",
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
+        None,
     );
 
     // Make sure the project is setup.
@@ -70,7 +72,8 @@ fn migration_revert_respects_migration_dir_env() {
         "bar",
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
+        None,
     );
 
     // Make sure the project is setup.
@@ -112,7 +115,8 @@ fn migration_revert_respects_migration_dir_from_diesel_toml() {
         "custom_migrations",
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
+        None,
     );
 
     // Make sure the project is setup.
@@ -141,19 +145,22 @@ fn migration_revert_runs_the_last_two_migration_down() {
     p.create_migration(
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE customers",
+        Some("DROP TABLE customers"),
+        None,
     );
 
     p.create_migration(
         "2017-09-03-210424_create_contracts",
         "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE contracts",
+        Some("DROP TABLE contracts"),
+        None,
     );
 
     p.create_migration(
         "2017-09-12-210424_create_bills",
         "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE bills",
+        Some("DROP TABLE bills"),
+        None,
     );
 
     // Make sure the project is setup
@@ -194,19 +201,22 @@ fn migration_revert_all_runs_the_migrations_down() {
     p.create_migration(
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE customers",
+        Some("DROP TABLE customers"),
+        None,
     );
 
     p.create_migration(
         "2017-09-03-210424_create_contracts",
         "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE contracts",
+        Some("DROP TABLE contracts"),
+        None,
     );
 
     p.create_migration(
         "2017-09-12-210424_create_bills",
         "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE bills",
+        Some("DROP TABLE bills"),
+        None,
     );
 
     // Make sure the project is setup
@@ -244,7 +254,8 @@ fn migration_revert_with_zero_should_not_revert_any_migration() {
     p.create_migration(
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE customers",
+        Some("DROP TABLE customers"),
+        None,
     );
 
     // Make sure the project is setup
@@ -259,8 +270,11 @@ fn migration_revert_with_zero_should_not_revert_any_migration() {
         .arg("-n")
         .arg("0")
         .run();
-
-    assert!(!result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.is_success(),
+        "Result was unsuccessful '{:?}'",
+        result
+    );
     assert!(result.stdout() == "");
 }
 
@@ -281,10 +295,13 @@ fn migration_revert_n_with_a_string_should_throw_an_error() {
         .arg("infinite")
         .run();
 
-    assert!(!result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!result.is_success(), "Result was successful {:?}", result);
 
     assert!(
-        result.stderr() == "error: Invalid value for '--number <REVERT_NUMBER>': infinite isn't a positive integer.\n",
+        result.stderr()
+            == "error: invalid value 'infinite' for '--number <REVERT_NUMBER>': \
+                invalid digit found in string\n\n\
+                For more information, try '--help'.\n",
         "Unexpected stderr : {}",
         result.stderr()
     );
@@ -300,19 +317,22 @@ fn migration_revert_with_more_than_max_should_revert_all() {
     p.create_migration(
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE customers",
+        Some("DROP TABLE customers"),
+        None,
     );
 
     p.create_migration(
         "2017-09-03-210424_create_contracts",
         "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE contracts",
+        Some("DROP TABLE contracts"),
+        None,
     );
 
     p.create_migration(
         "2017-09-12-210424_create_bills",
         "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE bills",
+        Some("DROP TABLE bills"),
+        None,
     );
 
     // Make sure the project is setup
@@ -343,4 +363,45 @@ fn migration_revert_with_more_than_max_should_revert_all() {
     assert!(!db.table_exists("customers"));
     assert!(!db.table_exists("contracts"));
     assert!(!db.table_exists("bills"));
+}
+
+#[test]
+fn migration_revert_gives_reasonable_error_message_on_missing_down() {
+    let p = project("migration_revert_error_message_on_missing_down")
+        .folder("migrations")
+        .build();
+    let db = database(&p.database_url());
+
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        None,
+        None,
+    );
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    assert!(db.table_exists("users"));
+
+    let result = p.command("migration").arg("revert").run();
+
+    assert!(
+        !result.is_success(),
+        "Result was successful when it shouldn't be {:?}",
+        result
+    );
+    assert!(
+        result.stdout().contains("Rolling back migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(
+        result
+            .stderr()
+            .contains("Missing `down.sql` file to revert migration"),
+        "Unexpected stderr {}",
+        result.stderr()
+    );
+    assert!(db.table_exists("users"));
 }

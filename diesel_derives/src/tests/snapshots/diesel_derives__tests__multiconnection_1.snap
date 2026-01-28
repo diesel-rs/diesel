@@ -1,0 +1,2045 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(MultiConnection)]\nenum DbConnection {\n    Pg(PgConnection),\n    Sqlite(diesel::SqliteConnection),\n}\n"
+---
+mod multi_connection_impl {
+    use super::*;
+    mod backend {
+        use super::*;
+        pub enum MultiBackend {
+            Pg(<PgConnection as diesel::Connection>::Backend),
+            Sqlite(<diesel::SqliteConnection as diesel::Connection>::Backend),
+        }
+        impl MultiBackend {
+            pub(super) fn pg(&self) -> &<PgConnection as diesel::Connection>::Backend {
+                match self {
+                    Self::Pg(b) => b,
+                    _ => unreachable!(),
+                }
+            }
+            pub(super) fn sqlite(
+                &self,
+            ) -> &<diesel::SqliteConnection as diesel::Connection>::Backend {
+                match self {
+                    Self::Sqlite(b) => b,
+                    _ => unreachable!(),
+                }
+            }
+            pub fn lookup_sql_type<ST>(
+                lookup: &mut dyn std::any::Any,
+            ) -> MultiTypeMetadata
+            where
+                <PgConnection as diesel::Connection>::Backend: diesel::sql_types::HasSqlType<
+                    ST,
+                >,
+                <diesel::SqliteConnection as diesel::Connection>::Backend: diesel::sql_types::HasSqlType<
+                    ST,
+                >,
+            {
+                let mut ret = MultiTypeMetadata::default();
+                if let Some(lookup) = <PgConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                    lookup,
+                ) {
+                    ret.Pg = Some(
+                        <<PgConnection as diesel::Connection>::Backend as diesel::sql_types::HasSqlType<
+                            ST,
+                        >>::metadata(lookup),
+                    );
+                }
+                if let Some(lookup) = <diesel::SqliteConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                    lookup,
+                ) {
+                    ret.Sqlite = Some(
+                        <<diesel::SqliteConnection as diesel::Connection>::Backend as diesel::sql_types::HasSqlType<
+                            ST,
+                        >>::metadata(lookup),
+                    );
+                }
+                ret
+            }
+        }
+        impl MultiBackend {
+            pub fn walk_variant_ast<'b, T>(
+                ast_node: &'b T,
+                pass: diesel::query_builder::AstPass<'_, 'b, Self>,
+            ) -> diesel::QueryResult<()>
+            where
+                T: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::Connection>::Backend,
+                >,
+                T: diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::Connection>::Backend,
+                >,
+            {
+                use diesel::internal::derives::multiconnection::AstPassHelper;
+                match pass.backend() {
+                    super::backend::MultiBackend::Pg(_) => {
+                        <T as diesel::query_builder::QueryFragment<
+                            <PgConnection as diesel::connection::Connection>::Backend,
+                        >>::walk_ast(
+                            ast_node,
+                            pass
+                                .cast_database(
+                                    super::bind_collector::MultiBindCollector::pg,
+                                    super::query_builder::MultiQueryBuilder::pg,
+                                    super::backend::MultiBackend::pg,
+                                    |l| {
+                                        <PgConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                                                l,
+                                            )
+                                            .expect(
+                                                "It's possible to downcast the metadata lookup type to the correct type",
+                                            )
+                                    },
+                                ),
+                        )
+                    }
+                    super::backend::MultiBackend::Sqlite(_) => {
+                        <T as diesel::query_builder::QueryFragment<
+                            <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                        >>::walk_ast(
+                            ast_node,
+                            pass
+                                .cast_database(
+                                    super::bind_collector::MultiBindCollector::sqlite,
+                                    super::query_builder::MultiQueryBuilder::sqlite,
+                                    super::backend::MultiBackend::sqlite,
+                                    |l| {
+                                        <diesel::SqliteConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                                                l,
+                                            )
+                                            .expect(
+                                                "It's possible to downcast the metadata lookup type to the correct type",
+                                            )
+                                    },
+                                ),
+                        )
+                    }
+                }
+            }
+        }
+        pub enum MultiRawValue<'a> {
+            Pg(
+                <<PgConnection as diesel::Connection>::Backend as diesel::backend::Backend>::RawValue<
+                    'a,
+                >,
+            ),
+            Sqlite(
+                <<diesel::SqliteConnection as diesel::Connection>::Backend as diesel::backend::Backend>::RawValue<
+                    'a,
+                >,
+            ),
+        }
+        impl MultiRawValue<'_> {
+            pub fn from_sql<T, ST>(self) -> diesel::deserialize::Result<T>
+            where
+                T: diesel::deserialize::FromSql<
+                    ST,
+                    <PgConnection as diesel::Connection>::Backend,
+                >,
+                T: diesel::deserialize::FromSql<
+                    ST,
+                    <diesel::SqliteConnection as diesel::Connection>::Backend,
+                >,
+            {
+                match self {
+                    Self::Pg(b) => {
+                        <T as diesel::deserialize::FromSql<
+                            ST,
+                            <PgConnection as diesel::Connection>::Backend,
+                        >>::from_sql(b)
+                    }
+                    Self::Sqlite(b) => {
+                        <T as diesel::deserialize::FromSql<
+                            ST,
+                            <diesel::SqliteConnection as diesel::Connection>::Backend,
+                        >>::from_sql(b)
+                    }
+                }
+            }
+        }
+        impl diesel::backend::Backend for MultiBackend {
+            type QueryBuilder = super::query_builder::MultiQueryBuilder;
+            type RawValue<'a> = MultiRawValue<'a>;
+            type BindCollector<'a> = super::bind_collector::MultiBindCollector<'a>;
+        }
+        #[derive(Default)]
+        #[allow(non_snake_case)]
+        pub struct MultiTypeMetadata {
+            pub(super) Pg: Option<
+                <<PgConnection as diesel::Connection>::Backend as diesel::sql_types::TypeMetadata>::TypeMetadata,
+            >,
+            pub(super) Sqlite: Option<
+                <<diesel::SqliteConnection as diesel::Connection>::Backend as diesel::sql_types::TypeMetadata>::TypeMetadata,
+            >,
+        }
+        impl diesel::sql_types::TypeMetadata for MultiBackend {
+            type TypeMetadata = MultiTypeMetadata;
+            type MetadataLookup = dyn std::any::Any;
+        }
+        pub struct MultiReturningClause;
+        pub struct MultiInsertWithDefaultKeyword;
+        pub struct MultiBatchInsertSupport;
+        pub struct MultiDefaultValueClauseForInsert;
+        pub struct MultiEmptyFromClauseSyntax;
+        pub struct MultiExistsSyntax;
+        pub struct MultiArrayComparisonSyntax;
+        pub struct MultiConcatClauseSyntax;
+        pub struct MultiSelectStatementSyntax;
+        pub struct MultiAliasSyntax;
+        pub struct MultiWindowFrameClauseGroupSupport;
+        pub struct MultiWindowFrameExclusionSupport;
+        pub struct MultiAggregateFunctionExpressions;
+        pub struct MultiBuiltInWindowFunctionRequireOrder;
+        impl diesel::backend::SqlDialect for MultiBackend {
+            type ReturningClause = MultiReturningClause;
+            type OnConflictClause = diesel::internal::derives::multiconnection::sql_dialect::on_conflict_clause::DoesNotSupportOnConflictClause;
+            type InsertWithDefaultKeyword = MultiInsertWithDefaultKeyword;
+            type BatchInsertSupport = MultiBatchInsertSupport;
+            type DefaultValueClauseForInsert = MultiDefaultValueClauseForInsert;
+            type EmptyFromClauseSyntax = MultiEmptyFromClauseSyntax;
+            type ExistsSyntax = MultiExistsSyntax;
+            type ArrayComparison = MultiArrayComparisonSyntax;
+            type ConcatClause = MultiConcatClauseSyntax;
+            type SelectStatementSyntax = MultiSelectStatementSyntax;
+            type AliasSyntax = MultiAliasSyntax;
+            type WindowFrameClauseGroupSupport = MultiWindowFrameClauseGroupSupport;
+            type WindowFrameExclusionSupport = MultiWindowFrameExclusionSupport;
+            type AggregateFunctionExpressions = MultiAggregateFunctionExpressions;
+            type BuiltInWindowFunctionRequireOrder = MultiBuiltInWindowFunctionRequireOrder;
+        }
+        impl diesel::internal::derives::multiconnection::TrustedBackend
+        for MultiBackend {}
+        impl diesel::internal::derives::multiconnection::DieselReserveSpecialization
+        for MultiBackend {}
+        impl diesel::sql_types::HasSqlType<diesel::sql_types::SmallInt>
+        for super::MultiBackend {
+            fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+                Self::lookup_sql_type::<diesel::sql_types::SmallInt>(lookup)
+            }
+        }
+        impl diesel::sql_types::HasSqlType<diesel::sql_types::Integer>
+        for super::MultiBackend {
+            fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+                Self::lookup_sql_type::<diesel::sql_types::Integer>(lookup)
+            }
+        }
+        impl diesel::sql_types::HasSqlType<diesel::sql_types::BigInt>
+        for super::MultiBackend {
+            fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+                Self::lookup_sql_type::<diesel::sql_types::BigInt>(lookup)
+            }
+        }
+        impl diesel::sql_types::HasSqlType<diesel::sql_types::Double>
+        for super::MultiBackend {
+            fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+                Self::lookup_sql_type::<diesel::sql_types::Double>(lookup)
+            }
+        }
+        impl diesel::sql_types::HasSqlType<diesel::sql_types::Float>
+        for super::MultiBackend {
+            fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+                Self::lookup_sql_type::<diesel::sql_types::Float>(lookup)
+            }
+        }
+        impl diesel::sql_types::HasSqlType<diesel::sql_types::Text>
+        for super::MultiBackend {
+            fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+                Self::lookup_sql_type::<diesel::sql_types::Text>(lookup)
+            }
+        }
+        impl diesel::sql_types::HasSqlType<diesel::sql_types::Binary>
+        for super::MultiBackend {
+            fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+                Self::lookup_sql_type::<diesel::sql_types::Binary>(lookup)
+            }
+        }
+        impl diesel::sql_types::HasSqlType<diesel::sql_types::Date>
+        for super::MultiBackend {
+            fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+                Self::lookup_sql_type::<diesel::sql_types::Date>(lookup)
+            }
+        }
+        impl diesel::sql_types::HasSqlType<diesel::sql_types::Time>
+        for super::MultiBackend {
+            fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+                Self::lookup_sql_type::<diesel::sql_types::Time>(lookup)
+            }
+        }
+        impl diesel::sql_types::HasSqlType<diesel::sql_types::Timestamp>
+        for super::MultiBackend {
+            fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+                Self::lookup_sql_type::<diesel::sql_types::Timestamp>(lookup)
+            }
+        }
+        impl diesel::sql_types::HasSqlType<diesel::sql_types::Bool>
+        for super::MultiBackend {
+            fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+                Self::lookup_sql_type::<diesel::sql_types::Bool>(lookup)
+            }
+        }
+        impl diesel::sql_types::HasSqlType<diesel::sql_types::Numeric>
+        for super::MultiBackend {
+            fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+                Self::lookup_sql_type::<diesel::sql_types::Numeric>(lookup)
+            }
+        }
+    }
+    mod query_builder {
+        use super::*;
+        pub enum MultiQueryBuilder {
+            Pg(
+                <<PgConnection as diesel::Connection>::Backend as diesel::backend::Backend>::QueryBuilder,
+            ),
+            Sqlite(
+                <<diesel::SqliteConnection as diesel::Connection>::Backend as diesel::backend::Backend>::QueryBuilder,
+            ),
+        }
+        impl MultiQueryBuilder {
+            pub(super) fn duplicate(&self) -> Self {
+                match self {
+                    Self::Pg(_) => Self::Pg(Default::default()),
+                    Self::Sqlite(_) => Self::Sqlite(Default::default()),
+                }
+            }
+        }
+        impl MultiQueryBuilder {
+            pub(super) fn pg(
+                &mut self,
+            ) -> &mut <<PgConnection as diesel::Connection>::Backend as diesel::backend::Backend>::QueryBuilder {
+                match self {
+                    Self::Pg(qb) => qb,
+                    _ => unreachable!(),
+                }
+            }
+            pub(super) fn sqlite(
+                &mut self,
+            ) -> &mut <<diesel::SqliteConnection as diesel::Connection>::Backend as diesel::backend::Backend>::QueryBuilder {
+                match self {
+                    Self::Sqlite(qb) => qb,
+                    _ => unreachable!(),
+                }
+            }
+        }
+        impl diesel::query_builder::QueryBuilder<super::MultiBackend>
+        for MultiQueryBuilder {
+            fn push_sql(&mut self, sql: &str) {
+                match self {
+                    Self::Pg(q) => q.push_sql(sql),
+                    Self::Sqlite(q) => q.push_sql(sql),
+                }
+            }
+            fn push_identifier(&mut self, identifier: &str) -> diesel::QueryResult<()> {
+                match self {
+                    Self::Pg(q) => q.push_identifier(identifier),
+                    Self::Sqlite(q) => q.push_identifier(identifier),
+                }
+            }
+            fn push_bind_param(&mut self) {
+                match self {
+                    Self::Pg(q) => q.push_bind_param(),
+                    Self::Sqlite(q) => q.push_bind_param(),
+                }
+            }
+            fn finish(self) -> String {
+                match self {
+                    Self::Pg(q) => q.finish(),
+                    Self::Sqlite(q) => q.finish(),
+                }
+            }
+        }
+        impl<L, O> diesel::query_builder::QueryFragment<super::backend::MultiBackend>
+        for diesel::internal::derives::multiconnection::LimitOffsetClause<L, O>
+        where
+            Self: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                super::backend::MultiBackend::walk_variant_ast(self, pass)
+            }
+        }
+        impl<
+            L,
+            R,
+        > diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiConcatClauseSyntax,
+        > for diesel::internal::derives::multiconnection::Concat<L, R>
+        where
+            Self: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                super::backend::MultiBackend::walk_variant_ast(self, pass)
+            }
+        }
+        impl<
+            T,
+            U,
+        > diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiArrayComparisonSyntax,
+        > for diesel::internal::derives::multiconnection::array_comparison::In<T, U>
+        where
+            Self: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                super::backend::MultiBackend::walk_variant_ast(self, pass)
+            }
+        }
+        impl<
+            T,
+            U,
+        > diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiArrayComparisonSyntax,
+        > for diesel::internal::derives::multiconnection::array_comparison::NotIn<T, U>
+        where
+            Self: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                super::backend::MultiBackend::walk_variant_ast(self, pass)
+            }
+        }
+        impl<
+            ST,
+            I,
+        > diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiArrayComparisonSyntax,
+        > for diesel::internal::derives::multiconnection::array_comparison::Many<ST, I>
+        where
+            Self: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                super::backend::MultiBackend::walk_variant_ast(self, pass)
+            }
+        }
+        impl<
+            T,
+        > diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiExistsSyntax,
+        > for diesel::internal::derives::multiconnection::Exists<T>
+        where
+            Self: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                super::backend::MultiBackend::walk_variant_ast(self, pass)
+            }
+        }
+        impl diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiEmptyFromClauseSyntax,
+        > for diesel::internal::derives::multiconnection::NoFromClause
+        where
+            Self: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                super::backend::MultiBackend::walk_variant_ast(self, pass)
+            }
+        }
+        impl diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiDefaultValueClauseForInsert,
+        > for diesel::internal::derives::multiconnection::DefaultValues
+        where
+            Self: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                super::backend::MultiBackend::walk_variant_ast(self, pass)
+            }
+        }
+        impl<
+            Expr,
+        > diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiReturningClause,
+        > for diesel::internal::derives::multiconnection::ReturningClause<Expr>
+        where
+            Self: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                super::backend::MultiBackend::walk_variant_ast(self, pass)
+            }
+        }
+        impl<
+            Expr,
+        > diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiInsertWithDefaultKeyword,
+        > for diesel::insertable::DefaultableColumnInsertValue<Expr>
+        where
+            Self: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                super::backend::MultiBackend::walk_variant_ast(self, pass)
+            }
+        }
+        impl<
+            Tab,
+            V,
+            QId,
+            const HAS_STATIC_QUERY_ID: bool,
+        > diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiBatchInsertSupport,
+        >
+        for diesel::internal::derives::multiconnection::BatchInsert<
+            V,
+            Tab,
+            QId,
+            HAS_STATIC_QUERY_ID,
+        >
+        where
+            Self: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                super::backend::MultiBackend::walk_variant_ast(self, pass)
+            }
+        }
+        impl<
+            S,
+        > diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiAliasSyntax,
+        > for diesel::query_source::Alias<S>
+        where
+            Self: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                super::backend::MultiBackend::walk_variant_ast(self, pass)
+            }
+        }
+        impl<
+            F,
+            S,
+            D,
+            W,
+            O,
+            LOf,
+            G,
+            H,
+            LC,
+        > diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiSelectStatementSyntax,
+        >
+        for diesel::internal::derives::multiconnection::SelectStatement<
+            F,
+            S,
+            D,
+            W,
+            O,
+            LOf,
+            G,
+            H,
+            LC,
+        >
+        where
+            S: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            F: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            D: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            W: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            O: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            LOf: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            G: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            H: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            LC: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                mut out: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                use diesel::internal::derives::multiconnection::SelectStatementAccessor;
+                out.push_sql("SELECT ");
+                self.distinct_clause().walk_ast(out.reborrow())?;
+                self.select_clause().walk_ast(out.reborrow())?;
+                self.from_clause().walk_ast(out.reborrow())?;
+                self.where_clause().walk_ast(out.reborrow())?;
+                self.group_by_clause().walk_ast(out.reborrow())?;
+                self.having_clause().walk_ast(out.reborrow())?;
+                self.order_clause().walk_ast(out.reborrow())?;
+                self.limit_offset_clause().walk_ast(out.reborrow())?;
+                self.locking_clause().walk_ast(out.reborrow())?;
+                Ok(())
+            }
+        }
+        impl<
+            'a,
+            ST,
+            QS,
+            GB,
+        > diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiSelectStatementSyntax,
+        >
+        for diesel::internal::derives::multiconnection::BoxedSelectStatement<
+            'a,
+            ST,
+            QS,
+            super::backend::MultiBackend,
+            GB,
+        >
+        where
+            QS: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                use diesel::internal::derives::multiconnection::BoxedQueryHelper;
+                self.build_query(pass, |where_clause, pass| where_clause.walk_ast(pass))
+            }
+        }
+        impl diesel::query_builder::QueryFragment<super::backend::MultiBackend>
+        for diesel::internal::derives::multiconnection::BoxedLimitOffsetClause<
+            '_,
+            super::backend::MultiBackend,
+        > {
+            fn walk_ast<'b>(
+                &'b self,
+                mut pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                if let Some(ref limit) = self.limit {
+                    limit.walk_ast(pass.reborrow())?;
+                }
+                if let Some(ref offset) = self.offset {
+                    offset.walk_ast(pass.reborrow())?;
+                }
+                Ok(())
+            }
+        }
+        impl<
+            'a,
+        > diesel::query_builder::IntoBoxedClause<
+            'a,
+            super::multi_connection_impl::backend::MultiBackend,
+        >
+        for diesel::internal::derives::multiconnection::LimitOffsetClause<
+            diesel::internal::derives::multiconnection::NoLimitClause,
+            diesel::internal::derives::multiconnection::NoOffsetClause,
+        > {
+            type BoxedClause = diesel::internal::derives::multiconnection::BoxedLimitOffsetClause<
+                'a,
+                super::multi_connection_impl::backend::MultiBackend,
+            >;
+            fn into_boxed(self) -> Self::BoxedClause {
+                diesel::internal::derives::multiconnection::BoxedLimitOffsetClause {
+                    limit: None,
+                    offset: None,
+                }
+            }
+        }
+        impl<
+            'a,
+            L,
+        > diesel::query_builder::IntoBoxedClause<
+            'a,
+            super::multi_connection_impl::backend::MultiBackend,
+        >
+        for diesel::internal::derives::multiconnection::LimitOffsetClause<
+            diesel::internal::derives::multiconnection::LimitClause<L>,
+            diesel::internal::derives::multiconnection::NoOffsetClause,
+        >
+        where
+            diesel::internal::derives::multiconnection::LimitClause<
+                L,
+            >: diesel::query_builder::QueryFragment<super::backend::MultiBackend> + Send
+                + 'static,
+        {
+            type BoxedClause = diesel::internal::derives::multiconnection::BoxedLimitOffsetClause<
+                'a,
+                super::multi_connection_impl::backend::MultiBackend,
+            >;
+            fn into_boxed(self) -> Self::BoxedClause {
+                diesel::internal::derives::multiconnection::BoxedLimitOffsetClause {
+                    limit: Some(Box::new(self.limit_clause)),
+                    offset: None,
+                }
+            }
+        }
+        impl<
+            'a,
+            O,
+        > diesel::query_builder::IntoBoxedClause<
+            'a,
+            super::multi_connection_impl::backend::MultiBackend,
+        >
+        for diesel::internal::derives::multiconnection::LimitOffsetClause<
+            diesel::internal::derives::multiconnection::NoLimitClause,
+            diesel::internal::derives::multiconnection::OffsetClause<O>,
+        >
+        where
+            diesel::internal::derives::multiconnection::OffsetClause<
+                O,
+            >: diesel::query_builder::QueryFragment<super::backend::MultiBackend> + Send
+                + 'static,
+        {
+            type BoxedClause = diesel::internal::derives::multiconnection::BoxedLimitOffsetClause<
+                'a,
+                super::multi_connection_impl::backend::MultiBackend,
+            >;
+            fn into_boxed(self) -> Self::BoxedClause {
+                diesel::internal::derives::multiconnection::BoxedLimitOffsetClause {
+                    limit: None,
+                    offset: Some(Box::new(self.offset_clause)),
+                }
+            }
+        }
+        impl<
+            'a,
+            L,
+            O,
+        > diesel::query_builder::IntoBoxedClause<
+            'a,
+            super::multi_connection_impl::backend::MultiBackend,
+        >
+        for diesel::internal::derives::multiconnection::LimitOffsetClause<
+            diesel::internal::derives::multiconnection::LimitClause<L>,
+            diesel::internal::derives::multiconnection::OffsetClause<O>,
+        >
+        where
+            diesel::internal::derives::multiconnection::LimitClause<
+                L,
+            >: diesel::query_builder::QueryFragment<super::backend::MultiBackend> + Send
+                + 'static,
+            diesel::internal::derives::multiconnection::OffsetClause<
+                O,
+            >: diesel::query_builder::QueryFragment<super::backend::MultiBackend> + Send
+                + 'static,
+        {
+            type BoxedClause = diesel::internal::derives::multiconnection::BoxedLimitOffsetClause<
+                'a,
+                super::multi_connection_impl::backend::MultiBackend,
+            >;
+            fn into_boxed(self) -> Self::BoxedClause {
+                diesel::internal::derives::multiconnection::BoxedLimitOffsetClause {
+                    limit: Some(Box::new(self.limit_clause)),
+                    offset: Some(Box::new(self.offset_clause)),
+                }
+            }
+        }
+        impl<
+            Col,
+            Expr,
+        > diesel::insertable::InsertValues<
+            super::multi_connection_impl::backend::MultiBackend,
+            Col::Table,
+        >
+        for diesel::insertable::DefaultableColumnInsertValue<
+            diesel::insertable::ColumnInsertValue<Col, Expr>,
+        >
+        where
+            Col: diesel::prelude::Column,
+            Expr: diesel::prelude::Expression<SqlType = Col::SqlType>,
+            Expr: diesel::prelude::AppearsOnTable<
+                diesel::internal::derives::multiconnection::NoFromClause,
+            >,
+            Self: diesel::query_builder::QueryFragment<
+                super::multi_connection_impl::backend::MultiBackend,
+            >,
+            diesel::insertable::DefaultableColumnInsertValue<
+                diesel::insertable::ColumnInsertValue<Col, Expr>,
+            >: diesel::insertable::InsertValues<
+                <PgConnection as diesel::connection::Connection>::Backend,
+                Col::Table,
+            >,
+            diesel::insertable::DefaultableColumnInsertValue<
+                diesel::insertable::ColumnInsertValue<Col, Expr>,
+            >: diesel::insertable::InsertValues<
+                <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                Col::Table,
+            >,
+        {
+            fn column_names(
+                &self,
+                mut out: diesel::query_builder::AstPass<
+                    '_,
+                    '_,
+                    super::multi_connection_impl::backend::MultiBackend,
+                >,
+            ) -> diesel::QueryResult<()> {
+                use diesel::internal::derives::multiconnection::AstPassHelper;
+                match out.backend() {
+                    super::backend::MultiBackend::Pg(_) => {
+                        <Self as diesel::insertable::InsertValues<
+                            <PgConnection as diesel::connection::Connection>::Backend,
+                            Col::Table,
+                        >>::column_names(
+                            &self,
+                            out
+                                .cast_database(
+                                    super::bind_collector::MultiBindCollector::pg,
+                                    super::query_builder::MultiQueryBuilder::pg,
+                                    super::backend::MultiBackend::pg,
+                                    |l| {
+                                        <PgConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                                                l,
+                                            )
+                                            .expect(
+                                                "It's possible to downcast the metadata lookup type to the correct type",
+                                            )
+                                    },
+                                ),
+                        )
+                    }
+                    super::backend::MultiBackend::Sqlite(_) => {
+                        <Self as diesel::insertable::InsertValues<
+                            <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                            Col::Table,
+                        >>::column_names(
+                            &self,
+                            out
+                                .cast_database(
+                                    super::bind_collector::MultiBindCollector::sqlite,
+                                    super::query_builder::MultiQueryBuilder::sqlite,
+                                    super::backend::MultiBackend::sqlite,
+                                    |l| {
+                                        <diesel::SqliteConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                                                l,
+                                            )
+                                            .expect(
+                                                "It's possible to downcast the metadata lookup type to the correct type",
+                                            )
+                                    },
+                                ),
+                        )
+                    }
+                }
+            }
+        }
+    }
+    mod bind_collector {
+        use super::*;
+        pub enum MultiBindCollector<'a> {
+            Pg(
+                <<PgConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::BindCollector<
+                    'a,
+                >,
+            ),
+            Sqlite(
+                <<diesel::SqliteConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::BindCollector<
+                    'a,
+                >,
+            ),
+        }
+        impl<'a> MultiBindCollector<'a> {
+            pub(super) fn pg(
+                &mut self,
+            ) -> &mut <<PgConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::BindCollector<
+                'a,
+            > {
+                match self {
+                    Self::Pg(bc) => bc,
+                    _ => unreachable!(),
+                }
+            }
+            pub(super) fn sqlite(
+                &mut self,
+            ) -> &mut <<diesel::SqliteConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::BindCollector<
+                'a,
+            > {
+                match self {
+                    Self::Sqlite(bc) => bc,
+                    _ => unreachable!(),
+                }
+            }
+        }
+        trait PushBoundValueToCollectorDB<DB: diesel::backend::Backend> {
+            fn push_bound_value<'a: 'b, 'b>(
+                &self,
+                v: InnerBindValueKind<'a>,
+                collector: &mut <DB as diesel::backend::Backend>::BindCollector<'b>,
+                lookup: &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
+            ) -> diesel::result::QueryResult<()>;
+        }
+        struct PushBoundValueToCollectorImpl<ST, T: ?Sized> {
+            p: std::marker::PhantomData<(ST, T)>,
+        }
+        impl<ST, T, DB> PushBoundValueToCollectorDB<DB>
+        for PushBoundValueToCollectorImpl<ST, T>
+        where
+            DB: diesel::backend::Backend + diesel::sql_types::HasSqlType<ST>,
+            T: diesel::serialize::ToSql<ST, DB> + 'static,
+            Option<
+                T,
+            >: diesel::serialize::ToSql<diesel::sql_types::Nullable<ST>, DB> + 'static,
+            ST: diesel::sql_types::SqlType,
+        {
+            fn push_bound_value<'a: 'b, 'b>(
+                &self,
+                v: InnerBindValueKind<'a>,
+                collector: &mut <DB as diesel::backend::Backend>::BindCollector<'b>,
+                lookup: &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
+            ) -> diesel::result::QueryResult<()> {
+                use diesel::query_builder::BindCollector;
+                match v {
+                    InnerBindValueKind::Sized(v) => {
+                        let v = v
+                            .downcast_ref::<T>()
+                            .expect("We know the type statically here");
+                        collector.push_bound_value::<ST, T>(v, lookup)
+                    }
+                    InnerBindValueKind::Null => {
+                        collector
+                            .push_bound_value::<
+                                diesel::sql_types::Nullable<ST>,
+                                Option<T>,
+                            >(&None, lookup)
+                    }
+                    _ => {
+                        unreachable!(
+                            "We set the value to `InnerBindValueKind::Sized` or `InnerBindValueKind::Null`"
+                        )
+                    }
+                }
+            }
+        }
+        impl<DB> PushBoundValueToCollectorDB<DB>
+        for PushBoundValueToCollectorImpl<diesel::sql_types::Text, str>
+        where
+            DB: diesel::backend::Backend
+                + diesel::sql_types::HasSqlType<diesel::sql_types::Text>,
+            str: diesel::serialize::ToSql<diesel::sql_types::Text, DB> + 'static,
+        {
+            fn push_bound_value<'a: 'b, 'b>(
+                &self,
+                v: InnerBindValueKind<'a>,
+                collector: &mut <DB as diesel::backend::Backend>::BindCollector<'b>,
+                lookup: &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
+            ) -> diesel::result::QueryResult<()> {
+                use diesel::query_builder::BindCollector;
+                if let InnerBindValueKind::Str(v) = v {
+                    collector.push_bound_value::<diesel::sql_types::Text, str>(v, lookup)
+                } else {
+                    unreachable!("We set the value to `InnerBindValueKind::Str`")
+                }
+            }
+        }
+        impl<DB> PushBoundValueToCollectorDB<DB>
+        for PushBoundValueToCollectorImpl<diesel::sql_types::Binary, [u8]>
+        where
+            DB: diesel::backend::Backend
+                + diesel::sql_types::HasSqlType<diesel::sql_types::Binary>,
+            [u8]: diesel::serialize::ToSql<diesel::sql_types::Binary, DB> + 'static,
+        {
+            fn push_bound_value<'a: 'b, 'b>(
+                &self,
+                v: InnerBindValueKind<'a>,
+                collector: &mut <DB as diesel::backend::Backend>::BindCollector<'b>,
+                lookup: &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
+            ) -> diesel::result::QueryResult<()> {
+                use diesel::query_builder::BindCollector;
+                if let InnerBindValueKind::Bytes(v) = v {
+                    collector
+                        .push_bound_value::<diesel::sql_types::Binary, [u8]>(v, lookup)
+                } else {
+                    unreachable!("We set the value to `InnerBindValueKind::Binary`")
+                }
+            }
+        }
+        trait PushBoundValueToCollector: PushBoundValueToCollectorDB<
+                <PgConnection as diesel::Connection>::Backend,
+            > + PushBoundValueToCollectorDB<
+                <diesel::SqliteConnection as diesel::Connection>::Backend,
+            > {}
+        impl<T> PushBoundValueToCollector for T
+        where
+            T: PushBoundValueToCollectorDB<<PgConnection as diesel::Connection>::Backend>
+                + PushBoundValueToCollectorDB<
+                    <diesel::SqliteConnection as diesel::Connection>::Backend,
+                >,
+        {}
+        #[derive(Default)]
+        pub struct BindValue<'a> {
+            inner: Option<InnerBindValue<'a>>,
+        }
+        struct InnerBindValue<'a> {
+            value: InnerBindValueKind<'a>,
+            push_bound_value_to_collector: &'static dyn PushBoundValueToCollector,
+        }
+        enum InnerBindValueKind<'a> {
+            Sized(&'a (dyn std::any::Any + std::marker::Send + std::marker::Sync)),
+            Str(&'a str),
+            Bytes(&'a [u8]),
+            Null,
+        }
+        impl<'a> From<(diesel::sql_types::Text, &'a str)> for BindValue<'a> {
+            fn from((_, v): (diesel::sql_types::Text, &'a str)) -> Self {
+                Self {
+                    inner: Some(InnerBindValue {
+                        value: InnerBindValueKind::Str(v),
+                        push_bound_value_to_collector: &PushBoundValueToCollectorImpl {
+                            p: std::marker::PhantomData::<(diesel::sql_types::Text, str)>,
+                        },
+                    }),
+                }
+            }
+        }
+        impl<'a> From<(diesel::sql_types::Binary, &'a [u8])> for BindValue<'a> {
+            fn from((_, v): (diesel::sql_types::Binary, &'a [u8])) -> Self {
+                Self {
+                    inner: Some(InnerBindValue {
+                        value: InnerBindValueKind::Bytes(v),
+                        push_bound_value_to_collector: &PushBoundValueToCollectorImpl {
+                            p: std::marker::PhantomData::<
+                                (diesel::sql_types::Binary, [u8]),
+                            >,
+                        },
+                    }),
+                }
+            }
+        }
+        impl<'a, T, ST> From<(ST, &'a T)> for BindValue<'a>
+        where
+            T: std::any::Any
+                + diesel::serialize::ToSql<
+                    ST,
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::serialize::ToSql<
+                    ST,
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                > + Send + Sync + 'static,
+            ST: Send
+                + diesel::sql_types::SqlType<
+                    IsNull = diesel::sql_types::is_nullable::NotNull,
+                > + 'static,
+            <PgConnection as diesel::connection::Connection>::Backend: diesel::sql_types::HasSqlType<
+                ST,
+            >,
+            <diesel::SqliteConnection as diesel::connection::Connection>::Backend: diesel::sql_types::HasSqlType<
+                ST,
+            >,
+        {
+            fn from((_, v): (ST, &'a T)) -> Self {
+                Self {
+                    inner: Some(InnerBindValue {
+                        value: InnerBindValueKind::Sized(v),
+                        push_bound_value_to_collector: &PushBoundValueToCollectorImpl {
+                            p: std::marker::PhantomData::<(ST, T)>,
+                        },
+                    }),
+                }
+            }
+        }
+        impl<'a> diesel::query_builder::BindCollector<'a, MultiBackend>
+        for MultiBindCollector<'a> {
+            type Buffer = multi_connection_impl::bind_collector::BindValue<'a>;
+            fn push_bound_value<T, U>(
+                &mut self,
+                bind: &'a U,
+                metadata_lookup: &mut (dyn std::any::Any + 'static),
+            ) -> diesel::QueryResult<()>
+            where
+                MultiBackend: diesel::sql_types::HasSqlType<T>,
+                U: diesel::serialize::ToSql<T, MultiBackend> + ?Sized + 'a,
+            {
+                let out = {
+                    let out = multi_connection_impl::bind_collector::BindValue::default();
+                    let mut out = diesel::serialize::Output::<
+                        MultiBackend,
+                    >::new(out, metadata_lookup);
+                    let bind_is_null = bind
+                        .to_sql(&mut out)
+                        .map_err(diesel::result::Error::SerializationError)?;
+                    if matches!(bind_is_null, diesel::serialize::IsNull::Yes) {
+                        let metadata = <MultiBackend as diesel::sql_types::HasSqlType<
+                            T,
+                        >>::metadata(metadata_lookup);
+                        match (self, metadata) {
+                            (
+                                Self::Pg(ref mut bc),
+                                super::backend::MultiTypeMetadata { Pg: Some(metadata), .. },
+                            ) => {
+                                bc.push_null_value(metadata)?;
+                            }
+                            (
+                                Self::Sqlite(ref mut bc),
+                                super::backend::MultiTypeMetadata {
+                                    Sqlite: Some(metadata),
+                                    ..
+                                },
+                            ) => {
+                                bc.push_null_value(metadata)?;
+                            }
+                            _ => unreachable!("We have matching metadata"),
+                        }
+                        return Ok(());
+                    } else {
+                        out.into_inner()
+                    }
+                };
+                match self {
+                    Self::Pg(ref mut bc) => {
+                        let out = out
+                            .inner
+                            .expect(
+                                "This inner value is set via our custom `ToSql` impls",
+                            );
+                        let callback = out.push_bound_value_to_collector;
+                        let value = out.value;
+                        <_ as PushBoundValueToCollectorDB<
+                            <PgConnection as diesel::Connection>::Backend,
+                        >>::push_bound_value(
+                            callback,
+                            value,
+                            bc,
+                            <PgConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                                    metadata_lookup,
+                                )
+                                .expect(
+                                    "We can downcast the metadata lookup to the right type",
+                                ),
+                        )?
+                    }
+                    Self::Sqlite(ref mut bc) => {
+                        let out = out
+                            .inner
+                            .expect(
+                                "This inner value is set via our custom `ToSql` impls",
+                            );
+                        let callback = out.push_bound_value_to_collector;
+                        let value = out.value;
+                        <_ as PushBoundValueToCollectorDB<
+                            <diesel::SqliteConnection as diesel::Connection>::Backend,
+                        >>::push_bound_value(
+                            callback,
+                            value,
+                            bc,
+                            <diesel::SqliteConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                                    metadata_lookup,
+                                )
+                                .expect(
+                                    "We can downcast the metadata lookup to the right type",
+                                ),
+                        )?
+                    }
+                }
+                Ok(())
+            }
+            fn push_null_value(
+                &mut self,
+                metadata: super::backend::MultiTypeMetadata,
+            ) -> diesel::QueryResult<()> {
+                match (self, metadata) {
+                    (
+                        Self::Pg(ref mut bc),
+                        super::backend::MultiTypeMetadata { Pg: Some(metadata), .. },
+                    ) => {
+                        bc.push_null_value(metadata)?;
+                    }
+                    (
+                        Self::Sqlite(ref mut bc),
+                        super::backend::MultiTypeMetadata { Sqlite: Some(metadata), .. },
+                    ) => {
+                        bc.push_null_value(metadata)?;
+                    }
+                    _ => unreachable!("We have matching metadata"),
+                }
+                Ok(())
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::SmallInt, super::MultiBackend>
+        for i16 {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::SmallInt, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Integer, super::MultiBackend>
+        for i32 {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Integer, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::BigInt, super::MultiBackend>
+        for i64 {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::BigInt, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Double, super::MultiBackend>
+        for f64 {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Double, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Float, super::MultiBackend>
+        for f32 {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Float, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Text, super::MultiBackend>
+        for str {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Text, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Binary, super::MultiBackend>
+        for [u8] {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Binary, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Bool, super::MultiBackend>
+        for bool {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Bool, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Numeric, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::bigdecimal::BigDecimal {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Numeric, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Timestamp, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::chrono::NaiveDateTime {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Timestamp, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Date, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::chrono::NaiveDate {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Date, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Time, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::chrono::NaiveTime {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Time, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Timestamp, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::time::PrimitiveDateTime {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Timestamp, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Time, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::time::Time {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Time, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::serialize::ToSql<diesel::sql_types::Date, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::time::Date {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+            ) -> diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Date, self));
+                Ok(diesel::serialize::IsNull::No)
+            }
+        }
+        impl diesel::deserialize::FromSql<
+            diesel::sql_types::SmallInt,
+            super::MultiBackend,
+        > for i16 {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::SmallInt>()
+            }
+        }
+        impl diesel::deserialize::FromSql<
+            diesel::sql_types::Integer,
+            super::MultiBackend,
+        > for i32 {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Integer>()
+            }
+        }
+        impl diesel::deserialize::FromSql<diesel::sql_types::BigInt, super::MultiBackend>
+        for i64 {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::BigInt>()
+            }
+        }
+        impl diesel::deserialize::FromSql<diesel::sql_types::Double, super::MultiBackend>
+        for f64 {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Double>()
+            }
+        }
+        impl diesel::deserialize::FromSql<diesel::sql_types::Float, super::MultiBackend>
+        for f32 {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Float>()
+            }
+        }
+        impl diesel::deserialize::FromSql<diesel::sql_types::Text, super::MultiBackend>
+        for String {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Text>()
+            }
+        }
+        impl diesel::deserialize::FromSql<diesel::sql_types::Binary, super::MultiBackend>
+        for Vec<u8> {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Binary>()
+            }
+        }
+        impl diesel::deserialize::FromSql<diesel::sql_types::Bool, super::MultiBackend>
+        for bool {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Bool>()
+            }
+        }
+        impl diesel::deserialize::FromSql<
+            diesel::sql_types::Numeric,
+            super::MultiBackend,
+        > for diesel::internal::derives::multiconnection::bigdecimal::BigDecimal {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Numeric>()
+            }
+        }
+        impl diesel::deserialize::FromSql<
+            diesel::sql_types::Timestamp,
+            super::MultiBackend,
+        > for diesel::internal::derives::multiconnection::chrono::NaiveDateTime {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Timestamp>()
+            }
+        }
+        impl diesel::deserialize::FromSql<diesel::sql_types::Date, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::chrono::NaiveDate {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Date>()
+            }
+        }
+        impl diesel::deserialize::FromSql<diesel::sql_types::Time, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::chrono::NaiveTime {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Time>()
+            }
+        }
+        impl diesel::deserialize::FromSql<
+            diesel::sql_types::Timestamp,
+            super::MultiBackend,
+        > for diesel::internal::derives::multiconnection::time::PrimitiveDateTime {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Timestamp>()
+            }
+        }
+        impl diesel::deserialize::FromSql<diesel::sql_types::Time, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::time::Time {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Time>()
+            }
+        }
+        impl diesel::deserialize::FromSql<diesel::sql_types::Date, super::MultiBackend>
+        for diesel::internal::derives::multiconnection::time::Date {
+            fn from_sql(
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            ) -> diesel::deserialize::Result<Self> {
+                bytes.from_sql::<Self, diesel::sql_types::Date>()
+            }
+        }
+    }
+    mod row {
+        use super::*;
+        pub enum MultiRow<'conn, 'query> {
+            Pg(<PgConnection as diesel::connection::LoadConnection>::Row<'conn, 'query>),
+            Sqlite(
+                <diesel::SqliteConnection as diesel::connection::LoadConnection>::Row<
+                    'conn,
+                    'query,
+                >,
+            ),
+        }
+        impl<'conn, 'query> diesel::internal::derives::multiconnection::RowSealed
+        for MultiRow<'conn, 'query> {}
+        pub enum MultiField<'conn: 'query, 'query> {
+            Pg(
+                <<PgConnection as diesel::connection::LoadConnection>::Row<
+                    'conn,
+                    'query,
+                > as diesel::row::Row<
+                    'conn,
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >>::Field<'query>,
+            ),
+            Sqlite(
+                <<diesel::SqliteConnection as diesel::connection::LoadConnection>::Row<
+                    'conn,
+                    'query,
+                > as diesel::row::Row<
+                    'conn,
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >>::Field<'query>,
+            ),
+        }
+        impl<'conn, 'query> diesel::row::Field<'conn, super::MultiBackend>
+        for MultiField<'conn, 'query> {
+            fn field_name(&self) -> Option<&str> {
+                use diesel::row::Field;
+                match self {
+                    Self::Pg(f) => f.field_name(),
+                    Self::Sqlite(f) => f.field_name(),
+                }
+            }
+            fn value(
+                &self,
+            ) -> Option<
+                <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+            > {
+                use diesel::row::Field;
+                match self {
+                    Self::Pg(f) => f.value().map(super::MultiRawValue::Pg),
+                    Self::Sqlite(f) => f.value().map(super::MultiRawValue::Sqlite),
+                }
+            }
+        }
+        impl<'conn, 'query, 'c> diesel::row::RowIndex<&'c str>
+        for MultiRow<'conn, 'query> {
+            fn idx(&self, idx: &'c str) -> Option<usize> {
+                use diesel::row::RowIndex;
+                match self {
+                    Self::Pg(r) => r.idx(idx),
+                    Self::Sqlite(r) => r.idx(idx),
+                }
+            }
+        }
+        impl<'conn, 'query> diesel::row::RowIndex<usize> for MultiRow<'conn, 'query> {
+            fn idx(&self, idx: usize) -> Option<usize> {
+                use diesel::row::RowIndex;
+                match self {
+                    Self::Pg(r) => r.idx(idx),
+                    Self::Sqlite(r) => r.idx(idx),
+                }
+            }
+        }
+        impl<'conn, 'query> diesel::row::Row<'conn, super::MultiBackend>
+        for MultiRow<'conn, 'query> {
+            type Field<'a> = MultiField<'a, 'a> where 'conn: 'a, Self: 'a;
+            type InnerPartialRow = Self;
+            fn field_count(&self) -> usize {
+                use diesel::row::Row;
+                match self {
+                    Self::Pg(r) => r.field_count(),
+                    Self::Sqlite(r) => r.field_count(),
+                }
+            }
+            fn get<'b, I>(&'b self, idx: I) -> Option<Self::Field<'b>>
+            where
+                'conn: 'b,
+                Self: diesel::row::RowIndex<I>,
+            {
+                use diesel::row::{RowIndex, Row};
+                let idx = self.idx(idx)?;
+                match self {
+                    Self::Pg(r) => r.get(idx).map(MultiField::Pg),
+                    Self::Sqlite(r) => r.get(idx).map(MultiField::Sqlite),
+                }
+            }
+            fn partial_row(
+                &self,
+                range: std::ops::Range<usize>,
+            ) -> diesel::internal::derives::multiconnection::PartialRow<
+                '_,
+                Self::InnerPartialRow,
+            > {
+                diesel::internal::derives::multiconnection::PartialRow::new(self, range)
+            }
+        }
+        pub enum MultiCursor<'conn, 'query> {
+            Pg(
+                <PgConnection as diesel::connection::LoadConnection>::Cursor<
+                    'conn,
+                    'query,
+                >,
+            ),
+            Sqlite(
+                <diesel::SqliteConnection as diesel::connection::LoadConnection>::Cursor<
+                    'conn,
+                    'query,
+                >,
+            ),
+        }
+        impl<'conn, 'query> Iterator for MultiCursor<'conn, 'query> {
+            type Item = diesel::QueryResult<MultiRow<'conn, 'query>>;
+            fn next(&mut self) -> Option<Self::Item> {
+                match self {
+                    Self::Pg(r) => Some(r.next()?.map(MultiRow::Pg)),
+                    Self::Sqlite(r) => Some(r.next()?.map(MultiRow::Sqlite)),
+                }
+            }
+        }
+    }
+    mod connection {
+        use super::*;
+        use diesel::connection::*;
+        pub(super) use super::DbConnection as MultiConnection;
+        impl SimpleConnection for MultiConnection {
+            fn batch_execute(&mut self, query: &str) -> diesel::result::QueryResult<()> {
+                match self {
+                    Self::Pg(conn) => conn.batch_execute(query),
+                    Self::Sqlite(conn) => conn.batch_execute(query),
+                }
+            }
+        }
+        impl diesel::internal::derives::multiconnection::ConnectionSealed
+        for MultiConnection {}
+        struct SerializedQuery<T, C> {
+            inner: T,
+            backend: MultiBackend,
+            query_builder: super::query_builder::MultiQueryBuilder,
+            p: std::marker::PhantomData<C>,
+        }
+        trait BindParamHelper: Connection {
+            fn handle_inner_pass<'a, 'b: 'a>(
+                collector: &mut <Self::Backend as diesel::backend::Backend>::BindCollector<
+                    'a,
+                >,
+                lookup: &mut <Self::Backend as diesel::sql_types::TypeMetadata>::MetadataLookup,
+                backend: &'b MultiBackend,
+                q: &'b impl diesel::query_builder::QueryFragment<MultiBackend>,
+            ) -> diesel::QueryResult<()>;
+        }
+        impl BindParamHelper for PgConnection {
+            fn handle_inner_pass<'a, 'b: 'a>(
+                outer_collector: &mut <Self::Backend as diesel::backend::Backend>::BindCollector<
+                    'a,
+                >,
+                lookup: &mut <Self::Backend as diesel::sql_types::TypeMetadata>::MetadataLookup,
+                backend: &'b MultiBackend,
+                q: &'b impl diesel::query_builder::QueryFragment<MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                use diesel::internal::derives::multiconnection::MultiConnectionHelper;
+                let mut collector = super::bind_collector::MultiBindCollector::Pg(
+                    Default::default(),
+                );
+                let lookup = Self::to_any(lookup);
+                q.collect_binds(&mut collector, lookup, backend)?;
+                if let super::bind_collector::MultiBindCollector::Pg(collector) = collector {
+                    *outer_collector = collector;
+                }
+                Ok(())
+            }
+        }
+        impl BindParamHelper for diesel::SqliteConnection {
+            fn handle_inner_pass<'a, 'b: 'a>(
+                outer_collector: &mut <Self::Backend as diesel::backend::Backend>::BindCollector<
+                    'a,
+                >,
+                lookup: &mut <Self::Backend as diesel::sql_types::TypeMetadata>::MetadataLookup,
+                backend: &'b MultiBackend,
+                q: &'b impl diesel::query_builder::QueryFragment<MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                use diesel::internal::derives::multiconnection::MultiConnectionHelper;
+                let mut collector = super::bind_collector::MultiBindCollector::Sqlite(
+                    Default::default(),
+                );
+                let lookup = Self::to_any(lookup);
+                q.collect_binds(&mut collector, lookup, backend)?;
+                if let super::bind_collector::MultiBindCollector::Sqlite(collector) = collector {
+                    *outer_collector = collector;
+                }
+                Ok(())
+            }
+        }
+        impl<T, DB, C> diesel::query_builder::QueryFragment<DB> for SerializedQuery<T, C>
+        where
+            DB: diesel::backend::Backend + 'static,
+            T: diesel::query_builder::QueryFragment<MultiBackend>,
+            C: diesel::connection::Connection<Backend = DB> + BindParamHelper
+                + diesel::internal::derives::multiconnection::MultiConnectionHelper,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                mut pass: diesel::query_builder::AstPass<'_, 'b, DB>,
+            ) -> diesel::QueryResult<()> {
+                use diesel::query_builder::QueryBuilder;
+                use diesel::internal::derives::multiconnection::AstPassHelper;
+                let mut query_builder = self.query_builder.duplicate();
+                self.inner.to_sql(&mut query_builder, &self.backend)?;
+                pass.push_sql(&query_builder.finish());
+                if !self.inner.is_safe_to_cache_prepared(&self.backend)? {
+                    pass.unsafe_to_cache_prepared();
+                }
+                if let Some((outer_collector, lookup)) = pass.bind_collector() {
+                    C::handle_inner_pass(
+                        outer_collector,
+                        lookup,
+                        &self.backend,
+                        &self.inner,
+                    )?;
+                }
+                if let Some((formatter, _backend)) = pass.debug_binds() {
+                    let pass = diesel::query_builder::AstPass::<
+                        MultiBackend,
+                    >::collect_debug_binds_pass(formatter, &self.backend);
+                    self.inner.walk_ast(pass)?;
+                }
+                Ok(())
+            }
+        }
+        impl<T, C> diesel::query_builder::QueryId for SerializedQuery<T, C>
+        where
+            T: diesel::query_builder::QueryId,
+        {
+            type QueryId = <T as diesel::query_builder::QueryId>::QueryId;
+            const HAS_STATIC_QUERY_ID: bool = <T as diesel::query_builder::QueryId>::HAS_STATIC_QUERY_ID;
+        }
+        impl<T, C> diesel::query_builder::Query for SerializedQuery<T, C>
+        where
+            T: diesel::query_builder::Query,
+        {
+            type SqlType = diesel::sql_types::Untyped;
+        }
+        impl Connection for MultiConnection {
+            type Backend = super::MultiBackend;
+            type TransactionManager = Self;
+            fn establish(database_url: &str) -> diesel::ConnectionResult<Self> {
+                if let Ok(conn) = PgConnection::establish(database_url) {
+                    return Ok(Self::Pg(conn));
+                }
+                if let Ok(conn) = diesel::SqliteConnection::establish(database_url) {
+                    return Ok(Self::Sqlite(conn));
+                }
+                Err(
+                    diesel::ConnectionError::BadConnection(
+                        "Invalid connection url for multiconnection".into(),
+                    ),
+                )
+            }
+            fn execute_returning_count<T>(
+                &mut self,
+                source: &T,
+            ) -> diesel::result::QueryResult<usize>
+            where
+                T: diesel::query_builder::QueryFragment<Self::Backend>
+                    + diesel::query_builder::QueryId,
+            {
+                match self {
+                    Self::Pg(conn) => {
+                        let query = SerializedQuery {
+                            inner: source,
+                            backend: MultiBackend::Pg(Default::default()),
+                            query_builder: super::query_builder::MultiQueryBuilder::Pg(
+                                Default::default(),
+                            ),
+                            p: std::marker::PhantomData::<PgConnection>,
+                        };
+                        conn.execute_returning_count(&query)
+                    }
+                    Self::Sqlite(conn) => {
+                        let query = SerializedQuery {
+                            inner: source,
+                            backend: MultiBackend::Sqlite(Default::default()),
+                            query_builder: super::query_builder::MultiQueryBuilder::Sqlite(
+                                Default::default(),
+                            ),
+                            p: std::marker::PhantomData::<diesel::SqliteConnection>,
+                        };
+                        conn.execute_returning_count(&query)
+                    }
+                }
+            }
+            fn transaction_state(
+                &mut self,
+            ) -> &mut <Self::TransactionManager as TransactionManager<
+                Self,
+            >>::TransactionStateData {
+                self
+            }
+            fn instrumentation(
+                &mut self,
+            ) -> &mut dyn diesel::connection::Instrumentation {
+                match self {
+                    DbConnection::Pg(conn) => {
+                        diesel::connection::Connection::instrumentation(conn)
+                    }
+                    DbConnection::Sqlite(conn) => {
+                        diesel::connection::Connection::instrumentation(conn)
+                    }
+                }
+            }
+            fn set_instrumentation(
+                &mut self,
+                instrumentation: impl diesel::connection::Instrumentation,
+            ) {
+                match self {
+                    DbConnection::Pg(conn) => {
+                        diesel::connection::Connection::set_instrumentation(
+                            conn,
+                            instrumentation,
+                        );
+                    }
+                    DbConnection::Sqlite(conn) => {
+                        diesel::connection::Connection::set_instrumentation(
+                            conn,
+                            instrumentation,
+                        );
+                    }
+                }
+            }
+            fn set_prepared_statement_cache_size(
+                &mut self,
+                size: diesel::connection::CacheSize,
+            ) {
+                match self {
+                    DbConnection::Pg(conn) => {
+                        diesel::connection::Connection::set_prepared_statement_cache_size(
+                            conn,
+                            size,
+                        );
+                    }
+                    DbConnection::Sqlite(conn) => {
+                        diesel::connection::Connection::set_prepared_statement_cache_size(
+                            conn,
+                            size,
+                        );
+                    }
+                }
+            }
+            fn begin_test_transaction(&mut self) -> diesel::QueryResult<()> {
+                match self {
+                    Self::Pg(conn) => conn.begin_test_transaction(),
+                    Self::Sqlite(conn) => conn.begin_test_transaction(),
+                }
+            }
+        }
+        impl LoadConnection for MultiConnection {
+            type Cursor<'conn, 'query> = super::row::MultiCursor<'conn, 'query>;
+            type Row<'conn, 'query> = super::MultiRow<'conn, 'query>;
+            fn load<'conn, 'query, T>(
+                &'conn mut self,
+                source: T,
+            ) -> diesel::result::QueryResult<Self::Cursor<'conn, 'query>>
+            where
+                T: diesel::query_builder::Query
+                    + diesel::query_builder::QueryFragment<Self::Backend>
+                    + diesel::query_builder::QueryId + 'query,
+                Self::Backend: diesel::expression::QueryMetadata<T::SqlType>,
+            {
+                match self {
+                    DbConnection::Pg(conn) => {
+                        let query = SerializedQuery {
+                            inner: source,
+                            backend: MultiBackend::Pg(Default::default()),
+                            query_builder: super::query_builder::MultiQueryBuilder::Pg(
+                                Default::default(),
+                            ),
+                            p: std::marker::PhantomData::<PgConnection>,
+                        };
+                        let r = <PgConnection as diesel::connection::LoadConnection>::load(
+                            conn,
+                            query,
+                        )?;
+                        Ok(super::row::MultiCursor::Pg(r))
+                    }
+                    DbConnection::Sqlite(conn) => {
+                        let query = SerializedQuery {
+                            inner: source,
+                            backend: MultiBackend::Sqlite(Default::default()),
+                            query_builder: super::query_builder::MultiQueryBuilder::Sqlite(
+                                Default::default(),
+                            ),
+                            p: std::marker::PhantomData::<diesel::SqliteConnection>,
+                        };
+                        let r = <diesel::SqliteConnection as diesel::connection::LoadConnection>::load(
+                            conn,
+                            query,
+                        )?;
+                        Ok(super::row::MultiCursor::Sqlite(r))
+                    }
+                }
+            }
+        }
+        impl TransactionManager<MultiConnection> for MultiConnection {
+            type TransactionStateData = Self;
+            fn begin_transaction(conn: &mut MultiConnection) -> diesel::QueryResult<()> {
+                match conn {
+                    Self::Pg(conn) => {
+                        <PgConnection as Connection>::TransactionManager::begin_transaction(
+                            conn,
+                        )
+                    }
+                    Self::Sqlite(conn) => {
+                        <diesel::SqliteConnection as Connection>::TransactionManager::begin_transaction(
+                            conn,
+                        )
+                    }
+                }
+            }
+            fn rollback_transaction(
+                conn: &mut MultiConnection,
+            ) -> diesel::QueryResult<()> {
+                match conn {
+                    Self::Pg(conn) => {
+                        <PgConnection as Connection>::TransactionManager::rollback_transaction(
+                            conn,
+                        )
+                    }
+                    Self::Sqlite(conn) => {
+                        <diesel::SqliteConnection as Connection>::TransactionManager::rollback_transaction(
+                            conn,
+                        )
+                    }
+                }
+            }
+            fn commit_transaction(
+                conn: &mut MultiConnection,
+            ) -> diesel::QueryResult<()> {
+                match conn {
+                    Self::Pg(conn) => {
+                        <PgConnection as Connection>::TransactionManager::commit_transaction(
+                            conn,
+                        )
+                    }
+                    Self::Sqlite(conn) => {
+                        <diesel::SqliteConnection as Connection>::TransactionManager::commit_transaction(
+                            conn,
+                        )
+                    }
+                }
+            }
+            fn transaction_manager_status_mut(
+                conn: &mut MultiConnection,
+            ) -> &mut diesel::connection::TransactionManagerStatus {
+                match conn {
+                    Self::Pg(conn) => {
+                        <PgConnection as Connection>::TransactionManager::transaction_manager_status_mut(
+                            conn,
+                        )
+                    }
+                    Self::Sqlite(conn) => {
+                        <diesel::SqliteConnection as Connection>::TransactionManager::transaction_manager_status_mut(
+                            conn,
+                        )
+                    }
+                }
+            }
+            fn is_broken_transaction_manager(conn: &mut MultiConnection) -> bool {
+                match conn {
+                    Self::Pg(conn) => {
+                        <PgConnection as Connection>::TransactionManager::is_broken_transaction_manager(
+                            conn,
+                        )
+                    }
+                    Self::Sqlite(conn) => {
+                        <diesel::SqliteConnection as Connection>::TransactionManager::is_broken_transaction_manager(
+                            conn,
+                        )
+                    }
+                }
+            }
+        }
+        impl diesel::migration::MigrationConnection for MultiConnection {
+            fn setup(&mut self) -> diesel::QueryResult<usize> {
+                match self {
+                    Self::Pg(conn) => {
+                        use diesel::migration::MigrationConnection;
+                        conn.setup()
+                    }
+                    Self::Sqlite(conn) => {
+                        use diesel::migration::MigrationConnection;
+                        conn.setup()
+                    }
+                }
+            }
+        }
+        impl diesel::r2d2::R2D2Connection for MultiConnection {
+            fn ping(&mut self) -> diesel::QueryResult<()> {
+                use diesel::r2d2::R2D2Connection;
+                match self {
+                    Self::Pg(conn) => conn.ping(),
+                    Self::Sqlite(conn) => conn.ping(),
+                }
+            }
+            fn is_broken(&mut self) -> bool {
+                use diesel::r2d2::R2D2Connection;
+                match self {
+                    Self::Pg(conn) => conn.is_broken(),
+                    Self::Sqlite(conn) => conn.is_broken(),
+                }
+            }
+        }
+    }
+    pub use self::backend::{MultiBackend, MultiRawValue};
+    pub use self::row::{MultiRow, MultiField};
+}
+pub use self::multi_connection_impl::{MultiBackend, MultiRow, MultiRawValue, MultiField};

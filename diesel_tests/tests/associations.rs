@@ -1,40 +1,57 @@
 use crate::schema::*;
 use diesel::*;
 
-#[test]
+#[diesel_test_helper::test]
 fn one_to_many_returns_query_source_for_association() {
-    let (connection, sean, tess, _) = conn_with_test_data();
+    let (mut connection, sean, tess, _) = conn_with_test_data();
 
     let seans_posts = posts::table
         .filter(posts::user_id.eq(sean.id))
-        .load::<Post>(&connection)
+        .load::<Post>(&mut connection)
         .unwrap();
     let tess_posts = posts::table
         .filter(posts::user_id.eq(tess.id))
-        .load::<Post>(&connection)
+        .load::<Post>(&mut connection)
         .unwrap();
 
-    let found_posts: Vec<_> = Post::belonging_to(&sean).load(&connection).unwrap();
+    let found_posts: Vec<_> = Post::belonging_to(&sean).load(&mut connection).unwrap();
     assert_eq!(seans_posts, found_posts);
 
-    let found_posts: Vec<_> = Post::belonging_to(&tess).load(&connection).unwrap();
+    let found_posts: Vec<_> = Post::belonging_to(&tess).load(&mut connection).unwrap();
     assert_eq!(tess_posts, found_posts);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn eager_loading_associations_for_multiple_records() {
-    let (connection, sean, tess, _) = conn_with_test_data();
+    let (mut connection, sean, tess, _) = conn_with_test_data();
 
     let users = vec![sean.clone(), tess.clone()];
     let posts = Post::belonging_to(&users)
-        .load::<Post>(&connection)
+        .load::<Post>(&mut connection)
         .unwrap()
         .grouped_by(&users);
     let users_and_posts = users.into_iter().zip(posts).collect::<Vec<_>>();
 
-    let seans_posts = Post::belonging_to(&sean).load(&connection).unwrap();
-    let tess_posts = Post::belonging_to(&tess).load(&connection).unwrap();
+    let seans_posts = Post::belonging_to(&sean).load(&mut connection).unwrap();
+    let tess_posts = Post::belonging_to(&tess).load(&mut connection).unwrap();
     let expected_data = vec![(sean, seans_posts), (tess, tess_posts)];
+    assert_eq!(expected_data, users_and_posts);
+}
+
+#[diesel_test_helper::test]
+fn eager_loading_associations_for_multiple_ref_records() {
+    let (mut connection, sean, tess, _) = conn_with_test_data();
+
+    let users = vec![&sean, &tess];
+    let posts = Post::belonging_to(&users)
+        .load::<Post>(&mut connection)
+        .unwrap()
+        .grouped_by(&users);
+    let users_and_posts = users.into_iter().zip(posts).collect::<Vec<_>>();
+
+    let seans_posts = Post::belonging_to(&sean).load(&mut connection).unwrap();
+    let tess_posts = Post::belonging_to(&tess).load(&mut connection).unwrap();
+    let expected_data = vec![(&sean, seans_posts), (&tess, tess_posts)];
     assert_eq!(expected_data, users_and_posts);
 }
 
@@ -48,24 +65,24 @@ mod eager_loading_with_string_keys {
     table! { posts { id -> Text, user_id -> Text, } }
     allow_tables_to_appear_in_same_query!(users, posts);
 
-    #[derive(Queryable, Identifiable, Debug, PartialEq, Clone)]
+    #[derive(Queryable, Identifiable, Debug, PartialEq, Clone, Eq)]
     pub struct User {
         id: String,
     }
 
-    #[derive(Queryable, Identifiable, Debug, PartialEq, Clone, Associations)]
-    #[belongs_to(User)]
+    #[derive(Queryable, Identifiable, Debug, PartialEq, Clone, Associations, Eq)]
+    #[diesel(belongs_to(User))]
     pub struct Post {
         id: String,
         user_id: String,
     }
 
-    #[test]
+    #[diesel_test_helper::test]
     fn eager_loading_associations_for_multiple_records() {
-        let connection = connection();
-        drop_table_cascade(&connection, "users");
-        drop_table_cascade(&connection, "posts");
-        drop_table_cascade(&connection, "fk_doesnt_reference_pk");
+        let connection = &mut connection();
+        drop_table_cascade(connection, "users");
+        drop_table_cascade(connection, "posts");
+        drop_table_cascade(connection, "fk_doesnt_reference_pk");
         connection
             .batch_execute(
                 r#"
@@ -81,45 +98,45 @@ mod eager_loading_with_string_keys {
 
         let users = vec![sean.clone(), tess.clone()];
         let posts = Post::belonging_to(&users)
-            .load::<Post>(&connection)
+            .load::<Post>(connection)
             .unwrap()
             .grouped_by(&users);
         let users_and_posts = users.into_iter().zip(posts).collect::<Vec<_>>();
 
-        let seans_posts = Post::belonging_to(&sean).load(&connection).unwrap();
-        let tess_posts = Post::belonging_to(&tess).load(&connection).unwrap();
+        let seans_posts = Post::belonging_to(&sean).load(connection).unwrap();
+        let tess_posts = Post::belonging_to(&tess).load(connection).unwrap();
         let expected_data = vec![(sean, seans_posts), (tess, tess_posts)];
         assert_eq!(expected_data, users_and_posts);
     }
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn grouping_associations_maintains_ordering() {
-    let (connection, sean, tess, _) = conn_with_test_data();
+    let (mut connection, sean, tess, _) = conn_with_test_data();
 
     let users = vec![sean.clone(), tess.clone()];
     let posts = Post::belonging_to(&users)
         .order(posts::title.desc())
-        .load::<Post>(&connection)
+        .load::<Post>(&mut connection)
         .unwrap()
         .grouped_by(&users);
     let users_and_posts = users.into_iter().zip(posts).collect::<Vec<_>>();
 
     let seans_posts = Post::belonging_to(&sean)
         .order(posts::title.desc())
-        .load(&connection)
+        .load(&mut connection)
         .unwrap();
     let tess_posts = Post::belonging_to(&tess)
         .order(posts::title.desc())
-        .load(&connection)
+        .load(&mut connection)
         .unwrap();
     let expected_data = vec![(sean.clone(), seans_posts), (tess.clone(), tess_posts)];
     assert_eq!(expected_data, users_and_posts);
 
     // Test when sorted manually
-    let users = vec![sean.clone(), tess.clone()];
+    let users = vec![sean, tess];
     let mut posts = Post::belonging_to(&users)
-        .load::<Post>(&connection)
+        .load::<Post>(&mut connection)
         .unwrap();
     posts.sort_by(|a, b| b.title.cmp(&a.title));
     let posts = posts.grouped_by(&users);
@@ -128,7 +145,7 @@ fn grouping_associations_maintains_ordering() {
     assert_eq!(expected_data, users_and_posts);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn associations_can_be_grouped_multiple_levels_deep() {
     // I'm manually defining the data rather than loading from the database here,
     // as it makes the tests *way* more readable if I omit setup here. This is
@@ -175,17 +192,17 @@ fn associations_can_be_grouped_multiple_levels_deep() {
     assert_eq!(expected_data, data);
 }
 
-#[test]
+#[diesel_test_helper::test]
 fn self_referencing_associations() {
     #[derive(Insertable, Queryable, Associations, Identifiable, Debug, Clone, Copy, PartialEq)]
-    #[table_name = "trees"]
-    #[belongs_to(Tree, foreign_key = "parent_id")]
+    #[diesel(table_name = trees)]
+    #[diesel(belongs_to(Tree, foreign_key = parent_id))]
     struct Tree {
         id: i32,
         parent_id: Option<i32>,
     }
 
-    let conn = connection();
+    let conn = &mut connection();
     let test_data = vec![
         Tree {
             id: 1,
@@ -210,14 +227,14 @@ fn self_referencing_associations() {
     ];
     insert_into(trees::table)
         .values(&test_data)
-        .execute(&conn)
+        .execute(conn)
         .unwrap();
 
     let parents = trees::table
         .filter(trees::parent_id.is_null())
-        .load::<Tree>(&conn)
+        .load::<Tree>(conn)
         .unwrap();
-    let children = Tree::belonging_to(&parents).load::<Tree>(&conn).unwrap();
+    let children = Tree::belonging_to(&parents).load::<Tree>(conn).unwrap();
     let children = children.grouped_by(&parents);
     let data = parents.into_iter().zip(children).collect::<Vec<_>>();
 
@@ -229,19 +246,19 @@ fn self_referencing_associations() {
 }
 
 fn conn_with_test_data() -> (TestConnection, User, User, User) {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
     insert_into(users::table)
         .values(&NewUser::new("Jim", None))
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
 
-    let sean = find_user_by_name("Sean", &connection);
-    let tess = find_user_by_name("Tess", &connection);
-    let jim = find_user_by_name("Jim", &connection);
+    let sean = find_user_by_name("Sean", &mut connection);
+    let tess = find_user_by_name("Tess", &mut connection);
+    let jim = find_user_by_name("Jim", &mut connection);
     let new_posts = vec![sean.new_post("Hello", None), sean.new_post("World", None)];
     insert_into(posts::table)
         .values(&new_posts)
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
     let new_posts = vec![
         tess.new_post("Hello 2", None),
@@ -249,19 +266,22 @@ fn conn_with_test_data() -> (TestConnection, User, User, User) {
     ];
     insert_into(posts::table)
         .values(&new_posts)
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
     let new_posts = vec![jim.new_post("Hello 3", None), jim.new_post("World 3", None)];
     insert_into(posts::table)
         .values(&new_posts)
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
 
     (connection, sean, tess, jim)
 }
 
-#[test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[diesel_test_helper::test]
+// FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(feature = "mysql"))]
+// https://github.com/rust-lang/rust/issues/124396
+#[allow(unknown_lints, non_local_definitions)]
 fn custom_foreign_key() {
     use diesel::connection::SimpleConnection;
     use diesel::*;
@@ -283,16 +303,16 @@ fn custom_foreign_key() {
 
     allow_tables_to_appear_in_same_query!(users1, posts1);
 
-    #[derive(Clone, Debug, PartialEq, Identifiable, Queryable)]
-    #[table_name = "users1"]
+    #[derive(Clone, Debug, PartialEq, Identifiable, Queryable, Eq)]
+    #[diesel(table_name = users1)]
     pub struct User {
         id: i32,
         name: String,
     }
 
-    #[derive(Clone, Debug, PartialEq, Associations, Identifiable, Queryable)]
-    #[belongs_to(User, foreign_key = "belongs_to_user")]
-    #[table_name = "posts1"]
+    #[derive(Clone, Debug, PartialEq, Associations, Identifiable, Queryable, Eq)]
+    #[diesel(belongs_to(User, foreign_key = belongs_to_user))]
+    #[diesel(table_name = posts1)]
     pub struct Post {
         id: i32,
         belongs_to_user: i32,
@@ -300,7 +320,7 @@ fn custom_foreign_key() {
     }
 
     joinable!(posts1 -> users1(belongs_to_user));
-    let connection = connection();
+    let connection = &mut connection();
     connection
         .batch_execute(
             r#"
@@ -343,12 +363,27 @@ fn custom_foreign_key() {
     };
 
     assert_eq!(
-        Post::belonging_to(&sean).load(&connection),
+        Post::belonging_to(&sean).load(connection),
         Ok(vec![post1.clone(), post3.clone()])
     );
 
     assert_eq!(
-        users1::table.inner_join(posts1::table).load(&connection),
+        users1::table.inner_join(posts1::table).load(connection),
         Ok(vec![(sean.clone(), post1), (tess, post2), (sean, post3)])
     );
+}
+
+#[diesel_test_helper::test]
+/// Verify that tuples of columns implement HasTable
+fn tuples_of_columns_implement_has_table() {
+    use diesel::associations::HasTable;
+
+    // Composite tuple case
+    let _users: users::table = <(User, NewUser)>::table();
+
+    // Triple element tuple case
+    let _users: users::table = <(User, User, NewUser)>::table();
+
+    // Single element tuple case
+    let _users: users::table = <(NewUser,)>::table();
 }

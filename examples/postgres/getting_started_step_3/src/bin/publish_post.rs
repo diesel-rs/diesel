@@ -1,6 +1,6 @@
 use self::models::Post;
 use diesel::prelude::*;
-use diesel_demo_step_3_pg::*;
+use getting_started_step_3_pg::*;
 use std::env::args;
 
 fn main() {
@@ -11,11 +11,12 @@ fn main() {
         .expect("publish_post requires a post id")
         .parse::<i32>()
         .expect("Invalid ID");
-    let connection = establish_connection();
+    let connection = &mut establish_connection();
 
     let post = diesel::update(posts.find(id))
         .set(published.eq(true))
-        .get_result::<Post>(&connection)
+        .returning(Post::as_returning())
+        .get_result(connection)
         .unwrap();
     println!("Published post {}", post.title);
 }

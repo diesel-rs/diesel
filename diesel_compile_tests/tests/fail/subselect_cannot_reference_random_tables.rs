@@ -25,19 +25,22 @@ allow_tables_to_appear_in_same_query!(users, posts, comments);
 fn main() {
     use diesel::dsl::{any, exists};
 
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
 
     let _ = users::table
         .filter(users::id.eq_any(posts::table.select(posts::id).filter(comments::id.eq(1))))
-        .load::<(i32,)>(&conn);
+        .load::<(i32,)>(&mut conn);
+    //~^ ERROR: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
 
     let _ = users::table
         .filter(users::id.eq(any(
             posts::table.select(posts::id).filter(comments::id.eq(1)),
         )))
-        .load::<(i32,)>(&conn);
+        .load::<(i32,)>(&mut conn);
+    //~^ ERROR: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
 
     let _ = users::table
         .filter(exists(posts::table.filter(comments::id.eq(1))))
-        .load::<(i32,)>(&conn);
+        .load::<(i32,)>(&mut conn);
+    //~^ ERROR: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
 }

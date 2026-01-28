@@ -2,8 +2,9 @@ use crate::dsl;
 use crate::expression::TypedExpressionType;
 use crate::expression::ValidGrouping;
 use crate::query_builder::AsQuery;
+use crate::query_builder::FromClause;
 use crate::query_builder::SelectStatement;
-use crate::query_source::Table;
+use crate::query_source::QueryRelation;
 use crate::Expression;
 
 /// The `into_boxed` method
@@ -12,7 +13,12 @@ use crate::Expression;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `into_boxed` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
+#[diagnostic::on_unimplemented(
+    message = "cannot box `{Self}` for backend `{DB}`",
+    note = "this either means `{Self}` is no valid SQL for `{DB}`",
+    note = "or this means `{Self}` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause"
+)]
 pub trait BoxedDsl<'a, DB> {
     /// The return type of `internal_into_boxed`
     type Output;
@@ -21,14 +27,15 @@ pub trait BoxedDsl<'a, DB> {
     fn internal_into_boxed(self) -> dsl::IntoBoxed<'a, Self, DB>;
 }
 
+#[diagnostic::do_not_recommend]
 impl<'a, T, DB> BoxedDsl<'a, DB> for T
 where
-    T: Table + AsQuery<Query = SelectStatement<T>>,
-    SelectStatement<T>: BoxedDsl<'a, DB>,
+    T: QueryRelation + AsQuery<Query = SelectStatement<FromClause<T>>>,
+    SelectStatement<FromClause<T>>: BoxedDsl<'a, DB>,
     T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
     T::SqlType: TypedExpressionType,
 {
-    type Output = dsl::IntoBoxed<'a, SelectStatement<T>, DB>;
+    type Output = dsl::IntoBoxed<'a, SelectStatement<FromClause<T>>, DB>;
 
     fn internal_into_boxed(self) -> Self::Output {
         self.as_query().internal_into_boxed()

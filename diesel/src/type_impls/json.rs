@@ -3,11 +3,11 @@
 use crate::deserialize::FromSqlRow;
 use crate::expression::AsExpression;
 use crate::sql_types::Json;
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
 use crate::sql_types::Jsonb;
 
 #[derive(AsExpression, FromSqlRow)]
 #[diesel(foreign_derive)]
-#[sql_type = "Json"]
-#[cfg_attr(feature = "postgres", sql_type = "Jsonb")]
+#[diesel(sql_type = Json)]
+#[cfg_attr(any(feature = "postgres_backend", feature = "sqlite"), diesel(sql_type = Jsonb))]
 struct SerdeJsonValueProxy(serde_json::Value);

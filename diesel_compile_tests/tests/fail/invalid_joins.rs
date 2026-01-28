@@ -1,0 +1,96 @@
+extern crate diesel;
+
+use diesel::*;
+
+table! {
+    users {
+        id -> Integer,
+        name -> VarChar,
+    }
+}
+
+table! {
+    posts {
+        id -> Integer,
+        title -> Text,
+        user_id -> Integer,
+    }
+}
+
+table! {
+    comments {
+        id -> Integer,
+        user_id -> Integer,
+        post_id -> Integer,
+        name -> Text,
+    }
+}
+
+joinable!(posts -> users (user_id));
+joinable!(comments -> users (user_id));
+joinable!(comments -> posts (post_id));
+allow_tables_to_appear_in_same_query!(posts, users, comments);
+
+fn main() {}
+
+fn invalid_inner_joins() {
+    // This is a valid join
+    let _ = users::table.inner_join(posts::table);
+
+    // This fails, because we join the same table more than once
+    let _ = users::table.inner_join(posts::table.inner_join(users::table));
+    //~^ ERROR: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
+    //~| ERROR: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
+
+    // It also fails if we use an explicit on clause
+    let _ = users::table
+        .inner_join(posts::table.inner_join(users::table.on(posts::user_id.eq(users::id))));
+    //~^ ERROR: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
+    //~| ERROR: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
+
+    // Also if we put the on clause on the first join
+    let _ = users::table.inner_join(
+        //~^ ERROR: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
+        posts::table
+            .on(users::id.eq(posts::user_id))
+            .inner_join(users::table),
+        //~^^^ ERROR: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
+    );
+
+    // it also fails if we join to another subjoin
+    let _ = users::table
+        .inner_join(comments::table)
+        .inner_join(posts::table.inner_join(comments::table));
+    //~^ ERROR: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
+}
+
+fn invalid_left_joins() {
+    // This is a valid join
+    let _ = users::table.left_join(posts::table);
+
+    // This fails, because we join the same table more than once
+    let _ = users::table.left_join(posts::table.left_join(users::table));
+    //~^ ERROR: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
+    //~| ERROR: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
+
+    // It also fails if we use an explicit on clause
+    let _ = users::table
+        .left_join(posts::table.left_join(users::table.on(posts::user_id.eq(users::id))));
+    //~^ ERROR: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
+    //~| ERROR: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
+
+    // Also if we put the on clause on the first join
+    let _ = users::table.left_join(
+        //~^ ERROR: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
+        posts::table
+            .on(users::id.eq(posts::user_id))
+            .left_join(users::table),
+        //~^^^ ERROR: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
+    );
+
+    // it also fails if we join to another subjoin
+    let _ = users::table
+        .left_join(comments::table)
+        .left_join(posts::table.left_join(comments::table));
+    //~^ ERROR: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
+}

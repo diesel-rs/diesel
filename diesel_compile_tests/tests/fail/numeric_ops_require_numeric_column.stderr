@@ -1,9 +1,17 @@
-error[E0369]: cannot add `users::columns::name` to `users::columns::name`
-  --> $DIR/numeric_ops_require_numeric_column.rs:15:31
+error[E0369]: cannot add `columns::name` to `columns::name`
+  --> tests/fail/numeric_ops_require_numeric_column.rs:15:31
    |
-15 |     let _ = users.select(name + name);
-   |                          ---- ^ ---- users::columns::name
+LL |     let _ = users.select(name + name);
+   |                          ---- ^ ---- columns::name
    |                          |
-   |                          users::columns::name
+   |                          columns::name
    |
-   = note: an implementation of `std::ops::Add` might be missing for `users::columns::name`
+note: an implementation of `std::ops::Add` might be missing for `columns::name`
+  --> tests/fail/numeric_ops_require_numeric_column.rs:8:9
+   |
+ LL |         name -> VarChar,
+   |         ^^^^ must implement `std::ops::Add`
+note: the trait `std::ops::Add` must be implemented
+  --> /rustc/0000000000000000000000000000000000000000/library/core/src/ops/arith.rs:77:1
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0369`.

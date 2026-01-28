@@ -1,13 +1,5 @@
-#![deny(warnings)]
-
-extern crate chrono;
-extern crate diesel;
-#[macro_use]
-extern crate difference;
-extern crate migrations_internals;
-extern crate regex;
-extern crate tempfile;
-
+// that's a false positive for `panic!`/`assert!` on rust 2018
+#![allow(clippy::uninlined_format_args)]
 mod completion_generation;
 mod database_drop;
 mod database_reset;

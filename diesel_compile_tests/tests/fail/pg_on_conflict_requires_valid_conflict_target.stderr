@@ -1,21 +1,103 @@
-error[E0271]: type mismatch resolving `<posts::columns::id as diesel::Column>::Table == users::table`
-  --> $DIR/pg_on_conflict_requires_valid_conflict_target.rs:34:10
-   |
-34 |         .on_conflict(posts::id);
-   |          ^^^^^^^^^^^ expected struct `posts::table`, found struct `users::table`
+error[E0271]: type mismatch resolving `<id as Column>::Table == table`
+   --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:41:22
+    |
+ LL |         .on_conflict(posts::id);
+    |          ----------- ^^^^^^^^^ type mismatch resolving `<id as Column>::Table == table`
+    |          |
+    |          required by a bound introduced by this call
+    |
+note: expected this to be `users::table`
+   --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:12:1
+    |
+ LL | / table! {
+ LL | |     posts {
+ LL | |         id -> Integer,
+ LL | |         title -> VarChar,
+ LL | |     }
+ LL | | }
+    | |_^
+    = note: `posts::table` and `users::table` have similar names, but are actually distinct types
+note: `posts::table` is defined in module `crate::posts` of the current crate
+   --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:12:1
+    |
+ LL | / table! {
+ LL | |     posts {
+    | |_________^
+note: `users::table` is defined in module `crate::users` of the current crate
+   --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:5:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
+note: required by a bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
+   --> DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
+    |
+LL |     pub fn on_conflict<Target>(
+    |            ----------- required by a bound in this associated function
+...
+LL |         ConflictTarget<Target>: OnConflictTarget<T>,
+    |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `lower::lower<posts::columns::title>: diesel::Column` is not satisfied
-  --> $DIR/pg_on_conflict_requires_valid_conflict_target.rs:38:22
-   |
-38 |         .on_conflict(lower(posts::title));
-   |                      ^^^^^^^^^^^^^^^^^^^ the trait `diesel::Column` is not implemented for `lower::lower<posts::columns::title>`
-   |
-   = note: required because of the requirements on the impl of `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>` for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<lower::lower<posts::columns::title>>`
+error[E0277]: the trait bound `lower_utils::lower<posts::columns::title>: Column` is not satisfied
+   --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:46:22
+    |
+ LL |         .on_conflict(lower(posts::title));
+    |          ----------- ^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
+    |
+help: the trait `Column` is not implemented for `lower_utils::lower<posts::columns::title>`
+   --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:23:1
+    |
+ LL | #[declare_sql_function]
+    | ^^^^^^^^^^^^^^^^^^^^^^^
+    = help: the following other types implement trait `Column`:
+              diesel::expression::assume_not_null::AssumeNotNull<T>
+              pg::metadata_lookup::pg_namespace::columns::nspname
+              pg::metadata_lookup::pg_namespace::columns::oid
+              pg::metadata_lookup::pg_type::columns::oid
+              pg::metadata_lookup::pg_type::columns::typarray
+              pg::metadata_lookup::pg_type::columns::typname
+              pg::metadata_lookup::pg_type::columns::typnamespace
+              posts::columns::id
+            and N others
+    = note: required for `ConflictTarget<lower<title>>` to implement `OnConflictTarget<table>`
+note: required by a bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
+   --> DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
+    |
+LL |     pub fn on_conflict<Target>(
+    |            ----------- required by a bound in this associated function
+...
+LL |         ConflictTarget<Target>: OnConflictTarget<T>,
+    |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
+ 
+        = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `&str: diesel::Column` is not satisfied
-  --> $DIR/pg_on_conflict_requires_valid_conflict_target.rs:42:22
-   |
-42 |         .on_conflict("id");
-   |                      ^^^^ the trait `diesel::Column` is not implemented for `&str`
-   |
-   = note: required because of the requirements on the impl of `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>` for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<&str>`
+error[E0277]: the trait bound `&str: Column` is not satisfied
+   --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:51:22
+    |
+ LL |         .on_conflict("id");
+    |          ----------- ^^^^ the trait `Column` is not implemented for `&str`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = help: the following other types implement trait `Column`:
+              diesel::expression::assume_not_null::AssumeNotNull<T>
+              pg::metadata_lookup::pg_namespace::columns::nspname
+              pg::metadata_lookup::pg_namespace::columns::oid
+              pg::metadata_lookup::pg_type::columns::oid
+              pg::metadata_lookup::pg_type::columns::typarray
+              pg::metadata_lookup::pg_type::columns::typname
+              pg::metadata_lookup::pg_type::columns::typnamespace
+              posts::columns::id
+            and N others
+    = note: required for `ConflictTarget<&str>` to implement `OnConflictTarget<table>`
+note: required by a bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
+   --> DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
+    |
+LL |     pub fn on_conflict<Target>(
+    |            ----------- required by a bound in this associated function
+...
+LL |         ConflictTarget<Target>: OnConflictTarget<T>,
+    |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`

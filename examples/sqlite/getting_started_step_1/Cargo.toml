@@ -1,16 +1,24 @@
 [package]
-name = "diesel_demo_step_1_sqlite"
+name = "getting_started_step_1_sqlite"
 version = "0.1.0"
 license = "MIT OR Apache-2.0"
 authors = ["Taryn Hill <taryn@phrohdoh.com>"]
-edition = "2018"
+edition.workspace = true
+publish = false
 
 [dependencies]
-diesel = { version = "2.0.0", path = "../../../diesel", features = ["sqlite"] }
-dotenv = "0.15"
+diesel = { version = "2.3.0", path = "../../../diesel", features = ["sqlite"] }
+libsqlite3-sys = { workspace = true, features = ["bundled"] }
+dotenvy = "0.15"
+
+[dev-dependencies]
+assert_cmd = "2.0.14"
+tempfile = "3"
+diesel_migrations = { version = "2.3.0", path = "../../../diesel_migrations" }
 
 [[bin]]
-name = "show_posts"
+name = "show_posts_step_1"
+path = "src/bin/show_posts.rs"
 doc = false
 
 [lib]

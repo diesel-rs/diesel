@@ -4,9 +4,11 @@ use diesel::dsl::*;
 use diesel::*;
 
 fn main() {
-    let connection = SqliteConnection::establish("").unwrap();
-    select(array((1,))).get_result::<Vec<i32>>(&connection);
+    let mut connection = SqliteConnection::establish("").unwrap();
+    select(array((1,))).get_result::<Vec<i32>>(&mut connection);
+    //~^ ERROR: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
 
-    let connection = MysqlConnection::establish("").unwrap();
-    select(array((1,))).get_result::<Vec<i32>>(&connection);
+    let mut connection = MysqlConnection::establish("").unwrap();
+    select(array((1,))).get_result::<Vec<i32>>(&mut connection);
+    //~^ ERROR: type mismatch resolving `<MysqlConnection as Connection>::Backend == Pg`
 }
