@@ -39,8 +39,7 @@ impl Backend {
                     );
                 }
             }
-            _ if database_url.starts_with("mysql://") =>
-            {
+            _ if database_url.starts_with("mysql://") => {
                 #[cfg(feature = "mysql")]
                 {
                     Backend::Mysql

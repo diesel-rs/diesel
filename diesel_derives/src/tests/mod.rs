@@ -76,11 +76,10 @@ impl AttributeFormatter<(proc_macro2::TokenStream, proc_macro2::TokenStream)> fo
 }
 
 fn format_input(input: proc_macro2::TokenStream) -> String {
-    let input_string = syn::parse2(input.clone())
+    syn::parse2(input.clone())
         .as_ref()
         .map(prettyplease::unparse)
-        .unwrap_or_else(|_| input.to_string());
-    input_string
+        .unwrap_or_else(|_| input.to_string())
 }
 
 #[track_caller]

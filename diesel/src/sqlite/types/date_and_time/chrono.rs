@@ -132,10 +132,10 @@ impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
                 }
             }
 
-            if let Ok(julian_days) = text.parse::<f64>() {
-                if let Some(timestamp) = parse_julian(julian_days) {
-                    return Ok(timestamp);
-                }
+            if let Ok(julian_days) = text.parse::<f64>()
+                && let Some(timestamp) = parse_julian(julian_days)
+            {
+                return Ok(timestamp);
             }
 
             Err(format!("Invalid datetime {text}").into())
@@ -161,10 +161,10 @@ impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
                 }
             }
 
-            if let Ok(julian_days) = text.parse::<f64>() {
-                if let Some(timestamp) = parse_julian(julian_days) {
-                    return Ok(timestamp);
-                }
+            if let Ok(julian_days) = text.parse::<f64>()
+                && let Some(timestamp) = parse_julian(julian_days)
+            {
+                return Ok(timestamp);
             }
 
             Err(format!("Invalid datetime {text}").into())

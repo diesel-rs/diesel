@@ -4,8 +4,8 @@
 extern crate time;
 
 use self::time::{
-    error::ComponentRange, macros::format_description, Date as NaiveDate, OffsetDateTime,
-    PrimitiveDateTime, Time as NaiveTime, UtcOffset,
+    Date as NaiveDate, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime, UtcOffset,
+    error::ComponentRange, macros::format_description,
 };
 // the non-deprecated variant does not exist in our minimal supported version
 #[allow(deprecated)]
@@ -74,51 +74,76 @@ const ENCODE_DATETIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] = format_descriptio
 
 // the non-deprecated variant does not exist in our minimal supported version
 #[allow(deprecated)]
-const ENCODE_DATETIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]");
+const ENCODE_DATETIME_FORMAT_SUBSECOND: &[FormatItem<'_>] = format_description!(
+    "[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"
+);
 
 // the non-deprecated variant does not exist in our minimal supported version
 #[allow(deprecated)]
 const PRIMITIVE_DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
     // Most likely formats
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]"),
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!(
+        "[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"
+    ),
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second]"),
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!(
+        "[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"
+    ),
     // All other formats in order of increasing specificity
     format_description!("[year]-[month]-[day] [hour]:[minute]"),
     format_description!("[year]-[month]-[day] [hour]:[minute]Z"),
-    format_description!("[year]-[month]-[day] [hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!(
+        "[year]-[month]-[day] [hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"
+    ),
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second]Z"),
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]Z"),
     format_description!("[year]-[month]-[day]T[hour]:[minute]"),
     format_description!("[year]-[month]-[day]T[hour]:[minute]Z"),
-    format_description!("[year]-[month]-[day]T[hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!(
+        "[year]-[month]-[day]T[hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"
+    ),
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]"),
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]Z"),
-    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!(
+        "[year]-[month]-[day]T[hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"
+    ),
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond]"),
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond]Z"),
-    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!(
+        "[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"
+    ),
 ];
 
 // the non-deprecated variant does not exist in our minimal supported version
 #[allow(deprecated)]
 const DATETIME_FORMATS: [&[FormatItem<'_>]; 12] = [
     // Most likely formats
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!(
+        "[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"
+    ),
+    format_description!(
+        "[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"
+    ),
     // All other formats in order of increasing specificity
     format_description!("[year]-[month]-[day] [hour]:[minute]Z"),
-    format_description!("[year]-[month]-[day] [hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!(
+        "[year]-[month]-[day] [hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"
+    ),
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second]Z"),
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]Z"),
     format_description!("[year]-[month]-[day]T[hour]:[minute]Z"),
-    format_description!("[year]-[month]-[day]T[hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!(
+        "[year]-[month]-[day]T[hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"
+    ),
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]Z"),
-    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!(
+        "[year]-[month]-[day]T[hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"
+    ),
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond]Z"),
-    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!(
+        "[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"
+    ),
 ];
 
 fn naive_utc(dt: OffsetDateTime) -> PrimitiveDateTime {
@@ -189,10 +214,10 @@ impl FromSql<Timestamp, Sqlite> for PrimitiveDateTime {
                 }
             }
 
-            if let Ok(julian_days) = text.parse::<f64>() {
-                if let Ok(timestamp) = parse_julian(julian_days) {
-                    return Ok(timestamp);
-                }
+            if let Ok(julian_days) = text.parse::<f64>()
+                && let Ok(timestamp) = parse_julian(julian_days)
+            {
+                return Ok(timestamp);
             }
 
             Err(format!("Invalid datetime {text}").into())
@@ -223,10 +248,10 @@ impl FromSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
                 }
             }
 
-            if let Ok(julian_days) = text.parse::<f64>() {
-                if let Ok(timestamp) = parse_julian(julian_days) {
-                    return Ok(timestamp);
-                }
+            if let Ok(julian_days) = text.parse::<f64>()
+                && let Ok(timestamp) = parse_julian(julian_days)
+            {
+                return Ok(timestamp);
             }
 
             Err(format!("Invalid datetime {text}").into())
@@ -290,8 +315,8 @@ mod tests {
     extern crate dotenvy;
 
     use super::time::{
-        macros::{date, datetime},
         Date as NaiveDate, Duration, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime,
+        macros::{date, datetime},
     };
 
     use super::naive_utc;

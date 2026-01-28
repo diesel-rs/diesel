@@ -1133,7 +1133,7 @@ extern "SQL" {
     #[cfg(feature = "sqlite")]
     #[variadic(2)]
     fn json_object<K: NotBlob<IsNull = is_nullable::NotNull>, V: NotBlob>(key: K, value: V)
-        -> Json;
+    -> Json;
 
     /// The `jsonb_object()` SQL function works just like the [`json_object()`](json_object_1())
     /// function except that the generated object is returned in SQLite's private binary JSONB

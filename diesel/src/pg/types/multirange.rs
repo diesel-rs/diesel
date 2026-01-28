@@ -3,8 +3,8 @@ use std::io::Write;
 use std::ops::Bound;
 
 use crate::deserialize::{self, Defaultable, FromSql};
-use crate::expression::bound::Bound as SqlBound;
 use crate::expression::AsExpression;
+use crate::expression::bound::Bound as SqlBound;
 use crate::pg::{Pg, PgTypeMetadata, PgValue};
 use crate::query_builder::bind_collector::ByteWrapper;
 use crate::serialize::{self, IsNull, Output, ToSql};
@@ -12,7 +12,7 @@ use crate::sql_types::*;
 
 // from `SELECT oid, typname FROM pg_catalog.pg_type where typname LIKE '%multirange'`;
 macro_rules! multirange_has_sql_type {
-    ($ty:ty, $oid:expr, $array_oid:expr) => {
+    ($ty:ty, $oid:expr_2021, $array_oid:expr_2021) => {
         #[cfg(feature = "postgres_backend")]
         impl HasSqlType<$ty> for Pg {
             fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {

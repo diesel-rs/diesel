@@ -2,8 +2,8 @@
 use super::bind_collector::{InternalSqliteBindValue, SqliteBindCollector};
 use super::raw::RawConnection;
 use super::sqlite_value::OwnedSqliteValue;
-use crate::connection::statement_cache::{MaybeCached, PrepareForCache};
 use crate::connection::Instrumentation;
+use crate::connection::statement_cache::{MaybeCached, PrepareForCache};
 use crate::query_builder::{QueryFragment, QueryId};
 use crate::result::Error::DatabaseError;
 use crate::result::*;
@@ -14,7 +14,7 @@ use libsqlite3_sys as ffi;
 use sqlite_wasm_rs as ffi;
 use std::cell::OnceCell;
 use std::ffi::{CStr, CString};
-use std::io::{stderr, Write};
+use std::io::{Write, stderr};
 use std::os::raw as libc;
 use std::ptr::{self, NonNull};
 
@@ -173,7 +173,7 @@ impl Statement {
             (t, b) => {
                 return Err(Error::SerializationError(
                     format!("Type mismatch: Expected {t:?}, got {b}").into(),
-                ))
+                ));
             }
         };
         match ensure_sqlite_ok(result, self.raw_connection()) {

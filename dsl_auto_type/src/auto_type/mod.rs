@@ -5,12 +5,12 @@ mod referenced_generics;
 mod settings_builder;
 
 use {
-    darling::{util::SpannedValue, FromMeta},
+    darling::{FromMeta, util::SpannedValue},
     either::Either,
     proc_macro2::{Span, TokenStream},
     quote::quote,
     std::{collections::HashMap, rc::Rc},
-    syn::{parse_quote, parse_quote_spanned, spanned::Spanned, Ident, ItemFn, Token, Type},
+    syn::{Ident, ItemFn, Token, Type, parse_quote, parse_quote_spanned, spanned::Spanned},
 };
 
 use local_variables_map::*;
@@ -69,7 +69,7 @@ pub(crate) fn auto_type_impl(
                 Span::mixed_site(),
                 "type_alias and no_type_alias are mutually exclusive",
             )
-            .into())
+            .into());
         }
     };
     let type_alias: Option<syn::Ident> = match (
@@ -97,7 +97,7 @@ pub(crate) fn auto_type_impl(
                 type_case.span(),
                 "type_name and type_case are mutually exclusive",
             )
-            .into())
+            .into());
         }
     };
 
@@ -123,7 +123,7 @@ pub(crate) fn auto_type_impl(
                         last_statement.span(),
                         "last statement should be an expression for auto_type",
                     )
-                    .into())
+                    .into());
                 }
             };
 

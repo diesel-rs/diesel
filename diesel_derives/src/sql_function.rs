@@ -1,17 +1,17 @@
 use proc_macro2::Span;
 use proc_macro2::TokenStream;
-use quote::format_ident;
-use quote::quote;
 use quote::ToTokens;
 use quote::TokenStreamExt;
+use quote::format_ident;
+use quote::quote;
 use std::iter;
 use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Pair;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{
-    parenthesized, parse_quote, Attribute, GenericArgument, Generics, Ident, ImplGenerics, LitStr,
-    PathArguments, Token, Type, TypeGenerics,
+    Attribute, GenericArgument, Generics, Ident, ImplGenerics, LitStr, PathArguments, Token, Type,
+    TypeGenerics, parenthesized, parse_quote,
 };
 use syn::{GenericParam, Meta};
 use syn::{LitBool, Path};
@@ -350,16 +350,14 @@ fn add_variadic_doc_comments(
 }
 
 fn parse_sql_name_attr(input: &mut SqlFunctionDecl) -> String {
-    let result = input
+    input
         .attributes
         .iter()
         .find_map(|attr| match attr.item {
             SqlFunctionAttribute::SqlName(_, ref value) => Some(value.value()),
             _ => None,
         })
-        .unwrap_or_else(|| input.fn_name.to_string());
-
-    result
+        .unwrap_or_else(|| input.fn_name.to_string())
 }
 
 fn expand_nonvariadic(
@@ -1365,10 +1363,10 @@ fn is_sqlite_type(ty: &Type) -> bool {
 
     let ident = last_segment.ident.to_string();
     if ident == "Nullable" {
-        if let PathArguments::AngleBracketed(ref ab) = last_segment.arguments {
-            if let Some(GenericArgument::Type(ty)) = ab.args.first() {
-                return is_sqlite_type(ty);
-            }
+        if let PathArguments::AngleBracketed(ref ab) = last_segment.arguments
+            && let Some(GenericArgument::Type(ty)) = ab.args.first()
+        {
+            return is_sqlite_type(ty);
         }
         return false;
     }
@@ -1695,18 +1693,18 @@ enum SqlFunctionAttribute {
 impl MySpanned for SqlFunctionAttribute {
     fn span(&self) -> proc_macro2::Span {
         match self {
-            SqlFunctionAttribute::Restriction(BackendRestriction::Backends(ref ident, ..))
-            | SqlFunctionAttribute::Restriction(BackendRestriction::SqlDialect(ref ident, ..))
-            | SqlFunctionAttribute::Restriction(BackendRestriction::BackendBound(ref ident, ..))
-            | SqlFunctionAttribute::Aggregate(ref ident, ..)
-            | SqlFunctionAttribute::Window { ref ident, .. }
-            | SqlFunctionAttribute::Variadic(ref ident, ..)
-            | SqlFunctionAttribute::SkipReturnTypeHelper(ref ident)
-            | SqlFunctionAttribute::SqlName(ref ident, ..) => ident.span(),
+            SqlFunctionAttribute::Restriction(BackendRestriction::Backends(ident, ..))
+            | SqlFunctionAttribute::Restriction(BackendRestriction::SqlDialect(ident, ..))
+            | SqlFunctionAttribute::Restriction(BackendRestriction::BackendBound(ident, ..))
+            | SqlFunctionAttribute::Aggregate(ident, ..)
+            | SqlFunctionAttribute::Window { ident, .. }
+            | SqlFunctionAttribute::Variadic(ident, ..)
+            | SqlFunctionAttribute::SkipReturnTypeHelper(ident)
+            | SqlFunctionAttribute::SqlName(ident, ..) => ident.span(),
             SqlFunctionAttribute::Restriction(BackendRestriction::None) => {
                 unreachable!("We do not construct that")
             }
-            SqlFunctionAttribute::Other(ref attribute) => attribute.span(),
+            SqlFunctionAttribute::Other(attribute) => attribute.span(),
         }
     }
 }
@@ -1767,11 +1765,7 @@ impl SqlFunctionAttribute {
             let inner;
             let _paren = parenthesized!(inner in input);
             let ret = SqlFunctionAttribute::parse_attr(name, &inner, attr, attribute_span)?;
-            if ignore {
-                Ok(None)
-            } else {
-                Ok(ret)
-            }
+            if ignore { Ok(None) } else { Ok(ret) }
         } else {
             let name_str = name.to_string();
             let parsed_attr = match &*name_str {

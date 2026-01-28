@@ -1,12 +1,12 @@
-use crate::query_builder::select_statement::boxed::BoxedQueryHelper;
-use crate::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper;
-use crate::query_builder::where_clause::BoxedWhereClause;
-use crate::query_builder::where_clause::WhereClause;
+use crate::QueryResult;
 use crate::query_builder::AstPass;
 use crate::query_builder::BoxedSelectStatement;
 use crate::query_builder::QueryFragment;
 use crate::query_builder::SelectStatement;
-use crate::QueryResult;
+use crate::query_builder::select_statement::boxed::BoxedQueryHelper;
+use crate::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper;
+use crate::query_builder::where_clause::BoxedWhereClause;
+use crate::query_builder::where_clause::WhereClause;
 
 // The corresponding impl for`NoWhereClause` is missing because of
 // https://www.sqlite.org/lang_UPSERT.html (Parsing Ambiguity)

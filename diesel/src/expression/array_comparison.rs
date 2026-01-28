@@ -2,7 +2,7 @@
 //! for array comparison operations like `IN` and `NOT IN`
 
 use super::expression_types::NotSelectable;
-use crate::backend::{sql_dialect, Backend, SqlDialect};
+use crate::backend::{Backend, SqlDialect, sql_dialect};
 use crate::expression::subselect::Subselect;
 use crate::expression::{
     AppearsOnTable, AsExpression, Expression, SelectableExpression, TypedExpressionType,

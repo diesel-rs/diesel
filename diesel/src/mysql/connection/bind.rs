@@ -429,11 +429,16 @@ impl BindData {
             let length = if let Some(length) = known_buffer_size_for_ffi_type(self.tpe) {
                 debug_assert!(
                     length <= self.capacity
-                    && <usize as TryFrom<_>>::try_from(self.length).expect("32bit integer fits in a usize")  <= self.capacity,
+                        && <usize as TryFrom<_>>::try_from(self.length)
+                            .expect("32bit integer fits in a usize")
+                            <= self.capacity,
                     "Libmysqlclient reported a larger size for a fixed size buffer without setting the truncated flag. \n\
                      This is a bug somewhere. Please open an issue with reproduction steps at \
                      https://github.com/diesel-rs/diesel/issues/new \n\
-                     Calculated Length: {length}, Buffer Capacity: {}, Reported Length {}, Type: {:?}", self.capacity, self.length, self.tpe
+                     Calculated Length: {length}, Buffer Capacity: {}, Reported Length {}, Type: {:?}",
+                    self.capacity,
+                    self.length,
+                    self.tpe
                 );
                 length
             } else {
@@ -444,7 +449,9 @@ impl BindData {
                 "Got a buffer size larger than the underlying allocation. \n\
                  If you see this message, please open an issue at https://github.com/diesel-rs/diesel/issues/new.\n\
                  Such an issue should contain exact reproduction steps how to trigger this message\n\
-                 Length: {length}, Capacity: {}, Type: {:?}", self.capacity, self.tpe
+                 Length: {length}, Capacity: {}, Type: {:?}",
+                self.capacity,
+                self.tpe
             );
 
             let slice = unsafe {
@@ -1247,9 +1254,9 @@ mod tests {
         assert!(!polygon_col.flags.contains(Flags::ENUM_FLAG));
         assert!(!polygon_col.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(
-                to_value::<Text, String>(polygon_col).unwrap(),
-                "MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))"
-            );
+            to_value::<Text, String>(polygon_col).unwrap(),
+            "MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))"
+        );
 
         let geometry_collection = &results[32].0;
         assert_eq!(

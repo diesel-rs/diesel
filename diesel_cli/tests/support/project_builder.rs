@@ -86,10 +86,10 @@ impl Project {
             .read_dir()
             .expect("Error reading directory")
             .filter_map(|e| {
-                if let Ok(e) = e {
-                    if e.path().is_dir() {
-                        return Some(Migration { path: e.path() });
-                    }
+                if let Ok(e) = e
+                    && e.path().is_dir()
+                {
+                    return Some(Migration { path: e.path() });
                 }
                 None
             })

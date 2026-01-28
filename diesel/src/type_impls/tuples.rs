@@ -4,8 +4,8 @@ use crate::deserialize::{
     self, FromSqlRow, FromStaticSqlRow, Queryable, SqlTypeOrSelectable, StaticallySizedRow,
 };
 use crate::expression::{
-    is_contained_in_group_by, AppearsOnTable, Expression, IsContainedInGroupBy, MixedAggregates,
-    QueryMetadata, Selectable, SelectableExpression, TypedExpressionType, ValidGrouping,
+    AppearsOnTable, Expression, IsContainedInGroupBy, MixedAggregates, QueryMetadata, Selectable,
+    SelectableExpression, TypedExpressionType, ValidGrouping, is_contained_in_group_by,
 };
 use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable, InsertableOptionHelper};
 use crate::query_builder::*;

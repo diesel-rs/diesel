@@ -1,6 +1,6 @@
 use crate::dsl::AsExpr;
-use crate::expression::grouped::Grouped;
 use crate::expression::Expression;
+use crate::expression::grouped::Grouped;
 use crate::expression_methods::JsonIndex;
 
 /// The return type of `lhs.is(rhs)`.

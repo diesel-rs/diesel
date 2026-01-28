@@ -5,8 +5,8 @@ use clap::ArgMatches;
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 use serde_regex::Serde as RegexWrapper;
-use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
+use std::collections::btree_map::Entry;
 use std::ops::Bound;
 use std::path::{Path, PathBuf};
 use std::{env, fmt, fs, iter};
@@ -288,12 +288,12 @@ impl Config {
                         print_schema.generate_missing_sql_type_definitions = Some(false)
                     }
 
-                    if let Some(except_rules) = &except_custom_type_definitions_with_indices {
-                        if let Some(rules) = except_rules.range(boundary).nth(0) {
-                            print_schema
-                                .except_custom_type_definitions
-                                .clone_from(rules.1);
-                        }
+                    if let Some(except_rules) = &except_custom_type_definitions_with_indices
+                        && let Some(rules) = except_rules.range(boundary).nth(0)
+                    {
+                        print_schema
+                            .except_custom_type_definitions
+                            .clone_from(rules.1);
                     }
 
                     let custom_type_derives = custom_type_derives_with_indices
@@ -505,16 +505,16 @@ impl PrintSchema {
     // https://github.com/rust-lang/rust-clippy/issues/12856
     #[allow(clippy::needless_borrows_for_generic_args)]
     fn set_relative_path_base(&mut self, base: &Path) {
-        if let Some(ref mut file) = self.file {
-            if file.is_relative() {
-                *file = base.join(&file);
-            }
+        if let Some(ref mut file) = self.file
+            && file.is_relative()
+        {
+            *file = base.join(&file);
         }
 
-        if let Some(ref mut patch_file) = self.patch_file {
-            if patch_file.is_relative() {
-                *patch_file = base.join(&patch_file);
-            }
+        if let Some(ref mut patch_file) = self.patch_file
+            && patch_file.is_relative()
+        {
+            *patch_file = base.join(&patch_file);
         }
     }
 

@@ -104,10 +104,10 @@ macro_rules! joinable_inner {
     (
         left_table_ty = $left_table_ty:ty,
         right_table_ty = $right_table_ty:ty,
-        right_table_expr = $right_table_expr:expr,
+        right_table_expr = $right_table_expr:expr_2021,
         foreign_key = $foreign_key:path,
         primary_key_ty = $primary_key_ty:ty,
-        primary_key_expr = $primary_key_expr:expr,
+        primary_key_expr = $primary_key_expr:expr_2021,
     ) => {
         impl $crate::JoinTo<$right_table_ty> for $left_table_ty {
             type FromClause = $right_table_ty;

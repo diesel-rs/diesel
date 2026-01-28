@@ -1,7 +1,7 @@
 use crate::diesel::ExpressionMethods;
-use diesel::sql_types::*;
 use diesel::IntoSql;
 use diesel::RunQueryDsl;
+use diesel::sql_types::*;
 #[cfg(feature = "mysql")]
 use std::str::FromStr;
 

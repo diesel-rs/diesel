@@ -1,6 +1,6 @@
 use crate::backend::Backend;
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::hash::Hash;
 
 use super::{CacheSize, StatementCacheKey};
@@ -114,8 +114,8 @@ where
 mod testing_utils {
 
     use crate::{
-        connection::{Instrumentation, InstrumentationEvent},
         Connection,
+        connection::{Instrumentation, InstrumentationEvent},
     };
 
     #[derive(Default)]
@@ -156,7 +156,7 @@ mod tests_pg {
     use crate::test_helpers::pg_database_url;
     use crate::{Connection, ExpressionMethods, IntoSql, PgConnection, QueryDsl, RunQueryDsl};
 
-    use super::testing_utils::{count_cache_calls, RecordCacheEvents};
+    use super::testing_utils::{RecordCacheEvents, count_cache_calls};
 
     #[crate::declare_sql_function]
     extern "SQL" {
@@ -351,7 +351,7 @@ mod tests_sqlite {
     use crate::sql_types::Integer;
     use crate::{Connection, ExpressionMethods, IntoSql, SqliteConnection};
 
-    use super::testing_utils::{count_cache_calls, RecordCacheEvents};
+    use super::testing_utils::{RecordCacheEvents, count_cache_calls};
 
     pub fn connection() -> SqliteConnection {
         let mut conn = SqliteConnection::establish(":memory:").unwrap();

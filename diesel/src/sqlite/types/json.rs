@@ -520,11 +520,11 @@ mod jsonb {
 mod tests {
     use super::jsonb::*;
     use super::*;
+    use crate::ExpressionMethods;
     use crate::query_dsl::RunQueryDsl;
     use crate::test_helpers::connection;
-    use crate::ExpressionMethods;
-    use crate::{dsl::sql, IntoSql};
-    use serde_json::{json, Value};
+    use crate::{IntoSql, dsl::sql};
+    use serde_json::{Value, json};
     use sql_types::{Json, Jsonb};
 
     #[diesel_test_helper::test]

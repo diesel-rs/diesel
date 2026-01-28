@@ -28,6 +28,10 @@ pub use self::json_expression_methods::{AnyJsonExpressionMethods, JsonIndex};
 #[doc(inline)]
 pub use self::text_expression_methods::TextExpressionMethods;
 #[doc(inline)]
+pub use crate::expression::functions::aggregate_expressions::AggregateExpressionMethods;
+#[doc(inline)]
+pub use crate::expression::functions::aggregate_expressions::WindowExpressionMethods;
+#[doc(inline)]
 pub use crate::expression::functions::aggregate_expressions::frame_clause::FrameBoundDsl;
 #[doc(inline)]
 pub use crate::expression::functions::aggregate_expressions::frame_clause::FrameClauseDsl;
@@ -36,10 +40,6 @@ pub use crate::expression::functions::aggregate_expressions::frame_clause::{
     FrameClauseEndBound, FrameClauseExclusion, FrameClauseStartBound, OffsetFollowing,
     OffsetPreceding,
 };
-#[doc(inline)]
-pub use crate::expression::functions::aggregate_expressions::AggregateExpressionMethods;
-#[doc(inline)]
-pub use crate::expression::functions::aggregate_expressions::WindowExpressionMethods;
 
 #[cfg(feature = "postgres_backend")]
 #[doc(inline)]

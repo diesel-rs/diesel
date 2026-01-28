@@ -2,7 +2,7 @@ use crate::dsl;
 use crate::expression::array_comparison::{AsInExpression, In, NotIn};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::*;
-use crate::expression::{assume_not_null, cast, nullable, AsExpression, Expression};
+use crate::expression::{AsExpression, Expression, assume_not_null, cast, nullable};
 use crate::sql_types::{SingleValue, SqlType, Untyped};
 
 /// Methods present on all expressions, except tuples

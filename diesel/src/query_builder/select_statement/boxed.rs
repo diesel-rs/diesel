@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::backend::{sql_dialect, DieselReserveSpecialization};
+use crate::backend::{DieselReserveSpecialization, sql_dialect};
 use crate::dsl::AsExprOf;
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;

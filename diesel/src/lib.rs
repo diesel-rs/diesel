@@ -377,7 +377,7 @@ pub mod helper_types {
     //! `users.filter(first_name.eq("John")).order(last_name.asc()).limit(10)` would
     //! be `Limit<Order<FindBy<users, first_name, &str>, Asc<last_name>>>`
     use super::query_builder::combination_clause::{self, CombinationClause};
-    use super::query_builder::{locking_clause as lock, AsQuery};
+    use super::query_builder::{AsQuery, locking_clause as lock};
     use super::query_dsl::methods::*;
     use super::query_dsl::*;
     use super::query_source::{aliasing, joins};
@@ -753,11 +753,11 @@ pub mod prelude {
     #[doc(inline)]
     pub use crate::macros::prelude::*;
     #[doc(inline)]
-    pub use crate::query_builder::has_query::HasQuery;
-    #[doc(inline)]
     pub use crate::query_builder::AsChangeset;
     #[doc(inline)]
     pub use crate::query_builder::DecoratableTarget;
+    #[doc(inline)]
+    pub use crate::query_builder::has_query::HasQuery;
     #[doc(inline)]
     pub use crate::query_dsl::{
         BelongingToDsl, CombineDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl,
@@ -780,12 +780,12 @@ pub mod prelude {
     #[cfg(feature = "mysql")]
     #[doc(inline)]
     pub use crate::mysql::MysqlConnection;
-    #[doc(inline)]
-    #[cfg(feature = "postgres_backend")]
-    pub use crate::pg::query_builder::copy::ExecuteCopyFromDsl;
     #[cfg(feature = "postgres")]
     #[doc(inline)]
     pub use crate::pg::PgConnection;
+    #[doc(inline)]
+    #[cfg(feature = "postgres_backend")]
+    pub use crate::pg::query_builder::copy::ExecuteCopyFromDsl;
     #[cfg(feature = "sqlite")]
     #[doc(inline)]
     pub use crate::sqlite::SqliteConnection;

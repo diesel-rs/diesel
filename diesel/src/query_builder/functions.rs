@@ -6,8 +6,8 @@ use super::{
     AsQuery, IncompleteInsertOrIgnoreStatement, IncompleteInsertStatement,
     IncompleteReplaceStatement, IntoUpdateTarget, SelectStatement, SqlQuery, UpdateStatement,
 };
-use crate::expression::Expression;
 use crate::Table;
+use crate::expression::Expression;
 
 /// Creates an `UPDATE` statement.
 ///

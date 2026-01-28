@@ -2,10 +2,10 @@ use super::DeleteStatement;
 use super::InsertStatement;
 use super::UpdateStatement;
 use super::{AstPass, QueryFragment};
+use crate::QuerySource;
 use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::query_builder::QueryId;
 use crate::result::QueryResult;
-use crate::QuerySource;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct NoReturningClause;
