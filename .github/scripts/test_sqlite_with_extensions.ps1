@@ -69,9 +69,10 @@ New-Item -ItemType Directory -Force -Path $InstallLib | Out-Null
 # /O2: Optimize
 # /LD: Create DLL
 # /Fe: Output name
+# /DSQLITE_API=__declspec(dllexport): Ensure symbols are exported so .lib is created
 Write-Host "Compiling SQLite DLL (Extensions Enabled + Math)..."
 
-cl.exe /O2 /LD /DSQLITE_ENABLE_MATH_FUNCTIONS sqlite3.c /Fe:sqlite3.dll
+cl.exe /O2 /LD /DSQLITE_ENABLE_MATH_FUNCTIONS /DSQLITE_API=__declspec(dllexport) sqlite3.c /Fe:sqlite3.dll
 
 if (-not (Test-Path "sqlite3.dll")) {
     Write-Error "Failed to build sqlite3.dll"
@@ -82,7 +83,9 @@ Copy-Item "sqlite3.dll" -Destination $InstallBin
 if (Test-Path "sqlite3.lib") {
     Copy-Item "sqlite3.lib" -Destination $InstallLib
 } else {
-    Write-Error "sqlite3.lib (import library) not found. Build likely failed."
+    Write-Host "Directory listing for debugging:"
+    Get-ChildItem
+    Write-Error "sqlite3.lib (import library) not found. Build likely failed (Check if symbols were exported)."
 }
 # Also copy dll to lib dir for easy finding
 Copy-Item "sqlite3.dll" -Destination $InstallLib

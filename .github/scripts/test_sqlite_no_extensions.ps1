@@ -45,9 +45,10 @@ New-Item -ItemType Directory -Force -Path $InstallLib | Out-Null
 # /LD = Create DLL
 # /DSQLITE_OMIT_LOAD_EXTENSION = The feature we are testing
 # /Fe: = File executable (output name)
+# /DSQLITE_API=__declspec(dllexport) = Ensure import lib is created
 Write-Host "Compiling SQLite DLL (DSQLITE_OMIT_LOAD_EXTENSION)..."
 
-cl.exe /O2 /LD /DSQLITE_OMIT_LOAD_EXTENSION sqlite3.c /Fe:sqlite3.dll
+cl.exe /O2 /LD /DSQLITE_OMIT_LOAD_EXTENSION /DSQLITE_API=__declspec(dllexport) sqlite3.c /Fe:sqlite3.dll
 
 if (-not (Test-Path "sqlite3.dll")) {
     Write-Error "Failed to build sqlite3.dll"
@@ -55,7 +56,13 @@ if (-not (Test-Path "sqlite3.dll")) {
 
 # Move artifacts to install locations
 Copy-Item "sqlite3.dll" -Destination $InstallBin
-Copy-Item "sqlite3.lib" -Destination $InstallLib
+if (Test-Path "sqlite3.lib") {
+    Copy-Item "sqlite3.lib" -Destination $InstallLib
+} else {
+    Write-Host "Directory listing for debugging:"
+    Get-ChildItem
+    Write-Error "sqlite3.lib not found. Build failed?"
+}
 # Also copy dll to lib dir for running convenience if needed, though PATH handles it
 Copy-Item "sqlite3.dll" -Destination $InstallLib 
 
