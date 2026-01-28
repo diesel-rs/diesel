@@ -1,12 +1,17 @@
 use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::expression::expression_types::NotSelectable;
-use crate::expression::{TypedExpressionType, ValidGrouping};
+use crate::expression::{Expression, TypedExpressionType, ValidGrouping};
+use crate::pg::expression::expression_methods::{ArrayOrNullableArray, IntegerOrNullableInteger};
 use crate::pg::Pg;
 use crate::query_builder::update_statement::changeset::AssignmentTarget;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::query_dsl::positional_order_dsl::{IntoPositionalOrderExpr, PositionalOrderExpr};
+use crate::sql_types::is_nullable::{
+    IsOneNullable, IsSqlTypeNullable, MaybeNullable, NotNull, OneNullable,
+};
 use crate::sql_types::{
-    Array, Bigint, Bool, DieselNumericOps, Inet, Integer, Jsonb, SqlType, Text,
+    Array, Bigint, Bool, DieselNumericOps, Inet, Integer, Jsonb, MaybeNullableType, OneIsNullable,
+    SqlType, Text,
 };
 use crate::{Column, QueryResult};
 
@@ -108,13 +113,15 @@ impl<L, R> ArrayIndex<L, R> {
     }
 }
 
-impl<L, R, ST> crate::expression::Expression for ArrayIndex<L, R>
+impl<L, R, ST> Expression for ArrayIndex<L, R>
 where
-    L: crate::expression::Expression<SqlType = Array<ST>>,
-    R: crate::expression::Expression<SqlType = Integer>,
+    L: Expression<SqlType: SqlType + ArrayOrNullableArray<Inner = ST>>,
+    R: Expression<SqlType: SqlType + IntegerOrNullableInteger>,
     ST: SqlType + TypedExpressionType,
+    IsSqlTypeNullable<L::SqlType>:
+        OneIsNullable<IsSqlTypeNullable<R::SqlType>, Out: MaybeNullableType<ST>>,
 {
-    type SqlType = ST;
+    type SqlType = MaybeNullable<IsOneNullable<L::SqlType, R::SqlType>, ST>;
 }
 
 impl_selectable_expression!(ArrayIndex<L, R>);
@@ -124,10 +131,7 @@ where
     L: QueryFragment<Pg>,
     R: QueryFragment<Pg>,
 {
-    fn walk_ast<'b>(
-        &'b self,
-        mut out: crate::query_builder::AstPass<'_, 'b, Pg>,
-    ) -> crate::result::QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         out.push_sql("(");
         self.array_expr.walk_ast(out.reborrow())?;
         out.push_sql(")");
@@ -138,8 +142,7 @@ where
     }
 }
 
-// we cannot use the additional
-// parenthesis for updates
+// we cannot use the additional parenthesis for updates
 #[derive(Debug)]
 pub struct UpdateArrayIndex<L, R>(ArrayIndex<L, R>);
 
@@ -148,10 +151,7 @@ where
     L: QueryFragment<Pg>,
     R: QueryFragment<Pg>,
 {
-    fn walk_ast<'b>(
-        &'b self,
-        mut out: crate::query_builder::AstPass<'_, 'b, Pg>,
-    ) -> crate::result::QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         self.0.array_expr.walk_ast(out.reborrow())?;
         out.push_sql("[");
         self.0.index_expr.walk_ast(out.reborrow())?;
@@ -163,6 +163,8 @@ where
 impl<L, R> AssignmentTarget for ArrayIndex<L, R>
 where
     L: Column,
+    // Null value in array subscript is forbidden in assignment
+    R: Expression<SqlType = Integer>,
 {
     type Table = <L as Column>::Table;
     type QueryAstNode = UpdateArrayIndex<UncorrelatedColumn<L>, R>;
@@ -171,6 +173,264 @@ where
         UpdateArrayIndex(ArrayIndex::new(
             UncorrelatedColumn(self.array_expr),
             self.index_expr,
+        ))
+    }
+}
+
+#[derive(Debug, Clone, Copy, QueryId, ValidGrouping)]
+#[doc(hidden)]
+pub struct ArraySlice<L, R1, R2> {
+    pub(crate) array_expr: L,
+    pub(crate) slice_start_expr: R1,
+    pub(crate) slice_end_expr: R2,
+}
+
+impl<L, R1, R2> ArraySlice<L, R1, R2> {
+    pub fn new(array_expr: L, slice_start_expr: R1, slice_end_expr: R2) -> Self {
+        Self {
+            array_expr,
+            slice_start_expr,
+            slice_end_expr,
+        }
+    }
+}
+
+impl<L, R1, R2, ST> Expression for ArraySlice<L, R1, R2>
+where
+    L: Expression<SqlType: SqlType + ArrayOrNullableArray<Inner = ST>>,
+    R1: Expression<SqlType: SqlType + IntegerOrNullableInteger>,
+    R2: Expression<SqlType: SqlType + IntegerOrNullableInteger>,
+    ST: SqlType + TypedExpressionType,
+    IsSqlTypeNullable<L::SqlType>: OneIsNullable<IsSqlTypeNullable<R1::SqlType>>,
+    IsOneNullable<L::SqlType, R1::SqlType>: OneIsNullable<IsSqlTypeNullable<R2::SqlType>>,
+    OneNullable<IsOneNullable<L::SqlType, R1::SqlType>, IsSqlTypeNullable<R2::SqlType>>:
+        MaybeNullableType<Array<ST>>,
+{
+    type SqlType = MaybeNullable<
+        OneNullable<IsOneNullable<L::SqlType, R1::SqlType>, IsSqlTypeNullable<R2::SqlType>>,
+        Array<ST>,
+    >;
+}
+
+impl_selectable_expression!(ArraySlice<L, R1, R2>);
+
+impl<L, R1, R2> QueryFragment<Pg> for ArraySlice<L, R1, R2>
+where
+    L: QueryFragment<Pg>,
+    R1: QueryFragment<Pg>,
+    R2: QueryFragment<Pg>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+        out.push_sql("(");
+        self.array_expr.walk_ast(out.reborrow())?;
+        out.push_sql(")");
+        out.push_sql("[");
+        self.slice_start_expr.walk_ast(out.reborrow())?;
+        out.push_sql(":");
+        self.slice_end_expr.walk_ast(out.reborrow())?;
+        out.push_sql("]");
+        Ok(())
+    }
+}
+
+// we cannot use the additional parenthesis for updates
+#[derive(Debug)]
+pub struct UpdateArraySlice<L, R1, R2>(ArraySlice<L, R1, R2>);
+
+impl<L, R1, R2> QueryFragment<Pg> for UpdateArraySlice<L, R1, R2>
+where
+    L: QueryFragment<Pg>,
+    R1: QueryFragment<Pg>,
+    R2: QueryFragment<Pg>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+        self.0.array_expr.walk_ast(out.reborrow())?;
+        out.push_sql("[");
+        self.0.slice_start_expr.walk_ast(out.reborrow())?;
+        out.push_sql(":");
+        self.0.slice_end_expr.walk_ast(out.reborrow())?;
+        out.push_sql("]");
+        Ok(())
+    }
+}
+
+impl<L, R1, R2> AssignmentTarget for ArraySlice<L, R1, R2>
+where
+    L: Column,
+    // Null value in array subscript is forbidden in assignment
+    R1: Expression<SqlType = Integer>,
+    R2: Expression<SqlType = Integer>,
+{
+    type Table = <L as Column>::Table;
+    type QueryAstNode = UpdateArraySlice<UncorrelatedColumn<L>, R1, R2>;
+
+    fn into_target(self) -> Self::QueryAstNode {
+        UpdateArraySlice(ArraySlice::new(
+            UncorrelatedColumn(self.array_expr),
+            self.slice_start_expr,
+            self.slice_end_expr,
+        ))
+    }
+}
+
+#[derive(Debug, Clone, Copy, QueryId, ValidGrouping)]
+#[doc(hidden)]
+pub struct ArraySliceFrom<L, R> {
+    pub(crate) array_expr: L,
+    pub(crate) slice_start_expr: R,
+}
+
+impl<L, R> ArraySliceFrom<L, R> {
+    pub fn new(array_expr: L, slice_start_expr: R) -> Self {
+        Self {
+            array_expr,
+            slice_start_expr,
+        }
+    }
+}
+
+impl<L, R, ST> Expression for ArraySliceFrom<L, R>
+where
+    L: Expression<SqlType: SqlType + ArrayOrNullableArray<Inner = ST>>,
+    R: Expression<SqlType: SqlType + IntegerOrNullableInteger>,
+    ST: SqlType + TypedExpressionType,
+    IsSqlTypeNullable<L::SqlType>:
+        OneIsNullable<IsSqlTypeNullable<R::SqlType>, Out: MaybeNullableType<Array<ST>>>,
+{
+    type SqlType = MaybeNullable<IsOneNullable<L::SqlType, R::SqlType>, Array<ST>>;
+}
+
+impl_selectable_expression!(ArraySliceFrom<L, R>);
+
+impl<L, R> QueryFragment<Pg> for ArraySliceFrom<L, R>
+where
+    L: QueryFragment<Pg>,
+    R: QueryFragment<Pg>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+        out.push_sql("(");
+        self.array_expr.walk_ast(out.reborrow())?;
+        out.push_sql(")");
+        out.push_sql("[");
+        self.slice_start_expr.walk_ast(out.reborrow())?;
+        out.push_sql(":]");
+        Ok(())
+    }
+}
+
+// we cannot use the additional parenthesis for updates
+#[derive(Debug)]
+pub struct UpdateArraySliceFrom<L, R>(ArraySliceFrom<L, R>);
+
+impl<L, R> QueryFragment<Pg> for UpdateArraySliceFrom<L, R>
+where
+    L: QueryFragment<Pg>,
+    R: QueryFragment<Pg>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+        self.0.array_expr.walk_ast(out.reborrow())?;
+        out.push_sql("[");
+        self.0.slice_start_expr.walk_ast(out.reborrow())?;
+        out.push_sql(":]");
+        Ok(())
+    }
+}
+
+impl<L, R> AssignmentTarget for ArraySliceFrom<L, R>
+where
+    // Column cannot be null if slice boundaries are not fully specified
+    L: Column<SqlType: SqlType<IsNull = NotNull>>,
+    // Null value in array subscript is forbidden in assignment
+    R: Expression<SqlType = Integer>,
+{
+    type Table = <L as Column>::Table;
+    type QueryAstNode = UpdateArraySliceFrom<UncorrelatedColumn<L>, R>;
+
+    fn into_target(self) -> Self::QueryAstNode {
+        UpdateArraySliceFrom(ArraySliceFrom::new(
+            UncorrelatedColumn(self.array_expr),
+            self.slice_start_expr,
+        ))
+    }
+}
+
+#[derive(Debug, Clone, Copy, QueryId, ValidGrouping)]
+#[doc(hidden)]
+pub struct ArraySliceTo<L, R> {
+    pub(crate) array_expr: L,
+    pub(crate) slice_end_expr: R,
+}
+
+impl<L, R> ArraySliceTo<L, R> {
+    pub fn new(array_expr: L, slice_end_expr: R) -> Self {
+        Self {
+            array_expr,
+            slice_end_expr,
+        }
+    }
+}
+
+impl<L, R, ST> Expression for ArraySliceTo<L, R>
+where
+    L: Expression<SqlType: SqlType + ArrayOrNullableArray<Inner = ST>>,
+    R: Expression<SqlType: SqlType + IntegerOrNullableInteger>,
+    ST: SqlType + TypedExpressionType,
+    IsSqlTypeNullable<L::SqlType>:
+        OneIsNullable<IsSqlTypeNullable<R::SqlType>, Out: MaybeNullableType<Array<ST>>>,
+{
+    type SqlType = MaybeNullable<IsOneNullable<L::SqlType, R::SqlType>, Array<ST>>;
+}
+
+impl_selectable_expression!(ArraySliceTo<L, R>);
+
+impl<L, R> QueryFragment<Pg> for ArraySliceTo<L, R>
+where
+    L: QueryFragment<Pg>,
+    R: QueryFragment<Pg>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+        out.push_sql("(");
+        self.array_expr.walk_ast(out.reborrow())?;
+        out.push_sql(")");
+        out.push_sql("[:");
+        self.slice_end_expr.walk_ast(out.reborrow())?;
+        out.push_sql("]");
+        Ok(())
+    }
+}
+
+// we cannot use the additional parenthesis for updates
+#[derive(Debug)]
+pub struct UpdateArraySliceTo<L, R>(ArraySliceTo<L, R>);
+
+impl<L, R> QueryFragment<Pg> for UpdateArraySliceTo<L, R>
+where
+    L: QueryFragment<Pg>,
+    R: QueryFragment<Pg>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+        self.0.array_expr.walk_ast(out.reborrow())?;
+        out.push_sql("[:");
+        self.0.slice_end_expr.walk_ast(out.reborrow())?;
+        out.push_sql("]");
+        Ok(())
+    }
+}
+
+impl<L, R> AssignmentTarget for ArraySliceTo<L, R>
+where
+    // Column cannot be null if slice boundaries are not fully specified
+    L: Column<SqlType: SqlType<IsNull = NotNull>>,
+    // Null value in array subscript is forbidden in assignment
+    R: Expression<SqlType = Integer>,
+{
+    type Table = <L as Column>::Table;
+    type QueryAstNode = UpdateArraySliceTo<UncorrelatedColumn<L>, R>;
+
+    fn into_target(self) -> Self::QueryAstNode {
+        UpdateArraySliceTo(ArraySliceTo::new(
+            UncorrelatedColumn(self.array_expr),
+            self.slice_end_expr,
         ))
     }
 }
