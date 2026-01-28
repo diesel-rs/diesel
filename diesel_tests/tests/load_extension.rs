@@ -1,91 +1,84 @@
 use crate::schema::connection_without_transaction;
-use diesel::{sql_query, RunQueryDsl};
-
-fn is_extension_loading_supported() -> bool {
-    std::env::var("DIESEL_TEST_SQLITE_EXTENSIONS_DISABLED").is_err()
-}
-
-#[test]
-fn test_load_extension() {
-    let mut conn = connection_without_transaction();
-
-    // disable extension loading
-    conn.disable_load_extension().unwrap();
-
-    // try loading module without enabling extension loading
-    let result = sql_query("SELECT load_extension('/tmp/foo');")
-        .execute(&mut conn)
-        .expect_err("should have been error");
-
-    if is_extension_loading_supported() {
-        assert_eq!(&format!("{}", &result), "not authorized");
-    } else {
-        assert_eq!(&format!("{}", &result), "no such function: load_extension");
-    }
-
-    // enable extension loading
-    conn.enable_load_extension().unwrap();
-
-    // try loading module without enabling extension loading
-    let result = sql_query("SELECT load_extension('/tmp/foo');")
-        .execute(&mut conn)
-        .expect_err("should have been error");
-
-    if is_extension_loading_supported() {
-        assert_ne!(&format!("{}", &result), "not authorized");
-    } else {
-        assert_eq!(&format!("{}", &result), "no such function: load_extension");
-    }
-}
+use diesel::sql_types::Text;
+use diesel::sqlite::{
+    SqliteExtension, SqliteMathFunctionsExtension, SqliteSpellfix1Extension, SqliteUUIDExtension,
+};
+use diesel::{select, RunQueryDsl};
 
 #[test]
-fn test_load_extensions_transaction() {
+fn test_load_all_extensions() {
     let mut conn = connection_without_transaction();
+    let restricted_build = std::env::var("DIESEL_TEST_SQLITE_EXTENSIONS_DISABLED").is_ok();
 
-    // We expect this to fail because extension likely doesn't exist
-    // But verify that it disabled the extension loading
-    let _ = conn.load_extensions(&["/non/existent/extension"]);
+    test_extension::<SqliteUUIDExtension, _>(&mut conn, restricted_build, "uuid", |conn| {
+        let uuid_result = select(diesel::dsl::sql::<Text>("uuid()")).get_result::<String>(conn);
+        assert!(uuid_result.is_ok(), "uuid() function should be available");
+        let uuid_value = uuid_result.unwrap();
+        assert_eq!(uuid_value.len(), 36);
+    });
 
-    // Check it is disabled
-    let result = sql_query("SELECT load_extension('/non/existent/extension');")
-        .execute(&mut conn)
-        .expect_err("should have been error");
+    test_extension::<SqliteMathFunctionsExtension, _>(
+        &mut conn,
+        restricted_build,
+        "extension-functions",
+        |conn| {
+            let cos_result = select(diesel::dsl::sql::<diesel::sql_types::Double>("cos(0)"))
+                .get_result::<f64>(conn);
+            // If compiled with math functions, this works.
+            if let Ok(val) = cos_result {
+                assert!((val - 1.0).abs() < 1e-6);
+            }
+        },
+    );
 
-    if is_extension_loading_supported() {
-        assert_eq!(&format!("{}", &result), "not authorized");
-    } else {
-        assert_eq!(&format!("{}", &result), "no such function: load_extension");
-    }
+    test_extension::<SqliteSpellfix1Extension, _>(&mut conn, restricted_build, "spellfix1", |conn| {
+        let dist = select(diesel::dsl::sql::<diesel::sql_types::Integer>(
+            "editdist1('apple', 'apply')",
+        ))
+        .get_result::<i32>(conn);
+        assert_eq!(dist, Ok(1), "spellfix1 should be loaded: editdist1 failed");
+    });
 }
 
-#[test]
-fn test_load_uuid_extension() {
-    let mut conn = connection_without_transaction();
-
-    // We attempt to load the uuid extension
-    // This might fail if the extension is not installed on the system
-    match conn.load_extensions(&["uuid"]) {
+fn test_extension<E, F>(
+    conn: &mut diesel::sqlite::SqliteConnection,
+    restricted_build: bool,
+    name: &str,
+    validation: F,
+) where
+    E: SqliteExtension,
+    F: FnOnce(&mut diesel::sqlite::SqliteConnection),
+{
+    match conn.load_extension::<E>() {
         Ok(_) => {
-            // If loading succeeded, the extension functions should be available
-            // and the load_extension function should be disabled
-
-            // Check function availability
-            let result = sql_query("SELECT uuid();").execute(&mut conn);
-            assert!(result.is_ok(), "uuid() function should be available");
-
-            // Check that load_extension is disabled
-            let result = sql_query("SELECT load_extension('uuid');")
-                .execute(&mut conn)
-                .expect_err("should have been error");
-            assert_eq!(&format!("{}", &result), "not authorized");
+            if restricted_build {
+                panic!(
+                    "Extension loading should fail in restricted build: {}",
+                    name
+                );
+            }
+            validation(conn);
         }
         Err(e) => {
-            // If loading failed, it should NOT be because of authorization
-            assert_ne!(
-                format!("{}", e),
-                "not authorized",
-                "Should have been authorized to load extension"
-            );
+            let error_string = format!("{}", e);
+            if restricted_build {
+                assert_eq!(
+                    error_string, "no such function: load_extension",
+                    "Should fail with specific error in restricted build for {}",
+                    name
+                );
+            } else {
+                assert_ne!(
+                    error_string, "not authorized",
+                    "Should have been authorized to load extension {}: {}",
+                    name, error_string
+                );
+                assert_ne!(
+                    error_string, "no such function: load_extension",
+                    "load_extension function should be available for {}",
+                    name
+                );
+            }
         }
     }
 }

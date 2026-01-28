@@ -5,6 +5,7 @@ extern crate libsqlite3_sys as ffi;
 use sqlite_wasm_rs as ffi;
 
 mod bind_collector;
+mod extensions;
 mod functions;
 mod owned_row;
 mod raw;
@@ -16,6 +17,7 @@ mod stmt;
 
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
 pub use self::bind_collector::SqliteBindValue;
+pub use self::extensions::*;
 pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
 
@@ -374,44 +376,95 @@ impl SqliteConnection {
         self.transaction_sql(f, "BEGIN EXCLUSIVE")
     }
 
-    /// Enables the `load_extension` SQL function.
+    /// Loads a SQLite extension.
     ///
-    /// See the documentation for the [`enable_load_extension` C function] for
-    /// details.
+    /// # Overview
     ///
-    /// [`enable_load_extension` C function]: https://www.sqlite.org/c3ref/enable_load_extension.html
-    pub fn enable_load_extension(&self) -> QueryResult<()> {
-        self.raw_connection.enable_load_extension(true)
-    }
+    /// This method loads a SQLite extension (shared library) into the current database connection.
+    /// It is designed to work even in environments where the standard `load_extension` SQL function
+    /// might be disabled or unavailable, provided the necessary symbols are present in the SQLite library.
+    /// When the symbols are not available, this method will not cause a compile or link error, but will
+    /// return a [`diesel::result::Error::DatabaseError`] indicating that extension loading is not supported.
+    ///
+    /// # Safety and Security
+    ///
+    /// Diesel prioritizes security by design. This method adheres to the following safety model:
+    ///
+    /// 1.  **Restricted Execution**: It temporarily enables the `SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION`
+    ///     configuration option only for the duration of this call. It matches the recommended security
+    ///     practice from the [SQLite documentation](https://www.sqlite.org/c3ref/db_config.html):
+    ///     *"It is recommended that extension loading be enabled using the SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION
+    ///     method... so the load_extension() SQL function remains disabled."*
+    /// 2.  **No SQL Injection**: The SQL-accessible `load_extension()` function remains disabled.
+    ///     Users cannot execute arbitrary code via SQL injection attacks.
+    /// 3.  **Type-Safe Allowlist**: The generic parameter `E` must implement the [`SqliteExtension`] trait.
+    ///     This trait acts as a compile-time allowlist (or registry) of known, trusted extensions.
+    ///     Since the extension filename is defined as a constant in the trait implementation, no
+    ///     arbitrary runtime strings are passed to the loading mechanism.
+    ///
+    /// # Linking and Portability
+    ///
+    /// This method uses dynamic symbol lookup (using `dlsym` on Unix-like systems and `GetProcAddress` on Windows)
+    /// to locate the `sqlite3_load_extension` helper function within the loaded SQLite library.
+    ///
+    /// *   **Why?** SQLite builds (e.g., on Android, iOS, or embedded Linux) are occasionally compiled with
+    ///     `-DSQLITE_OMIT_LOAD_EXTENSION`, which removes the optional extension loading headers but
+    ///     sometimes leaves the internal symbols or allows them to be dynamically resolved.
+    /// *   **Benefit**: This prevents linker errors at build time. If the underlying SQLite library
+    ///     does not support extensions, this method will return a clean `RunTimeError` instead of
+    ///     failing to compile.
+    ///
+    /// # Generic Parameter
+    ///
+    /// *   `E`: A type implementing [`SqliteExtension`], representing the extension to load.
+    ///     Examples include [`SqliteUUIDExtension`].
+    ///
+    /// # Returns
+    ///
+    /// *   `Ok(())` if the extension was successfully loaded.
+    /// *   `Err(Error::DatabaseError)` if the extension file could not be found or loaded by SQLite.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// use diesel::sqlite::{SqliteExtension, SqliteUUIDExtension};
+    ///
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    ///
+    /// // Attempt to load the UUID extension
+    /// // This will fail safely if the extension library is not in the system path
+    /// match conn.load_extension::<SqliteUUIDExtension>() {
+    ///     Ok(_) => println!("UUID extension loaded successfully"),
+    ///     Err(_) => println!("UUID extension not found, skipping"),
+    /// }
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn load_extension<E: SqliteExtension>(&mut self) -> QueryResult<()> {
+        // We first enable extension loading on the specific database connection.
+        // This is necessary because modern SQLite builds disable this by default for security.
+        self.raw_connection.enable_load_extension(true)?;
 
-    /// Disables the `load_extension` SQL function.
-    ///
-    /// See the documentation for the [`enable_load_extension` C function] for
-    /// details.
-    ///
-    /// [`enable_load_extension` C function]: https://www.sqlite.org/c3ref/enable_load_extension.html
-    pub fn disable_load_extension(&self) -> QueryResult<()> {
-        self.raw_connection.enable_load_extension(false)
-    }
+        // Now we attempt to load the extension using the filename provided by the trait.
+        // The trait implementation is trusted to provide a valid filename.
+        // This relies on dynamic symbol lookup in the raw connection implementation.
+        let result = self.raw_connection.load_extension::<E>();
 
-    /// Enables the `load_extension` SQL function, loads the provided extensions,
-    /// and then disables the `load_extension` SQL function.
-    ///
-    /// This function will attempt to disable the extension loading even if
-    /// loading an extension fails.
-    pub fn load_extensions(&mut self, extensions: &[&str]) -> QueryResult<()> {
-        use crate::query_dsl::RunQueryDsl;
+        // Regardless of whether the load succeeded or failed, we must attempt to
+        // disable extension loading immediately afterwards to minimize the
+        // window of vulnerability.
+        let disable_result = self.raw_connection.enable_load_extension(false);
 
-        self.enable_load_extension()?;
-        let result = (|| {
-            for ext in extensions {
-                crate::sql_query("SELECT load_extension(?)")
-                    .bind::<crate::sql_types::Text, _>(ext)
-                    .execute(self)?;
-            }
-            Ok(())
-        })();
-        let disable_result = self.disable_load_extension();
+        // We return the result of the load operation, unless disabling extension loading failed.
+        // If enabling failed (line 1), it returned early.
+        // If loading failed (line 2), result calls this error.
+        // If disabling failed (line 3), we want to know about it.
         result.and(disable_result)
     }
 

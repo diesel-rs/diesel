@@ -20,6 +20,7 @@ use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
+use crate::sqlite::SqliteExtension;
 
 /// For use in FFI function, which cannot unwind.
 /// Print the message, ask to open an issue at Github and [`abort`](std::process::abort).
@@ -262,24 +263,191 @@ impl RawConnection {
         }
     }
 
-    pub(super) fn enable_load_extension(&self, enabled: bool) -> QueryResult<()> {
-        let result = unsafe {
-            ffi::sqlite3_db_config(
+    pub(super) fn load_extension<E: SqliteExtension>(&self) -> QueryResult<()> {
+        unsafe {
+            use std::mem;
+
+            // Implementation Detail: Dynamic Loading of sqlite3_load_extension
+            //
+            // We cannot link directly to `sqlite3_load_extension` because it is not exported
+            // in SQLite builds compiled with `-DSQLITE_OMIT_LOAD_EXTENSION` (common on Android,
+            // iOS, and embedded systems). Direct linking would cause build failures on these targets.
+            //
+            // Instead, we look up the symbol at runtime:
+            // * On Unix, we use `dlsym` (via libc).
+            // * On Windows, we use `GetProcAddress`.
+            // * On unsupported platforms, we default to null, and loading will fail gracefully with
+            //   a "no such function" message in a `diesel::result::Error::DatabaseError`.
+            //
+            // Failure Cases:
+            // 1. **Symbol Missing**: If `sqlite3_load_extension` is not found (e.g. restricted build),
+            //    we return `Err(DatabaseError(..., "no such function: load_extension"))`.
+            //    This mimics SQLite's error when calling a non-existent function, allowing
+            //    graceful handling (as seen in our tests).
+            //
+            // 2. **Extension Load Failed**: If the symbol exists but the extension itself fails to load,
+            //    we propagate the error message returned by SQLite.
+
+            // On Unix systems, we search for symbols in the already loaded libraries (RTLD_DEFAULT).
+            // This relies on libsqlite3 being loaded in the process address space.
+            #[cfg(unix)]
+            let symbol =
+                { ::libc::dlsym(::libc::RTLD_DEFAULT, c"sqlite3_load_extension".as_ptr()) };
+
+            // On Windows, looking up symbols is more involved as we need a module handle.
+            #[cfg(target_os = "windows")]
+            let symbol = {
+                // We declare the necessary Windows API functions manually to avoid
+                // Adding a dependency on `windows-sys` or `winapi` just for this.
+                extern "system" {
+                    fn GetModuleHandleA(lpModuleName: *const libc::c_char) -> *mut libc::c_void;
+                    fn GetProcAddress(
+                        hModule: *mut libc::c_void,
+                        lpProcName: *const libc::c_char,
+                    ) -> *mut libc::c_void;
+                }
+
+                // Try to resolve the handle for `sqlite3.dll`.
+                let mut handle = GetModuleHandleA(c"sqlite3.dll".as_ptr());
+
+                // If not found, try `winsqlite3.dll` (common on some Windows versions).
+                if handle.is_null() {
+                    handle = GetModuleHandleA(c"winsqlite3.dll".as_ptr());
+                }
+
+                // If still not found, try getting the handle for the current process (NULL),
+                // in case sqlite is statically linked or symbols are exported by the executable.
+                if handle.is_null() {
+                    handle = GetModuleHandleA(ptr::null());
+                }
+
+                // If we found a handle, look up the function. Otherwise, return null.
+                if handle.is_null() {
+                    ptr::null_mut()
+                } else {
+                    GetProcAddress(handle, c"sqlite3_load_extension".as_ptr())
+                }
+            };
+
+            // On unsupported platforms (non-Unix, non-Windows), we default to null.
+            #[cfg(not(any(unix, target_os = "windows")))]
+            let symbol = std::ptr::null_mut();
+
+            // If the symbol was not found (either platform not supported, or symbol stripped),
+            // we return an error mimicking SQLite's "no such function".
+            if symbol.is_null() {
+                return Err(DatabaseError(
+                    DatabaseErrorKind::Unknown,
+                    Box::new("no such function: load_extension".to_string()),
+                ));
+            }
+
+            // We transmute the raw void pointer to a function pointer with the correct signature.
+            // Signature: int sqlite3_load_extension(sqlite3 *db, const char *zFile, const char *zProc, char **pzErrMsg);
+            let sqlite3_load_extension: unsafe extern "C" fn(
+                *mut ffi::sqlite3,
+                *const libc::c_char,
+                *const libc::c_char,
+                *mut *mut libc::c_char,
+            ) -> libc::c_int = mem::transmute(symbol);
+
+            // Pointer to hold the error message if loading fails.
+            // sqlite3_load_extension will allocate memory for this if needed.
+            let mut error_msg = ptr::null_mut();
+
+            // Call the function.
+            // 1. Connection handle.
+            // 2. Filename (from the generic trait).
+            // 3. Entry point (null = default).
+            // 4. Error message output pointer.
+            let result = sqlite3_load_extension(
                 self.internal_connection.as_ptr(),
+                E::FILENAME.as_ptr(),
+                ptr::null(),
+                &mut error_msg,
+            );
+
+            // Check result code.
+            if result == ffi::SQLITE_OK {
+                Ok(())
+            } else {
+                // If there's an error message returned by SQLite...
+                let msg = if !error_msg.is_null() {
+                    // Convert C string to Rust string.
+                    let s = std::ffi::CStr::from_ptr(error_msg)
+                        .to_string_lossy()
+                        .into_owned();
+                    // Important: Free the memory allocated by SQLite.
+                    ffi::sqlite3_free(error_msg as *mut _);
+                    s
+                } else {
+                    // Fallback to generic error message if none provided.
+                    super::error_message(result).to_string()
+                };
+
+                Err(DatabaseError(DatabaseErrorKind::Unknown, Box::new(msg)))
+            }
+        }
+    }
+
+    /// Sets whether extension loading is enabled or disabled.
+    ///
+    /// We use `sqlite3_db_config` instead of `sqlite3_enable_load_extension` here, because
+    /// `sqlite3_enable_load_extension` enables the `load_extension` SQL function, which is
+    /// considered unsafe.
+    ///
+    /// From the sqlite documentation:
+    /// > Security warning: It is recommended that extension loading be enabled using the
+    /// > SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION method rather than this interface,
+    /// > so the load_extension() SQL function remains disabled. This will prevent SQL
+    /// > injections from giving attackers access to extension loading capabilities.
+    pub(super) fn enable_load_extension(&self, enabled: bool) -> QueryResult<()> {
+        // Variable to hold the result reported back by SQLite.
+        // It will contain the updated value of the configuration option (0 or 1).
+        let mut call_outcome: libc::c_int = 0;
+
+        let result = unsafe {
+            // Using sqlite3_db_config is the secure way to enable C-API extension loading.
+            // It allows us to enable just the C-API (sqlite3_load_extension) without enabling
+            // the SQL function `load_extension()`, which prevents SQL injection risks.
+            ffi::sqlite3_db_config(
+                // 1. The database connection handle.
+                self.internal_connection.as_ptr(),
+                // 2. The configuration option: SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION.
+                // This controls whether the C-API `sqlite3_load_extension` is allowed to run.
                 ffi::SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION,
-                if enabled { 1 } else { 0 },
-                std::ptr::null_mut::<std::os::raw::c_int>(),
+                // 3. The new setting: 1 to enable, 0 to disable.
+                // Passed as a variadic argument (c_int).
+                if enabled { 1 } else { 0 } as libc::c_int,
+                // 4. Output pointer.
+                // SQLite writes 1 here if enabled, 0 if disabled after the call.
+                &mut call_outcome,
             )
         };
-        if result == ffi::SQLITE_OK {
-            Ok(())
-        } else {
+
+        if result != ffi::SQLITE_OK {
             let error_message = super::error_message(result);
-            Err(DatabaseError(
+            return Err(DatabaseError(
                 DatabaseErrorKind::Unknown,
                 Box::new(error_message.to_string()),
-            ))
+            ));
         }
+
+        // We verify that the call outcome is as expected
+        let call_outcome_bool = call_outcome != 0;
+        if call_outcome_bool != enabled {
+            let msg = if enabled {
+                "Failed to enable extension loading"
+            } else {
+                "Failed to disable extension loading"
+            };
+            return Err(DatabaseError(
+                DatabaseErrorKind::Unknown,
+                Box::new(msg.to_string()),
+            ));
+        }
+
+        Ok(())
     }
 }
 
