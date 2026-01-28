@@ -17,22 +17,44 @@ Set-Location $BuildDir
 
 $SqliteVersion = "3450100"
 $SqliteYear = "2024"
-$SqliteSourceDirName = "sqlite-src-$SqliteVersion"
-$SqliteZip = "$SqliteSourceDirName.zip"
 
-# Download full SQLite source (to get ext/misc/uuid.c)
-if (-not (Test-Path $SqliteZip)) {
-    Write-Host "Downloading SQLite $SqliteVersion..."
-    $Url = "https://sqlite.org/$SqliteYear/$SqliteZip"
-    Invoke-WebRequest -Uri $Url -OutFile $SqliteZip
+$SqliteAmalgamation = "sqlite-amalgamation-$SqliteVersion"
+$SqliteAmalgamationZip = "$SqliteAmalgamation.zip"
+$SqliteSource = "sqlite-src-$SqliteVersion"
+$SqliteSourceZip = "$SqliteSource.zip"
+
+# Download SQLite Amalgamation (for sqlite3.c)
+if (-not (Test-Path $SqliteAmalgamationZip)) {
+    Write-Host "Downloading SQLite Amalgamation $SqliteVersion..."
+    $Url = "https://sqlite.org/$SqliteYear/$SqliteAmalgamationZip"
+    Invoke-WebRequest -Uri $Url -OutFile $SqliteAmalgamationZip
 }
 
-if (-not (Test-Path $SqliteSourceDirName)) {
-    Write-Host "Extracting SQLite..."
-    Expand-Archive -Path $SqliteZip -DestinationPath $BuildDir
+# Download SQLite Source (to get ext/misc/uuid.c)
+if (-not (Test-Path $SqliteSourceZip)) {
+    Write-Host "Downloading SQLite Source $SqliteVersion..."
+    $Url = "https://sqlite.org/$SqliteYear/$SqliteSourceZip"
+    Invoke-WebRequest -Uri $Url -OutFile $SqliteSourceZip
 }
 
-Set-Location $SqliteSourceDirName
+if (-not (Test-Path $SqliteAmalgamation)) {
+    Write-Host "Extracting SQLite Amalgamation..."
+    Expand-Archive -Path $SqliteAmalgamationZip -DestinationPath $BuildDir
+}
+
+if (-not (Test-Path $SqliteSource)) {
+    Write-Host "Extracting SQLite Source..."
+    Expand-Archive -Path $SqliteSourceZip -DestinationPath $BuildDir
+}
+
+# Copy extensions to amalgamation folder
+Write-Host "Copying extension sources..."
+Copy-Item "$SqliteSource/ext/misc/uuid.c" -Destination "$SqliteAmalgamation/"
+if (Test-Path "$SqliteSource/ext/misc/spellfix.c") {
+    Copy-Item "$SqliteSource/ext/misc/spellfix.c" -Destination "$SqliteAmalgamation/"
+}
+
+Set-Location $SqliteAmalgamation
 
 # Create install/bin and install/lib directories
 $InstallBin = Join-Path $InstallDir "bin"
@@ -66,10 +88,10 @@ Copy-Item "sqlite3.dll" -Destination $InstallLib
 Write-Host "Building Extensions..."
 
 # 1. uuid.dll
-# Source: ext/misc/uuid.c
+# Source: uuid.c
 # Needs to link against sqlite3.lib
 Write-Host "Building uuid.dll..."
-cl.exe /O2 /LD /I. ext/misc/uuid.c sqlite3.lib /Fe:uuid.dll
+cl.exe /O2 /LD /I. uuid.c sqlite3.lib /Fe:uuid.dll
 
 if (-not (Test-Path "uuid.dll")) {
     Write-Error "Failed to build uuid.dll"
@@ -101,11 +123,9 @@ if (Test-Path "extension-functions.c") {
 # ----------------------------------------------------------------
 # The test might look for 'spellfix.so' (on Linux) or 'spellfix.dll'.
 # We need to see if we can build spellfix or if uuid is enough.
-# The Linux script creates a symlink: spellfix.so -> spellfix1.so
-# But spellfix is in ext/misc/spellfix.c? Let's check if we have it in full source.
-if (Test-Path "ext/misc/spellfix.c") {
+if (Test-Path "spellfix.c") {
     Write-Host "Building spellfix.dll..."
-    cl.exe /O2 /LD /I. ext/misc/spellfix.c sqlite3.lib /Fe:spellfix.dll
+    cl.exe /O2 /LD /I. spellfix.c sqlite3.lib /Fe:spellfix.dll
     if (Test-Path "spellfix.dll") {
         Copy-Item "spellfix.dll" -Destination $InstallLib
     }
