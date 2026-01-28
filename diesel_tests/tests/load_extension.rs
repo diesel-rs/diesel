@@ -35,10 +35,7 @@ fn test_load_all_extensions() {
         for ext in &extensions {
             let mut found = false;
             // Simple check for common shared library extensions
-            let candidates = [
-                format!("{}.so", ext),
-                format!("{}.dll", ext),
-            ];
+            let candidates = [format!("{}.so", ext), format!("{}.dll", ext)];
 
             for path in &paths {
                 for candidate in &candidates {
