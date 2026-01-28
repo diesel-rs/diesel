@@ -21,7 +21,7 @@
 ///
 /// impl SqliteExtension for MyCryptoExtension {
 ///     // The extension filename without 'lib' prefix or .so/.dll suffix
-///     const FILENAME: &'static std::ffi::CStr = unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"crypto\0") };
+///     const FILENAME: &'static std::ffi::CStr = c"crypto";
 /// }
 /// ```
 pub trait SqliteExtension {
@@ -38,10 +38,8 @@ pub trait SqliteExtension {
 #[derive(Debug, Clone, Copy)]
 pub struct SqliteUUIDExtension;
 
-#[allow(unsafe_code)]
 impl SqliteExtension for SqliteUUIDExtension {
-    const FILENAME: &'static std::ffi::CStr =
-        unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"uuid\0") };
+    const FILENAME: &'static std::ffi::CStr = c"uuid";
 }
 
 /// A marker struct for the "extension-functions" SQLite extension.
@@ -51,12 +49,10 @@ impl SqliteExtension for SqliteUUIDExtension {
 #[derive(Debug, Clone, Copy)]
 pub struct SqliteMathFunctionsExtension;
 
-#[allow(unsafe_code)]
 impl SqliteExtension for SqliteMathFunctionsExtension {
     // Commonly named "libsqlitefunctions" or "extension-functions" depending on distribution.
     // We try "extension-functions" here as a reasonable default for the library name.
-    const FILENAME: &'static std::ffi::CStr =
-        unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"extension-functions\0") };
+    const FILENAME: &'static std::ffi::CStr = c"extension-functions";
 }
 
 /// A marker struct for the "spellfix1" SQLite extension.
@@ -66,8 +62,6 @@ impl SqliteExtension for SqliteMathFunctionsExtension {
 #[derive(Debug, Clone, Copy)]
 pub struct SqliteSpellfix1Extension;
 
-#[allow(unsafe_code)]
 impl SqliteExtension for SqliteSpellfix1Extension {
-    const FILENAME: &'static std::ffi::CStr =
-        unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"spellfix1\0") };
+    const FILENAME: &'static std::ffi::CStr = c"spellfix1";
 }

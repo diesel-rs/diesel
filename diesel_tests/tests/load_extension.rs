@@ -31,13 +31,18 @@ fn test_load_all_extensions() {
         },
     );
 
-    test_extension::<SqliteSpellfix1Extension, _>(&mut conn, restricted_build, "spellfix1", |conn| {
-        let dist = select(diesel::dsl::sql::<diesel::sql_types::Integer>(
-            "editdist1('apple', 'apply')",
-        ))
-        .get_result::<i32>(conn);
-        assert_eq!(dist, Ok(1), "spellfix1 should be loaded: editdist1 failed");
-    });
+    test_extension::<SqliteSpellfix1Extension, _>(
+        &mut conn,
+        restricted_build,
+        "spellfix1",
+        |conn| {
+            let dist = select(diesel::dsl::sql::<diesel::sql_types::Integer>(
+                "editdist1('apple', 'apply')",
+            ))
+            .get_result::<i32>(conn);
+            assert_eq!(dist, Ok(1), "spellfix1 should be loaded: editdist1 failed");
+        },
+    );
 }
 
 fn test_extension<E, F>(
