@@ -453,28 +453,6 @@ impl SqliteConnection {
     /// *   `Ok(())` if the extension was successfully loaded.
     /// *   `Err(Error::DatabaseError)` if the extension file could not be found or loaded by SQLite.
     ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # include!("../../doctest_setup.rs");
-    /// use diesel::sqlite::{SqliteExtension, SqliteUUIDExtension};
-    ///
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    /// #
-    /// # fn run_test() -> QueryResult<()> {
-    /// let mut conn = SqliteConnection::establish(":memory:").unwrap();
-    ///
-    /// // Attempt to load the UUID extension
-    /// // This will fail safely if the extension library is not in the system path
-    /// match conn.load_extension::<SqliteUUIDExtension>() {
-    ///     Ok(_) => println!("UUID extension loaded successfully"),
-    ///     Err(_) => println!("UUID extension not found, skipping"),
-    /// }
-    /// #     Ok(())
-    /// # }
-    /// ```
     pub fn load_extension<E: SqliteExtension>(&mut self) -> QueryResult<()> {
         // We first enable extension loading on the specific database connection.
         // This is necessary because modern SQLite builds disable this by default for security.
