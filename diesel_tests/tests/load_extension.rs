@@ -16,7 +16,7 @@ impl SqliteExtension for SqliteMathFunctionsExtension {
 fn test_load_all_extensions() {
     let env_var = std::env::var("DIESEL_TEST_SQLITE_EXTENSIONS_DISABLED");
     if env_var.is_err() {
-        eprintln!("Skipping test_load_all_extensions because DIESEL_TEST_SQLITE_EXTENSIONS_DISABLED is not set");
+        eprintln!("Skipping test_load_all_extensions");
         return;
     }
     let val = env_var.unwrap();
@@ -55,9 +55,7 @@ fn test_load_all_extensions() {
         }
 
         if !missing.is_empty() {
-            eprintln!("WARNING: The following extensions verify files were not found in LD_LIBRARY_PATH: {:?}.", missing);
-            eprintln!("Tests expecting these extensions to load will likely fail (or be skipped if formatted as file-not-found errors).");
-            eprintln!("LD_LIBRARY_PATH: {:?}", library_paths);
+            eprintln!("Extensions not found");
             return;
         }
     }
