@@ -16,22 +16,22 @@ Set-Location $BuildDir
 
 $SqliteVersion = "3450100"
 $SqliteYear = "2024"
-$SqliteSourceDirName = "sqlite-src-$SqliteVersion"
-$SqliteZip = "$SqliteSourceDirName.zip"
+$SqliteAmalgamation = "sqlite-amalgamation-$SqliteVersion"
+$SqliteAmalgamationZip = "$SqliteAmalgamation.zip"
 
-# Download full SQLite source (consistency with Linux scripts)
-if (-not (Test-Path $SqliteZip)) {
-    Write-Host "Downloading SQLite $SqliteVersion..."
-    $Url = "https://sqlite.org/$SqliteYear/$SqliteZip"
-    Invoke-WebRequest -Uri $Url -OutFile $SqliteZip
+# Download SQLite Amalgamation
+if (-not (Test-Path $SqliteAmalgamationZip)) {
+    Write-Host "Downloading SQLite Amalgamation $SqliteVersion..."
+    $Url = "https://sqlite.org/$SqliteYear/$SqliteAmalgamationZip"
+    Invoke-WebRequest -Uri $Url -OutFile $SqliteAmalgamationZip
 }
 
-if (-not (Test-Path $SqliteSourceDirName)) {
+if (-not (Test-Path $SqliteAmalgamation)) {
     Write-Host "Extracting SQLite..."
-    Expand-Archive -Path $SqliteZip -DestinationPath $BuildDir
+    Expand-Archive -Path $SqliteAmalgamationZip -DestinationPath $BuildDir
 }
 
-Set-Location $SqliteSourceDirName
+Set-Location $SqliteAmalgamation
 
 # Create install/bin and install/lib directories
 $InstallBin = Join-Path $InstallDir "bin"

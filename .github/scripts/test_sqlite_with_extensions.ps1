@@ -78,7 +78,12 @@ if (-not (Test-Path "sqlite3.dll")) {
 }
 
 Copy-Item "sqlite3.dll" -Destination $InstallBin
-Copy-Item "sqlite3.lib" -Destination $InstallLib
+# When compiling with cl.exe /LD, the import library is named sqlite3.lib
+if (Test-Path "sqlite3.lib") {
+    Copy-Item "sqlite3.lib" -Destination $InstallLib
+} else {
+    Write-Error "sqlite3.lib (import library) not found. Build likely failed."
+}
 # Also copy dll to lib dir for easy finding
 Copy-Item "sqlite3.dll" -Destination $InstallLib
 
