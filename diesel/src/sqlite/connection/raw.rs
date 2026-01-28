@@ -331,7 +331,7 @@ impl RawConnection {
 
             // On unsupported platforms (non-Unix, non-Windows), we default to null.
             #[cfg(not(any(unix, target_os = "windows")))]
-            let symbol = std::ptr::null_mut();
+            let symbol: *mut libc::c_void = std::ptr::null_mut();
 
             // If the symbol was not found (either platform not supported, or symbol stripped),
             // we return an error mimicking SQLite's "no such function".
