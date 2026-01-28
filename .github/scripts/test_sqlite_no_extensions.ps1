@@ -4,7 +4,7 @@
 $ErrorActionPreference = "Stop"
 
 $WorkDir = Get-Location
-$BuildDir = Join-Path $WorkDir "build_sqlite_win"
+$BuildDir = Join-Path $WorkDir "build_sqlite_win_restricted"
 $InstallDir = Join-Path $BuildDir "install"
 
 Write-Host "Using build directory: $BuildDir"
@@ -16,42 +16,59 @@ Set-Location $BuildDir
 
 $SqliteVersion = "3450100"
 $SqliteYear = "2024"
-$SqliteSource = "sqlite-amalgamation-$SqliteVersion"
-$SqliteZip = "$SqliteSource.zip"
+$SqliteSourceDirName = "sqlite-src-$SqliteVersion"
+$SqliteZip = "$SqliteSourceDirName.zip"
 
-# Download SQLite amalgamation
+# Download full SQLite source (consistency with Linux scripts)
 if (-not (Test-Path $SqliteZip)) {
     Write-Host "Downloading SQLite $SqliteVersion..."
     $Url = "https://sqlite.org/$SqliteYear/$SqliteZip"
     Invoke-WebRequest -Uri $Url -OutFile $SqliteZip
 }
 
-if (-not (Test-Path $SqliteSource)) {
+if (-not (Test-Path $SqliteSourceDirName)) {
     Write-Host "Extracting SQLite..."
     Expand-Archive -Path $SqliteZip -DestinationPath $BuildDir
 }
 
-Set-Location $SqliteSource
+Set-Location $SqliteSourceDirName
 
-# Compile SQLite with extension loading disabled
-# We assume cl.exe (MSVC) is in the path (run from Developer Command Prompt or similar)
-Write-Host "Compiling SQLite (DSQLITE_OMIT_LOAD_EXTENSION)..."
+# Create install/bin and install/lib directories
+$InstallBin = Join-Path $InstallDir "bin"
+$InstallLib = Join-Path $InstallDir "lib"
+New-Item -ItemType Directory -Force -Path $InstallBin | Out-Null
+New-Item -ItemType Directory -Force -Path $InstallLib | Out-Null
 
-# Using /c (compile only), /O2 (optimize), /DSQLITE_OMIT_LOAD_EXTENSION
-cl.exe /c /O2 /DSQLITE_OMIT_LOAD_EXTENSION sqlite3.c
+# Compile SQLite with extension loading disabled as a DLL
+# We build a DLL so that GetProcAddress logic in diesel can work reliably (or fail reliably)
+# /O2 = Optimize
+# /LD = Create DLL
+# /DSQLITE_OMIT_LOAD_EXTENSION = The feature we are testing
+# /Fe: = File executable (output name)
+Write-Host "Compiling SQLite DLL (DSQLITE_OMIT_LOAD_EXTENSION)..."
 
-# Create static library
-lib.exe /OUT:sqlite3.lib sqlite3.obj
+cl.exe /O2 /LD /DSQLITE_OMIT_LOAD_EXTENSION sqlite3.c /Fe:sqlite3.dll
+
+if (-not (Test-Path "sqlite3.dll")) {
+    Write-Error "Failed to build sqlite3.dll"
+}
+
+# Move artifacts to install locations
+Copy-Item "sqlite3.dll" -Destination $InstallBin
+Copy-Item "sqlite3.lib" -Destination $InstallLib
+# Also copy dll to lib dir for running convenience if needed, though PATH handles it
+Copy-Item "sqlite3.dll" -Destination $InstallLib 
 
 Write-Host "Compilation complete."
 
 # Prepare environment for Cargo
-$AbsSqliteDir = (Get-Location).Path
+# SQLITE3_LIB_DIR tells build.rs where to find sqlite3.lib
+$env:SQLITE3_LIB_DIR = $InstallLib
 
-# Set environment variables for libsqlite3-sys
-$env:SQLITE3_LIB_DIR = $AbsSqliteDir
-$env:SQLITE3_STATIC = "1"
-# For runtime check in tests
+# Add bin to PATH so the test executable can find sqlite3.dll at runtime
+$env:PATH = "$InstallBin;$env:PATH"
+
+# Setting this to 1 tells the test suite to expect "no such function: load_extension"
 $env:DIESEL_TEST_SQLITE_EXTENSIONS_DISABLED = "1"
 
 Set-Location $WorkDir
@@ -59,16 +76,14 @@ Set-Location $WorkDir
 Write-Host "----------------------------------------------------------------"
 Write-Host "Running compilation check..."
 
-# Clean to force relink
+# Clean to force relink with our new library
 cargo clean
 
 Write-Host "Running tests against restricted SQLite..."
 
-# We need to ensure we link against system libraries that sqlite3 might depend on if not fully static
-# but standard sqlite3.c usually keeps to itself or basics.
-
 try {
-    cargo test --package diesel_tests --test integration_tests load_extension --features sqlite
+    # Run the specific test for extension loading
+    cargo test --package diesel_tests --test integration_tests load_extension --features sqlite -- --nocapture
     Write-Host "----------------------------------------------------------------"
     Write-Host "SUCCESS: Diesel compiled and passed tests against SQLite without extension support."
 } catch {
