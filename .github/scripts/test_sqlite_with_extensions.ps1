@@ -119,7 +119,7 @@ try {
 if (Test-Path "extension-functions.c") {
     Write-Host "Building extension-functions.dll..."
     # math.h functions usually linked automatically on Windows (or via standard lib)
-    cl.exe /O2 /LD /I. extension-functions.c sqlite3.lib /Fe:extension-functions.dll
+    cl.exe /O2 /LD /I. extension-functions.c sqlite3.lib /Fe:extension-functions.dll /link /EXPORT:sqlite3_extension_init
     
     if (Test-Path "extension-functions.dll") {
         Copy-Item "extension-functions.dll" -Destination $InstallLib
