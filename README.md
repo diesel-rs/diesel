@@ -278,10 +278,10 @@ We would like to thank all of the sponsors supporting the work on Diesel. Notabl
       </a>
     </td>
     <td align="center" width="33%">
-      <a href="https://nlnet.nl/project/Diesel/">
-        <img src="https://diesel.rs/assets/images/NGI0Core_tag.svg" />
+      <a href="https://giga-infosystems.com/">
+        <img src="https://diesel.rs/assets/images/logo_giga.svg" />
         <br/>
-        <sub><b>NGI Zero Core</b></sub>
+        <sub><b>GiGa Infosystems GmbH</b></sub>
       </a>
     </td>
     <td align="center" width="33%">
@@ -294,10 +294,10 @@ We would like to thank all of the sponsors supporting the work on Diesel. Notabl
   </tr>
   <tr>
     <td align="center" width="33%">
-      <a href="https://www.prototypefund.de/projects/diesel-databaseviews">
-        <img src="https://diesel.rs/assets/images/bmbf_logo.jpg" />
+      <a href="https://nlnet.nl/project/Diesel/">
+        <img src="https://diesel.rs/assets/images/NGI0Core_tag.svg" />
         <br/>
-        <sub><b>Federal Ministry of Research, Technology and Space (Germany)</b></sub>
+        <sub><b>NGI Zero Core</b></sub>
       </a>
     </td>
     <td align="center" width="33%">
@@ -308,10 +308,10 @@ We would like to thank all of the sponsors supporting the work on Diesel. Notabl
       </a>
     </td>
     <td align="center" width="33%">
-      <a href="https://giga-infosystems.com/">
-        <img src="https://diesel.rs/assets/images/logo_giga.svg" />
+      <a href="https://www.prototypefund.de/projects/diesel-databaseviews">
+        <img src="https://diesel.rs/assets/images/bmbf_logo.jpg" />
         <br/>
-        <sub><b>GiGa Infosystems GmbH</b></sub>
+        <sub><b>Federal Ministry of Research, Technology and Space (Germany)</b></sub>
       </a>
     </td>
   </tr>
