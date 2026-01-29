@@ -226,6 +226,36 @@ impl DatabaseErrorInformation for String {
     }
 }
 
+impl DatabaseErrorInformation for core::convert::Infallible {
+    fn message(&self) -> &str {
+        match *self {}
+    }
+
+    fn details(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn hint(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn table_name(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn column_name(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn constraint_name(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn statement_position(&self) -> Option<i32> {
+        match *self {}
+    }
+}
+
 /// Errors which can occur during [`Connection::establish`]
 ///
 /// [`Connection::establish`]: crate::connection::Connection::establish
@@ -422,6 +452,13 @@ impl PartialEq for Error {
 fn error_impls_send() {
     let err: Error = unimplemented!();
     let x: &dyn Send = &err;
+}
+
+#[cfg(test)]
+#[allow(warnings)]
+fn infallible_impls_database_error_information() {
+    let err: core::convert::Infallible = unimplemented!();
+    let x: &dyn DatabaseErrorInformation = &err;
 }
 
 /// An unexpected `NULL` was encountered during deserialization
