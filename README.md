@@ -268,51 +268,53 @@ dual-licensed as above, without any additional terms or conditions.
 We would like to thank all of the sponsors supporting the work on Diesel. Notable large sponsors are:
 
 
-<p align="center">
-    <a href="https://nlnet.nl/project/Diesel/">
-        <img src="https://diesel.rs/assets/images/nl_net_foundation_logo.svg" width="50%"/>
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <a href="https://nlnet.nl/project/Diesel/">
+        <img src="https://diesel.rs/assets/images/nl_net_foundation_logo.svg" />
         <br/>
-        NLNet Foundation
-    </a>
-</p>
-
-<p align="center">
-    <a href="https://nlnet.nl/project/Diesel/">
-        <img src="https://diesel.rs/assets/images/NGI0Core_tag.svg" width="50%"/>
+        <sub><b>NLNet Foundation</b></sub>
+      </a>
+    </td>
+    <td align="center" width="33%">
+      <a href="https://nlnet.nl/project/Diesel/">
+        <img src="https://diesel.rs/assets/images/NGI0Core_tag.svg" />
         <br/>
-        NGI Zero Core
-    </a>
-</p>
-
-<p align="center">
-    <a href="https://www.prototypefund.de/projects/diesel-databaseviews">
-        <img src="https://diesel.rs/assets/images/PrototypeFund_logo_dark.png" width="50%"/>
+        <sub><b>NGI Zero Core</b></sub>
+      </a>
+    </td>
+    <td align="center" width="33%">
+      <a href="https://www.prototypefund.de/projects/diesel-databaseviews">
+        <img src="https://diesel.rs/assets/images/PrototypeFund_logo_dark.png" />
         <br/>
-        Prototype Fund
-    </a>
-</p>
-
-<p align="center">
-    <a href="https://www.prototypefund.de/projects/diesel-databaseviews">
-        <img src="https://diesel.rs/assets/images/bmbf_logo.jpg" width="50%"/>
+        <sub><b>Prototype Fund</b></sub>
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
+      <a href="https://www.prototypefund.de/projects/diesel-databaseviews">
+        <img src="https://diesel.rs/assets/images/bmbf_logo.jpg" />
         <br/>
-        Federal Ministry of Research, Technology and Space (Germany)
-    </a>
-</p>
-
-<p align="center">
-    <a href="https://github.blog/open-source/maintainers/securing-the-supply-chain-at-scale-starting-with-71-important-open-source-projects/">
-        <img src="https://diesel.rs/assets/images/GitHub_Logo.png" width="50%"/>
-        GitHub Secure Open Source Fund
-    </a>
-</p>
-
-<p align="center">
-    <a href="https://giga-infosystems.com/">
-        <img src="https://diesel.rs/assets/images/logo_giga.svg" width="35%"/>
+        <sub><b>Federal Ministry of Research, Technology and Space (Germany)</b></sub>
+      </a>
+    </td>
+    <td align="center" width="33%">
+      <a href="https://github.blog/open-source/maintainers/securing-the-supply-chain-at-scale-starting-with-71-important-open-source-projects/">
+        <img src="https://diesel.rs/assets/images/GitHub_Logo.png" />
         <br/>
-        GiGa Infosystems GmbH
-    </a>
-</p>
+        <sub><b>GitHub Secure Open Source Fund</b></sub>
+      </a>
+    </td>
+    <td align="center" width="33%">
+      <a href="https://giga-infosystems.com/">
+        <img src="https://diesel.rs/assets/images/logo_giga.svg" />
+        <br/>
+        <sub><b>GiGa Infosystems GmbH</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
 Additionally we would like to thank all persons sponsoring the project on [GitHub](https://github.com/sponsors/weiznich#sponsors). Without them developing Diesel wouldn't be possible.
