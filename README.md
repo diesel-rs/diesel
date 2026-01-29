@@ -278,17 +278,17 @@ We would like to thank all of the sponsors supporting the work on Diesel. Notabl
       </a>
     </td>
     <td align="center" width="33%">
-      <a href="https://giga-infosystems.com/">
-        <img src="https://diesel.rs/assets/images/logo_giga.svg" />
-        <br/>
-        <sub><b>GiGa Infosystems GmbH</b></sub>
-      </a>
-    </td>
-    <td align="center" width="33%">
       <a href="https://www.prototypefund.de/projects/diesel-databaseviews">
         <img src="https://diesel.rs/assets/images/PrototypeFund_logo_dark.png" />
         <br/>
         <sub><b>Prototype Fund</b></sub>
+      </a>
+    </td>
+    <td align="center" width="33%">
+      <a href="https://github.blog/open-source/maintainers/securing-the-supply-chain-at-scale-starting-with-71-important-open-source-projects/">
+        <img src="https://diesel.rs/assets/images/GitHub_Logo.png" />
+        <br/>
+        <sub><b>GitHub Secure Open Source Fund</b></sub>
       </a>
     </td>
   </tr>
@@ -301,17 +301,17 @@ We would like to thank all of the sponsors supporting the work on Diesel. Notabl
       </a>
     </td>
     <td align="center" width="33%">
-      <a href="https://github.blog/open-source/maintainers/securing-the-supply-chain-at-scale-starting-with-71-important-open-source-projects/">
-        <img src="https://diesel.rs/assets/images/GitHub_Logo.png" />
-        <br/>
-        <sub><b>GitHub Secure Open Source Fund</b></sub>
-      </a>
-    </td>
-    <td align="center" width="33%">
       <a href="https://www.prototypefund.de/projects/diesel-databaseviews">
         <img src="https://diesel.rs/assets/images/bmbf_logo.jpg" />
         <br/>
         <sub><b>Federal Ministry of Research, Technology and Space (Germany)</b></sub>
+      </a>
+    </td>
+    <td align="center" width="33%">
+      <a href="https://giga-infosystems.com/">
+        <img src="https://diesel.rs/assets/images/logo_giga.svg" />
+        <br/>
+        <sub><b>GiGa Infosystems GmbH</b></sub>
       </a>
     </td>
   </tr>
