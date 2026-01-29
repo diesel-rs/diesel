@@ -117,7 +117,10 @@ pub trait CopyTarget {
     type SqlType: SqlType;
 
     #[doc(hidden)]
-    fn walk_target(pass: crate::query_builder::AstPass<'_, '_, Pg>) -> crate::QueryResult<()>;
+    fn walk_target(
+        &self,
+        pass: crate::query_builder::AstPass<'_, '_, Pg>,
+    ) -> crate::QueryResult<()>;
 }
 
 impl<T> CopyTarget for T
@@ -130,7 +133,10 @@ where
     type Table = Self;
     type SqlType = T::SqlType;
 
-    fn walk_target(mut pass: crate::query_builder::AstPass<'_, '_, Pg>) -> crate::QueryResult<()> {
+    fn walk_target(
+        &self,
+        mut pass: crate::query_builder::AstPass<'_, '_, Pg>,
+    ) -> crate::QueryResult<()> {
         T::STATIC_COMPONENT.walk_ast(pass.reborrow())?;
         pass.push_sql("(");
         T::all_columns().walk_ast(pass.reborrow())?;
@@ -157,7 +163,7 @@ macro_rules! copy_target_for_columns {
                 type Table = T;
                 type SqlType = crate::dsl::SqlTypeOf<Self>;
 
-                fn walk_target(
+                fn walk_target(&self,
                     mut pass: crate::query_builder::AstPass<'_, '_, Pg>,
                 ) -> crate::QueryResult<()> {
                     T::STATIC_COMPONENT.walk_ast(pass.reborrow())?;
