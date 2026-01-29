@@ -26,40 +26,6 @@ fn test_load_all_extensions() {
         _ => panic!("DIESEL_TEST_SQLITE_EXTENSIONS_DISABLED must be 0 or 1"),
     };
 
-    if !restricted_build {
-        let library_paths = std::env::var_os("LD_LIBRARY_PATH").unwrap_or_default();
-        let paths: Vec<std::path::PathBuf> = std::env::split_paths(&library_paths).collect();
-        let extensions = ["uuid", "extension-functions"];
-        let mut missing = Vec::new();
-
-        for ext in &extensions {
-            let mut found = false;
-            // Simple check for common shared library extensions
-            let candidates = [format!("{}.so", ext), format!("{}.dll", ext)];
-
-            for path in &paths {
-                for candidate in &candidates {
-                    if path.join(candidate).exists() {
-                        found = true;
-                        break;
-                    }
-                }
-                if found {
-                    break;
-                }
-            }
-
-            if !found {
-                missing.push(ext);
-            }
-        }
-
-        if !missing.is_empty() {
-            eprintln!("Extensions not found");
-            return;
-        }
-    }
-
     let mut conn = connection_without_transaction();
 
     test_extension::<SqliteUUIDExtension, _>(&mut conn, restricted_build, "uuid", |conn| {
