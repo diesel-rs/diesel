@@ -3,3 +3,5 @@ Cargo.lock
 !diesel_cli/Cargo.lock
 .env
 *.snap.new
+build_sqlite
+build_sqlite_ext

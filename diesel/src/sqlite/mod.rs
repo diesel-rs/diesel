@@ -16,6 +16,7 @@ pub use self::backend::{Sqlite, SqliteType};
 pub use self::connection::SerializedDatabase;
 pub use self::connection::SqliteBindValue;
 pub use self::connection::SqliteConnection;
+pub use self::connection::SqliteExtension;
 pub use self::connection::SqliteValue;
 pub use self::query_builder::SqliteQueryBuilder;
 

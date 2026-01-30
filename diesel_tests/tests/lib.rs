@@ -40,6 +40,8 @@ mod instrumentation;
 mod internal_details;
 mod joins;
 mod limit_offset;
+#[cfg(feature = "sqlite")]
+mod load_extension;
 mod macros;
 #[cfg(feature = "postgres")]
 mod only;
