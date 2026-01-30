@@ -1,0 +1,242 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_locale_core-2.1.1/src/preferences/extensions/unicode/keywords/line_break_word.rs`."><title>line_break_word.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../../../../../" data-static-root-path="../../../../../../static.files/" data-current-crate="icu_locale_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../../../static.files/storage-f9617a14.js"></script><script defer src="../../../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../../../src-files.js"></script><script defer src="../../../../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../../../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">icu_locale_core/preferences/extensions/unicode/keywords/</div>line_break_word.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// This file is part of ICU4X. For terms of use, please see the file
+<a href=#2 id=2 data-nosnippet>2</a>// called LICENSE at the top level of the ICU4X source tree
+<a href=#3 id=3 data-nosnippet>3</a>// (online at: https://github.com/unicode-org/icu4x/blob/main/LICENSE ).
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a></span><span class="kw">use </span><a href="../macros/enum_keyword.rs.html#53-214"><span class="kw">crate</span>::preferences::extensions::unicode::enum_keyword</a>;
+<a href=#6 id=6 data-nosnippet>6</a>
+<a href=#7 id=7 data-nosnippet>7</a><span class="expansion"><input id=expand-7 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[non_exhaustive]
+#[doc =
+<span class="string">r" A Unicode Line Break Word Identifier defines preferred line break word handling behavior corresponding to the CSS level 3 word-break option."</span>]
+#[doc = <span class="string">r""</span>]
+#[doc =
+<span class="string">r#" Specifying "lw" in a locale identifier overrides the locale’s default style (which may correspond to "normal" or "keepall")."#</span>]
+#[doc = <span class="string">r""</span>]
+#[doc =
+<span class="string">r" The valid values are listed in [LDML](https://unicode.org/reports/tr35/#UnicodeLineBreakWordIdentifier)."</span>]
+</span><span class="kw">pub enum </span>LineBreakWordHandling {
+
+    <span class="attr">#[doc =
+    <span class="string">r" CSS lev 3 word-break=normal, normal script/language behavior for midword breaks"</span>]
+    </span>Normal,
+
+    <span class="attr">#[doc =
+    <span class="string">r" CSS lev 3 word-break=break-all, allow midword breaks unless forbidden by lb setting"</span>]
+    </span>BreakAll,
+
+    <span class="attr">#[doc =
+    <span class="string">r" CSS lev 3 word-break=keep-all, prohibit midword breaks except for dictionary breaks"</span>]
+    </span>KeepAll,
+
+    <span class="attr">#[doc =
+    <span class="string">r" Prioritize keeping natural phrases (of multiple words) together when breaking,"</span>]
+    #[doc = <span class="string">r" used in short text like title and headline"</span>]
+    </span>Phrase,
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>LineBreakWordHandling {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::write_str(f,
+            <span class="kw">match </span><span class="self">self </span>{
+                LineBreakWordHandling::Normal =&gt; <span class="string">"Normal"</span>,
+                LineBreakWordHandling::BreakAll =&gt; <span class="string">"BreakAll"</span>,
+                LineBreakWordHandling::KeepAll =&gt; <span class="string">"KeepAll"</span>,
+                LineBreakWordHandling::Phrase =&gt; <span class="string">"Phrase"</span>,
+            })
+    }
+}
+<span class="attr">#[automatically_derived]
+#[doc(hidden)]
+</span><span class="kw">unsafe impl </span>::core::clone::TrivialClone <span class="kw">for </span>LineBreakWordHandling { }
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>LineBreakWordHandling {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; LineBreakWordHandling { <span class="kw-2">*</span><span class="self">self </span>}
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>LineBreakWordHandling {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_receiver_is_total_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {}
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>LineBreakWordHandling { }
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>LineBreakWordHandling {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>LineBreakWordHandling) -&gt; bool {
+        <span class="kw">let </span>__self_discr = ::core::intrinsics::discriminant_value(<span class="self">self</span>);
+        <span class="kw">let </span>__arg1_discr = ::core::intrinsics::discriminant_value(other);
+        __self_discr == __arg1_discr
+    }
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>LineBreakWordHandling { }
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::hash::Hash <span class="kw">for </span>LineBreakWordHandling {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>hash&lt;__H: ::core::hash::Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>__H) {
+        <span class="kw">let </span>__self_discr = ::core::intrinsics::discriminant_value(<span class="self">self</span>);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span>__self_discr, state)
+    }
+}
+<span class="kw">impl </span><span class="kw">crate</span>::preferences::PreferenceKey <span class="kw">for </span>LineBreakWordHandling {
+    <span class="kw">fn </span>unicode_extension_key() -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw">crate</span>::extensions::unicode::Key&gt; {
+        <span class="prelude-val">Some</span>(<span class="kw">const </span>{
+                    <span class="kw">use </span><span class="kw">crate</span>::extensions::unicode::Key;
+                    <span class="kw">match </span>Key::try_from_utf8(<span class="string">"lw"</span>.as_bytes()) {
+                        <span class="prelude-val">Ok</span>(r) =&gt; r,
+                        <span class="kw">_ </span>=&gt; {
+                            ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"Invalid extensions::unicode::Key: lw"</span>));
+                        }
+                    }
+                })
+    }
+    <span class="kw">fn </span>try_from_key_value(key: <span class="kw-2">&amp;</span><span class="kw">crate</span>::extensions::unicode::Key,
+        value: <span class="kw-2">&amp;</span><span class="kw">crate</span>::extensions::unicode::Value)
+        -&gt;
+            <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt;,
+            <span class="kw">crate</span>::preferences::extensions::unicode::errors::PreferencesParseError&gt; {
+        <span class="kw">if </span><span class="self">Self</span>::unicode_extension_key() == <span class="prelude-val">Some</span>(<span class="kw-2">*</span>key) {
+            <span class="self">Self</span>::try_from(value).map(<span class="prelude-val">Some</span>)
+        } <span class="kw">else </span>{ <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) }
+    }
+    <span class="kw">fn </span>unicode_extension_value(<span class="kw-2">&amp;</span><span class="self">self</span>)
+        -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw">crate</span>::extensions::unicode::Value&gt; {
+        <span class="prelude-val">Some</span>((<span class="kw-2">*</span><span class="self">self</span>).into())
+    }
+}
+<span class="kw">impl </span>TryFrom&lt;<span class="kw-2">&amp;</span><span class="kw">crate</span>::extensions::unicode::Value&gt; <span class="kw">for </span>LineBreakWordHandling {
+    <span class="kw">type </span>Error =
+        <span class="kw">crate</span>::preferences::extensions::unicode::errors::PreferencesParseError;
+    <span class="kw">fn </span>try_from(s: <span class="kw-2">&amp;</span><span class="kw">crate</span>::extensions::unicode::Value)
+        -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+        <span class="kw">let </span>subtag =
+            s.get_subtag(<span class="number">0</span>).unwrap_or(<span class="kw-2">&amp;</span><span class="kw">const </span>{
+                            <span class="kw">use </span><span class="kw">crate</span>::subtags::Subtag;
+                            <span class="kw">match </span>Subtag::try_from_utf8(<span class="string">"true"</span>.as_bytes()) {
+                                <span class="prelude-val">Ok</span>(r) =&gt; r,
+                                <span class="kw">_ </span>=&gt; {
+                                    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"Invalid subtags::Subtag: true"</span>));
+                                }
+                            }
+                        });
+        <span class="attr">#[allow(unused_imports)]
+        </span><span class="kw">use </span><span class="kw">crate</span>::extensions::unicode::value;
+        <span class="prelude-val">Ok</span>(<span class="kw">match </span>subtag.as_str() {
+                <span class="string">"normal" </span>=&gt; { LineBreakWordHandling::Normal }
+                <span class="string">"breakall" </span>=&gt; { LineBreakWordHandling::BreakAll }
+                <span class="string">"keepall" </span>=&gt; { LineBreakWordHandling::KeepAll }
+                <span class="string">"phrase" </span>=&gt; { LineBreakWordHandling::Phrase }
+                <span class="kw">_ </span>=&gt; { <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="self">Self</span>::Error::InvalidKeywordValue); }
+            })
+    }
+}
+<span class="kw">impl </span>From&lt;LineBreakWordHandling&gt; <span class="kw">for </span><span class="kw">crate</span>::extensions::unicode::Value {
+    <span class="kw">fn </span>from(input: LineBreakWordHandling)
+        -&gt; <span class="kw">crate</span>::extensions::unicode::Value {
+        <span class="kw">let </span>f;
+        <span class="attr">#[allow(unused_mut)]
+        </span><span class="kw">let </span><span class="kw-2">mut </span>s = <span class="prelude-val">None</span>;
+        <span class="kw">match </span>input
+            {
+                <span class="attr">#[allow(non_snake_case)]
+                </span>LineBreakWordHandling::Normal =&gt; {
+                f =
+                    <span class="kw">const </span>{
+                            <span class="kw">use </span><span class="kw">crate</span>::subtags::Subtag;
+                            <span class="kw">match </span>Subtag::try_from_utf8(<span class="string">"normal"</span>.as_bytes()) {
+                                <span class="prelude-val">Ok</span>(r) =&gt; r,
+                                <span class="kw">_ </span>=&gt; {
+                                    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"Invalid subtags::Subtag: normal"</span>));
+                                }
+                            }
+                        };
+            }
+                <span class="attr">#[allow(non_snake_case)]
+                </span>LineBreakWordHandling::BreakAll =&gt; {
+                f =
+                    <span class="kw">const </span>{
+                            <span class="kw">use </span><span class="kw">crate</span>::subtags::Subtag;
+                            <span class="kw">match </span>Subtag::try_from_utf8(<span class="string">"breakall"</span>.as_bytes()) {
+                                <span class="prelude-val">Ok</span>(r) =&gt; r,
+                                <span class="kw">_ </span>=&gt; {
+                                    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"Invalid subtags::Subtag: breakall"</span>));
+                                }
+                            }
+                        };
+            }
+                <span class="attr">#[allow(non_snake_case)]
+                </span>LineBreakWordHandling::KeepAll =&gt; {
+                f =
+                    <span class="kw">const </span>{
+                            <span class="kw">use </span><span class="kw">crate</span>::subtags::Subtag;
+                            <span class="kw">match </span>Subtag::try_from_utf8(<span class="string">"keepall"</span>.as_bytes()) {
+                                <span class="prelude-val">Ok</span>(r) =&gt; r,
+                                <span class="kw">_ </span>=&gt; {
+                                    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"Invalid subtags::Subtag: keepall"</span>));
+                                }
+                            }
+                        };
+            }
+                <span class="attr">#[allow(non_snake_case)]
+                </span>LineBreakWordHandling::Phrase =&gt; {
+                f =
+                    <span class="kw">const </span>{
+                            <span class="kw">use </span><span class="kw">crate</span>::subtags::Subtag;
+                            <span class="kw">match </span>Subtag::try_from_utf8(<span class="string">"phrase"</span>.as_bytes()) {
+                                <span class="prelude-val">Ok</span>(r) =&gt; r,
+                                <span class="kw">_ </span>=&gt; {
+                                    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"Invalid subtags::Subtag: phrase"</span>));
+                                }
+                            }
+                        };
+            }
+        }
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(s) = s {
+            <span class="kw">crate</span>::extensions::unicode::Value::from_two_subtags(f, s)
+        } <span class="kw">else </span>{ <span class="kw">crate</span>::extensions::unicode::Value::from_subtag(<span class="prelude-val">Some</span>(f)) }
+    }
+}
+<span class="kw">impl </span>LineBreakWordHandling {
+    <span class="doccomment">/// A helper function for displaying as a `&amp;str`.
+    </span><span class="kw">pub const fn </span>as_str(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
+        <span class="kw">match </span><span class="self">self
+            </span>{
+                <span class="attr">#[allow(non_snake_case)]
+                </span><span class="self">Self</span>::Normal =&gt; {
+                <span class="kw">return </span><span class="string">"normal"</span>;
+            }
+                <span class="attr">#[allow(non_snake_case)]
+                </span><span class="self">Self</span>::BreakAll =&gt; {
+                <span class="kw">return </span><span class="string">"breakall"</span>;
+            }
+                <span class="attr">#[allow(non_snake_case)]
+                </span><span class="self">Self</span>::KeepAll =&gt; {
+                <span class="kw">return </span><span class="string">"keepall"</span>;
+            }
+                <span class="attr">#[allow(non_snake_case)]
+                </span><span class="self">Self</span>::Phrase =&gt; {
+                <span class="kw">return </span><span class="string">"phrase"</span>;
+            }
+        }
+    }
+}</span><span class="original"><a href="../macros/enum_keyword.rs.html#53-214">enum_keyword!</a>(
+<a href=#8 id=8 data-nosnippet>8</a>    <span class="doccomment">/// A Unicode Line Break Word Identifier defines preferred line break word handling behavior corresponding to the CSS level 3 word-break option.
+<a href=#9 id=9 data-nosnippet>9</a>    ///
+<a href=#10 id=10 data-nosnippet>10</a>    /// Specifying "lw" in a locale identifier overrides the locale’s default style (which may correspond to "normal" or "keepall").
+<a href=#11 id=11 data-nosnippet>11</a>    ///
+<a href=#12 id=12 data-nosnippet>12</a>    /// The valid values are listed in [LDML](https://unicode.org/reports/tr35/#UnicodeLineBreakWordIdentifier).
+<a href=#13 id=13 data-nosnippet>13</a>    </span><a href="#7-23">LineBreakWordHandling</a> {
+<a href=#14 id=14 data-nosnippet>14</a>        <span class="doccomment">/// CSS lev 3 word-break=normal, normal script/language behavior for midword breaks
+<a href=#15 id=15 data-nosnippet>15</a>        </span>(<span class="string">"normal" </span>=&gt; Normal),
+<a href=#16 id=16 data-nosnippet>16</a>        <span class="doccomment">/// CSS lev 3 word-break=break-all, allow midword breaks unless forbidden by lb setting
+<a href=#17 id=17 data-nosnippet>17</a>        </span>(<span class="string">"breakall" </span>=&gt; BreakAll),
+<a href=#18 id=18 data-nosnippet>18</a>        <span class="doccomment">/// CSS lev 3 word-break=keep-all, prohibit midword breaks except for dictionary breaks
+<a href=#19 id=19 data-nosnippet>19</a>        </span>(<span class="string">"keepall" </span>=&gt; KeepAll),
+<a href=#20 id=20 data-nosnippet>20</a>        <span class="doccomment">/// Prioritize keeping natural phrases (of multiple words) together when breaking,
+<a href=#21 id=21 data-nosnippet>21</a>        /// used in short text like title and headline
+<a href=#22 id=22 data-nosnippet>22</a>        </span>(<span class="string">"phrase" </span>=&gt; Phrase),
+<a href=#23 id=23 data-nosnippet>23</a>}, <span class="string">"lw"</span>)</span></span>;
+</code></pre></div></section></main></body></html>

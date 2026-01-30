@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Error"],"fn":["parse_view_def"],"struct":["ViewData"],"trait":["SchemaField","SchemaResolver"],"type":["Result"]};

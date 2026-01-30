@@ -1,0 +1,61 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Deserializes the result of a query constructed with `sql_query`."><title>QueryableByName in diesel::deserialize - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc trait"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">QueryableByName</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.3.6</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Queryable<wbr>ByName</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul><h3><a href="#required-methods">Required Methods</a></h3><ul class="block"><li><a href="#tymethod.build" title="build">build</a></li></ul><h3><a href="#foreign-impls">Implementations on Foreign Types</a></h3><ul class="block"><li><a href="#impl-QueryableByName%3C__DB%3E-for-(T,)" title="(T,)">(T,)</a></li><li><a href="#impl-QueryableByName%3CDB%3E-for-Option%3CT%3E" title="Option&#60;T&#62;">Option&#60;T&#62;</a></li></ul><h3><a href="#dyn-compatibility">Dyn Compatibility</a></h3><h3><a href="#implementors">Implementors</a></h3></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>deserialize</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">diesel</a>::<wbr><a href="index.html">deserialize</a></div><h1>Trait <span class="trait">Queryable<wbr>ByName</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/diesel/deserialize.rs.html#387-394">Source</a> </span></div><pre class="rust item-decl"><code>pub trait QueryableByName&lt;DB&gt;<div class="where">where
+    Self: <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>,
+    DB: <a class="trait" href="../backend/trait.Backend.html" title="trait diesel::backend::Backend">Backend</a>,</div>{
+    // Required method
+    fn <a href="#tymethod.build" class="fn">build</a>&lt;'a&gt;(row: &amp;impl <a class="trait" href="../row/trait.NamedRow.html" title="trait diesel::row::NamedRow">NamedRow</a>&lt;'a, DB&gt;) -&gt; <a class="type" href="type.Result.html" title="type diesel::deserialize::Result">Result</a>&lt;Self&gt;;
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Deserializes the result of a query constructed with <a href="../fn.sql_query.html" title="fn diesel::sql_query"><code>sql_query</code></a>.</p>
+<p>This trait can be <a href="derive.QueryableByName.html" title="derive diesel::deserialize::QueryableByName">derived</a></p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>If we just want to map a query to our struct, we can use <code>derive</code>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(QueryableByName, PartialEq, Debug)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="kw">let </span>first_user = sql_query(<span class="string">"SELECT * FROM users ORDER BY id LIMIT 1"</span>).get_result(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = User {
+    id: <span class="number">1</span>,
+    name: <span class="string">"Sean"</span>.into(),
+};
+<span class="macro">assert_eq!</span>(expected, first_user);</code></pre></div>
+<p>If we want to do additional work during deserialization, we can use
+<code>deserialize_as</code> to use a different implementation.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">struct </span>LowercaseString(String);
+
+<span class="kw">impl </span>Into&lt;String&gt; <span class="kw">for </span>LowercaseString {
+    <span class="kw">fn </span>into(<span class="self">self</span>) -&gt; String {
+        <span class="self">self</span>.<span class="number">0
+    </span>}
+}
+
+<span class="kw">impl</span>&lt;DB, ST&gt; FromSql&lt;ST, DB&gt; <span class="kw">for </span>LowercaseString
+<span class="kw">where
+    </span>DB: Backend,
+    String: FromSql&lt;ST, DB&gt;,
+{
+    <span class="kw">fn </span>from_sql(bytes: DB::RawValue&lt;<span class="lifetime">'_</span>&gt;) -&gt; deserialize::Result&lt;<span class="self">Self</span>&gt; {
+        String::from_sql(bytes).map(|s| LowercaseString(s.to_lowercase()))
+    }
+}
+
+<span class="attr">#[derive(QueryableByName, PartialEq, Debug)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    <span class="attr">#[diesel(deserialize_as = LowercaseString)]
+    </span>name: String,
+}
+
+<span class="kw">let </span>first_user = sql_query(<span class="string">"SELECT * FROM users ORDER BY id LIMIT 1"</span>).get_result(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = User {
+    id: <span class="number">1</span>,
+    name: <span class="string">"sean"</span>.into(),
+};
+<span class="macro">assert_eq!</span>(expected, first_user);</code></pre></div></div></details><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.build" class="method"><a class="src rightside" href="../../src/diesel/deserialize.rs.html#393">Source</a><h4 class="code-header">fn <a href="#tymethod.build" class="fn">build</a>&lt;'a&gt;(row: &amp;impl <a class="trait" href="../row/trait.NamedRow.html" title="trait diesel::row::NamedRow">NamedRow</a>&lt;'a, DB&gt;) -&gt; <a class="type" href="type.Result.html" title="type diesel::deserialize::Result">Result</a>&lt;Self&gt;</h4></section></summary><div class="docblock"><p>Construct an instance of <code>Self</code> from the database row</p>
+</div></details></div><h2 id="dyn-compatibility" class="section-header">Dyn Compatibility<a href="#dyn-compatibility" class="anchor">§</a></h2><div class="dyn-compatibility-info"><p>This trait is <b>not</b> <a href="https://doc.rust-lang.org/nightly/reference/items/traits.html#dyn-compatibility">dyn compatible</a>.</p><p><i>In older versions of Rust, dyn compatibility was called "object safety", so this trait is not object safe.</i></p></div><h2 id="foreign-impls" class="section-header">Implementations on Foreign Types<a href="#foreign-impls" class="anchor">§</a></h2><details class="toggle implementors-toggle"><summary><section id="impl-QueryableByName%3CDB%3E-for-Option%3CT%3E" class="impl"><a class="src rightside" href="../../src/diesel/type_impls/option.rs.html#86-98">Source</a><a href="#impl-QueryableByName%3CDB%3E-for-Option%3CT%3E" class="anchor">§</a><h3 class="code-header">impl&lt;T, DB&gt; <a class="trait" href="trait.QueryableByName.html" title="trait diesel::deserialize::QueryableByName">QueryableByName</a>&lt;DB&gt; for <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;T&gt;<div class="where">where
+    DB: <a class="trait" href="../backend/trait.Backend.html" title="trait diesel::backend::Backend">Backend</a>,
+    T: <a class="trait" href="trait.QueryableByName.html" title="trait diesel::deserialize::QueryableByName">QueryableByName</a>&lt;DB&gt;,</div></h3></section></summary><div class="impl-items"><section id="method.build" class="method trait-impl"><a class="src rightside" href="../../src/diesel/type_impls/option.rs.html#91-97">Source</a><a href="#method.build" class="anchor">§</a><h4 class="code-header">fn <a href="#tymethod.build" class="fn">build</a>&lt;'a&gt;(row: &amp;impl <a class="trait" href="../row/trait.NamedRow.html" title="trait diesel::row::NamedRow">NamedRow</a>&lt;'a, DB&gt;) -&gt; <a class="type" href="type.Result.html" title="type diesel::deserialize::Result">Result</a>&lt;Self&gt;</h4></section></div></details><details class="toggle implementors-toggle"><summary><section id="impl-QueryableByName%3C__DB%3E-for-(T,)" class="impl"><a class="src rightside" href="../../src/diesel/type_impls/tuples.rs.html#604">Source</a><a href="#impl-QueryableByName%3C__DB%3E-for-(T,)" class="anchor">§</a><h3 class="code-header">impl&lt;T, __DB&gt; <a class="trait" href="trait.QueryableByName.html" title="trait diesel::deserialize::QueryableByName">QueryableByName</a>&lt;__DB&gt; for <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.tuple.html#trait-implementations-1">(T₁, T₂, …, Tₙ)</a><div class="where">where
+    __DB: <a class="trait" href="../backend/trait.Backend.html" title="trait diesel::backend::Backend">Backend</a>,
+    T: <a class="trait" href="trait.QueryableByName.html" title="trait diesel::deserialize::QueryableByName">QueryableByName</a>&lt;__DB&gt;,</div></h3></section></summary><div class="impl-items"><section id="method.build-1" class="method trait-impl"><a class="src rightside" href="../../src/diesel/type_impls/tuples.rs.html#604">Source</a><a href="#method.build-1" class="anchor">§</a><h4 class="code-header">fn <a href="#tymethod.build" class="fn">build</a>&lt;'a&gt;(row: &amp;impl <a class="trait" href="../row/trait.NamedRow.html" title="trait diesel::row::NamedRow">NamedRow</a>&lt;'a, __DB&gt;) -&gt; <a class="type" href="type.Result.html" title="type diesel::deserialize::Result">Result</a>&lt;Self&gt;</h4></section></div></details><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"></div><script src="../../trait.impl/diesel/deserialize/trait.QueryableByName.js" data-ignore-extern-crates="core,std" async></script></section></div></main></body></html>

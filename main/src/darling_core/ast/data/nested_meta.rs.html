@@ -1,0 +1,179 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/darling_core-0.21.3/src/ast/data/nested_meta.rs`."><title>nested_meta.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="darling_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../static.files/storage-f9617a14.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">darling_core/ast/data/</div>nested_meta.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span>proc_macro2::{<a href="../../../../proc_macro2/enum.Delimiter.html">Delimiter</a>, <a href="../../../../proc_macro2/struct.TokenStream.html">TokenStream</a>, <a href="../../../../proc_macro2/enum.TokenTree.html">TokenTree</a>};
+<a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span><a href="../../../../quote/to_tokens/trait.ToTokens.html">quote::ToTokens</a>;
+<a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span>syn::{
+<a href=#4 id=4 data-nosnippet>4</a>    <a href="../../../../syn/ext/trait.IdentExt.html">ext::IdentExt</a>,
+<a href=#5 id=5 data-nosnippet>5</a>    parse::{<a href="../../../../syn/parse/discouraged/trait.Speculative.html">discouraged::Speculative</a>, <a href="../../../../syn/parse/type.ParseStream.html">ParseStream</a>, <a href="../../../../syn/parse/trait.Parser.html">Parser</a>},
+<a href=#6 id=6 data-nosnippet>6</a>    <a href="../../../../syn/punctuated/struct.Punctuated.html">punctuated::Punctuated</a>,
+<a href=#7 id=7 data-nosnippet>7</a>    token::{<a class="self" href="../../../../syn/token/index.html">self</a>, Brace, Bracket, Paren},
+<a href=#8 id=8 data-nosnippet>8</a>    <a href="../../../../syn/expr/enum.Expr.html">Expr</a>, <a href="../../../../syn/expr/struct.ExprLit.html">ExprLit</a>, Ident, Lit, <a href="../../../../syn/mac/enum.MacroDelimiter.html">MacroDelimiter</a>, <a href="../../../../syn/attr/enum.Meta.html">Meta</a>, <a href="../../../../syn/attr/struct.MetaList.html">MetaList</a>, <a href="../../../../syn/attr/struct.MetaNameValue.html">MetaNameValue</a>, <a href="../../../../syn/path/struct.Path.html">Path</a>, <a href="../../../../syn/path/struct.PathSegment.html">PathSegment</a>,
+<a href=#9 id=9 data-nosnippet>9</a>    <a href="../../../../syn/macro.Token.html">Token</a>,
+<a href=#10 id=10 data-nosnippet>10</a>};
+<a href=#11 id=11 data-nosnippet>11</a>
+<a href=#12 id=12 data-nosnippet>12</a><span class="kw">fn </span>parse_meta_path&lt;<span class="lifetime">'a</span>&gt;(input: <a href="../../../../syn/parse/type.ParseStream.html">ParseStream</a>&lt;<span class="lifetime">'a</span>&gt;) -&gt; syn::<a href="../../../../syn/error/type.Result.html">Result</a>&lt;<a href="../../../../syn/path/struct.Path.html">Path</a>&gt; {
+<a href=#13 id=13 data-nosnippet>13</a>    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="../../../../syn/path/struct.Path.html">Path</a> {
+<a href=#14 id=14 data-nosnippet>14</a>        leading_colon: <a href="#12">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.parse">parse</a>()<span class="question-mark">?</span>,
+<a href=#15 id=15 data-nosnippet>15</a>        segments: {
+<a href=#16 id=16 data-nosnippet>16</a>            <span class="kw">let </span><span class="kw-2">mut </span>segments = <a href="../../../../syn/punctuated/struct.Punctuated.html">Punctuated</a>::<a href="../../../../syn/punctuated/struct.Punctuated.html#method.new">new</a>();
+<a href=#17 id=17 data-nosnippet>17</a>            <span class="kw">loop </span>{
+<a href=#18 id=18 data-nosnippet>18</a>                <span class="comment">// Allow all identifiers, including keywords.
+<a href=#19 id=19 data-nosnippet>19</a>                </span><span class="kw">if </span>!<a href="#12">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.peek">peek</a>(<a href="../../../../proc_macro2/struct.Ident.html">Ident</a>::<a href="../../../../syn/ext/trait.IdentExt.html#associatedconstant.peek_any">peek_any</a>) {
+<a href=#20 id=20 data-nosnippet>20</a>                    <span class="kw">break</span>;
+<a href=#21 id=21 data-nosnippet>21</a>                }
+<a href=#22 id=22 data-nosnippet>22</a>
+<a href=#23 id=23 data-nosnippet>23</a>                <span class="kw">let </span>ident = <a href="../../../../proc_macro2/struct.Ident.html">Ident</a>::<a href="../../../../syn/ext/trait.IdentExt.html#tymethod.parse_any">parse_any</a>(<a href="#12">input</a>)<span class="question-mark">?</span>;
+<a href=#24 id=24 data-nosnippet>24</a>                <a href="#16">segments</a>.<a href="../../../../syn/punctuated/struct.Punctuated.html#method.push_value">push_value</a>(<a href="../../../../syn/path/struct.PathSegment.html">PathSegment</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(<a href="#23">ident</a>));
+<a href=#25 id=25 data-nosnippet>25</a><span class="expansion"><input id=expand-25 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class="kw">if </span>!<a href="#12">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.peek">peek</a>(<span class=expanded>::syn::token::PathSep</span><span class="original"><a href="../../../../syn/macro.Token.html">Token!</a>[::]</span></span>) {
+<a href=#26 id=26 data-nosnippet>26</a>                    <span class="kw">break</span>;
+<a href=#27 id=27 data-nosnippet>27</a>                }
+<a href=#28 id=28 data-nosnippet>28</a>                <span class="kw">let </span>punct = <a href="#12">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.parse">parse</a>()<span class="question-mark">?</span>;
+<a href=#29 id=29 data-nosnippet>29</a>                <a href="#16">segments</a>.<a href="../../../../syn/punctuated/struct.Punctuated.html#method.push_punct">push_punct</a>(<a href="#28">punct</a>);
+<a href=#30 id=30 data-nosnippet>30</a>            }
+<a href=#31 id=31 data-nosnippet>31</a>            <span class="kw">if </span><a href="#16">segments</a>.<a href="../../../../syn/punctuated/struct.Punctuated.html#method.is_empty">is_empty</a>() {
+<a href=#32 id=32 data-nosnippet>32</a>                <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="#12">input</a>.parse::&lt;<a href="../../../../proc_macro2/struct.Ident.html">Ident</a>&gt;().<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.unwrap_err">unwrap_err</a>());
+<a href=#33 id=33 data-nosnippet>33</a>            } <span class="kw">else if </span><a href="#16">segments</a>.<a href="../../../../syn/punctuated/struct.Punctuated.html#method.trailing_punct">trailing_punct</a>() {
+<a href=#34 id=34 data-nosnippet>34</a>                <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="#12">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.error">error</a>(<span class="string">"expected path segment after `::`"</span>));
+<a href=#35 id=35 data-nosnippet>35</a>            }
+<a href=#36 id=36 data-nosnippet>36</a>            <a href="#16">segments</a>
+<a href=#37 id=37 data-nosnippet>37</a>        },
+<a href=#38 id=38 data-nosnippet>38</a>    })
+<a href=#39 id=39 data-nosnippet>39</a>}
+<a href=#40 id=40 data-nosnippet>40</a>
+<a href=#41 id=41 data-nosnippet>41</a><span class="kw">fn </span>parse_meta_after_path&lt;<span class="lifetime">'a</span>&gt;(path: <a href="../../../../syn/path/struct.Path.html">Path</a>, input: <a href="../../../../syn/parse/type.ParseStream.html">ParseStream</a>&lt;<span class="lifetime">'a</span>&gt;) -&gt; syn::<a href="../../../../syn/error/type.Result.html">Result</a>&lt;<a href="../../../../syn/attr/enum.Meta.html">Meta</a>&gt; {
+<a href=#42 id=42 data-nosnippet>42</a>    <span class="kw">if </span><a href="#41">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.peek">peek</a>(token::Paren) || <a href="#41">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.peek">peek</a>(token::Bracket) || <a href="#41">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.peek">peek</a>(token::Brace) {
+<a href=#43 id=43 data-nosnippet>43</a>        <a href="#51-73">parse_meta_list_after_path</a>(<a href="#41">path</a>, <a href="#41">input</a>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map">map</a>(Meta::<a href="../../../../syn/attr/enum.Meta.html#variant.List">List</a>)
+<a href=#44 id=44 data-nosnippet>44</a><span class="expansion"><input id=expand-44 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">    } <span class="kw">else if </span><a href="#41">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.peek">peek</a>(<span class=expanded>::syn::token::Eq</span><span class="original"><a href="../../../../syn/macro.Token.html">Token!</a>[=]</span></span>) {
+<a href=#45 id=45 data-nosnippet>45</a>        <a href="#75-98">parse_meta_name_value_after_path</a>(<a href="#41">path</a>, <a href="#41">input</a>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map">map</a>(Meta::<a href="../../../../syn/attr/enum.Meta.html#variant.NameValue">NameValue</a>)
+<a href=#46 id=46 data-nosnippet>46</a>    } <span class="kw">else </span>{
+<a href=#47 id=47 data-nosnippet>47</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(Meta::<a href="../../../../syn/attr/enum.Meta.html#variant.Path">Path</a>(<a href="#41">path</a>))
+<a href=#48 id=48 data-nosnippet>48</a>    }
+<a href=#49 id=49 data-nosnippet>49</a>}
+<a href=#50 id=50 data-nosnippet>50</a>
+<a href=#51 id=51 data-nosnippet>51</a><span class="kw">fn </span>parse_meta_list_after_path&lt;<span class="lifetime">'a</span>&gt;(path: <a href="../../../../syn/path/struct.Path.html">Path</a>, input: <a href="../../../../syn/parse/type.ParseStream.html">ParseStream</a>&lt;<span class="lifetime">'a</span>&gt;) -&gt; syn::<a href="../../../../syn/error/type.Result.html">Result</a>&lt;<a href="../../../../syn/attr/struct.MetaList.html">MetaList</a>&gt; {
+<a href=#52 id=52 data-nosnippet>52</a>    <span class="kw">let </span>(delimiter, tokens) = <a href="#51">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.step">step</a>(|cursor| {
+<a href=#53 id=53 data-nosnippet>53</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>((TokenTree::<a href="../../../../proc_macro2/enum.TokenTree.html#variant.Group">Group</a>(g), rest)) = <a href="#52">cursor</a>.<a href="../../../../syn/buffer/struct.Cursor.html#method.token_tree">token_tree</a>() {
+<a href=#54 id=54 data-nosnippet>54</a>            <span class="kw">let </span>span = <a href="#53">g</a>.<a href="../../../../proc_macro2/struct.Group.html#method.delim_span">delim_span</a>();
+<a href=#55 id=55 data-nosnippet>55</a>            <span class="kw">let </span>delimiter = <span class="kw">match </span><a href="#53">g</a>.<a href="../../../../proc_macro2/struct.Group.html#method.delimiter">delimiter</a>() {
+<a href=#56 id=56 data-nosnippet>56</a>                Delimiter::<a href="../../../../proc_macro2/enum.Delimiter.html#variant.Parenthesis">Parenthesis</a> =&gt; MacroDelimiter::<a href="../../../../syn/mac/enum.MacroDelimiter.html#variant.Paren">Paren</a>(Paren(<a href="#54">span</a>)),
+<a href=#57 id=57 data-nosnippet>57</a>                Delimiter::<a href="../../../../proc_macro2/enum.Delimiter.html#variant.Brace">Brace</a> =&gt; MacroDelimiter::<a href="../../../../syn/mac/enum.MacroDelimiter.html#variant.Brace">Brace</a>(Brace(<a href="#54">span</a>)),
+<a href=#58 id=58 data-nosnippet>58</a>                Delimiter::<a href="../../../../proc_macro2/enum.Delimiter.html#variant.Bracket">Bracket</a> =&gt; MacroDelimiter::<a href="../../../../syn/mac/enum.MacroDelimiter.html#variant.Bracket">Bracket</a>(Bracket(<a href="#54">span</a>)),
+<a href=#59 id=59 data-nosnippet>59</a>                Delimiter::<a href="../../../../proc_macro2/enum.Delimiter.html#variant.None">None</a> =&gt; {
+<a href=#60 id=60 data-nosnippet>60</a>                    <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="#52">cursor</a>.<a href="../../../../syn/parse/struct.StepCursor.html#method.error">error</a>(<span class="string">"expected delimiter"</span>));
+<a href=#61 id=61 data-nosnippet>61</a>                }
+<a href=#62 id=62 data-nosnippet>62</a>            };
+<a href=#63 id=63 data-nosnippet>63</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(((<a href="#55">delimiter</a>, <a href="#53">g</a>.<a href="../../../../proc_macro2/struct.Group.html#method.stream">stream</a>()), <a href="#53">rest</a>))
+<a href=#64 id=64 data-nosnippet>64</a>        } <span class="kw">else </span>{
+<a href=#65 id=65 data-nosnippet>65</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="#52">cursor</a>.<a href="../../../../syn/parse/struct.StepCursor.html#method.error">error</a>(<span class="string">"expected delimiter"</span>))
+<a href=#66 id=66 data-nosnippet>66</a>        }
+<a href=#67 id=67 data-nosnippet>67</a>    })<span class="question-mark">?</span>;
+<a href=#68 id=68 data-nosnippet>68</a>    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="../../../../syn/attr/struct.MetaList.html">MetaList</a> {
+<a href=#69 id=69 data-nosnippet>69</a>        <a href="#51">path</a>,
+<a href=#70 id=70 data-nosnippet>70</a>        <a href="#52">delimiter</a>,
+<a href=#71 id=71 data-nosnippet>71</a>        <a href="#52">tokens</a>,
+<a href=#72 id=72 data-nosnippet>72</a>    })
+<a href=#73 id=73 data-nosnippet>73</a>}
+<a href=#74 id=74 data-nosnippet>74</a>
+<a href=#75 id=75 data-nosnippet>75</a><span class="kw">fn </span>parse_meta_name_value_after_path&lt;<span class="lifetime">'a</span>&gt;(
+<a href=#76 id=76 data-nosnippet>76</a>    path: <a href="../../../../syn/path/struct.Path.html">Path</a>,
+<a href=#77 id=77 data-nosnippet>77</a>    input: <a href="../../../../syn/parse/type.ParseStream.html">ParseStream</a>&lt;<span class="lifetime">'a</span>&gt;,
+<a href=#78 id=78 data-nosnippet>78</a>) -&gt; syn::<a href="../../../../syn/error/type.Result.html">Result</a>&lt;<a href="../../../../syn/attr/struct.MetaNameValue.html">MetaNameValue</a>&gt; {
+<a href=#79 id=79 data-nosnippet>79</a><span class="expansion"><input id=expand-79 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">    <span class="kw">let </span>eq_token: <span class=expanded>::syn::token::Eq</span><span class="original"><a href="../../../../syn/macro.Token.html">Token!</a>[=]</span></span> = <a href="#77">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.parse">parse</a>()<span class="question-mark">?</span>;
+<a href=#80 id=80 data-nosnippet>80</a>    <span class="kw">let </span>ahead = <a href="#77">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.fork">fork</a>();
+<a href=#81 id=81 data-nosnippet>81</a>    <span class="kw">let </span>lit: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../../../../syn/lit/enum.Lit.html">Lit</a>&gt; = <a href="#80">ahead</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.parse">parse</a>()<span class="question-mark">?</span>;
+<a href=#82 id=82 data-nosnippet>82</a>    <span class="kw">let </span>value = <span class="kw">if let </span>(<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(lit), <span class="bool-val">true</span>) = (<a href="#81">lit</a>, <a href="#80">ahead</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.is_empty">is_empty</a>()) {
+<a href=#83 id=83 data-nosnippet>83</a>        <a href="#77">input</a>.<a href="../../../../syn/parse/discouraged/trait.Speculative.html#tymethod.advance_to">advance_to</a>(<span class="kw-2">&amp;</span><a href="#80">ahead</a>);
+<a href=#84 id=84 data-nosnippet>84</a>        Expr::<a href="../../../../syn/expr/enum.Expr.html#variant.Lit">Lit</a>(<a href="../../../../syn/expr/struct.ExprLit.html">ExprLit</a> {
+<a href=#85 id=85 data-nosnippet>85</a>            attrs: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>::<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.new">new</a>(),
+<a href=#86 id=86 data-nosnippet>86</a>            <a href="#82">lit</a>,
+<a href=#87 id=87 data-nosnippet>87</a>        })
+<a href=#88 id=88 data-nosnippet>88</a><span class="expansion"><input id=expand-88 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">    } <span class="kw">else if </span><a href="#77">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.peek">peek</a>(<span class=expanded>::syn::token::Pound</span><span class="original"><a href="../../../../syn/macro.Token.html">Token!</a>[#]</span></span>) &amp;&amp; <a href="#77">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.peek2">peek2</a>(token::Bracket) {
+<a href=#89 id=89 data-nosnippet>89</a>        <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="#77">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.error">error</a>(<span class="string">"unexpected attribute inside of attribute"</span>));
+<a href=#90 id=90 data-nosnippet>90</a>    } <span class="kw">else </span>{
+<a href=#91 id=91 data-nosnippet>91</a>        <a href="#77">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.parse">parse</a>()<span class="question-mark">?
+<a href=#92 id=92 data-nosnippet>92</a>    </span>};
+<a href=#93 id=93 data-nosnippet>93</a>    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="../../../../syn/attr/struct.MetaNameValue.html">MetaNameValue</a> {
+<a href=#94 id=94 data-nosnippet>94</a>        <a href="#76">path</a>,
+<a href=#95 id=95 data-nosnippet>95</a>        <a href="#79">eq_token</a>,
+<a href=#96 id=96 data-nosnippet>96</a>        <a href="#82">value</a>,
+<a href=#97 id=97 data-nosnippet>97</a>    })
+<a href=#98 id=98 data-nosnippet>98</a>}
+<a href=#99 id=99 data-nosnippet>99</a>
+<a href=#100 id=100 data-nosnippet>100</a><span class="expansion"><input id=expand-100 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+#[allow(clippy::large_enum_variant)]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>NestedMeta {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">match </span><span class="self">self </span>{
+            NestedMeta::Meta(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Meta"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            NestedMeta::Lit(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Lit"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[allow(clippy::large_enum_variant)]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>NestedMeta {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; NestedMeta {
+        <span class="kw">match </span><span class="self">self </span>{
+            NestedMeta::Meta(__self_0) =&gt;
+                NestedMeta::Meta(::core::clone::Clone::clone(__self_0)),
+            NestedMeta::Lit(__self_0) =&gt;
+                NestedMeta::Lit(::core::clone::Clone::clone(__self_0)),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span></span></span><span class="attr">)]
+<a href=#101 id=101 data-nosnippet>101</a></span><span class="comment">// Addressing this would break many users of the crate.
+<a href=#102 id=102 data-nosnippet>102</a></span><span class="attr">#[allow(clippy::large_enum_variant)]
+<a href=#103 id=103 data-nosnippet>103</a></span><span class="kw">pub enum </span><a href="../../../../darling_core/ast/enum.NestedMeta.html">NestedMeta</a> {
+<a href=#104 id=104 data-nosnippet>104</a>    Meta(syn::<a href="../../../../syn/attr/enum.Meta.html">Meta</a>),
+<a href=#105 id=105 data-nosnippet>105</a>    Lit(syn::<a href="../../../../syn/lit/enum.Lit.html">Lit</a>),
+<a href=#106 id=106 data-nosnippet>106</a>}
+<a href=#107 id=107 data-nosnippet>107</a>
+<a href=#108 id=108 data-nosnippet>108</a><span class="kw">impl </span><a href="#103-106">NestedMeta</a> {
+<a href=#109 id=109 data-nosnippet>109</a>    <span class="kw">pub fn </span>parse_meta_list(tokens: <a href="../../../../proc_macro2/struct.TokenStream.html">TokenStream</a>) -&gt; syn::<a href="../../../../syn/error/type.Result.html">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="self">Self</span>&gt;&gt; {
+<a href=#110 id=110 data-nosnippet>110</a><span class="expansion"><input id=expand-110 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        syn::punctuated::Punctuated::&lt;<a href="#103-106">NestedMeta</a>, <span class=expanded>::syn::token::Comma</span><span class="original"><a href="../../../../syn/macro.Token.html">Token!</a>[,]</span></span>&gt;::<a href="../../../../syn/punctuated/struct.Punctuated.html#method.parse_terminated">parse_terminated</a>
+<a href=#111 id=111 data-nosnippet>111</a>            .<a href="../../../../syn/parse/trait.Parser.html#tymethod.parse2">parse2</a>(<a href="#109">tokens</a>)
+<a href=#112 id=112 data-nosnippet>112</a>            .<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map">map</a>(|punctuated| <a href="#112">punctuated</a>.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>().<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>())
+<a href=#113 id=113 data-nosnippet>113</a>    }
+<a href=#114 id=114 data-nosnippet>114</a>}
+<a href=#115 id=115 data-nosnippet>115</a>
+<a href=#116 id=116 data-nosnippet>116</a><span class="kw">impl </span><a href="../../../../syn/parse/trait.Parse.html">syn::parse::Parse</a> <span class="kw">for </span><a href="#103-106">NestedMeta</a> {
+<a href=#117 id=117 data-nosnippet>117</a>    <span class="kw">fn </span>parse(input: syn::parse::<a href="../../../../syn/parse/type.ParseStream.html">ParseStream</a>&lt;<span class="lifetime">'_</span>&gt;) -&gt; syn::<a href="../../../../syn/error/type.Result.html">Result</a>&lt;<span class="self">Self</span>&gt; {
+<a href=#118 id=118 data-nosnippet>118</a>        <span class="comment">// The difference from `syn::Meta` and `NestedMeta`:
+<a href=#119 id=119 data-nosnippet>119</a>        // 1. `syn::Meta` requires a path, named value, or meta list only.
+<a href=#120 id=120 data-nosnippet>120</a>        //   1. `outer(path)`
+<a href=#121 id=121 data-nosnippet>121</a>        //   2. `outer(key = "value")`, the identifier of the key cannot be strict keywords in rust, like `self`, `super`, `crate`, etc.
+<a href=#122 id=122 data-nosnippet>122</a>        //   3. `outer(inner(..))`, the identifier of the inner meta cannot be strict keywords in rust, like `self`, `super`, `crate`, etc.
+<a href=#123 id=123 data-nosnippet>123</a>        // 2. `NestedMeta` allows a literal, which is useful for attributes like `#[outer("foo")]`.
+<a href=#124 id=124 data-nosnippet>124</a>        //   1. `outer("foo")`
+<a href=#125 id=125 data-nosnippet>125</a>        //   2. `outer(42)`
+<a href=#126 id=126 data-nosnippet>126</a>        //   3. `outer(key = "value")`, the identifier of the key can be strict keywords in rust, like `self`, `super`, `crate`, etc.
+<a href=#127 id=127 data-nosnippet>127</a>        //     1. `outer(self = "value")`
+<a href=#128 id=128 data-nosnippet>128</a>        //     2. `outer(type = "Foo")`
+<a href=#129 id=129 data-nosnippet>129</a>        //     3. `outer(crate = "bar")`
+<a href=#130 id=130 data-nosnippet>130</a>        //   4. `outer(inner(..))`, the identifier of the inner meta can be strict keywords in rust, like `self`, `super`, `crate`, etc.
+<a href=#131 id=131 data-nosnippet>131</a>        //     1. `outer(self(..))`
+<a href=#132 id=132 data-nosnippet>132</a>        //     2. `outer(super(..))`
+<a href=#133 id=133 data-nosnippet>133</a>        //     3. `outer(crate(..))`
+<a href=#134 id=134 data-nosnippet>134</a></span><span class="expansion"><input id=expand-134 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class="kw">if </span><a href="#117">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.peek">peek</a>(syn::Lit) &amp;&amp; !(<a href="#117">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.peek">peek</a>(syn::LitBool) &amp;&amp; <a href="#117">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.peek2">peek2</a>(<span class=expanded>::syn::token::Eq</span><span class="original"><a href="../../../../syn/macro.Token.html">syn::Token!</a>[=]</span></span>)) {
+<a href=#135 id=135 data-nosnippet>135</a>            <a href="#117">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.parse">parse</a>().<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map">map</a>(<span class="self">Self</span>::<a href="#105">Lit</a>)
+<a href=#136 id=136 data-nosnippet>136</a>        } <span class="kw">else if </span><a href="#117">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.peek">peek</a>(syn::<a href="../../../../proc_macro2/struct.Ident.html">Ident</a>::<a href="../../../../syn/ext/trait.IdentExt.html#associatedconstant.peek_any">peek_any</a>) {
+<a href=#137 id=137 data-nosnippet>137</a>            <span class="kw">let </span>path = <a href="#12-39">parse_meta_path</a>(<a href="#117">input</a>)<span class="question-mark">?</span>;
+<a href=#138 id=138 data-nosnippet>138</a>            <a href="#41-49">parse_meta_after_path</a>(<a href="#137">path</a>, <a href="#117">input</a>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map">map</a>(<span class="self">Self</span>::<a href="#104">Meta</a>)
+<a href=#139 id=139 data-nosnippet>139</a>        } <span class="kw">else </span>{
+<a href=#140 id=140 data-nosnippet>140</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="#117">input</a>.<a href="../../../../syn/parse/struct.ParseBuffer.html#method.error">error</a>(<span class="string">"expected identifier or literal"</span>))
+<a href=#141 id=141 data-nosnippet>141</a>        }
+<a href=#142 id=142 data-nosnippet>142</a>    }
+<a href=#143 id=143 data-nosnippet>143</a>}
+<a href=#144 id=144 data-nosnippet>144</a>
+<a href=#145 id=145 data-nosnippet>145</a><span class="kw">impl </span><a href="../../../../quote/to_tokens/trait.ToTokens.html">ToTokens</a> <span class="kw">for </span><a href="#103-106">NestedMeta</a> {
+<a href=#146 id=146 data-nosnippet>146</a>    <span class="kw">fn </span>to_tokens(<span class="kw-2">&amp;</span><span class="self">self</span>, tokens: <span class="kw-2">&amp;mut </span><a href="../../../../proc_macro2/struct.TokenStream.html">TokenStream</a>) {
+<a href=#147 id=147 data-nosnippet>147</a>        <span class="kw">match </span><a class="self" href="#146">self</a> {
+<a href=#148 id=148 data-nosnippet>148</a>            NestedMeta::<a href="#104">Meta</a>(meta) =&gt; <a href="#148">meta</a>.<a href="../../../../quote/to_tokens/trait.ToTokens.html#tymethod.to_tokens">to_tokens</a>(<a href="#146">tokens</a>),
+<a href=#149 id=149 data-nosnippet>149</a>            NestedMeta::<a href="#105">Lit</a>(lit) =&gt; <a href="#149">lit</a>.<a href="../../../../quote/to_tokens/trait.ToTokens.html#tymethod.to_tokens">to_tokens</a>(<a href="#146">tokens</a>),
+<a href=#150 id=150 data-nosnippet>150</a>        }
+<a href=#151 id=151 data-nosnippet>151</a>    }
+<a href=#152 id=152 data-nosnippet>152</a>}
+</code></pre></div></section></main></body></html>

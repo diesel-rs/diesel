@@ -1,0 +1,92 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libc-0.2.180/src/new/linux_uapi/linux/membarrier.rs`."><title>membarrier.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="libc" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../../static.files/storage-f9617a14.js"></script><script defer src="../../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../../src-files.js"></script><script defer src="../../../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">libc/new/linux_uapi/linux/</div>membarrier.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Header: `uapi/linux/membarrier.h`
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a></span><span class="kw">use </span><span class="kw">crate</span>::prelude::<span class="kw-2">*</span>;
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a><span class="expansion"><input id=expand-5 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="kw">pub type </span>membarrier_cmd = c_int;
+<span class="kw">pub const </span>MEMBARRIER_CMD_QUERY: membarrier_cmd =
+    {
+        <span class="attr">#[allow(unused_variables)]
+        </span><span class="kw">let </span>r = <span class="number">0</span>;
+        <span class="kw">let </span>r = <span class="number">0</span>;
+        r
+    };
+<span class="kw">pub const </span>MEMBARRIER_CMD_GLOBAL: membarrier_cmd =
+    {
+        <span class="attr">#[allow(unused_variables)]
+        </span><span class="kw">let </span>r = MEMBARRIER_CMD_QUERY + <span class="number">1</span>;
+        <span class="kw">let </span>r = <span class="number">1 </span>&lt;&lt; <span class="number">0</span>;
+        r
+    };
+<span class="kw">pub const </span>MEMBARRIER_CMD_GLOBAL_EXPEDITED: membarrier_cmd =
+    {
+        <span class="attr">#[allow(unused_variables)]
+        </span><span class="kw">let </span>r = MEMBARRIER_CMD_GLOBAL + <span class="number">1</span>;
+        <span class="kw">let </span>r = <span class="number">1 </span>&lt;&lt; <span class="number">1</span>;
+        r
+    };
+<span class="kw">pub const </span>MEMBARRIER_CMD_REGISTER_GLOBAL_EXPEDITED: membarrier_cmd =
+    {
+        <span class="attr">#[allow(unused_variables)]
+        </span><span class="kw">let </span>r = MEMBARRIER_CMD_GLOBAL_EXPEDITED + <span class="number">1</span>;
+        <span class="kw">let </span>r = <span class="number">1 </span>&lt;&lt; <span class="number">2</span>;
+        r
+    };
+<span class="kw">pub const </span>MEMBARRIER_CMD_PRIVATE_EXPEDITED: membarrier_cmd =
+    {
+        <span class="attr">#[allow(unused_variables)]
+        </span><span class="kw">let </span>r = MEMBARRIER_CMD_REGISTER_GLOBAL_EXPEDITED + <span class="number">1</span>;
+        <span class="kw">let </span>r = <span class="number">1 </span>&lt;&lt; <span class="number">3</span>;
+        r
+    };
+<span class="kw">pub const </span>MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED: membarrier_cmd =
+    {
+        <span class="attr">#[allow(unused_variables)]
+        </span><span class="kw">let </span>r = MEMBARRIER_CMD_PRIVATE_EXPEDITED + <span class="number">1</span>;
+        <span class="kw">let </span>r = <span class="number">1 </span>&lt;&lt; <span class="number">4</span>;
+        r
+    };
+<span class="kw">pub const </span>MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE: membarrier_cmd =
+    {
+        <span class="attr">#[allow(unused_variables)]
+        </span><span class="kw">let </span>r = MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED + <span class="number">1</span>;
+        <span class="kw">let </span>r = <span class="number">1 </span>&lt;&lt; <span class="number">5</span>;
+        r
+    };
+<span class="kw">pub const </span>MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE: membarrier_cmd
+    =
+    {
+        <span class="attr">#[allow(unused_variables)]
+        </span><span class="kw">let </span>r = MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE + <span class="number">1</span>;
+        <span class="kw">let </span>r = <span class="number">1 </span>&lt;&lt; <span class="number">6</span>;
+        r
+    };
+<span class="kw">pub const </span>MEMBARRIER_CMD_PRIVATE_EXPEDITED_RSEQ: membarrier_cmd =
+    {
+        <span class="attr">#[allow(unused_variables)]
+        </span><span class="kw">let </span>r = MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE + <span class="number">1</span>;
+        <span class="kw">let </span>r = <span class="number">1 </span>&lt;&lt; <span class="number">7</span>;
+        r
+    };
+<span class="kw">pub const </span>MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_RSEQ: membarrier_cmd =
+    {
+        <span class="attr">#[allow(unused_variables)]
+        </span><span class="kw">let </span>r = MEMBARRIER_CMD_PRIVATE_EXPEDITED_RSEQ + <span class="number">1</span>;
+        <span class="kw">let </span>r = <span class="number">1 </span>&lt;&lt; <span class="number">8</span>;
+        r
+    };</span><span class="original"><a href="../../../macros.rs.html#296-374">c_enum!</a> {
+<a href=#6 id=6 data-nosnippet>6</a>    <span class="comment">// FIXME(1.0): incorrect repr signedness, this should be removed in a breaking change.
+<a href=#7 id=7 data-nosnippet>7</a>    </span><span class="attr">#[repr(<a href="../../../primitives.rs.html#51">c_int</a>)]
+<a href=#8 id=8 data-nosnippet>8</a>    </span><span class="kw">pub enum </span><a href="#5-20">membarrier_cmd</a> {
+<a href=#9 id=9 data-nosnippet>9</a>        <span class="kw">pub </span><a href="../../../../../libc/constant.MEMBARRIER_CMD_QUERY.html">MEMBARRIER_CMD_QUERY</a> = <span class="number">0</span>,
+<a href=#10 id=10 data-nosnippet>10</a>        <span class="kw">pub </span><a href="../../../../../libc/constant.MEMBARRIER_CMD_GLOBAL.html">MEMBARRIER_CMD_GLOBAL</a> = <span class="number">1 </span>&lt;&lt; <span class="number">0</span>,
+<a href=#11 id=11 data-nosnippet>11</a>        <span class="kw">pub </span><a href="../../../../../libc/constant.MEMBARRIER_CMD_GLOBAL_EXPEDITED.html">MEMBARRIER_CMD_GLOBAL_EXPEDITED</a> = <span class="number">1 </span>&lt;&lt; <span class="number">1</span>,
+<a href=#12 id=12 data-nosnippet>12</a>        <span class="kw">pub </span><a href="../../../../../libc/constant.MEMBARRIER_CMD_REGISTER_GLOBAL_EXPEDITED.html">MEMBARRIER_CMD_REGISTER_GLOBAL_EXPEDITED</a> = <span class="number">1 </span>&lt;&lt; <span class="number">2</span>,
+<a href=#13 id=13 data-nosnippet>13</a>        <span class="kw">pub </span><a href="../../../../../libc/constant.MEMBARRIER_CMD_PRIVATE_EXPEDITED.html">MEMBARRIER_CMD_PRIVATE_EXPEDITED</a> = <span class="number">1 </span>&lt;&lt; <span class="number">3</span>,
+<a href=#14 id=14 data-nosnippet>14</a>        <span class="kw">pub </span><a href="../../../../../libc/constant.MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED.html">MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED</a> = <span class="number">1 </span>&lt;&lt; <span class="number">4</span>,
+<a href=#15 id=15 data-nosnippet>15</a>        <span class="kw">pub </span><a href="../../../../../libc/constant.MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE.html">MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE</a> = <span class="number">1 </span>&lt;&lt; <span class="number">5</span>,
+<a href=#16 id=16 data-nosnippet>16</a>        <span class="kw">pub </span><a href="../../../../../libc/constant.MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE.html">MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE</a> = <span class="number">1 </span>&lt;&lt; <span class="number">6</span>,
+<a href=#17 id=17 data-nosnippet>17</a>        <span class="kw">pub </span><a href="../../../../../libc/constant.MEMBARRIER_CMD_PRIVATE_EXPEDITED_RSEQ.html">MEMBARRIER_CMD_PRIVATE_EXPEDITED_RSEQ</a> = <span class="number">1 </span>&lt;&lt; <span class="number">7</span>,
+<a href=#18 id=18 data-nosnippet>18</a>        <span class="kw">pub </span><a href="../../../../../libc/constant.MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_RSEQ.html">MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_RSEQ</a> = <span class="number">1 </span>&lt;&lt; <span class="number">8</span>,
+<a href=#19 id=19 data-nosnippet>19</a>    }
+<a href=#20 id=20 data-nosnippet>20</a>}</span></span>
+</code></pre></div></section></main></body></html>

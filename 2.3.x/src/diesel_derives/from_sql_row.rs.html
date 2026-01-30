@@ -1,0 +1,155 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `diesel_derives/src/from_sql_row.rs`."><title>from_sql_row.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel_derives" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-f9617a14.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">diesel_derives/</div>from_sql_row.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><a href="../../proc_macro2/struct.TokenStream.html">proc_macro2::TokenStream</a>;
+<a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span><a href="../../quote/macro.quote.html">quote::quote</a>;
+<a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span><a href="../../syn/macro.parse_quote.html">syn::parse_quote</a>;
+<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span><a href="../../syn/derive/struct.DeriveInput.html">syn::DeriveInput</a>;
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><a href="../../syn/error/type.Result.html">syn::Result</a>;
+<a href=#6 id=6 data-nosnippet>6</a>
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">use </span><a href="model.rs.html#16-34"><span class="kw">crate</span>::model::Model</a>;
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span><span class="kw">crate</span>::util::{<a href="util.rs.html#152-172">ty_for_foreign_derive</a>, <a href="util.rs.html#99-113">wrap_in_dummy_mod</a>};
+<a href=#9 id=9 data-nosnippet>9</a>
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">pub fn </span>derive(<span class="kw-2">mut </span>item: <a href="../../syn/derive/struct.DeriveInput.html">DeriveInput</a>) -&gt; <a class="prelude-ty" href="../../syn/error/type.Result.html">Result</a>&lt;<a href="../../proc_macro2/struct.TokenStream.html">TokenStream</a>&gt; {
+<a href=#11 id=11 data-nosnippet>11</a>    <span class="kw">let </span>model = <a href="model.rs.html#16-34">Model</a>::<a href="model.rs.html#42-141">from_item</a>(<span class="kw-2">&amp;</span><a href="#10">item</a>, <span class="bool-val">true</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
+<a href=#12 id=12 data-nosnippet>12</a>    <span class="kw">let </span>struct_ty = <a href="util.rs.html#152-172">ty_for_foreign_derive</a>(<span class="kw-2">&amp;</span><a href="#10">item</a>, <span class="kw-2">&amp;</span><a href="#11">model</a>)<span class="question-mark">?</span>;
+<a href=#13 id=13 data-nosnippet>13</a>
+<a href=#14 id=14 data-nosnippet>14</a>    {
+<a href=#15 id=15 data-nosnippet>15</a><span class="expansion"><input id=expand-15 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <a href="#10">item</a>.generics.params.<a href="../../syn/punctuated/struct.Punctuated.html#method.push">push</a>(<span class=expanded>::syn::__private::parse_quote({
+        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__DB"</span>);
+        _s
+    })</span><span class="original"><a href="../../syn/macro.parse_quote.html">parse_quote!</a>(__DB)</span></span>);
+<a href=#16 id=16 data-nosnippet>16</a><span class="expansion"><input id=expand-16 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <a href="#10">item</a>.generics.params.<a href="../../syn/punctuated/struct.Punctuated.html#method.push">push</a>(<span class=expanded>::syn::__private::parse_quote({
+        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__ST"</span>);
+        _s
+    })</span><span class="original"><a href="../../syn/macro.parse_quote.html">parse_quote!</a>(__ST)</span></span>);
+<a href=#17 id=17 data-nosnippet>17</a>        <span class="kw">let </span>where_clause = <a href="#10">item</a>.generics.<a href="../../syn/generics/struct.Generics.html#method.make_where_clause">make_where_clause</a>();
+<a href=#18 id=18 data-nosnippet>18</a>        <a href="#17">where_clause</a>
+<a href=#19 id=19 data-nosnippet>19</a>            .predicates
+<a href=#20 id=20 data-nosnippet>20</a><span class="expansion"><input id=expand-20 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            .<a href="../../syn/punctuated/struct.Punctuated.html#method.push">push</a>(<span class=expanded>::syn::__private::parse_quote({
+        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__DB"</span>);
+        ::quote::__private::push_colon(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"diesel"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"backend"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Backend"</span>);
+        _s
+    })</span><span class="original"><a href="../../syn/macro.parse_quote.html">parse_quote!</a>(__DB: diesel::backend::Backend)</span></span>);
+<a href=#21 id=21 data-nosnippet>21</a>        <a href="#17">where_clause</a>
+<a href=#22 id=22 data-nosnippet>22</a>            .predicates
+<a href=#23 id=23 data-nosnippet>23</a><span class="expansion"><input id=expand-23 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            .<a href="../../syn/punctuated/struct.Punctuated.html#method.push">push</a>(<span class=expanded>::syn::__private::parse_quote({
+        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__ST"</span>);
+        ::quote::__private::push_colon(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"diesel"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"sql_types"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"SingleValue"</span>);
+        _s
+    })</span><span class="original"><a href="../../syn/macro.parse_quote.html">parse_quote!</a>(__ST: diesel::sql_types::SingleValue)</span></span>);
+<a href=#24 id=24 data-nosnippet>24</a>        <a href="#17">where_clause</a>
+<a href=#25 id=25 data-nosnippet>25</a>            .predicates
+<a href=#26 id=26 data-nosnippet>26</a><span class="expansion"><input id=expand-26 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            .<a href="../../syn/punctuated/struct.Punctuated.html#method.push">push</a>(<span class=expanded>::syn::__private::parse_quote({
+        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Self"</span>);
+        ::quote::__private::push_colon(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"diesel"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"deserialize"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"FromSql"</span>);
+        ::quote::__private::push_lt(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__ST"</span>);
+        ::quote::__private::push_comma(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__DB"</span>);
+        ::quote::__private::push_gt(<span class="kw-2">&amp;mut </span>_s);
+        _s
+    })</span><span class="original"><a href="../../syn/macro.parse_quote.html">parse_quote!</a>(<span class="self">Self</span>: diesel::deserialize::FromSql&lt;__ST, __DB&gt;)</span></span>);
+<a href=#27 id=27 data-nosnippet>27</a>    }
+<a href=#28 id=28 data-nosnippet>28</a>    <span class="kw">let </span>(impl_generics, <span class="kw">_</span>, where_clause) = <a href="#10">item</a>.generics.<a href="../../syn/generics/struct.Generics.html#method.split_for_impl">split_for_impl</a>();
+<a href=#29 id=29 data-nosnippet>29</a>
+<a href=#30 id=30 data-nosnippet>30</a><span class="expansion"><input id=expand-30 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="util.rs.html#99-113">wrap_in_dummy_mod</a>(<span class=expanded>{
+    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"impl"</span>);
+    ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>impl_generics, <span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"diesel"</span>);
+    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"deserialize"</span>);
+    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Queryable"</span>);
+    ::quote::__private::push_lt(<span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__ST"</span>);
+    ::quote::__private::push_comma(<span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__DB"</span>);
+    ::quote::__private::push_gt(<span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"for"</span>);
+    ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>struct_ty, <span class="kw-2">&amp;mut </span>_s);
+    ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>where_clause, <span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+        ::quote::__private::Delimiter::Brace,
+        {
+            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"type"</span>);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Row"</span>);
+            ::quote::__private::push_eq(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Self"</span>);
+            ::quote::__private::push_semi(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"fn"</span>);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"build"</span>);
+            ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                ::quote::__private::Delimiter::Parenthesis,
+                {
+                    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"row"</span>);
+                    ::quote::__private::push_colon(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Self"</span>);
+                    _s
+                });
+            ::quote::__private::push_rarrow(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"diesel"</span>);
+            ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"deserialize"</span>);
+            ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Result"</span>);
+            ::quote::__private::push_lt(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Self"</span>);
+            ::quote::__private::push_gt(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                ::quote::__private::Delimiter::Brace,
+                {
+                    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"diesel"</span>);
+                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"deserialize"</span>);
+                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Result"</span>);
+                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Ok"</span>);
+                    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                        ::quote::__private::Delimiter::Parenthesis,
+                        {
+                            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"row"</span>);
+                            _s
+                        });
+                    _s
+                });
+            _s
+        });
+    _s
+}</span><span class="original"><a href="../../quote/macro.quote.html">quote!</a> {
+<a href=#31 id=31 data-nosnippet>31</a>        <span class="comment">// Need to put __ST and __DB after lifetimes but before const params
+<a href=#32 id=32 data-nosnippet>32</a>        </span><span class="kw">impl </span>#impl_generics diesel::deserialize::Queryable&lt;__ST, __DB&gt; <span class="kw">for </span>#struct_ty
+<a href=#33 id=33 data-nosnippet>33</a>        #where_clause
+<a href=#34 id=34 data-nosnippet>34</a>        {
+<a href=#35 id=35 data-nosnippet>35</a>            <span class="kw">type </span>Row = <span class="self">Self</span>;
+<a href=#36 id=36 data-nosnippet>36</a>
+<a href=#37 id=37 data-nosnippet>37</a>            <span class="kw">fn </span>build(row: <span class="self">Self</span>) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+<a href=#38 id=38 data-nosnippet>38</a>                diesel::deserialize::Result::Ok(row)
+<a href=#39 id=39 data-nosnippet>39</a>            }
+<a href=#40 id=40 data-nosnippet>40</a>        }
+<a href=#41 id=41 data-nosnippet>41</a>    }</span></span>))
+<a href=#42 id=42 data-nosnippet>42</a>}
+</code></pre></div></section></main></body></html>

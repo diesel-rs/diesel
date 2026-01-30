@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Returns target with the item designated by path replaced by new_value, or with new_value added and the item designated by path does not exist."><title>jsonb_set_lax in diesel::pg::expression::functions - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">jsonb_set_lax</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../../diesel/index.html">diesel</a><span class="version">2.3.6</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">jsonb_<wbr>set_<wbr>lax</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>pg::<wbr>expression::<wbr>functions</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../../index.html">diesel</a>::<wbr><a href="../../index.html">pg</a>::<wbr><a href="../index.html">expression</a>::<wbr><a href="index.html">functions</a></div><h1>Function <span class="fn">jsonb_<wbr>set_<wbr>lax</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../../src/diesel/pg/expression/functions.rs.html#19">Source</a> </span></div><pre class="rust item-decl"><code>pub fn jsonb_set_lax&lt;E: JsonbOrNullableJsonb + <a class="trait" href="../../../sql_types/trait.SingleValue.html" title="trait diesel::sql_types::SingleValue">SingleValue</a>, Arr: TextArrayOrNullableTextArray + CombinedNullableValue&lt;E, <a class="struct" href="../../../sql_types/struct.Jsonb.html" title="struct diesel::sql_types::Jsonb">Jsonb</a>&gt;, base, path, new_value, create_if_missing, null_value_treatment&gt;(
+    base: base,
+    path: path,
+    new_value: new_value,
+    create_if_missing: create_if_missing,
+    null_value_treatment: null_value_treatment,
+) -&gt; <a class="type" href="type.jsonb_set_lax.html" title="type diesel::pg::expression::functions::jsonb_set_lax">jsonb_set_lax</a>&lt;E, Arr, base, path, new_value, create_if_missing, null_value_treatment&gt;<div class="where">where
+    base: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;E&gt;,
+    path: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Arr&gt;,
+    new_value: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;E&gt;,
+    create_if_missing: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../../../sql_types/struct.Bool.html" title="struct diesel::sql_types::Bool">Bool</a>&gt;,
+    null_value_treatment: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../../../sql_types/struct.NullValueTreatmentEnum.html" title="struct diesel::sql_types::NullValueTreatmentEnum">NullValueTreatmentEnum</a>&gt;,</div></code></pre><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>postgres_backend</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Returns target with the item designated by path replaced by new_value,
+or with new_value added and the item designated by path does not exist.</p>
+<p>It can’t set path in scalar</p>
+<p>All earlier steps in the path must exist, or the target is returned unchanged.
+As with the path oriented operators, negative integers that appear in the path count from the end of JSON arrays.
+If the last path step is an array index that is out of range,
+the new value is added at the beginning of the array if the index is negative,
+or at the end of the array if it is positive.</p>
+<p>If new_value is not NULL, behaves identically to jsonb_set.
+Otherwise behaves according to the value of null_value_treatment
+which must be one of ‘raise_exception’, ‘use_json_null’, ‘delete_key’, or ‘return_target’.
+The default is ‘use_json_null’.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>null_value_treatment = NullValueTreatment::UseJsonNull;
+<span class="kw">let </span>result = diesel::select(jsonb_set_lax::&lt;Jsonb, Array&lt;Text&gt;, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+        <span class="macro">json!</span>([{<span class="string">"f1"</span>:<span class="number">1</span>,<span class="string">"f2"</span>:null},<span class="number">2</span>,null,<span class="number">3</span>]),
+        <span class="macro">vec!</span>[<span class="string">"0"</span>,<span class="string">"f1"</span>],
+        <span class="macro">json!</span>([<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>]),
+        <span class="bool-val">true</span>,
+        null_value_treatment
+    )).get_result::&lt;Value&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected: Value = <span class="macro">json!</span>([{<span class="string">"f1"</span>: [<span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>], <span class="string">"f2"</span>: null}, <span class="number">2</span>, null, <span class="number">3</span>]);
+<span class="macro">assert_eq!</span>(result, expected);
+
+<span class="kw">let </span>null_value_treatment = NullValueTreatment::ReturnTarget;
+<span class="kw">let </span>result = diesel::select(jsonb_set_lax::&lt;Nullable&lt;Jsonb&gt;, Array&lt;Nullable&lt;Text&gt;&gt;, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+        <span class="macro">json!</span>([{<span class="string">"f1"</span>:<span class="number">99</span>,<span class="string">"f2"</span>:null},<span class="number">2</span>]),
+        <span class="macro">vec!</span>[<span class="string">"0"</span>,<span class="string">"f3"</span>],
+        None::&lt;Value&gt;,
+        <span class="bool-val">true</span>,
+        null_value_treatment
+    )).get_result::&lt;<span class="prelude-ty">Option</span>&lt;Value&gt;&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(result, <span class="prelude-val">Some</span>(<span class="macro">json!</span>([{<span class="string">"f1"</span>:<span class="number">99</span>,<span class="string">"f2"</span>:null},<span class="number">2</span>])));
+
+<span class="kw">let </span>null_value_treatment = NullValueTreatment::UseJsonNull;
+<span class="kw">let </span>empty:Vec&lt;String&gt; = Vec::new();
+<span class="kw">let </span>result = diesel::select(jsonb_set_lax::&lt;Jsonb, Array&lt;Nullable&lt;Text&gt;&gt;, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+        <span class="comment">// cannot be json!(null)
+        </span><span class="macro">json!</span>([]),
+        empty,
+        <span class="macro">json!</span>(null),
+        <span class="bool-val">true</span>,
+        null_value_treatment
+    )).get_result::&lt;Value&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = <span class="macro">json!</span>([]);
+<span class="macro">assert_eq!</span>(result, expected);
+
+<span class="kw">let </span>null_value_treatment = NullValueTreatment::UseJsonNull;
+<span class="kw">let </span>result = diesel::select(jsonb_set_lax::&lt;Jsonb, Nullable&lt;Array&lt;Nullable&lt;Text&gt;&gt;&gt;, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>,&gt;(
+        <span class="macro">json!</span>(null),
+        None::&lt;Vec&lt;String&gt;&gt;,
+        <span class="macro">json!</span>({<span class="string">"foo"</span>: <span class="number">42</span>}),
+        <span class="bool-val">true</span>,
+        null_value_treatment
+    )).get_result::&lt;<span class="prelude-ty">Option</span>&lt;Value&gt;&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert!</span>(result.is_none());
+</code></pre></div></div></details></section></div></main></body></html>

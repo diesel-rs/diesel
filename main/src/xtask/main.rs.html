@@ -1,0 +1,247 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `xtask/src/main.rs`."><title>main.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="xtask" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-f9617a14.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">xtask/</div>main.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html">std::fmt::Display</a>;
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span>clap::{<a href="../../clap_derive/derive.Parser.html">Parser</a>, <a href="../../clap_derive/derive.ValueEnum.html">ValueEnum</a>};
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">mod </span><a href="clippy.rs.html#1-92">clippy</a>;
+<a href=#6 id=6 data-nosnippet>6</a><span class="kw">mod </span><a href="semver_checks.rs.html#1-185">semver_checks</a>;
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">mod </span><a href="tests/mod.rs.html#1-331">tests</a>;
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">mod </span><a href="tidy.rs.html#1-79">tidy</a>;
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">mod </span><a href="utils.rs.html#1-20">utils</a>;
+<a href=#10 id=10 data-nosnippet>10</a>
+<a href=#11 id=11 data-nosnippet>11</a><span class="expansion"><input id=expand-11 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>Commands {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">match </span><span class="self">self </span>{
+            Commands::RunTests(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"RunTests"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Commands::Clippy(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Clippy"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            Commands::Tidy(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Tidy"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            Commands::SemverChecks(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"SemverChecks"</span>, <span class="kw-2">&amp;</span>__self_0),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[allow(dead_code, unreachable_code, unused_variables, unused_braces,
+unused_qualifications,)]
+#[allow(clippy :: style, clippy :: complexity, clippy :: pedantic, clippy ::
+restriction, clippy :: perf, clippy :: deprecated, clippy :: nursery, clippy
+:: cargo, clippy :: suspicious_else_formatting, clippy :: almost_swapped,
+clippy :: redundant_locals,)]
+#[automatically_derived]
+</span><span class="kw">impl </span>clap::Subcommand <span class="kw">for </span>Commands {
+    <span class="kw">fn </span>augment_subcommands&lt;<span class="lifetime">'b</span>&gt;(__clap_app: clap::Command) -&gt; clap::Command {
+        ;
+        <span class="kw">let </span>__clap_app = __clap_app;
+        <span class="kw">let </span>__clap_app =
+            __clap_app.subcommand({
+                    <span class="kw">let </span>__clap_subcommand = clap::Command::new(<span class="string">"run-tests"</span>);
+                    <span class="kw">let </span>__clap_subcommand = __clap_subcommand;
+                    <span class="kw">let </span>__clap_subcommand =
+                        {
+                            &lt;tests::TestArgs <span class="kw">as
+                                    </span>clap::Args&gt;::augment_args(__clap_subcommand)
+                        };
+                    __clap_subcommand.about(<span class="string">"Run all tests for diesel"</span>).long_about(<span class="string">"Run all tests for diesel\n\nRequires `cargo-nextest` to be installed"</span>)
+                });
+        <span class="kw">let </span>__clap_app =
+            __clap_app.subcommand({
+                    <span class="kw">let </span>__clap_subcommand = clap::Command::new(<span class="string">"clippy"</span>);
+                    <span class="kw">let </span>__clap_subcommand = __clap_subcommand;
+                    <span class="kw">let </span>__clap_subcommand =
+                        {
+                            &lt;clippy::ClippyArgs <span class="kw">as
+                                    </span>clap::Args&gt;::augment_args(__clap_subcommand)
+                        };
+                    __clap_subcommand.about(<span class="string">"Run clippy on all crates"</span>).long_about(<span class="prelude-val">None</span>)
+                });
+        <span class="kw">let </span>__clap_app =
+            __clap_app.subcommand({
+                    <span class="kw">let </span>__clap_subcommand = clap::Command::new(<span class="string">"tidy"</span>);
+                    <span class="kw">let </span>__clap_subcommand = __clap_subcommand;
+                    <span class="kw">let </span>__clap_subcommand =
+                        {
+                            &lt;tidy::TidyArgs <span class="kw">as
+                                    </span>clap::Args&gt;::augment_args(__clap_subcommand)
+                        };
+                    __clap_subcommand.about(<span class="string">"Perform a set of preliminary checks"</span>).long_about(<span class="string">"Perform a set of preliminary checks\n\nThis command will execute `cargo fmt --check` to verify that the code is formatted, `typos` to check for spelling errors and it will execute `xtask clippy` to verify that the code compiles without warning"</span>)
+                });
+        <span class="kw">let </span>__clap_app =
+            __clap_app.subcommand({
+                    <span class="kw">let </span>__clap_subcommand = clap::Command::new(<span class="string">"semver-checks"</span>);
+                    <span class="kw">let </span>__clap_subcommand = __clap_subcommand;
+                    <span class="kw">let </span>__clap_subcommand =
+                        {
+                            &lt;semver_checks::SemverArgs <span class="kw">as
+                                    </span>clap::Args&gt;::augment_args(__clap_subcommand)
+                        };
+                    __clap_subcommand.about(<span class="string">"Check for semver relevant changes"</span>).long_about(<span class="string">"Check for semver relevant changes\n\nThis command will execute `cargo semver-checks` to verify that no breaking changes are included"</span>)
+                });
+        ;
+        __clap_app
+    }
+    <span class="kw">fn </span>augment_subcommands_for_update&lt;<span class="lifetime">'b</span>&gt;(__clap_app: clap::Command)
+        -&gt; clap::Command {
+        ;
+        <span class="kw">let </span>__clap_app = __clap_app;
+        <span class="kw">let </span>__clap_app =
+            __clap_app.subcommand({
+                    <span class="kw">let </span>__clap_subcommand = clap::Command::new(<span class="string">"run-tests"</span>);
+                    <span class="kw">let </span>__clap_subcommand = __clap_subcommand;
+                    <span class="kw">let </span>__clap_subcommand =
+                        {
+                            &lt;tests::TestArgs <span class="kw">as
+                                    </span>clap::Args&gt;::augment_args_for_update(__clap_subcommand)
+                        };
+                    __clap_subcommand.about(<span class="string">"Run all tests for diesel"</span>).long_about(<span class="string">"Run all tests for diesel\n\nRequires `cargo-nextest` to be installed"</span>)
+                });
+        <span class="kw">let </span>__clap_app =
+            __clap_app.subcommand({
+                    <span class="kw">let </span>__clap_subcommand = clap::Command::new(<span class="string">"clippy"</span>);
+                    <span class="kw">let </span>__clap_subcommand = __clap_subcommand;
+                    <span class="kw">let </span>__clap_subcommand =
+                        {
+                            &lt;clippy::ClippyArgs <span class="kw">as
+                                    </span>clap::Args&gt;::augment_args_for_update(__clap_subcommand)
+                        };
+                    __clap_subcommand.about(<span class="string">"Run clippy on all crates"</span>).long_about(<span class="prelude-val">None</span>)
+                });
+        <span class="kw">let </span>__clap_app =
+            __clap_app.subcommand({
+                    <span class="kw">let </span>__clap_subcommand = clap::Command::new(<span class="string">"tidy"</span>);
+                    <span class="kw">let </span>__clap_subcommand = __clap_subcommand;
+                    <span class="kw">let </span>__clap_subcommand =
+                        {
+                            &lt;tidy::TidyArgs <span class="kw">as
+                                    </span>clap::Args&gt;::augment_args_for_update(__clap_subcommand)
+                        };
+                    __clap_subcommand.about(<span class="string">"Perform a set of preliminary checks"</span>).long_about(<span class="string">"Perform a set of preliminary checks\n\nThis command will execute `cargo fmt --check` to verify that the code is formatted, `typos` to check for spelling errors and it will execute `xtask clippy` to verify that the code compiles without warning"</span>)
+                });
+        <span class="kw">let </span>__clap_app =
+            __clap_app.subcommand({
+                    <span class="kw">let </span>__clap_subcommand = clap::Command::new(<span class="string">"semver-checks"</span>);
+                    <span class="kw">let </span>__clap_subcommand = __clap_subcommand;
+                    <span class="kw">let </span>__clap_subcommand =
+                        {
+                            &lt;semver_checks::SemverArgs <span class="kw">as
+                                    </span>clap::Args&gt;::augment_args_for_update(__clap_subcommand)
+                        };
+                    __clap_subcommand.about(<span class="string">"Check for semver relevant changes"</span>).long_about(<span class="string">"Check for semver relevant changes\n\nThis command will execute `cargo semver-checks` to verify that no breaking changes are included"</span>)
+                });
+        ;
+        __clap_app
+    }
+    <span class="kw">fn </span>has_subcommand(__clap_name: <span class="kw-2">&amp;</span>str) -&gt; bool {
+        <span class="kw">if </span><span class="string">"run-tests" </span>== __clap_name { <span class="kw">return </span><span class="bool-val">true </span>}
+        <span class="kw">if </span><span class="string">"clippy" </span>== __clap_name { <span class="kw">return </span><span class="bool-val">true </span>}
+        <span class="kw">if </span><span class="string">"tidy" </span>== __clap_name { <span class="kw">return </span><span class="bool-val">true </span>}
+        <span class="kw">if </span><span class="string">"semver-checks" </span>== __clap_name { <span class="kw">return </span><span class="bool-val">true </span>}
+        <span class="bool-val">false
+    </span>}
+}</span><span class="original"><a href="../../clap_derive/derive.Parser.html">Parser</a></span></span></span><span class="attr">)]
+<a href=#12 id=12 data-nosnippet>12</a></span><span class="kw">enum </span><a href="#12-31">Commands</a> {
+<a href=#13 id=13 data-nosnippet>13</a>    <span class="doccomment">/// Run all tests for diesel
+<a href=#14 id=14 data-nosnippet>14</a>    ///
+<a href=#15 id=15 data-nosnippet>15</a>    /// Requires `cargo-nextest` to be installed
+<a href=#16 id=16 data-nosnippet>16</a>    </span>RunTests(tests::<a href="tests/mod.rs.html#8-35">TestArgs</a>),
+<a href=#17 id=17 data-nosnippet>17</a>    <span class="doccomment">/// Run clippy on all crates
+<a href=#18 id=18 data-nosnippet>18</a>    </span>Clippy(clippy::<a href="clippy.rs.html#8-20">ClippyArgs</a>),
+<a href=#19 id=19 data-nosnippet>19</a>    <span class="doccomment">/// Perform a set of preliminary checks
+<a href=#20 id=20 data-nosnippet>20</a>    ///
+<a href=#21 id=21 data-nosnippet>21</a>    /// This command will execute `cargo fmt --check` to verify that
+<a href=#22 id=22 data-nosnippet>22</a>    /// the code is formatted, `typos` to check for spelling errors
+<a href=#23 id=23 data-nosnippet>23</a>    /// and it will execute `xtask clippy` to verify that the code
+<a href=#24 id=24 data-nosnippet>24</a>    /// compiles without warning
+<a href=#25 id=25 data-nosnippet>25</a>    </span>Tidy(tidy::<a href="tidy.rs.html#9-14">TidyArgs</a>),
+<a href=#26 id=26 data-nosnippet>26</a>    <span class="doccomment">/// Check for semver relevant changes
+<a href=#27 id=27 data-nosnippet>27</a>    ///
+<a href=#28 id=28 data-nosnippet>28</a>    /// This command will execute `cargo semver-checks` to verify that
+<a href=#29 id=29 data-nosnippet>29</a>    /// no breaking changes are included
+<a href=#30 id=30 data-nosnippet>30</a>    </span>SemverChecks(semver_checks::<a href="semver_checks.rs.html#25-33">SemverArgs</a>),
+<a href=#31 id=31 data-nosnippet>31</a>}
+<a href=#32 id=32 data-nosnippet>32</a>
+<a href=#33 id=33 data-nosnippet>33</a><span class="kw">impl </span><a href="#12-31">Commands</a> {
+<a href=#34 id=34 data-nosnippet>34</a>    <span class="kw">fn </span>run(<span class="self">self</span>) {
+<a href=#35 id=35 data-nosnippet>35</a>        <span class="kw">match </span><a class="self" href="#34">self</a> {
+<a href=#36 id=36 data-nosnippet>36</a>            Commands::<a href="#16">RunTests</a>(test_args) =&gt; <a href="#36">test_args</a>.<a href="tests/mod.rs.html#38-57">run</a>(),
+<a href=#37 id=37 data-nosnippet>37</a>            Commands::<a href="#18">Clippy</a>(clippy) =&gt; <a href="#37">clippy</a>.<a href="clippy.rs.html#23-42">run</a>(),
+<a href=#38 id=38 data-nosnippet>38</a>            Commands::<a href="#25">Tidy</a>(tidy) =&gt; <a href="#38">tidy</a>.<a href="tidy.rs.html#17-78">run</a>(),
+<a href=#39 id=39 data-nosnippet>39</a>            Commands::<a href="#30">SemverChecks</a>(semver) =&gt; <a href="#39">semver</a>.<a href="semver_checks.rs.html#36-77">run</a>(),
+<a href=#40 id=40 data-nosnippet>40</a>        }
+<a href=#41 id=41 data-nosnippet>41</a>    }
+<a href=#42 id=42 data-nosnippet>42</a>}
+<a href=#43 id=43 data-nosnippet>43</a>
+<a href=#44 id=44 data-nosnippet>44</a><span class="expansion"><input id=expand-44 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>Backend {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::write_str(f,
+            <span class="kw">match </span><span class="self">self </span>{
+                Backend::Postgres =&gt; <span class="string">"Postgres"</span>,
+                Backend::Sqlite =&gt; <span class="string">"Sqlite"</span>,
+                Backend::Mysql =&gt; <span class="string">"Mysql"</span>,
+                Backend::All =&gt; <span class="string">"All"</span>,
+            })
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>Backend {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Backend { <span class="kw-2">*</span><span class="self">self </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>Backend { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[allow(dead_code, unreachable_code, unused_variables, unused_braces,
+unused_qualifications,)]
+#[allow(clippy :: style, clippy :: complexity, clippy :: pedantic, clippy ::
+restriction, clippy :: perf, clippy :: deprecated, clippy :: nursery, clippy
+:: cargo, clippy :: suspicious_else_formatting, clippy :: almost_swapped,
+clippy :: redundant_locals,)]
+#[automatically_derived]
+</span><span class="kw">impl </span>clap::ValueEnum <span class="kw">for </span>Backend {
+    <span class="kw">fn </span>value_variants&lt;<span class="lifetime">'a</span>&gt;() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[<span class="self">Self</span>] {
+        <span class="kw-2">&amp;</span>[<span class="self">Self</span>::Postgres, <span class="self">Self</span>::Sqlite, <span class="self">Self</span>::Mysql, <span class="self">Self</span>::All]
+    }
+    <span class="kw">fn </span>to_possible_value&lt;<span class="lifetime">'a</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>)
+        -&gt; ::std::option::Option&lt;clap::builder::PossibleValue&gt; {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Postgres =&gt;
+                <span class="prelude-val">Some</span>({ clap::builder::PossibleValue::new(<span class="string">"postgres"</span>) }),
+            <span class="self">Self</span>::Sqlite =&gt;
+                <span class="prelude-val">Some</span>({ clap::builder::PossibleValue::new(<span class="string">"sqlite"</span>) }),
+            <span class="self">Self</span>::Mysql =&gt;
+                <span class="prelude-val">Some</span>({ clap::builder::PossibleValue::new(<span class="string">"mysql"</span>) }),
+            <span class="self">Self</span>::All =&gt; <span class="prelude-val">Some</span>({ clap::builder::PossibleValue::new(<span class="string">"all"</span>) }),
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+        }
+    }
+}</span><span class="original"><a href="../../clap_derive/derive.ValueEnum.html">ValueEnum</a></span></span></span><span class="attr">)]
+<a href=#45 id=45 data-nosnippet>45</a></span><span class="kw">enum </span><a href="#45-50">Backend</a> {
+<a href=#46 id=46 data-nosnippet>46</a>    Postgres,
+<a href=#47 id=47 data-nosnippet>47</a>    Sqlite,
+<a href=#48 id=48 data-nosnippet>48</a>    Mysql,
+<a href=#49 id=49 data-nosnippet>49</a>    All,
+<a href=#50 id=50 data-nosnippet>50</a>}
+<a href=#51 id=51 data-nosnippet>51</a>
+<a href=#52 id=52 data-nosnippet>52</a><span class="kw">impl </span><a href="#45-50">Backend</a> {
+<a href=#53 id=53 data-nosnippet>53</a>    <span class="kw">const </span>ALL: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>[<span class="self">Self</span>] = <span class="kw-2">&amp;</span>[Backend::<a href="#46">Postgres</a>, Backend::<a href="#47">Sqlite</a>, Backend::<a href="#48">Mysql</a>];
+<a href=#54 id=54 data-nosnippet>54</a>}
+<a href=#55 id=55 data-nosnippet>55</a>
+<a href=#56 id=56 data-nosnippet>56</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html">Display</a> <span class="kw">for </span><a href="#45-50">Backend</a> {
+<a href=#57 id=57 data-nosnippet>57</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html">Formatter</a>&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#58 id=58 data-nosnippet>58</a>        <span class="kw">match </span><a class="self" href="#57">self</a> {
+<a href=#59 id=59 data-nosnippet>59</a><span class="expansion"><input id=expand-59 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            Backend::<a href="#46">Postgres</a> =&gt; <span class=expanded>f.write_fmt(<span class="macro">format_args!</span>(<span class="string">"postgres"</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#57">f</a>, <span class="string">"postgres"</span>)</span></span>,
+<a href=#60 id=60 data-nosnippet>60</a><span class="expansion"><input id=expand-60 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            Backend::<a href="#47">Sqlite</a> =&gt; <span class=expanded>f.write_fmt(<span class="macro">format_args!</span>(<span class="string">"sqlite"</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#57">f</a>, <span class="string">"sqlite"</span>)</span></span>,
+<a href=#61 id=61 data-nosnippet>61</a><span class="expansion"><input id=expand-61 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            Backend::<a href="#48">Mysql</a> =&gt; <span class=expanded>f.write_fmt(<span class="macro">format_args!</span>(<span class="string">"mysql"</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#57">f</a>, <span class="string">"mysql"</span>)</span></span>,
+<a href=#62 id=62 data-nosnippet>62</a><span class="expansion"><input id=expand-62 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            Backend::<a href="#49">All</a> =&gt; <span class=expanded>f.write_fmt(<span class="macro">format_args!</span>(<span class="string">"all"</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#57">f</a>, <span class="string">"all"</span>)</span></span>,
+<a href=#63 id=63 data-nosnippet>63</a>        }
+<a href=#64 id=64 data-nosnippet>64</a>    }
+<a href=#65 id=65 data-nosnippet>65</a>}
+<a href=#66 id=66 data-nosnippet>66</a>
+<a href=#67 id=67 data-nosnippet>67</a><span class="kw">fn </span><a href="../../xtask/fn.main.html">main</a>() {
+<a href=#68 id=68 data-nosnippet>68</a>    dotenvy::<a href="../../dotenvy/fn.dotenv.html">dotenv</a>().<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.ok">ok</a>();
+<a href=#69 id=69 data-nosnippet>69</a>    <a href="#12-31">Commands</a>::<a href="../../clap_builder/derive/trait.Parser.html#method.parse">parse</a>().<a href="#34-41">run</a>();
+<a href=#70 id=70 data-nosnippet>70</a>}
+</code></pre></div></section></main></body></html>

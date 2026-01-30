@@ -1,0 +1,1006 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/chrono-0.4.43/src/format/formatting.rs`."><title>formatting.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="chrono" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../static.files/storage-f9617a14.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">chrono/format/</div>formatting.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// This is a part of Chrono.
+<a href=#2 id=2 data-nosnippet>2</a>// See README.md and LICENSE.txt for details.
+<a href=#3 id=3 data-nosnippet>3</a>
+<a href=#4 id=4 data-nosnippet>4</a></span><span class="doccomment">//! Date and time formatting routines.
+<a href=#5 id=5 data-nosnippet>5</a>
+<a href=#6 id=6 data-nosnippet>6</a></span><span class="attr">#[cfg(all(feature = <span class="string">"alloc"</span>, not(feature = <span class="string">"std"</span>), not(test)))]
+<a href=#7 id=7 data-nosnippet>7</a></span><span class="kw">use </span>alloc::string::{String, ToString};
+<a href=#8 id=8 data-nosnippet>8</a><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#9 id=9 data-nosnippet>9</a></span><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html">core::borrow::Borrow</a>;
+<a href=#10 id=10 data-nosnippet>10</a><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#11 id=11 data-nosnippet>11</a></span><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html">core::fmt::Display</a>;
+<a href=#12 id=12 data-nosnippet>12</a><span class="kw">use </span>core::fmt::{<a class="self" href="https://doc.rust-lang.org/nightly/core/fmt/index.html">self</a>, <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html">Write</a>};
+<a href=#13 id=13 data-nosnippet>13</a>
+<a href=#14 id=14 data-nosnippet>14</a><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#15 id=15 data-nosnippet>15</a></span><span class="kw">use </span><a href="../offset/mod.rs.html#291-294"><span class="kw">crate</span>::offset::Offset</a>;
+<a href=#16 id=16 data-nosnippet>16</a><span class="attr">#[cfg(any(feature = <span class="string">"alloc"</span>, feature = <span class="string">"serde"</span>))]
+<a href=#17 id=17 data-nosnippet>17</a></span><span class="kw">use </span>crate::{<a href="../traits.rs.html#31-280">Datelike</a>, <a href="../offset/fixed.rs.html#30-32">FixedOffset</a>, <a href="../naive/datetime/mod.rs.html#76-79">NaiveDateTime</a>, <a href="../traits.rs.html#283-344">Timelike</a>};
+<a href=#18 id=18 data-nosnippet>18</a><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#19 id=19 data-nosnippet>19</a></span><span class="kw">use </span>crate::{<a href="../naive/date/mod.rs.html#102-104">NaiveDate</a>, <a href="../naive/time/mod.rs.html#220-223">NaiveTime</a>, <a href="../weekday.rs.html#42-57">Weekday</a>};
+<a href=#20 id=20 data-nosnippet>20</a>
+<a href=#21 id=21 data-nosnippet>21</a><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#22 id=22 data-nosnippet>22</a></span><span class="kw">use </span><a href="mod.rs.html#57"><span class="kw">super</span>::locales</a>;
+<a href=#23 id=23 data-nosnippet>23</a><span class="attr">#[cfg(any(feature = <span class="string">"alloc"</span>, feature = <span class="string">"serde"</span>))]
+<a href=#24 id=24 data-nosnippet>24</a></span><span class="kw">use </span>super::{<a href="mod.rs.html#337-344">Colons</a>, <a href="mod.rs.html#301-310">OffsetFormat</a>, <a href="mod.rs.html#315-332">OffsetPrecision</a>, <a href="mod.rs.html#82-89">Pad</a>};
+<a href=#25 id=25 data-nosnippet>25</a><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#26 id=26 data-nosnippet>26</a></span><span class="kw">use </span>super::{<a href="mod.rs.html#189-269">Fixed</a>, <a href="mod.rs.html#274-276">InternalFixed</a>, <a href="mod.rs.html#280-296">InternalInternal</a>, <a href="mod.rs.html#348-366">Item</a>, <a href="mod.rs.html#107-161">Numeric</a>};
+<a href=#27 id=27 data-nosnippet>27</a><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#28 id=28 data-nosnippet>28</a></span><span class="kw">use </span>locales::<span class="kw-2">*</span>;
+<a href=#29 id=29 data-nosnippet>29</a>
+<a href=#30 id=30 data-nosnippet>30</a><span class="doccomment">/// A *temporary* object which can be used as an argument to `format!` or others.
+<a href=#31 id=31 data-nosnippet>31</a>/// This is normally constructed via `format` methods of each date and time type.
+<a href=#32 id=32 data-nosnippet>32</a></span><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#33 id=33 data-nosnippet>33</a></span><span class="expansion"><input id=expand-33 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;I: ::core::fmt::Debug&gt; ::core::fmt::Debug <span class="kw">for </span>DelayedFormat&lt;I&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field5_finish(f, <span class="string">"DelayedFormat"</span>,
+            <span class="string">"date"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.date, <span class="string">"time"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.time, <span class="string">"off"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.off, <span class="string">"items"</span>,
+            <span class="kw-2">&amp;</span><span class="self">self</span>.items, <span class="string">"locale"</span>, &amp;&amp;<span class="self">self</span>.locale)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span></span></span><span class="attr">)]
+<a href=#34 id=34 data-nosnippet>34</a></span><span class="kw">pub struct </span><a href="../../../chrono/format/struct.DelayedFormat.html">DelayedFormat</a>&lt;I&gt; {
+<a href=#35 id=35 data-nosnippet>35</a>    <span class="doccomment">/// The date view, if any.
+<a href=#36 id=36 data-nosnippet>36</a>    </span>date: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../naive/date/mod.rs.html#102-104">NaiveDate</a>&gt;,
+<a href=#37 id=37 data-nosnippet>37</a>    <span class="doccomment">/// The time view, if any.
+<a href=#38 id=38 data-nosnippet>38</a>    </span>time: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../naive/time/mod.rs.html#220-223">NaiveTime</a>&gt;,
+<a href=#39 id=39 data-nosnippet>39</a>    <span class="doccomment">/// The name and local-to-UTC difference for the offset (timezone), if any.
+<a href=#40 id=40 data-nosnippet>40</a>    </span>off: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;(<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>, <a href="../offset/fixed.rs.html#30-32">FixedOffset</a>)&gt;,
+<a href=#41 id=41 data-nosnippet>41</a>    <span class="doccomment">/// An iterator returning formatting items.
+<a href=#42 id=42 data-nosnippet>42</a>    </span>items: I,
+<a href=#43 id=43 data-nosnippet>43</a>    <span class="doccomment">/// Locale used for text.
+<a href=#44 id=44 data-nosnippet>44</a>    /// ZST if the `unstable-locales` feature is not enabled.
+<a href=#45 id=45 data-nosnippet>45</a>    </span>locale: <a href="locales.rs.html#58">Locale</a>,
+<a href=#46 id=46 data-nosnippet>46</a>}
+<a href=#47 id=47 data-nosnippet>47</a>
+<a href=#48 id=48 data-nosnippet>48</a><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#49 id=49 data-nosnippet>49</a></span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, I: <a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html">Iterator</a>&lt;Item = B&gt; + <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html">Clone</a>, B: <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html">Borrow</a>&lt;<a href="mod.rs.html#348-366">Item</a>&lt;<span class="lifetime">'a</span>&gt;&gt;&gt; <a href="#34-46">DelayedFormat</a>&lt;I&gt; {
+<a href=#50 id=50 data-nosnippet>50</a>    <span class="doccomment">/// Makes a new `DelayedFormat` value out of local date and time.
+<a href=#51 id=51 data-nosnippet>51</a>    </span><span class="attr">#[must_use]
+<a href=#52 id=52 data-nosnippet>52</a>    </span><span class="kw">pub fn </span>new(date: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../naive/date/mod.rs.html#102-104">NaiveDate</a>&gt;, time: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../naive/time/mod.rs.html#220-223">NaiveTime</a>&gt;, items: I) -&gt; <a href="#34-46">DelayedFormat</a>&lt;I&gt; {
+<a href=#53 id=53 data-nosnippet>53</a>        <a href="#34-46">DelayedFormat</a> { <a href="#52">date</a>, <a href="#52">time</a>, off: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>, <a href="#52">items</a>, locale: <a href="locales.rs.html#60-62">default_locale</a>() }
+<a href=#54 id=54 data-nosnippet>54</a>    }
+<a href=#55 id=55 data-nosnippet>55</a>
+<a href=#56 id=56 data-nosnippet>56</a>    <span class="doccomment">/// Makes a new `DelayedFormat` value out of local date and time and UTC offset.
+<a href=#57 id=57 data-nosnippet>57</a>    </span><span class="attr">#[must_use]
+<a href=#58 id=58 data-nosnippet>58</a>    </span><span class="kw">pub fn </span>new_with_offset&lt;Off&gt;(
+<a href=#59 id=59 data-nosnippet>59</a>        date: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../naive/date/mod.rs.html#102-104">NaiveDate</a>&gt;,
+<a href=#60 id=60 data-nosnippet>60</a>        time: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../naive/time/mod.rs.html#220-223">NaiveTime</a>&gt;,
+<a href=#61 id=61 data-nosnippet>61</a>        offset: <span class="kw-2">&amp;</span>Off,
+<a href=#62 id=62 data-nosnippet>62</a>        items: I,
+<a href=#63 id=63 data-nosnippet>63</a>    ) -&gt; <a href="#34-46">DelayedFormat</a>&lt;I&gt;
+<a href=#64 id=64 data-nosnippet>64</a>    <span class="kw">where
+<a href=#65 id=65 data-nosnippet>65</a>        </span>Off: <a href="../offset/mod.rs.html#291-294">Offset</a> + <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html">Display</a>,
+<a href=#66 id=66 data-nosnippet>66</a>    {
+<a href=#67 id=67 data-nosnippet>67</a>        <span class="kw">let </span>name_and_diff = (<a href="#61">offset</a>.<a href="https://doc.rust-lang.org/nightly/alloc/string/trait.ToString.html#tymethod.to_string">to_string</a>(), <a href="#61">offset</a>.<a href="../offset/mod.rs.html#293">fix</a>());
+<a href=#68 id=68 data-nosnippet>68</a>        <a href="#34-46">DelayedFormat</a> { <a href="#59">date</a>, <a href="#60">time</a>, off: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="#67">name_and_diff</a>), <a href="#62">items</a>, locale: <a href="locales.rs.html#60-62">default_locale</a>() }
+<a href=#69 id=69 data-nosnippet>69</a>    }
+<a href=#70 id=70 data-nosnippet>70</a>
+<a href=#71 id=71 data-nosnippet>71</a>    <span class="doccomment">/// Makes a new `DelayedFormat` value out of local date and time and locale.
+<a href=#72 id=72 data-nosnippet>72</a>    </span><span class="attr">#[cfg(feature = <span class="string">"unstable-locales"</span>)]
+<a href=#73 id=73 data-nosnippet>73</a>    #[must_use]
+<a href=#74 id=74 data-nosnippet>74</a>    </span><span class="kw">pub fn </span>new_with_locale(
+<a href=#75 id=75 data-nosnippet>75</a>        date: <span class="prelude-ty">Option</span>&lt;NaiveDate&gt;,
+<a href=#76 id=76 data-nosnippet>76</a>        time: <span class="prelude-ty">Option</span>&lt;NaiveTime&gt;,
+<a href=#77 id=77 data-nosnippet>77</a>        items: I,
+<a href=#78 id=78 data-nosnippet>78</a>        locale: Locale,
+<a href=#79 id=79 data-nosnippet>79</a>    ) -&gt; DelayedFormat&lt;I&gt; {
+<a href=#80 id=80 data-nosnippet>80</a>        DelayedFormat { date, time, off: <span class="prelude-val">None</span>, items, locale }
+<a href=#81 id=81 data-nosnippet>81</a>    }
+<a href=#82 id=82 data-nosnippet>82</a>
+<a href=#83 id=83 data-nosnippet>83</a>    <span class="doccomment">/// Makes a new `DelayedFormat` value out of local date and time, UTC offset and locale.
+<a href=#84 id=84 data-nosnippet>84</a>    </span><span class="attr">#[cfg(feature = <span class="string">"unstable-locales"</span>)]
+<a href=#85 id=85 data-nosnippet>85</a>    #[must_use]
+<a href=#86 id=86 data-nosnippet>86</a>    </span><span class="kw">pub fn </span>new_with_offset_and_locale&lt;Off&gt;(
+<a href=#87 id=87 data-nosnippet>87</a>        date: <span class="prelude-ty">Option</span>&lt;NaiveDate&gt;,
+<a href=#88 id=88 data-nosnippet>88</a>        time: <span class="prelude-ty">Option</span>&lt;NaiveTime&gt;,
+<a href=#89 id=89 data-nosnippet>89</a>        offset: <span class="kw-2">&amp;</span>Off,
+<a href=#90 id=90 data-nosnippet>90</a>        items: I,
+<a href=#91 id=91 data-nosnippet>91</a>        locale: Locale,
+<a href=#92 id=92 data-nosnippet>92</a>    ) -&gt; DelayedFormat&lt;I&gt;
+<a href=#93 id=93 data-nosnippet>93</a>    <span class="kw">where
+<a href=#94 id=94 data-nosnippet>94</a>        </span>Off: Offset + Display,
+<a href=#95 id=95 data-nosnippet>95</a>    {
+<a href=#96 id=96 data-nosnippet>96</a>        <span class="kw">let </span>name_and_diff = (offset.to_string(), offset.fix());
+<a href=#97 id=97 data-nosnippet>97</a>        DelayedFormat { date, time, off: <span class="prelude-val">Some</span>(name_and_diff), items, locale }
+<a href=#98 id=98 data-nosnippet>98</a>    }
+<a href=#99 id=99 data-nosnippet>99</a>
+<a href=#100 id=100 data-nosnippet>100</a>    <span class="doccomment">/// Formats `DelayedFormat` into a `core::fmt::Write` instance.
+<a href=#101 id=101 data-nosnippet>101</a>    /// # Errors
+<a href=#102 id=102 data-nosnippet>102</a>    /// This function returns a `core::fmt::Error` if formatting into the `core::fmt::Write` instance fails.
+<a href=#103 id=103 data-nosnippet>103</a>    ///
+<a href=#104 id=104 data-nosnippet>104</a>    /// # Example
+<a href=#105 id=105 data-nosnippet>105</a>    /// ### Writing to a String
+<a href=#106 id=106 data-nosnippet>106</a>    /// ```
+<a href=#107 id=107 data-nosnippet>107</a>    /// let dt = chrono::DateTime::from_timestamp(1643723400, 123456789).unwrap();
+<a href=#108 id=108 data-nosnippet>108</a>    /// let df = dt.format("%Y-%m-%d %H:%M:%S%.9f");
+<a href=#109 id=109 data-nosnippet>109</a>    /// let mut buffer = String::new();
+<a href=#110 id=110 data-nosnippet>110</a>    /// let _ = df.write_to(&amp;mut buffer);
+<a href=#111 id=111 data-nosnippet>111</a>    /// ```
+<a href=#112 id=112 data-nosnippet>112</a>    </span><span class="kw">pub fn </span>write_to(<span class="kw-2">&amp;</span><span class="self">self</span>, w: <span class="kw-2">&amp;mut </span>(<span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html">Write</a> + <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>)) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#113 id=113 data-nosnippet>113</a>        <span class="kw">for </span>item <span class="kw">in </span><span class="self">self</span>.items.clone() {
+<a href=#114 id=114 data-nosnippet>114</a>            <span class="kw">match </span><span class="kw-2">*</span>item.borrow() {
+<a href=#115 id=115 data-nosnippet>115</a>                Item::Literal(s) | Item::Space(s) =&gt; w.write_str(s),
+<a href=#116 id=116 data-nosnippet>116</a>                <span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#117 id=117 data-nosnippet>117</a>                </span>Item::OwnedLiteral(<span class="kw-2">ref </span>s) | Item::OwnedSpace(<span class="kw-2">ref </span>s) =&gt; w.write_str(s),
+<a href=#118 id=118 data-nosnippet>118</a>                Item::Numeric(<span class="kw-2">ref </span>spec, pad) =&gt; <span class="self">self</span>.format_numeric(w, spec, pad),
+<a href=#119 id=119 data-nosnippet>119</a>                Item::Fixed(<span class="kw-2">ref </span>spec) =&gt; <span class="self">self</span>.format_fixed(w, spec),
+<a href=#120 id=120 data-nosnippet>120</a>                Item::Error =&gt; <span class="prelude-val">Err</span>(fmt::Error),
+<a href=#121 id=121 data-nosnippet>121</a>            }<span class="question-mark">?</span>;
+<a href=#122 id=122 data-nosnippet>122</a>        }
+<a href=#123 id=123 data-nosnippet>123</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#124 id=124 data-nosnippet>124</a>    }
+<a href=#125 id=125 data-nosnippet>125</a>
+<a href=#126 id=126 data-nosnippet>126</a>    <span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#127 id=127 data-nosnippet>127</a>    </span><span class="kw">fn </span>format_numeric(
+<a href=#128 id=128 data-nosnippet>128</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#129 id=129 data-nosnippet>129</a>        w: <span class="kw-2">&amp;mut </span>(<span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html">Write</a> + <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>),
+<a href=#130 id=130 data-nosnippet>130</a>        spec: <span class="kw-2">&amp;</span><a href="mod.rs.html#107-161">Numeric</a>,
+<a href=#131 id=131 data-nosnippet>131</a>        pad: <a href="mod.rs.html#82-89">Pad</a>,
+<a href=#132 id=132 data-nosnippet>132</a>    ) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#133 id=133 data-nosnippet>133</a>        <span class="kw">use </span><span class="self">self</span>::Numeric::<span class="kw-2">*</span>;
+<a href=#134 id=134 data-nosnippet>134</a>
+<a href=#135 id=135 data-nosnippet>135</a>        <span class="kw">fn </span>write_one(w: <span class="kw-2">&amp;mut </span>(<span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html">Write</a> + <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>), v: <a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#136 id=136 data-nosnippet>136</a>            <a href="#135">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>((<span class="string">b'0' </span>+ <a href="#135">v</a>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.char.html">char</a>)
+<a href=#137 id=137 data-nosnippet>137</a>        }
+<a href=#138 id=138 data-nosnippet>138</a>
+<a href=#139 id=139 data-nosnippet>139</a>        <span class="kw">fn </span>write_two(w: <span class="kw-2">&amp;mut </span>(<span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html">Write</a> + <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>), v: <a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>, pad: <a href="mod.rs.html#82-89">Pad</a>) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#140 id=140 data-nosnippet>140</a>            <span class="kw">let </span>ones = <span class="string">b'0' </span>+ <a href="#139">v</a> % <span class="number">10</span>;
+<a href=#141 id=141 data-nosnippet>141</a>            <span class="kw">match </span>(<a href="#139">v</a> / <span class="number">10</span>, <a href="#139">pad</a>) {
+<a href=#142 id=142 data-nosnippet>142</a>                (<span class="number">0</span>, Pad::<a href="mod.rs.html#84">None</a>) =&gt; {}
+<a href=#143 id=143 data-nosnippet>143</a>                (<span class="number">0</span>, Pad::<a href="mod.rs.html#88">Space</a>) =&gt; <a href="#139">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">' '</span>)<span class="question-mark">?</span>,
+<a href=#144 id=144 data-nosnippet>144</a>                (tens, <span class="kw">_</span>) =&gt; <a href="#139">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>((<span class="string">b'0' </span>+ <a href="#144">tens</a>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.char.html">char</a>)<span class="question-mark">?</span>,
+<a href=#145 id=145 data-nosnippet>145</a>            }
+<a href=#146 id=146 data-nosnippet>146</a>            <a href="#139">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<a href="#140">ones</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.char.html">char</a>)
+<a href=#147 id=147 data-nosnippet>147</a>        }
+<a href=#148 id=148 data-nosnippet>148</a>
+<a href=#149 id=149 data-nosnippet>149</a>        <span class="attr">#[inline]
+<a href=#150 id=150 data-nosnippet>150</a>        </span><span class="kw">fn </span>write_year(w: <span class="kw-2">&amp;mut </span>(<span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html">Write</a> + <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>), year: <a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>, pad: <a href="mod.rs.html#82-89">Pad</a>) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#151 id=151 data-nosnippet>151</a>            <span class="kw">if </span>(<span class="number">1000</span>..=<span class="number">9999</span>).<a href="https://doc.rust-lang.org/nightly/core/ops/range/struct.RangeInclusive.html#method.contains">contains</a>(<span class="kw-2">&amp;</span><a href="#150">year</a>) {
+<a href=#152 id=152 data-nosnippet>152</a>                <span class="comment">// fast path
+<a href=#153 id=153 data-nosnippet>153</a>                </span><a href="#614-623">write_hundreds</a>(<a href="#150">w</a>, (<a href="#150">year</a> / <span class="number">100</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)<span class="question-mark">?</span>;
+<a href=#154 id=154 data-nosnippet>154</a>                <a href="#614-623">write_hundreds</a>(<a href="#150">w</a>, (<a href="#150">year</a> % <span class="number">100</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)
+<a href=#155 id=155 data-nosnippet>155</a>            } <span class="kw">else </span>{
+<a href=#156 id=156 data-nosnippet>156</a>                <a href="#160-180">write_n</a>(<a href="#150">w</a>, <span class="number">4</span>, <a href="#150">year</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>, <a href="#150">pad</a>, !(<span class="number">0</span>..<span class="number">10_000</span>).<a href="https://doc.rust-lang.org/nightly/core/ops/range/struct.Range.html#method.contains">contains</a>(<span class="kw-2">&amp;</span><a href="#150">year</a>))
+<a href=#157 id=157 data-nosnippet>157</a>            }
+<a href=#158 id=158 data-nosnippet>158</a>        }
+<a href=#159 id=159 data-nosnippet>159</a>
+<a href=#160 id=160 data-nosnippet>160</a>        <span class="kw">fn </span>write_n(
+<a href=#161 id=161 data-nosnippet>161</a>            w: <span class="kw-2">&amp;mut </span>(<span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html">Write</a> + <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>),
+<a href=#162 id=162 data-nosnippet>162</a>            n: <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>,
+<a href=#163 id=163 data-nosnippet>163</a>            v: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>,
+<a href=#164 id=164 data-nosnippet>164</a>            pad: <a href="mod.rs.html#82-89">Pad</a>,
+<a href=#165 id=165 data-nosnippet>165</a>            always_sign: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#166 id=166 data-nosnippet>166</a>        ) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#167 id=167 data-nosnippet>167</a>            <span class="kw">if </span><a href="#165">always_sign</a> {
+<a href=#168 id=168 data-nosnippet>168</a>                <span class="kw">match </span><a href="#164">pad</a> {
+<a href=#169 id=169 data-nosnippet>169</a><span class="expansion"><input id=expand-169 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                    Pad::<a href="mod.rs.html#84">None</a> =&gt; <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:+}"</span>, v))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#161">w</a>, <span class="string">"{v:+}"</span>)</span></span>,
+<a href=#170 id=170 data-nosnippet>170</a><span class="expansion"><input id=expand-170 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                    Pad::<a href="mod.rs.html#86">Zero</a> =&gt; <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:+01$}"</span>, v, n + <span class="number">1</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#161">w</a>, <span class="string">"{:+01$}"</span>, v, n + <span class="number">1</span>)</span></span>,
+<a href=#171 id=171 data-nosnippet>171</a><span class="expansion"><input id=expand-171 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                    Pad::<a href="mod.rs.html#88">Space</a> =&gt; <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:+1$}"</span>, v, n + <span class="number">1</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#161">w</a>, <span class="string">"{:+1$}"</span>, v, n + <span class="number">1</span>)</span></span>,
+<a href=#172 id=172 data-nosnippet>172</a>                }
+<a href=#173 id=173 data-nosnippet>173</a>            } <span class="kw">else </span>{
+<a href=#174 id=174 data-nosnippet>174</a>                <span class="kw">match </span><a href="#164">pad</a> {
+<a href=#175 id=175 data-nosnippet>175</a><span class="expansion"><input id=expand-175 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                    Pad::<a href="mod.rs.html#84">None</a> =&gt; <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0}"</span>, v))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#161">w</a>, <span class="string">"{v}"</span>)</span></span>,
+<a href=#176 id=176 data-nosnippet>176</a><span class="expansion"><input id=expand-176 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                    Pad::<a href="mod.rs.html#86">Zero</a> =&gt; <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:01$}"</span>, v, n))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#161">w</a>, <span class="string">"{v:0n$}"</span>)</span></span>,
+<a href=#177 id=177 data-nosnippet>177</a><span class="expansion"><input id=expand-177 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                    Pad::<a href="mod.rs.html#88">Space</a> =&gt; <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:1$}"</span>, v, n))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#161">w</a>, <span class="string">"{v:n$}"</span>)</span></span>,
+<a href=#178 id=178 data-nosnippet>178</a>                }
+<a href=#179 id=179 data-nosnippet>179</a>            }
+<a href=#180 id=180 data-nosnippet>180</a>        }
+<a href=#181 id=181 data-nosnippet>181</a>
+<a href=#182 id=182 data-nosnippet>182</a>        <span class="kw">match </span>(<a href="#130">spec</a>, <a class="self" href="#128">self</a>.date, <a class="self" href="#128">self</a>.time) {
+<a href=#183 id=183 data-nosnippet>183</a>            (<a href="mod.rs.html#110">Year</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; <a href="#150-158">write_year</a>(<a href="#129">w</a>, <a href="#183">d</a>.<a href="../traits.rs.html#33">year</a>(), <a href="#131">pad</a>),
+<a href=#184 id=184 data-nosnippet>184</a>            (<a href="mod.rs.html#112">YearDiv100</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; <a href="#139-147">write_two</a>(<a href="#129">w</a>, <a href="#184">d</a>.<a href="../traits.rs.html#33">year</a>().<a href="https://doc.rust-lang.org/nightly/core/foreigntype.num.html#method.div_euclid">div_euclid</a>(<span class="number">100</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>, <a href="#131">pad</a>),
+<a href=#185 id=185 data-nosnippet>185</a>            (<a href="mod.rs.html#114">YearMod100</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; <a href="#139-147">write_two</a>(<a href="#129">w</a>, <a href="#185">d</a>.<a href="../traits.rs.html#33">year</a>().<a href="https://doc.rust-lang.org/nightly/core/foreigntype.num.html#method.rem_euclid">rem_euclid</a>(<span class="number">100</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>, <a href="#131">pad</a>),
+<a href=#186 id=186 data-nosnippet>186</a>            (<a href="mod.rs.html#117">IsoYear</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; <a href="#150-158">write_year</a>(<a href="#129">w</a>, <a href="#186">d</a>.<a href="../traits.rs.html#85">iso_week</a>().<a href="../naive/isoweek.rs.html#81-83">year</a>(), <a href="#131">pad</a>),
+<a href=#187 id=187 data-nosnippet>187</a>            (<a href="mod.rs.html#119">IsoYearDiv100</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; {
+<a href=#188 id=188 data-nosnippet>188</a>                <a href="#139-147">write_two</a>(<a href="#129">w</a>, <a href="#187">d</a>.<a href="../traits.rs.html#85">iso_week</a>().<a href="../naive/isoweek.rs.html#81-83">year</a>().<a href="https://doc.rust-lang.org/nightly/core/foreigntype.num.html#method.div_euclid">div_euclid</a>(<span class="number">100</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>, <a href="#131">pad</a>)
+<a href=#189 id=189 data-nosnippet>189</a>            }
+<a href=#190 id=190 data-nosnippet>190</a>            (<a href="mod.rs.html#121">IsoYearMod100</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; {
+<a href=#191 id=191 data-nosnippet>191</a>                <a href="#139-147">write_two</a>(<a href="#129">w</a>, <a href="#190">d</a>.<a href="../traits.rs.html#85">iso_week</a>().<a href="../naive/isoweek.rs.html#81-83">year</a>().<a href="https://doc.rust-lang.org/nightly/core/foreigntype.num.html#method.rem_euclid">rem_euclid</a>(<span class="number">100</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>, <a href="#131">pad</a>)
+<a href=#192 id=192 data-nosnippet>192</a>            }
+<a href=#193 id=193 data-nosnippet>193</a>            (<a href="mod.rs.html#123">Quarter</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; <a href="#135-137">write_one</a>(<a href="#129">w</a>, <a href="#193">d</a>.<a href="../traits.rs.html#47-49">quarter</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>),
+<a href=#194 id=194 data-nosnippet>194</a>            (<a href="mod.rs.html#125">Month</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; <a href="#139-147">write_two</a>(<a href="#129">w</a>, <a href="#194">d</a>.<a href="../traits.rs.html#54">month</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>, <a href="#131">pad</a>),
+<a href=#195 id=195 data-nosnippet>195</a>            (<a href="mod.rs.html#127">Day</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; <a href="#139-147">write_two</a>(<a href="#129">w</a>, <a href="#195">d</a>.<a href="../traits.rs.html#64">day</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>, <a href="#131">pad</a>),
+<a href=#196 id=196 data-nosnippet>196</a>            (<a href="mod.rs.html#129">WeekFromSun</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; <a href="#139-147">write_two</a>(<a href="#129">w</a>, <a href="#196">d</a>.<a href="../naive/date/mod.rs.html#124-126">weeks_from</a>(Weekday::<a href="../weekday.rs.html#56">Sun</a>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>, <a href="#131">pad</a>),
+<a href=#197 id=197 data-nosnippet>197</a>            (<a href="mod.rs.html#131">WeekFromMon</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; <a href="#139-147">write_two</a>(<a href="#129">w</a>, <a href="#197">d</a>.<a href="../naive/date/mod.rs.html#124-126">weeks_from</a>(Weekday::<a href="../weekday.rs.html#44">Mon</a>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>, <a href="#131">pad</a>),
+<a href=#198 id=198 data-nosnippet>198</a>            (<a href="mod.rs.html#133">IsoWeek</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; <a href="#139-147">write_two</a>(<a href="#129">w</a>, <a href="#198">d</a>.<a href="../traits.rs.html#85">iso_week</a>().<a href="../naive/isoweek.rs.html#98-100">week</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>, <a href="#131">pad</a>),
+<a href=#199 id=199 data-nosnippet>199</a>            (<a href="mod.rs.html#135">NumDaysFromSun</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; <a href="#135-137">write_one</a>(<a href="#129">w</a>, <a href="#199">d</a>.<a href="../traits.rs.html#82">weekday</a>().<a href="../weekday.rs.html#148-150">num_days_from_sunday</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>),
+<a href=#200 id=200 data-nosnippet>200</a>            (<a href="mod.rs.html#137">WeekdayFromMon</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; <a href="#135-137">write_one</a>(<a href="#129">w</a>, <a href="#200">d</a>.<a href="../traits.rs.html#82">weekday</a>().<a href="../weekday.rs.html#104-106">number_from_monday</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>),
+<a href=#201 id=201 data-nosnippet>201</a>            (<a href="mod.rs.html#139">Ordinal</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>) =&gt; <a href="#160-180">write_n</a>(<a href="#129">w</a>, <span class="number">3</span>, <a href="#201">d</a>.<a href="../traits.rs.html#74">ordinal</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>, <a href="#131">pad</a>, <span class="bool-val">false</span>),
+<a href=#202 id=202 data-nosnippet>202</a>            (<a href="mod.rs.html#141">Hour</a>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t)) =&gt; <a href="#139-147">write_two</a>(<a href="#129">w</a>, <a href="#202">t</a>.<a href="../traits.rs.html#285">hour</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>, <a href="#131">pad</a>),
+<a href=#203 id=203 data-nosnippet>203</a>            (<a href="mod.rs.html#143">Hour12</a>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t)) =&gt; <a href="#139-147">write_two</a>(<a href="#129">w</a>, <a href="#203">t</a>.<a href="../traits.rs.html#290-297">hour12</a>().<span class="number">1 </span><span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>, <a href="#131">pad</a>),
+<a href=#204 id=204 data-nosnippet>204</a>            (<a href="mod.rs.html#145">Minute</a>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t)) =&gt; <a href="#139-147">write_two</a>(<a href="#129">w</a>, <a href="#204">t</a>.<a href="../traits.rs.html#300">minute</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>, <a href="#131">pad</a>),
+<a href=#205 id=205 data-nosnippet>205</a>            (<a href="mod.rs.html#147">Second</a>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t)) =&gt; {
+<a href=#206 id=206 data-nosnippet>206</a>                <a href="#139-147">write_two</a>(<a href="#129">w</a>, (<a href="#205">t</a>.<a href="../traits.rs.html#303">second</a>() + <a href="#205">t</a>.<a href="../naive/time/mod.rs.html#893-895">nanosecond</a>() / <span class="number">1_000_000_000</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>, <a href="#131">pad</a>)
+<a href=#207 id=207 data-nosnippet>207</a>            }
+<a href=#208 id=208 data-nosnippet>208</a>            (<a href="mod.rs.html#151">Nanosecond</a>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t)) =&gt; {
+<a href=#209 id=209 data-nosnippet>209</a>                <a href="#160-180">write_n</a>(<a href="#129">w</a>, <span class="number">9</span>, (<a href="#208">t</a>.<a href="../naive/time/mod.rs.html#893-895">nanosecond</a>() % <span class="number">1_000_000_000</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>, <a href="#131">pad</a>, <span class="bool-val">false</span>)
+<a href=#210 id=210 data-nosnippet>210</a>            }
+<a href=#211 id=211 data-nosnippet>211</a>            (<a href="mod.rs.html#154">Timestamp</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t)) =&gt; {
+<a href=#212 id=212 data-nosnippet>212</a>                <span class="kw">let </span>offset = <a class="self" href="#128">self</a>.off.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.as_ref">as_ref</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(|(<span class="kw">_</span>, o)| <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(<a href="#212">o</a>.<a href="../offset/fixed.rs.html#107-109">local_minus_utc</a>()));
+<a href=#213 id=213 data-nosnippet>213</a>                <span class="kw">let </span>timestamp = <a href="#211">d</a>.<a href="../naive/date/mod.rs.html#739-741">and_time</a>(<a href="#211">t</a>).<a href="../naive/datetime/mod.rs.html#937-939">and_utc</a>().<a href="../datetime/mod.rs.html#200-204">timestamp</a>() - <a href="#212">offset</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_or">unwrap_or</a>(<span class="number">0</span>);
+<a href=#214 id=214 data-nosnippet>214</a>                <a href="#160-180">write_n</a>(<a href="#129">w</a>, <span class="number">9</span>, <a href="#213">timestamp</a>, <a href="#131">pad</a>, <span class="bool-val">false</span>)
+<a href=#215 id=215 data-nosnippet>215</a>            }
+<a href=#216 id=216 data-nosnippet>216</a>            (<a href="mod.rs.html#160">Internal</a>(<span class="kw">_</span>), <span class="kw">_</span>, <span class="kw">_</span>) =&gt; <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(()), <span class="comment">// for future expansion
+<a href=#217 id=217 data-nosnippet>217</a>            </span><span class="kw">_ </span>=&gt; <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Error.html">Error</a>),          <span class="comment">// insufficient arguments for given format
+<a href=#218 id=218 data-nosnippet>218</a>        </span>}
+<a href=#219 id=219 data-nosnippet>219</a>    }
+<a href=#220 id=220 data-nosnippet>220</a>
+<a href=#221 id=221 data-nosnippet>221</a>    <span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#222 id=222 data-nosnippet>222</a>    </span><span class="kw">fn </span>format_fixed(<span class="kw-2">&amp;</span><span class="self">self</span>, w: <span class="kw-2">&amp;mut </span>(<span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html">Write</a> + <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>), spec: <span class="kw-2">&amp;</span><a href="mod.rs.html#189-269">Fixed</a>) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#223 id=223 data-nosnippet>223</a>        <span class="kw">use </span>Fixed::<span class="kw-2">*</span>;
+<a href=#224 id=224 data-nosnippet>224</a>        <span class="kw">use </span>InternalInternal::<span class="kw-2">*</span>;
+<a href=#225 id=225 data-nosnippet>225</a>
+<a href=#226 id=226 data-nosnippet>226</a>        <span class="kw">match </span>(<a href="#222">spec</a>, <a class="self" href="#222">self</a>.date, <a class="self" href="#222">self</a>.time, <a class="self" href="#222">self</a>.off.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.as_ref">as_ref</a>()) {
+<a href=#227 id=227 data-nosnippet>227</a>            (<a href="mod.rs.html#193">ShortMonthName</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>, <span class="kw">_</span>) =&gt; {
+<a href=#228 id=228 data-nosnippet>228</a>                <a href="#222">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#tymethod.write_str">write_str</a>(<a href="locales.rs.html#64-66">short_months</a>(<a class="self" href="#222">self</a>.locale)[<a href="#227">d</a>.<a href="../traits.rs.html#59">month0</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>])
+<a href=#229 id=229 data-nosnippet>229</a>            }
+<a href=#230 id=230 data-nosnippet>230</a>            (<a href="mod.rs.html#197">LongMonthName</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>, <span class="kw">_</span>) =&gt; {
+<a href=#231 id=231 data-nosnippet>231</a>                <a href="#222">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#tymethod.write_str">write_str</a>(<a href="locales.rs.html#68-83">long_months</a>(<a class="self" href="#222">self</a>.locale)[<a href="#230">d</a>.<a href="../traits.rs.html#59">month0</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>])
+<a href=#232 id=232 data-nosnippet>232</a>            }
+<a href=#233 id=233 data-nosnippet>233</a>            (<a href="mod.rs.html#201">ShortWeekdayName</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>, <span class="kw">_</span>) =&gt; <a href="#222">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#tymethod.write_str">write_str</a>(
+<a href=#234 id=234 data-nosnippet>234</a>                <a href="locales.rs.html#85-87">short_weekdays</a>(<a class="self" href="#222">self</a>.locale)[<a href="#233">d</a>.<a href="../traits.rs.html#82">weekday</a>().<a href="../weekday.rs.html#148-150">num_days_from_sunday</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>],
+<a href=#235 id=235 data-nosnippet>235</a>            ),
+<a href=#236 id=236 data-nosnippet>236</a>            (<a href="mod.rs.html#205">LongWeekdayName</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <span class="kw">_</span>, <span class="kw">_</span>) =&gt; {
+<a href=#237 id=237 data-nosnippet>237</a>                <a href="#222">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#tymethod.write_str">write_str</a>(<a href="locales.rs.html#89-91">long_weekdays</a>(<a class="self" href="#222">self</a>.locale)[<a href="#236">d</a>.<a href="../traits.rs.html#82">weekday</a>().<a href="../weekday.rs.html#148-150">num_days_from_sunday</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>])
+<a href=#238 id=238 data-nosnippet>238</a>            }
+<a href=#239 id=239 data-nosnippet>239</a>            (<a href="mod.rs.html#209">LowerAmPm</a>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t), <span class="kw">_</span>) =&gt; {
+<a href=#240 id=240 data-nosnippet>240</a>                <span class="kw">let </span>ampm = <span class="kw">if </span><a href="#239">t</a>.<a href="../traits.rs.html#290-297">hour12</a>().<span class="number">0 </span>{ <a href="locales.rs.html#93-95">am_pm</a>(<a class="self" href="#222">self</a>.locale)[<span class="number">1</span>] } <span class="kw">else </span>{ <a href="locales.rs.html#93-95">am_pm</a>(<a class="self" href="#222">self</a>.locale)[<span class="number">0</span>] };
+<a href=#241 id=241 data-nosnippet>241</a>                <span class="kw">for </span>c <span class="kw">in </span>ampm.chars().flat_map(|c| c.to_lowercase()) {
+<a href=#242 id=242 data-nosnippet>242</a>                    w.write_char(c)<span class="question-mark">?
+<a href=#243 id=243 data-nosnippet>243</a>                </span>}
+<a href=#244 id=244 data-nosnippet>244</a>                <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#245 id=245 data-nosnippet>245</a>            }
+<a href=#246 id=246 data-nosnippet>246</a>            (<a href="mod.rs.html#213">UpperAmPm</a>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t), <span class="kw">_</span>) =&gt; {
+<a href=#247 id=247 data-nosnippet>247</a>                <span class="kw">let </span>ampm = <span class="kw">if </span><a href="#246">t</a>.<a href="../traits.rs.html#290-297">hour12</a>().<span class="number">0 </span>{ <a href="locales.rs.html#93-95">am_pm</a>(<a class="self" href="#222">self</a>.locale)[<span class="number">1</span>] } <span class="kw">else </span>{ <a href="locales.rs.html#93-95">am_pm</a>(<a class="self" href="#222">self</a>.locale)[<span class="number">0</span>] };
+<a href=#248 id=248 data-nosnippet>248</a>                <a href="#222">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#tymethod.write_str">write_str</a>(<a href="#247">ampm</a>)
+<a href=#249 id=249 data-nosnippet>249</a>            }
+<a href=#250 id=250 data-nosnippet>250</a>            (<a href="mod.rs.html#217">Nanosecond</a>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t), <span class="kw">_</span>) =&gt; {
+<a href=#251 id=251 data-nosnippet>251</a>                <span class="kw">let </span>nano = <a href="#250">t</a>.<a href="../naive/time/mod.rs.html#893-895">nanosecond</a>() % <span class="number">1_000_000_000</span>;
+<a href=#252 id=252 data-nosnippet>252</a>                <span class="kw">if </span><a href="#251">nano</a> == <span class="number">0 </span>{
+<a href=#253 id=253 data-nosnippet>253</a>                    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#254 id=254 data-nosnippet>254</a>                } <span class="kw">else </span>{
+<a href=#255 id=255 data-nosnippet>255</a>                    <a href="#222">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#tymethod.write_str">write_str</a>(<a href="locales.rs.html#97-99">decimal_point</a>(<a class="self" href="#222">self</a>.locale))<span class="question-mark">?</span>;
+<a href=#256 id=256 data-nosnippet>256</a>                    <span class="kw">if </span><a href="#251">nano</a> % <span class="number">1_000_000 </span>== <span class="number">0 </span>{
+<a href=#257 id=257 data-nosnippet>257</a><span class="expansion"><input id=expand-257 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                        <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:03}"</span>, nano / <span class="number">1_000_000</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#222">w</a>, <span class="string">"{:03}"</span>, nano / <span class="number">1_000_000</span>)</span></span>
+<a href=#258 id=258 data-nosnippet>258</a>                    } <span class="kw">else if </span><a href="#251">nano</a> % <span class="number">1_000 </span>== <span class="number">0 </span>{
+<a href=#259 id=259 data-nosnippet>259</a><span class="expansion"><input id=expand-259 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                        <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:06}"</span>, nano / <span class="number">1_000</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#222">w</a>, <span class="string">"{:06}"</span>, nano / <span class="number">1_000</span>)</span></span>
+<a href=#260 id=260 data-nosnippet>260</a>                    } <span class="kw">else </span>{
+<a href=#261 id=261 data-nosnippet>261</a><span class="expansion"><input id=expand-261 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                        <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:09}"</span>, nano))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#222">w</a>, <span class="string">"{nano:09}"</span>)</span></span>
+<a href=#262 id=262 data-nosnippet>262</a>                    }
+<a href=#263 id=263 data-nosnippet>263</a>                }
+<a href=#264 id=264 data-nosnippet>264</a>            }
+<a href=#265 id=265 data-nosnippet>265</a>            (<a href="mod.rs.html#219">Nanosecond3</a>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t), <span class="kw">_</span>) =&gt; {
+<a href=#266 id=266 data-nosnippet>266</a>                <a href="#222">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#tymethod.write_str">write_str</a>(<a href="locales.rs.html#97-99">decimal_point</a>(<a class="self" href="#222">self</a>.locale))<span class="question-mark">?</span>;
+<a href=#267 id=267 data-nosnippet>267</a><span class="expansion"><input id=expand-267 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:03}"</span>, t.nanosecond() / <span class="number">1_000_000 </span>% <span class="number">1000</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#222">w</a>, <span class="string">"{:03}"</span>, t.nanosecond() / <span class="number">1_000_000 </span>% <span class="number">1000</span>)</span></span>
+<a href=#268 id=268 data-nosnippet>268</a>            }
+<a href=#269 id=269 data-nosnippet>269</a>            (<a href="mod.rs.html#221">Nanosecond6</a>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t), <span class="kw">_</span>) =&gt; {
+<a href=#270 id=270 data-nosnippet>270</a>                <a href="#222">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#tymethod.write_str">write_str</a>(<a href="locales.rs.html#97-99">decimal_point</a>(<a class="self" href="#222">self</a>.locale))<span class="question-mark">?</span>;
+<a href=#271 id=271 data-nosnippet>271</a><span class="expansion"><input id=expand-271 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:06}"</span>, t.nanosecond() / <span class="number">1_000 </span>% <span class="number">1_000_000</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#222">w</a>, <span class="string">"{:06}"</span>, t.nanosecond() / <span class="number">1_000 </span>% <span class="number">1_000_000</span>)</span></span>
+<a href=#272 id=272 data-nosnippet>272</a>            }
+<a href=#273 id=273 data-nosnippet>273</a>            (<a href="mod.rs.html#223">Nanosecond9</a>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t), <span class="kw">_</span>) =&gt; {
+<a href=#274 id=274 data-nosnippet>274</a>                <a href="#222">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#tymethod.write_str">write_str</a>(<a href="locales.rs.html#97-99">decimal_point</a>(<a class="self" href="#222">self</a>.locale))<span class="question-mark">?</span>;
+<a href=#275 id=275 data-nosnippet>275</a><span class="expansion"><input id=expand-275 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:09}"</span>, t.nanosecond() % <span class="number">1_000_000_000</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#222">w</a>, <span class="string">"{:09}"</span>, t.nanosecond() % <span class="number">1_000_000_000</span>)</span></span>
+<a href=#276 id=276 data-nosnippet>276</a>            }
+<a href=#277 id=277 data-nosnippet>277</a>            (<a href="mod.rs.html#268">Internal</a>(<a href="mod.rs.html#274-276">InternalFixed</a> { val: <a href="mod.rs.html#291">Nanosecond3NoDot</a> }), <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t), <span class="kw">_</span>) =&gt; {
+<a href=#278 id=278 data-nosnippet>278</a><span class="expansion"><input id=expand-278 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:03}"</span>, t.nanosecond() / <span class="number">1_000_000 </span>% <span class="number">1_000</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#222">w</a>, <span class="string">"{:03}"</span>, t.nanosecond() / <span class="number">1_000_000 </span>% <span class="number">1_000</span>)</span></span>
+<a href=#279 id=279 data-nosnippet>279</a>            }
+<a href=#280 id=280 data-nosnippet>280</a>            (<a href="mod.rs.html#268">Internal</a>(<a href="mod.rs.html#274-276">InternalFixed</a> { val: <a href="mod.rs.html#293">Nanosecond6NoDot</a> }), <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t), <span class="kw">_</span>) =&gt; {
+<a href=#281 id=281 data-nosnippet>281</a><span class="expansion"><input id=expand-281 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:06}"</span>, t.nanosecond() / <span class="number">1_000 </span>% <span class="number">1_000_000</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#222">w</a>, <span class="string">"{:06}"</span>, t.nanosecond() / <span class="number">1_000 </span>% <span class="number">1_000_000</span>)</span></span>
+<a href=#282 id=282 data-nosnippet>282</a>            }
+<a href=#283 id=283 data-nosnippet>283</a>            (<a href="mod.rs.html#268">Internal</a>(<a href="mod.rs.html#274-276">InternalFixed</a> { val: <a href="mod.rs.html#295">Nanosecond9NoDot</a> }), <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t), <span class="kw">_</span>) =&gt; {
+<a href=#284 id=284 data-nosnippet>284</a><span class="expansion"><input id=expand-284 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:09}"</span>, t.nanosecond() % <span class="number">1_000_000_000</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#222">w</a>, <span class="string">"{:09}"</span>, t.nanosecond() % <span class="number">1_000_000_000</span>)</span></span>
+<a href=#285 id=285 data-nosnippet>285</a>            }
+<a href=#286 id=286 data-nosnippet>286</a><span class="expansion"><input id=expand-286 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            (<a href="mod.rs.html#227">TimezoneName</a>, <span class="kw">_</span>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>((tz_name, <span class="kw">_</span>))) =&gt; <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0}"</span>, tz_name))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#222">w</a>, <span class="string">"{tz_name}"</span>)</span></span>,
+<a href=#287 id=287 data-nosnippet>287</a>            (<a href="mod.rs.html#255">TimezoneOffset</a> | <a href="mod.rs.html#258">TimezoneOffsetZ</a>, <span class="kw">_</span>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>((<span class="kw">_</span>, off))) =&gt; {
+<a href=#288 id=288 data-nosnippet>288</a>                <span class="kw">let </span>offset_format = <a href="mod.rs.html#301-310">OffsetFormat</a> {
+<a href=#289 id=289 data-nosnippet>289</a>                    precision: OffsetPrecision::<a href="mod.rs.html#322">Minutes</a>,
+<a href=#290 id=290 data-nosnippet>290</a>                    colons: Colons::<a href="mod.rs.html#343">Maybe</a>,
+<a href=#291 id=291 data-nosnippet>291</a>                    allow_zulu: <span class="kw-2">*</span><a href="#222">spec</a> == <a href="mod.rs.html#258">TimezoneOffsetZ</a>,
+<a href=#292 id=292 data-nosnippet>292</a>                    padding: Pad::<a href="mod.rs.html#86">Zero</a>,
+<a href=#293 id=293 data-nosnippet>293</a>                };
+<a href=#294 id=294 data-nosnippet>294</a>                <a href="#288">offset_format</a>.<a href="#395-469">format</a>(<a href="#222">w</a>, <span class="kw-2">*</span><a href="#287">off</a>)
+<a href=#295 id=295 data-nosnippet>295</a>            }
+<a href=#296 id=296 data-nosnippet>296</a>            (<a href="mod.rs.html#233">TimezoneOffsetColon</a> | <a href="mod.rs.html#252">TimezoneOffsetColonZ</a>, <span class="kw">_</span>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>((<span class="kw">_</span>, off))) =&gt; {
+<a href=#297 id=297 data-nosnippet>297</a>                <span class="kw">let </span>offset_format = <a href="mod.rs.html#301-310">OffsetFormat</a> {
+<a href=#298 id=298 data-nosnippet>298</a>                    precision: OffsetPrecision::<a href="mod.rs.html#322">Minutes</a>,
+<a href=#299 id=299 data-nosnippet>299</a>                    colons: Colons::<a href="mod.rs.html#341">Colon</a>,
+<a href=#300 id=300 data-nosnippet>300</a>                    allow_zulu: <span class="kw-2">*</span><a href="#222">spec</a> == <a href="mod.rs.html#252">TimezoneOffsetColonZ</a>,
+<a href=#301 id=301 data-nosnippet>301</a>                    padding: Pad::<a href="mod.rs.html#86">Zero</a>,
+<a href=#302 id=302 data-nosnippet>302</a>                };
+<a href=#303 id=303 data-nosnippet>303</a>                <a href="#297">offset_format</a>.<a href="#395-469">format</a>(<a href="#222">w</a>, <span class="kw-2">*</span><a href="#296">off</a>)
+<a href=#304 id=304 data-nosnippet>304</a>            }
+<a href=#305 id=305 data-nosnippet>305</a>            (<a href="mod.rs.html#239">TimezoneOffsetDoubleColon</a>, <span class="kw">_</span>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>((<span class="kw">_</span>, off))) =&gt; {
+<a href=#306 id=306 data-nosnippet>306</a>                <span class="kw">let </span>offset_format = <a href="mod.rs.html#301-310">OffsetFormat</a> {
+<a href=#307 id=307 data-nosnippet>307</a>                    precision: OffsetPrecision::<a href="mod.rs.html#324">Seconds</a>,
+<a href=#308 id=308 data-nosnippet>308</a>                    colons: Colons::<a href="mod.rs.html#341">Colon</a>,
+<a href=#309 id=309 data-nosnippet>309</a>                    allow_zulu: <span class="bool-val">false</span>,
+<a href=#310 id=310 data-nosnippet>310</a>                    padding: Pad::<a href="mod.rs.html#86">Zero</a>,
+<a href=#311 id=311 data-nosnippet>311</a>                };
+<a href=#312 id=312 data-nosnippet>312</a>                <a href="#306">offset_format</a>.<a href="#395-469">format</a>(<a href="#222">w</a>, <span class="kw-2">*</span><a href="#305">off</a>)
+<a href=#313 id=313 data-nosnippet>313</a>            }
+<a href=#314 id=314 data-nosnippet>314</a>            (<a href="mod.rs.html#245">TimezoneOffsetTripleColon</a>, <span class="kw">_</span>, <span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>((<span class="kw">_</span>, off))) =&gt; {
+<a href=#315 id=315 data-nosnippet>315</a>                <span class="kw">let </span>offset_format = <a href="mod.rs.html#301-310">OffsetFormat</a> {
+<a href=#316 id=316 data-nosnippet>316</a>                    precision: OffsetPrecision::<a href="mod.rs.html#319">Hours</a>,
+<a href=#317 id=317 data-nosnippet>317</a>                    colons: Colons::<a href="mod.rs.html#339">None</a>,
+<a href=#318 id=318 data-nosnippet>318</a>                    allow_zulu: <span class="bool-val">false</span>,
+<a href=#319 id=319 data-nosnippet>319</a>                    padding: Pad::<a href="mod.rs.html#86">Zero</a>,
+<a href=#320 id=320 data-nosnippet>320</a>                };
+<a href=#321 id=321 data-nosnippet>321</a>                <a href="#315">offset_format</a>.<a href="#395-469">format</a>(<a href="#222">w</a>, <span class="kw-2">*</span><a href="#314">off</a>)
+<a href=#322 id=322 data-nosnippet>322</a>            }
+<a href=#323 id=323 data-nosnippet>323</a>            (<a href="mod.rs.html#260">RFC2822</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t), <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>((<span class="kw">_</span>, off))) =&gt; {
+<a href=#324 id=324 data-nosnippet>324</a>                <a href="#568-611">write_rfc2822</a>(<a href="#222">w</a>, <span class="kw">crate</span>::<a href="../naive/datetime/mod.rs.html#76-79">NaiveDateTime</a>::<a href="../naive/datetime/mod.rs.html#99-101">new</a>(<a href="#323">d</a>, <a href="#323">t</a>), <span class="kw-2">*</span><a href="#323">off</a>)
+<a href=#325 id=325 data-nosnippet>325</a>            }
+<a href=#326 id=326 data-nosnippet>326</a>            (<a href="mod.rs.html#262">RFC3339</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d), <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(t), <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>((<span class="kw">_</span>, off))) =&gt; <a href="#504-564">write_rfc3339</a>(
+<a href=#327 id=327 data-nosnippet>327</a>                <a href="#222">w</a>,
+<a href=#328 id=328 data-nosnippet>328</a>                <span class="kw">crate</span>::<a href="../naive/datetime/mod.rs.html#76-79">NaiveDateTime</a>::<a href="../naive/datetime/mod.rs.html#99-101">new</a>(<a href="#326">d</a>, <a href="#326">t</a>),
+<a href=#329 id=329 data-nosnippet>329</a>                <span class="kw-2">*</span><a href="#326">off</a>,
+<a href=#330 id=330 data-nosnippet>330</a>                SecondsFormat::<a href="#494">AutoSi</a>,
+<a href=#331 id=331 data-nosnippet>331</a>                <span class="bool-val">false</span>,
+<a href=#332 id=332 data-nosnippet>332</a>            ),
+<a href=#333 id=333 data-nosnippet>333</a>            <span class="kw">_ </span>=&gt; <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Error.html">Error</a>), <span class="comment">// insufficient arguments for given format
+<a href=#334 id=334 data-nosnippet>334</a>        </span>}
+<a href=#335 id=335 data-nosnippet>335</a>    }
+<a href=#336 id=336 data-nosnippet>336</a>}
+<a href=#337 id=337 data-nosnippet>337</a>
+<a href=#338 id=338 data-nosnippet>338</a><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#339 id=339 data-nosnippet>339</a></span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, I: <a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html">Iterator</a>&lt;Item = B&gt; + <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html">Clone</a>, B: <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html">Borrow</a>&lt;<a href="mod.rs.html#348-366">Item</a>&lt;<span class="lifetime">'a</span>&gt;&gt;&gt; <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html">Display</a> <span class="kw">for </span><a href="#34-46">DelayedFormat</a>&lt;I&gt; {
+<a href=#340 id=340 data-nosnippet>340</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html">Formatter</a>) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#341 id=341 data-nosnippet>341</a>        <span class="kw">let </span><span class="kw-2">mut </span>result = <a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>::<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html#method.new">new</a>();
+<a href=#342 id=342 data-nosnippet>342</a>        <a class="self" href="#340">self</a>.<a href="#112-124">write_to</a>(<span class="kw-2">&amp;mut </span><a href="#341">result</a>)<span class="question-mark">?</span>;
+<a href=#343 id=343 data-nosnippet>343</a>        <a href="#340">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.pad">pad</a>(<span class="kw-2">&amp;</span><a href="#341">result</a>)
+<a href=#344 id=344 data-nosnippet>344</a>    }
+<a href=#345 id=345 data-nosnippet>345</a>}
+<a href=#346 id=346 data-nosnippet>346</a>
+<a href=#347 id=347 data-nosnippet>347</a><span class="doccomment">/// Tries to format given arguments with given formatting items.
+<a href=#348 id=348 data-nosnippet>348</a>/// Internally used by `DelayedFormat`.
+<a href=#349 id=349 data-nosnippet>349</a></span><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#350 id=350 data-nosnippet>350</a>#[deprecated(since = <span class="string">"0.4.32"</span>, note = <span class="string">"Use DelayedFormat::fmt or DelayedFormat::write_to instead"</span>)]
+<a href=#351 id=351 data-nosnippet>351</a></span><span class="kw">pub fn </span><a href="../../../chrono/format/fn.format.html">format</a>&lt;<span class="lifetime">'a</span>, I, B&gt;(
+<a href=#352 id=352 data-nosnippet>352</a>    w: <span class="kw-2">&amp;mut </span>fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html">Formatter</a>,
+<a href=#353 id=353 data-nosnippet>353</a>    date: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="../naive/date/mod.rs.html#102-104">NaiveDate</a>&gt;,
+<a href=#354 id=354 data-nosnippet>354</a>    time: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="../naive/time/mod.rs.html#220-223">NaiveTime</a>&gt;,
+<a href=#355 id=355 data-nosnippet>355</a>    off: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span>(<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>, <a href="../offset/fixed.rs.html#30-32">FixedOffset</a>)&gt;,
+<a href=#356 id=356 data-nosnippet>356</a>    items: I,
+<a href=#357 id=357 data-nosnippet>357</a>) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a>
+<a href=#358 id=358 data-nosnippet>358</a><span class="kw">where
+<a href=#359 id=359 data-nosnippet>359</a>    </span>I: <a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html">Iterator</a>&lt;Item = B&gt; + <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html">Clone</a>,
+<a href=#360 id=360 data-nosnippet>360</a>    B: <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html">Borrow</a>&lt;<a href="mod.rs.html#348-366">Item</a>&lt;<span class="lifetime">'a</span>&gt;&gt;,
+<a href=#361 id=361 data-nosnippet>361</a>{
+<a href=#362 id=362 data-nosnippet>362</a>    <a href="#34-46">DelayedFormat</a> {
+<a href=#363 id=363 data-nosnippet>363</a>        date: <a href="#353">date</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.copied">copied</a>(),
+<a href=#364 id=364 data-nosnippet>364</a>        time: <a href="#354">time</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.copied">copied</a>(),
+<a href=#365 id=365 data-nosnippet>365</a>        off: <a href="#355">off</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.cloned">cloned</a>(),
+<a href=#366 id=366 data-nosnippet>366</a>        <a href="#356">items</a>,
+<a href=#367 id=367 data-nosnippet>367</a>        locale: <a href="locales.rs.html#60-62">default_locale</a>(),
+<a href=#368 id=368 data-nosnippet>368</a>    }
+<a href=#369 id=369 data-nosnippet>369</a>    .<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html#tymethod.fmt">fmt</a>(<a href="#352">w</a>)
+<a href=#370 id=370 data-nosnippet>370</a>}
+<a href=#371 id=371 data-nosnippet>371</a>
+<a href=#372 id=372 data-nosnippet>372</a><span class="doccomment">/// Formats single formatting item
+<a href=#373 id=373 data-nosnippet>373</a></span><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#374 id=374 data-nosnippet>374</a>#[deprecated(since = <span class="string">"0.4.32"</span>, note = <span class="string">"Use DelayedFormat::fmt or DelayedFormat::write_to instead"</span>)]
+<a href=#375 id=375 data-nosnippet>375</a></span><span class="kw">pub fn </span><a href="../../../chrono/format/fn.format_item.html">format_item</a>(
+<a href=#376 id=376 data-nosnippet>376</a>    w: <span class="kw-2">&amp;mut </span>fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html">Formatter</a>,
+<a href=#377 id=377 data-nosnippet>377</a>    date: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="../naive/date/mod.rs.html#102-104">NaiveDate</a>&gt;,
+<a href=#378 id=378 data-nosnippet>378</a>    time: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="../naive/time/mod.rs.html#220-223">NaiveTime</a>&gt;,
+<a href=#379 id=379 data-nosnippet>379</a>    off: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span>(<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>, <a href="../offset/fixed.rs.html#30-32">FixedOffset</a>)&gt;,
+<a href=#380 id=380 data-nosnippet>380</a>    item: <span class="kw-2">&amp;</span><a href="mod.rs.html#348-366">Item</a>&lt;<span class="lifetime">'_</span>&gt;,
+<a href=#381 id=381 data-nosnippet>381</a>) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#382 id=382 data-nosnippet>382</a>    <a href="#34-46">DelayedFormat</a> {
+<a href=#383 id=383 data-nosnippet>383</a>        date: <a href="#377">date</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.copied">copied</a>(),
+<a href=#384 id=384 data-nosnippet>384</a>        time: <a href="#378">time</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.copied">copied</a>(),
+<a href=#385 id=385 data-nosnippet>385</a>        off: <a href="#379">off</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.cloned">cloned</a>(),
+<a href=#386 id=386 data-nosnippet>386</a>        items: [<a href="#380">item</a>].<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>(),
+<a href=#387 id=387 data-nosnippet>387</a>        locale: <a href="locales.rs.html#60-62">default_locale</a>(),
+<a href=#388 id=388 data-nosnippet>388</a>    }
+<a href=#389 id=389 data-nosnippet>389</a>    .<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html#tymethod.fmt">fmt</a>(<a href="#376">w</a>)
+<a href=#390 id=390 data-nosnippet>390</a>}
+<a href=#391 id=391 data-nosnippet>391</a>
+<a href=#392 id=392 data-nosnippet>392</a><span class="attr">#[cfg(any(feature = <span class="string">"alloc"</span>, feature = <span class="string">"serde"</span>))]
+<a href=#393 id=393 data-nosnippet>393</a></span><span class="kw">impl </span><a href="mod.rs.html#301-310">OffsetFormat</a> {
+<a href=#394 id=394 data-nosnippet>394</a>    <span class="doccomment">/// Writes an offset from UTC with the format defined by `self`.
+<a href=#395 id=395 data-nosnippet>395</a>    </span><span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, w: <span class="kw-2">&amp;mut </span>(<span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html">Write</a> + <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>), off: <a href="../offset/fixed.rs.html#30-32">FixedOffset</a>) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#396 id=396 data-nosnippet>396</a>        <span class="kw">let </span>off = <a href="#395">off</a>.<a href="../offset/fixed.rs.html#107-109">local_minus_utc</a>();
+<a href=#397 id=397 data-nosnippet>397</a>        <span class="kw">if </span><a class="self" href="#395">self</a>.allow_zulu &amp;&amp; <a href="#396">off</a> == <span class="number">0 </span>{
+<a href=#398 id=398 data-nosnippet>398</a>            <a href="#395">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">'Z'</span>)<span class="question-mark">?</span>;
+<a href=#399 id=399 data-nosnippet>399</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(());
+<a href=#400 id=400 data-nosnippet>400</a>        }
+<a href=#401 id=401 data-nosnippet>401</a>        <span class="kw">let </span>(sign, off) = <span class="kw">if </span><a href="#396">off</a> &lt; <span class="number">0 </span>{ (<span class="string">'-'</span>, -<a href="#396">off</a>) } <span class="kw">else </span>{ (<span class="string">'+'</span>, <a href="#396">off</a>) };
+<a href=#402 id=402 data-nosnippet>402</a>
+<a href=#403 id=403 data-nosnippet>403</a>        <span class="kw">let </span>hours;
+<a href=#404 id=404 data-nosnippet>404</a>        <span class="kw">let </span><span class="kw-2">mut </span>mins = <span class="number">0</span>;
+<a href=#405 id=405 data-nosnippet>405</a>        <span class="kw">let </span><span class="kw-2">mut </span>secs = <span class="number">0</span>;
+<a href=#406 id=406 data-nosnippet>406</a>        <span class="kw">let </span>precision = <span class="kw">match </span><a class="self" href="#395">self</a>.precision {
+<a href=#407 id=407 data-nosnippet>407</a>            OffsetPrecision::<a href="mod.rs.html#319">Hours</a> =&gt; {
+<a href=#408 id=408 data-nosnippet>408</a>                <span class="comment">// Minutes and seconds are simply truncated
+<a href=#409 id=409 data-nosnippet>409</a>                </span><a href="#403">hours</a> = (<a href="#401">off</a> / <span class="number">3600</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>;
+<a href=#410 id=410 data-nosnippet>410</a>                OffsetPrecision::<a href="mod.rs.html#319">Hours</a>
+<a href=#411 id=411 data-nosnippet>411</a>            }
+<a href=#412 id=412 data-nosnippet>412</a>            OffsetPrecision::<a href="mod.rs.html#322">Minutes</a> | OffsetPrecision::<a href="mod.rs.html#327">OptionalMinutes</a> =&gt; {
+<a href=#413 id=413 data-nosnippet>413</a>                <span class="comment">// Round seconds to the nearest minute.
+<a href=#414 id=414 data-nosnippet>414</a>                </span><span class="kw">let </span>minutes = (<a href="#401">off</a> + <span class="number">30</span>) / <span class="number">60</span>;
+<a href=#415 id=415 data-nosnippet>415</a>                <a href="#404">mins</a> = (<a href="#414">minutes</a> % <span class="number">60</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>;
+<a href=#416 id=416 data-nosnippet>416</a>                <a href="#403">hours</a> = (<a href="#414">minutes</a> / <span class="number">60</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>;
+<a href=#417 id=417 data-nosnippet>417</a>                <span class="kw">if </span><a class="self" href="#395">self</a>.precision == OffsetPrecision::<a href="mod.rs.html#327">OptionalMinutes</a> &amp;&amp; <a href="#404">mins</a> == <span class="number">0 </span>{
+<a href=#418 id=418 data-nosnippet>418</a>                    OffsetPrecision::<a href="mod.rs.html#319">Hours</a>
+<a href=#419 id=419 data-nosnippet>419</a>                } <span class="kw">else </span>{
+<a href=#420 id=420 data-nosnippet>420</a>                    OffsetPrecision::<a href="mod.rs.html#322">Minutes</a>
+<a href=#421 id=421 data-nosnippet>421</a>                }
+<a href=#422 id=422 data-nosnippet>422</a>            }
+<a href=#423 id=423 data-nosnippet>423</a>            OffsetPrecision::<a href="mod.rs.html#324">Seconds</a>
+<a href=#424 id=424 data-nosnippet>424</a>            | OffsetPrecision::<a href="mod.rs.html#329">OptionalSeconds</a>
+<a href=#425 id=425 data-nosnippet>425</a>            | OffsetPrecision::<a href="mod.rs.html#331">OptionalMinutesAndSeconds</a> =&gt; {
+<a href=#426 id=426 data-nosnippet>426</a>                <span class="kw">let </span>minutes = <a href="#401">off</a> / <span class="number">60</span>;
+<a href=#427 id=427 data-nosnippet>427</a>                <a href="#405">secs</a> = (<a href="#401">off</a> % <span class="number">60</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>;
+<a href=#428 id=428 data-nosnippet>428</a>                <a href="#404">mins</a> = (<a href="#426">minutes</a> % <span class="number">60</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>;
+<a href=#429 id=429 data-nosnippet>429</a>                <a href="#403">hours</a> = (<a href="#426">minutes</a> / <span class="number">60</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>;
+<a href=#430 id=430 data-nosnippet>430</a>                <span class="kw">if </span><a class="self" href="#395">self</a>.<span class="macro">precision !</span>= OffsetPrecision::<a href="mod.rs.html#324">Seconds</a> &amp;&amp; <a href="#405">secs</a> == <span class="number">0 </span>{
+<a href=#431 id=431 data-nosnippet>431</a>                    <span class="kw">if </span><a class="self" href="#395">self</a>.precision == OffsetPrecision::<a href="mod.rs.html#331">OptionalMinutesAndSeconds</a> &amp;&amp; <a href="#404">mins</a> == <span class="number">0 </span>{
+<a href=#432 id=432 data-nosnippet>432</a>                        OffsetPrecision::<a href="mod.rs.html#319">Hours</a>
+<a href=#433 id=433 data-nosnippet>433</a>                    } <span class="kw">else </span>{
+<a href=#434 id=434 data-nosnippet>434</a>                        OffsetPrecision::<a href="mod.rs.html#322">Minutes</a>
+<a href=#435 id=435 data-nosnippet>435</a>                    }
+<a href=#436 id=436 data-nosnippet>436</a>                } <span class="kw">else </span>{
+<a href=#437 id=437 data-nosnippet>437</a>                    OffsetPrecision::<a href="mod.rs.html#324">Seconds</a>
+<a href=#438 id=438 data-nosnippet>438</a>                }
+<a href=#439 id=439 data-nosnippet>439</a>            }
+<a href=#440 id=440 data-nosnippet>440</a>        };
+<a href=#441 id=441 data-nosnippet>441</a>        <span class="kw">let </span>colons = <a class="self" href="#395">self</a>.colons == Colons::<a href="mod.rs.html#341">Colon</a>;
+<a href=#442 id=442 data-nosnippet>442</a>
+<a href=#443 id=443 data-nosnippet>443</a>        <span class="kw">if </span><a href="#403">hours</a> &lt; <span class="number">10 </span>{
+<a href=#444 id=444 data-nosnippet>444</a>            <span class="kw">if </span><a class="self" href="#395">self</a>.padding == Pad::<a href="mod.rs.html#88">Space</a> {
+<a href=#445 id=445 data-nosnippet>445</a>                <a href="#395">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">' '</span>)<span class="question-mark">?</span>;
+<a href=#446 id=446 data-nosnippet>446</a>            }
+<a href=#447 id=447 data-nosnippet>447</a>            <a href="#395">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<a href="#401">sign</a>)<span class="question-mark">?</span>;
+<a href=#448 id=448 data-nosnippet>448</a>            <span class="kw">if </span><a class="self" href="#395">self</a>.padding == Pad::<a href="mod.rs.html#86">Zero</a> {
+<a href=#449 id=449 data-nosnippet>449</a>                <a href="#395">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">'0'</span>)<span class="question-mark">?</span>;
+<a href=#450 id=450 data-nosnippet>450</a>            }
+<a href=#451 id=451 data-nosnippet>451</a>            <a href="#395">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>((<span class="string">b'0' </span>+ <a href="#403">hours</a>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.char.html">char</a>)<span class="question-mark">?</span>;
+<a href=#452 id=452 data-nosnippet>452</a>        } <span class="kw">else </span>{
+<a href=#453 id=453 data-nosnippet>453</a>            <a href="#395">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<a href="#401">sign</a>)<span class="question-mark">?</span>;
+<a href=#454 id=454 data-nosnippet>454</a>            <a href="#614-623">write_hundreds</a>(<a href="#395">w</a>, <a href="#403">hours</a>)<span class="question-mark">?</span>;
+<a href=#455 id=455 data-nosnippet>455</a>        }
+<a href=#456 id=456 data-nosnippet>456</a>        <span class="kw">if let </span>OffsetPrecision::<a href="mod.rs.html#322">Minutes</a> | OffsetPrecision::<a href="mod.rs.html#324">Seconds</a> = <a href="#406">precision</a> {
+<a href=#457 id=457 data-nosnippet>457</a>            <span class="kw">if </span><a href="#441">colons</a> {
+<a href=#458 id=458 data-nosnippet>458</a>                <a href="#395">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">':'</span>)<span class="question-mark">?</span>;
+<a href=#459 id=459 data-nosnippet>459</a>            }
+<a href=#460 id=460 data-nosnippet>460</a>            <a href="#614-623">write_hundreds</a>(<a href="#395">w</a>, <a href="#404">mins</a>)<span class="question-mark">?</span>;
+<a href=#461 id=461 data-nosnippet>461</a>        }
+<a href=#462 id=462 data-nosnippet>462</a>        <span class="kw">if let </span>OffsetPrecision::<a href="mod.rs.html#324">Seconds</a> = <a href="#406">precision</a> {
+<a href=#463 id=463 data-nosnippet>463</a>            <span class="kw">if </span><a href="#441">colons</a> {
+<a href=#464 id=464 data-nosnippet>464</a>                <a href="#395">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">':'</span>)<span class="question-mark">?</span>;
+<a href=#465 id=465 data-nosnippet>465</a>            }
+<a href=#466 id=466 data-nosnippet>466</a>            <a href="#614-623">write_hundreds</a>(<a href="#395">w</a>, <a href="#405">secs</a>)<span class="question-mark">?</span>;
+<a href=#467 id=467 data-nosnippet>467</a>        }
+<a href=#468 id=468 data-nosnippet>468</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#469 id=469 data-nosnippet>469</a>    }
+<a href=#470 id=470 data-nosnippet>470</a>}
+<a href=#471 id=471 data-nosnippet>471</a>
+<a href=#472 id=472 data-nosnippet>472</a><span class="doccomment">/// Specific formatting options for seconds. This may be extended in the
+<a href=#473 id=473 data-nosnippet>473</a>/// future, so exhaustive matching in external code is not recommended.
+<a href=#474 id=474 data-nosnippet>474</a>///
+<a href=#475 id=475 data-nosnippet>475</a>/// See the `TimeZone::to_rfc3339_opts` function for usage.
+<a href=#476 id=476 data-nosnippet>476</a></span><span class="expansion"><input id=expand-476 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+#[allow(clippy::manual_non_exhaustive)]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>SecondsFormat {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; SecondsFormat { <span class="kw-2">*</span><span class="self">self </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[allow(clippy::manual_non_exhaustive)]
+</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>SecondsFormat { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[allow(clippy::manual_non_exhaustive)]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>SecondsFormat {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::write_str(f,
+            <span class="kw">match </span><span class="self">self </span>{
+                SecondsFormat::Secs =&gt; <span class="string">"Secs"</span>,
+                SecondsFormat::Millis =&gt; <span class="string">"Millis"</span>,
+                SecondsFormat::Micros =&gt; <span class="string">"Micros"</span>,
+                SecondsFormat::Nanos =&gt; <span class="string">"Nanos"</span>,
+                SecondsFormat::AutoSi =&gt; <span class="string">"AutoSi"</span>,
+                SecondsFormat::__NonExhaustive =&gt; <span class="string">"__NonExhaustive"</span>,
+            })
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[allow(clippy::manual_non_exhaustive)]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>SecondsFormat {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_receiver_is_total_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[allow(clippy::manual_non_exhaustive)]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>SecondsFormat {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>SecondsFormat) -&gt; bool {
+        <span class="kw">let </span>__self_discr = ::core::intrinsics::discriminant_value(<span class="self">self</span>);
+        <span class="kw">let </span>__arg1_discr = ::core::intrinsics::discriminant_value(other);
+        __self_discr == __arg1_discr
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[allow(clippy::manual_non_exhaustive)]
+</span><span class="kw">impl </span>::core::hash::Hash <span class="kw">for </span>SecondsFormat {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>hash&lt;__H: ::core::hash::Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>__H) {
+        <span class="kw">let </span>__self_discr = ::core::intrinsics::discriminant_value(<span class="self">self</span>);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span>__self_discr, state)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/hash/macros/derive.Hash.html">Hash</a></span></span></span><span class="attr">)]
+<a href=#477 id=477 data-nosnippet>477</a>#[cfg_attr(feature = <span class="string">"defmt"</span>, derive(defmt::Format))]
+<a href=#478 id=478 data-nosnippet>478</a>#[allow(clippy::manual_non_exhaustive)]
+<a href=#479 id=479 data-nosnippet>479</a></span><span class="kw">pub enum </span><a href="../../../chrono/format/enum.SecondsFormat.html">SecondsFormat</a> {
+<a href=#480 id=480 data-nosnippet>480</a>    <span class="doccomment">/// Format whole seconds only, with no decimal point nor subseconds.
+<a href=#481 id=481 data-nosnippet>481</a>    </span>Secs,
+<a href=#482 id=482 data-nosnippet>482</a>
+<a href=#483 id=483 data-nosnippet>483</a>    <span class="doccomment">/// Use fixed 3 subsecond digits. This corresponds to [Fixed::Nanosecond3].
+<a href=#484 id=484 data-nosnippet>484</a>    </span>Millis,
+<a href=#485 id=485 data-nosnippet>485</a>
+<a href=#486 id=486 data-nosnippet>486</a>    <span class="doccomment">/// Use fixed 6 subsecond digits. This corresponds to [Fixed::Nanosecond6].
+<a href=#487 id=487 data-nosnippet>487</a>    </span>Micros,
+<a href=#488 id=488 data-nosnippet>488</a>
+<a href=#489 id=489 data-nosnippet>489</a>    <span class="doccomment">/// Use fixed 9 subsecond digits. This corresponds to [Fixed::Nanosecond9].
+<a href=#490 id=490 data-nosnippet>490</a>    </span>Nanos,
+<a href=#491 id=491 data-nosnippet>491</a>
+<a href=#492 id=492 data-nosnippet>492</a>    <span class="doccomment">/// Automatically select one of `Secs`, `Millis`, `Micros`, or `Nanos` to display all available
+<a href=#493 id=493 data-nosnippet>493</a>    /// non-zero sub-second digits.  This corresponds to [Fixed::Nanosecond].
+<a href=#494 id=494 data-nosnippet>494</a>    </span>AutoSi,
+<a href=#495 id=495 data-nosnippet>495</a>
+<a href=#496 id=496 data-nosnippet>496</a>    <span class="comment">// Do not match against this.
+<a href=#497 id=497 data-nosnippet>497</a>    </span><span class="attr">#[doc(hidden)]
+<a href=#498 id=498 data-nosnippet>498</a>    </span>__NonExhaustive,
+<a href=#499 id=499 data-nosnippet>499</a>}
+<a href=#500 id=500 data-nosnippet>500</a>
+<a href=#501 id=501 data-nosnippet>501</a><span class="doccomment">/// Writes the date, time and offset to the string. same as `%Y-%m-%dT%H:%M:%S%.f%:z`
+<a href=#502 id=502 data-nosnippet>502</a></span><span class="attr">#[inline]
+<a href=#503 id=503 data-nosnippet>503</a>#[cfg(any(feature = <span class="string">"alloc"</span>, feature = <span class="string">"serde"</span>))]
+<a href=#504 id=504 data-nosnippet>504</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>write_rfc3339(
+<a href=#505 id=505 data-nosnippet>505</a>    w: <span class="kw-2">&amp;mut </span>(<span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html">Write</a> + <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>),
+<a href=#506 id=506 data-nosnippet>506</a>    dt: <a href="../naive/datetime/mod.rs.html#76-79">NaiveDateTime</a>,
+<a href=#507 id=507 data-nosnippet>507</a>    off: <a href="../offset/fixed.rs.html#30-32">FixedOffset</a>,
+<a href=#508 id=508 data-nosnippet>508</a>    secform: <a href="#479-499">SecondsFormat</a>,
+<a href=#509 id=509 data-nosnippet>509</a>    use_z: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#510 id=510 data-nosnippet>510</a>) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#511 id=511 data-nosnippet>511</a>    <span class="kw">let </span>year = <a href="#506">dt</a>.<a href="../naive/datetime/mod.rs.html#330-332">date</a>().<a href="../traits.rs.html#33">year</a>();
+<a href=#512 id=512 data-nosnippet>512</a>    <span class="kw">if </span>(<span class="number">0</span>..=<span class="number">9999</span>).<a href="https://doc.rust-lang.org/nightly/core/ops/range/struct.RangeInclusive.html#method.contains">contains</a>(<span class="kw-2">&amp;</span><a href="#511">year</a>) {
+<a href=#513 id=513 data-nosnippet>513</a>        <a href="#614-623">write_hundreds</a>(<a href="#505">w</a>, (<a href="#511">year</a> / <span class="number">100</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)<span class="question-mark">?</span>;
+<a href=#514 id=514 data-nosnippet>514</a>        <a href="#614-623">write_hundreds</a>(<a href="#505">w</a>, (<a href="#511">year</a> % <span class="number">100</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)<span class="question-mark">?</span>;
+<a href=#515 id=515 data-nosnippet>515</a>    } <span class="kw">else </span>{
+<a href=#516 id=516 data-nosnippet>516</a>        <span class="comment">// ISO 8601 requires the explicit sign for out-of-range years
+<a href=#517 id=517 data-nosnippet>517</a></span><span class="expansion"><input id=expand-517 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:+05}"</span>, year))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#505">w</a>, <span class="string">"{year:+05}"</span>)</span></span><span class="question-mark">?</span>;
+<a href=#518 id=518 data-nosnippet>518</a>    }
+<a href=#519 id=519 data-nosnippet>519</a>    <a href="#505">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">'-'</span>)<span class="question-mark">?</span>;
+<a href=#520 id=520 data-nosnippet>520</a>    <a href="#614-623">write_hundreds</a>(<a href="#505">w</a>, <a href="#506">dt</a>.<a href="../naive/datetime/mod.rs.html#330-332">date</a>().<a href="../traits.rs.html#54">month</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)<span class="question-mark">?</span>;
+<a href=#521 id=521 data-nosnippet>521</a>    <a href="#505">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">'-'</span>)<span class="question-mark">?</span>;
+<a href=#522 id=522 data-nosnippet>522</a>    <a href="#614-623">write_hundreds</a>(<a href="#505">w</a>, <a href="#506">dt</a>.<a href="../naive/datetime/mod.rs.html#330-332">date</a>().<a href="../traits.rs.html#64">day</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)<span class="question-mark">?</span>;
+<a href=#523 id=523 data-nosnippet>523</a>
+<a href=#524 id=524 data-nosnippet>524</a>    <a href="#505">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">'T'</span>)<span class="question-mark">?</span>;
+<a href=#525 id=525 data-nosnippet>525</a>
+<a href=#526 id=526 data-nosnippet>526</a>    <span class="kw">let </span>(hour, min, <span class="kw-2">mut </span>sec) = <a href="#506">dt</a>.<a href="../naive/datetime/mod.rs.html#345-347">time</a>().<a href="../naive/time/mod.rs.html#874-880">hms</a>();
+<a href=#527 id=527 data-nosnippet>527</a>    <span class="kw">let </span><span class="kw-2">mut </span>nano = <a href="#506">dt</a>.<a href="../traits.rs.html#308">nanosecond</a>();
+<a href=#528 id=528 data-nosnippet>528</a>    <span class="kw">if </span><a href="#527">nano</a> &gt;= <span class="number">1_000_000_000 </span>{
+<a href=#529 id=529 data-nosnippet>529</a>        <a href="#526">sec</a> += <span class="number">1</span>;
+<a href=#530 id=530 data-nosnippet>530</a>        <a href="#527">nano</a> -= <span class="number">1_000_000_000</span>;
+<a href=#531 id=531 data-nosnippet>531</a>    }
+<a href=#532 id=532 data-nosnippet>532</a>    <a href="#614-623">write_hundreds</a>(<a href="#505">w</a>, <a href="#526">hour</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)<span class="question-mark">?</span>;
+<a href=#533 id=533 data-nosnippet>533</a>    <a href="#505">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">':'</span>)<span class="question-mark">?</span>;
+<a href=#534 id=534 data-nosnippet>534</a>    <a href="#614-623">write_hundreds</a>(<a href="#505">w</a>, <a href="#526">min</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)<span class="question-mark">?</span>;
+<a href=#535 id=535 data-nosnippet>535</a>    <a href="#505">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">':'</span>)<span class="question-mark">?</span>;
+<a href=#536 id=536 data-nosnippet>536</a>    <span class="kw">let </span>sec = <a href="#526">sec</a>;
+<a href=#537 id=537 data-nosnippet>537</a>    <a href="#614-623">write_hundreds</a>(<a href="#505">w</a>, <a href="#536">sec</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)<span class="question-mark">?</span>;
+<a href=#538 id=538 data-nosnippet>538</a>
+<a href=#539 id=539 data-nosnippet>539</a>    <span class="kw">match </span><a href="#508">secform</a> {
+<a href=#540 id=540 data-nosnippet>540</a>        SecondsFormat::<a href="#481">Secs</a> =&gt; {}
+<a href=#541 id=541 data-nosnippet>541</a><span class="expansion"><input id=expand-541 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        SecondsFormat::<a href="#484">Millis</a> =&gt; <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">".{0:03}"</span>, nano / <span class="number">1_000_000</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#505">w</a>, <span class="string">".{:03}"</span>, nano / <span class="number">1_000_000</span>)</span></span><span class="question-mark">?</span>,
+<a href=#542 id=542 data-nosnippet>542</a><span class="expansion"><input id=expand-542 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        SecondsFormat::<a href="#487">Micros</a> =&gt; <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">".{0:06}"</span>, nano / <span class="number">1000</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#505">w</a>, <span class="string">".{:06}"</span>, nano / <span class="number">1000</span>)</span></span><span class="question-mark">?</span>,
+<a href=#543 id=543 data-nosnippet>543</a><span class="expansion"><input id=expand-543 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        SecondsFormat::<a href="#490">Nanos</a> =&gt; <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">".{0:09}"</span>, nano))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#505">w</a>, <span class="string">".{nano:09}"</span>)</span></span><span class="question-mark">?</span>,
+<a href=#544 id=544 data-nosnippet>544</a>        SecondsFormat::<a href="#494">AutoSi</a> =&gt; {
+<a href=#545 id=545 data-nosnippet>545</a>            <span class="kw">if </span><a href="#527">nano</a> == <span class="number">0 </span>{
+<a href=#546 id=546 data-nosnippet>546</a>            } <span class="kw">else if </span><a href="#527">nano</a> % <span class="number">1_000_000 </span>== <span class="number">0 </span>{
+<a href=#547 id=547 data-nosnippet>547</a><span class="expansion"><input id=expand-547 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">".{0:03}"</span>, nano / <span class="number">1_000_000</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#505">w</a>, <span class="string">".{:03}"</span>, nano / <span class="number">1_000_000</span>)</span></span><span class="question-mark">?
+<a href=#548 id=548 data-nosnippet>548</a>            </span>} <span class="kw">else if </span><a href="#527">nano</a> % <span class="number">1_000 </span>== <span class="number">0 </span>{
+<a href=#549 id=549 data-nosnippet>549</a><span class="expansion"><input id=expand-549 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">".{0:06}"</span>, nano / <span class="number">1_000</span>))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#505">w</a>, <span class="string">".{:06}"</span>, nano / <span class="number">1_000</span>)</span></span><span class="question-mark">?
+<a href=#550 id=550 data-nosnippet>550</a>            </span>} <span class="kw">else </span>{
+<a href=#551 id=551 data-nosnippet>551</a><span class="expansion"><input id=expand-551 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>w.write_fmt(<span class="macro">format_args!</span>(<span class="string">".{0:09}"</span>, nano))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#505">w</a>, <span class="string">".{nano:09}"</span>)</span></span><span class="question-mark">?
+<a href=#552 id=552 data-nosnippet>552</a>            </span>}
+<a href=#553 id=553 data-nosnippet>553</a>        }
+<a href=#554 id=554 data-nosnippet>554</a><span class="expansion"><input id=expand-554 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        SecondsFormat::<a href="#498">__NonExhaustive</a> =&gt; <span class=expanded>::core::panicking::panic(<span class="string">"internal error: entered unreachable code"</span>)</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.unreachable.html">unreachable!</a>()</span></span>,
+<a href=#555 id=555 data-nosnippet>555</a>    };
+<a href=#556 id=556 data-nosnippet>556</a>
+<a href=#557 id=557 data-nosnippet>557</a>    <a href="mod.rs.html#301-310">OffsetFormat</a> {
+<a href=#558 id=558 data-nosnippet>558</a>        precision: OffsetPrecision::<a href="mod.rs.html#322">Minutes</a>,
+<a href=#559 id=559 data-nosnippet>559</a>        colons: Colons::<a href="mod.rs.html#341">Colon</a>,
+<a href=#560 id=560 data-nosnippet>560</a>        allow_zulu: <a href="#509">use_z</a>,
+<a href=#561 id=561 data-nosnippet>561</a>        padding: Pad::<a href="mod.rs.html#86">Zero</a>,
+<a href=#562 id=562 data-nosnippet>562</a>    }
+<a href=#563 id=563 data-nosnippet>563</a>    .<a href="#395-469">format</a>(<a href="#505">w</a>, <a href="#507">off</a>)
+<a href=#564 id=564 data-nosnippet>564</a>}
+<a href=#565 id=565 data-nosnippet>565</a>
+<a href=#566 id=566 data-nosnippet>566</a><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#567 id=567 data-nosnippet>567</a></span><span class="doccomment">/// write datetimes like `Tue, 1 Jul 2003 10:52:37 +0200`, same as `%a, %d %b %Y %H:%M:%S %z`
+<a href=#568 id=568 data-nosnippet>568</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>write_rfc2822(
+<a href=#569 id=569 data-nosnippet>569</a>    w: <span class="kw-2">&amp;mut </span>(<span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html">Write</a> + <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>),
+<a href=#570 id=570 data-nosnippet>570</a>    dt: <a href="../naive/datetime/mod.rs.html#76-79">NaiveDateTime</a>,
+<a href=#571 id=571 data-nosnippet>571</a>    off: <a href="../offset/fixed.rs.html#30-32">FixedOffset</a>,
+<a href=#572 id=572 data-nosnippet>572</a>) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#573 id=573 data-nosnippet>573</a>    <span class="kw">let </span>year = <a href="#570">dt</a>.<a href="../traits.rs.html#33">year</a>();
+<a href=#574 id=574 data-nosnippet>574</a>    <span class="comment">// RFC2822 is only defined on years 0 through 9999
+<a href=#575 id=575 data-nosnippet>575</a>    </span><span class="kw">if </span>!(<span class="number">0</span>..=<span class="number">9999</span>).<a href="https://doc.rust-lang.org/nightly/core/ops/range/struct.RangeInclusive.html#method.contains">contains</a>(<span class="kw-2">&amp;</span><a href="#573">year</a>) {
+<a href=#576 id=576 data-nosnippet>576</a>        <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Error.html">Error</a>);
+<a href=#577 id=577 data-nosnippet>577</a>    }
+<a href=#578 id=578 data-nosnippet>578</a>
+<a href=#579 id=579 data-nosnippet>579</a>    <span class="kw">let </span>english = <a href="locales.rs.html#60-62">default_locale</a>();
+<a href=#580 id=580 data-nosnippet>580</a>
+<a href=#581 id=581 data-nosnippet>581</a>    <a href="#569">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#tymethod.write_str">write_str</a>(<a href="locales.rs.html#85-87">short_weekdays</a>(<a href="#579">english</a>)[<a href="#570">dt</a>.<a href="../traits.rs.html#82">weekday</a>().<a href="../weekday.rs.html#148-150">num_days_from_sunday</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>])<span class="question-mark">?</span>;
+<a href=#582 id=582 data-nosnippet>582</a>    <a href="#569">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#tymethod.write_str">write_str</a>(<span class="string">", "</span>)<span class="question-mark">?</span>;
+<a href=#583 id=583 data-nosnippet>583</a>    <span class="kw">let </span>day = <a href="#570">dt</a>.<a href="../traits.rs.html#64">day</a>();
+<a href=#584 id=584 data-nosnippet>584</a>    <span class="kw">if </span><a href="#583">day</a> &lt; <span class="number">10 </span>{
+<a href=#585 id=585 data-nosnippet>585</a>        <a href="#569">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>((<span class="string">b'0' </span>+ <a href="#583">day</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.char.html">char</a>)<span class="question-mark">?</span>;
+<a href=#586 id=586 data-nosnippet>586</a>    } <span class="kw">else </span>{
+<a href=#587 id=587 data-nosnippet>587</a>        <a href="#614-623">write_hundreds</a>(<a href="#569">w</a>, <a href="#583">day</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)<span class="question-mark">?</span>;
+<a href=#588 id=588 data-nosnippet>588</a>    }
+<a href=#589 id=589 data-nosnippet>589</a>    <a href="#569">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">' '</span>)<span class="question-mark">?</span>;
+<a href=#590 id=590 data-nosnippet>590</a>    <a href="#569">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#tymethod.write_str">write_str</a>(<a href="locales.rs.html#64-66">short_months</a>(<a href="#579">english</a>)[<a href="#570">dt</a>.<a href="../traits.rs.html#59">month0</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>])<span class="question-mark">?</span>;
+<a href=#591 id=591 data-nosnippet>591</a>    <a href="#569">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">' '</span>)<span class="question-mark">?</span>;
+<a href=#592 id=592 data-nosnippet>592</a>    <a href="#614-623">write_hundreds</a>(<a href="#569">w</a>, (<a href="#573">year</a> / <span class="number">100</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)<span class="question-mark">?</span>;
+<a href=#593 id=593 data-nosnippet>593</a>    <a href="#614-623">write_hundreds</a>(<a href="#569">w</a>, (<a href="#573">year</a> % <span class="number">100</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)<span class="question-mark">?</span>;
+<a href=#594 id=594 data-nosnippet>594</a>    <a href="#569">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">' '</span>)<span class="question-mark">?</span>;
+<a href=#595 id=595 data-nosnippet>595</a>
+<a href=#596 id=596 data-nosnippet>596</a>    <span class="kw">let </span>(hour, min, sec) = <a href="#570">dt</a>.<a href="../naive/datetime/mod.rs.html#345-347">time</a>().<a href="../naive/time/mod.rs.html#874-880">hms</a>();
+<a href=#597 id=597 data-nosnippet>597</a>    <a href="#614-623">write_hundreds</a>(<a href="#569">w</a>, <a href="#596">hour</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)<span class="question-mark">?</span>;
+<a href=#598 id=598 data-nosnippet>598</a>    <a href="#569">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">':'</span>)<span class="question-mark">?</span>;
+<a href=#599 id=599 data-nosnippet>599</a>    <a href="#614-623">write_hundreds</a>(<a href="#569">w</a>, <a href="#596">min</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)<span class="question-mark">?</span>;
+<a href=#600 id=600 data-nosnippet>600</a>    <a href="#569">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">':'</span>)<span class="question-mark">?</span>;
+<a href=#601 id=601 data-nosnippet>601</a>    <span class="kw">let </span>sec = <a href="#596">sec</a> + <a href="#570">dt</a>.<a href="../traits.rs.html#308">nanosecond</a>() / <span class="number">1_000_000_000</span>;
+<a href=#602 id=602 data-nosnippet>602</a>    <a href="#614-623">write_hundreds</a>(<a href="#569">w</a>, <a href="#601">sec</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>)<span class="question-mark">?</span>;
+<a href=#603 id=603 data-nosnippet>603</a>    <a href="#569">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<span class="string">' '</span>)<span class="question-mark">?</span>;
+<a href=#604 id=604 data-nosnippet>604</a>    <a href="mod.rs.html#301-310">OffsetFormat</a> {
+<a href=#605 id=605 data-nosnippet>605</a>        precision: OffsetPrecision::<a href="mod.rs.html#322">Minutes</a>,
+<a href=#606 id=606 data-nosnippet>606</a>        colons: Colons::<a href="mod.rs.html#339">None</a>,
+<a href=#607 id=607 data-nosnippet>607</a>        allow_zulu: <span class="bool-val">false</span>,
+<a href=#608 id=608 data-nosnippet>608</a>        padding: Pad::<a href="mod.rs.html#86">Zero</a>,
+<a href=#609 id=609 data-nosnippet>609</a>    }
+<a href=#610 id=610 data-nosnippet>610</a>    .<a href="#395-469">format</a>(<a href="#569">w</a>, <a href="#571">off</a>)
+<a href=#611 id=611 data-nosnippet>611</a>}
+<a href=#612 id=612 data-nosnippet>612</a>
+<a href=#613 id=613 data-nosnippet>613</a><span class="doccomment">/// Equivalent to `{:02}` formatting for n &lt; 100.
+<a href=#614 id=614 data-nosnippet>614</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>write_hundreds(w: <span class="kw-2">&amp;mut </span>(<span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html">Write</a> + <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>), n: <a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#615 id=615 data-nosnippet>615</a>    <span class="kw">if </span><a href="#614">n</a> &gt;= <span class="number">100 </span>{
+<a href=#616 id=616 data-nosnippet>616</a>        <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Error.html">Error</a>);
+<a href=#617 id=617 data-nosnippet>617</a>    }
+<a href=#618 id=618 data-nosnippet>618</a>
+<a href=#619 id=619 data-nosnippet>619</a>    <span class="kw">let </span>tens = <span class="string">b'0' </span>+ <a href="#614">n</a> / <span class="number">10</span>;
+<a href=#620 id=620 data-nosnippet>620</a>    <span class="kw">let </span>ones = <span class="string">b'0' </span>+ <a href="#614">n</a> % <span class="number">10</span>;
+<a href=#621 id=621 data-nosnippet>621</a>    <a href="#614">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<a href="#619">tens</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.char.html">char</a>)<span class="question-mark">?</span>;
+<a href=#622 id=622 data-nosnippet>622</a>    <a href="#614">w</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Write.html#method.write_char">write_char</a>(<a href="#620">ones</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.char.html">char</a>)
+<a href=#623 id=623 data-nosnippet>623</a>}
+<a href=#624 id=624 data-nosnippet>624</a>
+<a href=#625 id=625 data-nosnippet>625</a><span class="attr">#[cfg(test)]
+<a href=#626 id=626 data-nosnippet>626</a>#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#627 id=627 data-nosnippet>627</a></span><span class="kw">mod </span>tests {
+<a href=#628 id=628 data-nosnippet>628</a>    <span class="kw">use </span>super::{Colons, OffsetFormat, OffsetPrecision, Pad};
+<a href=#629 id=629 data-nosnippet>629</a>    <span class="kw">use </span><span class="kw">crate</span>::FixedOffset;
+<a href=#630 id=630 data-nosnippet>630</a>    <span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#631 id=631 data-nosnippet>631</a>    </span><span class="kw">use </span>crate::{NaiveDate, NaiveTime, TimeZone, Timelike, Utc};
+<a href=#632 id=632 data-nosnippet>632</a>
+<a href=#633 id=633 data-nosnippet>633</a>    <span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#634 id=634 data-nosnippet>634</a>    #[test]
+<a href=#635 id=635 data-nosnippet>635</a>    </span><span class="kw">fn </span>test_delayed_write_to() {
+<a href=#636 id=636 data-nosnippet>636</a>        <span class="kw">let </span>dt = <span class="kw">crate</span>::DateTime::from_timestamp(<span class="number">1643723400</span>, <span class="number">123456789</span>).unwrap();
+<a href=#637 id=637 data-nosnippet>637</a>        <span class="kw">let </span>df = dt.format(<span class="string">"%Y-%m-%d %H:%M:%S%.9f"</span>);
+<a href=#638 id=638 data-nosnippet>638</a>
+<a href=#639 id=639 data-nosnippet>639</a>        <span class="kw">let </span><span class="kw-2">mut </span>dt_str = String::new();
+<a href=#640 id=640 data-nosnippet>640</a>
+<a href=#641 id=641 data-nosnippet>641</a>        df.write_to(<span class="kw-2">&amp;mut </span>dt_str).unwrap();
+<a href=#642 id=642 data-nosnippet>642</a>        <span class="macro">assert_eq!</span>(dt_str, <span class="string">"2022-02-01 13:50:00.123456789"</span>);
+<a href=#643 id=643 data-nosnippet>643</a>    }
+<a href=#644 id=644 data-nosnippet>644</a>
+<a href=#645 id=645 data-nosnippet>645</a>    <span class="attr">#[cfg(all(feature = <span class="string">"std"</span>, feature = <span class="string">"unstable-locales"</span>, feature = <span class="string">"alloc"</span>))]
+<a href=#646 id=646 data-nosnippet>646</a>    #[test]
+<a href=#647 id=647 data-nosnippet>647</a>    </span><span class="kw">fn </span>test_with_locale_delayed_write_to() {
+<a href=#648 id=648 data-nosnippet>648</a>        <span class="kw">use </span><span class="kw">crate</span>::DateTime;
+<a href=#649 id=649 data-nosnippet>649</a>        <span class="kw">use </span><span class="kw">crate</span>::format::locales::Locale;
+<a href=#650 id=650 data-nosnippet>650</a>
+<a href=#651 id=651 data-nosnippet>651</a>        <span class="kw">let </span>dt = DateTime::from_timestamp(<span class="number">1643723400</span>, <span class="number">123456789</span>).unwrap();
+<a href=#652 id=652 data-nosnippet>652</a>        <span class="kw">let </span>df = dt.format_localized(<span class="string">"%A, %B %d, %Y"</span>, Locale::ja_JP);
+<a href=#653 id=653 data-nosnippet>653</a>
+<a href=#654 id=654 data-nosnippet>654</a>        <span class="kw">let </span><span class="kw-2">mut </span>dt_str = String::new();
+<a href=#655 id=655 data-nosnippet>655</a>
+<a href=#656 id=656 data-nosnippet>656</a>        df.write_to(<span class="kw-2">&amp;mut </span>dt_str).unwrap();
+<a href=#657 id=657 data-nosnippet>657</a>
+<a href=#658 id=658 data-nosnippet>658</a>        <span class="macro">assert_eq!</span>(dt_str, <span class="string">"火曜日, 2月 01, 2022"</span>);
+<a href=#659 id=659 data-nosnippet>659</a>    }
+<a href=#660 id=660 data-nosnippet>660</a>
+<a href=#661 id=661 data-nosnippet>661</a>    <span class="attr">#[test]
+<a href=#662 id=662 data-nosnippet>662</a>    #[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#663 id=663 data-nosnippet>663</a>    </span><span class="kw">fn </span>test_date_format() {
+<a href=#664 id=664 data-nosnippet>664</a>        <span class="kw">let </span>d = NaiveDate::from_ymd_opt(<span class="number">2012</span>, <span class="number">3</span>, <span class="number">4</span>).unwrap();
+<a href=#665 id=665 data-nosnippet>665</a>        <span class="macro">assert_eq!</span>(d.format(<span class="string">"%Y,%C,%y,%G,%g"</span>).to_string(), <span class="string">"2012,20,12,2012,12"</span>);
+<a href=#666 id=666 data-nosnippet>666</a>        <span class="macro">assert_eq!</span>(d.format(<span class="string">"%m,%b,%h,%B"</span>).to_string(), <span class="string">"03,Mar,Mar,March"</span>);
+<a href=#667 id=667 data-nosnippet>667</a>        <span class="macro">assert_eq!</span>(d.format(<span class="string">"%q"</span>).to_string(), <span class="string">"1"</span>);
+<a href=#668 id=668 data-nosnippet>668</a>        <span class="macro">assert_eq!</span>(d.format(<span class="string">"%d,%e"</span>).to_string(), <span class="string">"04, 4"</span>);
+<a href=#669 id=669 data-nosnippet>669</a>        <span class="macro">assert_eq!</span>(d.format(<span class="string">"%U,%W,%V"</span>).to_string(), <span class="string">"10,09,09"</span>);
+<a href=#670 id=670 data-nosnippet>670</a>        <span class="macro">assert_eq!</span>(d.format(<span class="string">"%a,%A,%w,%u"</span>).to_string(), <span class="string">"Sun,Sunday,0,7"</span>);
+<a href=#671 id=671 data-nosnippet>671</a>        <span class="macro">assert_eq!</span>(d.format(<span class="string">"%j"</span>).to_string(), <span class="string">"064"</span>); <span class="comment">// since 2012 is a leap year
+<a href=#672 id=672 data-nosnippet>672</a>        </span><span class="macro">assert_eq!</span>(d.format(<span class="string">"%D,%x"</span>).to_string(), <span class="string">"03/04/12,03/04/12"</span>);
+<a href=#673 id=673 data-nosnippet>673</a>        <span class="macro">assert_eq!</span>(d.format(<span class="string">"%F"</span>).to_string(), <span class="string">"2012-03-04"</span>);
+<a href=#674 id=674 data-nosnippet>674</a>        <span class="macro">assert_eq!</span>(d.format(<span class="string">"%v"</span>).to_string(), <span class="string">" 4-Mar-2012"</span>);
+<a href=#675 id=675 data-nosnippet>675</a>        <span class="macro">assert_eq!</span>(d.format(<span class="string">"%t%n%%%n%t"</span>).to_string(), <span class="string">"\t\n%\n\t"</span>);
+<a href=#676 id=676 data-nosnippet>676</a>
+<a href=#677 id=677 data-nosnippet>677</a>        <span class="comment">// non-four-digit years
+<a href=#678 id=678 data-nosnippet>678</a>        </span><span class="macro">assert_eq!</span>(
+<a href=#679 id=679 data-nosnippet>679</a>            NaiveDate::from_ymd_opt(<span class="number">12345</span>, <span class="number">1</span>, <span class="number">1</span>).unwrap().format(<span class="string">"%Y"</span>).to_string(),
+<a href=#680 id=680 data-nosnippet>680</a>            <span class="string">"+12345"
+<a href=#681 id=681 data-nosnippet>681</a>        </span>);
+<a href=#682 id=682 data-nosnippet>682</a>        <span class="macro">assert_eq!</span>(NaiveDate::from_ymd_opt(<span class="number">1234</span>, <span class="number">1</span>, <span class="number">1</span>).unwrap().format(<span class="string">"%Y"</span>).to_string(), <span class="string">"1234"</span>);
+<a href=#683 id=683 data-nosnippet>683</a>        <span class="macro">assert_eq!</span>(NaiveDate::from_ymd_opt(<span class="number">123</span>, <span class="number">1</span>, <span class="number">1</span>).unwrap().format(<span class="string">"%Y"</span>).to_string(), <span class="string">"0123"</span>);
+<a href=#684 id=684 data-nosnippet>684</a>        <span class="macro">assert_eq!</span>(NaiveDate::from_ymd_opt(<span class="number">12</span>, <span class="number">1</span>, <span class="number">1</span>).unwrap().format(<span class="string">"%Y"</span>).to_string(), <span class="string">"0012"</span>);
+<a href=#685 id=685 data-nosnippet>685</a>        <span class="macro">assert_eq!</span>(NaiveDate::from_ymd_opt(<span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>).unwrap().format(<span class="string">"%Y"</span>).to_string(), <span class="string">"0001"</span>);
+<a href=#686 id=686 data-nosnippet>686</a>        <span class="macro">assert_eq!</span>(NaiveDate::from_ymd_opt(<span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>).unwrap().format(<span class="string">"%Y"</span>).to_string(), <span class="string">"0000"</span>);
+<a href=#687 id=687 data-nosnippet>687</a>        <span class="macro">assert_eq!</span>(NaiveDate::from_ymd_opt(-<span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>).unwrap().format(<span class="string">"%Y"</span>).to_string(), <span class="string">"-0001"</span>);
+<a href=#688 id=688 data-nosnippet>688</a>        <span class="macro">assert_eq!</span>(NaiveDate::from_ymd_opt(-<span class="number">12</span>, <span class="number">1</span>, <span class="number">1</span>).unwrap().format(<span class="string">"%Y"</span>).to_string(), <span class="string">"-0012"</span>);
+<a href=#689 id=689 data-nosnippet>689</a>        <span class="macro">assert_eq!</span>(NaiveDate::from_ymd_opt(-<span class="number">123</span>, <span class="number">1</span>, <span class="number">1</span>).unwrap().format(<span class="string">"%Y"</span>).to_string(), <span class="string">"-0123"</span>);
+<a href=#690 id=690 data-nosnippet>690</a>        <span class="macro">assert_eq!</span>(NaiveDate::from_ymd_opt(-<span class="number">1234</span>, <span class="number">1</span>, <span class="number">1</span>).unwrap().format(<span class="string">"%Y"</span>).to_string(), <span class="string">"-1234"</span>);
+<a href=#691 id=691 data-nosnippet>691</a>        <span class="macro">assert_eq!</span>(
+<a href=#692 id=692 data-nosnippet>692</a>            NaiveDate::from_ymd_opt(-<span class="number">12345</span>, <span class="number">1</span>, <span class="number">1</span>).unwrap().format(<span class="string">"%Y"</span>).to_string(),
+<a href=#693 id=693 data-nosnippet>693</a>            <span class="string">"-12345"
+<a href=#694 id=694 data-nosnippet>694</a>        </span>);
+<a href=#695 id=695 data-nosnippet>695</a>
+<a href=#696 id=696 data-nosnippet>696</a>        <span class="comment">// corner cases
+<a href=#697 id=697 data-nosnippet>697</a>        </span><span class="macro">assert_eq!</span>(
+<a href=#698 id=698 data-nosnippet>698</a>            NaiveDate::from_ymd_opt(<span class="number">2007</span>, <span class="number">12</span>, <span class="number">31</span>).unwrap().format(<span class="string">"%G,%g,%U,%W,%V"</span>).to_string(),
+<a href=#699 id=699 data-nosnippet>699</a>            <span class="string">"2008,08,52,53,01"
+<a href=#700 id=700 data-nosnippet>700</a>        </span>);
+<a href=#701 id=701 data-nosnippet>701</a>        <span class="macro">assert_eq!</span>(
+<a href=#702 id=702 data-nosnippet>702</a>            NaiveDate::from_ymd_opt(<span class="number">2010</span>, <span class="number">1</span>, <span class="number">3</span>).unwrap().format(<span class="string">"%G,%g,%U,%W,%V"</span>).to_string(),
+<a href=#703 id=703 data-nosnippet>703</a>            <span class="string">"2009,09,01,00,53"
+<a href=#704 id=704 data-nosnippet>704</a>        </span>);
+<a href=#705 id=705 data-nosnippet>705</a>    }
+<a href=#706 id=706 data-nosnippet>706</a>
+<a href=#707 id=707 data-nosnippet>707</a>    <span class="attr">#[test]
+<a href=#708 id=708 data-nosnippet>708</a>    #[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#709 id=709 data-nosnippet>709</a>    </span><span class="kw">fn </span>test_time_format() {
+<a href=#710 id=710 data-nosnippet>710</a>        <span class="kw">let </span>t = NaiveTime::from_hms_nano_opt(<span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">98765432</span>).unwrap();
+<a href=#711 id=711 data-nosnippet>711</a>        <span class="macro">assert_eq!</span>(t.format(<span class="string">"%H,%k,%I,%l,%P,%p"</span>).to_string(), <span class="string">"03, 3,03, 3,am,AM"</span>);
+<a href=#712 id=712 data-nosnippet>712</a>        <span class="macro">assert_eq!</span>(t.format(<span class="string">"%M"</span>).to_string(), <span class="string">"05"</span>);
+<a href=#713 id=713 data-nosnippet>713</a>        <span class="macro">assert_eq!</span>(t.format(<span class="string">"%S,%f,%.f"</span>).to_string(), <span class="string">"07,098765432,.098765432"</span>);
+<a href=#714 id=714 data-nosnippet>714</a>        <span class="macro">assert_eq!</span>(t.format(<span class="string">"%.3f,%.6f,%.9f"</span>).to_string(), <span class="string">".098,.098765,.098765432"</span>);
+<a href=#715 id=715 data-nosnippet>715</a>        <span class="macro">assert_eq!</span>(t.format(<span class="string">"%R"</span>).to_string(), <span class="string">"03:05"</span>);
+<a href=#716 id=716 data-nosnippet>716</a>        <span class="macro">assert_eq!</span>(t.format(<span class="string">"%T,%X"</span>).to_string(), <span class="string">"03:05:07,03:05:07"</span>);
+<a href=#717 id=717 data-nosnippet>717</a>        <span class="macro">assert_eq!</span>(t.format(<span class="string">"%r"</span>).to_string(), <span class="string">"03:05:07 AM"</span>);
+<a href=#718 id=718 data-nosnippet>718</a>        <span class="macro">assert_eq!</span>(t.format(<span class="string">"%t%n%%%n%t"</span>).to_string(), <span class="string">"\t\n%\n\t"</span>);
+<a href=#719 id=719 data-nosnippet>719</a>
+<a href=#720 id=720 data-nosnippet>720</a>        <span class="kw">let </span>t = NaiveTime::from_hms_micro_opt(<span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">432100</span>).unwrap();
+<a href=#721 id=721 data-nosnippet>721</a>        <span class="macro">assert_eq!</span>(t.format(<span class="string">"%S,%f,%.f"</span>).to_string(), <span class="string">"07,432100000,.432100"</span>);
+<a href=#722 id=722 data-nosnippet>722</a>        <span class="macro">assert_eq!</span>(t.format(<span class="string">"%.3f,%.6f,%.9f"</span>).to_string(), <span class="string">".432,.432100,.432100000"</span>);
+<a href=#723 id=723 data-nosnippet>723</a>
+<a href=#724 id=724 data-nosnippet>724</a>        <span class="kw">let </span>t = NaiveTime::from_hms_milli_opt(<span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">210</span>).unwrap();
+<a href=#725 id=725 data-nosnippet>725</a>        <span class="macro">assert_eq!</span>(t.format(<span class="string">"%S,%f,%.f"</span>).to_string(), <span class="string">"07,210000000,.210"</span>);
+<a href=#726 id=726 data-nosnippet>726</a>        <span class="macro">assert_eq!</span>(t.format(<span class="string">"%.3f,%.6f,%.9f"</span>).to_string(), <span class="string">".210,.210000,.210000000"</span>);
+<a href=#727 id=727 data-nosnippet>727</a>
+<a href=#728 id=728 data-nosnippet>728</a>        <span class="kw">let </span>t = NaiveTime::from_hms_opt(<span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>).unwrap();
+<a href=#729 id=729 data-nosnippet>729</a>        <span class="macro">assert_eq!</span>(t.format(<span class="string">"%S,%f,%.f"</span>).to_string(), <span class="string">"07,000000000,"</span>);
+<a href=#730 id=730 data-nosnippet>730</a>        <span class="macro">assert_eq!</span>(t.format(<span class="string">"%.3f,%.6f,%.9f"</span>).to_string(), <span class="string">".000,.000000,.000000000"</span>);
+<a href=#731 id=731 data-nosnippet>731</a>
+<a href=#732 id=732 data-nosnippet>732</a>        <span class="comment">// corner cases
+<a href=#733 id=733 data-nosnippet>733</a>        </span><span class="macro">assert_eq!</span>(
+<a href=#734 id=734 data-nosnippet>734</a>            NaiveTime::from_hms_opt(<span class="number">13</span>, <span class="number">57</span>, <span class="number">9</span>).unwrap().format(<span class="string">"%r"</span>).to_string(),
+<a href=#735 id=735 data-nosnippet>735</a>            <span class="string">"01:57:09 PM"
+<a href=#736 id=736 data-nosnippet>736</a>        </span>);
+<a href=#737 id=737 data-nosnippet>737</a>        <span class="macro">assert_eq!</span>(
+<a href=#738 id=738 data-nosnippet>738</a>            NaiveTime::from_hms_milli_opt(<span class="number">23</span>, <span class="number">59</span>, <span class="number">59</span>, <span class="number">1_000</span>).unwrap().format(<span class="string">"%X"</span>).to_string(),
+<a href=#739 id=739 data-nosnippet>739</a>            <span class="string">"23:59:60"
+<a href=#740 id=740 data-nosnippet>740</a>        </span>);
+<a href=#741 id=741 data-nosnippet>741</a>    }
+<a href=#742 id=742 data-nosnippet>742</a>
+<a href=#743 id=743 data-nosnippet>743</a>    <span class="attr">#[test]
+<a href=#744 id=744 data-nosnippet>744</a>    #[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#745 id=745 data-nosnippet>745</a>    </span><span class="kw">fn </span>test_datetime_format() {
+<a href=#746 id=746 data-nosnippet>746</a>        <span class="kw">let </span>dt =
+<a href=#747 id=747 data-nosnippet>747</a>            NaiveDate::from_ymd_opt(<span class="number">2010</span>, <span class="number">9</span>, <span class="number">8</span>).unwrap().and_hms_milli_opt(<span class="number">7</span>, <span class="number">6</span>, <span class="number">54</span>, <span class="number">321</span>).unwrap();
+<a href=#748 id=748 data-nosnippet>748</a>        <span class="macro">assert_eq!</span>(dt.format(<span class="string">"%c"</span>).to_string(), <span class="string">"Wed Sep  8 07:06:54 2010"</span>);
+<a href=#749 id=749 data-nosnippet>749</a>        <span class="macro">assert_eq!</span>(dt.format(<span class="string">"%s"</span>).to_string(), <span class="string">"1283929614"</span>);
+<a href=#750 id=750 data-nosnippet>750</a>        <span class="macro">assert_eq!</span>(dt.format(<span class="string">"%t%n%%%n%t"</span>).to_string(), <span class="string">"\t\n%\n\t"</span>);
+<a href=#751 id=751 data-nosnippet>751</a>
+<a href=#752 id=752 data-nosnippet>752</a>        <span class="comment">// a horror of leap second: coming near to you.
+<a href=#753 id=753 data-nosnippet>753</a>        </span><span class="kw">let </span>dt = NaiveDate::from_ymd_opt(<span class="number">2012</span>, <span class="number">6</span>, <span class="number">30</span>)
+<a href=#754 id=754 data-nosnippet>754</a>            .unwrap()
+<a href=#755 id=755 data-nosnippet>755</a>            .and_hms_milli_opt(<span class="number">23</span>, <span class="number">59</span>, <span class="number">59</span>, <span class="number">1_000</span>)
+<a href=#756 id=756 data-nosnippet>756</a>            .unwrap();
+<a href=#757 id=757 data-nosnippet>757</a>        <span class="macro">assert_eq!</span>(dt.format(<span class="string">"%c"</span>).to_string(), <span class="string">"Sat Jun 30 23:59:60 2012"</span>);
+<a href=#758 id=758 data-nosnippet>758</a>        <span class="macro">assert_eq!</span>(dt.format(<span class="string">"%s"</span>).to_string(), <span class="string">"1341100799"</span>); <span class="comment">// not 1341100800, it's intentional.
+<a href=#759 id=759 data-nosnippet>759</a>    </span>}
+<a href=#760 id=760 data-nosnippet>760</a>
+<a href=#761 id=761 data-nosnippet>761</a>    <span class="attr">#[test]
+<a href=#762 id=762 data-nosnippet>762</a>    #[cfg(feature = <span class="string">"alloc"</span>)]
+<a href=#763 id=763 data-nosnippet>763</a>    </span><span class="kw">fn </span>test_datetime_format_alignment() {
+<a href=#764 id=764 data-nosnippet>764</a>        <span class="kw">let </span>datetime = Utc
+<a href=#765 id=765 data-nosnippet>765</a>            .with_ymd_and_hms(<span class="number">2007</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">12</span>, <span class="number">34</span>, <span class="number">56</span>)
+<a href=#766 id=766 data-nosnippet>766</a>            .unwrap()
+<a href=#767 id=767 data-nosnippet>767</a>            .with_nanosecond(<span class="number">123456789</span>)
+<a href=#768 id=768 data-nosnippet>768</a>            .unwrap();
+<a href=#769 id=769 data-nosnippet>769</a>
+<a href=#770 id=770 data-nosnippet>770</a>        <span class="comment">// Item::Literal, odd number of padding bytes.
+<a href=#771 id=771 data-nosnippet>771</a>        </span><span class="kw">let </span>percent = datetime.format(<span class="string">"%%"</span>);
+<a href=#772 id=772 data-nosnippet>772</a>        <span class="macro">assert_eq!</span>(<span class="string">"   %"</span>, <span class="macro">format!</span>(<span class="string">"{percent:&gt;4}"</span>));
+<a href=#773 id=773 data-nosnippet>773</a>        <span class="macro">assert_eq!</span>(<span class="string">"%   "</span>, <span class="macro">format!</span>(<span class="string">"{percent:&lt;4}"</span>));
+<a href=#774 id=774 data-nosnippet>774</a>        <span class="macro">assert_eq!</span>(<span class="string">" %  "</span>, <span class="macro">format!</span>(<span class="string">"{percent:^4}"</span>));
+<a href=#775 id=775 data-nosnippet>775</a>
+<a href=#776 id=776 data-nosnippet>776</a>        <span class="comment">// Item::Numeric, custom non-ASCII padding character
+<a href=#777 id=777 data-nosnippet>777</a>        </span><span class="kw">let </span>year = datetime.format(<span class="string">"%Y"</span>);
+<a href=#778 id=778 data-nosnippet>778</a>        <span class="macro">assert_eq!</span>(<span class="string">"——2007"</span>, <span class="macro">format!</span>(<span class="string">"{year:—&gt;6}"</span>));
+<a href=#779 id=779 data-nosnippet>779</a>        <span class="macro">assert_eq!</span>(<span class="string">"2007——"</span>, <span class="macro">format!</span>(<span class="string">"{year:—&lt;6}"</span>));
+<a href=#780 id=780 data-nosnippet>780</a>        <span class="macro">assert_eq!</span>(<span class="string">"—2007—"</span>, <span class="macro">format!</span>(<span class="string">"{year:—^6}"</span>));
+<a href=#781 id=781 data-nosnippet>781</a>
+<a href=#782 id=782 data-nosnippet>782</a>        <span class="comment">// Item::Fixed
+<a href=#783 id=783 data-nosnippet>783</a>        </span><span class="kw">let </span>tz = datetime.format(<span class="string">"%Z"</span>);
+<a href=#784 id=784 data-nosnippet>784</a>        <span class="macro">assert_eq!</span>(<span class="string">"  UTC"</span>, <span class="macro">format!</span>(<span class="string">"{tz:&gt;5}"</span>));
+<a href=#785 id=785 data-nosnippet>785</a>        <span class="macro">assert_eq!</span>(<span class="string">"UTC  "</span>, <span class="macro">format!</span>(<span class="string">"{tz:&lt;5}"</span>));
+<a href=#786 id=786 data-nosnippet>786</a>        <span class="macro">assert_eq!</span>(<span class="string">" UTC "</span>, <span class="macro">format!</span>(<span class="string">"{tz:^5}"</span>));
+<a href=#787 id=787 data-nosnippet>787</a>
+<a href=#788 id=788 data-nosnippet>788</a>        <span class="comment">// [Item::Numeric, Item::Space, Item::Literal, Item::Space, Item::Numeric]
+<a href=#789 id=789 data-nosnippet>789</a>        </span><span class="kw">let </span>ymd = datetime.format(<span class="string">"%Y %B %d"</span>);
+<a href=#790 id=790 data-nosnippet>790</a>        <span class="macro">assert_eq!</span>(<span class="string">"  2007 January 02"</span>, <span class="macro">format!</span>(<span class="string">"{ymd:&gt;17}"</span>));
+<a href=#791 id=791 data-nosnippet>791</a>        <span class="macro">assert_eq!</span>(<span class="string">"2007 January 02  "</span>, <span class="macro">format!</span>(<span class="string">"{ymd:&lt;17}"</span>));
+<a href=#792 id=792 data-nosnippet>792</a>        <span class="macro">assert_eq!</span>(<span class="string">" 2007 January 02 "</span>, <span class="macro">format!</span>(<span class="string">"{ymd:^17}"</span>));
+<a href=#793 id=793 data-nosnippet>793</a>
+<a href=#794 id=794 data-nosnippet>794</a>        <span class="comment">// Truncated
+<a href=#795 id=795 data-nosnippet>795</a>        </span><span class="kw">let </span>time = datetime.format(<span class="string">"%T%.6f"</span>);
+<a href=#796 id=796 data-nosnippet>796</a>        <span class="macro">assert_eq!</span>(<span class="string">"12:34:56.1234"</span>, <span class="macro">format!</span>(<span class="string">"{time:.13}"</span>));
+<a href=#797 id=797 data-nosnippet>797</a>    }
+<a href=#798 id=798 data-nosnippet>798</a>
+<a href=#799 id=799 data-nosnippet>799</a>    <span class="attr">#[test]
+<a href=#800 id=800 data-nosnippet>800</a>    </span><span class="kw">fn </span>test_offset_formatting() {
+<a href=#801 id=801 data-nosnippet>801</a>        <span class="kw">fn </span>check_all(precision: OffsetPrecision, expected: [[<span class="kw-2">&amp;</span>str; <span class="number">7</span>]; <span class="number">12</span>]) {
+<a href=#802 id=802 data-nosnippet>802</a>            <span class="kw">fn </span>check(
+<a href=#803 id=803 data-nosnippet>803</a>                precision: OffsetPrecision,
+<a href=#804 id=804 data-nosnippet>804</a>                colons: Colons,
+<a href=#805 id=805 data-nosnippet>805</a>                padding: Pad,
+<a href=#806 id=806 data-nosnippet>806</a>                allow_zulu: bool,
+<a href=#807 id=807 data-nosnippet>807</a>                offsets: [FixedOffset; <span class="number">7</span>],
+<a href=#808 id=808 data-nosnippet>808</a>                expected: [<span class="kw-2">&amp;</span>str; <span class="number">7</span>],
+<a href=#809 id=809 data-nosnippet>809</a>            ) {
+<a href=#810 id=810 data-nosnippet>810</a>                <span class="kw">let </span>offset_format = OffsetFormat { precision, colons, allow_zulu, padding };
+<a href=#811 id=811 data-nosnippet>811</a>                <span class="kw">for </span>(offset, expected) <span class="kw">in </span>offsets.iter().zip(expected.iter()) {
+<a href=#812 id=812 data-nosnippet>812</a>                    <span class="kw">let </span><span class="kw-2">mut </span>output = String::new();
+<a href=#813 id=813 data-nosnippet>813</a>                    offset_format.format(<span class="kw-2">&amp;mut </span>output, <span class="kw-2">*</span>offset).unwrap();
+<a href=#814 id=814 data-nosnippet>814</a>                    <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>output, expected);
+<a href=#815 id=815 data-nosnippet>815</a>                }
+<a href=#816 id=816 data-nosnippet>816</a>            }
+<a href=#817 id=817 data-nosnippet>817</a>            <span class="comment">// +03:45, -03:30, +11:00, -11:00:22, +02:34:26, -12:34:30, +00:00
+<a href=#818 id=818 data-nosnippet>818</a>            </span><span class="kw">let </span>offsets = [
+<a href=#819 id=819 data-nosnippet>819</a>                FixedOffset::east_opt(<span class="number">13_500</span>).unwrap(),
+<a href=#820 id=820 data-nosnippet>820</a>                FixedOffset::east_opt(-<span class="number">12_600</span>).unwrap(),
+<a href=#821 id=821 data-nosnippet>821</a>                FixedOffset::east_opt(<span class="number">39_600</span>).unwrap(),
+<a href=#822 id=822 data-nosnippet>822</a>                FixedOffset::east_opt(-<span class="number">39_622</span>).unwrap(),
+<a href=#823 id=823 data-nosnippet>823</a>                FixedOffset::east_opt(<span class="number">9266</span>).unwrap(),
+<a href=#824 id=824 data-nosnippet>824</a>                FixedOffset::east_opt(-<span class="number">45270</span>).unwrap(),
+<a href=#825 id=825 data-nosnippet>825</a>                FixedOffset::east_opt(<span class="number">0</span>).unwrap(),
+<a href=#826 id=826 data-nosnippet>826</a>            ];
+<a href=#827 id=827 data-nosnippet>827</a>            check(precision, Colons::Colon, Pad::Zero, <span class="bool-val">false</span>, offsets, expected[<span class="number">0</span>]);
+<a href=#828 id=828 data-nosnippet>828</a>            check(precision, Colons::Colon, Pad::Zero, <span class="bool-val">true</span>, offsets, expected[<span class="number">1</span>]);
+<a href=#829 id=829 data-nosnippet>829</a>            check(precision, Colons::Colon, Pad::Space, <span class="bool-val">false</span>, offsets, expected[<span class="number">2</span>]);
+<a href=#830 id=830 data-nosnippet>830</a>            check(precision, Colons::Colon, Pad::Space, <span class="bool-val">true</span>, offsets, expected[<span class="number">3</span>]);
+<a href=#831 id=831 data-nosnippet>831</a>            check(precision, Colons::Colon, Pad::None, <span class="bool-val">false</span>, offsets, expected[<span class="number">4</span>]);
+<a href=#832 id=832 data-nosnippet>832</a>            check(precision, Colons::Colon, Pad::None, <span class="bool-val">true</span>, offsets, expected[<span class="number">5</span>]);
+<a href=#833 id=833 data-nosnippet>833</a>            check(precision, Colons::None, Pad::Zero, <span class="bool-val">false</span>, offsets, expected[<span class="number">6</span>]);
+<a href=#834 id=834 data-nosnippet>834</a>            check(precision, Colons::None, Pad::Zero, <span class="bool-val">true</span>, offsets, expected[<span class="number">7</span>]);
+<a href=#835 id=835 data-nosnippet>835</a>            check(precision, Colons::None, Pad::Space, <span class="bool-val">false</span>, offsets, expected[<span class="number">8</span>]);
+<a href=#836 id=836 data-nosnippet>836</a>            check(precision, Colons::None, Pad::Space, <span class="bool-val">true</span>, offsets, expected[<span class="number">9</span>]);
+<a href=#837 id=837 data-nosnippet>837</a>            check(precision, Colons::None, Pad::None, <span class="bool-val">false</span>, offsets, expected[<span class="number">10</span>]);
+<a href=#838 id=838 data-nosnippet>838</a>            check(precision, Colons::None, Pad::None, <span class="bool-val">true</span>, offsets, expected[<span class="number">11</span>]);
+<a href=#839 id=839 data-nosnippet>839</a>            <span class="comment">// `Colons::Maybe` should format the same as `Colons::None`
+<a href=#840 id=840 data-nosnippet>840</a>            </span>check(precision, Colons::Maybe, Pad::Zero, <span class="bool-val">false</span>, offsets, expected[<span class="number">6</span>]);
+<a href=#841 id=841 data-nosnippet>841</a>            check(precision, Colons::Maybe, Pad::Zero, <span class="bool-val">true</span>, offsets, expected[<span class="number">7</span>]);
+<a href=#842 id=842 data-nosnippet>842</a>            check(precision, Colons::Maybe, Pad::Space, <span class="bool-val">false</span>, offsets, expected[<span class="number">8</span>]);
+<a href=#843 id=843 data-nosnippet>843</a>            check(precision, Colons::Maybe, Pad::Space, <span class="bool-val">true</span>, offsets, expected[<span class="number">9</span>]);
+<a href=#844 id=844 data-nosnippet>844</a>            check(precision, Colons::Maybe, Pad::None, <span class="bool-val">false</span>, offsets, expected[<span class="number">10</span>]);
+<a href=#845 id=845 data-nosnippet>845</a>            check(precision, Colons::Maybe, Pad::None, <span class="bool-val">true</span>, offsets, expected[<span class="number">11</span>]);
+<a href=#846 id=846 data-nosnippet>846</a>        }
+<a href=#847 id=847 data-nosnippet>847</a>        check_all(
+<a href=#848 id=848 data-nosnippet>848</a>            OffsetPrecision::Hours,
+<a href=#849 id=849 data-nosnippet>849</a>            [
+<a href=#850 id=850 data-nosnippet>850</a>                [<span class="string">"+03"</span>, <span class="string">"-03"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+02"</span>, <span class="string">"-12"</span>, <span class="string">"+00"</span>],
+<a href=#851 id=851 data-nosnippet>851</a>                [<span class="string">"+03"</span>, <span class="string">"-03"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+02"</span>, <span class="string">"-12"</span>, <span class="string">"Z"</span>],
+<a href=#852 id=852 data-nosnippet>852</a>                [<span class="string">" +3"</span>, <span class="string">" -3"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">" +2"</span>, <span class="string">"-12"</span>, <span class="string">" +0"</span>],
+<a href=#853 id=853 data-nosnippet>853</a>                [<span class="string">" +3"</span>, <span class="string">" -3"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">" +2"</span>, <span class="string">"-12"</span>, <span class="string">"Z"</span>],
+<a href=#854 id=854 data-nosnippet>854</a>                [<span class="string">"+3"</span>, <span class="string">"-3"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+2"</span>, <span class="string">"-12"</span>, <span class="string">"+0"</span>],
+<a href=#855 id=855 data-nosnippet>855</a>                [<span class="string">"+3"</span>, <span class="string">"-3"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+2"</span>, <span class="string">"-12"</span>, <span class="string">"Z"</span>],
+<a href=#856 id=856 data-nosnippet>856</a>                [<span class="string">"+03"</span>, <span class="string">"-03"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+02"</span>, <span class="string">"-12"</span>, <span class="string">"+00"</span>],
+<a href=#857 id=857 data-nosnippet>857</a>                [<span class="string">"+03"</span>, <span class="string">"-03"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+02"</span>, <span class="string">"-12"</span>, <span class="string">"Z"</span>],
+<a href=#858 id=858 data-nosnippet>858</a>                [<span class="string">" +3"</span>, <span class="string">" -3"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">" +2"</span>, <span class="string">"-12"</span>, <span class="string">" +0"</span>],
+<a href=#859 id=859 data-nosnippet>859</a>                [<span class="string">" +3"</span>, <span class="string">" -3"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">" +2"</span>, <span class="string">"-12"</span>, <span class="string">"Z"</span>],
+<a href=#860 id=860 data-nosnippet>860</a>                [<span class="string">"+3"</span>, <span class="string">"-3"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+2"</span>, <span class="string">"-12"</span>, <span class="string">"+0"</span>],
+<a href=#861 id=861 data-nosnippet>861</a>                [<span class="string">"+3"</span>, <span class="string">"-3"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+2"</span>, <span class="string">"-12"</span>, <span class="string">"Z"</span>],
+<a href=#862 id=862 data-nosnippet>862</a>            ],
+<a href=#863 id=863 data-nosnippet>863</a>        );
+<a href=#864 id=864 data-nosnippet>864</a>        check_all(
+<a href=#865 id=865 data-nosnippet>865</a>            OffsetPrecision::Minutes,
+<a href=#866 id=866 data-nosnippet>866</a>            [
+<a href=#867 id=867 data-nosnippet>867</a>                [<span class="string">"+03:45"</span>, <span class="string">"-03:30"</span>, <span class="string">"+11:00"</span>, <span class="string">"-11:00"</span>, <span class="string">"+02:34"</span>, <span class="string">"-12:35"</span>, <span class="string">"+00:00"</span>],
+<a href=#868 id=868 data-nosnippet>868</a>                [<span class="string">"+03:45"</span>, <span class="string">"-03:30"</span>, <span class="string">"+11:00"</span>, <span class="string">"-11:00"</span>, <span class="string">"+02:34"</span>, <span class="string">"-12:35"</span>, <span class="string">"Z"</span>],
+<a href=#869 id=869 data-nosnippet>869</a>                [<span class="string">" +3:45"</span>, <span class="string">" -3:30"</span>, <span class="string">"+11:00"</span>, <span class="string">"-11:00"</span>, <span class="string">" +2:34"</span>, <span class="string">"-12:35"</span>, <span class="string">" +0:00"</span>],
+<a href=#870 id=870 data-nosnippet>870</a>                [<span class="string">" +3:45"</span>, <span class="string">" -3:30"</span>, <span class="string">"+11:00"</span>, <span class="string">"-11:00"</span>, <span class="string">" +2:34"</span>, <span class="string">"-12:35"</span>, <span class="string">"Z"</span>],
+<a href=#871 id=871 data-nosnippet>871</a>                [<span class="string">"+3:45"</span>, <span class="string">"-3:30"</span>, <span class="string">"+11:00"</span>, <span class="string">"-11:00"</span>, <span class="string">"+2:34"</span>, <span class="string">"-12:35"</span>, <span class="string">"+0:00"</span>],
+<a href=#872 id=872 data-nosnippet>872</a>                [<span class="string">"+3:45"</span>, <span class="string">"-3:30"</span>, <span class="string">"+11:00"</span>, <span class="string">"-11:00"</span>, <span class="string">"+2:34"</span>, <span class="string">"-12:35"</span>, <span class="string">"Z"</span>],
+<a href=#873 id=873 data-nosnippet>873</a>                [<span class="string">"+0345"</span>, <span class="string">"-0330"</span>, <span class="string">"+1100"</span>, <span class="string">"-1100"</span>, <span class="string">"+0234"</span>, <span class="string">"-1235"</span>, <span class="string">"+0000"</span>],
+<a href=#874 id=874 data-nosnippet>874</a>                [<span class="string">"+0345"</span>, <span class="string">"-0330"</span>, <span class="string">"+1100"</span>, <span class="string">"-1100"</span>, <span class="string">"+0234"</span>, <span class="string">"-1235"</span>, <span class="string">"Z"</span>],
+<a href=#875 id=875 data-nosnippet>875</a>                [<span class="string">" +345"</span>, <span class="string">" -330"</span>, <span class="string">"+1100"</span>, <span class="string">"-1100"</span>, <span class="string">" +234"</span>, <span class="string">"-1235"</span>, <span class="string">" +000"</span>],
+<a href=#876 id=876 data-nosnippet>876</a>                [<span class="string">" +345"</span>, <span class="string">" -330"</span>, <span class="string">"+1100"</span>, <span class="string">"-1100"</span>, <span class="string">" +234"</span>, <span class="string">"-1235"</span>, <span class="string">"Z"</span>],
+<a href=#877 id=877 data-nosnippet>877</a>                [<span class="string">"+345"</span>, <span class="string">"-330"</span>, <span class="string">"+1100"</span>, <span class="string">"-1100"</span>, <span class="string">"+234"</span>, <span class="string">"-1235"</span>, <span class="string">"+000"</span>],
+<a href=#878 id=878 data-nosnippet>878</a>                [<span class="string">"+345"</span>, <span class="string">"-330"</span>, <span class="string">"+1100"</span>, <span class="string">"-1100"</span>, <span class="string">"+234"</span>, <span class="string">"-1235"</span>, <span class="string">"Z"</span>],
+<a href=#879 id=879 data-nosnippet>879</a>            ],
+<a href=#880 id=880 data-nosnippet>880</a>        );
+<a href=#881 id=881 data-nosnippet>881</a>        <span class="attr">#[rustfmt::skip]
+<a href=#882 id=882 data-nosnippet>882</a>        </span>check_all(
+<a href=#883 id=883 data-nosnippet>883</a>            OffsetPrecision::Seconds,
+<a href=#884 id=884 data-nosnippet>884</a>            [
+<a href=#885 id=885 data-nosnippet>885</a>                [<span class="string">"+03:45:00"</span>, <span class="string">"-03:30:00"</span>, <span class="string">"+11:00:00"</span>, <span class="string">"-11:00:22"</span>, <span class="string">"+02:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"+00:00:00"</span>],
+<a href=#886 id=886 data-nosnippet>886</a>                [<span class="string">"+03:45:00"</span>, <span class="string">"-03:30:00"</span>, <span class="string">"+11:00:00"</span>, <span class="string">"-11:00:22"</span>, <span class="string">"+02:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"Z"</span>],
+<a href=#887 id=887 data-nosnippet>887</a>                [<span class="string">" +3:45:00"</span>, <span class="string">" -3:30:00"</span>, <span class="string">"+11:00:00"</span>, <span class="string">"-11:00:22"</span>, <span class="string">" +2:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">" +0:00:00"</span>],
+<a href=#888 id=888 data-nosnippet>888</a>                [<span class="string">" +3:45:00"</span>, <span class="string">" -3:30:00"</span>, <span class="string">"+11:00:00"</span>, <span class="string">"-11:00:22"</span>, <span class="string">" +2:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"Z"</span>],
+<a href=#889 id=889 data-nosnippet>889</a>                [<span class="string">"+3:45:00"</span>, <span class="string">"-3:30:00"</span>, <span class="string">"+11:00:00"</span>, <span class="string">"-11:00:22"</span>, <span class="string">"+2:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"+0:00:00"</span>],
+<a href=#890 id=890 data-nosnippet>890</a>                [<span class="string">"+3:45:00"</span>, <span class="string">"-3:30:00"</span>, <span class="string">"+11:00:00"</span>, <span class="string">"-11:00:22"</span>, <span class="string">"+2:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"Z"</span>],
+<a href=#891 id=891 data-nosnippet>891</a>                [<span class="string">"+034500"</span>, <span class="string">"-033000"</span>, <span class="string">"+110000"</span>, <span class="string">"-110022"</span>, <span class="string">"+023426"</span>, <span class="string">"-123430"</span>, <span class="string">"+000000"</span>],
+<a href=#892 id=892 data-nosnippet>892</a>                [<span class="string">"+034500"</span>, <span class="string">"-033000"</span>, <span class="string">"+110000"</span>, <span class="string">"-110022"</span>, <span class="string">"+023426"</span>, <span class="string">"-123430"</span>, <span class="string">"Z"</span>],
+<a href=#893 id=893 data-nosnippet>893</a>                [<span class="string">" +34500"</span>, <span class="string">" -33000"</span>, <span class="string">"+110000"</span>, <span class="string">"-110022"</span>, <span class="string">" +23426"</span>, <span class="string">"-123430"</span>, <span class="string">" +00000"</span>],
+<a href=#894 id=894 data-nosnippet>894</a>                [<span class="string">" +34500"</span>, <span class="string">" -33000"</span>, <span class="string">"+110000"</span>, <span class="string">"-110022"</span>, <span class="string">" +23426"</span>, <span class="string">"-123430"</span>, <span class="string">"Z"</span>],
+<a href=#895 id=895 data-nosnippet>895</a>                [<span class="string">"+34500"</span>, <span class="string">"-33000"</span>, <span class="string">"+110000"</span>, <span class="string">"-110022"</span>, <span class="string">"+23426"</span>, <span class="string">"-123430"</span>, <span class="string">"+00000"</span>],
+<a href=#896 id=896 data-nosnippet>896</a>                [<span class="string">"+34500"</span>, <span class="string">"-33000"</span>, <span class="string">"+110000"</span>, <span class="string">"-110022"</span>, <span class="string">"+23426"</span>, <span class="string">"-123430"</span>, <span class="string">"Z"</span>],
+<a href=#897 id=897 data-nosnippet>897</a>            ],
+<a href=#898 id=898 data-nosnippet>898</a>        );
+<a href=#899 id=899 data-nosnippet>899</a>        check_all(
+<a href=#900 id=900 data-nosnippet>900</a>            OffsetPrecision::OptionalMinutes,
+<a href=#901 id=901 data-nosnippet>901</a>            [
+<a href=#902 id=902 data-nosnippet>902</a>                [<span class="string">"+03:45"</span>, <span class="string">"-03:30"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+02:34"</span>, <span class="string">"-12:35"</span>, <span class="string">"+00"</span>],
+<a href=#903 id=903 data-nosnippet>903</a>                [<span class="string">"+03:45"</span>, <span class="string">"-03:30"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+02:34"</span>, <span class="string">"-12:35"</span>, <span class="string">"Z"</span>],
+<a href=#904 id=904 data-nosnippet>904</a>                [<span class="string">" +3:45"</span>, <span class="string">" -3:30"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">" +2:34"</span>, <span class="string">"-12:35"</span>, <span class="string">" +0"</span>],
+<a href=#905 id=905 data-nosnippet>905</a>                [<span class="string">" +3:45"</span>, <span class="string">" -3:30"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">" +2:34"</span>, <span class="string">"-12:35"</span>, <span class="string">"Z"</span>],
+<a href=#906 id=906 data-nosnippet>906</a>                [<span class="string">"+3:45"</span>, <span class="string">"-3:30"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+2:34"</span>, <span class="string">"-12:35"</span>, <span class="string">"+0"</span>],
+<a href=#907 id=907 data-nosnippet>907</a>                [<span class="string">"+3:45"</span>, <span class="string">"-3:30"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+2:34"</span>, <span class="string">"-12:35"</span>, <span class="string">"Z"</span>],
+<a href=#908 id=908 data-nosnippet>908</a>                [<span class="string">"+0345"</span>, <span class="string">"-0330"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+0234"</span>, <span class="string">"-1235"</span>, <span class="string">"+00"</span>],
+<a href=#909 id=909 data-nosnippet>909</a>                [<span class="string">"+0345"</span>, <span class="string">"-0330"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+0234"</span>, <span class="string">"-1235"</span>, <span class="string">"Z"</span>],
+<a href=#910 id=910 data-nosnippet>910</a>                [<span class="string">" +345"</span>, <span class="string">" -330"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">" +234"</span>, <span class="string">"-1235"</span>, <span class="string">" +0"</span>],
+<a href=#911 id=911 data-nosnippet>911</a>                [<span class="string">" +345"</span>, <span class="string">" -330"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">" +234"</span>, <span class="string">"-1235"</span>, <span class="string">"Z"</span>],
+<a href=#912 id=912 data-nosnippet>912</a>                [<span class="string">"+345"</span>, <span class="string">"-330"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+234"</span>, <span class="string">"-1235"</span>, <span class="string">"+0"</span>],
+<a href=#913 id=913 data-nosnippet>913</a>                [<span class="string">"+345"</span>, <span class="string">"-330"</span>, <span class="string">"+11"</span>, <span class="string">"-11"</span>, <span class="string">"+234"</span>, <span class="string">"-1235"</span>, <span class="string">"Z"</span>],
+<a href=#914 id=914 data-nosnippet>914</a>            ],
+<a href=#915 id=915 data-nosnippet>915</a>        );
+<a href=#916 id=916 data-nosnippet>916</a>        check_all(
+<a href=#917 id=917 data-nosnippet>917</a>            OffsetPrecision::OptionalSeconds,
+<a href=#918 id=918 data-nosnippet>918</a>            [
+<a href=#919 id=919 data-nosnippet>919</a>                [<span class="string">"+03:45"</span>, <span class="string">"-03:30"</span>, <span class="string">"+11:00"</span>, <span class="string">"-11:00:22"</span>, <span class="string">"+02:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"+00:00"</span>],
+<a href=#920 id=920 data-nosnippet>920</a>                [<span class="string">"+03:45"</span>, <span class="string">"-03:30"</span>, <span class="string">"+11:00"</span>, <span class="string">"-11:00:22"</span>, <span class="string">"+02:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"Z"</span>],
+<a href=#921 id=921 data-nosnippet>921</a>                [<span class="string">" +3:45"</span>, <span class="string">" -3:30"</span>, <span class="string">"+11:00"</span>, <span class="string">"-11:00:22"</span>, <span class="string">" +2:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">" +0:00"</span>],
+<a href=#922 id=922 data-nosnippet>922</a>                [<span class="string">" +3:45"</span>, <span class="string">" -3:30"</span>, <span class="string">"+11:00"</span>, <span class="string">"-11:00:22"</span>, <span class="string">" +2:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"Z"</span>],
+<a href=#923 id=923 data-nosnippet>923</a>                [<span class="string">"+3:45"</span>, <span class="string">"-3:30"</span>, <span class="string">"+11:00"</span>, <span class="string">"-11:00:22"</span>, <span class="string">"+2:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"+0:00"</span>],
+<a href=#924 id=924 data-nosnippet>924</a>                [<span class="string">"+3:45"</span>, <span class="string">"-3:30"</span>, <span class="string">"+11:00"</span>, <span class="string">"-11:00:22"</span>, <span class="string">"+2:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"Z"</span>],
+<a href=#925 id=925 data-nosnippet>925</a>                [<span class="string">"+0345"</span>, <span class="string">"-0330"</span>, <span class="string">"+1100"</span>, <span class="string">"-110022"</span>, <span class="string">"+023426"</span>, <span class="string">"-123430"</span>, <span class="string">"+0000"</span>],
+<a href=#926 id=926 data-nosnippet>926</a>                [<span class="string">"+0345"</span>, <span class="string">"-0330"</span>, <span class="string">"+1100"</span>, <span class="string">"-110022"</span>, <span class="string">"+023426"</span>, <span class="string">"-123430"</span>, <span class="string">"Z"</span>],
+<a href=#927 id=927 data-nosnippet>927</a>                [<span class="string">" +345"</span>, <span class="string">" -330"</span>, <span class="string">"+1100"</span>, <span class="string">"-110022"</span>, <span class="string">" +23426"</span>, <span class="string">"-123430"</span>, <span class="string">" +000"</span>],
+<a href=#928 id=928 data-nosnippet>928</a>                [<span class="string">" +345"</span>, <span class="string">" -330"</span>, <span class="string">"+1100"</span>, <span class="string">"-110022"</span>, <span class="string">" +23426"</span>, <span class="string">"-123430"</span>, <span class="string">"Z"</span>],
+<a href=#929 id=929 data-nosnippet>929</a>                [<span class="string">"+345"</span>, <span class="string">"-330"</span>, <span class="string">"+1100"</span>, <span class="string">"-110022"</span>, <span class="string">"+23426"</span>, <span class="string">"-123430"</span>, <span class="string">"+000"</span>],
+<a href=#930 id=930 data-nosnippet>930</a>                [<span class="string">"+345"</span>, <span class="string">"-330"</span>, <span class="string">"+1100"</span>, <span class="string">"-110022"</span>, <span class="string">"+23426"</span>, <span class="string">"-123430"</span>, <span class="string">"Z"</span>],
+<a href=#931 id=931 data-nosnippet>931</a>            ],
+<a href=#932 id=932 data-nosnippet>932</a>        );
+<a href=#933 id=933 data-nosnippet>933</a>        check_all(
+<a href=#934 id=934 data-nosnippet>934</a>            OffsetPrecision::OptionalMinutesAndSeconds,
+<a href=#935 id=935 data-nosnippet>935</a>            [
+<a href=#936 id=936 data-nosnippet>936</a>                [<span class="string">"+03:45"</span>, <span class="string">"-03:30"</span>, <span class="string">"+11"</span>, <span class="string">"-11:00:22"</span>, <span class="string">"+02:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"+00"</span>],
+<a href=#937 id=937 data-nosnippet>937</a>                [<span class="string">"+03:45"</span>, <span class="string">"-03:30"</span>, <span class="string">"+11"</span>, <span class="string">"-11:00:22"</span>, <span class="string">"+02:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"Z"</span>],
+<a href=#938 id=938 data-nosnippet>938</a>                [<span class="string">" +3:45"</span>, <span class="string">" -3:30"</span>, <span class="string">"+11"</span>, <span class="string">"-11:00:22"</span>, <span class="string">" +2:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">" +0"</span>],
+<a href=#939 id=939 data-nosnippet>939</a>                [<span class="string">" +3:45"</span>, <span class="string">" -3:30"</span>, <span class="string">"+11"</span>, <span class="string">"-11:00:22"</span>, <span class="string">" +2:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"Z"</span>],
+<a href=#940 id=940 data-nosnippet>940</a>                [<span class="string">"+3:45"</span>, <span class="string">"-3:30"</span>, <span class="string">"+11"</span>, <span class="string">"-11:00:22"</span>, <span class="string">"+2:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"+0"</span>],
+<a href=#941 id=941 data-nosnippet>941</a>                [<span class="string">"+3:45"</span>, <span class="string">"-3:30"</span>, <span class="string">"+11"</span>, <span class="string">"-11:00:22"</span>, <span class="string">"+2:34:26"</span>, <span class="string">"-12:34:30"</span>, <span class="string">"Z"</span>],
+<a href=#942 id=942 data-nosnippet>942</a>                [<span class="string">"+0345"</span>, <span class="string">"-0330"</span>, <span class="string">"+11"</span>, <span class="string">"-110022"</span>, <span class="string">"+023426"</span>, <span class="string">"-123430"</span>, <span class="string">"+00"</span>],
+<a href=#943 id=943 data-nosnippet>943</a>                [<span class="string">"+0345"</span>, <span class="string">"-0330"</span>, <span class="string">"+11"</span>, <span class="string">"-110022"</span>, <span class="string">"+023426"</span>, <span class="string">"-123430"</span>, <span class="string">"Z"</span>],
+<a href=#944 id=944 data-nosnippet>944</a>                [<span class="string">" +345"</span>, <span class="string">" -330"</span>, <span class="string">"+11"</span>, <span class="string">"-110022"</span>, <span class="string">" +23426"</span>, <span class="string">"-123430"</span>, <span class="string">" +0"</span>],
+<a href=#945 id=945 data-nosnippet>945</a>                [<span class="string">" +345"</span>, <span class="string">" -330"</span>, <span class="string">"+11"</span>, <span class="string">"-110022"</span>, <span class="string">" +23426"</span>, <span class="string">"-123430"</span>, <span class="string">"Z"</span>],
+<a href=#946 id=946 data-nosnippet>946</a>                [<span class="string">"+345"</span>, <span class="string">"-330"</span>, <span class="string">"+11"</span>, <span class="string">"-110022"</span>, <span class="string">"+23426"</span>, <span class="string">"-123430"</span>, <span class="string">"+0"</span>],
+<a href=#947 id=947 data-nosnippet>947</a>                [<span class="string">"+345"</span>, <span class="string">"-330"</span>, <span class="string">"+11"</span>, <span class="string">"-110022"</span>, <span class="string">"+23426"</span>, <span class="string">"-123430"</span>, <span class="string">"Z"</span>],
+<a href=#948 id=948 data-nosnippet>948</a>            ],
+<a href=#949 id=949 data-nosnippet>949</a>        );
+<a href=#950 id=950 data-nosnippet>950</a>    }
+<a href=#951 id=951 data-nosnippet>951</a>}
+</code></pre></div></section></main></body></html>

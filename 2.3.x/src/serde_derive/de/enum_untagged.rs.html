@@ -1,0 +1,516 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_derive-1.0.228/src/de/enum_untagged.rs`."><title>enum_untagged.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="serde_derive" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../static.files/storage-f9617a14.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">serde_derive/de/</div>enum_untagged.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Deserialization for untagged enums:
+<a href=#2 id=2 data-nosnippet>2</a>//!
+<a href=#3 id=3 data-nosnippet>3</a>//! ```ignore
+<a href=#4 id=4 data-nosnippet>4</a>//! #[serde(untagged)]
+<a href=#5 id=5 data-nosnippet>5</a>//! enum Enum {}
+<a href=#6 id=6 data-nosnippet>6</a>//! ```
+<a href=#7 id=7 data-nosnippet>7</a>
+<a href=#8 id=8 data-nosnippet>8</a></span><span class="kw">use </span><a href="../de.rs.html#21"><span class="kw">crate</span>::de::struct_</a>;
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span><a href="../de.rs.html#22"><span class="kw">crate</span>::de::tuple</a>;
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span><span class="kw">crate</span>::de::{
+<a href=#11 id=11 data-nosnippet>11</a>    <a href="../de.rs.html#838-843">effective_style</a>, <a href="../de.rs.html#763-803">expr_is_missing</a>, <a href="../de.rs.html#716-761">unwrap_to_variant_closure</a>, <a href="../de.rs.html#116-142">Parameters</a>, <a href="../de.rs.html#640-648">StructForm</a>, <a href="../de.rs.html#443-449">TupleForm</a>,
+<a href=#12 id=12 data-nosnippet>12</a>};
+<a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span><span class="kw">crate</span>::fragment::{<a href="../fragment.rs.html#27">Expr</a>, <a href="../fragment.rs.html#5-11">Fragment</a>};
+<a href=#14 id=14 data-nosnippet>14</a><span class="kw">use </span><span class="kw">crate</span>::internals::ast::{<a href="../internals/ast.rs.html#41-46">Field</a>, <a href="../internals/ast.rs.html#49-58">Style</a>, <a href="../internals/ast.rs.html#32-38">Variant</a>};
+<a href=#15 id=15 data-nosnippet>15</a><span class="kw">use </span><a href="../internals/mod.rs.html#2"><span class="kw">crate</span>::internals::attr</a>;
+<a href=#16 id=16 data-nosnippet>16</a><span class="kw">use </span><a href="../lib.rs.html#96"><span class="kw">crate</span>::private</a>;
+<a href=#17 id=17 data-nosnippet>17</a><span class="kw">use </span><a href="../../../proc_macro2/struct.TokenStream.html">proc_macro2::TokenStream</a>;
+<a href=#18 id=18 data-nosnippet>18</a><span class="kw">use </span>quote::{<a href="https://docs.rs/quote/1.0.44/quote/macro.quote.html">quote</a>, <a href="https://docs.rs/quote/1.0.44/quote/macro.quote_spanned.html">quote_spanned</a>};
+<a href=#19 id=19 data-nosnippet>19</a><span class="kw">use </span><a href="https://docs.rs/syn/2.0.114/syn/spanned/trait.Spanned.html">syn::spanned::Spanned</a>;
+<a href=#20 id=20 data-nosnippet>20</a>
+<a href=#21 id=21 data-nosnippet>21</a><span class="doccomment">/// Generates `Deserialize::deserialize` body for an `enum Enum {...}` with `#[serde(untagged)]` attribute
+<a href=#22 id=22 data-nosnippet>22</a></span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deserialize(
+<a href=#23 id=23 data-nosnippet>23</a>    params: <span class="kw-2">&amp;</span><a href="../de.rs.html#116-142">Parameters</a>,
+<a href=#24 id=24 data-nosnippet>24</a>    variants: <span class="kw-2">&amp;</span>[<a href="../internals/ast.rs.html#32-38">Variant</a>],
+<a href=#25 id=25 data-nosnippet>25</a>    cattrs: <span class="kw-2">&amp;</span>attr::<a href="../internals/attr.rs.html#155-175">Container</a>,
+<a href=#26 id=26 data-nosnippet>26</a>    first_attempt: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../../../proc_macro2/struct.TokenStream.html">TokenStream</a>&gt;,
+<a href=#27 id=27 data-nosnippet>27</a>) -&gt; <a href="../fragment.rs.html#5-11">Fragment</a> {
+<a href=#28 id=28 data-nosnippet>28</a>    <span class="kw">let </span>attempts = <a href="#24">variants</a>
+<a href=#29 id=29 data-nosnippet>29</a>        .<a href="https://doc.rust-lang.org/nightly/core/foreigntype.slice.html#method.iter">iter</a>()
+<a href=#30 id=30 data-nosnippet>30</a>        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.filter">filter</a>(|variant| !<a href="#30">variant</a>.attrs.<a href="../internals/attr.rs.html#952-954">skip_deserializing</a>())
+<a href=#31 id=31 data-nosnippet>31</a>        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(|variant| <a href="../fragment.rs.html#27">Expr</a>(<a href="#62-109">deserialize_variant</a>(<a href="#23">params</a>, <a href="#31">variant</a>, <a href="#25">cattrs</a>)));
+<a href=#32 id=32 data-nosnippet>32</a>    <span class="comment">// TODO this message could be better by saving the errors from the failed
+<a href=#33 id=33 data-nosnippet>33</a>    // attempts. The heuristic used by TOML was to count the number of fields
+<a href=#34 id=34 data-nosnippet>34</a>    // processed before an error, and use the error that happened after the
+<a href=#35 id=35 data-nosnippet>35</a>    // largest number of fields. I'm not sure I like that. Maybe it would be
+<a href=#36 id=36 data-nosnippet>36</a>    // better to save all the errors and combine them into one message that
+<a href=#37 id=37 data-nosnippet>37</a>    // explains why none of the variants matched.
+<a href=#38 id=38 data-nosnippet>38</a></span><span class="expansion"><input id=expand-38 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">    <span class="kw">let </span>fallthrough_msg = <span class=expanded>::alloc::__export::must_use({
+        ::alloc::fmt::format(<span class="macro">format_args!</span>(<span class="string">"data did not match any variant of untagged enum {0}"</span>,
+                params.type_name()))
+    })</span><span class="original"><a href="https://doc.rust-lang.org/nightly/alloc/macro.format.html">format!</a>(
+<a href=#39 id=39 data-nosnippet>39</a>        <span class="string">"data did not match any variant of untagged enum {}"</span>,
+<a href=#40 id=40 data-nosnippet>40</a>        params.type_name()
+<a href=#41 id=41 data-nosnippet>41</a>    )</span></span>;
+<a href=#42 id=42 data-nosnippet>42</a>    <span class="kw">let </span>fallthrough_msg = <a href="#25">cattrs</a>.<a href="../internals/attr.rs.html#613-615">expecting</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_or">unwrap_or</a>(<span class="kw-2">&amp;</span><a href="#38">fallthrough_msg</a>);
+<a href=#43 id=43 data-nosnippet>43</a>
+<a href=#44 id=44 data-nosnippet>44</a>    <span class="kw">let </span>private2 = <a href="../lib.rs.html#96">private</a>;
+<a href=#45 id=45 data-nosnippet>45</a><span class="expansion"><input id=expand-45 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">    <span class=expanded><span class="kw">crate</span>::fragment::Fragment::Block({
+        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"let"</span>);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__content"</span>);
+        ::quote::__private::push_eq(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"de"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"DeserializeSeed"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"deserialize"</span>);
+        ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+            ::quote::__private::Delimiter::Parenthesis,
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>private, <span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"de"</span>);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"ContentVisitor"</span>);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"new"</span>);
+                ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    ::quote::__private::TokenStream::new());
+                ::quote::__private::push_comma(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__deserializer"</span>);
+                _s
+            });
+        ::quote::__private::push_question(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_semi(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"let"</span>);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__deserializer"</span>);
+        ::quote::__private::push_eq(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>private, <span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"de"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"ContentRefDeserializer"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_lt(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__D"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Error"</span>);
+        ::quote::__private::push_gt(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"new"</span>);
+        ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+            ::quote::__private::Delimiter::Parenthesis,
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                ::quote::__private::push_and(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__content"</span>);
+                _s
+            });
+        ::quote::__private::push_semi(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>first_attempt, <span class="kw-2">&amp;mut </span>_s);
+        {
+            <span class="kw">use </span>::quote::__private::ext::<span class="kw-2">*</span>;
+            <span class="kw">let </span>has_iter = ::quote::__private::HasIterator::&lt;<span class="bool-val">false</span>&gt;;
+            <span class="attr">#[allow(unused_mut)]
+            </span><span class="kw">let </span>(<span class="kw-2">mut </span>private2, i) = private2.quote_into_iter();
+            <span class="kw">let </span>has_iter = has_iter | i;
+            <span class="attr">#[allow(unused_mut)]
+            </span><span class="kw">let </span>(<span class="kw-2">mut </span>attempts, i) = attempts.quote_into_iter();
+            <span class="kw">let </span>has_iter = has_iter | i;
+            <span class="attr">#[allow(unused_mut)]
+            </span><span class="kw">let </span>(<span class="kw-2">mut </span>private2, i) = private2.quote_into_iter();
+            <span class="kw">let </span>has_iter = has_iter | i;
+            &lt;<span class="kw">_ as
+                    </span>::quote::__private::CheckHasIterator&lt;<span class="bool-val">true</span>&gt;&gt;::check(has_iter);
+            <span class="kw">while </span><span class="bool-val">true </span>{
+                <span class="kw">let </span>private2 =
+                    <span class="kw">match </span>private2.next() {
+                        <span class="prelude-val">Some</span>(_x) =&gt; ::quote::__private::RepInterp(_x),
+                        <span class="prelude-val">None </span>=&gt; <span class="kw">break</span>,
+                    };
+                <span class="kw">let </span>attempts =
+                    <span class="kw">match </span>attempts.next() {
+                        <span class="prelude-val">Some</span>(_x) =&gt; ::quote::__private::RepInterp(_x),
+                        <span class="prelude-val">None </span>=&gt; <span class="kw">break</span>,
+                    };
+                <span class="kw">let </span>private2 =
+                    <span class="kw">match </span>private2.next() {
+                        <span class="prelude-val">Some</span>(_x) =&gt; ::quote::__private::RepInterp(_x),
+                        <span class="prelude-val">None </span>=&gt; <span class="kw">break</span>,
+                    };
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"if"</span>);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"let"</span>);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>private2, <span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Ok"</span>);
+                ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__ok"</span>);
+                        _s
+                    });
+                ::quote::__private::push_eq(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>attempts, <span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                    ::quote::__private::Delimiter::Brace,
+                    {
+                        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"return"</span>);
+                        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+                        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>private2, <span class="kw-2">&amp;mut </span>_s);
+                        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Ok"</span>);
+                        ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__ok"</span>);
+                                _s
+                            });
+                        ::quote::__private::push_semi(<span class="kw-2">&amp;mut </span>_s);
+                        _s
+                    });
+            }
+        }
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>private, <span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Err"</span>);
+        ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+            ::quote::__private::Delimiter::Parenthesis,
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"de"</span>);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Error"</span>);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"custom"</span>);
+                ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>fallthrough_msg, <span class="kw-2">&amp;mut </span>_s);
+                        _s
+                    });
+                _s
+            });
+        _s
+    });</span><span class="original"><a href="../fragment.rs.html#19-23">quote_block!</a> {
+<a href=#46 id=46 data-nosnippet>46</a>        <span class="kw">let </span>__content = _serde::de::DeserializeSeed::deserialize(_serde::#private::de::ContentVisitor::new(), __deserializer)<span class="question-mark">?</span>;
+<a href=#47 id=47 data-nosnippet>47</a>        <span class="kw">let </span>__deserializer = _serde::#private::de::ContentRefDeserializer::&lt;__D::Error&gt;::new(<span class="kw-2">&amp;</span>__content);
+<a href=#48 id=48 data-nosnippet>48</a>
+<a href=#49 id=49 data-nosnippet>49</a>        #first_attempt
+<a href=#50 id=50 data-nosnippet>50</a>
+<a href=#51 id=51 data-nosnippet>51</a>        #(
+<a href=#52 id=52 data-nosnippet>52</a>            <span class="kw">if let </span>_serde::#private2::Ok(__ok) = #attempts {
+<a href=#53 id=53 data-nosnippet>53</a>                <span class="kw">return </span>_serde::#private2::Ok(__ok);
+<a href=#54 id=54 data-nosnippet>54</a>            }
+<a href=#55 id=55 data-nosnippet>55</a>        )*
+<a href=#56 id=56 data-nosnippet>56</a>
+<a href=#57 id=57 data-nosnippet>57</a>        _serde::#private::Err(_serde::de::Error::custom(#fallthrough_msg))
+<a href=#58 id=58 data-nosnippet>58</a>    }</span></span>
+<a href=#59 id=59 data-nosnippet>59</a>}
+<a href=#60 id=60 data-nosnippet>60</a>
+<a href=#61 id=61 data-nosnippet>61</a><span class="comment">// Also used by adjacently tagged enums
+<a href=#62 id=62 data-nosnippet>62</a></span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deserialize_variant(
+<a href=#63 id=63 data-nosnippet>63</a>    params: <span class="kw-2">&amp;</span><a href="../de.rs.html#116-142">Parameters</a>,
+<a href=#64 id=64 data-nosnippet>64</a>    variant: <span class="kw-2">&amp;</span><a href="../internals/ast.rs.html#32-38">Variant</a>,
+<a href=#65 id=65 data-nosnippet>65</a>    cattrs: <span class="kw-2">&amp;</span>attr::<a href="../internals/attr.rs.html#155-175">Container</a>,
+<a href=#66 id=66 data-nosnippet>66</a>) -&gt; <a href="../fragment.rs.html#5-11">Fragment</a> {
+<a href=#67 id=67 data-nosnippet>67</a>    <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(path) = <a href="#64">variant</a>.attrs.<a href="../internals/attr.rs.html#968-970">deserialize_with</a>() {
+<a href=#68 id=68 data-nosnippet>68</a>        <span class="kw">let </span>unwrap_fn = <a href="../de.rs.html#716-761">unwrap_to_variant_closure</a>(<a href="#63">params</a>, <a href="#64">variant</a>, <span class="bool-val">false</span>);
+<a href=#69 id=69 data-nosnippet>69</a><span class="expansion"><input id=expand-69 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class="kw">return </span><span class=expanded><span class="kw">crate</span>::fragment::Fragment::Block({
+        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>private, <span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Result"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"map"</span>);
+        ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+            ::quote::__private::Delimiter::Parenthesis,
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>path, <span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__deserializer"</span>);
+                        _s
+                    });
+                ::quote::__private::push_comma(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>unwrap_fn, <span class="kw-2">&amp;mut </span>_s);
+                _s
+            });
+        _s
+    })</span><span class="original"><a href="../fragment.rs.html#19-23">quote_block!</a> {
+<a href=#70 id=70 data-nosnippet>70</a>            _serde::#private::Result::map(#path(__deserializer), #unwrap_fn)
+<a href=#71 id=71 data-nosnippet>71</a>        }</span></span>;
+<a href=#72 id=72 data-nosnippet>72</a>    }
+<a href=#73 id=73 data-nosnippet>73</a>
+<a href=#74 id=74 data-nosnippet>74</a>    <span class="kw">let </span>variant_ident = <span class="kw-2">&amp;</span><a href="#64">variant</a>.ident;
+<a href=#75 id=75 data-nosnippet>75</a>
+<a href=#76 id=76 data-nosnippet>76</a>    <span class="kw">match </span><a href="../de.rs.html#838-843">effective_style</a>(<a href="#64">variant</a>) {
+<a href=#77 id=77 data-nosnippet>77</a>        Style::<a href="../internals/ast.rs.html#57">Unit</a> =&gt; {
+<a href=#78 id=78 data-nosnippet>78</a>            <span class="kw">let </span>this_value = <span class="kw-2">&amp;</span><a href="#63">params</a>.this_value;
+<a href=#79 id=79 data-nosnippet>79</a>            <span class="kw">let </span>type_name = <a href="#63">params</a>.<a href="../de.rs.html#167-169">type_name</a>();
+<a href=#80 id=80 data-nosnippet>80</a>            <span class="kw">let </span>variant_name = <a href="#64">variant</a>.ident.<a href="https://doc.rust-lang.org/nightly/alloc/string/trait.ToString.html#tymethod.to_string">to_string</a>();
+<a href=#81 id=81 data-nosnippet>81</a>            <span class="kw">let </span>default = <a href="#64">variant</a>.fields.<a href="https://doc.rust-lang.org/nightly/core/foreigntype.slice.html#method.first">first</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(|field| {
+<a href=#82 id=82 data-nosnippet>82</a>                <span class="kw">let </span>default = <a href="../fragment.rs.html#27">Expr</a>(<a href="../de.rs.html#763-803">expr_is_missing</a>(<a href="#81">field</a>, <a href="#65">cattrs</a>));
+<a href=#83 id=83 data-nosnippet>83</a><span class="expansion"><input id=expand-83 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>{
+    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+        ::quote::__private::Delimiter::Parenthesis,
+        {
+            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+            ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>default, <span class="kw-2">&amp;mut </span>_s);
+            _s
+        });
+    _s
+}</span><span class="original"><a href="https://docs.rs/quote/1.0.44/quote/macro.quote.html">quote!</a>((#default))</span></span>
+<a href=#84 id=84 data-nosnippet>84</a>            });
+<a href=#85 id=85 data-nosnippet>85</a><span class="expansion"><input id=expand-85 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <span class=expanded><span class="kw">crate</span>::fragment::Fragment::Expr({
+        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"match"</span>);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Deserializer"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"deserialize_any"</span>);
+        ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+            ::quote::__private::Delimiter::Parenthesis,
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__deserializer"</span>);
+                ::quote::__private::push_comma(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>private, <span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"de"</span>);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s,
+                    <span class="string">"UntaggedUnitVisitor"</span>);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"new"</span>);
+                ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>type_name, <span class="kw-2">&amp;mut </span>_s);
+                        ::quote::__private::push_comma(<span class="kw-2">&amp;mut </span>_s);
+                        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>variant_name, <span class="kw-2">&amp;mut </span>_s);
+                        _s
+                    });
+                _s
+            });
+        ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+            ::quote::__private::Delimiter::Brace,
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>private, <span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Ok"</span>);
+                ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            ::quote::__private::TokenStream::new());
+                        _s
+                    });
+                ::quote::__private::push_fat_arrow(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>private, <span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Ok"</span>);
+                ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>this_value, <span class="kw-2">&amp;mut </span>_s);
+                        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>variant_ident, <span class="kw-2">&amp;mut </span>_s);
+                        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>default, <span class="kw-2">&amp;mut </span>_s);
+                        _s
+                    });
+                ::quote::__private::push_comma(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>private, <span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Err"</span>);
+                ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__err"</span>);
+                        _s
+                    });
+                ::quote::__private::push_fat_arrow(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>private, <span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Err"</span>);
+                ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__err"</span>);
+                        _s
+                    });
+                ::quote::__private::push_comma(<span class="kw-2">&amp;mut </span>_s);
+                _s
+            });
+        _s
+    });</span><span class="original"><a href="../fragment.rs.html#13-17">quote_expr!</a> {
+<a href=#86 id=86 data-nosnippet>86</a>                <span class="kw">match </span>_serde::Deserializer::deserialize_any(
+<a href=#87 id=87 data-nosnippet>87</a>                    __deserializer,
+<a href=#88 id=88 data-nosnippet>88</a>                    _serde::#private::de::UntaggedUnitVisitor::new(#type_name, #variant_name)
+<a href=#89 id=89 data-nosnippet>89</a>                ) {
+<a href=#90 id=90 data-nosnippet>90</a>                    _serde::#private::Ok(()) =&gt; _serde::#private::Ok(#this_value::#variant_ident #default),
+<a href=#91 id=91 data-nosnippet>91</a>                    _serde::#private::Err(__err) =&gt; _serde::#private::Err(__err),
+<a href=#92 id=92 data-nosnippet>92</a>                }
+<a href=#93 id=93 data-nosnippet>93</a>            }</span></span>
+<a href=#94 id=94 data-nosnippet>94</a>        }
+<a href=#95 id=95 data-nosnippet>95</a>        Style::<a href="../internals/ast.rs.html#55">Newtype</a> =&gt; <a href="#113-135">deserialize_newtype_variant</a>(<a href="#74">variant_ident</a>, <a href="#63">params</a>, <span class="kw-2">&amp;</span><a href="#64">variant</a>.fields[<span class="number">0</span>]),
+<a href=#96 id=96 data-nosnippet>96</a>        Style::<a href="../internals/ast.rs.html#53">Tuple</a> =&gt; tuple::<a href="tuple.rs.html#13-133">deserialize</a>(
+<a href=#97 id=97 data-nosnippet>97</a>            <a href="#63">params</a>,
+<a href=#98 id=98 data-nosnippet>98</a>            <span class="kw-2">&amp;</span><a href="#64">variant</a>.fields,
+<a href=#99 id=99 data-nosnippet>99</a>            <a href="#65">cattrs</a>,
+<a href=#100 id=100 data-nosnippet>100</a>            TupleForm::<a href="../de.rs.html#448">Untagged</a>(<a href="#74">variant_ident</a>),
+<a href=#101 id=101 data-nosnippet>101</a>        ),
+<a href=#102 id=102 data-nosnippet>102</a>        Style::<a href="../internals/ast.rs.html#51">Struct</a> =&gt; struct_::<a href="struct_.rs.html#17-197">deserialize</a>(
+<a href=#103 id=103 data-nosnippet>103</a>            <a href="#63">params</a>,
+<a href=#104 id=104 data-nosnippet>104</a>            <span class="kw-2">&amp;</span><a href="#64">variant</a>.fields,
+<a href=#105 id=105 data-nosnippet>105</a>            <a href="#65">cattrs</a>,
+<a href=#106 id=106 data-nosnippet>106</a>            StructForm::<a href="../de.rs.html#647">Untagged</a>(<a href="#74">variant_ident</a>),
+<a href=#107 id=107 data-nosnippet>107</a>        ),
+<a href=#108 id=108 data-nosnippet>108</a>    }
+<a href=#109 id=109 data-nosnippet>109</a>}
+<a href=#110 id=110 data-nosnippet>110</a>
+<a href=#111 id=111 data-nosnippet>111</a><span class="comment">// Also used by internally tagged enums
+<a href=#112 id=112 data-nosnippet>112</a>// Implicitly (via `generate_variant`) used by adjacently tagged enums
+<a href=#113 id=113 data-nosnippet>113</a></span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deserialize_newtype_variant(
+<a href=#114 id=114 data-nosnippet>114</a>    variant_ident: <span class="kw-2">&amp;</span>syn::<a href="../../../proc_macro2/struct.Ident.html">Ident</a>,
+<a href=#115 id=115 data-nosnippet>115</a>    params: <span class="kw-2">&amp;</span><a href="../de.rs.html#116-142">Parameters</a>,
+<a href=#116 id=116 data-nosnippet>116</a>    field: <span class="kw-2">&amp;</span><a href="../internals/ast.rs.html#41-46">Field</a>,
+<a href=#117 id=117 data-nosnippet>117</a>) -&gt; <a href="../fragment.rs.html#5-11">Fragment</a> {
+<a href=#118 id=118 data-nosnippet>118</a>    <span class="kw">let </span>this_value = <span class="kw-2">&amp;</span><a href="#115">params</a>.this_value;
+<a href=#119 id=119 data-nosnippet>119</a>    <span class="kw">let </span>field_ty = <a href="#116">field</a>.ty;
+<a href=#120 id=120 data-nosnippet>120</a>    <span class="kw">match </span><a href="#116">field</a>.attrs.<a href="../internals/attr.rs.html#1308-1310">deserialize_with</a>() {
+<a href=#121 id=121 data-nosnippet>121</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a> =&gt; {
+<a href=#122 id=122 data-nosnippet>122</a>            <span class="kw">let </span>span = <a href="#116">field</a>.original.<a href="https://docs.rs/syn/2.0.114/syn/spanned/trait.Spanned.html#tymethod.span">span</a>();
+<a href=#123 id=123 data-nosnippet>123</a><span class="expansion"><input id=expand-123 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <span class="kw">let </span>func = <span class=expanded>{
+    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+    <span class="kw">let </span>_span: ::quote::__private::Span =
+        ::quote::__private::get_span(span).__into_span();
+    ::quote::__private::push_lt_spanned(<span class="kw-2">&amp;mut </span>_s, _span);
+    ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>field_ty, <span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident_spanned(<span class="kw-2">&amp;mut </span>_s, _span, <span class="string">"as"</span>);
+    ::quote::__private::push_ident_spanned(<span class="kw-2">&amp;mut </span>_s, _span, <span class="string">"_serde"</span>);
+    ::quote::__private::push_colon2_spanned(<span class="kw-2">&amp;mut </span>_s, _span);
+    ::quote::__private::push_ident_spanned(<span class="kw-2">&amp;mut </span>_s, _span, <span class="string">"Deserialize"</span>);
+    ::quote::__private::push_gt_spanned(<span class="kw-2">&amp;mut </span>_s, _span);
+    ::quote::__private::push_colon2_spanned(<span class="kw-2">&amp;mut </span>_s, _span);
+    ::quote::__private::push_ident_spanned(<span class="kw-2">&amp;mut </span>_s, _span, <span class="string">"deserialize"</span>);
+    _s
+}</span><span class="original"><a href="https://docs.rs/quote/1.0.44/quote/macro.quote_spanned.html">quote_spanned!</a>(span=&gt; &lt;#field_ty <span class="kw">as </span>_serde::Deserialize&gt;::deserialize)</span></span>;
+<a href=#124 id=124 data-nosnippet>124</a><span class="expansion"><input id=expand-124 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <span class=expanded><span class="kw">crate</span>::fragment::Fragment::Expr({
+        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>private, <span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Result"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"map"</span>);
+        ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+            ::quote::__private::Delimiter::Parenthesis,
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>func, <span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__deserializer"</span>);
+                        _s
+                    });
+                ::quote::__private::push_comma(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>this_value, <span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>variant_ident, <span class="kw-2">&amp;mut </span>_s);
+                _s
+            });
+        _s
+    });</span><span class="original"><a href="../fragment.rs.html#13-17">quote_expr!</a> {
+<a href=#125 id=125 data-nosnippet>125</a>                _serde::#private::Result::map(#func(__deserializer), #this_value::#variant_ident)
+<a href=#126 id=126 data-nosnippet>126</a>            }</span></span>
+<a href=#127 id=127 data-nosnippet>127</a>        }
+<a href=#128 id=128 data-nosnippet>128</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(path) =&gt; {
+<a href=#129 id=129 data-nosnippet>129</a><span class="expansion"><input id=expand-129 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <span class=expanded><span class="kw">crate</span>::fragment::Fragment::Block({
+        <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"let"</span>);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__value"</span>);
+        ::quote::__private::push_colon(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>private, <span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Result"</span>);
+        ::quote::__private::push_lt(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>field_ty, <span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_comma(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_underscore(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_gt(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_eq(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>path, <span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+            ::quote::__private::Delimiter::Parenthesis,
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__deserializer"</span>);
+                _s
+            });
+        ::quote::__private::push_semi(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"_serde"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>private, <span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Result"</span>);
+        ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+        ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"map"</span>);
+        ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+            ::quote::__private::Delimiter::Parenthesis,
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"__value"</span>);
+                ::quote::__private::push_comma(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>this_value, <span class="kw-2">&amp;mut </span>_s);
+                ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>variant_ident, <span class="kw-2">&amp;mut </span>_s);
+                _s
+            });
+        _s
+    });</span><span class="original"><a href="../fragment.rs.html#19-23">quote_block!</a> {
+<a href=#130 id=130 data-nosnippet>130</a>                <span class="kw">let </span>__value: _serde::#private::Result&lt;#field_ty, <span class="kw">_</span>&gt; = #path(__deserializer);
+<a href=#131 id=131 data-nosnippet>131</a>                _serde::#private::Result::map(__value, #this_value::#variant_ident)
+<a href=#132 id=132 data-nosnippet>132</a>            }</span></span>
+<a href=#133 id=133 data-nosnippet>133</a>        }
+<a href=#134 id=134 data-nosnippet>134</a>    }
+<a href=#135 id=135 data-nosnippet>135</a>}
+</code></pre></div></section></main></body></html>

@@ -1,0 +1,897 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_metadata-0.19.2/src/dependency.rs`."><title>dependency.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="cargo_metadata" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-f9617a14.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">cargo_metadata/</div>dependency.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! This module contains `Dependency` and the types/functions it uses for deserialization.
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a></span><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/alloc/fmt/index.html">std::fmt</a>;
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><a href="../../camino/struct.Utf8PathBuf.html">camino::Utf8PathBuf</a>;
+<a href=#6 id=6 data-nosnippet>6</a><span class="attr">#[cfg(feature = <span class="string">"builder"</span>)]
+<a href=#7 id=7 data-nosnippet>7</a></span><span class="kw">use </span>derive_builder::Builder;
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span><a href="../../semver/struct.VersionReq.html">semver::VersionReq</a>;
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>serde::{<a href="../../serde_derive/derive.Deserialize.html">Deserialize</a>, <a href="../../serde_core/de/trait.Deserializer.html">Deserializer</a>, <a href="../../serde_derive/derive.Serialize.html">Serialize</a>};
+<a href=#10 id=10 data-nosnippet>10</a>
+<a href=#11 id=11 data-nosnippet>11</a><span class="expansion"><input id=expand-11 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>DependencyKind {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_receiver_is_total_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>DependencyKind {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>DependencyKind) -&gt; bool {
+        <span class="kw">let </span>__self_discr = ::core::intrinsics::discriminant_value(<span class="self">self</span>);
+        <span class="kw">let </span>__arg1_discr = ::core::intrinsics::discriminant_value(other);
+        __self_discr == __arg1_discr
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>DependencyKind {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; DependencyKind { <span class="kw-2">*</span><span class="self">self </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>DependencyKind {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::write_str(f,
+            <span class="kw">match </span><span class="self">self </span>{
+                DependencyKind::Normal =&gt; <span class="string">"Normal"</span>,
+                DependencyKind::Development =&gt; <span class="string">"Development"</span>,
+                DependencyKind::Build =&gt; <span class="string">"Build"</span>,
+                DependencyKind::Unknown =&gt; <span class="string">"Unknown"</span>,
+            })
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>DependencyKind { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::hash::Hash <span class="kw">for </span>DependencyKind {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>hash&lt;__H: ::core::hash::Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>__H) {
+        <span class="kw">let </span>__self_discr = ::core::intrinsics::discriminant_value(<span class="self">self</span>);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span>__self_discr, state)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/hash/macros/derive.Hash.html">Hash</a></span>, <span class=expanded><span class="attr">#[doc(hidden)]
+#[allow(non_upper_case_globals, unused_attributes, unused_qualifications,
+clippy :: absolute_paths,)]
+</span><span class="kw">const _</span>: () =
+    {
+        <span class="attr">#[allow(unused_extern_crates, clippy :: useless_attribute)]
+        </span><span class="kw">extern crate </span>serde <span class="kw">as </span>_serde;
+        ;
+        <span class="attr">#[automatically_derived]
+        </span><span class="kw">impl </span>_serde::Serialize <span class="kw">for </span>DependencyKind {
+            <span class="kw">fn </span>serialize&lt;__S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, __serializer: __S)
+                -&gt; _serde::__private228::Result&lt;__S::Ok, __S::Error&gt; <span class="kw">where
+                </span>__S: _serde::Serializer {
+                <span class="kw">match </span><span class="kw-2">*</span><span class="self">self </span>{
+                    DependencyKind::Normal =&gt;
+                        _serde::Serializer::serialize_unit_variant(__serializer,
+                            <span class="string">"DependencyKind"</span>, <span class="number">0u32</span>, <span class="string">"normal"</span>),
+                    DependencyKind::Development =&gt;
+                        _serde::Serializer::serialize_unit_variant(__serializer,
+                            <span class="string">"DependencyKind"</span>, <span class="number">1u32</span>, <span class="string">"dev"</span>),
+                    DependencyKind::Build =&gt;
+                        _serde::Serializer::serialize_unit_variant(__serializer,
+                            <span class="string">"DependencyKind"</span>, <span class="number">2u32</span>, <span class="string">"build"</span>),
+                    DependencyKind::Unknown =&gt;
+                        _serde::Serializer::serialize_unit_variant(__serializer,
+                            <span class="string">"DependencyKind"</span>, <span class="number">3u32</span>, <span class="string">"Unknown"</span>),
+                }
+            }
+        }
+    };</span><span class="original"><a href="../../serde_derive/derive.Serialize.html">Serialize</a></span>, <span class=expanded><span class="attr">#[doc(hidden)]
+#[allow(non_upper_case_globals, unused_attributes, unused_qualifications,
+clippy :: absolute_paths,)]
+</span><span class="kw">const _</span>: () =
+    {
+        <span class="attr">#[allow(unused_extern_crates, clippy :: useless_attribute)]
+        </span><span class="kw">extern crate </span>serde <span class="kw">as </span>_serde;
+        ;
+        <span class="attr">#[automatically_derived]
+        </span><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; _serde::Deserialize&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span>DependencyKind {
+            <span class="kw">fn </span>deserialize&lt;__D&gt;(__deserializer: __D)
+                -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>, __D::Error&gt; <span class="kw">where
+                </span>__D: _serde::Deserializer&lt;<span class="lifetime">'de</span>&gt; {
+                <span class="attr">#[allow(non_camel_case_types)]
+                #[doc(hidden)]
+                </span><span class="kw">enum </span>__Field { __field0, __field1, __field2, __field3, }
+                <span class="attr">#[doc(hidden)]
+                </span><span class="kw">struct </span>__FieldVisitor;
+                <span class="attr">#[automatically_derived]
+                </span><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; _serde::de::Visitor&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span>__FieldVisitor {
+                    <span class="kw">type </span>Value = __Field;
+                    <span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>,
+                        __formatter: <span class="kw-2">&amp;mut </span>_serde::__private228::Formatter)
+                        -&gt; _serde::__private228::fmt::Result {
+                        _serde::__private228::Formatter::write_str(__formatter,
+                            <span class="string">"variant identifier"</span>)
+                    }
+                    <span class="kw">fn </span>visit_u64&lt;__E&gt;(<span class="self">self</span>, __value: u64)
+                        -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>::Value, __E&gt; <span class="kw">where
+                        </span>__E: _serde::de::Error {
+                        <span class="kw">match </span>__value {
+                            <span class="number">0u64 </span>=&gt; _serde::__private228::Ok(__Field::__field0),
+                            <span class="number">1u64 </span>=&gt; _serde::__private228::Ok(__Field::__field1),
+                            <span class="number">2u64 </span>=&gt; _serde::__private228::Ok(__Field::__field2),
+                            <span class="number">3u64 </span>=&gt; _serde::__private228::Ok(__Field::__field3),
+                            <span class="kw">_ </span>=&gt; _serde::__private228::Ok(__Field::__field3),
+                        }
+                    }
+                    <span class="kw">fn </span>visit_str&lt;__E&gt;(<span class="self">self</span>, __value: <span class="kw-2">&amp;</span>str)
+                        -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>::Value, __E&gt; <span class="kw">where
+                        </span>__E: _serde::de::Error {
+                        <span class="kw">match </span>__value {
+                            <span class="string">"normal" </span>=&gt; _serde::__private228::Ok(__Field::__field0),
+                            <span class="string">"dev" </span>=&gt; _serde::__private228::Ok(__Field::__field1),
+                            <span class="string">"build" </span>=&gt; _serde::__private228::Ok(__Field::__field2),
+                            <span class="string">"Unknown" </span>=&gt; _serde::__private228::Ok(__Field::__field3),
+                            <span class="kw">_ </span>=&gt; { _serde::__private228::Ok(__Field::__field3) }
+                        }
+                    }
+                    <span class="kw">fn </span>visit_bytes&lt;__E&gt;(<span class="self">self</span>, __value: <span class="kw-2">&amp;</span>[u8])
+                        -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>::Value, __E&gt; <span class="kw">where
+                        </span>__E: _serde::de::Error {
+                        <span class="kw">match </span>__value {
+                            <span class="string">b"normal" </span>=&gt; _serde::__private228::Ok(__Field::__field0),
+                            <span class="string">b"dev" </span>=&gt; _serde::__private228::Ok(__Field::__field1),
+                            <span class="string">b"build" </span>=&gt; _serde::__private228::Ok(__Field::__field2),
+                            <span class="string">b"Unknown" </span>=&gt; _serde::__private228::Ok(__Field::__field3),
+                            <span class="kw">_ </span>=&gt; { _serde::__private228::Ok(__Field::__field3) }
+                        }
+                    }
+                }
+                <span class="attr">#[automatically_derived]
+                </span><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; _serde::Deserialize&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span>__Field {
+                    <span class="attr">#[inline]
+                    </span><span class="kw">fn </span>deserialize&lt;__D&gt;(__deserializer: __D)
+                        -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>, __D::Error&gt; <span class="kw">where
+                        </span>__D: _serde::Deserializer&lt;<span class="lifetime">'de</span>&gt; {
+                        _serde::Deserializer::deserialize_identifier(__deserializer,
+                            __FieldVisitor)
+                    }
+                }
+                <span class="attr">#[doc(hidden)]
+                </span><span class="kw">struct </span>__Visitor&lt;<span class="lifetime">'de</span>&gt; {
+                    marker: _serde::__private228::PhantomData&lt;DependencyKind&gt;,
+                    lifetime: _serde::__private228::PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'de </span>()&gt;,
+                }
+                <span class="attr">#[automatically_derived]
+                </span><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; _serde::de::Visitor&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span>__Visitor&lt;<span class="lifetime">'de</span>&gt; {
+                    <span class="kw">type </span>Value = DependencyKind;
+                    <span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>,
+                        __formatter: <span class="kw-2">&amp;mut </span>_serde::__private228::Formatter)
+                        -&gt; _serde::__private228::fmt::Result {
+                        _serde::__private228::Formatter::write_str(__formatter,
+                            <span class="string">"enum DependencyKind"</span>)
+                    }
+                    <span class="kw">fn </span>visit_enum&lt;__A&gt;(<span class="self">self</span>, __data: __A)
+                        -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>::Value, __A::Error&gt;
+                        <span class="kw">where </span>__A: _serde::de::EnumAccess&lt;<span class="lifetime">'de</span>&gt; {
+                        <span class="kw">match </span>_serde::de::EnumAccess::variant(__data)<span class="question-mark">? </span>{
+                            (__Field::__field0, __variant) =&gt; {
+                                _serde::de::VariantAccess::unit_variant(__variant)<span class="question-mark">?</span>;
+                                _serde::__private228::Ok(DependencyKind::Normal)
+                            }
+                            (__Field::__field1, __variant) =&gt; {
+                                _serde::de::VariantAccess::unit_variant(__variant)<span class="question-mark">?</span>;
+                                _serde::__private228::Ok(DependencyKind::Development)
+                            }
+                            (__Field::__field2, __variant) =&gt; {
+                                _serde::de::VariantAccess::unit_variant(__variant)<span class="question-mark">?</span>;
+                                _serde::__private228::Ok(DependencyKind::Build)
+                            }
+                            (__Field::__field3, __variant) =&gt; {
+                                _serde::de::VariantAccess::unit_variant(__variant)<span class="question-mark">?</span>;
+                                _serde::__private228::Ok(DependencyKind::Unknown)
+                            }
+                        }
+                    }
+                }
+                <span class="attr">#[doc(hidden)]
+                </span><span class="kw">const </span>VARIANTS: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>[<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str] =
+                    <span class="kw-2">&amp;</span>[<span class="string">"normal"</span>, <span class="string">"dev"</span>, <span class="string">"build"</span>, <span class="string">"Unknown"</span>];
+                _serde::Deserializer::deserialize_enum(__deserializer,
+                    <span class="string">"DependencyKind"</span>, VARIANTS,
+                    __Visitor {
+                        marker: _serde::__private228::PhantomData::&lt;DependencyKind&gt;,
+                        lifetime: _serde::__private228::PhantomData,
+                    })
+            }
+        }
+    };</span><span class="original"><a href="../../serde_derive/derive.Deserialize.html">Deserialize</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::default::Default <span class="kw">for </span>DependencyKind {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>default() -&gt; DependencyKind { <span class="self">Self</span>::Normal }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/default/derive.Default.html">Default</a></span></span></span><span class="attr">)]
+<a href=#12 id=12 data-nosnippet>12</a></span><span class="doccomment">/// Dependencies can come in three kinds
+<a href=#13 id=13 data-nosnippet>13</a></span><span class="kw">pub enum </span><a href="../../cargo_metadata/enum.DependencyKind.html">DependencyKind</a> {
+<a href=#14 id=14 data-nosnippet>14</a>    <span class="attr">#[serde(rename = <span class="string">"normal"</span>)]
+<a href=#15 id=15 data-nosnippet>15</a>    #[default]
+<a href=#16 id=16 data-nosnippet>16</a>    </span><span class="doccomment">/// The 'normal' kind
+<a href=#17 id=17 data-nosnippet>17</a>    </span>Normal,
+<a href=#18 id=18 data-nosnippet>18</a>    <span class="attr">#[serde(rename = <span class="string">"dev"</span>)]
+<a href=#19 id=19 data-nosnippet>19</a>    </span><span class="doccomment">/// Those used in tests only
+<a href=#20 id=20 data-nosnippet>20</a>    </span>Development,
+<a href=#21 id=21 data-nosnippet>21</a>    <span class="attr">#[serde(rename = <span class="string">"build"</span>)]
+<a href=#22 id=22 data-nosnippet>22</a>    </span><span class="doccomment">/// Those used in build scripts only
+<a href=#23 id=23 data-nosnippet>23</a>    </span>Build,
+<a href=#24 id=24 data-nosnippet>24</a>    <span class="attr">#[doc(hidden)]
+<a href=#25 id=25 data-nosnippet>25</a>    #[serde(other)]
+<a href=#26 id=26 data-nosnippet>26</a>    </span>Unknown,
+<a href=#27 id=27 data-nosnippet>27</a>}
+<a href=#28 id=28 data-nosnippet>28</a>
+<a href=#29 id=29 data-nosnippet>29</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html">fmt::Display</a> <span class="kw">for </span><a href="#13-27">DependencyKind</a> {
+<a href=#30 id=30 data-nosnippet>30</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html">Formatter</a>&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#31 id=31 data-nosnippet>31</a>        <span class="kw">let </span>s = serde_json::<a href="../../serde_json/ser/fn.to_string.html">to_string</a>(<a class="self" href="#30">self</a>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.unwrap">unwrap</a>();
+<a href=#32 id=32 data-nosnippet>32</a>        <span class="comment">// skip opening and closing quotes
+<a href=#33 id=33 data-nosnippet>33</a>        </span><a href="#30">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.write_str">write_str</a>(<span class="kw-2">&amp;</span><a href="#31">s</a>[<span class="number">1</span>..s.len() - <span class="number">1</span>])
+<a href=#34 id=34 data-nosnippet>34</a>    }
+<a href=#35 id=35 data-nosnippet>35</a>}
+<a href=#36 id=36 data-nosnippet>36</a>
+<a href=#37 id=37 data-nosnippet>37</a><span class="doccomment">/// The `kind` can be `null`, which is interpreted as the default - `Normal`.
+<a href=#38 id=38 data-nosnippet>38</a></span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>parse_dependency_kind&lt;<span class="lifetime">'de</span>, D&gt;(d: D) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="#13-27">DependencyKind</a>, D::Error&gt;
+<a href=#39 id=39 data-nosnippet>39</a><span class="kw">where
+<a href=#40 id=40 data-nosnippet>40</a>    </span>D: <a href="../../serde_core/de/trait.Deserializer.html">Deserializer</a>&lt;<span class="lifetime">'de</span>&gt;,
+<a href=#41 id=41 data-nosnippet>41</a>{
+<a href=#42 id=42 data-nosnippet>42</a>    Deserialize::<a href="../../serde_core/de/trait.Deserialize.html#tymethod.deserialize">deserialize</a>(<a href="#38">d</a>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map">map</a>(|x: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw">_</span>&gt;| <a href="#42">x</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_or_default">unwrap_or_default</a>())
+<a href=#43 id=43 data-nosnippet>43</a>}
+<a href=#44 id=44 data-nosnippet>44</a>
+<a href=#45 id=45 data-nosnippet>45</a><span class="expansion"><input id=expand-45 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>Dependency {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Dependency {
+        Dependency {
+            name: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.name),
+            source: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.source),
+            req: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.req),
+            kind: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.kind),
+            optional: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.optional),
+            uses_default_features: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.uses_default_features),
+            features: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.features),
+            target: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.target),
+            rename: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.rename),
+            registry: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.registry),
+            path: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.path),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[doc(hidden)]
+#[allow(non_upper_case_globals, unused_attributes, unused_qualifications,
+clippy :: absolute_paths,)]
+</span><span class="kw">const _</span>: () =
+    {
+        <span class="attr">#[allow(unused_extern_crates, clippy :: useless_attribute)]
+        </span><span class="kw">extern crate </span>serde <span class="kw">as </span>_serde;
+        ;
+        <span class="attr">#[automatically_derived]
+        </span><span class="kw">impl </span>_serde::Serialize <span class="kw">for </span>Dependency {
+            <span class="kw">fn </span>serialize&lt;__S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, __serializer: __S)
+                -&gt; _serde::__private228::Result&lt;__S::Ok, __S::Error&gt; <span class="kw">where
+                </span>__S: _serde::Serializer {
+                <span class="kw">let </span><span class="kw-2">mut </span>__serde_state =
+                    _serde::Serializer::serialize_struct(__serializer,
+                            <span class="string">"Dependency"</span>,
+                            <span class="bool-val">false </span><span class="kw">as </span>usize + <span class="number">1 </span>+ <span class="number">1 </span>+ <span class="number">1 </span>+ <span class="number">1 </span>+ <span class="number">1 </span>+ <span class="number">1 </span>+ <span class="number">1 </span>+ <span class="number">1 </span>+ <span class="number">1 </span>+ <span class="number">1 </span>+
+                                <span class="number">1</span>)<span class="question-mark">?</span>;
+                _serde::ser::SerializeStruct::serialize_field(<span class="kw-2">&amp;mut </span>__serde_state,
+                        <span class="string">"name"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.name)<span class="question-mark">?</span>;
+                _serde::ser::SerializeStruct::serialize_field(<span class="kw-2">&amp;mut </span>__serde_state,
+                        <span class="string">"source"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.source)<span class="question-mark">?</span>;
+                _serde::ser::SerializeStruct::serialize_field(<span class="kw-2">&amp;mut </span>__serde_state,
+                        <span class="string">"req"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.req)<span class="question-mark">?</span>;
+                _serde::ser::SerializeStruct::serialize_field(<span class="kw-2">&amp;mut </span>__serde_state,
+                        <span class="string">"kind"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.kind)<span class="question-mark">?</span>;
+                _serde::ser::SerializeStruct::serialize_field(<span class="kw-2">&amp;mut </span>__serde_state,
+                        <span class="string">"optional"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.optional)<span class="question-mark">?</span>;
+                _serde::ser::SerializeStruct::serialize_field(<span class="kw-2">&amp;mut </span>__serde_state,
+                        <span class="string">"uses_default_features"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.uses_default_features)<span class="question-mark">?</span>;
+                _serde::ser::SerializeStruct::serialize_field(<span class="kw-2">&amp;mut </span>__serde_state,
+                        <span class="string">"features"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.features)<span class="question-mark">?</span>;
+                _serde::ser::SerializeStruct::serialize_field(<span class="kw-2">&amp;mut </span>__serde_state,
+                        <span class="string">"target"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.target)<span class="question-mark">?</span>;
+                _serde::ser::SerializeStruct::serialize_field(<span class="kw-2">&amp;mut </span>__serde_state,
+                        <span class="string">"rename"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.rename)<span class="question-mark">?</span>;
+                _serde::ser::SerializeStruct::serialize_field(<span class="kw-2">&amp;mut </span>__serde_state,
+                        <span class="string">"registry"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.registry)<span class="question-mark">?</span>;
+                _serde::ser::SerializeStruct::serialize_field(<span class="kw-2">&amp;mut </span>__serde_state,
+                        <span class="string">"path"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.path)<span class="question-mark">?</span>;
+                _serde::ser::SerializeStruct::end(__serde_state)
+            }
+        }
+    };</span><span class="original"><a href="../../serde_derive/derive.Serialize.html">Serialize</a></span>, <span class=expanded><span class="attr">#[doc(hidden)]
+#[allow(non_upper_case_globals, unused_attributes, unused_qualifications,
+clippy :: absolute_paths,)]
+</span><span class="kw">const _</span>: () =
+    {
+        <span class="attr">#[allow(unused_extern_crates, clippy :: useless_attribute)]
+        </span><span class="kw">extern crate </span>serde <span class="kw">as </span>_serde;
+        ;
+        <span class="attr">#[automatically_derived]
+        </span><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; _serde::Deserialize&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span>Dependency {
+            <span class="kw">fn </span>deserialize&lt;__D&gt;(__deserializer: __D)
+                -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>, __D::Error&gt; <span class="kw">where
+                </span>__D: _serde::Deserializer&lt;<span class="lifetime">'de</span>&gt; {
+                <span class="attr">#[allow(non_camel_case_types)]
+                #[doc(hidden)]
+                </span><span class="kw">enum </span>__Field {
+                    __field0,
+                    __field1,
+                    __field2,
+                    __field3,
+                    __field4,
+                    __field5,
+                    __field6,
+                    __field7,
+                    __field8,
+                    __field9,
+                    __field10,
+                    __ignore,
+                }
+                <span class="attr">#[doc(hidden)]
+                </span><span class="kw">struct </span>__FieldVisitor;
+                <span class="attr">#[automatically_derived]
+                </span><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; _serde::de::Visitor&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span>__FieldVisitor {
+                    <span class="kw">type </span>Value = __Field;
+                    <span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>,
+                        __formatter: <span class="kw-2">&amp;mut </span>_serde::__private228::Formatter)
+                        -&gt; _serde::__private228::fmt::Result {
+                        _serde::__private228::Formatter::write_str(__formatter,
+                            <span class="string">"field identifier"</span>)
+                    }
+                    <span class="kw">fn </span>visit_u64&lt;__E&gt;(<span class="self">self</span>, __value: u64)
+                        -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>::Value, __E&gt; <span class="kw">where
+                        </span>__E: _serde::de::Error {
+                        <span class="kw">match </span>__value {
+                            <span class="number">0u64 </span>=&gt; _serde::__private228::Ok(__Field::__field0),
+                            <span class="number">1u64 </span>=&gt; _serde::__private228::Ok(__Field::__field1),
+                            <span class="number">2u64 </span>=&gt; _serde::__private228::Ok(__Field::__field2),
+                            <span class="number">3u64 </span>=&gt; _serde::__private228::Ok(__Field::__field3),
+                            <span class="number">4u64 </span>=&gt; _serde::__private228::Ok(__Field::__field4),
+                            <span class="number">5u64 </span>=&gt; _serde::__private228::Ok(__Field::__field5),
+                            <span class="number">6u64 </span>=&gt; _serde::__private228::Ok(__Field::__field6),
+                            <span class="number">7u64 </span>=&gt; _serde::__private228::Ok(__Field::__field7),
+                            <span class="number">8u64 </span>=&gt; _serde::__private228::Ok(__Field::__field8),
+                            <span class="number">9u64 </span>=&gt; _serde::__private228::Ok(__Field::__field9),
+                            <span class="number">10u64 </span>=&gt; _serde::__private228::Ok(__Field::__field10),
+                            <span class="kw">_ </span>=&gt; _serde::__private228::Ok(__Field::__ignore),
+                        }
+                    }
+                    <span class="kw">fn </span>visit_str&lt;__E&gt;(<span class="self">self</span>, __value: <span class="kw-2">&amp;</span>str)
+                        -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>::Value, __E&gt; <span class="kw">where
+                        </span>__E: _serde::de::Error {
+                        <span class="kw">match </span>__value {
+                            <span class="string">"name" </span>=&gt; _serde::__private228::Ok(__Field::__field0),
+                            <span class="string">"source" </span>=&gt; _serde::__private228::Ok(__Field::__field1),
+                            <span class="string">"req" </span>=&gt; _serde::__private228::Ok(__Field::__field2),
+                            <span class="string">"kind" </span>=&gt; _serde::__private228::Ok(__Field::__field3),
+                            <span class="string">"optional" </span>=&gt; _serde::__private228::Ok(__Field::__field4),
+                            <span class="string">"uses_default_features" </span>=&gt;
+                                _serde::__private228::Ok(__Field::__field5),
+                            <span class="string">"features" </span>=&gt; _serde::__private228::Ok(__Field::__field6),
+                            <span class="string">"target" </span>=&gt; _serde::__private228::Ok(__Field::__field7),
+                            <span class="string">"rename" </span>=&gt; _serde::__private228::Ok(__Field::__field8),
+                            <span class="string">"registry" </span>=&gt; _serde::__private228::Ok(__Field::__field9),
+                            <span class="string">"path" </span>=&gt; _serde::__private228::Ok(__Field::__field10),
+                            <span class="kw">_ </span>=&gt; { _serde::__private228::Ok(__Field::__ignore) }
+                        }
+                    }
+                    <span class="kw">fn </span>visit_bytes&lt;__E&gt;(<span class="self">self</span>, __value: <span class="kw-2">&amp;</span>[u8])
+                        -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>::Value, __E&gt; <span class="kw">where
+                        </span>__E: _serde::de::Error {
+                        <span class="kw">match </span>__value {
+                            <span class="string">b"name" </span>=&gt; _serde::__private228::Ok(__Field::__field0),
+                            <span class="string">b"source" </span>=&gt; _serde::__private228::Ok(__Field::__field1),
+                            <span class="string">b"req" </span>=&gt; _serde::__private228::Ok(__Field::__field2),
+                            <span class="string">b"kind" </span>=&gt; _serde::__private228::Ok(__Field::__field3),
+                            <span class="string">b"optional" </span>=&gt; _serde::__private228::Ok(__Field::__field4),
+                            <span class="string">b"uses_default_features" </span>=&gt;
+                                _serde::__private228::Ok(__Field::__field5),
+                            <span class="string">b"features" </span>=&gt; _serde::__private228::Ok(__Field::__field6),
+                            <span class="string">b"target" </span>=&gt; _serde::__private228::Ok(__Field::__field7),
+                            <span class="string">b"rename" </span>=&gt; _serde::__private228::Ok(__Field::__field8),
+                            <span class="string">b"registry" </span>=&gt; _serde::__private228::Ok(__Field::__field9),
+                            <span class="string">b"path" </span>=&gt; _serde::__private228::Ok(__Field::__field10),
+                            <span class="kw">_ </span>=&gt; { _serde::__private228::Ok(__Field::__ignore) }
+                        }
+                    }
+                }
+                <span class="attr">#[automatically_derived]
+                </span><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; _serde::Deserialize&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span>__Field {
+                    <span class="attr">#[inline]
+                    </span><span class="kw">fn </span>deserialize&lt;__D&gt;(__deserializer: __D)
+                        -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>, __D::Error&gt; <span class="kw">where
+                        </span>__D: _serde::Deserializer&lt;<span class="lifetime">'de</span>&gt; {
+                        _serde::Deserializer::deserialize_identifier(__deserializer,
+                            __FieldVisitor)
+                    }
+                }
+                <span class="attr">#[doc(hidden)]
+                </span><span class="kw">struct </span>__Visitor&lt;<span class="lifetime">'de</span>&gt; {
+                    marker: _serde::__private228::PhantomData&lt;Dependency&gt;,
+                    lifetime: _serde::__private228::PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'de </span>()&gt;,
+                }
+                <span class="attr">#[automatically_derived]
+                </span><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; _serde::de::Visitor&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span>__Visitor&lt;<span class="lifetime">'de</span>&gt; {
+                    <span class="kw">type </span>Value = Dependency;
+                    <span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>,
+                        __formatter: <span class="kw-2">&amp;mut </span>_serde::__private228::Formatter)
+                        -&gt; _serde::__private228::fmt::Result {
+                        _serde::__private228::Formatter::write_str(__formatter,
+                            <span class="string">"struct Dependency"</span>)
+                    }
+                    <span class="attr">#[inline]
+                    </span><span class="kw">fn </span>visit_seq&lt;__A&gt;(<span class="self">self</span>, <span class="kw-2">mut </span>__seq: __A)
+                        -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>::Value, __A::Error&gt;
+                        <span class="kw">where </span>__A: _serde::de::SeqAccess&lt;<span class="lifetime">'de</span>&gt; {
+                        <span class="kw">let </span>__field0 =
+                            <span class="kw">match </span>_serde::de::SeqAccess::next_element::&lt;String&gt;(<span class="kw-2">&amp;mut </span>__seq)<span class="question-mark">?
+                                </span>{
+                                _serde::__private228::Some(__value) =&gt; __value,
+                                _serde::__private228::None =&gt;
+                                    <span class="kw">return </span>_serde::__private228::Err(_serde::de::Error::invalid_length(<span class="number">0usize</span>,
+                                                <span class="kw-2">&amp;</span><span class="string">"struct Dependency with 11 elements"</span>)),
+                            };
+                        <span class="kw">let </span>__field1 =
+                            <span class="kw">match </span>_serde::de::SeqAccess::next_element::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(<span class="kw-2">&amp;mut </span>__seq)<span class="question-mark">?
+                                </span>{
+                                _serde::__private228::Some(__value) =&gt; __value,
+                                _serde::__private228::None =&gt;
+                                    <span class="kw">return </span>_serde::__private228::Err(_serde::de::Error::invalid_length(<span class="number">1usize</span>,
+                                                <span class="kw-2">&amp;</span><span class="string">"struct Dependency with 11 elements"</span>)),
+                            };
+                        <span class="kw">let </span>__field2 =
+                            <span class="kw">match </span>_serde::de::SeqAccess::next_element::&lt;VersionReq&gt;(<span class="kw-2">&amp;mut </span>__seq)<span class="question-mark">?
+                                </span>{
+                                _serde::__private228::Some(__value) =&gt; __value,
+                                _serde::__private228::None =&gt;
+                                    <span class="kw">return </span>_serde::__private228::Err(_serde::de::Error::invalid_length(<span class="number">2usize</span>,
+                                                <span class="kw-2">&amp;</span><span class="string">"struct Dependency with 11 elements"</span>)),
+                            };
+                        <span class="kw">let </span>__field3 =
+                            <span class="kw">match </span>{
+                                    <span class="attr">#[doc(hidden)]
+                                    </span><span class="kw">struct </span>__DeserializeWith&lt;<span class="lifetime">'de</span>&gt; {
+                                        value: DependencyKind,
+                                        phantom: _serde::__private228::PhantomData&lt;Dependency&gt;,
+                                        lifetime: _serde::__private228::PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'de </span>()&gt;,
+                                    }
+                                    <span class="attr">#[automatically_derived]
+                                    </span><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; _serde::Deserialize&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for
+                                        </span>__DeserializeWith&lt;<span class="lifetime">'de</span>&gt; {
+                                        <span class="kw">fn </span>deserialize&lt;__D&gt;(__deserializer: __D)
+                                            -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>, __D::Error&gt; <span class="kw">where
+                                            </span>__D: _serde::Deserializer&lt;<span class="lifetime">'de</span>&gt; {
+                                            _serde::__private228::Ok(__DeserializeWith {
+                                                    value: parse_dependency_kind(__deserializer)<span class="question-mark">?</span>,
+                                                    phantom: _serde::__private228::PhantomData,
+                                                    lifetime: _serde::__private228::PhantomData,
+                                                })
+                                        }
+                                    }
+                                    _serde::__private228::Option::map(_serde::de::SeqAccess::next_element::&lt;__DeserializeWith&lt;<span class="lifetime">'de</span>&gt;&gt;(<span class="kw-2">&amp;mut </span>__seq)<span class="question-mark">?</span>,
+                                        |__wrap| __wrap.value)
+                                } {
+                                _serde::__private228::Some(__value) =&gt; __value,
+                                _serde::__private228::None =&gt;
+                                    <span class="kw">return </span>_serde::__private228::Err(_serde::de::Error::invalid_length(<span class="number">3usize</span>,
+                                                <span class="kw-2">&amp;</span><span class="string">"struct Dependency with 11 elements"</span>)),
+                            };
+                        <span class="kw">let </span>__field4 =
+                            <span class="kw">match </span>_serde::de::SeqAccess::next_element::&lt;bool&gt;(<span class="kw-2">&amp;mut </span>__seq)<span class="question-mark">?
+                                </span>{
+                                _serde::__private228::Some(__value) =&gt; __value,
+                                _serde::__private228::None =&gt;
+                                    <span class="kw">return </span>_serde::__private228::Err(_serde::de::Error::invalid_length(<span class="number">4usize</span>,
+                                                <span class="kw-2">&amp;</span><span class="string">"struct Dependency with 11 elements"</span>)),
+                            };
+                        <span class="kw">let </span>__field5 =
+                            <span class="kw">match </span>_serde::de::SeqAccess::next_element::&lt;bool&gt;(<span class="kw-2">&amp;mut </span>__seq)<span class="question-mark">?
+                                </span>{
+                                _serde::__private228::Some(__value) =&gt; __value,
+                                _serde::__private228::None =&gt;
+                                    <span class="kw">return </span>_serde::__private228::Err(_serde::de::Error::invalid_length(<span class="number">5usize</span>,
+                                                <span class="kw-2">&amp;</span><span class="string">"struct Dependency with 11 elements"</span>)),
+                            };
+                        <span class="kw">let </span>__field6 =
+                            <span class="kw">match </span>_serde::de::SeqAccess::next_element::&lt;Vec&lt;String&gt;&gt;(<span class="kw-2">&amp;mut </span>__seq)<span class="question-mark">?
+                                </span>{
+                                _serde::__private228::Some(__value) =&gt; __value,
+                                _serde::__private228::None =&gt;
+                                    <span class="kw">return </span>_serde::__private228::Err(_serde::de::Error::invalid_length(<span class="number">6usize</span>,
+                                                <span class="kw-2">&amp;</span><span class="string">"struct Dependency with 11 elements"</span>)),
+                            };
+                        <span class="kw">let </span>__field7 =
+                            <span class="kw">match </span>_serde::de::SeqAccess::next_element::&lt;<span class="prelude-ty">Option</span>&lt;Platform&gt;&gt;(<span class="kw-2">&amp;mut </span>__seq)<span class="question-mark">?
+                                </span>{
+                                _serde::__private228::Some(__value) =&gt; __value,
+                                _serde::__private228::None =&gt;
+                                    <span class="kw">return </span>_serde::__private228::Err(_serde::de::Error::invalid_length(<span class="number">7usize</span>,
+                                                <span class="kw-2">&amp;</span><span class="string">"struct Dependency with 11 elements"</span>)),
+                            };
+                        <span class="kw">let </span>__field8 =
+                            <span class="kw">match </span>_serde::de::SeqAccess::next_element::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(<span class="kw-2">&amp;mut </span>__seq)<span class="question-mark">?
+                                </span>{
+                                _serde::__private228::Some(__value) =&gt; __value,
+                                _serde::__private228::None =&gt;
+                                    <span class="kw">return </span>_serde::__private228::Err(_serde::de::Error::invalid_length(<span class="number">8usize</span>,
+                                                <span class="kw-2">&amp;</span><span class="string">"struct Dependency with 11 elements"</span>)),
+                            };
+                        <span class="kw">let </span>__field9 =
+                            <span class="kw">match </span>_serde::de::SeqAccess::next_element::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(<span class="kw-2">&amp;mut </span>__seq)<span class="question-mark">?
+                                </span>{
+                                _serde::__private228::Some(__value) =&gt; __value,
+                                _serde::__private228::None =&gt;
+                                    <span class="kw">return </span>_serde::__private228::Err(_serde::de::Error::invalid_length(<span class="number">9usize</span>,
+                                                <span class="kw-2">&amp;</span><span class="string">"struct Dependency with 11 elements"</span>)),
+                            };
+                        <span class="kw">let </span>__field10 =
+                            <span class="kw">match </span>_serde::de::SeqAccess::next_element::&lt;<span class="prelude-ty">Option</span>&lt;Utf8PathBuf&gt;&gt;(<span class="kw-2">&amp;mut </span>__seq)<span class="question-mark">?
+                                </span>{
+                                _serde::__private228::Some(__value) =&gt; __value,
+                                _serde::__private228::None =&gt;
+                                    <span class="kw">return </span>_serde::__private228::Err(_serde::de::Error::invalid_length(<span class="number">10usize</span>,
+                                                <span class="kw-2">&amp;</span><span class="string">"struct Dependency with 11 elements"</span>)),
+                            };
+                        _serde::__private228::Ok(Dependency {
+                                name: __field0,
+                                source: __field1,
+                                req: __field2,
+                                kind: __field3,
+                                optional: __field4,
+                                uses_default_features: __field5,
+                                features: __field6,
+                                target: __field7,
+                                rename: __field8,
+                                registry: __field9,
+                                path: __field10,
+                            })
+                    }
+                    <span class="attr">#[inline]
+                    </span><span class="kw">fn </span>visit_map&lt;__A&gt;(<span class="self">self</span>, <span class="kw-2">mut </span>__map: __A)
+                        -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>::Value, __A::Error&gt;
+                        <span class="kw">where </span>__A: _serde::de::MapAccess&lt;<span class="lifetime">'de</span>&gt; {
+                        <span class="kw">let </span><span class="kw-2">mut </span>__field0: _serde::__private228::Option&lt;String&gt; =
+                            _serde::__private228::None;
+                        <span class="kw">let </span><span class="kw-2">mut </span>__field1:
+                                _serde::__private228::Option&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt; =
+                            _serde::__private228::None;
+                        <span class="kw">let </span><span class="kw-2">mut </span>__field2: _serde::__private228::Option&lt;VersionReq&gt; =
+                            _serde::__private228::None;
+                        <span class="kw">let </span><span class="kw-2">mut </span>__field3:
+                                _serde::__private228::Option&lt;DependencyKind&gt; =
+                            _serde::__private228::None;
+                        <span class="kw">let </span><span class="kw-2">mut </span>__field4: _serde::__private228::Option&lt;bool&gt; =
+                            _serde::__private228::None;
+                        <span class="kw">let </span><span class="kw-2">mut </span>__field5: _serde::__private228::Option&lt;bool&gt; =
+                            _serde::__private228::None;
+                        <span class="kw">let </span><span class="kw-2">mut </span>__field6:
+                                _serde::__private228::Option&lt;Vec&lt;String&gt;&gt; =
+                            _serde::__private228::None;
+                        <span class="kw">let </span><span class="kw-2">mut </span>__field7:
+                                _serde::__private228::Option&lt;<span class="prelude-ty">Option</span>&lt;Platform&gt;&gt; =
+                            _serde::__private228::None;
+                        <span class="kw">let </span><span class="kw-2">mut </span>__field8:
+                                _serde::__private228::Option&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt; =
+                            _serde::__private228::None;
+                        <span class="kw">let </span><span class="kw-2">mut </span>__field9:
+                                _serde::__private228::Option&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt; =
+                            _serde::__private228::None;
+                        <span class="kw">let </span><span class="kw-2">mut </span>__field10:
+                                _serde::__private228::Option&lt;<span class="prelude-ty">Option</span>&lt;Utf8PathBuf&gt;&gt; =
+                            _serde::__private228::None;
+                        <span class="kw">while let </span>_serde::__private228::Some(__key) =
+                                _serde::de::MapAccess::next_key::&lt;__Field&gt;(<span class="kw-2">&amp;mut </span>__map)<span class="question-mark">? </span>{
+                            <span class="kw">match </span>__key {
+                                __Field::__field0 =&gt; {
+                                    <span class="kw">if </span>_serde::__private228::Option::is_some(<span class="kw-2">&amp;</span>__field0) {
+                                        <span class="kw">return </span>_serde::__private228::Err(&lt;__A::Error <span class="kw">as
+                                                        </span>_serde::de::Error&gt;::duplicate_field(<span class="string">"name"</span>));
+                                    }
+                                    __field0 =
+                                        _serde::__private228::Some(_serde::de::MapAccess::next_value::&lt;String&gt;(<span class="kw-2">&amp;mut </span>__map)<span class="question-mark">?</span>);
+                                }
+                                __Field::__field1 =&gt; {
+                                    <span class="kw">if </span>_serde::__private228::Option::is_some(<span class="kw-2">&amp;</span>__field1) {
+                                        <span class="kw">return </span>_serde::__private228::Err(&lt;__A::Error <span class="kw">as
+                                                        </span>_serde::de::Error&gt;::duplicate_field(<span class="string">"source"</span>));
+                                    }
+                                    __field1 =
+                                        _serde::__private228::Some(_serde::de::MapAccess::next_value::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(<span class="kw-2">&amp;mut </span>__map)<span class="question-mark">?</span>);
+                                }
+                                __Field::__field2 =&gt; {
+                                    <span class="kw">if </span>_serde::__private228::Option::is_some(<span class="kw-2">&amp;</span>__field2) {
+                                        <span class="kw">return </span>_serde::__private228::Err(&lt;__A::Error <span class="kw">as
+                                                        </span>_serde::de::Error&gt;::duplicate_field(<span class="string">"req"</span>));
+                                    }
+                                    __field2 =
+                                        _serde::__private228::Some(_serde::de::MapAccess::next_value::&lt;VersionReq&gt;(<span class="kw-2">&amp;mut </span>__map)<span class="question-mark">?</span>);
+                                }
+                                __Field::__field3 =&gt; {
+                                    <span class="kw">if </span>_serde::__private228::Option::is_some(<span class="kw-2">&amp;</span>__field3) {
+                                        <span class="kw">return </span>_serde::__private228::Err(&lt;__A::Error <span class="kw">as
+                                                        </span>_serde::de::Error&gt;::duplicate_field(<span class="string">"kind"</span>));
+                                    }
+                                    __field3 =
+                                        _serde::__private228::Some({
+                                                <span class="attr">#[doc(hidden)]
+                                                </span><span class="kw">struct </span>__DeserializeWith&lt;<span class="lifetime">'de</span>&gt; {
+                                                    value: DependencyKind,
+                                                    phantom: _serde::__private228::PhantomData&lt;Dependency&gt;,
+                                                    lifetime: _serde::__private228::PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'de </span>()&gt;,
+                                                }
+                                                <span class="attr">#[automatically_derived]
+                                                </span><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; _serde::Deserialize&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for
+                                                    </span>__DeserializeWith&lt;<span class="lifetime">'de</span>&gt; {
+                                                    <span class="kw">fn </span>deserialize&lt;__D&gt;(__deserializer: __D)
+                                                        -&gt; _serde::__private228::Result&lt;<span class="self">Self</span>, __D::Error&gt; <span class="kw">where
+                                                        </span>__D: _serde::Deserializer&lt;<span class="lifetime">'de</span>&gt; {
+                                                        _serde::__private228::Ok(__DeserializeWith {
+                                                                value: parse_dependency_kind(__deserializer)<span class="question-mark">?</span>,
+                                                                phantom: _serde::__private228::PhantomData,
+                                                                lifetime: _serde::__private228::PhantomData,
+                                                            })
+                                                    }
+                                                }
+                                                <span class="kw">match </span>_serde::de::MapAccess::next_value::&lt;__DeserializeWith&lt;<span class="lifetime">'de</span>&gt;&gt;(<span class="kw-2">&amp;mut </span>__map)
+                                                    {
+                                                    _serde::__private228::Ok(__wrapper) =&gt; __wrapper.value,
+                                                    _serde::__private228::Err(__err) =&gt; {
+                                                        <span class="kw">return </span>_serde::__private228::Err(__err);
+                                                    }
+                                                }
+                                            });
+                                }
+                                __Field::__field4 =&gt; {
+                                    <span class="kw">if </span>_serde::__private228::Option::is_some(<span class="kw-2">&amp;</span>__field4) {
+                                        <span class="kw">return </span>_serde::__private228::Err(&lt;__A::Error <span class="kw">as
+                                                        </span>_serde::de::Error&gt;::duplicate_field(<span class="string">"optional"</span>));
+                                    }
+                                    __field4 =
+                                        _serde::__private228::Some(_serde::de::MapAccess::next_value::&lt;bool&gt;(<span class="kw-2">&amp;mut </span>__map)<span class="question-mark">?</span>);
+                                }
+                                __Field::__field5 =&gt; {
+                                    <span class="kw">if </span>_serde::__private228::Option::is_some(<span class="kw-2">&amp;</span>__field5) {
+                                        <span class="kw">return </span>_serde::__private228::Err(&lt;__A::Error <span class="kw">as
+                                                        </span>_serde::de::Error&gt;::duplicate_field(<span class="string">"uses_default_features"</span>));
+                                    }
+                                    __field5 =
+                                        _serde::__private228::Some(_serde::de::MapAccess::next_value::&lt;bool&gt;(<span class="kw-2">&amp;mut </span>__map)<span class="question-mark">?</span>);
+                                }
+                                __Field::__field6 =&gt; {
+                                    <span class="kw">if </span>_serde::__private228::Option::is_some(<span class="kw-2">&amp;</span>__field6) {
+                                        <span class="kw">return </span>_serde::__private228::Err(&lt;__A::Error <span class="kw">as
+                                                        </span>_serde::de::Error&gt;::duplicate_field(<span class="string">"features"</span>));
+                                    }
+                                    __field6 =
+                                        _serde::__private228::Some(_serde::de::MapAccess::next_value::&lt;Vec&lt;String&gt;&gt;(<span class="kw-2">&amp;mut </span>__map)<span class="question-mark">?</span>);
+                                }
+                                __Field::__field7 =&gt; {
+                                    <span class="kw">if </span>_serde::__private228::Option::is_some(<span class="kw-2">&amp;</span>__field7) {
+                                        <span class="kw">return </span>_serde::__private228::Err(&lt;__A::Error <span class="kw">as
+                                                        </span>_serde::de::Error&gt;::duplicate_field(<span class="string">"target"</span>));
+                                    }
+                                    __field7 =
+                                        _serde::__private228::Some(_serde::de::MapAccess::next_value::&lt;<span class="prelude-ty">Option</span>&lt;Platform&gt;&gt;(<span class="kw-2">&amp;mut </span>__map)<span class="question-mark">?</span>);
+                                }
+                                __Field::__field8 =&gt; {
+                                    <span class="kw">if </span>_serde::__private228::Option::is_some(<span class="kw-2">&amp;</span>__field8) {
+                                        <span class="kw">return </span>_serde::__private228::Err(&lt;__A::Error <span class="kw">as
+                                                        </span>_serde::de::Error&gt;::duplicate_field(<span class="string">"rename"</span>));
+                                    }
+                                    __field8 =
+                                        _serde::__private228::Some(_serde::de::MapAccess::next_value::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(<span class="kw-2">&amp;mut </span>__map)<span class="question-mark">?</span>);
+                                }
+                                __Field::__field9 =&gt; {
+                                    <span class="kw">if </span>_serde::__private228::Option::is_some(<span class="kw-2">&amp;</span>__field9) {
+                                        <span class="kw">return </span>_serde::__private228::Err(&lt;__A::Error <span class="kw">as
+                                                        </span>_serde::de::Error&gt;::duplicate_field(<span class="string">"registry"</span>));
+                                    }
+                                    __field9 =
+                                        _serde::__private228::Some(_serde::de::MapAccess::next_value::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(<span class="kw-2">&amp;mut </span>__map)<span class="question-mark">?</span>);
+                                }
+                                __Field::__field10 =&gt; {
+                                    <span class="kw">if </span>_serde::__private228::Option::is_some(<span class="kw-2">&amp;</span>__field10) {
+                                        <span class="kw">return </span>_serde::__private228::Err(&lt;__A::Error <span class="kw">as
+                                                        </span>_serde::de::Error&gt;::duplicate_field(<span class="string">"path"</span>));
+                                    }
+                                    __field10 =
+                                        _serde::__private228::Some(_serde::de::MapAccess::next_value::&lt;<span class="prelude-ty">Option</span>&lt;Utf8PathBuf&gt;&gt;(<span class="kw-2">&amp;mut </span>__map)<span class="question-mark">?</span>);
+                                }
+                                <span class="kw">_ </span>=&gt; {
+                                    <span class="kw">let _ </span>=
+                                        _serde::de::MapAccess::next_value::&lt;_serde::de::IgnoredAny&gt;(<span class="kw-2">&amp;mut </span>__map)<span class="question-mark">?</span>;
+                                }
+                            }
+                        }
+                        <span class="kw">let </span>__field0 =
+                            <span class="kw">match </span>__field0 {
+                                _serde::__private228::Some(__field0) =&gt; __field0,
+                                _serde::__private228::None =&gt;
+                                    _serde::__private228::de::missing_field(<span class="string">"name"</span>)<span class="question-mark">?</span>,
+                            };
+                        <span class="kw">let </span>__field1 =
+                            <span class="kw">match </span>__field1 {
+                                _serde::__private228::Some(__field1) =&gt; __field1,
+                                _serde::__private228::None =&gt;
+                                    _serde::__private228::de::missing_field(<span class="string">"source"</span>)<span class="question-mark">?</span>,
+                            };
+                        <span class="kw">let </span>__field2 =
+                            <span class="kw">match </span>__field2 {
+                                _serde::__private228::Some(__field2) =&gt; __field2,
+                                _serde::__private228::None =&gt;
+                                    _serde::__private228::de::missing_field(<span class="string">"req"</span>)<span class="question-mark">?</span>,
+                            };
+                        <span class="kw">let </span>__field3 =
+                            <span class="kw">match </span>__field3 {
+                                _serde::__private228::Some(__field3) =&gt; __field3,
+                                _serde::__private228::None =&gt;
+                                    <span class="kw">return </span>_serde::__private228::Err(&lt;__A::Error <span class="kw">as
+                                                    </span>_serde::de::Error&gt;::missing_field(<span class="string">"kind"</span>)),
+                            };
+                        <span class="kw">let </span>__field4 =
+                            <span class="kw">match </span>__field4 {
+                                _serde::__private228::Some(__field4) =&gt; __field4,
+                                _serde::__private228::None =&gt;
+                                    _serde::__private228::de::missing_field(<span class="string">"optional"</span>)<span class="question-mark">?</span>,
+                            };
+                        <span class="kw">let </span>__field5 =
+                            <span class="kw">match </span>__field5 {
+                                _serde::__private228::Some(__field5) =&gt; __field5,
+                                _serde::__private228::None =&gt;
+                                    _serde::__private228::de::missing_field(<span class="string">"uses_default_features"</span>)<span class="question-mark">?</span>,
+                            };
+                        <span class="kw">let </span>__field6 =
+                            <span class="kw">match </span>__field6 {
+                                _serde::__private228::Some(__field6) =&gt; __field6,
+                                _serde::__private228::None =&gt;
+                                    _serde::__private228::de::missing_field(<span class="string">"features"</span>)<span class="question-mark">?</span>,
+                            };
+                        <span class="kw">let </span>__field7 =
+                            <span class="kw">match </span>__field7 {
+                                _serde::__private228::Some(__field7) =&gt; __field7,
+                                _serde::__private228::None =&gt;
+                                    _serde::__private228::de::missing_field(<span class="string">"target"</span>)<span class="question-mark">?</span>,
+                            };
+                        <span class="kw">let </span>__field8 =
+                            <span class="kw">match </span>__field8 {
+                                _serde::__private228::Some(__field8) =&gt; __field8,
+                                _serde::__private228::None =&gt;
+                                    _serde::__private228::de::missing_field(<span class="string">"rename"</span>)<span class="question-mark">?</span>,
+                            };
+                        <span class="kw">let </span>__field9 =
+                            <span class="kw">match </span>__field9 {
+                                _serde::__private228::Some(__field9) =&gt; __field9,
+                                _serde::__private228::None =&gt;
+                                    _serde::__private228::de::missing_field(<span class="string">"registry"</span>)<span class="question-mark">?</span>,
+                            };
+                        <span class="kw">let </span>__field10 =
+                            <span class="kw">match </span>__field10 {
+                                _serde::__private228::Some(__field10) =&gt; __field10,
+                                _serde::__private228::None =&gt;
+                                    _serde::__private228::de::missing_field(<span class="string">"path"</span>)<span class="question-mark">?</span>,
+                            };
+                        _serde::__private228::Ok(Dependency {
+                                name: __field0,
+                                source: __field1,
+                                req: __field2,
+                                kind: __field3,
+                                optional: __field4,
+                                uses_default_features: __field5,
+                                features: __field6,
+                                target: __field7,
+                                rename: __field8,
+                                registry: __field9,
+                                path: __field10,
+                            })
+                    }
+                }
+                <span class="attr">#[doc(hidden)]
+                </span><span class="kw">const </span>FIELDS: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>[<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str] =
+                    <span class="kw-2">&amp;</span>[<span class="string">"name"</span>, <span class="string">"source"</span>, <span class="string">"req"</span>, <span class="string">"kind"</span>, <span class="string">"optional"</span>,
+                                <span class="string">"uses_default_features"</span>, <span class="string">"features"</span>, <span class="string">"target"</span>, <span class="string">"rename"</span>,
+                                <span class="string">"registry"</span>, <span class="string">"path"</span>];
+                _serde::Deserializer::deserialize_struct(__deserializer,
+                    <span class="string">"Dependency"</span>, FIELDS,
+                    __Visitor {
+                        marker: _serde::__private228::PhantomData::&lt;Dependency&gt;,
+                        lifetime: _serde::__private228::PhantomData,
+                    })
+            }
+        }
+    };</span><span class="original"><a href="../../serde_derive/derive.Deserialize.html">Deserialize</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>Dependency {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">let </span>names: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><span class="kw">_ </span>=
+            <span class="kw-2">&amp;</span>[<span class="string">"name"</span>, <span class="string">"source"</span>, <span class="string">"req"</span>, <span class="string">"kind"</span>, <span class="string">"optional"</span>,
+                        <span class="string">"uses_default_features"</span>, <span class="string">"features"</span>, <span class="string">"target"</span>, <span class="string">"rename"</span>,
+                        <span class="string">"registry"</span>, <span class="string">"path"</span>];
+        <span class="kw">let </span>values: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="kw">dyn </span>::core::fmt::Debug] =
+            <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="self">self</span>.name, <span class="kw-2">&amp;</span><span class="self">self</span>.source, <span class="kw-2">&amp;</span><span class="self">self</span>.req, <span class="kw-2">&amp;</span><span class="self">self</span>.kind, <span class="kw-2">&amp;</span><span class="self">self</span>.optional,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.uses_default_features, <span class="kw-2">&amp;</span><span class="self">self</span>.features, <span class="kw-2">&amp;</span><span class="self">self</span>.target,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.rename, <span class="kw-2">&amp;</span><span class="self">self</span>.registry, &amp;&amp;<span class="self">self</span>.path];
+        ::core::fmt::Formatter::debug_struct_fields_finish(f, <span class="string">"Dependency"</span>,
+            names, values)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>Dependency {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>Dependency) -&gt; bool {
+        <span class="self">self</span>.optional == other.optional &amp;&amp;
+                                                <span class="self">self</span>.uses_default_features == other.uses_default_features &amp;&amp;
+                                            <span class="self">self</span>.name == other.name &amp;&amp; <span class="self">self</span>.source == other.source &amp;&amp;
+                                    <span class="self">self</span>.req == other.req &amp;&amp; <span class="self">self</span>.kind == other.kind &amp;&amp;
+                            <span class="self">self</span>.features == other.features &amp;&amp;
+                        <span class="self">self</span>.target == other.target &amp;&amp; <span class="self">self</span>.rename == other.rename
+                &amp;&amp; <span class="self">self</span>.registry == other.registry &amp;&amp; <span class="self">self</span>.path == other.path
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>Dependency {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_receiver_is_total_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;String&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;VersionReq&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;DependencyKind&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;bool&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Vec&lt;String&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;Platform&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;Utf8PathBuf&gt;&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::hash::Hash <span class="kw">for </span>Dependency {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>hash&lt;__H: ::core::hash::Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>__H) {
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.name, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.source, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.req, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.kind, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.optional, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.uses_default_features, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.features, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.target, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.rename, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.registry, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.path, state)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/hash/macros/derive.Hash.html">Hash</a></span></span></span><span class="attr">)]
+<a href=#46 id=46 data-nosnippet>46</a>#[cfg_attr(feature = <span class="string">"builder"</span>, derive(Builder))]
+<a href=#47 id=47 data-nosnippet>47</a>#[non_exhaustive]
+<a href=#48 id=48 data-nosnippet>48</a>#[cfg_attr(feature = <span class="string">"builder"</span>, builder(pattern = <span class="string">"owned"</span>, setter(into)))]
+<a href=#49 id=49 data-nosnippet>49</a></span><span class="doccomment">/// A dependency of the main crate
+<a href=#50 id=50 data-nosnippet>50</a></span><span class="kw">pub struct </span><a href="../../cargo_metadata/struct.Dependency.html">Dependency</a> {
+<a href=#51 id=51 data-nosnippet>51</a>    <span class="doccomment">/// Name as given in the `Cargo.toml`
+<a href=#52 id=52 data-nosnippet>52</a>    </span><span class="kw">pub </span>name: <a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>,
+<a href=#53 id=53 data-nosnippet>53</a>    <span class="doccomment">/// The source of dependency
+<a href=#54 id=54 data-nosnippet>54</a>    </span><span class="kw">pub </span>source: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;,
+<a href=#55 id=55 data-nosnippet>55</a>    <span class="doccomment">/// The required version
+<a href=#56 id=56 data-nosnippet>56</a>    </span><span class="kw">pub </span>req: <a href="../../semver/struct.VersionReq.html">VersionReq</a>,
+<a href=#57 id=57 data-nosnippet>57</a>    <span class="doccomment">/// The kind of dependency this is
+<a href=#58 id=58 data-nosnippet>58</a>    </span><span class="attr">#[serde(deserialize_with = <span class="string">"parse_dependency_kind"</span>)]
+<a href=#59 id=59 data-nosnippet>59</a>    </span><span class="kw">pub </span>kind: <a href="#13-27">DependencyKind</a>,
+<a href=#60 id=60 data-nosnippet>60</a>    <span class="doccomment">/// Whether this dependency is required or optional
+<a href=#61 id=61 data-nosnippet>61</a>    </span><span class="kw">pub </span>optional: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#62 id=62 data-nosnippet>62</a>    <span class="doccomment">/// Whether the default features in this dependency are used.
+<a href=#63 id=63 data-nosnippet>63</a>    </span><span class="kw">pub </span>uses_default_features: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#64 id=64 data-nosnippet>64</a>    <span class="doccomment">/// The list of features enabled for this dependency.
+<a href=#65 id=65 data-nosnippet>65</a>    </span><span class="kw">pub </span>features: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;,
+<a href=#66 id=66 data-nosnippet>66</a>    <span class="doccomment">/// The target this dependency is specific to.
+<a href=#67 id=67 data-nosnippet>67</a>    ///
+<a href=#68 id=68 data-nosnippet>68</a>    /// Use the [`Display`] trait to access the contents.
+<a href=#69 id=69 data-nosnippet>69</a>    ///
+<a href=#70 id=70 data-nosnippet>70</a>    /// [`Display`]: std::fmt::Display
+<a href=#71 id=71 data-nosnippet>71</a>    </span><span class="kw">pub </span>target: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../../cargo_platform/enum.Platform.html">Platform</a>&gt;,
+<a href=#72 id=72 data-nosnippet>72</a>    <span class="doccomment">/// If the dependency is renamed, this is the new name for the dependency
+<a href=#73 id=73 data-nosnippet>73</a>    /// as a string.  None if it is not renamed.
+<a href=#74 id=74 data-nosnippet>74</a>    </span><span class="kw">pub </span>rename: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;,
+<a href=#75 id=75 data-nosnippet>75</a>    <span class="doccomment">/// The URL of the index of the registry where this dependency is from.
+<a href=#76 id=76 data-nosnippet>76</a>    ///
+<a href=#77 id=77 data-nosnippet>77</a>    /// If None, the dependency is from crates.io.
+<a href=#78 id=78 data-nosnippet>78</a>    </span><span class="kw">pub </span>registry: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;,
+<a href=#79 id=79 data-nosnippet>79</a>    <span class="doccomment">/// The file system path for a local path dependency.
+<a href=#80 id=80 data-nosnippet>80</a>    ///
+<a href=#81 id=81 data-nosnippet>81</a>    /// Only produced on cargo 1.51+
+<a href=#82 id=82 data-nosnippet>82</a>    </span><span class="kw">pub </span>path: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../../camino/struct.Utf8PathBuf.html">Utf8PathBuf</a>&gt;,
+<a href=#83 id=83 data-nosnippet>83</a>}
+<a href=#84 id=84 data-nosnippet>84</a>
+<a href=#85 id=85 data-nosnippet>85</a><span class="kw">pub use </span><a href="../../cargo_platform/enum.Platform.html">cargo_platform::Platform</a>;
+</code></pre></div></section></main></body></html>

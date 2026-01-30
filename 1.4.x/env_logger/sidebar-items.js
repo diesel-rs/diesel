@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["init","Initializes the global logger with an env logger."]],"struct":[["LogBuilder","LogBuilder acts as builder for initializing the Logger. It can be used to customize the log format, change the enviromental variable used to provide the logging directives and also set the default log level filter."],["Logger","The logger."]]});

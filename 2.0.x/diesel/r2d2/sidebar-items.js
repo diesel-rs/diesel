@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Error"],"mod":["event"],"struct":["Builder","ConnectionManager","Extensions","LoggingErrorHandler","NopConnectionCustomizer","NopErrorHandler","NopEventHandler","Pool","PooledConnection","State"],"trait":["CustomizeConnection","HandleError","HandleEvent","ManageConnection","R2D2Connection"],"type":["PoolError"]};

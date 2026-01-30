@@ -1,0 +1,153 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Implements `Queryable` to load the result of statically typed queries"><title>Queryable in diesel::prelude - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc derive"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Queryable</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.3.6</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Queryable</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#attributes" title="Attributes">Attributes</a><ul><li><a href="#optional-field-attributes" title="Optional field attributes">Optional field attributes</a></li></ul></li><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#expanded-code" title="Expanded Code">Expanded Code</a><ul><li><a href="#input" title="Input">Input</a></li><li><a href="#expanded-code-1" title="Expanded Code">Expanded Code</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>prelude</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">diesel</a>::<wbr><a href="index.html">prelude</a></div><h1>Derive Macro <span class="derive">Queryable</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/diesel_derives/lib.rs.html#713">Source</a> </span></div><pre class="rust item-decl"><code>#[derive(Queryable)]
+{
+    <span class="comment">// Attributes available to this derive:</span>
+    #[diesel]
+    #[column_name]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Implements <code>Queryable</code> to load the result of statically typed queries</p>
+<p>This trait can only be derived for structs, not enums.</p>
+<p><strong>Note</strong>: When this trait is derived, it will assume that <strong>all fields on
+your struct</strong> matches <strong>all fields in the query</strong>, including the order and
+count. This means that field order is significant if you’re using
+<code>#[derive(Queryable)]</code>. <strong>Field name has no effect</strong>. If you see errors while
+loading data into a struct that derives <code>Queryable</code>: Consider using
+[<code>#[derive(Selectable)]</code>] + <code>#[diesel(check_for_backend(YourBackendType))]</code>
+to check for mismatching fields at compile-time.</p>
+<p>To provide custom deserialization behavior for a field, you can use
+<code>#[diesel(deserialize_as = SomeType)]</code>. If this attribute is present, Diesel
+will deserialize the corresponding field into <code>SomeType</code>, rather than the
+actual field type on your struct and then call
+<a href="https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html#tymethod.try_into"><code>.try_into</code></a>
+to convert it to the actual field type. This can be used to add custom behavior for a
+single field, or use types that are otherwise unsupported by Diesel.
+(Note: all types that have <code>Into&lt;T&gt;</code> automatically implement <code>TryInto&lt;T&gt;</code>,
+for cases where your conversion is not fallible.)</p>
+<h2 id="attributes"><a class="doc-anchor" href="#attributes">§</a>Attributes</h2><h3 id="optional-field-attributes"><a class="doc-anchor" href="#optional-field-attributes">§</a>Optional field attributes</h3>
+<ul>
+<li><code>#[diesel(deserialize_as = Type)]</code>, instead of deserializing directly
+into the field type, the implementation will deserialize into <code>Type</code>.
+Then <code>Type</code> is converted via
+<code>.try_into()</code> call into the field type. By default, this derive will deserialize directly into the field type
+The <code>try_into()</code> method can be provided by:
+<ul>
+<li>Implementing any of the <a href="https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html"><code>TryInto</code></a>/<a href="https://doc.rust-lang.org/stable/std/convert/trait.TryFrom.html"><code>TryFrom</code></a>/<a href="https://doc.rust-lang.org/stable/std/convert/trait.Into.html"><code>Into</code></a>/<a href="https://doc.rust-lang.org/stable/std/convert/trait.From.html"><code>From</code></a> traits</li>
+<li>Using an method on the type directly (Useful if it’s not possible to implement the traits mentioned above
+due to the orphan rule)</li>
+</ul>
+</li>
+</ul>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>If we just want to map a query to our struct, we can use <code>derive</code>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(Queryable, PartialEq, Debug)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="kw">let </span>first_user = users.first(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = User {
+    id: <span class="number">1</span>,
+    name: <span class="string">"Sean"</span>.into(),
+};
+<span class="macro">assert_eq!</span>(expected, first_user);</code></pre></div>
+<p>If we want to do additional work during deserialization, we can use
+<code>deserialize_as</code> to use a different implementation.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">struct </span>LowercaseString(String);
+
+<span class="kw">impl </span>Into&lt;String&gt; <span class="kw">for </span>LowercaseString {
+    <span class="kw">fn </span>into(<span class="self">self</span>) -&gt; String {
+        <span class="self">self</span>.<span class="number">0
+    </span>}
+}
+
+<span class="kw">impl</span>&lt;DB&gt; Queryable&lt;Text, DB&gt; <span class="kw">for </span>LowercaseString
+<span class="kw">where
+    </span>DB: Backend,
+    String: FromSql&lt;Text, DB&gt;,
+{
+    <span class="kw">type </span>Row = String;
+
+    <span class="kw">fn </span>build(s: String) -&gt; deserialize::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="prelude-val">Ok</span>(LowercaseString(s.to_lowercase()))
+    }
+}
+
+<span class="attr">#[derive(Queryable, PartialEq, Debug)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    <span class="attr">#[diesel(deserialize_as = LowercaseString)]
+    </span>name: String,
+}
+
+<span class="kw">let </span>first_user = users.first(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = User {
+    id: <span class="number">1</span>,
+    name: <span class="string">"sean"</span>.into(),
+};
+<span class="macro">assert_eq!</span>(expected, first_user);</code></pre></div>
+<p>Alternatively, we can implement the trait for our struct manually.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::deserialize::{<span class="self">self</span>, FromSqlRow, Queryable};
+<span class="kw">use </span>diesel::row::Row;
+<span class="kw">use </span>schema::users;
+
+<span class="kw">type </span>DB = diesel::sqlite::Sqlite;
+<span class="attr">#[derive(PartialEq, Debug)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="kw">impl </span>Queryable&lt;users::SqlType, DB&gt; <span class="kw">for </span>User
+<span class="kw">where
+    </span>(i32, String): FromSqlRow&lt;users::SqlType, DB&gt;,
+{
+    <span class="kw">type </span>Row = (i32, String);
+
+    <span class="kw">fn </span>build((id, name): <span class="self">Self</span>::Row) -&gt; deserialize::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="prelude-val">Ok</span>(User {
+            id,
+            name: name.to_lowercase(),
+        })
+    }
+}
+
+<span class="kw">let </span>first_user = users.first(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = User {
+    id: <span class="number">1</span>,
+    name: <span class="string">"sean"</span>.into(),
+};
+<span class="macro">assert_eq!</span>(expected, first_user);</code></pre></div><h2 id="expanded-code"><a class="doc-anchor" href="#expanded-code">§</a>Expanded Code</h2><details>
+<summary> Expanded Code </summary>
+<h5 id="input"><a class="doc-anchor" href="#input">§</a>Input</h5>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(Queryable)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+</code></pre></div><h5 id="expanded-code-1"><a class="doc-anchor" href="#expanded-code-1">§</a>Expanded Code</h5><div class="warning">Expanded code might use diesel internal API's and is only shown for educational purpose</div>
+<p>The macro expands the input to the following Rust code:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">const _</span>: () = {
+    <span class="kw">use </span>diesel;
+    <span class="kw">use </span>diesel::row::{Row <span class="kw">as _</span>, Field <span class="kw">as _</span>};
+    <span class="kw">impl</span>&lt;
+        __DB: diesel::backend::Backend,
+        __ST0,
+        __ST1,
+    &gt; diesel::deserialize::Queryable&lt;(__ST0, __ST1), __DB&gt; <span class="kw">for </span>User
+    <span class="kw">where
+        </span>(i32, String): diesel::deserialize::FromStaticSqlRow&lt;(__ST0, __ST1), __DB&gt;,
+    {
+        <span class="kw">type </span>Row = (i32, String);
+        <span class="kw">fn </span>build(row: (i32, String)) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+            <span class="kw">use </span>std::convert::TryInto;
+            diesel::deserialize::Result::Ok(<span class="self">Self </span>{
+                id: row.<span class="number">0</span>.try_into()<span class="question-mark">?</span>,
+                name: row.<span class="number">1</span>.try_into()<span class="question-mark">?</span>,
+            })
+        }
+    }
+};</code></pre></div></details></div></details></section></div></main></body></html>

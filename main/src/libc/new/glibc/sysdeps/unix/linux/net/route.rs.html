@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libc-0.2.180/src/new/glibc/sysdeps/unix/linux/net/route.rs`."><title>route.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../../../../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../../../../../../../" data-static-root-path="../../../../../../../../static.files/" data-current-crate="libc" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../../../../../static.files/storage-f9617a14.js"></script><script defer src="../../../../../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../../../../../src-files.js"></script><script defer src="../../../../../../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../../../../../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">libc/new/glibc/sysdeps/unix/linux/net/</div>route.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Header: `net/route.h`
+<a href=#2 id=2 data-nosnippet>2</a>//!
+<a href=#3 id=3 data-nosnippet>3</a>//! Source header: `sysdeps/unix/sysv/linux/net/route.h`
+<a href=#4 id=4 data-nosnippet>4</a>//! &lt;https://github.com/bminor/glibc/blob/master/sysdeps/unix/sysv/linux/net/route.h&gt;
+<a href=#5 id=5 data-nosnippet>5</a>
+<a href=#6 id=6 data-nosnippet>6</a></span><span class="kw">use </span><span class="kw">crate</span>::prelude::<span class="kw-2">*</span>;
+<a href=#7 id=7 data-nosnippet>7</a>
+<a href=#8 id=8 data-nosnippet>8</a><span class="expansion"><input id=expand-8 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[automatically_derived]
+#[allow(deprecated)]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>rtentry {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; rtentry {
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;c_ulong&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;<span class="kw">crate</span>::sockaddr&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;<span class="kw">crate</span>::sockaddr&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;<span class="kw">crate</span>::sockaddr&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;c_ushort&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;c_short&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;c_uchar&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;[c_short; <span class="number">3usize</span>]&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;<span class="kw-2">*mut </span>c_char&gt;;
+        <span class="kw-2">*</span><span class="self">self
+    </span>}
+}
+<span class="attr">#[automatically_derived]
+#[allow(deprecated)]
+</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>rtentry { }
+<span class="attr">#[automatically_derived]
+#[allow(deprecated)]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>rtentry {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">let </span>names: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><span class="kw">_ </span>=
+            <span class="kw-2">&amp;</span>[<span class="string">"rt_pad1"</span>, <span class="string">"rt_dst"</span>, <span class="string">"rt_gateway"</span>, <span class="string">"rt_genmask"</span>, <span class="string">"rt_flags"</span>,
+                        <span class="string">"rt_pad2"</span>, <span class="string">"rt_pad3"</span>, <span class="string">"rt_tos"</span>, <span class="string">"rt_class"</span>, <span class="string">"rt_pad4"</span>,
+                        <span class="string">"rt_metric"</span>, <span class="string">"rt_dev"</span>, <span class="string">"rt_mtu"</span>, <span class="string">"rt_window"</span>, <span class="string">"rt_irtt"</span>];
+        <span class="kw">let </span>values: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="kw">dyn </span>::core::fmt::Debug] =
+            <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="self">self</span>.rt_pad1, <span class="kw-2">&amp;</span><span class="self">self</span>.rt_dst, <span class="kw-2">&amp;</span><span class="self">self</span>.rt_gateway, <span class="kw-2">&amp;</span><span class="self">self</span>.rt_genmask,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.rt_flags, <span class="kw-2">&amp;</span><span class="self">self</span>.rt_pad2, <span class="kw-2">&amp;</span><span class="self">self</span>.rt_pad3, <span class="kw-2">&amp;</span><span class="self">self</span>.rt_tos,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.rt_class, <span class="kw-2">&amp;</span><span class="self">self</span>.rt_pad4, <span class="kw-2">&amp;</span><span class="self">self</span>.rt_metric,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.rt_dev, <span class="kw-2">&amp;</span><span class="self">self</span>.rt_mtu, <span class="kw-2">&amp;</span><span class="self">self</span>.rt_window,
+                        &amp;&amp;<span class="self">self</span>.rt_irtt];
+        ::core::fmt::Formatter::debug_struct_fields_finish(f, <span class="string">"rtentry"</span>,
+            names, values)
+    }
+}</span><span class="original"><a href="../../../../../../macros.rs.html#143-172">s!</a> {
+<a href=#9 id=9 data-nosnippet>9</a>    <span class="kw">pub struct </span><a href="../../../../../../../../libc/struct.rtentry.html">rtentry</a> {
+<a href=#10 id=10 data-nosnippet>10</a>        <span class="kw">pub </span>rt_pad1: <a href="../../../../../../primitives.rs.html#59">c_ulong</a>,
+<a href=#11 id=11 data-nosnippet>11</a>        <span class="kw">pub </span>rt_dst: <span class="kw">crate</span>::<a href="../../../../../../unix/linux_like/mod.rs.html#16-229">sockaddr</a>,
+<a href=#12 id=12 data-nosnippet>12</a>        <span class="kw">pub </span>rt_gateway: <span class="kw">crate</span>::<a href="../../../../../../unix/linux_like/mod.rs.html#16-229">sockaddr</a>,
+<a href=#13 id=13 data-nosnippet>13</a>        <span class="kw">pub </span>rt_genmask: <span class="kw">crate</span>::<a href="../../../../../../unix/linux_like/mod.rs.html#16-229">sockaddr</a>,
+<a href=#14 id=14 data-nosnippet>14</a>        <span class="kw">pub </span>rt_flags: <a href="../../../../../../primitives.rs.html#12">c_ushort</a>,
+<a href=#15 id=15 data-nosnippet>15</a>        <span class="kw">pub </span>rt_pad2: <a href="../../../../../../primitives.rs.html#11">c_short</a>,
+<a href=#16 id=16 data-nosnippet>16</a>        <span class="kw">pub </span>rt_pad3: <a href="../../../../../../primitives.rs.html#59">c_ulong</a>,
+<a href=#17 id=17 data-nosnippet>17</a>        <span class="kw">pub </span>rt_tos: <a href="../../../../../../primitives.rs.html#10">c_uchar</a>,
+<a href=#18 id=18 data-nosnippet>18</a>        <span class="kw">pub </span>rt_class: <a href="../../../../../../primitives.rs.html#10">c_uchar</a>,
+<a href=#19 id=19 data-nosnippet>19</a>        <span class="comment">// FIXME(1.0): private padding fields
+<a href=#20 id=20 data-nosnippet>20</a>        </span><span class="attr">#[cfg(target_pointer_width = <span class="string">"64"</span>)]
+<a href=#21 id=21 data-nosnippet>21</a>        </span><span class="kw">pub </span>rt_pad4: [<a href="../../../../../../primitives.rs.html#11">c_short</a>; <span class="number">3usize</span>],
+<a href=#22 id=22 data-nosnippet>22</a>        <span class="attr">#[cfg(not(target_pointer_width = <span class="string">"64"</span>))]
+<a href=#23 id=23 data-nosnippet>23</a>        </span><span class="kw">pub </span>rt_pad4: c_short,
+<a href=#24 id=24 data-nosnippet>24</a>        <span class="kw">pub </span>rt_metric: <a href="../../../../../../primitives.rs.html#11">c_short</a>,
+<a href=#25 id=25 data-nosnippet>25</a>        <span class="kw">pub </span>rt_dev: <span class="kw-2">*mut </span><a href="../../../../../../primitives.rs.html#42">c_char</a>,
+<a href=#26 id=26 data-nosnippet>26</a>        <span class="kw">pub </span>rt_mtu: <a href="../../../../../../primitives.rs.html#59">c_ulong</a>,
+<a href=#27 id=27 data-nosnippet>27</a>        <span class="kw">pub </span>rt_window: <a href="../../../../../../primitives.rs.html#59">c_ulong</a>,
+<a href=#28 id=28 data-nosnippet>28</a>        <span class="kw">pub </span>rt_irtt: <a href="../../../../../../primitives.rs.html#12">c_ushort</a>,
+<a href=#29 id=29 data-nosnippet>29</a>    }
+<a href=#30 id=30 data-nosnippet>30</a>}</span></span>
+</code></pre></div></section></main></body></html>

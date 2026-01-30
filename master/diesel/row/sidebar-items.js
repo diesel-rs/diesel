@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["PartialRow"],"trait":["Field","IntoOwnedRow","NamedRow","Row","RowIndex","RowSealed"]};

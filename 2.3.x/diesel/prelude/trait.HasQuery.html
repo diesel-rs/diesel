@@ -1,0 +1,57 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Trait indicating that a base query can be constructed for this type"><title>HasQuery in diesel::prelude - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">HasQuery</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.3.6</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">HasQuery</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a><ul><li><a href="#with-derive" title="With derive">With derive</a></li><li><a href="#manual-implementation" title="Manual implementation">Manual implementation</a></li></ul></li></ul><h3><a href="#required-associated-types">Required Associated Types</a></h3><ul class="block"><li><a href="#associatedtype.BaseQuery" title="BaseQuery">BaseQuery</a></li></ul><h3><a href="#provided-methods">Provided Methods</a></h3><ul class="block"><li><a href="#method.query" title="query">query</a></li></ul><h3><a href="#dyn-compatibility">Dyn Compatibility</a></h3><h3><a href="#implementors">Implementors</a></h3></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>prelude</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">diesel</a>::<wbr><a href="index.html">prelude</a></div><h1>Trait <span class="trait">HasQuery</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/diesel/query_builder/has_query.rs.html#96-115">Source</a> </span></div><pre class="rust item-decl"><code>pub trait HasQuery&lt;DB: <a class="trait" href="../backend/trait.Backend.html" title="trait diesel::backend::Backend">Backend</a>&gt;: <a class="trait" href="../expression/trait.SelectableHelper.html" title="trait diesel::expression::SelectableHelper">SelectableHelper</a>&lt;DB, SelectExpression: <a class="trait" href="../query_builder/trait.QueryId.html" title="trait diesel::query_builder::QueryId">QueryId</a> + <a class="trait" href="../expression/trait.AppearsOnTable.html" title="trait diesel::expression::AppearsOnTable">AppearsOnTable</a>&lt;&lt;Self::<a class="associatedtype" href="trait.HasQuery.html#associatedtype.BaseQuery" title="type diesel::prelude::HasQuery::BaseQuery">BaseQuery</a> as AcceptedQueries&gt;::From&gt; + <a class="trait" href="../expression/trait.ValidGrouping.html" title="trait diesel::expression::ValidGrouping">ValidGrouping</a>&lt;&lt;Self::<a class="associatedtype" href="trait.HasQuery.html#associatedtype.BaseQuery" title="type diesel::prelude::HasQuery::BaseQuery">BaseQuery</a> as AcceptedQueries&gt;::GroupBy&gt;&gt; {
+    type <a href="#associatedtype.BaseQuery" class="associatedtype">BaseQuery</a>: AcceptedQueries + <a class="trait" href="../query_dsl/methods/trait.SelectDsl.html" title="trait diesel::query_dsl::methods::SelectDsl">SelectDsl</a>&lt;<a class="type" href="../dsl/type.AsSelect.html" title="type diesel::dsl::AsSelect">AsSelect</a>&lt;Self, DB&gt;, Output: <a class="trait" href="../query_builder/trait.Query.html" title="trait diesel::query_builder::Query">Query</a>&gt;;
+
+    // Provided method
+    fn <a href="#method.query" class="fn">query</a>() -&gt; <a class="type" href="../dsl/type.Select.html" title="type diesel::dsl::Select">Select</a>&lt;Self::<a class="associatedtype" href="trait.HasQuery.html#associatedtype.BaseQuery" title="type diesel::prelude::HasQuery::BaseQuery">BaseQuery</a>, <a class="type" href="../dsl/type.AsSelect.html" title="type diesel::dsl::AsSelect">AsSelect</a>&lt;Self, DB&gt;&gt; { ... }
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Trait indicating that a base query can be constructed for this type</p>
+<p>Types which implement <code>HasQuery</code> have a default query for loading
+the relevant data from the database associated with this type.</p>
+<p>Consumers of this trait should use the <code>query()</code> associated function
+to construct a query including a matching select clause for their type</p>
+<p>This trait can be <a href="derive.HasQuery.html" title="derive diesel::prelude::HasQuery">derived</a></p>
+<p>It’s important to note that for Diesel mappings between the database and rust types always happen
+on query and not on table level. This enables you to write several queries related to the
+same table, while a single query could be related to zero or multiple tables.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2><h3 id="with-derive"><a class="doc-anchor" href="#with-derive">§</a>With derive</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="comment">// it's important to have the right table in scope
+</span><span class="kw">use </span>schema::users;
+
+<span class="attr">#[derive(HasQuery, PartialEq, Debug)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="comment">// equivalent to `users::table.select(User::as_select()).first(connection)?;
+</span><span class="kw">let </span>first_user = User::query().first(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = User { id: <span class="number">1</span>, name: <span class="string">"Sean"</span>.into() };
+<span class="macro">assert_eq!</span>(expected, first_user);
+</code></pre></div><h3 id="manual-implementation"><a class="doc-anchor" href="#manual-implementation">§</a>Manual implementation</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="comment">// it's important to have the right table in scope
+</span><span class="kw">use </span>schema::users;
+
+<span class="attr">#[derive(Selectable, Queryable, PartialEq, Debug)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="kw">impl</span>&lt;DB: diesel::backend::Backend&gt; diesel::HasQuery&lt;DB&gt; <span class="kw">for </span>User {
+   <span class="kw">type </span>BaseQuery = &lt;users::table <span class="kw">as </span>diesel::query_builder::AsQuery&gt;::Query;
+
+   <span class="comment">// internal not stable method
+   </span><span class="kw">fn </span>base_query() -&gt; <span class="self">Self</span>::BaseQuery {
+       <span class="kw">use </span>diesel::query_builder::AsQuery;
+       users::table.as_query()
+   }
+}
+
+<span class="comment">// equivalent to `users::table.select(User::as_select()).first(connection)?;
+</span><span class="kw">let </span>first_user = User::query().first(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = User { id: <span class="number">1</span>, name: <span class="string">"Sean"</span>.into() };
+<span class="macro">assert_eq!</span>(expected, first_user);
+</code></pre></div></div></details><h2 id="required-associated-types" class="section-header">Required Associated Types<a href="#required-associated-types" class="anchor">§</a></h2><div class="methods"><details class="toggle" open><summary><section id="associatedtype.BaseQuery" class="method"><a class="src rightside" href="../../src/diesel/query_builder/has_query.rs.html#106">Source</a><h4 class="code-header">type <a href="#associatedtype.BaseQuery" class="associatedtype">BaseQuery</a>: AcceptedQueries + <a class="trait" href="../query_dsl/methods/trait.SelectDsl.html" title="trait diesel::query_dsl::methods::SelectDsl">SelectDsl</a>&lt;<a class="type" href="../dsl/type.AsSelect.html" title="type diesel::dsl::AsSelect">AsSelect</a>&lt;Self, DB&gt;, Output: <a class="trait" href="../query_builder/trait.Query.html" title="trait diesel::query_builder::Query">Query</a>&gt;</h4></section></summary><div class="docblock"><p>Base query type defined by the implementing type</p>
+</div></details></div><h2 id="provided-methods" class="section-header">Provided Methods<a href="#provided-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="method.query" class="method"><a class="src rightside" href="../../src/diesel/query_builder/has_query.rs.html#112-114">Source</a><h4 class="code-header">fn <a href="#method.query" class="fn">query</a>() -&gt; <a class="type" href="../dsl/type.Select.html" title="type diesel::dsl::Select">Select</a>&lt;Self::<a class="associatedtype" href="trait.HasQuery.html#associatedtype.BaseQuery" title="type diesel::prelude::HasQuery::BaseQuery">BaseQuery</a>, <a class="type" href="../dsl/type.AsSelect.html" title="type diesel::dsl::AsSelect">AsSelect</a>&lt;Self, DB&gt;&gt;</h4></section></summary><div class="docblock"><p>Construct the query associated with this type</p>
+</div></details></div><h2 id="dyn-compatibility" class="section-header">Dyn Compatibility<a href="#dyn-compatibility" class="anchor">§</a></h2><div class="dyn-compatibility-info"><p>This trait is <b>not</b> <a href="https://doc.rust-lang.org/nightly/reference/items/traits.html#dyn-compatibility">dyn compatible</a>.</p><p><i>In older versions of Rust, dyn compatibility was called "object safety", so this trait is not object safe.</i></p></div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"></div><script src="../../trait.impl/diesel/query_builder/has_query/trait.HasQuery.js" async></script></section></div></main></body></html>

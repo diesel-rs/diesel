@@ -1,0 +1,249 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Trait indicating that a record can be selected and queried from the database."><title>Selectable in diesel::expression - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc trait"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Selectable</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.3.6</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Selectable</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul><h3><a href="#required-associated-types">Required Associated Types</a></h3><ul class="block"><li><a href="#associatedtype.SelectExpression" title="SelectExpression">SelectExpression</a></li></ul><h3><a href="#required-methods">Required Methods</a></h3><ul class="block"><li><a href="#tymethod.construct_selection" title="construct_selection">construct_selection</a></li></ul><h3><a href="#foreign-impls">Implementations on Foreign Types</a></h3><ul class="block"><li><a href="#impl-Selectable%3C__DB%3E-for-(T,)" title="(T,)">(T,)</a></li><li><a href="#impl-Selectable%3CDB%3E-for-Option%3CT%3E" title="Option&#60;T&#62;">Option&#60;T&#62;</a></li></ul><h3><a href="#dyn-compatibility">Dyn Compatibility</a></h3><h3><a href="#implementors">Implementors</a></h3></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>expression</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">diesel</a>::<wbr><a href="index.html">expression</a></div><h1>Trait <span class="trait">Selectable</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/diesel/expression/mod.rs.html#677-685">Source</a> </span></div><pre class="rust item-decl"><code>pub trait Selectable&lt;DB: <a class="trait" href="../backend/trait.Backend.html" title="trait diesel::backend::Backend">Backend</a>&gt; {
+    type <a href="#associatedtype.SelectExpression" class="associatedtype">SelectExpression</a>: <a class="trait" href="trait.Expression.html" title="trait diesel::expression::Expression">Expression</a>;
+
+    // Required method
+    fn <a href="#tymethod.construct_selection" class="fn">construct_selection</a>() -&gt; Self::<a class="associatedtype" href="trait.Selectable.html#associatedtype.SelectExpression" title="type diesel::expression::Selectable::SelectExpression">SelectExpression</a>;
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Trait indicating that a record can be selected and queried from the database.</p>
+<p>Types which implement <code>Selectable</code> represent the select clause of a SQL query.
+Use <a href="trait.SelectableHelper.html#tymethod.as_select" title="associated function diesel::expression::SelectableHelper::as_select"><code>SelectableHelper::as_select()</code></a> to construct the select clause. Once you
+called <code>.select(YourType::as_select())</code> we enforce at the type system level that you
+use the same type to load the query result into.</p>
+<p>The constructed select clause can contain arbitrary expressions coming from different
+tables. The corresponding <a href="derive.Selectable.html" title="derive diesel::expression::Selectable">derive</a> provides a simple way to
+construct a select clause matching fields to the corresponding table columns.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>If you just want to construct a select clause using an existing struct, you can use
+<code>#[derive(Selectable)]</code>, See <a href="derive.Selectable.html" title="derive diesel::expression::Selectable"><code>#[derive(Selectable)]</code></a> for details.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>schema::users;
+
+<span class="attr">#[derive(Queryable, PartialEq, Debug, Selectable)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="kw">let </span>first_user = users.select(User::as_select()).first(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = User {
+    id: <span class="number">1</span>,
+    name: <span class="string">"Sean"</span>.into(),
+};
+<span class="macro">assert_eq!</span>(expected, first_user);</code></pre></div>
+<p>Alternatively, we can implement the trait for our struct manually.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::backend::Backend;
+<span class="kw">use </span>diesel::prelude::{Queryable, Selectable};
+<span class="kw">use </span>schema::users;
+
+<span class="attr">#[derive(Queryable, PartialEq, Debug)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="kw">impl</span>&lt;DB&gt; Selectable&lt;DB&gt; <span class="kw">for </span>User
+<span class="kw">where
+    </span>DB: Backend,
+{
+    <span class="kw">type </span>SelectExpression = (users::id, users::name);
+
+    <span class="kw">fn </span>construct_selection() -&gt; <span class="self">Self</span>::SelectExpression {
+        (users::id, users::name)
+    }
+}
+
+<span class="kw">let </span>first_user = users.select(User::as_select()).first(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = User {
+    id: <span class="number">1</span>,
+    name: <span class="string">"Sean"</span>.into(),
+};
+<span class="macro">assert_eq!</span>(expected, first_user);</code></pre></div>
+<p>When selecting from joined tables, you can select from a
+composition of types that implement <code>Selectable</code>. The simplest way
+is to use a tuple of all the types you wish to select.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>schema::{posts, users};
+
+<span class="attr">#[derive(Debug, PartialEq, Queryable, Selectable)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="attr">#[derive(Debug, PartialEq, Queryable, Selectable)]
+</span><span class="kw">struct </span>Post {
+    id: i32,
+    user_id: i32,
+    title: String,
+}
+
+<span class="kw">let </span>(first_user, first_post) = users::table
+    .inner_join(posts::table)
+    .select(&lt;(User, Post)&gt;::as_select())
+    .first(connection)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>expected_user = User {
+    id: <span class="number">1</span>,
+    name: <span class="string">"Sean"</span>.into(),
+};
+<span class="macro">assert_eq!</span>(expected_user, first_user);
+
+<span class="kw">let </span>expected_post = Post {
+    id: <span class="number">1</span>,
+    user_id: <span class="number">1</span>,
+    title: <span class="string">"My first post"</span>.into(),
+};
+<span class="macro">assert_eq!</span>(expected_post, first_post);</code></pre></div>
+<p>If you want to load only a subset of fields, you can create types
+with those fields and use them in the composition.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>schema::{posts, users};
+
+<span class="attr">#[derive(Debug, PartialEq, Queryable, Selectable)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="attr">#[derive(Debug, PartialEq, Queryable, Selectable)]
+#[diesel(table_name = posts)]
+</span><span class="kw">struct </span>PostTitle {
+    title: String,
+}
+
+<span class="kw">let </span>(first_user, first_post_title) = users::table
+    .inner_join(posts::table)
+    .select(&lt;(User, PostTitle)&gt;::as_select())
+    .first(connection)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>expected_user = User {
+    id: <span class="number">1</span>,
+    name: <span class="string">"Sean"</span>.into(),
+};
+<span class="macro">assert_eq!</span>(expected_user, first_user);
+
+<span class="kw">let </span>expected_post_title = PostTitle {
+    title: <span class="string">"My first post"</span>.into(),
+};
+<span class="macro">assert_eq!</span>(expected_post_title, first_post_title);</code></pre></div>
+<p>You are not limited to using only tuples to build the composed
+type. The <a href="derive.Selectable.html" title="derive diesel::expression::Selectable"><code>Selectable</code></a> derive macro allows
+you to <em>embed</em> other types. This is useful when you want to
+implement methods or traits on the composed type.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>schema::{posts, users};
+
+<span class="attr">#[derive(Debug, PartialEq, Queryable, Selectable)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="attr">#[derive(Debug, PartialEq, Queryable, Selectable)]
+#[diesel(table_name = posts)]
+</span><span class="kw">struct </span>PostTitle {
+    title: String,
+}
+
+<span class="attr">#[derive(Debug, PartialEq, Queryable, Selectable)]
+</span><span class="kw">struct </span>UserPost {
+    <span class="attr">#[diesel(embed)]
+    </span>user: User,
+    <span class="attr">#[diesel(embed)]
+    </span>post_title: PostTitle,
+}
+
+<span class="kw">let </span>first_user_post = users::table
+    .inner_join(posts::table)
+    .select(UserPost::as_select())
+    .first(connection)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>expected_user_post = UserPost {
+    user: User {
+        id: <span class="number">1</span>,
+        name: <span class="string">"Sean"</span>.into(),
+    },
+    post_title: PostTitle {
+        title: <span class="string">"My first post"</span>.into(),
+    },
+};
+<span class="macro">assert_eq!</span>(expected_user_post, first_user_post);</code></pre></div>
+<p>It is also possible to specify an entirely custom select expression
+for fields when deriving <a href="derive.Selectable.html" title="derive diesel::expression::Selectable"><code>Selectable</code></a>.
+This is useful for example to</p>
+<ul>
+<li>avoid nesting types, or to</li>
+<li>populate fields with values other than table columns, such as
+the result of an SQL function like <code>CURRENT_TIMESTAMP()</code>
+or a custom SQL function.</li>
+</ul>
+<p>The select expression is specified via the <code>select_expression</code> parameter.</p>
+<p>Query fragments created using <a href="../dsl/attr.auto_type.html" title="attr diesel::dsl::auto_type"><code>dsl::auto_type</code></a> are supported, which
+may be useful as the select expression gets large: it may not be practical to inline it in
+the attribute then.</p>
+<p>The type of the expression is usually inferred. If it can’t be fully inferred automatically,
+one may either:</p>
+<ul>
+<li>Put type annotations in inline blocks in the query fragment itself</li>
+<li>Use a dedicated <a href="../dsl/attr.auto_type.html" title="attr diesel::dsl::auto_type"><code>dsl::auto_type</code></a> function as <code>select_expression</code>
+and use <a href="../dsl/attr.auto_type.html" title="attr diesel::dsl::auto_type"><code>dsl::auto_type</code>’s type annotation features</a></li>
+<li>Specify the type of the expression using the <code>select_expression_type</code> attribute</li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::dsl;
+<span class="kw">use </span>schema::{posts, users};
+
+<span class="attr">#[derive(Debug, PartialEq, Queryable, Selectable)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="attr">#[derive(Debug, PartialEq, Queryable, Selectable)]
+#[diesel(table_name = posts)]
+</span><span class="kw">struct </span>PostTitle {
+    title: String,
+}
+
+<span class="attr">#[derive(Debug, PartialEq, Queryable, Selectable)]
+</span><span class="kw">struct </span>UserPost {
+    <span class="attr">#[diesel(select_expression = users::columns::id)]
+    #[diesel(select_expression_type = users::columns::id)]
+    </span>id: i32,
+    <span class="attr">#[diesel(select_expression = users::columns::name)]
+    </span>name: String,
+    <span class="attr">#[diesel(select_expression = complex_fragment_for_title())]
+    </span>title: String,
+    <span class="attr">#[diesel(select_expression = diesel::dsl::now)]
+    </span>access_time: chrono::NaiveDateTime,
+    <span class="attr">#[diesel(select_expression = users::columns::id.eq({<span class="kw">let </span>id: i32 = FOO; id}))]
+    </span>user_id_is_foo: bool,
+}
+<span class="kw">const </span>FOO: i32 = <span class="number">42</span>; <span class="comment">// Type of FOO can't be inferred automatically in the select_expression
+</span><span class="attr">#[dsl::auto_type]
+</span><span class="kw">fn </span>complex_fragment_for_title() -&gt; <span class="kw">_ </span>{
+    <span class="comment">// See the `#[dsl::auto_type]` documentation for examples of more complex usage
+    </span>posts::columns::title
+}
+
+<span class="kw">let </span>first_user_post = users::table
+    .inner_join(posts::table)
+    .select(UserPost::as_select())
+    .first(connection)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>expected_user_post = UserPost {
+    id: <span class="number">1</span>,
+    name: <span class="string">"Sean"</span>.into(),
+    title: <span class="string">"My first post"</span>.into(),
+    access_time: first_user_post.access_time,
+    user_id_is_foo: <span class="bool-val">false</span>,
+};
+<span class="macro">assert_eq!</span>(expected_user_post, first_user_post);</code></pre></div></div></details><h2 id="required-associated-types" class="section-header">Required Associated Types<a href="#required-associated-types" class="anchor">§</a></h2><div class="methods"><details class="toggle" open><summary><section id="associatedtype.SelectExpression" class="method"><a class="src rightside" href="../../src/diesel/expression/mod.rs.html#681">Source</a><h4 class="code-header">type <a href="#associatedtype.SelectExpression" class="associatedtype">SelectExpression</a>: <a class="trait" href="trait.Expression.html" title="trait diesel::expression::Expression">Expression</a></h4></section></summary><div class="docblock"><p>The expression you’d like to select.</p>
+<p>This is typically a tuple of corresponding to the table columns of your struct’s fields.</p>
+</div></details></div><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.construct_selection" class="method"><a class="src rightside" href="../../src/diesel/expression/mod.rs.html#684">Source</a><h4 class="code-header">fn <a href="#tymethod.construct_selection" class="fn">construct_selection</a>() -&gt; Self::<a class="associatedtype" href="trait.Selectable.html#associatedtype.SelectExpression" title="type diesel::expression::Selectable::SelectExpression">SelectExpression</a></h4></section></summary><div class="docblock"><p>Construct an instance of the expression</p>
+</div></details></div><h2 id="dyn-compatibility" class="section-header">Dyn Compatibility<a href="#dyn-compatibility" class="anchor">§</a></h2><div class="dyn-compatibility-info"><p>This trait is <b>not</b> <a href="https://doc.rust-lang.org/nightly/reference/items/traits.html#dyn-compatibility">dyn compatible</a>.</p><p><i>In older versions of Rust, dyn compatibility was called "object safety", so this trait is not object safe.</i></p></div><h2 id="foreign-impls" class="section-header">Implementations on Foreign Types<a href="#foreign-impls" class="anchor">§</a></h2><details class="toggle implementors-toggle"><summary><section id="impl-Selectable%3CDB%3E-for-Option%3CT%3E" class="impl"><a class="src rightside" href="../../src/diesel/type_impls/option.rs.html#113-124">Source</a><a href="#impl-Selectable%3CDB%3E-for-Option%3CT%3E" class="anchor">§</a><h3 class="code-header">impl&lt;T, DB&gt; <a class="trait" href="trait.Selectable.html" title="trait diesel::expression::Selectable">Selectable</a>&lt;DB&gt; for <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;T&gt;<div class="where">where
+    DB: <a class="trait" href="../backend/trait.Backend.html" title="trait diesel::backend::Backend">Backend</a>,
+    T: <a class="trait" href="trait.Selectable.html" title="trait diesel::expression::Selectable">Selectable</a>&lt;DB&gt;,
+    <a class="type" href="../dsl/type.Nullable.html" title="type diesel::dsl::Nullable">Nullable</a>&lt;T::<a class="associatedtype" href="trait.Selectable.html#associatedtype.SelectExpression" title="type diesel::expression::Selectable::SelectExpression">SelectExpression</a>&gt;: <a class="trait" href="trait.Expression.html" title="trait diesel::expression::Expression">Expression</a>,</div></h3></section></summary><div class="impl-items"><section id="associatedtype.SelectExpression-1" class="associatedtype trait-impl"><a class="src rightside" href="../../src/diesel/type_impls/option.rs.html#119">Source</a><a href="#associatedtype.SelectExpression-1" class="anchor">§</a><h4 class="code-header">type <a href="#associatedtype.SelectExpression" class="associatedtype">SelectExpression</a> = Nullable&lt;&lt;T as <a class="trait" href="trait.Selectable.html" title="trait diesel::expression::Selectable">Selectable</a>&lt;DB&gt;&gt;::<a class="associatedtype" href="trait.Selectable.html#associatedtype.SelectExpression" title="type diesel::expression::Selectable::SelectExpression">SelectExpression</a>&gt;</h4></section><section id="method.construct_selection" class="method trait-impl"><a class="src rightside" href="../../src/diesel/type_impls/option.rs.html#121-123">Source</a><a href="#method.construct_selection" class="anchor">§</a><h4 class="code-header">fn <a href="#tymethod.construct_selection" class="fn">construct_selection</a>() -&gt; Self::<a class="associatedtype" href="trait.Selectable.html#associatedtype.SelectExpression" title="type diesel::expression::Selectable::SelectExpression">SelectExpression</a></h4></section></div></details><details class="toggle implementors-toggle"><summary><section id="impl-Selectable%3C__DB%3E-for-(T,)" class="impl"><a class="src rightside" href="../../src/diesel/type_impls/tuples.rs.html#604">Source</a><a href="#impl-Selectable%3C__DB%3E-for-(T,)" class="anchor">§</a><h3 class="code-header">impl&lt;T, __DB&gt; <a class="trait" href="trait.Selectable.html" title="trait diesel::expression::Selectable">Selectable</a>&lt;__DB&gt; for <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.tuple.html#trait-implementations-1">(T₁, T₂, …, Tₙ)</a><div class="where">where
+    __DB: <a class="trait" href="../backend/trait.Backend.html" title="trait diesel::backend::Backend">Backend</a>,
+    T: <a class="trait" href="trait.Selectable.html" title="trait diesel::expression::Selectable">Selectable</a>&lt;__DB&gt;,</div></h3></section></summary><div class="impl-items"><section id="associatedtype.SelectExpression-2" class="associatedtype trait-impl"><a class="src rightside" href="../../src/diesel/type_impls/tuples.rs.html#604">Source</a><a href="#associatedtype.SelectExpression-2" class="anchor">§</a><h4 class="code-header">type <a href="#associatedtype.SelectExpression" class="associatedtype">SelectExpression</a> = (&lt;T as <a class="trait" href="trait.Selectable.html" title="trait diesel::expression::Selectable">Selectable</a>&lt;__DB&gt;&gt;::<a class="associatedtype" href="trait.Selectable.html#associatedtype.SelectExpression" title="type diesel::expression::Selectable::SelectExpression">SelectExpression</a>,)</h4></section><section id="method.construct_selection-1" class="method trait-impl"><a class="src rightside" href="../../src/diesel/type_impls/tuples.rs.html#604">Source</a><a href="#method.construct_selection-1" class="anchor">§</a><h4 class="code-header">fn <a href="#tymethod.construct_selection" class="fn">construct_selection</a>() -&gt; Self::<a class="associatedtype" href="trait.Selectable.html#associatedtype.SelectExpression" title="type diesel::expression::Selectable::SelectExpression">SelectExpression</a></h4></section></div></details><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"></div><script src="../../trait.impl/diesel/expression/trait.Selectable.js" data-ignore-extern-crates="core,std" async></script></section></div></main></body></html>

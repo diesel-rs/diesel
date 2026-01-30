@@ -1,0 +1,61 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-syntax-0.8.8/src/either.rs`."><title>either.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="regex_syntax" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-f9617a14.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">regex_syntax/</div>either.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-1"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">/// A simple binary sum type.
+<a href=#2 id=2 data-nosnippet>2</a>///
+<a href=#3 id=3 data-nosnippet>3</a>/// This is occasionally useful in an ad hoc fashion.
+<a href=#4 id=4 data-nosnippet>4</a></span><span class="expansion"><input id=expand-4 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;Left: ::core::clone::Clone, Right: ::core::clone::Clone&gt;
+    ::core::clone::Clone <span class="kw">for </span>Either&lt;Left, Right&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Either&lt;Left, Right&gt; {
+        <span class="kw">match </span><span class="self">self </span>{
+            Either::Left(__self_0) =&gt;
+                Either::Left(::core::clone::Clone::clone(__self_0)),
+            Either::Right(__self_0) =&gt;
+                Either::Right(::core::clone::Clone::clone(__self_0)),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;Left: ::core::fmt::Debug, Right: ::core::fmt::Debug&gt; ::core::fmt::Debug
+    <span class="kw">for </span>Either&lt;Left, Right&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">match </span><span class="self">self </span>{
+            Either::Left(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Left"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            Either::Right(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Right"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;Left: ::core::cmp::Eq, Right: ::core::cmp::Eq&gt; ::core::cmp::Eq <span class="kw">for
+    </span>Either&lt;Left, Right&gt; {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_receiver_is_total_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Left&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Right&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;Left: ::core::cmp::PartialEq, Right: ::core::cmp::PartialEq&gt;
+    ::core::cmp::PartialEq <span class="kw">for </span>Either&lt;Left, Right&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>Either&lt;Left, Right&gt;) -&gt; bool {
+        <span class="kw">let </span>__self_discr = ::core::intrinsics::discriminant_value(<span class="self">self</span>);
+        <span class="kw">let </span>__arg1_discr = ::core::intrinsics::discriminant_value(other);
+        __self_discr == __arg1_discr &amp;&amp;
+            <span class="kw">match </span>(<span class="self">self</span>, other) {
+                (Either::Left(__self_0), Either::Left(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Either::Right(__self_0), Either::Right(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                <span class="kw">_ </span>=&gt; <span class="kw">unsafe </span>{ ::core::intrinsics::unreachable() }
+            }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span></span></span><span class="attr">)]
+<a href=#5 id=5 data-nosnippet>5</a></span><span class="kw">pub enum </span>Either&lt;Left, Right&gt; {
+<a href=#6 id=6 data-nosnippet>6</a>    Left(Left),
+<a href=#7 id=7 data-nosnippet>7</a>    Right(Right),
+<a href=#8 id=8 data-nosnippet>8</a>}
+</code></pre></div></section></main></body></html>

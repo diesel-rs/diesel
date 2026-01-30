@@ -1,0 +1,89 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml-0.9.7/src/de/deserializer/array.rs`."><title>array.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="toml" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (975e6c8fe 2025-09-23)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../../../../static.files/storage-e2aeef58.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">toml/de/deserializer/</div>array.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><a href="../../../../toml/struct.Spanned.html">serde_spanned::Spanned</a>;
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span><a href="../parser/dearray.rs.html#8-11"><span class="kw">crate</span>::de::DeArray</a>;
+<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span><a href="../parser/devalue.rs.html#120-135"><span class="kw">crate</span>::de::DeValue</a>;
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><a href="../error.rs.html#5-10"><span class="kw">crate</span>::de::Error</a>;
+<a href=#6 id=6 data-nosnippet>6</a>
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>ArrayDeserializer&lt;<span class="lifetime">'i</span>&gt; {
+<a href=#8 id=8 data-nosnippet>8</a>    input: <a href="../parser/dearray.rs.html#8-11">DeArray</a>&lt;<span class="lifetime">'i</span>&gt;,
+<a href=#9 id=9 data-nosnippet>9</a>    span: <a href="https://doc.rust-lang.org/nightly/core/ops/range/struct.Range.html">core::ops::Range</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt;,
+<a href=#10 id=10 data-nosnippet>10</a>}
+<a href=#11 id=11 data-nosnippet>11</a>
+<a href=#12 id=12 data-nosnippet>12</a><span class="kw">impl</span>&lt;<span class="lifetime">'i</span>&gt; <a href="#7-10">ArrayDeserializer</a>&lt;<span class="lifetime">'i</span>&gt; {
+<a href=#13 id=13 data-nosnippet>13</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(input: <a href="../parser/dearray.rs.html#8-11">DeArray</a>&lt;<span class="lifetime">'i</span>&gt;, span: <a href="https://doc.rust-lang.org/nightly/core/ops/range/struct.Range.html">core::ops::Range</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#14 id=14 data-nosnippet>14</a>        <span class="self">Self </span>{ <a href="#13">input</a>, <a href="#13">span</a> }
+<a href=#15 id=15 data-nosnippet>15</a>    }
+<a href=#16 id=16 data-nosnippet>16</a>}
+<a href=#17 id=17 data-nosnippet>17</a>
+<a href=#18 id=18 data-nosnippet>18</a><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; <a href="../../../../serde_core/de/trait.Deserializer.html">serde_core::Deserializer</a>&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span><a href="#7-10">ArrayDeserializer</a>&lt;<span class="lifetime">'de</span>&gt; {
+<a href=#19 id=19 data-nosnippet>19</a>    <span class="kw">type </span>Error = <a href="../error.rs.html#5-10">Error</a>;
+<a href=#20 id=20 data-nosnippet>20</a>
+<a href=#21 id=21 data-nosnippet>21</a>    <span class="kw">fn </span>deserialize_any&lt;V&gt;(<span class="self">self</span>, visitor: V) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;V::Value, <span class="self">Self</span>::Error&gt;
+<a href=#22 id=22 data-nosnippet>22</a>    <span class="kw">where
+<a href=#23 id=23 data-nosnippet>23</a>        </span>V: <a href="../../../../serde_core/de/trait.Visitor.html">serde_core::de::Visitor</a>&lt;<span class="lifetime">'de</span>&gt;,
+<a href=#24 id=24 data-nosnippet>24</a>    {
+<a href=#25 id=25 data-nosnippet>25</a>        <a href="#21">visitor</a>.<a href="../../../../serde_core/de/trait.Visitor.html#tymethod.visit_seq">visit_seq</a>(<a href="#65-69">ArraySeqAccess::new</a>(<a class="self" href="#21">self</a>.input))
+<a href=#26 id=26 data-nosnippet>26</a>    }
+<a href=#27 id=27 data-nosnippet>27</a>
+<a href=#28 id=28 data-nosnippet>28</a>    <span class="kw">fn </span>deserialize_struct&lt;V&gt;(
+<a href=#29 id=29 data-nosnippet>29</a>        <span class="self">self</span>,
+<a href=#30 id=30 data-nosnippet>30</a>        name: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>,
+<a href=#31 id=31 data-nosnippet>31</a>        _fields: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>[<span class="kw-2">&amp;</span><span class="lifetime">'static </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>],
+<a href=#32 id=32 data-nosnippet>32</a>        visitor: V,
+<a href=#33 id=33 data-nosnippet>33</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;V::Value, <a href="../error.rs.html#5-10">Error</a>&gt;
+<a href=#34 id=34 data-nosnippet>34</a>    <span class="kw">where
+<a href=#35 id=35 data-nosnippet>35</a>        </span>V: <a href="../../../../serde_core/de/trait.Visitor.html">serde_core::de::Visitor</a>&lt;<span class="lifetime">'de</span>&gt;,
+<a href=#36 id=36 data-nosnippet>36</a>    {
+<a href=#37 id=37 data-nosnippet>37</a>        <span class="kw">if </span><a href="../../../../serde_spanned/de/fn.is_spanned.html">serde_spanned::de::is_spanned</a>(<a href="#30">name</a>) {
+<a href=#38 id=38 data-nosnippet>38</a>            <span class="kw">let </span>span = <a class="self" href="#29">self</a>.span.<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>();
+<a href=#39 id=39 data-nosnippet>39</a>            <span class="kw">return </span><a href="#32">visitor</a>.<a href="../../../../serde_core/de/trait.Visitor.html#tymethod.visit_map">visit_map</a>(<a href="../../../../serde_spanned/de/struct.SpannedDeserializer.html#method.new"><span class="kw">super</span>::SpannedDeserializer::new</a>(<a class="self" href="#29">self</a>, <a href="#38">span</a>));
+<a href=#40 id=40 data-nosnippet>40</a>        }
+<a href=#41 id=41 data-nosnippet>41</a>
+<a href=#42 id=42 data-nosnippet>42</a>        <a class="self" href="#29">self</a>.<a href="../../../../serde_core/de/trait.Deserializer.html#tymethod.deserialize_any">deserialize_any</a>(<a href="#32">visitor</a>)
+<a href=#43 id=43 data-nosnippet>43</a>    }
+<a href=#44 id=44 data-nosnippet>44</a>
+<a href=#45 id=45 data-nosnippet>45</a>    <a class="macro" href="../../../../serde_core/macro.forward_to_deserialize_any.html">serde_core::forward_to_deserialize_any!</a> {
+<a href=#46 id=46 data-nosnippet>46</a>        bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string seq
+<a href=#47 id=47 data-nosnippet>47</a>        bytes byte_buf map option unit newtype_struct
+<a href=#48 id=48 data-nosnippet>48</a>        ignored_any unit_struct tuple_struct tuple <span class="kw">enum </span>identifier
+<a href=#49 id=49 data-nosnippet>49</a>    }
+<a href=#50 id=50 data-nosnippet>50</a>}
+<a href=#51 id=51 data-nosnippet>51</a>
+<a href=#52 id=52 data-nosnippet>52</a><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; <a href="../../../../serde_core/de/trait.IntoDeserializer.html">serde_core::de::IntoDeserializer</a>&lt;<span class="lifetime">'de</span>, <a href="../error.rs.html#5-10">Error</a>&gt; <span class="kw">for </span><a href="#7-10">ArrayDeserializer</a>&lt;<span class="lifetime">'de</span>&gt; {
+<a href=#53 id=53 data-nosnippet>53</a>    <span class="kw">type </span>Deserializer = <span class="self">Self</span>;
+<a href=#54 id=54 data-nosnippet>54</a>
+<a href=#55 id=55 data-nosnippet>55</a>    <span class="kw">fn </span>into_deserializer(<span class="self">self</span>) -&gt; <span class="self">Self</span>::Deserializer {
+<a href=#56 id=56 data-nosnippet>56</a>        <span class="self"><a href="#55">self</a>
+<a href=#57 id=57 data-nosnippet>57</a>    </span>}
+<a href=#58 id=58 data-nosnippet>58</a>}
+<a href=#59 id=59 data-nosnippet>59</a>
+<a href=#60 id=60 data-nosnippet>60</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>ArraySeqAccess&lt;<span class="lifetime">'i</span>&gt; {
+<a href=#61 id=61 data-nosnippet>61</a>    iter: <a href="https://doc.rust-lang.org/nightly/alloc/vec/into_iter/struct.IntoIter.html">alloc::vec::IntoIter</a>&lt;<a href="../../../../toml/struct.Spanned.html">Spanned</a>&lt;<a href="../parser/devalue.rs.html#120-135">DeValue</a>&lt;<span class="lifetime">'i</span>&gt;&gt;&gt;,
+<a href=#62 id=62 data-nosnippet>62</a>}
+<a href=#63 id=63 data-nosnippet>63</a>
+<a href=#64 id=64 data-nosnippet>64</a><span class="kw">impl</span>&lt;<span class="lifetime">'i</span>&gt; <a href="#60-62">ArraySeqAccess</a>&lt;<span class="lifetime">'i</span>&gt; {
+<a href=#65 id=65 data-nosnippet>65</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(input: <a href="../parser/dearray.rs.html#8-11">DeArray</a>&lt;<span class="lifetime">'i</span>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#66 id=66 data-nosnippet>66</a>        <span class="self">Self </span>{
+<a href=#67 id=67 data-nosnippet>67</a>            iter: <a href="#65">input</a>.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>(),
+<a href=#68 id=68 data-nosnippet>68</a>        }
+<a href=#69 id=69 data-nosnippet>69</a>    }
+<a href=#70 id=70 data-nosnippet>70</a>}
+<a href=#71 id=71 data-nosnippet>71</a>
+<a href=#72 id=72 data-nosnippet>72</a><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; <a href="../../../../serde_core/de/trait.SeqAccess.html">serde_core::de::SeqAccess</a>&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span><a href="#60-62">ArraySeqAccess</a>&lt;<span class="lifetime">'de</span>&gt; {
+<a href=#73 id=73 data-nosnippet>73</a>    <span class="kw">type </span>Error = <a href="../error.rs.html#5-10">Error</a>;
+<a href=#74 id=74 data-nosnippet>74</a>
+<a href=#75 id=75 data-nosnippet>75</a>    <span class="kw">fn </span>next_element_seed&lt;T&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, seed: T) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;T::Value&gt;, <span class="self">Self</span>::Error&gt;
+<a href=#76 id=76 data-nosnippet>76</a>    <span class="kw">where
+<a href=#77 id=77 data-nosnippet>77</a>        </span>T: <a href="../../../../serde_core/de/trait.DeserializeSeed.html">serde_core::de::DeserializeSeed</a>&lt;<span class="lifetime">'de</span>&gt;,
+<a href=#78 id=78 data-nosnippet>78</a>    {
+<a href=#79 id=79 data-nosnippet>79</a>        <span class="kw">match </span><a class="self" href="#75">self</a>.iter.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#tymethod.next">next</a>() {
+<a href=#80 id=80 data-nosnippet>80</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(v) =&gt; {
+<a href=#81 id=81 data-nosnippet>81</a>                <span class="kw">let </span>span = <a href="#80">v</a>.<a href="../../../../serde_spanned/spanned/struct.Spanned.html#method.span">span</a>();
+<a href=#82 id=82 data-nosnippet>82</a>                <span class="kw">let </span>v = <a href="#80">v</a>.<a href="../../../../serde_spanned/spanned/struct.Spanned.html#method.into_inner">into_inner</a>();
+<a href=#83 id=83 data-nosnippet>83</a>                <a href="#75">seed</a>.<a href="../../../../serde_core/de/trait.DeserializeSeed.html#tymethod.deserialize">deserialize</a>(<a href="value.rs.html#62-68"><span class="kw">crate</span>::de::ValueDeserializer::with_parts</a>(<a href="#82">v</a>, <a href="#81">span</a>))
+<a href=#84 id=84 data-nosnippet>84</a>                    .<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map">map</a>(<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>)
+<a href=#85 id=85 data-nosnippet>85</a>            }
+<a href=#86 id=86 data-nosnippet>86</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None"><a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a> </a>=&gt; <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>),
+<a href=#87 id=87 data-nosnippet>87</a>        }
+<a href=#88 id=88 data-nosnippet>88</a>    }
+<a href=#89 id=89 data-nosnippet>89</a>}</code></pre></div></section></main></body></html>

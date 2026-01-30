@@ -1,0 +1,307 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Implements `HasQuery`"><title>HasQuery in diesel_derives - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel_derives" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc derive"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">HasQuery</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel_derives/index.html">diesel_<wbr>derives</a><span class="version">2.3.7</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">HasQuery</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#attributes" title="Attributes">Attributes</a><ul><li><a href="#optional-type-attributes" title="Optional Type attributes">Optional Type attributes</a></li><li><a href="#optional-field-attributes" title="Optional Field Attributes">Optional Field Attributes</a></li></ul></li><li><a href="#examples" title="Examples">Examples</a><ul><li><a href="#basic-usage" title="Basic usage">Basic usage</a></li><li><a href="#custom-base-query" title="Custom base query">Custom base query</a></li></ul></li><li><a href="#expanded-code" title="Expanded Code">Expanded Code</a><ul><li><a href="#sqlite" title="SQLite">SQLite</a></li><li><a href="#postgresql" title="PostgreSQL">PostgreSQL</a></li><li><a href="#mysql" title="MySQL">MySQL</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate diesel_<wbr>derives</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">diesel_derives</a></div><h1>Derive Macro <span class="derive">HasQuery</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/diesel_derives/lib.rs.html#2767-2769">Source</a> </span></div><pre class="rust item-decl"><code>#[derive(HasQuery)]
+{
+    <span class="comment">// Attributes available to this derive:</span>
+    #[diesel]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Implements <code>HasQuery</code></p>
+<p>This derive implements a common entry point for building queries
+based on a model like Rust struct. It enables you to always have a certain base query
+associated with a given type. This derive is designed to easily couple your query with
+your Rust type. It’s important to note that for Diesel this mapping happens always
+on query and not on table level, which enables you to write several queries related to the
+same table, while a single query could be related to zero or multiple tables.</p>
+<p>By default this derive will use the equivalent of <code>SELECT your, fields FROM your_types</code>
+which implies that it needs to know the corresponding table type. As with any other
+diesel derive it uses the <code>snake_case</code> type name with an added <code>s</code> if no other
+name is specified.
+It is possible to change this default by using <code>#[diesel(table_name = something)]</code>.</p>
+<p>If you would like to use a more complex query as base query you can overwrite the standard
+query by using the <code>#[diesel(base_query = your_type::table.filter(your_type::is_admin.eq(true)))]</code>
+attribute to overwrite the automatically generated base query. This derive will still apply
+a select clause that matches your type. By default it also tries to infer the correct
+type of that query. This type can be overwritten by using the <code>#[diesel(base_query_type)]</code>
+attribute.</p>
+<p>This derive will internally implement the following traits:</p>
+<ul>
+<li><code>HasQuery</code></li>
+<li><code>Selectable</code> (for building the selection)</li>
+<li><code>Queryable</code> (for allowing to load results from the database)</li>
+</ul>
+<p>For the later two traits see their corresponding derives for supported options:</p>
+<ul>
+<li><a href="derive.Queryable.html" title="derive diesel_derives::Queryable">Queryable</a></li>
+<li><a href="derive.Selectable.html" title="derive diesel_derives::Selectable">Selectable</a></li>
+</ul>
+<p>Any option documented there is also supported by this derive</p>
+<p>In contrast to <code>#[derive(Selectable)]</code> this derive automatically enables
+<code>#[diesel(check_for_backend(_))]</code> with all backends enabled at compile time
+if no explicit <code>#[diesel(check_for_backend(_))]</code> attribute is given. This
+will lead to better error messages. You
+can use <code>#[diesel(check_for_backend(disable = true))]</code> to disable this behaviour
+for that particular instance.</p>
+<h2 id="attributes"><a class="doc-anchor" href="#attributes">§</a>Attributes</h2><h3 id="optional-type-attributes"><a class="doc-anchor" href="#optional-type-attributes">§</a>Optional Type attributes</h3>
+<ul>
+<li><code>#[diesel(base_query = _)]</code>  specifies a base query associated with this type.
+It may be used in conjunction with <code>base_query_type</code> (described below)</li>
+<li><code>#[diesel(base_query_type = _)]</code> the Rust type described by the <code>base_query</code>
+attribute. Usually diesel is able to infer this type, but for complex types such an
+annotation might be required. This will be required if  a custom
+function call that doesn’t have the corresponding associated type defined at the same path
+appears in your query.</li>
+<li><code>#[diesel(table_name = path::to::table)]</code>, specifies a path to the table for which the
+current type is selectable. The path is relative to the current module.
+If this attribute is not used, the type name converted to
+<code>snake_case</code> with an added <code>s</code> is used as table name.</li>
+<li><code>#[diesel(check_for_backend(diesel::pg::Pg, diesel::mysql::Mysql))]</code>, instructs
+the derive to generate additional code to identify potential type mismatches.
+It accepts a list of backend types to check the types against. If this option
+is not set this derive automatically uses all backends enabled at compile time
+for this check. You can disable this behaviour via <code>#[diesel(check_for_backend(disable = true))]</code></li>
+</ul>
+<h3 id="optional-field-attributes"><a class="doc-anchor" href="#optional-field-attributes">§</a>Optional Field Attributes</h3>
+<ul>
+<li><code>#[diesel(column_name = some_column)]</code>, overrides the column name for
+a given field. If not set, the name of the field is used as column
+name.</li>
+<li><code>#[diesel(embed)]</code>, specifies that the current field maps not only
+a single database column, but is a type that implements
+<code>Selectable</code> on its own</li>
+<li><code>#[diesel(select_expression = some_custom_select_expression)]</code>, overrides
+the entire select expression for the given field. It may be used to select with
+custom tuples, or specify <code>select_expression = my_table::some_field.is_not_null()</code>,
+or separate tables…
+It may be used in conjunction with <code>select_expression_type</code> (described below)</li>
+<li><code>#[diesel(select_expression_type = the_custom_select_expression_type]</code>, should be used
+in conjunction with <code>select_expression</code> (described above) if the type is too complex
+for diesel to infer it automatically. This will be required if select_expression is a custom
+function call that doesn’t have the corresponding associated type defined at the same path.
+Example use (this would actually be inferred):
+<code>#[diesel(select_expression_type = dsl::IsNotNull&lt;my_table::some_field&gt;)]</code></li>
+<li><code>#[diesel(deserialize_as = Type)]</code>, instead of deserializing directly
+into the field type, the implementation will deserialize into <code>Type</code>.
+Then <code>Type</code> is converted via
+<a href="https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html#tymethod.try_into"><code>.try_into</code></a>
+into the field type. By default, this derive will deserialize directly into the field type</li>
+</ul>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2><h3 id="basic-usage"><a class="doc-anchor" href="#basic-usage">§</a>Basic usage</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="comment">// it's important to have the right table in scope
+</span><span class="kw">use </span>schema::users;
+
+<span class="attr">#[derive(HasQuery, PartialEq, Debug)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="comment">// equivalent to `users::table.select(User::as_select()).first(connection)?;
+</span><span class="kw">let </span>first_user = User::query().first(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = User { id: <span class="number">1</span>, name: <span class="string">"Sean"</span>.into() };
+<span class="macro">assert_eq!</span>(expected, first_user);
+</code></pre></div><h3 id="custom-base-query"><a class="doc-anchor" href="#custom-base-query">§</a>Custom base query</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="comment">// it's important to have the right table in scope
+</span><span class="kw">use </span>schema::{users, posts};
+
+<span class="attr">#[derive(HasQuery, PartialEq, Debug)]
+</span><span class="kw">struct </span>Post {
+   id: i32,
+   user_id: i32,
+   title: String,
+}
+
+<span class="attr">#[derive(HasQuery, PartialEq, Debug)]
+#[diesel(base_query = users::table.inner_join(posts::table).order_by(users::id))]
+</span><span class="comment">// that's required to let the derive understand
+// from which table the columns should be selected
+</span><span class="attr">#[diesel(table_name = users)]
+</span><span class="kw">struct </span>UserWithPost {
+    id: i32,
+    name: String,
+    <span class="attr">#[diesel(embed)]
+    </span>post: Post,
+}
+
+<span class="comment">// equivalent to users::table.inner_join(posts::table)
+//               .order_by(users::id)
+//               .select(UserWithPost::as_select()).first(connection)?;
+</span><span class="kw">let </span>first_user = UserWithPost::query().first(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = UserWithPost { id: <span class="number">1</span>, name: <span class="string">"Sean"</span>.into(), post: Post {id: <span class="number">1</span>, user_id: <span class="number">1</span>, title: <span class="string">"My first post"</span>.into() } };
+<span class="macro">assert_eq!</span>(expected, first_user);
+</code></pre></div><h2 id="expanded-code"><a class="doc-anchor" href="#expanded-code">§</a>Expanded Code</h2><details>
+<summary> Expanded Code </summary>
+<h4 id="sqlite"><a class="doc-anchor" href="#sqlite">§</a>SQLite</h4><h5 id="input"><a class="doc-anchor" href="#input">§</a>Input</h5>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(HasQuery)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}</code></pre></div><h5 id="expanded-code-1"><a class="doc-anchor" href="#expanded-code-1">§</a>Expanded Code</h5><div class="warning">Expanded code might use diesel internal API's and is only shown for educational purpose</div>
+<p>The macro expands the input to the following Rust code:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">const _</span>: () = {
+    <span class="kw">use </span>diesel;
+    <span class="kw">impl</span>&lt;__DB: diesel::backend::Backend&gt; diesel::HasQuery&lt;__DB&gt; <span class="kw">for </span>User {
+        <span class="kw">type </span>BaseQuery = &lt;users::table <span class="kw">as </span>diesel::query_builder::AsQuery&gt;::Query;
+        <span class="kw">fn </span>base_query() -&gt; <span class="self">Self</span>::BaseQuery {
+            diesel::query_builder::AsQuery::as_query(users::table)
+        }
+    }
+};
+<span class="kw">const _</span>: () = {
+    <span class="kw">use </span>diesel;
+    <span class="kw">use </span>diesel::expression::Selectable;
+    <span class="kw">impl</span>&lt;__DB: diesel::backend::Backend&gt; Selectable&lt;__DB&gt; <span class="kw">for </span>User {
+        <span class="kw">type </span>SelectExpression = (users::r#id, users::r#name);
+        <span class="kw">fn </span>construct_selection() -&gt; <span class="self">Self</span>::SelectExpression {
+            (users::r#id, users::r#name)
+        }
+    }
+    <span class="kw">fn </span>_check_field_compatibility()
+    <span class="kw">where
+        </span>i32: diesel::deserialize::FromSqlRow&lt;
+            diesel::dsl::SqlTypeOf&lt;users::r#id&gt;,
+            diesel::sqlite::Sqlite,
+        &gt;,
+        String: diesel::deserialize::FromSqlRow&lt;
+            diesel::dsl::SqlTypeOf&lt;users::r#name&gt;,
+            diesel::sqlite::Sqlite,
+        &gt;,
+    {}
+};
+<span class="kw">const _</span>: () = {
+    <span class="kw">use </span>diesel;
+    <span class="kw">use </span>diesel::row::{Row <span class="kw">as _</span>, Field <span class="kw">as _</span>};
+    <span class="kw">impl</span>&lt;
+        __DB: diesel::backend::Backend,
+        __ST0,
+        __ST1,
+    &gt; diesel::deserialize::Queryable&lt;(__ST0, __ST1), __DB&gt; <span class="kw">for </span>User
+    <span class="kw">where
+        </span>(i32, String): diesel::deserialize::FromStaticSqlRow&lt;(__ST0, __ST1), __DB&gt;,
+    {
+        <span class="kw">type </span>Row = (i32, String);
+        <span class="kw">fn </span>build(row: (i32, String)) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+            <span class="kw">use </span>std::convert::TryInto;
+            diesel::deserialize::Result::Ok(<span class="self">Self </span>{
+                id: row.<span class="number">0</span>.try_into()<span class="question-mark">?</span>,
+                name: row.<span class="number">1</span>.try_into()<span class="question-mark">?</span>,
+            })
+        }
+    }
+};</code></pre></div><h4 id="postgresql"><a class="doc-anchor" href="#postgresql">§</a>PostgreSQL</h4><h5 id="input-1"><a class="doc-anchor" href="#input-1">§</a>Input</h5>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(HasQuery)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}</code></pre></div><h5 id="expanded-code-2"><a class="doc-anchor" href="#expanded-code-2">§</a>Expanded Code</h5><div class="warning">Expanded code might use diesel internal API's and is only shown for educational purpose</div>
+<p>The macro expands the input to the following Rust code:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">const _</span>: () = {
+    <span class="kw">use </span>diesel;
+    <span class="kw">impl</span>&lt;__DB: diesel::backend::Backend&gt; diesel::HasQuery&lt;__DB&gt; <span class="kw">for </span>User {
+        <span class="kw">type </span>BaseQuery = &lt;users::table <span class="kw">as </span>diesel::query_builder::AsQuery&gt;::Query;
+        <span class="kw">fn </span>base_query() -&gt; <span class="self">Self</span>::BaseQuery {
+            diesel::query_builder::AsQuery::as_query(users::table)
+        }
+    }
+};
+<span class="kw">const _</span>: () = {
+    <span class="kw">use </span>diesel;
+    <span class="kw">use </span>diesel::expression::Selectable;
+    <span class="kw">impl</span>&lt;__DB: diesel::backend::Backend&gt; Selectable&lt;__DB&gt; <span class="kw">for </span>User {
+        <span class="kw">type </span>SelectExpression = (users::r#id, users::r#name);
+        <span class="kw">fn </span>construct_selection() -&gt; <span class="self">Self</span>::SelectExpression {
+            (users::r#id, users::r#name)
+        }
+    }
+    <span class="kw">fn </span>_check_field_compatibility()
+    <span class="kw">where
+        </span>i32: diesel::deserialize::FromSqlRow&lt;
+            diesel::dsl::SqlTypeOf&lt;users::r#id&gt;,
+            diesel::pg::Pg,
+        &gt;,
+        String: diesel::deserialize::FromSqlRow&lt;
+            diesel::dsl::SqlTypeOf&lt;users::r#name&gt;,
+            diesel::pg::Pg,
+        &gt;,
+    {}
+};
+<span class="kw">const _</span>: () = {
+    <span class="kw">use </span>diesel;
+    <span class="kw">use </span>diesel::row::{Row <span class="kw">as _</span>, Field <span class="kw">as _</span>};
+    <span class="kw">impl</span>&lt;
+        __DB: diesel::backend::Backend,
+        __ST0,
+        __ST1,
+    &gt; diesel::deserialize::Queryable&lt;(__ST0, __ST1), __DB&gt; <span class="kw">for </span>User
+    <span class="kw">where
+        </span>(i32, String): diesel::deserialize::FromStaticSqlRow&lt;(__ST0, __ST1), __DB&gt;,
+    {
+        <span class="kw">type </span>Row = (i32, String);
+        <span class="kw">fn </span>build(row: (i32, String)) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+            <span class="kw">use </span>std::convert::TryInto;
+            diesel::deserialize::Result::Ok(<span class="self">Self </span>{
+                id: row.<span class="number">0</span>.try_into()<span class="question-mark">?</span>,
+                name: row.<span class="number">1</span>.try_into()<span class="question-mark">?</span>,
+            })
+        }
+    }
+};</code></pre></div><h4 id="mysql"><a class="doc-anchor" href="#mysql">§</a>MySQL</h4><h5 id="input-2"><a class="doc-anchor" href="#input-2">§</a>Input</h5>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(HasQuery)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}</code></pre></div><h5 id="expanded-code-3"><a class="doc-anchor" href="#expanded-code-3">§</a>Expanded Code</h5><div class="warning">Expanded code might use diesel internal API's and is only shown for educational purpose</div>
+<p>The macro expands the input to the following Rust code:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">const _</span>: () = {
+    <span class="kw">use </span>diesel;
+    <span class="kw">impl</span>&lt;__DB: diesel::backend::Backend&gt; diesel::HasQuery&lt;__DB&gt; <span class="kw">for </span>User {
+        <span class="kw">type </span>BaseQuery = &lt;users::table <span class="kw">as </span>diesel::query_builder::AsQuery&gt;::Query;
+        <span class="kw">fn </span>base_query() -&gt; <span class="self">Self</span>::BaseQuery {
+            diesel::query_builder::AsQuery::as_query(users::table)
+        }
+    }
+};
+<span class="kw">const _</span>: () = {
+    <span class="kw">use </span>diesel;
+    <span class="kw">use </span>diesel::expression::Selectable;
+    <span class="kw">impl</span>&lt;__DB: diesel::backend::Backend&gt; Selectable&lt;__DB&gt; <span class="kw">for </span>User {
+        <span class="kw">type </span>SelectExpression = (users::r#id, users::r#name);
+        <span class="kw">fn </span>construct_selection() -&gt; <span class="self">Self</span>::SelectExpression {
+            (users::r#id, users::r#name)
+        }
+    }
+    <span class="kw">fn </span>_check_field_compatibility()
+    <span class="kw">where
+        </span>i32: diesel::deserialize::FromSqlRow&lt;
+            diesel::dsl::SqlTypeOf&lt;users::r#id&gt;,
+            diesel::mysql::Mysql,
+        &gt;,
+        String: diesel::deserialize::FromSqlRow&lt;
+            diesel::dsl::SqlTypeOf&lt;users::r#name&gt;,
+            diesel::mysql::Mysql,
+        &gt;,
+    {}
+};
+<span class="kw">const _</span>: () = {
+    <span class="kw">use </span>diesel;
+    <span class="kw">use </span>diesel::row::{Row <span class="kw">as _</span>, Field <span class="kw">as _</span>};
+    <span class="kw">impl</span>&lt;
+        __DB: diesel::backend::Backend,
+        __ST0,
+        __ST1,
+    &gt; diesel::deserialize::Queryable&lt;(__ST0, __ST1), __DB&gt; <span class="kw">for </span>User
+    <span class="kw">where
+        </span>(i32, String): diesel::deserialize::FromStaticSqlRow&lt;(__ST0, __ST1), __DB&gt;,
+    {
+        <span class="kw">type </span>Row = (i32, String);
+        <span class="kw">fn </span>build(row: (i32, String)) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+            <span class="kw">use </span>std::convert::TryInto;
+            diesel::deserialize::Result::Ok(<span class="self">Self </span>{
+                id: row.<span class="number">0</span>.try_into()<span class="question-mark">?</span>,
+                name: row.<span class="number">1</span>.try_into()<span class="question-mark">?</span>,
+            })
+        }
+    }
+};</code></pre></div></details></div></details></section></div></main></body></html>

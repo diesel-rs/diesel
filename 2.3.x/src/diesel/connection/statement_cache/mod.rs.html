@@ -1,0 +1,643 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `diesel/src/connection/statement_cache/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../static.files/storage-f9617a14.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">diesel/connection/statement_cache/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Helper types for prepared statement caching
+<a href=#2 id=2 data-nosnippet>2</a>//!
+<a href=#3 id=3 data-nosnippet>3</a>//! A primer on prepared statement caching in Diesel
+<a href=#4 id=4 data-nosnippet>4</a>//! ------------------------------------------------
+<a href=#5 id=5 data-nosnippet>5</a>//!
+<a href=#6 id=6 data-nosnippet>6</a>//! Diesel uses prepared statements for virtually all queries. This is most
+<a href=#7 id=7 data-nosnippet>7</a>//! visible in our lack of any sort of "quoting" API. Values must always be
+<a href=#8 id=8 data-nosnippet>8</a>//! transmitted as bind parameters, we do not support direct interpolation. The
+<a href=#9 id=9 data-nosnippet>9</a>//! only method in the public API that doesn't require the use of prepared
+<a href=#10 id=10 data-nosnippet>10</a>//! statements is [`SimpleConnection::batch_execute`](super::SimpleConnection::batch_execute).
+<a href=#11 id=11 data-nosnippet>11</a>//!
+<a href=#12 id=12 data-nosnippet>12</a>//! In order to avoid the cost of re-parsing and planning subsequent queries,
+<a href=#13 id=13 data-nosnippet>13</a>//! by default Diesel caches the prepared statement whenever possible. This
+<a href=#14 id=14 data-nosnippet>14</a>//! can be customized by calling
+<a href=#15 id=15 data-nosnippet>15</a>//! [`Connection::set_cache_size`](super::Connection::set_prepared_statement_cache_size).
+<a href=#16 id=16 data-nosnippet>16</a>//!
+<a href=#17 id=17 data-nosnippet>17</a>//! Queries will fall into one of three buckets:
+<a href=#18 id=18 data-nosnippet>18</a>//!
+<a href=#19 id=19 data-nosnippet>19</a>//! - Unsafe to cache
+<a href=#20 id=20 data-nosnippet>20</a>//! - Cached by SQL
+<a href=#21 id=21 data-nosnippet>21</a>//! - Cached by type
+<a href=#22 id=22 data-nosnippet>22</a>//!
+<a href=#23 id=23 data-nosnippet>23</a>//! A query is considered unsafe to cache if it represents a potentially
+<a href=#24 id=24 data-nosnippet>24</a>//! unbounded number of queries. This is communicated to the connection through
+<a href=#25 id=25 data-nosnippet>25</a>//! [`QueryFragment::is_safe_to_cache_prepared`]. While this is done as a full AST
+<a href=#26 id=26 data-nosnippet>26</a>//! pass, after monomorphisation and inlining this will usually be optimized to
+<a href=#27 id=27 data-nosnippet>27</a>//! a constant. Only boxed queries will need to do actual work to answer this
+<a href=#28 id=28 data-nosnippet>28</a>//! question.
+<a href=#29 id=29 data-nosnippet>29</a>//!
+<a href=#30 id=30 data-nosnippet>30</a>//! The majority of AST nodes are safe to cache if their components are safe to
+<a href=#31 id=31 data-nosnippet>31</a>//! cache. There are at least 4 cases where a query is unsafe to cache:
+<a href=#32 id=32 data-nosnippet>32</a>//!
+<a href=#33 id=33 data-nosnippet>33</a>//! - queries containing `IN` with bind parameters
+<a href=#34 id=34 data-nosnippet>34</a>//!     - This requires 1 bind parameter per value, and is therefore unbounded
+<a href=#35 id=35 data-nosnippet>35</a>//!     - `IN` with subselects are cached (assuming the subselect is safe to
+<a href=#36 id=36 data-nosnippet>36</a>//!       cache)
+<a href=#37 id=37 data-nosnippet>37</a>//!     - `IN` statements for postgresql are cached as they use `= ANY($1)` instead
+<a href=#38 id=38 data-nosnippet>38</a>//!       which does not cause an unbound number of binds
+<a href=#39 id=39 data-nosnippet>39</a>//! - `INSERT` statements with a variable number of rows
+<a href=#40 id=40 data-nosnippet>40</a>//!     - The SQL varies based on the number of rows being inserted.
+<a href=#41 id=41 data-nosnippet>41</a>//! - `UPDATE` statements
+<a href=#42 id=42 data-nosnippet>42</a>//!     - Technically it's bounded on "number of optional values being passed to
+<a href=#43 id=43 data-nosnippet>43</a>//!       `SET` factorial" but that's still quite high, and not worth caching
+<a href=#44 id=44 data-nosnippet>44</a>//!       for the same reason as single row inserts
+<a href=#45 id=45 data-nosnippet>45</a>//! - `SqlLiteral` nodes
+<a href=#46 id=46 data-nosnippet>46</a>//!     - We have no way of knowing whether the SQL was generated dynamically or
+<a href=#47 id=47 data-nosnippet>47</a>//!       not, so we must assume that it's unbounded
+<a href=#48 id=48 data-nosnippet>48</a>//!
+<a href=#49 id=49 data-nosnippet>49</a>//! For queries which are unsafe to cache, the statement cache will never insert
+<a href=#50 id=50 data-nosnippet>50</a>//! them. They will be prepared and immediately released after use (or in the
+<a href=#51 id=51 data-nosnippet>51</a>//! case of PG they will use the unnamed prepared statement).
+<a href=#52 id=52 data-nosnippet>52</a>//!
+<a href=#53 id=53 data-nosnippet>53</a>//! For statements which are able to be cached, we then have to determine what
+<a href=#54 id=54 data-nosnippet>54</a>//! to use as the cache key. The standard method that virtually all ORMs or
+<a href=#55 id=55 data-nosnippet>55</a>//! database access layers use in the wild is to store the statements in a
+<a href=#56 id=56 data-nosnippet>56</a>//! hash map, using the SQL as the key.
+<a href=#57 id=57 data-nosnippet>57</a>//!
+<a href=#58 id=58 data-nosnippet>58</a>//! However, the majority of queries using Diesel that are safe to cache as
+<a href=#59 id=59 data-nosnippet>59</a>//! prepared statements will be uniquely identified by their type. For these
+<a href=#60 id=60 data-nosnippet>60</a>//! queries, we can bypass the query builder entirely. Since our AST is
+<a href=#61 id=61 data-nosnippet>61</a>//! generally optimized away by the compiler, for these queries the cost of
+<a href=#62 id=62 data-nosnippet>62</a>//! fetching a prepared statement from the cache is the cost of [`HashMap&lt;u32,
+<a href=#63 id=63 data-nosnippet>63</a>//! _&gt;::get`](std::collections::HashMap::get), where the key we're fetching by is a compile time constant. For
+<a href=#64 id=64 data-nosnippet>64</a>//! these types, the AST pass to gather the bind parameters will also be
+<a href=#65 id=65 data-nosnippet>65</a>//! optimized to accessing each parameter individually.
+<a href=#66 id=66 data-nosnippet>66</a>//!
+<a href=#67 id=67 data-nosnippet>67</a>//! Determining if a query can be cached by type is the responsibility of the
+<a href=#68 id=68 data-nosnippet>68</a>//! [`QueryId`] trait. This trait is quite similar to `Any`, but with a few
+<a href=#69 id=69 data-nosnippet>69</a>//! differences:
+<a href=#70 id=70 data-nosnippet>70</a>//!
+<a href=#71 id=71 data-nosnippet>71</a>//! - No `'static` bound
+<a href=#72 id=72 data-nosnippet>72</a>//!     - Something being a reference never changes the SQL that is generated,
+<a href=#73 id=73 data-nosnippet>73</a>//!       so `&amp;T` has the same query id as `T`.
+<a href=#74 id=74 data-nosnippet>74</a>//! - `Option&lt;TypeId&gt;` instead of `TypeId`
+<a href=#75 id=75 data-nosnippet>75</a>//!     - We need to be able to constrain on this trait being implemented, but
+<a href=#76 id=76 data-nosnippet>76</a>//!       not all types will actually have a static query id. Hopefully once
+<a href=#77 id=77 data-nosnippet>77</a>//!       specialization is stable we can remove the `QueryId` bound and
+<a href=#78 id=78 data-nosnippet>78</a>//!       specialize on it instead (or provide a blanket impl for all `T`)
+<a href=#79 id=79 data-nosnippet>79</a>//! - Implementors give a more broad type than `Self`
+<a href=#80 id=80 data-nosnippet>80</a>//!     - This really only affects bind parameters. There are 6 different Rust
+<a href=#81 id=81 data-nosnippet>81</a>//!       types which can be used for a parameter of type `timestamp`. The same
+<a href=#82 id=82 data-nosnippet>82</a>//!       statement can be used regardless of the Rust type, so [`Bound&lt;ST, T&gt;`](crate::expression::bound::Bound)
+<a href=#83 id=83 data-nosnippet>83</a>//!       defines its [`QueryId`] as [`Bound&lt;ST, ()&gt;`](crate::expression::bound::Bound).
+<a href=#84 id=84 data-nosnippet>84</a>//!
+<a href=#85 id=85 data-nosnippet>85</a>//! A type returning `Some(id)` or `None` for its query ID is based on whether
+<a href=#86 id=86 data-nosnippet>86</a>//! the SQL it generates can change without the type changing. At the moment,
+<a href=#87 id=87 data-nosnippet>87</a>//! the only type which is safe to cache as a prepared statement but does not
+<a href=#88 id=88 data-nosnippet>88</a>//! have a static query ID is something which has been boxed.
+<a href=#89 id=89 data-nosnippet>89</a>//!
+<a href=#90 id=90 data-nosnippet>90</a>//! One potential optimization that we don't perform is storing the queries
+<a href=#91 id=91 data-nosnippet>91</a>//! which are cached by type ID in a separate map. Since a type ID is a u64,
+<a href=#92 id=92 data-nosnippet>92</a>//! this would allow us to use a specialized map which knows that there will
+<a href=#93 id=93 data-nosnippet>93</a>//! never be hashing collisions (also known as a perfect hashing function),
+<a href=#94 id=94 data-nosnippet>94</a>//! which would mean lookups are always constant time. However, this would save
+<a href=#95 id=95 data-nosnippet>95</a>//! nanoseconds on an operation that will take microseconds or even
+<a href=#96 id=96 data-nosnippet>96</a>//! milliseconds.
+<a href=#97 id=97 data-nosnippet>97</a>
+<a href=#98 id=98 data-nosnippet>98</a></span><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/any/struct.TypeId.html">std::any::TypeId</a>;
+<a href=#99 id=99 data-nosnippet>99</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/alloc/borrow/enum.Cow.html">std::borrow::Cow</a>;
+<a href=#100 id=100 data-nosnippet>100</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/enum.Entry.html">std::collections::hash_map::Entry</a>;
+<a href=#101 id=101 data-nosnippet>101</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/hash/macros/derive.Hash.html">std::hash::Hash</a>;
+<a href=#102 id=102 data-nosnippet>102</a><span class="kw">use </span>std::ops::{<a href="https://doc.rust-lang.org/nightly/core/ops/deref/trait.Deref.html">Deref</a>, <a href="https://doc.rust-lang.org/nightly/core/ops/deref/trait.DerefMut.html">DerefMut</a>};
+<a href=#103 id=103 data-nosnippet>103</a>
+<a href=#104 id=104 data-nosnippet>104</a><span class="kw">use </span>strategy::{
+<a href=#105 id=105 data-nosnippet>105</a>    <a href="strategy.rs.html#18-28">LookupStatementResult</a>, <a href="strategy.rs.html#32-45">StatementCacheStrategy</a>, <a href="strategy.rs.html#49-54">WithCacheStrategy</a>, <a href="strategy.rs.html#90">WithoutCacheStrategy</a>,
+<a href=#106 id=106 data-nosnippet>106</a>};
+<a href=#107 id=107 data-nosnippet>107</a>
+<a href=#108 id=108 data-nosnippet>108</a><span class="kw">use </span><a href="../../backend.rs.html#83-113"><span class="kw">crate</span>::backend::Backend</a>;
+<a href=#109 id=109 data-nosnippet>109</a><span class="kw">use </span><a href="../instrumentation.rs.html#84-171"><span class="kw">crate</span>::connection::InstrumentationEvent</a>;
+<a href=#110 id=110 data-nosnippet>110</a><span class="kw">use </span><span class="kw">crate</span>::query_builder::<span class="kw-2">*</span>;
+<a href=#111 id=111 data-nosnippet>111</a><span class="kw">use </span><a href="../../result.rs.html#255"><span class="kw">crate</span>::result::QueryResult</a>;
+<a href=#112 id=112 data-nosnippet>112</a>
+<a href=#113 id=113 data-nosnippet>113</a><span class="kw">use </span>super::{<a href="../mod.rs.html#51-56">CacheSize</a>, <a href="../instrumentation.rs.html#246-249">Instrumentation</a>};
+<a href=#114 id=114 data-nosnippet>114</a>
+<a href=#115 id=115 data-nosnippet>115</a><span class="doccomment">/// Various interfaces and implementations to control connection statement caching.
+<a href=#116 id=116 data-nosnippet>116</a></span><span class="attr">#[allow(unreachable_pub)]
+<a href=#117 id=117 data-nosnippet>117</a></span><span class="kw">pub mod </span><a href="strategy.rs.html#1-424">strategy</a>;
+<a href=#118 id=118 data-nosnippet>118</a>
+<a href=#119 id=119 data-nosnippet>119</a><span class="doccomment">/// A prepared statement cache
+<a href=#120 id=120 data-nosnippet>120</a></span><span class="attr">#[allow(missing_debug_implementations, unreachable_pub)]
+<a href=#121 id=121 data-nosnippet>121</a>#[cfg_attr(
+<a href=#122 id=122 data-nosnippet>122</a>    diesel_docsrs,
+<a href=#123 id=123 data-nosnippet>123</a>    doc(cfg(feature = <span class="string">"i-implement-a-third-party-backend-and-opt-into-breaking-changes"</span>))
+<a href=#124 id=124 data-nosnippet>124</a>)]
+<a href=#125 id=125 data-nosnippet>125</a></span><span class="kw">pub struct </span><a href="../../../../diesel/connection/statement_cache/struct.StatementCache.html">StatementCache</a>&lt;DB: <a href="../../backend.rs.html#83-113">Backend</a>, Statement&gt; {
+<a href=#126 id=126 data-nosnippet>126</a>    cache: <a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<span class="kw">dyn </span><a href="strategy.rs.html#32-45">StatementCacheStrategy</a>&lt;DB, Statement&gt;&gt;,
+<a href=#127 id=127 data-nosnippet>127</a>    <span class="comment">// increment every time a query is cached
+<a href=#128 id=128 data-nosnippet>128</a>    // some backends might use it to create unique prepared statement names
+<a href=#129 id=129 data-nosnippet>129</a>    </span>cache_counter: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>,
+<a href=#130 id=130 data-nosnippet>130</a>}
+<a href=#131 id=131 data-nosnippet>131</a>
+<a href=#132 id=132 data-nosnippet>132</a><span class="doccomment">/// A helper type that indicates if a certain query
+<a href=#133 id=133 data-nosnippet>133</a>/// is cached inside of the prepared statement cache or not
+<a href=#134 id=134 data-nosnippet>134</a>///
+<a href=#135 id=135 data-nosnippet>135</a>/// This information can be used by the connection implementation
+<a href=#136 id=136 data-nosnippet>136</a>/// to signal this fact to the database while actually
+<a href=#137 id=137 data-nosnippet>137</a>/// preparing the statement
+<a href=#138 id=138 data-nosnippet>138</a></span><span class="expansion"><input id=expand-138 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+#[allow(unreachable_pub)]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>PrepareForCache {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">match </span><span class="self">self </span>{
+            PrepareForCache::Yes { counter: __self_0 } =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f, <span class="string">"Yes"</span>,
+                    <span class="string">"counter"</span>, <span class="kw-2">&amp;</span>__self_0),
+            PrepareForCache::No =&gt; ::core::fmt::Formatter::write_str(f, <span class="string">"No"</span>),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[allow(unreachable_pub)]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>PrepareForCache {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PrepareForCache {
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;u64&gt;;
+        <span class="kw-2">*</span><span class="self">self
+    </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[allow(unreachable_pub)]
+</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>PrepareForCache { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span></span></span><span class="attr">)]
+<a href=#139 id=139 data-nosnippet>139</a>#[cfg_attr(
+<a href=#140 id=140 data-nosnippet>140</a>    diesel_docsrs,
+<a href=#141 id=141 data-nosnippet>141</a>    doc(cfg(feature = <span class="string">"i-implement-a-third-party-backend-and-opt-into-breaking-changes"</span>))
+<a href=#142 id=142 data-nosnippet>142</a>)]
+<a href=#143 id=143 data-nosnippet>143</a>#[allow(unreachable_pub)]
+<a href=#144 id=144 data-nosnippet>144</a></span><span class="kw">pub enum </span><a href="../../../../diesel/connection/statement_cache/enum.PrepareForCache.html">PrepareForCache</a> {
+<a href=#145 id=145 data-nosnippet>145</a>    <span class="doccomment">/// The statement will be cached
+<a href=#146 id=146 data-nosnippet>146</a>    </span>Yes {
+<a href=#147 id=147 data-nosnippet>147</a>        <span class="doccomment">/// Counter might be used as unique identifier for prepared statement.
+<a href=#148 id=148 data-nosnippet>148</a>        </span><span class="attr">#[allow(dead_code)]
+<a href=#149 id=149 data-nosnippet>149</a>        </span>counter: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>,
+<a href=#150 id=150 data-nosnippet>150</a>    },
+<a href=#151 id=151 data-nosnippet>151</a>    <span class="doccomment">/// The statement won't be cached
+<a href=#152 id=152 data-nosnippet>152</a>    </span>No,
+<a href=#153 id=153 data-nosnippet>153</a>}
+<a href=#154 id=154 data-nosnippet>154</a>
+<a href=#155 id=155 data-nosnippet>155</a><span class="attr">#[allow(clippy::new_without_default, unreachable_pub)]
+<a href=#156 id=156 data-nosnippet>156</a></span><span class="kw">impl</span>&lt;DB, Statement&gt; <a href="#125-130">StatementCache</a>&lt;DB, Statement&gt;
+<a href=#157 id=157 data-nosnippet>157</a><span class="kw">where
+<a href=#158 id=158 data-nosnippet>158</a>    </span>DB: <a href="../../backend.rs.html#83-113">Backend</a> + <span class="lifetime">'static</span>,
+<a href=#159 id=159 data-nosnippet>159</a>    Statement: <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a> + <span class="lifetime">'static</span>,
+<a href=#160 id=160 data-nosnippet>160</a>    DB::TypeMetadata: <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a> + <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html">Clone</a>,
+<a href=#161 id=161 data-nosnippet>161</a>    DB::QueryBuilder: <a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html">Default</a>,
+<a href=#162 id=162 data-nosnippet>162</a>    <a href="#510-526">StatementCacheKey</a>&lt;DB&gt;: <a href="https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html">Hash</a> + <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html">Eq</a>,
+<a href=#163 id=163 data-nosnippet>163</a>{
+<a href=#164 id=164 data-nosnippet>164</a>    <span class="doccomment">/// Create a new prepared statement cache using [`CacheSize::Unbounded`] as caching strategy.
+<a href=#165 id=165 data-nosnippet>165</a>    </span><span class="attr">#[allow(unreachable_pub)]
+<a href=#166 id=166 data-nosnippet>166</a>    </span><span class="kw">pub fn </span>new() -&gt; <span class="self">Self </span>{
+<a href=#167 id=167 data-nosnippet>167</a>        <a href="#125-130">StatementCache</a> {
+<a href=#168 id=168 data-nosnippet>168</a>            cache: <a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>::<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html#method.new">new</a>(<a href="strategy.rs.html#49-54">WithCacheStrategy</a>::<a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default">default</a>()),
+<a href=#169 id=169 data-nosnippet>169</a>            cache_counter: <span class="number">0</span>,
+<a href=#170 id=170 data-nosnippet>170</a>        }
+<a href=#171 id=171 data-nosnippet>171</a>    }
+<a href=#172 id=172 data-nosnippet>172</a>
+<a href=#173 id=173 data-nosnippet>173</a>    <span class="doccomment">/// Set caching strategy from predefined implementations
+<a href=#174 id=174 data-nosnippet>174</a>    </span><span class="kw">pub fn </span>set_cache_size(<span class="kw-2">&amp;mut </span><span class="self">self</span>, size: <a href="../mod.rs.html#51-56">CacheSize</a>) {
+<a href=#175 id=175 data-nosnippet>175</a>        <span class="kw">if </span><a class="self" href="#174">self</a>.cache.<a href="strategy.rs.html#38">cache_size</a>() != <a href="#174">size</a> {
+<a href=#176 id=176 data-nosnippet>176</a>            <a class="self" href="#174">self</a>.cache = <span class="kw">match </span><a href="#174">size</a> {
+<a href=#177 id=177 data-nosnippet>177</a>                CacheSize::<a href="../mod.rs.html#53">Unbounded</a> =&gt; <a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>::<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html#method.new">new</a>(<a href="strategy.rs.html#49-54">WithCacheStrategy</a>::<a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default">default</a>()),
+<a href=#178 id=178 data-nosnippet>178</a>                CacheSize::<a href="../mod.rs.html#55">Disabled</a> =&gt; <a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>::<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html#method.new">new</a>(<a href="strategy.rs.html#90">WithoutCacheStrategy</a>::<a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default">default</a>()),
+<a href=#179 id=179 data-nosnippet>179</a>            }
+<a href=#180 id=180 data-nosnippet>180</a>        }
+<a href=#181 id=181 data-nosnippet>181</a>    }
+<a href=#182 id=182 data-nosnippet>182</a>
+<a href=#183 id=183 data-nosnippet>183</a>    <span class="doccomment">/// Setting custom caching strategy. It is used in tests, to verify caching logic
+<a href=#184 id=184 data-nosnippet>184</a>    </span><span class="attr">#[allow(dead_code)]
+<a href=#185 id=185 data-nosnippet>185</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>set_strategy&lt;Strategy&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, s: Strategy)
+<a href=#186 id=186 data-nosnippet>186</a>    <span class="kw">where
+<a href=#187 id=187 data-nosnippet>187</a>        </span>Strategy: <a href="strategy.rs.html#32-45">StatementCacheStrategy</a>&lt;DB, Statement&gt; + <span class="lifetime">'static</span>,
+<a href=#188 id=188 data-nosnippet>188</a>    {
+<a href=#189 id=189 data-nosnippet>189</a>        <a class="self" href="#185">self</a>.cache = <a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>::<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html#method.new">new</a>(<a href="#185">s</a>);
+<a href=#190 id=190 data-nosnippet>190</a>    }
+<a href=#191 id=191 data-nosnippet>191</a>
+<a href=#192 id=192 data-nosnippet>192</a>    <span class="doccomment">/// Prepare a query as prepared statement
+<a href=#193 id=193 data-nosnippet>193</a>    ///
+<a href=#194 id=194 data-nosnippet>194</a>    /// This functions returns a prepared statement corresponding to the
+<a href=#195 id=195 data-nosnippet>195</a>    /// query passed as `source` with the bind values passed as `bind_types`.
+<a href=#196 id=196 data-nosnippet>196</a>    /// If the query is already cached inside this prepared statement cache
+<a href=#197 id=197 data-nosnippet>197</a>    /// the cached prepared statement will be returned, otherwise `prepare_fn`
+<a href=#198 id=198 data-nosnippet>198</a>    /// will be called to create a new prepared statement for this query source.
+<a href=#199 id=199 data-nosnippet>199</a>    /// The first parameter of the callback contains the query string, the second
+<a href=#200 id=200 data-nosnippet>200</a>    /// parameter indicates if the constructed prepared statement will be cached or not.
+<a href=#201 id=201 data-nosnippet>201</a>    /// See the [module](self) documentation for details
+<a href=#202 id=202 data-nosnippet>202</a>    /// about which statements are cached and which are not cached.
+<a href=#203 id=203 data-nosnippet>203</a>    </span><span class="comment">//
+<a href=#204 id=204 data-nosnippet>204</a>    // Notes:
+<a href=#205 id=205 data-nosnippet>205</a>    // This function takes explicitly a connection and a function pointer (and no generic callback)
+<a href=#206 id=206 data-nosnippet>206</a>    // as argument to ensure that we don't leak generic query types into the prepare function
+<a href=#207 id=207 data-nosnippet>207</a>    </span><span class="attr">#[allow(unreachable_pub)]
+<a href=#208 id=208 data-nosnippet>208</a>    #[cfg(any(
+<a href=#209 id=209 data-nosnippet>209</a>        feature = <span class="string">"i-implement-a-third-party-backend-and-opt-into-breaking-changes"</span>,
+<a href=#210 id=210 data-nosnippet>210</a>        feature = <span class="string">"sqlite"</span>,
+<a href=#211 id=211 data-nosnippet>211</a>        feature = <span class="string">"mysql"
+<a href=#212 id=212 data-nosnippet>212</a>    </span>))]
+<a href=#213 id=213 data-nosnippet>213</a>    </span><span class="kw">pub fn </span>cached_statement&lt;<span class="lifetime">'a</span>, T, R, C&gt;(
+<a href=#214 id=214 data-nosnippet>214</a>        <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span><span class="self">self</span>,
+<a href=#215 id=215 data-nosnippet>215</a>        source: <span class="kw-2">&amp;</span>T,
+<a href=#216 id=216 data-nosnippet>216</a>        backend: <span class="kw-2">&amp;</span>DB,
+<a href=#217 id=217 data-nosnippet>217</a>        bind_types: <span class="kw-2">&amp;</span>[DB::TypeMetadata],
+<a href=#218 id=218 data-nosnippet>218</a>        conn: C,
+<a href=#219 id=219 data-nosnippet>219</a>        prepare_fn: <span class="kw">fn</span>(C, <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>, <a href="#144-153">PrepareForCache</a>, <span class="kw-2">&amp;</span>[DB::TypeMetadata]) -&gt; R,
+<a href=#220 id=220 data-nosnippet>220</a>        instrumentation: <span class="kw-2">&amp;mut </span><span class="kw">dyn </span><a href="../instrumentation.rs.html#246-249">Instrumentation</a>,
+<a href=#221 id=221 data-nosnippet>221</a>    ) -&gt; R::Return&lt;<span class="lifetime">'a</span>&gt;
+<a href=#222 id=222 data-nosnippet>222</a>    <span class="kw">where
+<a href=#223 id=223 data-nosnippet>223</a>        </span>T: <a href="../../query_builder/mod.rs.html#225-295">QueryFragment</a>&lt;DB&gt; + <a href="../../query_builder/query_id.rs.html#26-69">QueryId</a>,
+<a href=#224 id=224 data-nosnippet>224</a>        R: <a href="#422-447">StatementCallbackReturnType</a>&lt;Statement, C&gt; + <span class="lifetime">'a</span>,
+<a href=#225 id=225 data-nosnippet>225</a>    {
+<a href=#226 id=226 data-nosnippet>226</a>        <a class="self" href="#214">self</a>.<a href="#249-286">cached_statement_non_generic</a>(
+<a href=#227 id=227 data-nosnippet>227</a>            T::<a href="../../query_builder/query_id.rs.html#62-68">query_id</a>(),
+<a href=#228 id=228 data-nosnippet>228</a>            <a href="#215">source</a>,
+<a href=#229 id=229 data-nosnippet>229</a>            <a href="#216">backend</a>,
+<a href=#230 id=230 data-nosnippet>230</a>            <a href="#217">bind_types</a>,
+<a href=#231 id=231 data-nosnippet>231</a>            <a href="#218">conn</a>,
+<a href=#232 id=232 data-nosnippet>232</a>            <a href="#219">prepare_fn</a>,
+<a href=#233 id=233 data-nosnippet>233</a>            <a href="#220">instrumentation</a>,
+<a href=#234 id=234 data-nosnippet>234</a>        )
+<a href=#235 id=235 data-nosnippet>235</a>    }
+<a href=#236 id=236 data-nosnippet>236</a>
+<a href=#237 id=237 data-nosnippet>237</a>    <span class="doccomment">/// Prepare a query as prepared statement
+<a href=#238 id=238 data-nosnippet>238</a>    ///
+<a href=#239 id=239 data-nosnippet>239</a>    /// This function closely mirrors `Self::cached_statement` but
+<a href=#240 id=240 data-nosnippet>240</a>    /// eliminates the generic query type in favour of a trait object
+<a href=#241 id=241 data-nosnippet>241</a>    ///
+<a href=#242 id=242 data-nosnippet>242</a>    /// This can be easier to use in situations where you already turned
+<a href=#243 id=243 data-nosnippet>243</a>    /// the query type into a concrete SQL string
+<a href=#244 id=244 data-nosnippet>244</a>    </span><span class="comment">// Notes:
+<a href=#245 id=245 data-nosnippet>245</a>    // This function takes explicitly a connection and a function pointer (and no generic callback)
+<a href=#246 id=246 data-nosnippet>246</a>    // as argument to ensure that we don't leak generic query types into the prepare function
+<a href=#247 id=247 data-nosnippet>247</a>    </span><span class="attr">#[allow(unreachable_pub)]
+<a href=#248 id=248 data-nosnippet>248</a>    #[allow(clippy::too_many_arguments)] </span><span class="comment">// we need all of them
+<a href=#249 id=249 data-nosnippet>249</a>    </span><span class="kw">pub fn </span>cached_statement_non_generic&lt;<span class="lifetime">'a</span>, R, C&gt;(
+<a href=#250 id=250 data-nosnippet>250</a>        <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span><span class="self">self</span>,
+<a href=#251 id=251 data-nosnippet>251</a>        maybe_type_id: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/core/any/struct.TypeId.html">TypeId</a>&gt;,
+<a href=#252 id=252 data-nosnippet>252</a>        source: <span class="kw-2">&amp;</span><span class="kw">dyn </span><a href="#371-377">QueryFragmentForCachedStatement</a>&lt;DB&gt;,
+<a href=#253 id=253 data-nosnippet>253</a>        backend: <span class="kw-2">&amp;</span>DB,
+<a href=#254 id=254 data-nosnippet>254</a>        bind_types: <span class="kw-2">&amp;</span>[DB::TypeMetadata],
+<a href=#255 id=255 data-nosnippet>255</a>        conn: C,
+<a href=#256 id=256 data-nosnippet>256</a>        prepare_fn: <span class="kw">fn</span>(C, <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>, <a href="#144-153">PrepareForCache</a>, <span class="kw-2">&amp;</span>[DB::TypeMetadata]) -&gt; R,
+<a href=#257 id=257 data-nosnippet>257</a>        instrumentation: <span class="kw-2">&amp;mut </span><span class="kw">dyn </span><a href="../instrumentation.rs.html#246-249">Instrumentation</a>,
+<a href=#258 id=258 data-nosnippet>258</a>    ) -&gt; R::Return&lt;<span class="lifetime">'a</span>&gt;
+<a href=#259 id=259 data-nosnippet>259</a>    <span class="kw">where
+<a href=#260 id=260 data-nosnippet>260</a>        </span>R: <a href="#422-447">StatementCallbackReturnType</a>&lt;Statement, C&gt; + <span class="lifetime">'a</span>,
+<a href=#261 id=261 data-nosnippet>261</a>    {
+<a href=#262 id=262 data-nosnippet>262</a>        <span class="self">Self</span>::<a href="#293-354">cached_statement_non_generic_impl</a>(
+<a href=#263 id=263 data-nosnippet>263</a>            <a class="self" href="#250">self</a>.cache.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.AsMut.html#tymethod.as_mut">as_mut</a>(),
+<a href=#264 id=264 data-nosnippet>264</a>            <a href="#251">maybe_type_id</a>,
+<a href=#265 id=265 data-nosnippet>265</a>            <a href="#252">source</a>,
+<a href=#266 id=266 data-nosnippet>266</a>            <a href="#253">backend</a>,
+<a href=#267 id=267 data-nosnippet>267</a>            <a href="#254">bind_types</a>,
+<a href=#268 id=268 data-nosnippet>268</a>            <a href="#255">conn</a>,
+<a href=#269 id=269 data-nosnippet>269</a>            |conn, sql, is_cached| {
+<a href=#270 id=270 data-nosnippet>270</a>                <span class="kw">if </span><a href="#269">is_cached</a> {
+<a href=#271 id=271 data-nosnippet>271</a>                    <a href="#257">instrumentation</a>.<a href="../instrumentation.rs.html#248">on_connection_event</a>(InstrumentationEvent::<a href="../instrumentation.rs.html#127-130">CacheQuery</a> { <a href="#269">sql</a> });
+<a href=#272 id=272 data-nosnippet>272</a>                    <a class="self" href="#250">self</a>.cache_counter += <span class="number">1</span>;
+<a href=#273 id=273 data-nosnippet>273</a>                    <a href="#256">prepare_fn</a>(
+<a href=#274 id=274 data-nosnippet>274</a>                        <a href="#269">conn</a>,
+<a href=#275 id=275 data-nosnippet>275</a>                        <a href="#269">sql</a>,
+<a href=#276 id=276 data-nosnippet>276</a>                        PrepareForCache::<a href="#146-150">Yes</a> {
+<a href=#277 id=277 data-nosnippet>277</a>                            counter: <a class="self" href="#250">self</a>.cache_counter,
+<a href=#278 id=278 data-nosnippet>278</a>                        },
+<a href=#279 id=279 data-nosnippet>279</a>                        <a href="#254">bind_types</a>,
+<a href=#280 id=280 data-nosnippet>280</a>                    )
+<a href=#281 id=281 data-nosnippet>281</a>                } <span class="kw">else </span>{
+<a href=#282 id=282 data-nosnippet>282</a>                    <a href="#256">prepare_fn</a>(<a href="#269">conn</a>, <a href="#269">sql</a>, PrepareForCache::<a href="#152">No</a>, <a href="#254">bind_types</a>)
+<a href=#283 id=283 data-nosnippet>283</a>                }
+<a href=#284 id=284 data-nosnippet>284</a>            },
+<a href=#285 id=285 data-nosnippet>285</a>        )
+<a href=#286 id=286 data-nosnippet>286</a>    }
+<a href=#287 id=287 data-nosnippet>287</a>
+<a href=#288 id=288 data-nosnippet>288</a>    <span class="doccomment">/// Reduce the amount of monomorphized code by factoring this via dynamic dispatch
+<a href=#289 id=289 data-nosnippet>289</a>    /// There will be only one instance of `R` for diesel (and a different single instance for diesel-async)
+<a href=#290 id=290 data-nosnippet>290</a>    /// There will be only a instance per connection type `C` for each connection that
+<a href=#291 id=291 data-nosnippet>291</a>    /// uses this prepared statement impl, this closely correlates to the types `DB` and `Statement`
+<a href=#292 id=292 data-nosnippet>292</a>    /// for the overall statement cache impl
+<a href=#293 id=293 data-nosnippet>293</a>    </span><span class="kw">fn </span>cached_statement_non_generic_impl&lt;<span class="lifetime">'a</span>, R, C&gt;(
+<a href=#294 id=294 data-nosnippet>294</a>        cache: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span><span class="kw">dyn </span><a href="strategy.rs.html#32-45">StatementCacheStrategy</a>&lt;DB, Statement&gt;,
+<a href=#295 id=295 data-nosnippet>295</a>        maybe_type_id: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/core/any/struct.TypeId.html">TypeId</a>&gt;,
+<a href=#296 id=296 data-nosnippet>296</a>        source: <span class="kw-2">&amp;</span><span class="kw">dyn </span><a href="#371-377">QueryFragmentForCachedStatement</a>&lt;DB&gt;,
+<a href=#297 id=297 data-nosnippet>297</a>        backend: <span class="kw-2">&amp;</span>DB,
+<a href=#298 id=298 data-nosnippet>298</a>        bind_types: <span class="kw-2">&amp;</span>[DB::TypeMetadata],
+<a href=#299 id=299 data-nosnippet>299</a>        conn: C,
+<a href=#300 id=300 data-nosnippet>300</a>        prepare_fn: <span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnOnce.html">FnOnce</a>(C, <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>, <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>) -&gt; R,
+<a href=#301 id=301 data-nosnippet>301</a>    ) -&gt; R::Return&lt;<span class="lifetime">'a</span>&gt;
+<a href=#302 id=302 data-nosnippet>302</a>    <span class="kw">where
+<a href=#303 id=303 data-nosnippet>303</a>        </span>R: <a href="#422-447">StatementCallbackReturnType</a>&lt;Statement, C&gt; + <span class="lifetime">'a</span>,
+<a href=#304 id=304 data-nosnippet>304</a>    {
+<a href=#305 id=305 data-nosnippet>305</a>        <span class="comment">// this function cannot use the `?` operator
+<a href=#306 id=306 data-nosnippet>306</a>        // as we want to abstract over returning `QueryResult&lt;MaybeCached&gt;` and
+<a href=#307 id=307 data-nosnippet>307</a>        // `impl Future&lt;Output = QueryResult&lt;MaybeCached&gt;&gt;` here
+<a href=#308 id=308 data-nosnippet>308</a>        // to share the prepared statement cache implementation between diesel and
+<a href=#309 id=309 data-nosnippet>309</a>        // diesel_async
+<a href=#310 id=310 data-nosnippet>310</a>        //
+<a href=#311 id=311 data-nosnippet>311</a>        // For this reason we need to match explicitly on each error and call `R::from_error()`
+<a href=#312 id=312 data-nosnippet>312</a>        // to construct the right error return variant
+<a href=#313 id=313 data-nosnippet>313</a>        </span><span class="kw">let </span>cache_key =
+<a href=#314 id=314 data-nosnippet>314</a>            <span class="kw">match </span><a href="#510-526">StatementCacheKey</a>::<a href="#537-553">for_source</a>(<a href="#295">maybe_type_id</a>, <a href="#296">source</a>, <a href="#298">bind_types</a>, <a href="#297">backend</a>) {
+<a href=#315 id=315 data-nosnippet>315</a>                <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(o) =&gt; <a href="#315">o</a>,
+<a href=#316 id=316 data-nosnippet>316</a>                <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(e) =&gt; <span class="kw">return </span>R::<a href="#429">from_error</a>(<a href="#316">e</a>),
+<a href=#317 id=317 data-nosnippet>317</a>            };
+<a href=#318 id=318 data-nosnippet>318</a>        <span class="kw">let </span>is_safe_to_cache_prepared = <span class="kw">match </span><a href="#296">source</a>.<a href="#376">is_safe_to_cache_prepared</a>(<a href="#297">backend</a>) {
+<a href=#319 id=319 data-nosnippet>319</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(o) =&gt; <a href="#319">o</a>,
+<a href=#320 id=320 data-nosnippet>320</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(e) =&gt; <span class="kw">return </span>R::<a href="#429">from_error</a>(<a href="#320">e</a>),
+<a href=#321 id=321 data-nosnippet>321</a>        };
+<a href=#322 id=322 data-nosnippet>322</a>        <span class="comment">// early return if the statement cannot be cached
+<a href=#323 id=323 data-nosnippet>323</a>        </span><span class="kw">if </span>!<a href="#318">is_safe_to_cache_prepared</a> {
+<a href=#324 id=324 data-nosnippet>324</a>            <span class="kw">let </span>sql = <span class="kw">match </span><a href="#313">cache_key</a>.<a href="#561-570">sql</a>(<a href="#296">source</a>, <a href="#297">backend</a>) {
+<a href=#325 id=325 data-nosnippet>325</a>                <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(sql) =&gt; <a href="#325">sql</a>,
+<a href=#326 id=326 data-nosnippet>326</a>                <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(e) =&gt; <span class="kw">return </span>R::<a href="#429">from_error</a>(<a href="#326">e</a>),
+<a href=#327 id=327 data-nosnippet>327</a>            };
+<a href=#328 id=328 data-nosnippet>328</a>            <span class="kw">return </span><a href="#300">prepare_fn</a>(<a href="#299">conn</a>, <span class="kw-2">&amp;</span><a href="#324">sql</a>, <span class="bool-val">false</span>).<a href="#432-434">map_to_no_cache</a>();
+<a href=#329 id=329 data-nosnippet>329</a>        }
+<a href=#330 id=330 data-nosnippet>330</a>        <span class="kw">let </span>entry = <a href="#294">cache</a>.<a href="strategy.rs.html#41-44">lookup_statement</a>(<a href="#313">cache_key</a>);
+<a href=#331 id=331 data-nosnippet>331</a>        <span class="kw">match </span><a href="#330">entry</a> {
+<a href=#332 id=332 data-nosnippet>332</a>            <span class="comment">// The statement is already cached
+<a href=#333 id=333 data-nosnippet>333</a>            </span>LookupStatementResult::<a href="strategy.rs.html#25">CacheEntry</a>(Entry::<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/enum.Entry.html#variant.Occupied">Occupied</a>(e)) =&gt; {
+<a href=#334 id=334 data-nosnippet>334</a>                R::<a href="#437">map_to_cache</a>(<a href="#333">e</a>.<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.OccupiedEntry.html#method.into_mut">into_mut</a>(), <a href="#299">conn</a>)
+<a href=#335 id=335 data-nosnippet>335</a>            }
+<a href=#336 id=336 data-nosnippet>336</a>            <span class="comment">// The statement is not cached but there is capacity to cache it
+<a href=#337 id=337 data-nosnippet>337</a>            </span>LookupStatementResult::<a href="strategy.rs.html#25">CacheEntry</a>(Entry::<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/enum.Entry.html#variant.Vacant">Vacant</a>(e)) =&gt; {
+<a href=#338 id=338 data-nosnippet>338</a>                <span class="kw">let </span>sql = <span class="kw">match </span><a href="#337">e</a>.<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.VacantEntry.html#method.key">key</a>().<a href="#561-570">sql</a>(<a href="#296">source</a>, <a href="#297">backend</a>) {
+<a href=#339 id=339 data-nosnippet>339</a>                    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(sql) =&gt; <a href="#339">sql</a>,
+<a href=#340 id=340 data-nosnippet>340</a>                    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(e) =&gt; <span class="kw">return </span>R::<a href="#429">from_error</a>(<a href="#340">e</a>),
+<a href=#341 id=341 data-nosnippet>341</a>                };
+<a href=#342 id=342 data-nosnippet>342</a>                <span class="kw">let </span>st = <a href="#300">prepare_fn</a>(<a href="#299">conn</a>, <span class="kw-2">&amp;</span><a href="#338">sql</a>, <span class="bool-val">true</span>);
+<a href=#343 id=343 data-nosnippet>343</a>                <a href="#342">st</a>.<a href="#441-446">register_cache</a>(|stmt| <a href="#337">e</a>.<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.VacantEntry.html#method.insert">insert</a>(<a href="#343">stmt</a>))
+<a href=#344 id=344 data-nosnippet>344</a>            }
+<a href=#345 id=345 data-nosnippet>345</a>            <span class="comment">// The statement is not cached and there is no capacity to cache it
+<a href=#346 id=346 data-nosnippet>346</a>            </span>LookupStatementResult::<a href="strategy.rs.html#27">NoCache</a>(cache_key) =&gt; {
+<a href=#347 id=347 data-nosnippet>347</a>                <span class="kw">let </span>sql = <span class="kw">match </span><a href="#346">cache_key</a>.<a href="#561-570">sql</a>(<a href="#296">source</a>, <a href="#297">backend</a>) {
+<a href=#348 id=348 data-nosnippet>348</a>                    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(sql) =&gt; <a href="#348">sql</a>,
+<a href=#349 id=349 data-nosnippet>349</a>                    <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(e) =&gt; <span class="kw">return </span>R::<a href="#429">from_error</a>(<a href="#349">e</a>),
+<a href=#350 id=350 data-nosnippet>350</a>                };
+<a href=#351 id=351 data-nosnippet>351</a>                <a href="#300">prepare_fn</a>(<a href="#299">conn</a>, <span class="kw-2">&amp;</span><a href="#347">sql</a>, <span class="bool-val">false</span>).<a href="#432-434">map_to_no_cache</a>()
+<a href=#352 id=352 data-nosnippet>352</a>            }
+<a href=#353 id=353 data-nosnippet>353</a>        }
+<a href=#354 id=354 data-nosnippet>354</a>    }
+<a href=#355 id=355 data-nosnippet>355</a>}
+<a href=#356 id=356 data-nosnippet>356</a>
+<a href=#357 id=357 data-nosnippet>357</a><span class="doccomment">/// Implemented for all `QueryFragment`s, dedicated to dynamic dispatch within the context of
+<a href=#358 id=358 data-nosnippet>358</a>/// `statement_cache`
+<a href=#359 id=359 data-nosnippet>359</a>///
+<a href=#360 id=360 data-nosnippet>360</a>/// We want the generated code to be as small as possible, so for each query passed to
+<a href=#361 id=361 data-nosnippet>361</a>/// [`StatementCache::cached_statement`] the generated assembly will just call a non generic
+<a href=#362 id=362 data-nosnippet>362</a>/// version with dynamic dispatch pointing to the VTABLE of this minimal trait
+<a href=#363 id=363 data-nosnippet>363</a>///
+<a href=#364 id=364 data-nosnippet>364</a>/// This preserves the opportunity for the compiler to entirely optimize the `construct_sql`
+<a href=#365 id=365 data-nosnippet>365</a>/// function as a function that simply returns a constant `String`.
+<a href=#366 id=366 data-nosnippet>366</a></span><span class="attr">#[allow(unreachable_pub)]
+<a href=#367 id=367 data-nosnippet>367</a>#[cfg_attr(
+<a href=#368 id=368 data-nosnippet>368</a>    diesel_docsrs,
+<a href=#369 id=369 data-nosnippet>369</a>    doc(cfg(feature = <span class="string">"i-implement-a-third-party-backend-and-opt-into-breaking-changes"</span>))
+<a href=#370 id=370 data-nosnippet>370</a>)]
+<a href=#371 id=371 data-nosnippet>371</a></span><span class="kw">pub trait </span><a href="../../../../diesel/connection/statement_cache/trait.QueryFragmentForCachedStatement.html">QueryFragmentForCachedStatement</a>&lt;DB&gt; {
+<a href=#372 id=372 data-nosnippet>372</a>    <span class="doccomment">/// Convert the query fragment into a SQL string for the given backend
+<a href=#373 id=373 data-nosnippet>373</a>    </span><span class="kw">fn </span>construct_sql(<span class="kw-2">&amp;</span><span class="self">self</span>, backend: <span class="kw-2">&amp;</span>DB) -&gt; <a href="../../result.rs.html#255">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;;
+<a href=#374 id=374 data-nosnippet>374</a>
+<a href=#375 id=375 data-nosnippet>375</a>    <span class="doccomment">/// Check whether it's safe to cache the query
+<a href=#376 id=376 data-nosnippet>376</a>    </span><span class="kw">fn </span>is_safe_to_cache_prepared(<span class="kw-2">&amp;</span><span class="self">self</span>, backend: <span class="kw-2">&amp;</span>DB) -&gt; <a href="../../result.rs.html#255">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>&gt;;
+<a href=#377 id=377 data-nosnippet>377</a>}
+<a href=#378 id=378 data-nosnippet>378</a>
+<a href=#379 id=379 data-nosnippet>379</a><span class="kw">impl</span>&lt;T, DB&gt; <a href="#371-377">QueryFragmentForCachedStatement</a>&lt;DB&gt; <span class="kw">for </span>T
+<a href=#380 id=380 data-nosnippet>380</a><span class="kw">where
+<a href=#381 id=381 data-nosnippet>381</a>    </span>DB: <a href="../../backend.rs.html#83-113">Backend</a>,
+<a href=#382 id=382 data-nosnippet>382</a>    DB::QueryBuilder: <a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html">Default</a>,
+<a href=#383 id=383 data-nosnippet>383</a>    T: <a href="../../query_builder/mod.rs.html#225-295">QueryFragment</a>&lt;DB&gt;,
+<a href=#384 id=384 data-nosnippet>384</a>{
+<a href=#385 id=385 data-nosnippet>385</a>    <span class="kw">fn </span>construct_sql(<span class="kw-2">&amp;</span><span class="self">self</span>, backend: <span class="kw-2">&amp;</span>DB) -&gt; <a href="../../result.rs.html#255">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt; {
+<a href=#386 id=386 data-nosnippet>386</a>        <span class="kw">let </span><span class="kw-2">mut </span>query_builder = DB::QueryBuilder::<a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default">default</a>();
+<a href=#387 id=387 data-nosnippet>387</a>        <a class="self" href="#385">self</a>.<a href="../../query_builder/mod.rs.html#239-242">to_sql</a>(<span class="kw-2">&amp;mut </span><a href="#386">query_builder</a>, <a href="#385">backend</a>)<span class="question-mark">?</span>;
+<a href=#388 id=388 data-nosnippet>388</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#386">query_builder</a>.<a href="../../query_builder/mod.rs.html#171">finish</a>())
+<a href=#389 id=389 data-nosnippet>389</a>    }
+<a href=#390 id=390 data-nosnippet>390</a>
+<a href=#391 id=391 data-nosnippet>391</a>    <span class="kw">fn </span>is_safe_to_cache_prepared(<span class="kw-2">&amp;</span><span class="self">self</span>, backend: <span class="kw-2">&amp;</span>DB) -&gt; <a href="../../result.rs.html#255">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>&gt; {
+<a href=#392 id=392 data-nosnippet>392</a>        &lt;T <span class="kw">as </span>QueryFragment&lt;DB&gt;&gt;::<a href="../../query_builder/mod.rs.html#280-284">is_safe_to_cache_prepared</a>(<a class="self" href="#391">self</a>, <a href="#391">backend</a>)
+<a href=#393 id=393 data-nosnippet>393</a>    }
+<a href=#394 id=394 data-nosnippet>394</a>}
+<a href=#395 id=395 data-nosnippet>395</a>
+<a href=#396 id=396 data-nosnippet>396</a><span class="doccomment">/// Wraps a possibly cached prepared statement
+<a href=#397 id=397 data-nosnippet>397</a>///
+<a href=#398 id=398 data-nosnippet>398</a>/// Essentially a customized version of [`Cow`]
+<a href=#399 id=399 data-nosnippet>399</a>/// that does not depend on [`ToOwned`]
+<a href=#400 id=400 data-nosnippet>400</a></span><span class="attr">#[allow(missing_debug_implementations, unreachable_pub)]
+<a href=#401 id=401 data-nosnippet>401</a>#[cfg_attr(
+<a href=#402 id=402 data-nosnippet>402</a>    diesel_docsrs,
+<a href=#403 id=403 data-nosnippet>403</a>    doc(cfg(feature = <span class="string">"i-implement-a-third-party-backend-and-opt-into-breaking-changes"</span>))
+<a href=#404 id=404 data-nosnippet>404</a>)]
+<a href=#405 id=405 data-nosnippet>405</a>#[non_exhaustive]
+<a href=#406 id=406 data-nosnippet>406</a></span><span class="kw">pub enum </span><a href="../../../../diesel/connection/statement_cache/enum.MaybeCached.html">MaybeCached</a>&lt;<span class="lifetime">'a</span>, T: <span class="lifetime">'a</span>&gt; {
+<a href=#407 id=407 data-nosnippet>407</a>    <span class="doccomment">/// Contains a not cached prepared statement
+<a href=#408 id=408 data-nosnippet>408</a>    </span>CannotCache(T),
+<a href=#409 id=409 data-nosnippet>409</a>    <span class="doccomment">/// Contains a reference cached prepared statement
+<a href=#410 id=410 data-nosnippet>410</a>    </span>Cached(<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>T),
+<a href=#411 id=411 data-nosnippet>411</a>}
+<a href=#412 id=412 data-nosnippet>412</a>
+<a href=#413 id=413 data-nosnippet>413</a><span class="doccomment">/// This trait abstracts over the type returned by the prepare statement function
+<a href=#414 id=414 data-nosnippet>414</a>///
+<a href=#415 id=415 data-nosnippet>415</a>/// The main use-case for this abstraction is to share the same statement cache implementation
+<a href=#416 id=416 data-nosnippet>416</a>/// between diesel and diesel-async.
+<a href=#417 id=417 data-nosnippet>417</a></span><span class="attr">#[cfg_attr(
+<a href=#418 id=418 data-nosnippet>418</a>    diesel_docsrs,
+<a href=#419 id=419 data-nosnippet>419</a>    doc(cfg(feature = <span class="string">"i-implement-a-third-party-backend-and-opt-into-breaking-changes"</span>))
+<a href=#420 id=420 data-nosnippet>420</a>)]
+<a href=#421 id=421 data-nosnippet>421</a>#[allow(unreachable_pub)]
+<a href=#422 id=422 data-nosnippet>422</a></span><span class="kw">pub trait </span><a href="../../../../diesel/connection/statement_cache/trait.StatementCallbackReturnType.html">StatementCallbackReturnType</a>&lt;S: <span class="lifetime">'static</span>, C&gt; {
+<a href=#423 id=423 data-nosnippet>423</a>    <span class="doccomment">/// The return type of `StatementCache::cached_statement`
+<a href=#424 id=424 data-nosnippet>424</a>    ///
+<a href=#425 id=425 data-nosnippet>425</a>    /// Either a `QueryResult&lt;MaybeCached&lt;S&gt;&gt;` or a future of that result type
+<a href=#426 id=426 data-nosnippet>426</a>    </span><span class="kw">type </span>Return&lt;<span class="lifetime">'a</span>&gt;;
+<a href=#427 id=427 data-nosnippet>427</a>
+<a href=#428 id=428 data-nosnippet>428</a>    <span class="doccomment">/// Create the return type from an error
+<a href=#429 id=429 data-nosnippet>429</a>    </span><span class="kw">fn </span>from_error&lt;<span class="lifetime">'a</span>&gt;(e: diesel::result::<a href="../../result.rs.html#14-97">Error</a>) -&gt; <span class="self">Self</span>::Return&lt;<span class="lifetime">'a</span>&gt;;
+<a href=#430 id=430 data-nosnippet>430</a>
+<a href=#431 id=431 data-nosnippet>431</a>    <span class="doccomment">/// Map the callback return type to the `MaybeCached::CannotCache` variant
+<a href=#432 id=432 data-nosnippet>432</a>    </span><span class="kw">fn </span>map_to_no_cache&lt;<span class="lifetime">'a</span>&gt;(<span class="self">self</span>) -&gt; <span class="self">Self</span>::Return&lt;<span class="lifetime">'a</span>&gt;
+<a href=#433 id=433 data-nosnippet>433</a>    <span class="kw">where
+<a href=#434 id=434 data-nosnippet>434</a>        </span><span class="self">Self</span>: <span class="lifetime">'a</span>;
+<a href=#435 id=435 data-nosnippet>435</a>
+<a href=#436 id=436 data-nosnippet>436</a>    <span class="doccomment">/// Map the cached statement to the `MaybeCached::Cached` variant
+<a href=#437 id=437 data-nosnippet>437</a>    </span><span class="kw">fn </span>map_to_cache(stmt: <span class="kw-2">&amp;mut </span>S, conn: C) -&gt; <span class="self">Self</span>::Return&lt;<span class="lifetime">'_</span>&gt;;
+<a href=#438 id=438 data-nosnippet>438</a>
+<a href=#439 id=439 data-nosnippet>439</a>    <span class="doccomment">/// Insert the created statement into the cache via the provided callback
+<a href=#440 id=440 data-nosnippet>440</a>    /// and then turn the returned reference into `MaybeCached::Cached`
+<a href=#441 id=441 data-nosnippet>441</a>    </span><span class="kw">fn </span>register_cache&lt;<span class="lifetime">'a</span>&gt;(
+<a href=#442 id=442 data-nosnippet>442</a>        <span class="self">self</span>,
+<a href=#443 id=443 data-nosnippet>443</a>        callback: <span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnOnce.html">FnOnce</a>(S) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>S + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a> + <span class="lifetime">'a</span>,
+<a href=#444 id=444 data-nosnippet>444</a>    ) -&gt; <span class="self">Self</span>::Return&lt;<span class="lifetime">'a</span>&gt;
+<a href=#445 id=445 data-nosnippet>445</a>    <span class="kw">where
+<a href=#446 id=446 data-nosnippet>446</a>        </span><span class="self">Self</span>: <span class="lifetime">'a</span>;
+<a href=#447 id=447 data-nosnippet>447</a>}
+<a href=#448 id=448 data-nosnippet>448</a>
+<a href=#449 id=449 data-nosnippet>449</a><span class="kw">impl</span>&lt;S, C&gt; <a href="#422-447">StatementCallbackReturnType</a>&lt;S, C&gt; <span class="kw">for </span><a href="../../result.rs.html#255">QueryResult</a>&lt;S&gt;
+<a href=#450 id=450 data-nosnippet>450</a><span class="kw">where
+<a href=#451 id=451 data-nosnippet>451</a>    </span>S: <span class="lifetime">'static</span>,
+<a href=#452 id=452 data-nosnippet>452</a>{
+<a href=#453 id=453 data-nosnippet>453</a>    <span class="kw">type </span>Return&lt;<span class="lifetime">'a</span>&gt; = <a href="../../result.rs.html#255">QueryResult</a>&lt;<a href="#406-411">MaybeCached</a>&lt;<span class="lifetime">'a</span>, S&gt;&gt;;
+<a href=#454 id=454 data-nosnippet>454</a>
+<a href=#455 id=455 data-nosnippet>455</a>    <span class="kw">fn </span>from_error&lt;<span class="lifetime">'a</span>&gt;(e: diesel::result::<a href="../../result.rs.html#14-97">Error</a>) -&gt; <span class="self">Self</span>::Return&lt;<span class="lifetime">'a</span>&gt; {
+<a href=#456 id=456 data-nosnippet>456</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="#455">e</a>)
+<a href=#457 id=457 data-nosnippet>457</a>    }
+<a href=#458 id=458 data-nosnippet>458</a>
+<a href=#459 id=459 data-nosnippet>459</a>    <span class="kw">fn </span>map_to_no_cache&lt;<span class="lifetime">'a</span>&gt;(<span class="self">self</span>) -&gt; <span class="self">Self</span>::Return&lt;<span class="lifetime">'a</span>&gt; {
+<a href=#460 id=460 data-nosnippet>460</a>        <a class="self" href="#459">self</a>.<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map">map</a>(MaybeCached::<a href="#408">CannotCache</a>)
+<a href=#461 id=461 data-nosnippet>461</a>    }
+<a href=#462 id=462 data-nosnippet>462</a>
+<a href=#463 id=463 data-nosnippet>463</a>    <span class="kw">fn </span>map_to_cache(stmt: <span class="kw-2">&amp;mut </span>S, _conn: C) -&gt; <span class="self">Self</span>::Return&lt;<span class="lifetime">'_</span>&gt; {
+<a href=#464 id=464 data-nosnippet>464</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(MaybeCached::<a href="#410">Cached</a>(<a href="#463">stmt</a>))
+<a href=#465 id=465 data-nosnippet>465</a>    }
+<a href=#466 id=466 data-nosnippet>466</a>
+<a href=#467 id=467 data-nosnippet>467</a>    <span class="kw">fn </span>register_cache&lt;<span class="lifetime">'a</span>&gt;(
+<a href=#468 id=468 data-nosnippet>468</a>        <span class="self">self</span>,
+<a href=#469 id=469 data-nosnippet>469</a>        callback: <span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnOnce.html">FnOnce</a>(S) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>S + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a> + <span class="lifetime">'a</span>,
+<a href=#470 id=470 data-nosnippet>470</a>    ) -&gt; <span class="self">Self</span>::Return&lt;<span class="lifetime">'a</span>&gt;
+<a href=#471 id=471 data-nosnippet>471</a>    <span class="kw">where
+<a href=#472 id=472 data-nosnippet>472</a>        </span><span class="self">Self</span>: <span class="lifetime">'a</span>,
+<a href=#473 id=473 data-nosnippet>473</a>    {
+<a href=#474 id=474 data-nosnippet>474</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(MaybeCached::<a href="#410">Cached</a>(<a href="#469">callback</a>(<a class="self" href="#468">self</a><span class="question-mark">?</span>)))
+<a href=#475 id=475 data-nosnippet>475</a>    }
+<a href=#476 id=476 data-nosnippet>476</a>}
+<a href=#477 id=477 data-nosnippet>477</a>
+<a href=#478 id=478 data-nosnippet>478</a><span class="kw">impl</span>&lt;T&gt; <a href="https://doc.rust-lang.org/nightly/core/ops/deref/trait.Deref.html">Deref</a> <span class="kw">for </span><a href="#406-411">MaybeCached</a>&lt;<span class="lifetime">'_</span>, T&gt; {
+<a href=#479 id=479 data-nosnippet>479</a>    <span class="kw">type </span>Target = T;
+<a href=#480 id=480 data-nosnippet>480</a>
+<a href=#481 id=481 data-nosnippet>481</a>    <span class="kw">fn </span>deref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>::Target {
+<a href=#482 id=482 data-nosnippet>482</a>        <span class="kw">match </span><span class="kw-2">*</span><a class="self" href="#481">self</a> {
+<a href=#483 id=483 data-nosnippet>483</a>            MaybeCached::<a href="#408">CannotCache</a>(<span class="kw-2">ref </span>x) =&gt; <a href="#483">x</a>,
+<a href=#484 id=484 data-nosnippet>484</a>            MaybeCached::<a href="#410">Cached</a>(<span class="kw-2">ref </span>x) =&gt; <a href="#484">x</a>,
+<a href=#485 id=485 data-nosnippet>485</a>        }
+<a href=#486 id=486 data-nosnippet>486</a>    }
+<a href=#487 id=487 data-nosnippet>487</a>}
+<a href=#488 id=488 data-nosnippet>488</a>
+<a href=#489 id=489 data-nosnippet>489</a><span class="kw">impl</span>&lt;T&gt; <a href="https://doc.rust-lang.org/nightly/core/ops/deref/trait.DerefMut.html">DerefMut</a> <span class="kw">for </span><a href="#406-411">MaybeCached</a>&lt;<span class="lifetime">'_</span>, T&gt; {
+<a href=#490 id=490 data-nosnippet>490</a>    <span class="kw">fn </span>deref_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span><span class="self">Self</span>::Target {
+<a href=#491 id=491 data-nosnippet>491</a>        <span class="kw">match </span><span class="kw-2">*</span><a class="self" href="#490">self</a> {
+<a href=#492 id=492 data-nosnippet>492</a>            MaybeCached::<a href="#408">CannotCache</a>(<span class="kw-2">ref mut </span>x) =&gt; <a href="#492">x</a>,
+<a href=#493 id=493 data-nosnippet>493</a>            MaybeCached::<a href="#410">Cached</a>(<span class="kw-2">ref mut </span>x) =&gt; <a href="#493">x</a>,
+<a href=#494 id=494 data-nosnippet>494</a>        }
+<a href=#495 id=495 data-nosnippet>495</a>    }
+<a href=#496 id=496 data-nosnippet>496</a>}
+<a href=#497 id=497 data-nosnippet>497</a>
+<a href=#498 id=498 data-nosnippet>498</a><span class="doccomment">/// The lookup key used by [`StatementCache`] internally
+<a href=#499 id=499 data-nosnippet>499</a>///
+<a href=#500 id=500 data-nosnippet>500</a>/// This can contain either a at compile time known type id
+<a href=#501 id=501 data-nosnippet>501</a>/// (representing a statically known query) or a at runtime
+<a href=#502 id=502 data-nosnippet>502</a>/// calculated query string + parameter types (for queries
+<a href=#503 id=503 data-nosnippet>503</a>/// that may change depending on their parameters)
+<a href=#504 id=504 data-nosnippet>504</a></span><span class="attr">#[allow(missing_debug_implementations, unreachable_pub)]
+<a href=#505 id=505 data-nosnippet>505</a></span><span class="expansion"><input id=expand-505 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+#[allow(missing_debug_implementations, unreachable_pub)]
+</span><span class="kw">impl</span>&lt;DB: ::core::hash::Hash + Backend&gt; ::core::hash::Hash <span class="kw">for
+    </span>StatementCacheKey&lt;DB&gt; <span class="kw">where </span>DB::TypeMetadata: ::core::hash::Hash {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>hash&lt;__H: ::core::hash::Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>__H) {
+        <span class="kw">let </span>__self_discr = ::core::intrinsics::discriminant_value(<span class="self">self</span>);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span>__self_discr, state);
+        <span class="kw">match </span><span class="self">self </span>{
+            StatementCacheKey::Type(__self_0) =&gt;
+                ::core::hash::Hash::hash(__self_0, state),
+            StatementCacheKey::Sql { sql: __self_0, bind_types: __self_1 } =&gt;
+                {
+                ::core::hash::Hash::hash(__self_0, state);
+                ::core::hash::Hash::hash(__self_1, state)
+            }
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/hash/macros/derive.Hash.html">Hash</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[allow(missing_debug_implementations, unreachable_pub)]
+</span><span class="kw">impl</span>&lt;DB: ::core::cmp::PartialEq + Backend&gt; ::core::cmp::PartialEq <span class="kw">for
+    </span>StatementCacheKey&lt;DB&gt; <span class="kw">where </span>DB::TypeMetadata: ::core::cmp::PartialEq {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>StatementCacheKey&lt;DB&gt;) -&gt; bool {
+        <span class="kw">let </span>__self_discr = ::core::intrinsics::discriminant_value(<span class="self">self</span>);
+        <span class="kw">let </span>__arg1_discr = ::core::intrinsics::discriminant_value(other);
+        __self_discr == __arg1_discr &amp;&amp;
+            <span class="kw">match </span>(<span class="self">self</span>, other) {
+                (StatementCacheKey::Type(__self_0),
+                    StatementCacheKey::Type(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (StatementCacheKey::Sql { sql: __self_0, bind_types: __self_1
+                    }, StatementCacheKey::Sql {
+                    sql: __arg1_0, bind_types: __arg1_1 }) =&gt;
+                    __self_0 == __arg1_0 &amp;&amp; __self_1 == __arg1_1,
+                <span class="kw">_ </span>=&gt; <span class="kw">unsafe </span>{ ::core::intrinsics::unreachable() }
+            }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[allow(missing_debug_implementations, unreachable_pub)]
+</span><span class="kw">impl</span>&lt;DB: ::core::cmp::Eq + Backend&gt; ::core::cmp::Eq <span class="kw">for </span>StatementCacheKey&lt;DB&gt;
+    <span class="kw">where </span>DB::TypeMetadata: ::core::cmp::Eq {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_receiver_is_total_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;TypeId&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;String&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Vec&lt;DB::TypeMetadata&gt;&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span></span></span><span class="attr">)]
+<a href=#506 id=506 data-nosnippet>506</a>#[cfg_attr(
+<a href=#507 id=507 data-nosnippet>507</a>    diesel_docsrs,
+<a href=#508 id=508 data-nosnippet>508</a>    doc(cfg(feature = <span class="string">"i-implement-a-third-party-backend-and-opt-into-breaking-changes"</span>))
+<a href=#509 id=509 data-nosnippet>509</a>)]
+<a href=#510 id=510 data-nosnippet>510</a></span><span class="kw">pub enum </span><a href="../../../../diesel/connection/statement_cache/enum.StatementCacheKey.html">StatementCacheKey</a>&lt;DB: <a href="../../backend.rs.html#83-113">Backend</a>&gt; {
+<a href=#511 id=511 data-nosnippet>511</a>    <span class="doccomment">/// Represents a at compile time known query
+<a href=#512 id=512 data-nosnippet>512</a>    ///
+<a href=#513 id=513 data-nosnippet>513</a>    /// Calculated via [`QueryId::QueryId`]
+<a href=#514 id=514 data-nosnippet>514</a>    </span>Type(<a href="https://doc.rust-lang.org/nightly/core/any/struct.TypeId.html">TypeId</a>),
+<a href=#515 id=515 data-nosnippet>515</a>    <span class="doccomment">/// Represents a dynamically constructed query
+<a href=#516 id=516 data-nosnippet>516</a>    ///
+<a href=#517 id=517 data-nosnippet>517</a>    /// This variant is used if [`QueryId::HAS_STATIC_QUERY_ID`]
+<a href=#518 id=518 data-nosnippet>518</a>    /// is `false` and [`AstPass::unsafe_to_cache_prepared`] is not
+<a href=#519 id=519 data-nosnippet>519</a>    /// called for a given query.
+<a href=#520 id=520 data-nosnippet>520</a>    </span>Sql {
+<a href=#521 id=521 data-nosnippet>521</a>        <span class="doccomment">/// contains the sql query string
+<a href=#522 id=522 data-nosnippet>522</a>        </span>sql: <a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>,
+<a href=#523 id=523 data-nosnippet>523</a>        <span class="doccomment">/// contains the types of any bind parameter passed to the query
+<a href=#524 id=524 data-nosnippet>524</a>        </span>bind_types: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;DB::TypeMetadata&gt;,
+<a href=#525 id=525 data-nosnippet>525</a>    },
+<a href=#526 id=526 data-nosnippet>526</a>}
+<a href=#527 id=527 data-nosnippet>527</a>
+<a href=#528 id=528 data-nosnippet>528</a><span class="kw">impl</span>&lt;DB&gt; <a href="#510-526">StatementCacheKey</a>&lt;DB&gt;
+<a href=#529 id=529 data-nosnippet>529</a><span class="kw">where
+<a href=#530 id=530 data-nosnippet>530</a>    </span>DB: <a href="../../backend.rs.html#83-113">Backend</a>,
+<a href=#531 id=531 data-nosnippet>531</a>    DB::QueryBuilder: <a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html">Default</a>,
+<a href=#532 id=532 data-nosnippet>532</a>    DB::TypeMetadata: <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html">Clone</a>,
+<a href=#533 id=533 data-nosnippet>533</a>{
+<a href=#534 id=534 data-nosnippet>534</a>    <span class="doccomment">/// Create a new statement cache key for the given query source
+<a href=#535 id=535 data-nosnippet>535</a>    </span><span class="comment">// Note: Intentionally monomorphic over source.
+<a href=#536 id=536 data-nosnippet>536</a>    </span><span class="attr">#[allow(unreachable_pub)]
+<a href=#537 id=537 data-nosnippet>537</a>    </span><span class="kw">pub fn </span>for_source(
+<a href=#538 id=538 data-nosnippet>538</a>        maybe_type_id: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/core/any/struct.TypeId.html">TypeId</a>&gt;,
+<a href=#539 id=539 data-nosnippet>539</a>        source: <span class="kw-2">&amp;</span><span class="kw">dyn </span><a href="#371-377">QueryFragmentForCachedStatement</a>&lt;DB&gt;,
+<a href=#540 id=540 data-nosnippet>540</a>        bind_types: <span class="kw-2">&amp;</span>[DB::TypeMetadata],
+<a href=#541 id=541 data-nosnippet>541</a>        backend: <span class="kw-2">&amp;</span>DB,
+<a href=#542 id=542 data-nosnippet>542</a>    ) -&gt; <a href="../../result.rs.html#255">QueryResult</a>&lt;<span class="self">Self</span>&gt; {
+<a href=#543 id=543 data-nosnippet>543</a>        <span class="kw">match </span><a href="#538">maybe_type_id</a> {
+<a href=#544 id=544 data-nosnippet>544</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(id) =&gt; <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(StatementCacheKey::<a href="#514">Type</a>(<a href="#544">id</a>)),
+<a href=#545 id=545 data-nosnippet>545</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a> =&gt; {
+<a href=#546 id=546 data-nosnippet>546</a>                <span class="kw">let </span>sql = <a href="#539">source</a>.<a href="#373">construct_sql</a>(<a href="#541">backend</a>)<span class="question-mark">?</span>;
+<a href=#547 id=547 data-nosnippet>547</a>                <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(StatementCacheKey::<a href="#520-525">Sql</a> {
+<a href=#548 id=548 data-nosnippet>548</a>                    <a href="#546">sql</a>,
+<a href=#549 id=549 data-nosnippet>549</a>                    bind_types: <a href="#540">bind_types</a>.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html#tymethod.into">into</a>(),
+<a href=#550 id=550 data-nosnippet>550</a>                })
+<a href=#551 id=551 data-nosnippet>551</a>            }
+<a href=#552 id=552 data-nosnippet>552</a>        }
+<a href=#553 id=553 data-nosnippet>553</a>    }
+<a href=#554 id=554 data-nosnippet>554</a>
+<a href=#555 id=555 data-nosnippet>555</a>    <span class="doccomment">/// Get the sql for a given query source based
+<a href=#556 id=556 data-nosnippet>556</a>    ///
+<a href=#557 id=557 data-nosnippet>557</a>    /// This is an optimization that may skip constructing the query string
+<a href=#558 id=558 data-nosnippet>558</a>    /// twice if it's already part of the current cache key
+<a href=#559 id=559 data-nosnippet>559</a>    </span><span class="comment">// Note: Intentionally monomorphic over source.
+<a href=#560 id=560 data-nosnippet>560</a>    </span><span class="attr">#[allow(unreachable_pub)]
+<a href=#561 id=561 data-nosnippet>561</a>    </span><span class="kw">pub fn </span>sql(
+<a href=#562 id=562 data-nosnippet>562</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#563 id=563 data-nosnippet>563</a>        source: <span class="kw-2">&amp;</span><span class="kw">dyn </span><a href="#371-377">QueryFragmentForCachedStatement</a>&lt;DB&gt;,
+<a href=#564 id=564 data-nosnippet>564</a>        backend: <span class="kw-2">&amp;</span>DB,
+<a href=#565 id=565 data-nosnippet>565</a>    ) -&gt; <a href="../../result.rs.html#255">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/borrow/enum.Cow.html">Cow</a>&lt;<span class="lifetime">'_</span>, <a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;&gt; {
+<a href=#566 id=566 data-nosnippet>566</a>        <span class="kw">match </span><span class="kw-2">*</span><a class="self" href="#562">self</a> {
+<a href=#567 id=567 data-nosnippet>567</a>            StatementCacheKey::<a href="#514">Type</a>(<span class="kw">_</span>) =&gt; <a href="#563">source</a>.<a href="#373">construct_sql</a>(<a href="#564">backend</a>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map">map</a>(Cow::<a href="https://doc.rust-lang.org/nightly/alloc/borrow/enum.Cow.html#variant.Owned">Owned</a>),
+<a href=#568 id=568 data-nosnippet>568</a>            StatementCacheKey::<a href="#520-525">Sql</a> { <span class="kw-2">ref </span>sql, .. } =&gt; <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(Cow::<a href="https://doc.rust-lang.org/nightly/alloc/borrow/enum.Cow.html#variant.Borrowed">Borrowed</a>(<a href="#568">sql</a>)),
+<a href=#569 id=569 data-nosnippet>569</a>        }
+<a href=#570 id=570 data-nosnippet>570</a>    }
+<a href=#571 id=571 data-nosnippet>571</a>}
+</code></pre></div></section></main></body></html>

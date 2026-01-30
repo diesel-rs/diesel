@@ -1,0 +1,2183 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="This derives implements `diesel::Connection` and related traits for an enum of connections to different databases."><title>MultiConnection in diesel - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc derive"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">MultiConnection</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel/index.html">diesel</a><span class="version">2.3.6</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Multi<wbr>Connection</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li><li><a href="#limitations" title="Limitations">Limitations</a></li><li><a href="#expanded-code" title="Expanded Code">Expanded Code</a><ul><li><a href="#input" title="Input">Input</a></li><li><a href="#expanded-code-1" title="Expanded Code">Expanded Code</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate diesel</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">diesel</a></div><h1>Derive Macro <span class="derive">Multi<wbr>Connection</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/diesel_derives/lib.rs.html#1645">Source</a> </span></div><pre class="rust item-decl"><code>#[derive(MultiConnection)]</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>This derives implements <code>diesel::Connection</code> and related traits for an enum of
+connections to different databases.</p>
+<p>By applying this derive to such an enum, you can use the enum as a connection type in
+any location all the inner connections are valid. This derive supports enum
+variants containing a single tuple field. Each tuple field type must implement
+<code>diesel::Connection</code> and a number of related traits. Connection types form Diesel itself
+as well as third party connection types are supported by this derive.</p>
+<p>The implementation of <code>diesel::Connection::establish</code> tries to establish
+a new connection with the given connection string in the order the connections
+are specified in the enum. If one connection fails, it tries the next one and so on.
+That means that as soon as more than one connection type accepts a certain connection
+string the first matching type in your enum will always establish the connection. This
+is especially important if one of the connection types is <code>diesel::SqliteConnection</code>
+as this connection type accepts arbitrary paths. It should normally place as last entry
+in your enum. If you want control of which connection type is created, just construct the
+corresponding enum manually by first establishing the connection via the inner type and then
+wrap the result into the enum.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::prelude::<span class="kw-2">*</span>;
+
+<span class="attr">#[derive(diesel::MultiConnection)]
+</span><span class="kw">pub enum </span>AnyConnection {
+    Postgresql(diesel::PgConnection),
+    Mysql(diesel::MysqlConnection),
+    Sqlite(diesel::SqliteConnection),
+}
+
+<span class="macro">diesel::table!</span> {
+    users {
+        id -&gt; Integer,
+        name -&gt; Text,
+    }
+}
+
+<span class="kw">fn </span>use_multi(conn: <span class="kw-2">&amp;mut </span>AnyConnection) -&gt; QueryResult&lt;()&gt; {
+    <span class="comment">// Use the connection enum as any other connection type
+    // for inserting/updating/loading/…
+    </span>diesel::insert_into(users::table)
+        .values(users::name.eq(<span class="string">"Sean"</span>))
+        .execute(conn)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>users = users::table.load::&lt;(i32, String)&gt;(conn)<span class="question-mark">?</span>;
+
+    <span class="comment">// Match on the connection type to access
+    // the inner connection. This allows us then to use
+    // backend specific methods.
+    </span><span class="kw">if let </span>AnyConnection::Postgresql(<span class="kw-2">ref mut </span>conn) = conn {
+        <span class="comment">// perform a postgresql specific query here
+        </span><span class="kw">let </span>users = users::table.load::&lt;(i32, String)&gt;(conn)<span class="question-mark">?</span>;
+    }
+
+    <span class="prelude-val">Ok</span>(())
+}
+</code></pre></div><h2 id="limitations"><a class="doc-anchor" href="#limitations">§</a>Limitations</h2>
+<p>The derived connection implementation can only cover the common subset of
+all inner connection types. So, if one backend doesn’t support certain SQL features,
+like for example, returning clauses, the whole connection implementation doesn’t
+support this feature. In addition, only a limited set of SQL types is supported:</p>
+<ul>
+<li><code>diesel::sql_types::SmallInt</code></li>
+<li><code>diesel::sql_types::Integer</code></li>
+<li><code>diesel::sql_types::BigInt</code></li>
+<li><code>diesel::sql_types::Double</code></li>
+<li><code>diesel::sql_types::Float</code></li>
+<li><code>diesel::sql_types::Text</code></li>
+<li><code>diesel::sql_types::Date</code></li>
+<li><code>diesel::sql_types::Time</code></li>
+<li><code>diesel::sql_types::Timestamp</code></li>
+</ul>
+<p>Support for additional types can be added by providing manual implementations of
+<code>HasSqlType</code>, <code>FromSql</code> and <code>ToSql</code> for the corresponding type, all databases included
+in your enum, and the backend generated by this derive called <code>MultiBackend</code>.
+For example to support a custom enum <code>MyEnum</code> with the custom SQL type <code>MyInteger</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">extern crate </span>diesel;
+<span class="kw">use </span>diesel::backend::Backend;
+<span class="kw">use </span>diesel::deserialize::{<span class="self">self</span>, FromSql, FromSqlRow};
+<span class="kw">use </span>diesel::serialize::{<span class="self">self</span>, IsNull, ToSql};
+<span class="kw">use </span>diesel::AsExpression;
+<span class="kw">use </span>diesel::sql_types::{HasSqlType, SqlType};
+<span class="kw">use </span>diesel::prelude::<span class="kw-2">*</span>;
+
+<span class="attr">#[derive(diesel::MultiConnection)]
+</span><span class="kw">pub enum </span>AnyConnection {
+    Postgresql(diesel::PgConnection),
+    Mysql(diesel::MysqlConnection),
+    Sqlite(diesel::SqliteConnection),
+}
+
+<span class="comment">// defining an custom SQL type is optional
+// you can also use types from `diesel::sql_types`
+</span><span class="attr">#[derive(Copy, Clone, Debug, SqlType)]
+#[diesel(postgres_type(name = <span class="string">"Int4"</span>))]
+#[diesel(mysql_type(name = <span class="string">"Long"</span>))]
+#[diesel(sqlite_type(name = <span class="string">"Integer"</span>))]
+</span><span class="kw">struct </span>MyInteger;
+
+
+<span class="comment">// our custom enum
+</span><span class="attr">#[repr(i32)]
+#[derive(Debug, Clone, Copy, AsExpression, FromSqlRow)]
+#[diesel(sql_type = MyInteger)]
+</span><span class="kw">pub enum </span>MyEnum {
+    A = <span class="number">1</span>,
+    B = <span class="number">2</span>,
+}
+
+<span class="comment">// The `MultiBackend` type is generated by `#[derive(diesel::MultiConnection)]`
+// This part is only required if you define a custom sql type
+</span><span class="kw">impl </span>HasSqlType&lt;MyInteger&gt; <span class="kw">for </span>MultiBackend {
+   <span class="kw">fn </span>metadata(lookup: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; <span class="self">Self</span>::TypeMetadata {
+       <span class="comment">// The `lookup_sql_type` function is exposed by the `MultiBackend` type
+       </span>MultiBackend::lookup_sql_type::&lt;MyInteger&gt;(lookup)
+   }
+}
+
+<span class="kw">impl </span>FromSql&lt;MyInteger, MultiBackend&gt; <span class="kw">for </span>MyEnum {
+   <span class="kw">fn </span>from_sql(bytes: &lt;MultiBackend <span class="kw">as </span>Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;) -&gt; deserialize::Result&lt;<span class="self">Self</span>&gt; {
+       <span class="comment">// The `from_sql` function is exposed by the `RawValue` type of the
+       // `MultiBackend` type
+       // This requires a `FromSql` impl for each backend
+       </span>bytes.from_sql::&lt;MyEnum, MyInteger&gt;()
+   }
+}
+
+<span class="kw">impl </span>ToSql&lt;MyInteger, MultiBackend&gt; <span class="kw">for </span>MyEnum {
+   <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>, out: <span class="kw-2">&amp;mut </span>serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, MultiBackend&gt;) -&gt; serialize::Result {
+       <span class="doccomment">/// `set_value` expects a tuple consisting of the target SQL type
+       /// and self for `MultiBackend`
+       /// This requires a `ToSql` impl for each backend
+       </span>out.set_value((MyInteger, <span class="self">self</span>));
+       <span class="prelude-val">Ok</span>(IsNull::No)
+   }
+}</code></pre></div><h2 id="expanded-code"><a class="doc-anchor" href="#expanded-code">§</a>Expanded Code</h2><details>
+<summary> Expanded Code </summary>
+<h5 id="input"><a class="doc-anchor" href="#input">§</a>Input</h5>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(MultiConnection)]
+</span><span class="kw">enum </span>DbConnection {
+    Pg(PgConnection),
+    Sqlite(diesel::SqliteConnection),
+}
+</code></pre></div><h5 id="expanded-code-1"><a class="doc-anchor" href="#expanded-code-1">§</a>Expanded Code</h5><div class="warning">Expanded code might use diesel internal API's and is only shown for educational purpose</div>
+<p>The macro expands the input to the following Rust code:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">mod </span>multi_connection_impl {
+    <span class="kw">use </span>super::<span class="kw-2">*</span>;
+    <span class="kw">mod </span>backend {
+        <span class="kw">use </span>super::<span class="kw-2">*</span>;
+        <span class="kw">pub enum </span>MultiBackend {
+            Pg(&lt;PgConnection <span class="kw">as </span>diesel::Connection&gt;::Backend),
+            Sqlite(&lt;diesel::SqliteConnection <span class="kw">as </span>diesel::Connection&gt;::Backend),
+        }
+        <span class="kw">impl </span>MultiBackend {
+            <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>pg(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>&lt;PgConnection <span class="kw">as </span>diesel::Connection&gt;::Backend {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(b) =&gt; b,
+                    <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
+                }
+            }
+            <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>sqlite(
+                <span class="kw-2">&amp;</span><span class="self">self</span>,
+            ) -&gt; <span class="kw-2">&amp;</span>&lt;diesel::SqliteConnection <span class="kw">as </span>diesel::Connection&gt;::Backend {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Sqlite(b) =&gt; b,
+                    <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
+                }
+            }
+            <span class="kw">pub fn </span>lookup_sql_type&lt;ST&gt;(
+                lookup: <span class="kw-2">&amp;mut </span><span class="kw">dyn </span>std::any::Any,
+            ) -&gt; MultiTypeMetadata
+            <span class="kw">where
+                </span>&lt;PgConnection <span class="kw">as </span>diesel::Connection&gt;::Backend: diesel::sql_types::HasSqlType&lt;
+                    ST,
+                &gt;,
+                &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::Connection&gt;::Backend: diesel::sql_types::HasSqlType&lt;
+                    ST,
+                &gt;,
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>ret = MultiTypeMetadata::default();
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(lookup) = &lt;PgConnection <span class="kw">as </span>diesel::internal::derives::multiconnection::MultiConnectionHelper&gt;::from_any(
+                    lookup,
+                ) {
+                    ret.Pg = <span class="prelude-val">Some</span>(
+                        &lt;&lt;PgConnection <span class="kw">as </span>diesel::Connection&gt;::Backend <span class="kw">as </span>diesel::sql_types::HasSqlType&lt;
+                            ST,
+                        &gt;&gt;::metadata(lookup),
+                    );
+                }
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(lookup) = &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::internal::derives::multiconnection::MultiConnectionHelper&gt;::from_any(
+                    lookup,
+                ) {
+                    ret.Sqlite = <span class="prelude-val">Some</span>(
+                        &lt;&lt;diesel::SqliteConnection <span class="kw">as </span>diesel::Connection&gt;::Backend <span class="kw">as </span>diesel::sql_types::HasSqlType&lt;
+                            ST,
+                        &gt;&gt;::metadata(lookup),
+                    );
+                }
+                ret
+            }
+        }
+        <span class="kw">impl </span>MultiBackend {
+            <span class="kw">pub fn </span>walk_variant_ast&lt;<span class="lifetime">'b</span>, T&gt;(
+                ast_node: <span class="kw-2">&amp;</span><span class="lifetime">'b </span>T,
+                pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, <span class="self">Self</span>&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt;
+            <span class="kw">where
+                </span>T: diesel::query_builder::QueryFragment&lt;
+                    &lt;PgConnection <span class="kw">as </span>diesel::Connection&gt;::Backend,
+                &gt;,
+                T: diesel::query_builder::QueryFragment&lt;
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::Connection&gt;::Backend,
+                &gt;,
+            {
+                <span class="kw">use </span>diesel::internal::derives::multiconnection::AstPassHelper;
+                <span class="kw">match </span>pass.backend() {
+                    <span class="kw">super</span>::backend::MultiBackend::Pg(<span class="kw">_</span>) =&gt; {
+                        &lt;T <span class="kw">as </span>diesel::query_builder::QueryFragment&lt;
+                            &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                        &gt;&gt;::walk_ast(
+                            ast_node,
+                            pass
+                                .cast_database(
+                                    <span class="kw">super</span>::bind_collector::MultiBindCollector::pg,
+                                    <span class="kw">super</span>::query_builder::MultiQueryBuilder::pg,
+                                    <span class="kw">super</span>::backend::MultiBackend::pg,
+                                    |l| {
+                                        &lt;PgConnection <span class="kw">as </span>diesel::internal::derives::multiconnection::MultiConnectionHelper&gt;::from_any(
+                                                l,
+                                            )
+                                            .expect(
+                                                <span class="string">"It's possible to downcast the metadata lookup type to the correct type"</span>,
+                                            )
+                                    },
+                                ),
+                        )
+                    }
+                    <span class="kw">super</span>::backend::MultiBackend::Sqlite(<span class="kw">_</span>) =&gt; {
+                        &lt;T <span class="kw">as </span>diesel::query_builder::QueryFragment&lt;
+                            &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                        &gt;&gt;::walk_ast(
+                            ast_node,
+                            pass
+                                .cast_database(
+                                    <span class="kw">super</span>::bind_collector::MultiBindCollector::sqlite,
+                                    <span class="kw">super</span>::query_builder::MultiQueryBuilder::sqlite,
+                                    <span class="kw">super</span>::backend::MultiBackend::sqlite,
+                                    |l| {
+                                        &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::internal::derives::multiconnection::MultiConnectionHelper&gt;::from_any(
+                                                l,
+                                            )
+                                            .expect(
+                                                <span class="string">"It's possible to downcast the metadata lookup type to the correct type"</span>,
+                                            )
+                                    },
+                                ),
+                        )
+                    }
+                }
+            }
+        }
+        <span class="kw">pub enum </span>MultiRawValue&lt;<span class="lifetime">'a</span>&gt; {
+            Pg(
+                &lt;&lt;PgConnection <span class="kw">as </span>diesel::Connection&gt;::Backend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;
+                    <span class="lifetime">'a</span>,
+                &gt;,
+            ),
+            Sqlite(
+                &lt;&lt;diesel::SqliteConnection <span class="kw">as </span>diesel::Connection&gt;::Backend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;
+                    <span class="lifetime">'a</span>,
+                &gt;,
+            ),
+        }
+        <span class="kw">impl </span>MultiRawValue&lt;<span class="lifetime">'_</span>&gt; {
+            <span class="kw">pub fn </span>from_sql&lt;T, ST&gt;(<span class="self">self</span>) -&gt; diesel::deserialize::Result&lt;T&gt;
+            <span class="kw">where
+                </span>T: diesel::deserialize::FromSql&lt;
+                    ST,
+                    &lt;PgConnection <span class="kw">as </span>diesel::Connection&gt;::Backend,
+                &gt;,
+                T: diesel::deserialize::FromSql&lt;
+                    ST,
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::Connection&gt;::Backend,
+                &gt;,
+            {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(b) =&gt; {
+                        &lt;T <span class="kw">as </span>diesel::deserialize::FromSql&lt;
+                            ST,
+                            &lt;PgConnection <span class="kw">as </span>diesel::Connection&gt;::Backend,
+                        &gt;&gt;::from_sql(b)
+                    }
+                    <span class="self">Self</span>::Sqlite(b) =&gt; {
+                        &lt;T <span class="kw">as </span>diesel::deserialize::FromSql&lt;
+                            ST,
+                            &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::Connection&gt;::Backend,
+                        &gt;&gt;::from_sql(b)
+                    }
+                }
+            }
+        }
+        <span class="kw">impl </span>diesel::backend::Backend <span class="kw">for </span>MultiBackend {
+            <span class="kw">type </span>QueryBuilder = <span class="kw">super</span>::query_builder::MultiQueryBuilder;
+            <span class="kw">type </span>RawValue&lt;<span class="lifetime">'a</span>&gt; = MultiRawValue&lt;<span class="lifetime">'a</span>&gt;;
+            <span class="kw">type </span>BindCollector&lt;<span class="lifetime">'a</span>&gt; = <span class="kw">super</span>::bind_collector::MultiBindCollector&lt;<span class="lifetime">'a</span>&gt;;
+        }
+        <span class="attr">#[derive(Default)]
+        #[allow(non_snake_case)]
+        </span><span class="kw">pub struct </span>MultiTypeMetadata {
+            <span class="kw">pub</span>(<span class="kw">super</span>) Pg: <span class="prelude-ty">Option</span>&lt;
+                &lt;&lt;PgConnection <span class="kw">as </span>diesel::Connection&gt;::Backend <span class="kw">as </span>diesel::sql_types::TypeMetadata&gt;::TypeMetadata,
+            &gt;,
+            <span class="kw">pub</span>(<span class="kw">super</span>) Sqlite: <span class="prelude-ty">Option</span>&lt;
+                &lt;&lt;diesel::SqliteConnection <span class="kw">as </span>diesel::Connection&gt;::Backend <span class="kw">as </span>diesel::sql_types::TypeMetadata&gt;::TypeMetadata,
+            &gt;,
+        }
+        <span class="kw">impl </span>diesel::sql_types::TypeMetadata <span class="kw">for </span>MultiBackend {
+            <span class="kw">type </span>TypeMetadata = MultiTypeMetadata;
+            <span class="kw">type </span>MetadataLookup = <span class="kw">dyn </span>std::any::Any;
+        }
+        <span class="kw">pub struct </span>MultiReturningClause;
+        <span class="kw">pub struct </span>MultiInsertWithDefaultKeyword;
+        <span class="kw">pub struct </span>MultiBatchInsertSupport;
+        <span class="kw">pub struct </span>MultiDefaultValueClauseForInsert;
+        <span class="kw">pub struct </span>MultiEmptyFromClauseSyntax;
+        <span class="kw">pub struct </span>MultiExistsSyntax;
+        <span class="kw">pub struct </span>MultiArrayComparisonSyntax;
+        <span class="kw">pub struct </span>MultiConcatClauseSyntax;
+        <span class="kw">pub struct </span>MultiSelectStatementSyntax;
+        <span class="kw">pub struct </span>MultiAliasSyntax;
+        <span class="kw">pub struct </span>MultiWindowFrameClauseGroupSupport;
+        <span class="kw">pub struct </span>MultiWindowFrameExclusionSupport;
+        <span class="kw">pub struct </span>MultiAggregateFunctionExpressions;
+        <span class="kw">pub struct </span>MultiBuiltInWindowFunctionRequireOrder;
+        <span class="kw">impl </span>diesel::backend::SqlDialect <span class="kw">for </span>MultiBackend {
+            <span class="kw">type </span>ReturningClause = MultiReturningClause;
+            <span class="kw">type </span>OnConflictClause = diesel::internal::derives::multiconnection::sql_dialect::on_conflict_clause::DoesNotSupportOnConflictClause;
+            <span class="kw">type </span>InsertWithDefaultKeyword = MultiInsertWithDefaultKeyword;
+            <span class="kw">type </span>BatchInsertSupport = MultiBatchInsertSupport;
+            <span class="kw">type </span>DefaultValueClauseForInsert = MultiDefaultValueClauseForInsert;
+            <span class="kw">type </span>EmptyFromClauseSyntax = MultiEmptyFromClauseSyntax;
+            <span class="kw">type </span>ExistsSyntax = MultiExistsSyntax;
+            <span class="kw">type </span>ArrayComparison = MultiArrayComparisonSyntax;
+            <span class="kw">type </span>ConcatClause = MultiConcatClauseSyntax;
+            <span class="kw">type </span>SelectStatementSyntax = MultiSelectStatementSyntax;
+            <span class="kw">type </span>AliasSyntax = MultiAliasSyntax;
+            <span class="kw">type </span>WindowFrameClauseGroupSupport = MultiWindowFrameClauseGroupSupport;
+            <span class="kw">type </span>WindowFrameExclusionSupport = MultiWindowFrameExclusionSupport;
+            <span class="kw">type </span>AggregateFunctionExpressions = MultiAggregateFunctionExpressions;
+            <span class="kw">type </span>BuiltInWindowFunctionRequireOrder = MultiBuiltInWindowFunctionRequireOrder;
+        }
+        <span class="kw">impl </span>diesel::internal::derives::multiconnection::TrustedBackend
+        <span class="kw">for </span>MultiBackend {}
+        <span class="kw">impl </span>diesel::internal::derives::multiconnection::DieselReserveSpecialization
+        <span class="kw">for </span>MultiBackend {}
+        <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;diesel::sql_types::SmallInt&gt;
+        <span class="kw">for </span><span class="kw">super</span>::MultiBackend {
+            <span class="kw">fn </span>metadata(lookup: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; <span class="self">Self</span>::TypeMetadata {
+                <span class="self">Self</span>::lookup_sql_type::&lt;diesel::sql_types::SmallInt&gt;(lookup)
+            }
+        }
+        <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;diesel::sql_types::Integer&gt;
+        <span class="kw">for </span><span class="kw">super</span>::MultiBackend {
+            <span class="kw">fn </span>metadata(lookup: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; <span class="self">Self</span>::TypeMetadata {
+                <span class="self">Self</span>::lookup_sql_type::&lt;diesel::sql_types::Integer&gt;(lookup)
+            }
+        }
+        <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;diesel::sql_types::BigInt&gt;
+        <span class="kw">for </span><span class="kw">super</span>::MultiBackend {
+            <span class="kw">fn </span>metadata(lookup: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; <span class="self">Self</span>::TypeMetadata {
+                <span class="self">Self</span>::lookup_sql_type::&lt;diesel::sql_types::BigInt&gt;(lookup)
+            }
+        }
+        <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;diesel::sql_types::Double&gt;
+        <span class="kw">for </span><span class="kw">super</span>::MultiBackend {
+            <span class="kw">fn </span>metadata(lookup: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; <span class="self">Self</span>::TypeMetadata {
+                <span class="self">Self</span>::lookup_sql_type::&lt;diesel::sql_types::Double&gt;(lookup)
+            }
+        }
+        <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;diesel::sql_types::Float&gt;
+        <span class="kw">for </span><span class="kw">super</span>::MultiBackend {
+            <span class="kw">fn </span>metadata(lookup: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; <span class="self">Self</span>::TypeMetadata {
+                <span class="self">Self</span>::lookup_sql_type::&lt;diesel::sql_types::Float&gt;(lookup)
+            }
+        }
+        <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;diesel::sql_types::Text&gt;
+        <span class="kw">for </span><span class="kw">super</span>::MultiBackend {
+            <span class="kw">fn </span>metadata(lookup: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; <span class="self">Self</span>::TypeMetadata {
+                <span class="self">Self</span>::lookup_sql_type::&lt;diesel::sql_types::Text&gt;(lookup)
+            }
+        }
+        <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;diesel::sql_types::Binary&gt;
+        <span class="kw">for </span><span class="kw">super</span>::MultiBackend {
+            <span class="kw">fn </span>metadata(lookup: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; <span class="self">Self</span>::TypeMetadata {
+                <span class="self">Self</span>::lookup_sql_type::&lt;diesel::sql_types::Binary&gt;(lookup)
+            }
+        }
+        <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;diesel::sql_types::Date&gt;
+        <span class="kw">for </span><span class="kw">super</span>::MultiBackend {
+            <span class="kw">fn </span>metadata(lookup: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; <span class="self">Self</span>::TypeMetadata {
+                <span class="self">Self</span>::lookup_sql_type::&lt;diesel::sql_types::Date&gt;(lookup)
+            }
+        }
+        <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;diesel::sql_types::Time&gt;
+        <span class="kw">for </span><span class="kw">super</span>::MultiBackend {
+            <span class="kw">fn </span>metadata(lookup: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; <span class="self">Self</span>::TypeMetadata {
+                <span class="self">Self</span>::lookup_sql_type::&lt;diesel::sql_types::Time&gt;(lookup)
+            }
+        }
+        <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;diesel::sql_types::Timestamp&gt;
+        <span class="kw">for </span><span class="kw">super</span>::MultiBackend {
+            <span class="kw">fn </span>metadata(lookup: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; <span class="self">Self</span>::TypeMetadata {
+                <span class="self">Self</span>::lookup_sql_type::&lt;diesel::sql_types::Timestamp&gt;(lookup)
+            }
+        }
+        <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;diesel::sql_types::Bool&gt;
+        <span class="kw">for </span><span class="kw">super</span>::MultiBackend {
+            <span class="kw">fn </span>metadata(lookup: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; <span class="self">Self</span>::TypeMetadata {
+                <span class="self">Self</span>::lookup_sql_type::&lt;diesel::sql_types::Bool&gt;(lookup)
+            }
+        }
+        <span class="kw">impl </span>diesel::sql_types::HasSqlType&lt;diesel::sql_types::Numeric&gt;
+        <span class="kw">for </span><span class="kw">super</span>::MultiBackend {
+            <span class="kw">fn </span>metadata(lookup: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::MetadataLookup) -&gt; <span class="self">Self</span>::TypeMetadata {
+                <span class="self">Self</span>::lookup_sql_type::&lt;diesel::sql_types::Numeric&gt;(lookup)
+            }
+        }
+    }
+    <span class="kw">mod </span>query_builder {
+        <span class="kw">use </span>super::<span class="kw-2">*</span>;
+        <span class="kw">pub enum </span>MultiQueryBuilder {
+            Pg(
+                &lt;&lt;PgConnection <span class="kw">as </span>diesel::Connection&gt;::Backend <span class="kw">as </span>diesel::backend::Backend&gt;::QueryBuilder,
+            ),
+            Sqlite(
+                &lt;&lt;diesel::SqliteConnection <span class="kw">as </span>diesel::Connection&gt;::Backend <span class="kw">as </span>diesel::backend::Backend&gt;::QueryBuilder,
+            ),
+        }
+        <span class="kw">impl </span>MultiQueryBuilder {
+            <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>duplicate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(<span class="kw">_</span>) =&gt; <span class="self">Self</span>::Pg(Default::default()),
+                    <span class="self">Self</span>::Sqlite(<span class="kw">_</span>) =&gt; <span class="self">Self</span>::Sqlite(Default::default()),
+                }
+            }
+        }
+        <span class="kw">impl </span>MultiQueryBuilder {
+            <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>pg(
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+            ) -&gt; <span class="kw-2">&amp;mut </span>&lt;&lt;PgConnection <span class="kw">as </span>diesel::Connection&gt;::Backend <span class="kw">as </span>diesel::backend::Backend&gt;::QueryBuilder {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(qb) =&gt; qb,
+                    <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
+                }
+            }
+            <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>sqlite(
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+            ) -&gt; <span class="kw-2">&amp;mut </span>&lt;&lt;diesel::SqliteConnection <span class="kw">as </span>diesel::Connection&gt;::Backend <span class="kw">as </span>diesel::backend::Backend&gt;::QueryBuilder {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Sqlite(qb) =&gt; qb,
+                    <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
+                }
+            }
+        }
+        <span class="kw">impl </span>diesel::query_builder::QueryBuilder&lt;<span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>MultiQueryBuilder {
+            <span class="kw">fn </span>push_sql(<span class="kw-2">&amp;mut </span><span class="self">self</span>, sql: <span class="kw-2">&amp;</span>str) {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(q) =&gt; q.push_sql(sql),
+                    <span class="self">Self</span>::Sqlite(q) =&gt; q.push_sql(sql),
+                }
+            }
+            <span class="kw">fn </span>push_identifier(<span class="kw-2">&amp;mut </span><span class="self">self</span>, identifier: <span class="kw-2">&amp;</span>str) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(q) =&gt; q.push_identifier(identifier),
+                    <span class="self">Self</span>::Sqlite(q) =&gt; q.push_identifier(identifier),
+                }
+            }
+            <span class="kw">fn </span>push_bind_param(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(q) =&gt; q.push_bind_param(),
+                    <span class="self">Self</span>::Sqlite(q) =&gt; q.push_bind_param(),
+                }
+            }
+            <span class="kw">fn </span>finish(<span class="self">self</span>) -&gt; String {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(q) =&gt; q.finish(),
+                    <span class="self">Self</span>::Sqlite(q) =&gt; q.finish(),
+                }
+            }
+        }
+        <span class="kw">impl</span>&lt;L, O&gt; diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::LimitOffsetClause&lt;L, O&gt;
+        <span class="kw">where
+            </span><span class="self">Self</span>: diesel::query_builder::QueryFragment&lt;
+                    &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;
+                + diesel::query_builder::QueryFragment&lt;
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">super</span>::backend::MultiBackend::walk_variant_ast(<span class="self">self</span>, pass)
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            L,
+            R,
+        &gt; diesel::query_builder::QueryFragment&lt;
+            <span class="kw">super</span>::backend::MultiBackend,
+            <span class="kw">super</span>::backend::MultiConcatClauseSyntax,
+        &gt; <span class="kw">for </span>diesel::internal::derives::multiconnection::Concat&lt;L, R&gt;
+        <span class="kw">where
+            </span><span class="self">Self</span>: diesel::query_builder::QueryFragment&lt;
+                    &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;
+                + diesel::query_builder::QueryFragment&lt;
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">super</span>::backend::MultiBackend::walk_variant_ast(<span class="self">self</span>, pass)
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            T,
+            U,
+        &gt; diesel::query_builder::QueryFragment&lt;
+            <span class="kw">super</span>::backend::MultiBackend,
+            <span class="kw">super</span>::backend::MultiArrayComparisonSyntax,
+        &gt; <span class="kw">for </span>diesel::internal::derives::multiconnection::array_comparison::In&lt;T, U&gt;
+        <span class="kw">where
+            </span><span class="self">Self</span>: diesel::query_builder::QueryFragment&lt;
+                    &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;
+                + diesel::query_builder::QueryFragment&lt;
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">super</span>::backend::MultiBackend::walk_variant_ast(<span class="self">self</span>, pass)
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            T,
+            U,
+        &gt; diesel::query_builder::QueryFragment&lt;
+            <span class="kw">super</span>::backend::MultiBackend,
+            <span class="kw">super</span>::backend::MultiArrayComparisonSyntax,
+        &gt; <span class="kw">for </span>diesel::internal::derives::multiconnection::array_comparison::NotIn&lt;T, U&gt;
+        <span class="kw">where
+            </span><span class="self">Self</span>: diesel::query_builder::QueryFragment&lt;
+                    &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;
+                + diesel::query_builder::QueryFragment&lt;
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">super</span>::backend::MultiBackend::walk_variant_ast(<span class="self">self</span>, pass)
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            ST,
+            I,
+        &gt; diesel::query_builder::QueryFragment&lt;
+            <span class="kw">super</span>::backend::MultiBackend,
+            <span class="kw">super</span>::backend::MultiArrayComparisonSyntax,
+        &gt; <span class="kw">for </span>diesel::internal::derives::multiconnection::array_comparison::Many&lt;ST, I&gt;
+        <span class="kw">where
+            </span><span class="self">Self</span>: diesel::query_builder::QueryFragment&lt;
+                    &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;
+                + diesel::query_builder::QueryFragment&lt;
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">super</span>::backend::MultiBackend::walk_variant_ast(<span class="self">self</span>, pass)
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            T,
+        &gt; diesel::query_builder::QueryFragment&lt;
+            <span class="kw">super</span>::backend::MultiBackend,
+            <span class="kw">super</span>::backend::MultiExistsSyntax,
+        &gt; <span class="kw">for </span>diesel::internal::derives::multiconnection::Exists&lt;T&gt;
+        <span class="kw">where
+            </span><span class="self">Self</span>: diesel::query_builder::QueryFragment&lt;
+                    &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;
+                + diesel::query_builder::QueryFragment&lt;
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">super</span>::backend::MultiBackend::walk_variant_ast(<span class="self">self</span>, pass)
+            }
+        }
+        <span class="kw">impl </span>diesel::query_builder::QueryFragment&lt;
+            <span class="kw">super</span>::backend::MultiBackend,
+            <span class="kw">super</span>::backend::MultiEmptyFromClauseSyntax,
+        &gt; <span class="kw">for </span>diesel::internal::derives::multiconnection::NoFromClause
+        <span class="kw">where
+            </span><span class="self">Self</span>: diesel::query_builder::QueryFragment&lt;
+                    &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;
+                + diesel::query_builder::QueryFragment&lt;
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">super</span>::backend::MultiBackend::walk_variant_ast(<span class="self">self</span>, pass)
+            }
+        }
+        <span class="kw">impl </span>diesel::query_builder::QueryFragment&lt;
+            <span class="kw">super</span>::backend::MultiBackend,
+            <span class="kw">super</span>::backend::MultiDefaultValueClauseForInsert,
+        &gt; <span class="kw">for </span>diesel::internal::derives::multiconnection::DefaultValues
+        <span class="kw">where
+            </span><span class="self">Self</span>: diesel::query_builder::QueryFragment&lt;
+                    &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;
+                + diesel::query_builder::QueryFragment&lt;
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">super</span>::backend::MultiBackend::walk_variant_ast(<span class="self">self</span>, pass)
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            Expr,
+        &gt; diesel::query_builder::QueryFragment&lt;
+            <span class="kw">super</span>::backend::MultiBackend,
+            <span class="kw">super</span>::backend::MultiReturningClause,
+        &gt; <span class="kw">for </span>diesel::internal::derives::multiconnection::ReturningClause&lt;Expr&gt;
+        <span class="kw">where
+            </span><span class="self">Self</span>: diesel::query_builder::QueryFragment&lt;
+                    &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;
+                + diesel::query_builder::QueryFragment&lt;
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">super</span>::backend::MultiBackend::walk_variant_ast(<span class="self">self</span>, pass)
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            Expr,
+        &gt; diesel::query_builder::QueryFragment&lt;
+            <span class="kw">super</span>::backend::MultiBackend,
+            <span class="kw">super</span>::backend::MultiInsertWithDefaultKeyword,
+        &gt; <span class="kw">for </span>diesel::insertable::DefaultableColumnInsertValue&lt;Expr&gt;
+        <span class="kw">where
+            </span><span class="self">Self</span>: diesel::query_builder::QueryFragment&lt;
+                    &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;
+                + diesel::query_builder::QueryFragment&lt;
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">super</span>::backend::MultiBackend::walk_variant_ast(<span class="self">self</span>, pass)
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            Tab,
+            V,
+            QId,
+            <span class="kw">const </span>HAS_STATIC_QUERY_ID: bool,
+        &gt; diesel::query_builder::QueryFragment&lt;
+            <span class="kw">super</span>::backend::MultiBackend,
+            <span class="kw">super</span>::backend::MultiBatchInsertSupport,
+        &gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::BatchInsert&lt;
+            V,
+            Tab,
+            QId,
+            HAS_STATIC_QUERY_ID,
+        &gt;
+        <span class="kw">where
+            </span><span class="self">Self</span>: diesel::query_builder::QueryFragment&lt;
+                    &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;
+                + diesel::query_builder::QueryFragment&lt;
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">super</span>::backend::MultiBackend::walk_variant_ast(<span class="self">self</span>, pass)
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            S,
+        &gt; diesel::query_builder::QueryFragment&lt;
+            <span class="kw">super</span>::backend::MultiBackend,
+            <span class="kw">super</span>::backend::MultiAliasSyntax,
+        &gt; <span class="kw">for </span>diesel::query_source::Alias&lt;S&gt;
+        <span class="kw">where
+            </span><span class="self">Self</span>: diesel::query_builder::QueryFragment&lt;
+                    &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;
+                + diesel::query_builder::QueryFragment&lt;
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">super</span>::backend::MultiBackend::walk_variant_ast(<span class="self">self</span>, pass)
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            F,
+            S,
+            D,
+            W,
+            O,
+            LOf,
+            G,
+            H,
+            LC,
+        &gt; diesel::query_builder::QueryFragment&lt;
+            <span class="kw">super</span>::backend::MultiBackend,
+            <span class="kw">super</span>::backend::MultiSelectStatementSyntax,
+        &gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::SelectStatement&lt;
+            F,
+            S,
+            D,
+            W,
+            O,
+            LOf,
+            G,
+            H,
+            LC,
+        &gt;
+        <span class="kw">where
+            </span>S: diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt;,
+            F: diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt;,
+            D: diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt;,
+            W: diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt;,
+            O: diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt;,
+            LOf: diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt;,
+            G: diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt;,
+            H: diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt;,
+            LC: diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt;,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                <span class="kw-2">mut </span>out: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">use </span>diesel::internal::derives::multiconnection::SelectStatementAccessor;
+                out.push_sql(<span class="string">"SELECT "</span>);
+                <span class="self">self</span>.distinct_clause().walk_ast(out.reborrow())<span class="question-mark">?</span>;
+                <span class="self">self</span>.select_clause().walk_ast(out.reborrow())<span class="question-mark">?</span>;
+                <span class="self">self</span>.from_clause().walk_ast(out.reborrow())<span class="question-mark">?</span>;
+                <span class="self">self</span>.where_clause().walk_ast(out.reborrow())<span class="question-mark">?</span>;
+                <span class="self">self</span>.group_by_clause().walk_ast(out.reborrow())<span class="question-mark">?</span>;
+                <span class="self">self</span>.having_clause().walk_ast(out.reborrow())<span class="question-mark">?</span>;
+                <span class="self">self</span>.order_clause().walk_ast(out.reborrow())<span class="question-mark">?</span>;
+                <span class="self">self</span>.limit_offset_clause().walk_ast(out.reborrow())<span class="question-mark">?</span>;
+                <span class="self">self</span>.locking_clause().walk_ast(out.reborrow())<span class="question-mark">?</span>;
+                <span class="prelude-val">Ok</span>(())
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            <span class="lifetime">'a</span>,
+            ST,
+            QS,
+            GB,
+        &gt; diesel::query_builder::QueryFragment&lt;
+            <span class="kw">super</span>::backend::MultiBackend,
+            <span class="kw">super</span>::backend::MultiSelectStatementSyntax,
+        &gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::BoxedSelectStatement&lt;
+            <span class="lifetime">'a</span>,
+            ST,
+            QS,
+            <span class="kw">super</span>::backend::MultiBackend,
+            GB,
+        &gt;
+        <span class="kw">where
+            </span>QS: diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt;,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">use </span>diesel::internal::derives::multiconnection::BoxedQueryHelper;
+                <span class="self">self</span>.build_query(pass, |where_clause, pass| where_clause.walk_ast(pass))
+            }
+        }
+        <span class="kw">impl </span>diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::BoxedLimitOffsetClause&lt;
+            <span class="lifetime">'_</span>,
+            <span class="kw">super</span>::backend::MultiBackend,
+        &gt; {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                <span class="kw-2">mut </span>pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref </span>limit) = <span class="self">self</span>.limit {
+                    limit.walk_ast(pass.reborrow())<span class="question-mark">?</span>;
+                }
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref </span>offset) = <span class="self">self</span>.offset {
+                    offset.walk_ast(pass.reborrow())<span class="question-mark">?</span>;
+                }
+                <span class="prelude-val">Ok</span>(())
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            <span class="lifetime">'a</span>,
+        &gt; diesel::query_builder::IntoBoxedClause&lt;
+            <span class="lifetime">'a</span>,
+            <span class="kw">super</span>::multi_connection_impl::backend::MultiBackend,
+        &gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::LimitOffsetClause&lt;
+            diesel::internal::derives::multiconnection::NoLimitClause,
+            diesel::internal::derives::multiconnection::NoOffsetClause,
+        &gt; {
+            <span class="kw">type </span>BoxedClause = diesel::internal::derives::multiconnection::BoxedLimitOffsetClause&lt;
+                <span class="lifetime">'a</span>,
+                <span class="kw">super</span>::multi_connection_impl::backend::MultiBackend,
+            &gt;;
+            <span class="kw">fn </span>into_boxed(<span class="self">self</span>) -&gt; <span class="self">Self</span>::BoxedClause {
+                diesel::internal::derives::multiconnection::BoxedLimitOffsetClause {
+                    limit: <span class="prelude-val">None</span>,
+                    offset: <span class="prelude-val">None</span>,
+                }
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            <span class="lifetime">'a</span>,
+            L,
+        &gt; diesel::query_builder::IntoBoxedClause&lt;
+            <span class="lifetime">'a</span>,
+            <span class="kw">super</span>::multi_connection_impl::backend::MultiBackend,
+        &gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::LimitOffsetClause&lt;
+            diesel::internal::derives::multiconnection::LimitClause&lt;L&gt;,
+            diesel::internal::derives::multiconnection::NoOffsetClause,
+        &gt;
+        <span class="kw">where
+            </span>diesel::internal::derives::multiconnection::LimitClause&lt;
+                L,
+            &gt;: diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt; + Send
+                + <span class="lifetime">'static</span>,
+        {
+            <span class="kw">type </span>BoxedClause = diesel::internal::derives::multiconnection::BoxedLimitOffsetClause&lt;
+                <span class="lifetime">'a</span>,
+                <span class="kw">super</span>::multi_connection_impl::backend::MultiBackend,
+            &gt;;
+            <span class="kw">fn </span>into_boxed(<span class="self">self</span>) -&gt; <span class="self">Self</span>::BoxedClause {
+                diesel::internal::derives::multiconnection::BoxedLimitOffsetClause {
+                    limit: <span class="prelude-val">Some</span>(Box::new(<span class="self">self</span>.limit_clause)),
+                    offset: <span class="prelude-val">None</span>,
+                }
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            <span class="lifetime">'a</span>,
+            O,
+        &gt; diesel::query_builder::IntoBoxedClause&lt;
+            <span class="lifetime">'a</span>,
+            <span class="kw">super</span>::multi_connection_impl::backend::MultiBackend,
+        &gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::LimitOffsetClause&lt;
+            diesel::internal::derives::multiconnection::NoLimitClause,
+            diesel::internal::derives::multiconnection::OffsetClause&lt;O&gt;,
+        &gt;
+        <span class="kw">where
+            </span>diesel::internal::derives::multiconnection::OffsetClause&lt;
+                O,
+            &gt;: diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt; + Send
+                + <span class="lifetime">'static</span>,
+        {
+            <span class="kw">type </span>BoxedClause = diesel::internal::derives::multiconnection::BoxedLimitOffsetClause&lt;
+                <span class="lifetime">'a</span>,
+                <span class="kw">super</span>::multi_connection_impl::backend::MultiBackend,
+            &gt;;
+            <span class="kw">fn </span>into_boxed(<span class="self">self</span>) -&gt; <span class="self">Self</span>::BoxedClause {
+                diesel::internal::derives::multiconnection::BoxedLimitOffsetClause {
+                    limit: <span class="prelude-val">None</span>,
+                    offset: <span class="prelude-val">Some</span>(Box::new(<span class="self">self</span>.offset_clause)),
+                }
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            <span class="lifetime">'a</span>,
+            L,
+            O,
+        &gt; diesel::query_builder::IntoBoxedClause&lt;
+            <span class="lifetime">'a</span>,
+            <span class="kw">super</span>::multi_connection_impl::backend::MultiBackend,
+        &gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::LimitOffsetClause&lt;
+            diesel::internal::derives::multiconnection::LimitClause&lt;L&gt;,
+            diesel::internal::derives::multiconnection::OffsetClause&lt;O&gt;,
+        &gt;
+        <span class="kw">where
+            </span>diesel::internal::derives::multiconnection::LimitClause&lt;
+                L,
+            &gt;: diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt; + Send
+                + <span class="lifetime">'static</span>,
+            diesel::internal::derives::multiconnection::OffsetClause&lt;
+                O,
+            &gt;: diesel::query_builder::QueryFragment&lt;<span class="kw">super</span>::backend::MultiBackend&gt; + Send
+                + <span class="lifetime">'static</span>,
+        {
+            <span class="kw">type </span>BoxedClause = diesel::internal::derives::multiconnection::BoxedLimitOffsetClause&lt;
+                <span class="lifetime">'a</span>,
+                <span class="kw">super</span>::multi_connection_impl::backend::MultiBackend,
+            &gt;;
+            <span class="kw">fn </span>into_boxed(<span class="self">self</span>) -&gt; <span class="self">Self</span>::BoxedClause {
+                diesel::internal::derives::multiconnection::BoxedLimitOffsetClause {
+                    limit: <span class="prelude-val">Some</span>(Box::new(<span class="self">self</span>.limit_clause)),
+                    offset: <span class="prelude-val">Some</span>(Box::new(<span class="self">self</span>.offset_clause)),
+                }
+            }
+        }
+        <span class="kw">impl</span>&lt;
+            Col,
+            Expr,
+        &gt; diesel::insertable::InsertValues&lt;
+            <span class="kw">super</span>::multi_connection_impl::backend::MultiBackend,
+            Col::Table,
+        &gt;
+        <span class="kw">for </span>diesel::insertable::DefaultableColumnInsertValue&lt;
+            diesel::insertable::ColumnInsertValue&lt;Col, Expr&gt;,
+        &gt;
+        <span class="kw">where
+            </span>Col: diesel::prelude::Column,
+            Expr: diesel::prelude::Expression&lt;SqlType = Col::SqlType&gt;,
+            Expr: diesel::prelude::AppearsOnTable&lt;
+                diesel::internal::derives::multiconnection::NoFromClause,
+            &gt;,
+            <span class="self">Self</span>: diesel::query_builder::QueryFragment&lt;
+                <span class="kw">super</span>::multi_connection_impl::backend::MultiBackend,
+            &gt;,
+            diesel::insertable::DefaultableColumnInsertValue&lt;
+                diesel::insertable::ColumnInsertValue&lt;Col, Expr&gt;,
+            &gt;: diesel::insertable::InsertValues&lt;
+                &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                Col::Table,
+            &gt;,
+            diesel::insertable::DefaultableColumnInsertValue&lt;
+                diesel::insertable::ColumnInsertValue&lt;Col, Expr&gt;,
+            &gt;: diesel::insertable::InsertValues&lt;
+                &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                Col::Table,
+            &gt;,
+        {
+            <span class="kw">fn </span>column_names(
+                <span class="kw-2">&amp;</span><span class="self">self</span>,
+                <span class="kw-2">mut </span>out: diesel::query_builder::AstPass&lt;
+                    <span class="lifetime">'_</span>,
+                    <span class="lifetime">'_</span>,
+                    <span class="kw">super</span>::multi_connection_impl::backend::MultiBackend,
+                &gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">use </span>diesel::internal::derives::multiconnection::AstPassHelper;
+                <span class="kw">match </span>out.backend() {
+                    <span class="kw">super</span>::backend::MultiBackend::Pg(<span class="kw">_</span>) =&gt; {
+                        &lt;<span class="self">Self </span><span class="kw">as </span>diesel::insertable::InsertValues&lt;
+                            &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                            Col::Table,
+                        &gt;&gt;::column_names(
+                            <span class="kw-2">&amp;</span><span class="self">self</span>,
+                            out
+                                .cast_database(
+                                    <span class="kw">super</span>::bind_collector::MultiBindCollector::pg,
+                                    <span class="kw">super</span>::query_builder::MultiQueryBuilder::pg,
+                                    <span class="kw">super</span>::backend::MultiBackend::pg,
+                                    |l| {
+                                        &lt;PgConnection <span class="kw">as </span>diesel::internal::derives::multiconnection::MultiConnectionHelper&gt;::from_any(
+                                                l,
+                                            )
+                                            .expect(
+                                                <span class="string">"It's possible to downcast the metadata lookup type to the correct type"</span>,
+                                            )
+                                    },
+                                ),
+                        )
+                    }
+                    <span class="kw">super</span>::backend::MultiBackend::Sqlite(<span class="kw">_</span>) =&gt; {
+                        &lt;<span class="self">Self </span><span class="kw">as </span>diesel::insertable::InsertValues&lt;
+                            &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                            Col::Table,
+                        &gt;&gt;::column_names(
+                            <span class="kw-2">&amp;</span><span class="self">self</span>,
+                            out
+                                .cast_database(
+                                    <span class="kw">super</span>::bind_collector::MultiBindCollector::sqlite,
+                                    <span class="kw">super</span>::query_builder::MultiQueryBuilder::sqlite,
+                                    <span class="kw">super</span>::backend::MultiBackend::sqlite,
+                                    |l| {
+                                        &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::internal::derives::multiconnection::MultiConnectionHelper&gt;::from_any(
+                                                l,
+                                            )
+                                            .expect(
+                                                <span class="string">"It's possible to downcast the metadata lookup type to the correct type"</span>,
+                                            )
+                                    },
+                                ),
+                        )
+                    }
+                }
+            }
+        }
+    }
+    <span class="kw">mod </span>bind_collector {
+        <span class="kw">use </span>super::<span class="kw-2">*</span>;
+        <span class="kw">pub enum </span>MultiBindCollector&lt;<span class="lifetime">'a</span>&gt; {
+            Pg(
+                &lt;&lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend <span class="kw">as </span>diesel::backend::Backend&gt;::BindCollector&lt;
+                    <span class="lifetime">'a</span>,
+                &gt;,
+            ),
+            Sqlite(
+                &lt;&lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend <span class="kw">as </span>diesel::backend::Backend&gt;::BindCollector&lt;
+                    <span class="lifetime">'a</span>,
+                &gt;,
+            ),
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; MultiBindCollector&lt;<span class="lifetime">'a</span>&gt; {
+            <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>pg(
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+            ) -&gt; <span class="kw-2">&amp;mut </span>&lt;&lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend <span class="kw">as </span>diesel::backend::Backend&gt;::BindCollector&lt;
+                <span class="lifetime">'a</span>,
+            &gt; {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(bc) =&gt; bc,
+                    <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
+                }
+            }
+            <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>sqlite(
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+            ) -&gt; <span class="kw-2">&amp;mut </span>&lt;&lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend <span class="kw">as </span>diesel::backend::Backend&gt;::BindCollector&lt;
+                <span class="lifetime">'a</span>,
+            &gt; {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Sqlite(bc) =&gt; bc,
+                    <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
+                }
+            }
+        }
+        <span class="kw">trait </span>PushBoundValueToCollectorDB&lt;DB: diesel::backend::Backend&gt; {
+            <span class="kw">fn </span>push_bound_value&lt;<span class="lifetime">'a</span>: <span class="lifetime">'b</span>, <span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="self">self</span>,
+                v: InnerBindValueKind&lt;<span class="lifetime">'a</span>&gt;,
+                collector: <span class="kw-2">&amp;mut </span>&lt;DB <span class="kw">as </span>diesel::backend::Backend&gt;::BindCollector&lt;<span class="lifetime">'b</span>&gt;,
+                lookup: <span class="kw-2">&amp;mut </span>&lt;DB <span class="kw">as </span>diesel::sql_types::TypeMetadata&gt;::MetadataLookup,
+            ) -&gt; diesel::result::QueryResult&lt;()&gt;;
+        }
+        <span class="kw">struct </span>PushBoundValueToCollectorImpl&lt;ST, T: <span class="question-mark">?</span>Sized&gt; {
+            p: std::marker::PhantomData&lt;(ST, T)&gt;,
+        }
+        <span class="kw">impl</span>&lt;ST, T, DB&gt; PushBoundValueToCollectorDB&lt;DB&gt;
+        <span class="kw">for </span>PushBoundValueToCollectorImpl&lt;ST, T&gt;
+        <span class="kw">where
+            </span>DB: diesel::backend::Backend + diesel::sql_types::HasSqlType&lt;ST&gt;,
+            T: diesel::serialize::ToSql&lt;ST, DB&gt; + <span class="lifetime">'static</span>,
+            <span class="prelude-ty">Option</span>&lt;
+                T,
+            &gt;: diesel::serialize::ToSql&lt;diesel::sql_types::Nullable&lt;ST&gt;, DB&gt; + <span class="lifetime">'static</span>,
+            ST: diesel::sql_types::SqlType,
+        {
+            <span class="kw">fn </span>push_bound_value&lt;<span class="lifetime">'a</span>: <span class="lifetime">'b</span>, <span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="self">self</span>,
+                v: InnerBindValueKind&lt;<span class="lifetime">'a</span>&gt;,
+                collector: <span class="kw-2">&amp;mut </span>&lt;DB <span class="kw">as </span>diesel::backend::Backend&gt;::BindCollector&lt;<span class="lifetime">'b</span>&gt;,
+                lookup: <span class="kw-2">&amp;mut </span>&lt;DB <span class="kw">as </span>diesel::sql_types::TypeMetadata&gt;::MetadataLookup,
+            ) -&gt; diesel::result::QueryResult&lt;()&gt; {
+                <span class="kw">use </span>diesel::query_builder::BindCollector;
+                <span class="kw">match </span>v {
+                    InnerBindValueKind::Sized(v) =&gt; {
+                        <span class="kw">let </span>v = v
+                            .downcast_ref::&lt;T&gt;()
+                            .expect(<span class="string">"We know the type statically here"</span>);
+                        collector.push_bound_value::&lt;ST, T&gt;(v, lookup)
+                    }
+                    InnerBindValueKind::Null =&gt; {
+                        collector
+                            .push_bound_value::&lt;
+                                diesel::sql_types::Nullable&lt;ST&gt;,
+                                <span class="prelude-ty">Option</span>&lt;T&gt;,
+                            &gt;(<span class="kw-2">&amp;</span><span class="prelude-val">None</span>, lookup)
+                    }
+                    <span class="kw">_ </span>=&gt; {
+                        <span class="macro">unreachable!</span>(
+                            <span class="string">"We set the value to `InnerBindValueKind::Sized` or `InnerBindValueKind::Null`"
+                        </span>)
+                    }
+                }
+            }
+        }
+        <span class="kw">impl</span>&lt;DB&gt; PushBoundValueToCollectorDB&lt;DB&gt;
+        <span class="kw">for </span>PushBoundValueToCollectorImpl&lt;diesel::sql_types::Text, str&gt;
+        <span class="kw">where
+            </span>DB: diesel::backend::Backend
+                + diesel::sql_types::HasSqlType&lt;diesel::sql_types::Text&gt;,
+            str: diesel::serialize::ToSql&lt;diesel::sql_types::Text, DB&gt; + <span class="lifetime">'static</span>,
+        {
+            <span class="kw">fn </span>push_bound_value&lt;<span class="lifetime">'a</span>: <span class="lifetime">'b</span>, <span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="self">self</span>,
+                v: InnerBindValueKind&lt;<span class="lifetime">'a</span>&gt;,
+                collector: <span class="kw-2">&amp;mut </span>&lt;DB <span class="kw">as </span>diesel::backend::Backend&gt;::BindCollector&lt;<span class="lifetime">'b</span>&gt;,
+                lookup: <span class="kw-2">&amp;mut </span>&lt;DB <span class="kw">as </span>diesel::sql_types::TypeMetadata&gt;::MetadataLookup,
+            ) -&gt; diesel::result::QueryResult&lt;()&gt; {
+                <span class="kw">use </span>diesel::query_builder::BindCollector;
+                <span class="kw">if let </span>InnerBindValueKind::Str(v) = v {
+                    collector.push_bound_value::&lt;diesel::sql_types::Text, str&gt;(v, lookup)
+                } <span class="kw">else </span>{
+                    <span class="macro">unreachable!</span>(<span class="string">"We set the value to `InnerBindValueKind::Str`"</span>)
+                }
+            }
+        }
+        <span class="kw">impl</span>&lt;DB&gt; PushBoundValueToCollectorDB&lt;DB&gt;
+        <span class="kw">for </span>PushBoundValueToCollectorImpl&lt;diesel::sql_types::Binary, [u8]&gt;
+        <span class="kw">where
+            </span>DB: diesel::backend::Backend
+                + diesel::sql_types::HasSqlType&lt;diesel::sql_types::Binary&gt;,
+            [u8]: diesel::serialize::ToSql&lt;diesel::sql_types::Binary, DB&gt; + <span class="lifetime">'static</span>,
+        {
+            <span class="kw">fn </span>push_bound_value&lt;<span class="lifetime">'a</span>: <span class="lifetime">'b</span>, <span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="self">self</span>,
+                v: InnerBindValueKind&lt;<span class="lifetime">'a</span>&gt;,
+                collector: <span class="kw-2">&amp;mut </span>&lt;DB <span class="kw">as </span>diesel::backend::Backend&gt;::BindCollector&lt;<span class="lifetime">'b</span>&gt;,
+                lookup: <span class="kw-2">&amp;mut </span>&lt;DB <span class="kw">as </span>diesel::sql_types::TypeMetadata&gt;::MetadataLookup,
+            ) -&gt; diesel::result::QueryResult&lt;()&gt; {
+                <span class="kw">use </span>diesel::query_builder::BindCollector;
+                <span class="kw">if let </span>InnerBindValueKind::Bytes(v) = v {
+                    collector
+                        .push_bound_value::&lt;diesel::sql_types::Binary, [u8]&gt;(v, lookup)
+                } <span class="kw">else </span>{
+                    <span class="macro">unreachable!</span>(<span class="string">"We set the value to `InnerBindValueKind::Binary`"</span>)
+                }
+            }
+        }
+        <span class="kw">trait </span>PushBoundValueToCollector: PushBoundValueToCollectorDB&lt;
+                &lt;PgConnection <span class="kw">as </span>diesel::Connection&gt;::Backend,
+            &gt; + PushBoundValueToCollectorDB&lt;
+                &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::Connection&gt;::Backend,
+            &gt; {}
+        <span class="kw">impl</span>&lt;T&gt; PushBoundValueToCollector <span class="kw">for </span>T
+        <span class="kw">where
+            </span>T: PushBoundValueToCollectorDB&lt;&lt;PgConnection <span class="kw">as </span>diesel::Connection&gt;::Backend&gt;
+                + PushBoundValueToCollectorDB&lt;
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::Connection&gt;::Backend,
+                &gt;,
+        {}
+        <span class="attr">#[derive(Default)]
+        </span><span class="kw">pub struct </span>BindValue&lt;<span class="lifetime">'a</span>&gt; {
+            inner: <span class="prelude-ty">Option</span>&lt;InnerBindValue&lt;<span class="lifetime">'a</span>&gt;&gt;,
+        }
+        <span class="kw">struct </span>InnerBindValue&lt;<span class="lifetime">'a</span>&gt; {
+            value: InnerBindValueKind&lt;<span class="lifetime">'a</span>&gt;,
+            push_bound_value_to_collector: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><span class="kw">dyn </span>PushBoundValueToCollector,
+        }
+        <span class="kw">enum </span>InnerBindValueKind&lt;<span class="lifetime">'a</span>&gt; {
+            Sized(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>(<span class="kw">dyn </span>std::any::Any + std::marker::Send + std::marker::Sync)),
+            Str(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>str),
+            Bytes(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[u8]),
+            Null,
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; From&lt;(diesel::sql_types::Text, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str)&gt; <span class="kw">for </span>BindValue&lt;<span class="lifetime">'a</span>&gt; {
+            <span class="kw">fn </span>from((<span class="kw">_</span>, v): (diesel::sql_types::Text, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str)) -&gt; <span class="self">Self </span>{
+                <span class="self">Self </span>{
+                    inner: <span class="prelude-val">Some</span>(InnerBindValue {
+                        value: InnerBindValueKind::Str(v),
+                        push_bound_value_to_collector: <span class="kw-2">&amp;</span>PushBoundValueToCollectorImpl {
+                            p: std::marker::PhantomData::&lt;(diesel::sql_types::Text, str)&gt;,
+                        },
+                    }),
+                }
+            }
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; From&lt;(diesel::sql_types::Binary, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[u8])&gt; <span class="kw">for </span>BindValue&lt;<span class="lifetime">'a</span>&gt; {
+            <span class="kw">fn </span>from((<span class="kw">_</span>, v): (diesel::sql_types::Binary, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[u8])) -&gt; <span class="self">Self </span>{
+                <span class="self">Self </span>{
+                    inner: <span class="prelude-val">Some</span>(InnerBindValue {
+                        value: InnerBindValueKind::Bytes(v),
+                        push_bound_value_to_collector: <span class="kw-2">&amp;</span>PushBoundValueToCollectorImpl {
+                            p: std::marker::PhantomData::&lt;
+                                (diesel::sql_types::Binary, [u8]),
+                            &gt;,
+                        },
+                    }),
+                }
+            }
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, ST&gt; From&lt;(ST, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T)&gt; <span class="kw">for </span>BindValue&lt;<span class="lifetime">'a</span>&gt;
+        <span class="kw">where
+            </span>T: std::any::Any
+                + diesel::serialize::ToSql&lt;
+                    ST,
+                    &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;
+                + diesel::serialize::ToSql&lt;
+                    ST,
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt; + Send + Sync + <span class="lifetime">'static</span>,
+            ST: Send
+                + diesel::sql_types::SqlType&lt;
+                    IsNull = diesel::sql_types::is_nullable::NotNull,
+                &gt; + <span class="lifetime">'static</span>,
+            &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend: diesel::sql_types::HasSqlType&lt;
+                ST,
+            &gt;,
+            &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend: diesel::sql_types::HasSqlType&lt;
+                ST,
+            &gt;,
+        {
+            <span class="kw">fn </span>from((<span class="kw">_</span>, v): (ST, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T)) -&gt; <span class="self">Self </span>{
+                <span class="self">Self </span>{
+                    inner: <span class="prelude-val">Some</span>(InnerBindValue {
+                        value: InnerBindValueKind::Sized(v),
+                        push_bound_value_to_collector: <span class="kw-2">&amp;</span>PushBoundValueToCollectorImpl {
+                            p: std::marker::PhantomData::&lt;(ST, T)&gt;,
+                        },
+                    }),
+                }
+            }
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; diesel::query_builder::BindCollector&lt;<span class="lifetime">'a</span>, MultiBackend&gt;
+        <span class="kw">for </span>MultiBindCollector&lt;<span class="lifetime">'a</span>&gt; {
+            <span class="kw">type </span>Buffer = multi_connection_impl::bind_collector::BindValue&lt;<span class="lifetime">'a</span>&gt;;
+            <span class="kw">fn </span>push_bound_value&lt;T, U&gt;(
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+                bind: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>U,
+                metadata_lookup: <span class="kw-2">&amp;mut </span>(<span class="kw">dyn </span>std::any::Any + <span class="lifetime">'static</span>),
+            ) -&gt; diesel::QueryResult&lt;()&gt;
+            <span class="kw">where
+                </span>MultiBackend: diesel::sql_types::HasSqlType&lt;T&gt;,
+                U: diesel::serialize::ToSql&lt;T, MultiBackend&gt; + <span class="question-mark">?</span>Sized + <span class="lifetime">'a</span>,
+            {
+                <span class="kw">let </span>out = {
+                    <span class="kw">let </span>out = multi_connection_impl::bind_collector::BindValue::default();
+                    <span class="kw">let </span><span class="kw-2">mut </span>out = diesel::serialize::Output::&lt;
+                        MultiBackend,
+                    &gt;::new(out, metadata_lookup);
+                    <span class="kw">let </span>bind_is_null = bind
+                        .to_sql(<span class="kw-2">&amp;mut </span>out)
+                        .map_err(diesel::result::Error::SerializationError)<span class="question-mark">?</span>;
+                    <span class="kw">if </span><span class="macro">matches!</span>(bind_is_null, diesel::serialize::IsNull::Yes) {
+                        <span class="kw">let </span>metadata = &lt;MultiBackend <span class="kw">as </span>diesel::sql_types::HasSqlType&lt;
+                            T,
+                        &gt;&gt;::metadata(metadata_lookup);
+                        <span class="kw">match </span>(<span class="self">self</span>, metadata) {
+                            (
+                                <span class="self">Self</span>::Pg(<span class="kw-2">ref mut </span>bc),
+                                <span class="kw">super</span>::backend::MultiTypeMetadata { Pg: <span class="prelude-val">Some</span>(metadata), .. },
+                            ) =&gt; {
+                                bc.push_null_value(metadata)<span class="question-mark">?</span>;
+                            }
+                            (
+                                <span class="self">Self</span>::Sqlite(<span class="kw-2">ref mut </span>bc),
+                                <span class="kw">super</span>::backend::MultiTypeMetadata {
+                                    Sqlite: <span class="prelude-val">Some</span>(metadata),
+                                    ..
+                                },
+                            ) =&gt; {
+                                bc.push_null_value(metadata)<span class="question-mark">?</span>;
+                            }
+                            <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(<span class="string">"We have matching metadata"</span>),
+                        }
+                        <span class="kw">return </span><span class="prelude-val">Ok</span>(());
+                    } <span class="kw">else </span>{
+                        out.into_inner()
+                    }
+                };
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(<span class="kw-2">ref mut </span>bc) =&gt; {
+                        <span class="kw">let </span>out = out
+                            .inner
+                            .expect(
+                                <span class="string">"This inner value is set via our custom `ToSql` impls"</span>,
+                            );
+                        <span class="kw">let </span>callback = out.push_bound_value_to_collector;
+                        <span class="kw">let </span>value = out.value;
+                        &lt;<span class="kw">_ as </span>PushBoundValueToCollectorDB&lt;
+                            &lt;PgConnection <span class="kw">as </span>diesel::Connection&gt;::Backend,
+                        &gt;&gt;::push_bound_value(
+                            callback,
+                            value,
+                            bc,
+                            &lt;PgConnection <span class="kw">as </span>diesel::internal::derives::multiconnection::MultiConnectionHelper&gt;::from_any(
+                                    metadata_lookup,
+                                )
+                                .expect(
+                                    <span class="string">"We can downcast the metadata lookup to the right type"</span>,
+                                ),
+                        )<span class="question-mark">?
+                    </span>}
+                    <span class="self">Self</span>::Sqlite(<span class="kw-2">ref mut </span>bc) =&gt; {
+                        <span class="kw">let </span>out = out
+                            .inner
+                            .expect(
+                                <span class="string">"This inner value is set via our custom `ToSql` impls"</span>,
+                            );
+                        <span class="kw">let </span>callback = out.push_bound_value_to_collector;
+                        <span class="kw">let </span>value = out.value;
+                        &lt;<span class="kw">_ as </span>PushBoundValueToCollectorDB&lt;
+                            &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::Connection&gt;::Backend,
+                        &gt;&gt;::push_bound_value(
+                            callback,
+                            value,
+                            bc,
+                            &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::internal::derives::multiconnection::MultiConnectionHelper&gt;::from_any(
+                                    metadata_lookup,
+                                )
+                                .expect(
+                                    <span class="string">"We can downcast the metadata lookup to the right type"</span>,
+                                ),
+                        )<span class="question-mark">?
+                    </span>}
+                }
+                <span class="prelude-val">Ok</span>(())
+            }
+            <span class="kw">fn </span>push_null_value(
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+                metadata: <span class="kw">super</span>::backend::MultiTypeMetadata,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">match </span>(<span class="self">self</span>, metadata) {
+                    (
+                        <span class="self">Self</span>::Pg(<span class="kw-2">ref mut </span>bc),
+                        <span class="kw">super</span>::backend::MultiTypeMetadata { Pg: <span class="prelude-val">Some</span>(metadata), .. },
+                    ) =&gt; {
+                        bc.push_null_value(metadata)<span class="question-mark">?</span>;
+                    }
+                    (
+                        <span class="self">Self</span>::Sqlite(<span class="kw-2">ref mut </span>bc),
+                        <span class="kw">super</span>::backend::MultiTypeMetadata { Sqlite: <span class="prelude-val">Some</span>(metadata), .. },
+                    ) =&gt; {
+                        bc.push_null_value(metadata)<span class="question-mark">?</span>;
+                    }
+                    <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(<span class="string">"We have matching metadata"</span>),
+                }
+                <span class="prelude-val">Ok</span>(())
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::SmallInt, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>i16 {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::SmallInt, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::Integer, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>i32 {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Integer, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::BigInt, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>i64 {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::BigInt, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::Double, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>f64 {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Double, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::Float, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>f32 {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Float, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::Text, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>str {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Text, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::Binary, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>[u8] {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Binary, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::Bool, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>bool {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Bool, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::Numeric, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::bigdecimal::BigDecimal {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Numeric, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::Timestamp, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::chrono::NaiveDateTime {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Timestamp, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::Date, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::chrono::NaiveDate {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Date, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::Time, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::chrono::NaiveTime {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Time, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::Timestamp, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::time::PrimitiveDateTime {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Timestamp, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::Time, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::time::Time {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Time, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::serialize::ToSql&lt;diesel::sql_types::Date, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::time::Date {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, <span class="kw">super</span>::MultiBackend&gt;,
+            ) -&gt; diesel::serialize::Result {
+                out.set_value((diesel::sql_types::Date, <span class="self">self</span>));
+                <span class="prelude-val">Ok</span>(diesel::serialize::IsNull::No)
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;
+            diesel::sql_types::SmallInt,
+            <span class="kw">super</span>::MultiBackend,
+        &gt; <span class="kw">for </span>i16 {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::SmallInt&gt;()
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;
+            diesel::sql_types::Integer,
+            <span class="kw">super</span>::MultiBackend,
+        &gt; <span class="kw">for </span>i32 {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::Integer&gt;()
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;diesel::sql_types::BigInt, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>i64 {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::BigInt&gt;()
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;diesel::sql_types::Double, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>f64 {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::Double&gt;()
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;diesel::sql_types::Float, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>f32 {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::Float&gt;()
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;diesel::sql_types::Text, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>String {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::Text&gt;()
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;diesel::sql_types::Binary, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>Vec&lt;u8&gt; {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::Binary&gt;()
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;diesel::sql_types::Bool, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>bool {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::Bool&gt;()
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;
+            diesel::sql_types::Numeric,
+            <span class="kw">super</span>::MultiBackend,
+        &gt; <span class="kw">for </span>diesel::internal::derives::multiconnection::bigdecimal::BigDecimal {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::Numeric&gt;()
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;
+            diesel::sql_types::Timestamp,
+            <span class="kw">super</span>::MultiBackend,
+        &gt; <span class="kw">for </span>diesel::internal::derives::multiconnection::chrono::NaiveDateTime {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::Timestamp&gt;()
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;diesel::sql_types::Date, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::chrono::NaiveDate {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::Date&gt;()
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;diesel::sql_types::Time, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::chrono::NaiveTime {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::Time&gt;()
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;
+            diesel::sql_types::Timestamp,
+            <span class="kw">super</span>::MultiBackend,
+        &gt; <span class="kw">for </span>diesel::internal::derives::multiconnection::time::PrimitiveDateTime {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::Timestamp&gt;()
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;diesel::sql_types::Time, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::time::Time {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::Time&gt;()
+            }
+        }
+        <span class="kw">impl </span>diesel::deserialize::FromSql&lt;diesel::sql_types::Date, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>diesel::internal::derives::multiconnection::time::Date {
+            <span class="kw">fn </span>from_sql(
+                bytes: &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            ) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                bytes.from_sql::&lt;<span class="self">Self</span>, diesel::sql_types::Date&gt;()
+            }
+        }
+    }
+    <span class="kw">mod </span>row {
+        <span class="kw">use </span>super::<span class="kw-2">*</span>;
+        <span class="kw">pub enum </span>MultiRow&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; {
+            Pg(&lt;PgConnection <span class="kw">as </span>diesel::connection::LoadConnection&gt;::Row&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt;),
+            Sqlite(
+                &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::LoadConnection&gt;::Row&lt;
+                    <span class="lifetime">'conn</span>,
+                    <span class="lifetime">'query</span>,
+                &gt;,
+            ),
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; diesel::internal::derives::multiconnection::RowSealed
+        <span class="kw">for </span>MultiRow&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; {}
+        <span class="kw">pub enum </span>MultiField&lt;<span class="lifetime">'conn</span>: <span class="lifetime">'query</span>, <span class="lifetime">'query</span>&gt; {
+            Pg(
+                &lt;&lt;PgConnection <span class="kw">as </span>diesel::connection::LoadConnection&gt;::Row&lt;
+                    <span class="lifetime">'conn</span>,
+                    <span class="lifetime">'query</span>,
+                &gt; <span class="kw">as </span>diesel::row::Row&lt;
+                    <span class="lifetime">'conn</span>,
+                    &lt;PgConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;&gt;::Field&lt;<span class="lifetime">'query</span>&gt;,
+            ),
+            Sqlite(
+                &lt;&lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::LoadConnection&gt;::Row&lt;
+                    <span class="lifetime">'conn</span>,
+                    <span class="lifetime">'query</span>,
+                &gt; <span class="kw">as </span>diesel::row::Row&lt;
+                    <span class="lifetime">'conn</span>,
+                    &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::Connection&gt;::Backend,
+                &gt;&gt;::Field&lt;<span class="lifetime">'query</span>&gt;,
+            ),
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; diesel::row::Field&lt;<span class="lifetime">'conn</span>, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>MultiField&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; {
+            <span class="kw">fn </span>field_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt; {
+                <span class="kw">use </span>diesel::row::Field;
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(f) =&gt; f.field_name(),
+                    <span class="self">Self</span>::Sqlite(f) =&gt; f.field_name(),
+                }
+            }
+            <span class="kw">fn </span>value(
+                <span class="kw-2">&amp;</span><span class="self">self</span>,
+            ) -&gt; <span class="prelude-ty">Option</span>&lt;
+                &lt;<span class="kw">super</span>::MultiBackend <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;,
+            &gt; {
+                <span class="kw">use </span>diesel::row::Field;
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(f) =&gt; f.value().map(<span class="kw">super</span>::MultiRawValue::Pg),
+                    <span class="self">Self</span>::Sqlite(f) =&gt; f.value().map(<span class="kw">super</span>::MultiRawValue::Sqlite),
+                }
+            }
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>, <span class="lifetime">'c</span>&gt; diesel::row::RowIndex&lt;<span class="kw-2">&amp;</span><span class="lifetime">'c </span>str&gt;
+        <span class="kw">for </span>MultiRow&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; {
+            <span class="kw">fn </span>idx(<span class="kw-2">&amp;</span><span class="self">self</span>, idx: <span class="kw-2">&amp;</span><span class="lifetime">'c </span>str) -&gt; <span class="prelude-ty">Option</span>&lt;usize&gt; {
+                <span class="kw">use </span>diesel::row::RowIndex;
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(r) =&gt; r.idx(idx),
+                    <span class="self">Self</span>::Sqlite(r) =&gt; r.idx(idx),
+                }
+            }
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; diesel::row::RowIndex&lt;usize&gt; <span class="kw">for </span>MultiRow&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; {
+            <span class="kw">fn </span>idx(<span class="kw-2">&amp;</span><span class="self">self</span>, idx: usize) -&gt; <span class="prelude-ty">Option</span>&lt;usize&gt; {
+                <span class="kw">use </span>diesel::row::RowIndex;
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(r) =&gt; r.idx(idx),
+                    <span class="self">Self</span>::Sqlite(r) =&gt; r.idx(idx),
+                }
+            }
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; diesel::row::Row&lt;<span class="lifetime">'conn</span>, <span class="kw">super</span>::MultiBackend&gt;
+        <span class="kw">for </span>MultiRow&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; {
+            <span class="kw">type </span>Field&lt;<span class="lifetime">'a</span>&gt; = MultiField&lt;<span class="lifetime">'a</span>, <span class="lifetime">'a</span>&gt; <span class="kw">where </span><span class="lifetime">'conn</span>: <span class="lifetime">'a</span>, <span class="self">Self</span>: <span class="lifetime">'a</span>;
+            <span class="kw">type </span>InnerPartialRow = <span class="self">Self</span>;
+            <span class="kw">fn </span>field_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
+                <span class="kw">use </span>diesel::row::Row;
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(r) =&gt; r.field_count(),
+                    <span class="self">Self</span>::Sqlite(r) =&gt; r.field_count(),
+                }
+            }
+            <span class="kw">fn </span>get&lt;<span class="lifetime">'b</span>, I&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>, idx: I) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Field&lt;<span class="lifetime">'b</span>&gt;&gt;
+            <span class="kw">where
+                </span><span class="lifetime">'conn</span>: <span class="lifetime">'b</span>,
+                <span class="self">Self</span>: diesel::row::RowIndex&lt;I&gt;,
+            {
+                <span class="kw">use </span>diesel::row::{RowIndex, Row};
+                <span class="kw">let </span>idx = <span class="self">self</span>.idx(idx)<span class="question-mark">?</span>;
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(r) =&gt; r.get(idx).map(MultiField::Pg),
+                    <span class="self">Self</span>::Sqlite(r) =&gt; r.get(idx).map(MultiField::Sqlite),
+                }
+            }
+            <span class="kw">fn </span>partial_row(
+                <span class="kw-2">&amp;</span><span class="self">self</span>,
+                range: std::ops::Range&lt;usize&gt;,
+            ) -&gt; diesel::internal::derives::multiconnection::PartialRow&lt;
+                <span class="lifetime">'_</span>,
+                <span class="self">Self</span>::InnerPartialRow,
+            &gt; {
+                diesel::internal::derives::multiconnection::PartialRow::new(<span class="self">self</span>, range)
+            }
+        }
+        <span class="kw">pub enum </span>MultiCursor&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; {
+            Pg(
+                &lt;PgConnection <span class="kw">as </span>diesel::connection::LoadConnection&gt;::Cursor&lt;
+                    <span class="lifetime">'conn</span>,
+                    <span class="lifetime">'query</span>,
+                &gt;,
+            ),
+            Sqlite(
+                &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::LoadConnection&gt;::Cursor&lt;
+                    <span class="lifetime">'conn</span>,
+                    <span class="lifetime">'query</span>,
+                &gt;,
+            ),
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; Iterator <span class="kw">for </span>MultiCursor&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; {
+            <span class="kw">type </span>Item = diesel::QueryResult&lt;MultiRow&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt;&gt;;
+            <span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(r) =&gt; <span class="prelude-val">Some</span>(r.next()<span class="question-mark">?</span>.map(MultiRow::Pg)),
+                    <span class="self">Self</span>::Sqlite(r) =&gt; <span class="prelude-val">Some</span>(r.next()<span class="question-mark">?</span>.map(MultiRow::Sqlite)),
+                }
+            }
+        }
+    }
+    <span class="kw">mod </span>connection {
+        <span class="kw">use </span>super::<span class="kw-2">*</span>;
+        <span class="kw">use </span>diesel::connection::<span class="kw-2">*</span>;
+        <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">use </span><span class="kw">super</span>::DbConnection <span class="kw">as </span>MultiConnection;
+        <span class="kw">impl </span>SimpleConnection <span class="kw">for </span>MultiConnection {
+            <span class="kw">fn </span>batch_execute(<span class="kw-2">&amp;mut </span><span class="self">self</span>, query: <span class="kw-2">&amp;</span>str) -&gt; diesel::result::QueryResult&lt;()&gt; {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(conn) =&gt; conn.batch_execute(query),
+                    <span class="self">Self</span>::Sqlite(conn) =&gt; conn.batch_execute(query),
+                }
+            }
+        }
+        <span class="kw">impl </span>diesel::internal::derives::multiconnection::ConnectionSealed
+        <span class="kw">for </span>MultiConnection {}
+        <span class="kw">struct </span>SerializedQuery&lt;T, C&gt; {
+            inner: T,
+            backend: MultiBackend,
+            query_builder: <span class="kw">super</span>::query_builder::MultiQueryBuilder,
+            p: std::marker::PhantomData&lt;C&gt;,
+        }
+        <span class="kw">trait </span>BindParamHelper: Connection {
+            <span class="kw">fn </span>handle_inner_pass&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>: <span class="lifetime">'a</span>&gt;(
+                collector: <span class="kw-2">&amp;mut </span>&lt;<span class="self">Self</span>::Backend <span class="kw">as </span>diesel::backend::Backend&gt;::BindCollector&lt;
+                    <span class="lifetime">'a</span>,
+                &gt;,
+                lookup: <span class="kw-2">&amp;mut </span>&lt;<span class="self">Self</span>::Backend <span class="kw">as </span>diesel::sql_types::TypeMetadata&gt;::MetadataLookup,
+                backend: <span class="kw-2">&amp;</span><span class="lifetime">'b </span>MultiBackend,
+                q: <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="kw">impl </span>diesel::query_builder::QueryFragment&lt;MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt;;
+        }
+        <span class="kw">impl </span>BindParamHelper <span class="kw">for </span>PgConnection {
+            <span class="kw">fn </span>handle_inner_pass&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>: <span class="lifetime">'a</span>&gt;(
+                outer_collector: <span class="kw-2">&amp;mut </span>&lt;<span class="self">Self</span>::Backend <span class="kw">as </span>diesel::backend::Backend&gt;::BindCollector&lt;
+                    <span class="lifetime">'a</span>,
+                &gt;,
+                lookup: <span class="kw-2">&amp;mut </span>&lt;<span class="self">Self</span>::Backend <span class="kw">as </span>diesel::sql_types::TypeMetadata&gt;::MetadataLookup,
+                backend: <span class="kw-2">&amp;</span><span class="lifetime">'b </span>MultiBackend,
+                q: <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="kw">impl </span>diesel::query_builder::QueryFragment&lt;MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">use </span>diesel::internal::derives::multiconnection::MultiConnectionHelper;
+                <span class="kw">let </span><span class="kw-2">mut </span>collector = <span class="kw">super</span>::bind_collector::MultiBindCollector::Pg(
+                    Default::default(),
+                );
+                <span class="kw">let </span>lookup = <span class="self">Self</span>::to_any(lookup);
+                q.collect_binds(<span class="kw-2">&amp;mut </span>collector, lookup, backend)<span class="question-mark">?</span>;
+                <span class="kw">if let </span><span class="kw">super</span>::bind_collector::MultiBindCollector::Pg(collector) = collector {
+                    <span class="kw-2">*</span>outer_collector = collector;
+                }
+                <span class="prelude-val">Ok</span>(())
+            }
+        }
+        <span class="kw">impl </span>BindParamHelper <span class="kw">for </span>diesel::SqliteConnection {
+            <span class="kw">fn </span>handle_inner_pass&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>: <span class="lifetime">'a</span>&gt;(
+                outer_collector: <span class="kw-2">&amp;mut </span>&lt;<span class="self">Self</span>::Backend <span class="kw">as </span>diesel::backend::Backend&gt;::BindCollector&lt;
+                    <span class="lifetime">'a</span>,
+                &gt;,
+                lookup: <span class="kw-2">&amp;mut </span>&lt;<span class="self">Self</span>::Backend <span class="kw">as </span>diesel::sql_types::TypeMetadata&gt;::MetadataLookup,
+                backend: <span class="kw-2">&amp;</span><span class="lifetime">'b </span>MultiBackend,
+                q: <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="kw">impl </span>diesel::query_builder::QueryFragment&lt;MultiBackend&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">use </span>diesel::internal::derives::multiconnection::MultiConnectionHelper;
+                <span class="kw">let </span><span class="kw-2">mut </span>collector = <span class="kw">super</span>::bind_collector::MultiBindCollector::Sqlite(
+                    Default::default(),
+                );
+                <span class="kw">let </span>lookup = <span class="self">Self</span>::to_any(lookup);
+                q.collect_binds(<span class="kw-2">&amp;mut </span>collector, lookup, backend)<span class="question-mark">?</span>;
+                <span class="kw">if let </span><span class="kw">super</span>::bind_collector::MultiBindCollector::Sqlite(collector) = collector {
+                    <span class="kw-2">*</span>outer_collector = collector;
+                }
+                <span class="prelude-val">Ok</span>(())
+            }
+        }
+        <span class="kw">impl</span>&lt;T, DB, C&gt; diesel::query_builder::QueryFragment&lt;DB&gt; <span class="kw">for </span>SerializedQuery&lt;T, C&gt;
+        <span class="kw">where
+            </span>DB: diesel::backend::Backend + <span class="lifetime">'static</span>,
+            T: diesel::query_builder::QueryFragment&lt;MultiBackend&gt;,
+            C: diesel::connection::Connection&lt;Backend = DB&gt; + BindParamHelper
+                + diesel::internal::derives::multiconnection::MultiConnectionHelper,
+        {
+            <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                <span class="kw-2">mut </span>pass: diesel::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, DB&gt;,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">use </span>diesel::query_builder::QueryBuilder;
+                <span class="kw">use </span>diesel::internal::derives::multiconnection::AstPassHelper;
+                <span class="kw">let </span><span class="kw-2">mut </span>query_builder = <span class="self">self</span>.query_builder.duplicate();
+                <span class="self">self</span>.inner.to_sql(<span class="kw-2">&amp;mut </span>query_builder, <span class="kw-2">&amp;</span><span class="self">self</span>.backend)<span class="question-mark">?</span>;
+                pass.push_sql(<span class="kw-2">&amp;</span>query_builder.finish());
+                <span class="kw">if </span>!<span class="self">self</span>.inner.is_safe_to_cache_prepared(<span class="kw-2">&amp;</span><span class="self">self</span>.backend)<span class="question-mark">? </span>{
+                    pass.unsafe_to_cache_prepared();
+                }
+                <span class="kw">if let </span><span class="prelude-val">Some</span>((outer_collector, lookup)) = pass.bind_collector() {
+                    C::handle_inner_pass(
+                        outer_collector,
+                        lookup,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.backend,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.inner,
+                    )<span class="question-mark">?</span>;
+                }
+                <span class="kw">if let </span><span class="prelude-val">Some</span>((formatter, _backend)) = pass.debug_binds() {
+                    <span class="kw">let </span>pass = diesel::query_builder::AstPass::&lt;
+                        MultiBackend,
+                    &gt;::collect_debug_binds_pass(formatter, <span class="kw-2">&amp;</span><span class="self">self</span>.backend);
+                    <span class="self">self</span>.inner.walk_ast(pass)<span class="question-mark">?</span>;
+                }
+                <span class="prelude-val">Ok</span>(())
+            }
+        }
+        <span class="kw">impl</span>&lt;T, C&gt; diesel::query_builder::QueryId <span class="kw">for </span>SerializedQuery&lt;T, C&gt;
+        <span class="kw">where
+            </span>T: diesel::query_builder::QueryId,
+        {
+            <span class="kw">type </span>QueryId = &lt;T <span class="kw">as </span>diesel::query_builder::QueryId&gt;::QueryId;
+            <span class="kw">const </span>HAS_STATIC_QUERY_ID: bool = &lt;T <span class="kw">as </span>diesel::query_builder::QueryId&gt;::HAS_STATIC_QUERY_ID;
+        }
+        <span class="kw">impl</span>&lt;T, C&gt; diesel::query_builder::Query <span class="kw">for </span>SerializedQuery&lt;T, C&gt;
+        <span class="kw">where
+            </span>T: diesel::query_builder::Query,
+        {
+            <span class="kw">type </span>SqlType = diesel::sql_types::Untyped;
+        }
+        <span class="kw">impl </span>Connection <span class="kw">for </span>MultiConnection {
+            <span class="kw">type </span>Backend = <span class="kw">super</span>::MultiBackend;
+            <span class="kw">type </span>TransactionManager = <span class="self">Self</span>;
+            <span class="kw">fn </span>establish(database_url: <span class="kw-2">&amp;</span>str) -&gt; diesel::ConnectionResult&lt;<span class="self">Self</span>&gt; {
+                <span class="kw">if let </span><span class="prelude-val">Ok</span>(conn) = PgConnection::establish(database_url) {
+                    <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">Self</span>::Pg(conn));
+                }
+                <span class="kw">if let </span><span class="prelude-val">Ok</span>(conn) = diesel::SqliteConnection::establish(database_url) {
+                    <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">Self</span>::Sqlite(conn));
+                }
+                <span class="prelude-val">Err</span>(
+                    diesel::ConnectionError::BadConnection(
+                        <span class="string">"Invalid connection url for multiconnection"</span>.into(),
+                    ),
+                )
+            }
+            <span class="kw">fn </span>execute_returning_count&lt;T&gt;(
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+                source: <span class="kw-2">&amp;</span>T,
+            ) -&gt; diesel::result::QueryResult&lt;usize&gt;
+            <span class="kw">where
+                </span>T: diesel::query_builder::QueryFragment&lt;<span class="self">Self</span>::Backend&gt;
+                    + diesel::query_builder::QueryId,
+            {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(conn) =&gt; {
+                        <span class="kw">let </span>query = SerializedQuery {
+                            inner: source,
+                            backend: MultiBackend::Pg(Default::default()),
+                            query_builder: <span class="kw">super</span>::query_builder::MultiQueryBuilder::Pg(
+                                Default::default(),
+                            ),
+                            p: std::marker::PhantomData::&lt;PgConnection&gt;,
+                        };
+                        conn.execute_returning_count(<span class="kw-2">&amp;</span>query)
+                    }
+                    <span class="self">Self</span>::Sqlite(conn) =&gt; {
+                        <span class="kw">let </span>query = SerializedQuery {
+                            inner: source,
+                            backend: MultiBackend::Sqlite(Default::default()),
+                            query_builder: <span class="kw">super</span>::query_builder::MultiQueryBuilder::Sqlite(
+                                Default::default(),
+                            ),
+                            p: std::marker::PhantomData::&lt;diesel::SqliteConnection&gt;,
+                        };
+                        conn.execute_returning_count(<span class="kw-2">&amp;</span>query)
+                    }
+                }
+            }
+            <span class="kw">fn </span>transaction_state(
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+            ) -&gt; <span class="kw-2">&amp;mut </span>&lt;<span class="self">Self</span>::TransactionManager <span class="kw">as </span>TransactionManager&lt;
+                <span class="self">Self</span>,
+            &gt;&gt;::TransactionStateData {
+                <span class="self">self
+            </span>}
+            <span class="kw">fn </span>instrumentation(
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+            ) -&gt; <span class="kw-2">&amp;mut </span><span class="kw">dyn </span>diesel::connection::Instrumentation {
+                <span class="kw">match </span><span class="self">self </span>{
+                    DbConnection::Pg(conn) =&gt; {
+                        diesel::connection::Connection::instrumentation(conn)
+                    }
+                    DbConnection::Sqlite(conn) =&gt; {
+                        diesel::connection::Connection::instrumentation(conn)
+                    }
+                }
+            }
+            <span class="kw">fn </span>set_instrumentation(
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+                instrumentation: <span class="kw">impl </span>diesel::connection::Instrumentation,
+            ) {
+                <span class="kw">match </span><span class="self">self </span>{
+                    DbConnection::Pg(conn) =&gt; {
+                        diesel::connection::Connection::set_instrumentation(
+                            conn,
+                            instrumentation,
+                        );
+                    }
+                    DbConnection::Sqlite(conn) =&gt; {
+                        diesel::connection::Connection::set_instrumentation(
+                            conn,
+                            instrumentation,
+                        );
+                    }
+                }
+            }
+            <span class="kw">fn </span>set_prepared_statement_cache_size(
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+                size: diesel::connection::CacheSize,
+            ) {
+                <span class="kw">match </span><span class="self">self </span>{
+                    DbConnection::Pg(conn) =&gt; {
+                        diesel::connection::Connection::set_prepared_statement_cache_size(
+                            conn,
+                            size,
+                        );
+                    }
+                    DbConnection::Sqlite(conn) =&gt; {
+                        diesel::connection::Connection::set_prepared_statement_cache_size(
+                            conn,
+                            size,
+                        );
+                    }
+                }
+            }
+            <span class="kw">fn </span>begin_test_transaction(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(conn) =&gt; conn.begin_test_transaction(),
+                    <span class="self">Self</span>::Sqlite(conn) =&gt; conn.begin_test_transaction(),
+                }
+            }
+        }
+        <span class="kw">impl </span>LoadConnection <span class="kw">for </span>MultiConnection {
+            <span class="kw">type </span>Cursor&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; = <span class="kw">super</span>::row::MultiCursor&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt;;
+            <span class="kw">type </span>Row&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt; = <span class="kw">super</span>::MultiRow&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt;;
+            <span class="kw">fn </span>load&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>, T&gt;(
+                <span class="kw-2">&amp;</span><span class="lifetime">'conn </span><span class="kw-2">mut </span><span class="self">self</span>,
+                source: T,
+            ) -&gt; diesel::result::QueryResult&lt;<span class="self">Self</span>::Cursor&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>&gt;&gt;
+            <span class="kw">where
+                </span>T: diesel::query_builder::Query
+                    + diesel::query_builder::QueryFragment&lt;<span class="self">Self</span>::Backend&gt;
+                    + diesel::query_builder::QueryId + <span class="lifetime">'query</span>,
+                <span class="self">Self</span>::Backend: diesel::expression::QueryMetadata&lt;T::SqlType&gt;,
+            {
+                <span class="kw">match </span><span class="self">self </span>{
+                    DbConnection::Pg(conn) =&gt; {
+                        <span class="kw">let </span>query = SerializedQuery {
+                            inner: source,
+                            backend: MultiBackend::Pg(Default::default()),
+                            query_builder: <span class="kw">super</span>::query_builder::MultiQueryBuilder::Pg(
+                                Default::default(),
+                            ),
+                            p: std::marker::PhantomData::&lt;PgConnection&gt;,
+                        };
+                        <span class="kw">let </span>r = &lt;PgConnection <span class="kw">as </span>diesel::connection::LoadConnection&gt;::load(
+                            conn,
+                            query,
+                        )<span class="question-mark">?</span>;
+                        <span class="prelude-val">Ok</span>(<span class="kw">super</span>::row::MultiCursor::Pg(r))
+                    }
+                    DbConnection::Sqlite(conn) =&gt; {
+                        <span class="kw">let </span>query = SerializedQuery {
+                            inner: source,
+                            backend: MultiBackend::Sqlite(Default::default()),
+                            query_builder: <span class="kw">super</span>::query_builder::MultiQueryBuilder::Sqlite(
+                                Default::default(),
+                            ),
+                            p: std::marker::PhantomData::&lt;diesel::SqliteConnection&gt;,
+                        };
+                        <span class="kw">let </span>r = &lt;diesel::SqliteConnection <span class="kw">as </span>diesel::connection::LoadConnection&gt;::load(
+                            conn,
+                            query,
+                        )<span class="question-mark">?</span>;
+                        <span class="prelude-val">Ok</span>(<span class="kw">super</span>::row::MultiCursor::Sqlite(r))
+                    }
+                }
+            }
+        }
+        <span class="kw">impl </span>TransactionManager&lt;MultiConnection&gt; <span class="kw">for </span>MultiConnection {
+            <span class="kw">type </span>TransactionStateData = <span class="self">Self</span>;
+            <span class="kw">fn </span>begin_transaction(conn: <span class="kw-2">&amp;mut </span>MultiConnection) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">match </span>conn {
+                    <span class="self">Self</span>::Pg(conn) =&gt; {
+                        &lt;PgConnection <span class="kw">as </span>Connection&gt;::TransactionManager::begin_transaction(
+                            conn,
+                        )
+                    }
+                    <span class="self">Self</span>::Sqlite(conn) =&gt; {
+                        &lt;diesel::SqliteConnection <span class="kw">as </span>Connection&gt;::TransactionManager::begin_transaction(
+                            conn,
+                        )
+                    }
+                }
+            }
+            <span class="kw">fn </span>rollback_transaction(
+                conn: <span class="kw-2">&amp;mut </span>MultiConnection,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">match </span>conn {
+                    <span class="self">Self</span>::Pg(conn) =&gt; {
+                        &lt;PgConnection <span class="kw">as </span>Connection&gt;::TransactionManager::rollback_transaction(
+                            conn,
+                        )
+                    }
+                    <span class="self">Self</span>::Sqlite(conn) =&gt; {
+                        &lt;diesel::SqliteConnection <span class="kw">as </span>Connection&gt;::TransactionManager::rollback_transaction(
+                            conn,
+                        )
+                    }
+                }
+            }
+            <span class="kw">fn </span>commit_transaction(
+                conn: <span class="kw-2">&amp;mut </span>MultiConnection,
+            ) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">match </span>conn {
+                    <span class="self">Self</span>::Pg(conn) =&gt; {
+                        &lt;PgConnection <span class="kw">as </span>Connection&gt;::TransactionManager::commit_transaction(
+                            conn,
+                        )
+                    }
+                    <span class="self">Self</span>::Sqlite(conn) =&gt; {
+                        &lt;diesel::SqliteConnection <span class="kw">as </span>Connection&gt;::TransactionManager::commit_transaction(
+                            conn,
+                        )
+                    }
+                }
+            }
+            <span class="kw">fn </span>transaction_manager_status_mut(
+                conn: <span class="kw-2">&amp;mut </span>MultiConnection,
+            ) -&gt; <span class="kw-2">&amp;mut </span>diesel::connection::TransactionManagerStatus {
+                <span class="kw">match </span>conn {
+                    <span class="self">Self</span>::Pg(conn) =&gt; {
+                        &lt;PgConnection <span class="kw">as </span>Connection&gt;::TransactionManager::transaction_manager_status_mut(
+                            conn,
+                        )
+                    }
+                    <span class="self">Self</span>::Sqlite(conn) =&gt; {
+                        &lt;diesel::SqliteConnection <span class="kw">as </span>Connection&gt;::TransactionManager::transaction_manager_status_mut(
+                            conn,
+                        )
+                    }
+                }
+            }
+            <span class="kw">fn </span>is_broken_transaction_manager(conn: <span class="kw-2">&amp;mut </span>MultiConnection) -&gt; bool {
+                <span class="kw">match </span>conn {
+                    <span class="self">Self</span>::Pg(conn) =&gt; {
+                        &lt;PgConnection <span class="kw">as </span>Connection&gt;::TransactionManager::is_broken_transaction_manager(
+                            conn,
+                        )
+                    }
+                    <span class="self">Self</span>::Sqlite(conn) =&gt; {
+                        &lt;diesel::SqliteConnection <span class="kw">as </span>Connection&gt;::TransactionManager::is_broken_transaction_manager(
+                            conn,
+                        )
+                    }
+                }
+            }
+        }
+        <span class="kw">impl </span>diesel::migration::MigrationConnection <span class="kw">for </span>MultiConnection {
+            <span class="kw">fn </span>setup(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; diesel::QueryResult&lt;usize&gt; {
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(conn) =&gt; {
+                        <span class="kw">use </span>diesel::migration::MigrationConnection;
+                        conn.setup()
+                    }
+                    <span class="self">Self</span>::Sqlite(conn) =&gt; {
+                        <span class="kw">use </span>diesel::migration::MigrationConnection;
+                        conn.setup()
+                    }
+                }
+            }
+        }
+        <span class="kw">impl </span>diesel::r2d2::R2D2Connection <span class="kw">for </span>MultiConnection {
+            <span class="kw">fn </span>ping(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; diesel::QueryResult&lt;()&gt; {
+                <span class="kw">use </span>diesel::r2d2::R2D2Connection;
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(conn) =&gt; conn.ping(),
+                    <span class="self">Self</span>::Sqlite(conn) =&gt; conn.ping(),
+                }
+            }
+            <span class="kw">fn </span>is_broken(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; bool {
+                <span class="kw">use </span>diesel::r2d2::R2D2Connection;
+                <span class="kw">match </span><span class="self">self </span>{
+                    <span class="self">Self</span>::Pg(conn) =&gt; conn.is_broken(),
+                    <span class="self">Self</span>::Sqlite(conn) =&gt; conn.is_broken(),
+                }
+            }
+        }
+    }
+    <span class="kw">pub use </span><span class="self">self</span>::backend::{MultiBackend, MultiRawValue};
+    <span class="kw">pub use </span><span class="self">self</span>::row::{MultiRow, MultiField};
+}
+<span class="kw">pub use </span><span class="self">self</span>::multi_connection_impl::{MultiBackend, MultiRow, MultiRawValue, MultiField};</code></pre></div></details></div></details></section></div></main></body></html>

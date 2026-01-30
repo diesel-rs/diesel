@@ -1,0 +1,68 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Value of argument from row leading current row within partition"><title>lead_with_offset_and_default in diesel::dsl - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">lead_with_offset_and_default</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.3.6</span></h2></div><div class="sidebar-elems"><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>dsl</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">diesel</a>::<wbr><a href="index.html">dsl</a></div><h1>Function <span class="fn">lead_<wbr>with_<wbr>offset_<wbr>and_<wbr>default</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/diesel/expression/functions/window_functions.rs.html#7">Source</a> </span></div><pre class="rust item-decl"><code>pub fn lead_with_offset_and_default&lt;T: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a> + <a class="trait" href="../sql_types/trait.SingleValue.html" title="trait diesel::sql_types::SingleValue">SingleValue</a> + <a class="trait" href="../sql_types/trait.IntoNotNullable.html" title="trait diesel::sql_types::IntoNotNullable">IntoNotNullable</a>&lt;NotNullable: SameType&lt;T2::<a class="associatedtype" href="../sql_types/trait.IntoNotNullable.html#associatedtype.NotNullable" title="type diesel::sql_types::IntoNotNullable::NotNullable">NotNullable</a>&gt;&gt; + CombinedNullableValue&lt;T2, T::<a class="associatedtype" href="../sql_types/trait.IntoNotNullable.html#associatedtype.NotNullable" title="type diesel::sql_types::IntoNotNullable::NotNullable">NotNullable</a>&gt;, T2: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a> + <a class="trait" href="../sql_types/trait.SingleValue.html" title="trait diesel::sql_types::SingleValue">SingleValue</a> + <a class="trait" href="../sql_types/trait.IntoNotNullable.html" title="trait diesel::sql_types::IntoNotNullable">IntoNotNullable</a>, value, offset, default&gt;(
+    value: value,
+    offset: offset,
+    default: default,
+) -&gt; lead_with_offset_and_default&lt;T, T2, &lt;value as <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;T&gt;&gt;::<a class="associatedtype" href="../expression/trait.AsExpression.html#associatedtype.Expression" title="type diesel::expression::AsExpression::Expression">Expression</a>, &lt;offset as <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Integer.html" title="struct diesel::sql_types::Integer">Integer</a>&gt;&gt;::<a class="associatedtype" href="../expression/trait.AsExpression.html#associatedtype.Expression" title="type diesel::expression::AsExpression::Expression">Expression</a>, &lt;default as <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;T2&gt;&gt;::<a class="associatedtype" href="../expression/trait.AsExpression.html#associatedtype.Expression" title="type diesel::expression::AsExpression::Expression">Expression</a>&gt;<div class="where">where
+    value: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;T&gt;,
+    offset: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Integer.html" title="struct diesel::sql_types::Integer">Integer</a>&gt;,
+    default: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;T2&gt;,</div></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Value of argument from row leading current row within partition</p>
+<p>Returns value evaluated at the row that is offset rows after the current
+row within the partition; if there is no such row,
+instead returns default (which must be of a type compatible with value).
+Both offset and default are evaluated with respect to the current row.
+If omitted, offset defaults to 1 and default to NULL.</p>
+<p>This function returns a nullable value if either the value or the default expression are
+nullable.</p>
+<p>This function must be used as window function. You need to call at least one
+of the methods <a href="../expression_methods/trait.WindowExpressionMethods.html" title="trait diesel::expression_methods::WindowExpressionMethods"><code>WindowExpressionMethods</code></a> from to use this function in your <code>SELECT</code>
+clause. It cannot be used outside of <code>SELECT</code> clauses.</p>
+<p>For MySQL this function requires you to call <a href="../expression_methods/trait.WindowExpressionMethods.html#method.window_order" title="method diesel::expression_methods::WindowExpressionMethods::window_order"><code>.window_order()</code></a></p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>res = posts
+    .select((
+        title,
+        user_id,
+        lead_with_offset_and_default(id, <span class="number">1</span>, user_id)
+            .partition_by(user_id)
+            .window_order(user_id),
+    ))
+    .load::&lt;(String, i32, i32)&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = <span class="macro">vec!</span>[
+    (<span class="string">"My first post"</span>.to_owned(), <span class="number">1</span>, <span class="number">2</span>),
+    (<span class="string">"About Rust"</span>.into(), <span class="number">1</span>, <span class="number">1</span>),
+    (<span class="string">"My first post too"</span>.into(), <span class="number">2</span>, <span class="number">2</span>),
+];
+<span class="macro">assert_eq!</span>(expected, res);
+
+<span class="kw">let </span>res = posts
+    .select((
+        title,
+        user_id,
+        lead_with_offset_and_default(None::&lt;i32&gt;.into_sql::&lt;Nullable&lt;Integer&gt;&gt;(), <span class="number">1</span>, user_id)
+            .partition_by(user_id)
+            .window_order(user_id),
+    ))
+    .load::&lt;(String, i32, <span class="prelude-ty">Option</span>&lt;i32&gt;)&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = <span class="macro">vec!</span>[
+    (<span class="string">"My first post"</span>.to_owned(), <span class="number">1</span>, <span class="prelude-val">None</span>),
+    (<span class="string">"About Rust"</span>.into(), <span class="number">1</span>, <span class="prelude-val">Some</span>(<span class="number">1</span>)),
+    (<span class="string">"My first post too"</span>.into(), <span class="number">2</span>, <span class="prelude-val">Some</span>(<span class="number">2</span>)),
+];
+<span class="macro">assert_eq!</span>(expected, res);
+
+<span class="kw">let </span>res = posts
+    .select((
+        title,
+        user_id,
+        lead_with_offset_and_default(id, <span class="number">1</span>, None::&lt;i32&gt;.into_sql::&lt;Nullable&lt;Integer&gt;&gt;())
+            .partition_by(user_id)
+            .window_order(user_id),
+    ))
+    .load::&lt;(String, i32, <span class="prelude-ty">Option</span>&lt;i32&gt;)&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = <span class="macro">vec!</span>[
+    (<span class="string">"My first post"</span>.to_owned(), <span class="number">1</span>, <span class="prelude-val">Some</span>(<span class="number">2</span>)),
+    (<span class="string">"About Rust"</span>.into(), <span class="number">1</span>, <span class="prelude-val">None</span>),
+    (<span class="string">"My first post too"</span>.into(), <span class="number">2</span>, <span class="prelude-val">None</span>),
+];
+<span class="macro">assert_eq!</span>(expected, res);
+<span class="kw">fn </span>main() {}</code></pre></div></div></details></section></div></main></body></html>

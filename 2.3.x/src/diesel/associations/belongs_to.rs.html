@@ -1,0 +1,486 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `diesel/src/associations/belongs_to.rs`."><title>belongs_to.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../static.files/storage-f9617a14.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">diesel/associations/</div>belongs_to.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><a href="mod.rs.html#419-425"><span class="kw">super</span>::HasTable</a>;
+<a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span><span class="kw">crate</span>::dsl::{<a href="../expression/helper_types.rs.html#23">Eq</a>, <a href="../expression/helper_types.rs.html#34">EqAny</a>, <a href="../lib.rs.html#407">Filter</a>, <a href="../lib.rs.html#410">FindBy</a>};
+<a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span><a href="../expression/array_comparison.rs.html#204-214"><span class="kw">crate</span>::expression::array_comparison::AsInExpression</a>;
+<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span><a href="../../../diesel/expression/derive.AsExpression.html"><span class="kw">crate</span>::expression::AsExpression</a>;
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><span class="kw">crate</span>::prelude::<span class="kw-2">*</span>;
+<a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span><a href="../query_dsl/filter_dsl.rs.html#12-18"><span class="kw">crate</span>::query_dsl::methods::FilterDsl</a>;
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">use </span><a href="../../../diesel/sql_types/derive.SqlType.html"><span class="kw">crate</span>::sql_types::SqlType</a>;
+<a href=#8 id=8 data-nosnippet>8</a>
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html">std::borrow::Borrow</a>;
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/hash/macros/derive.Hash.html">std::hash::Hash</a>;
+<a href=#11 id=11 data-nosnippet>11</a>
+<a href=#12 id=12 data-nosnippet>12</a><span class="doccomment">/// Indicates that a type belongs to `Parent`
+<a href=#13 id=13 data-nosnippet>13</a>///
+<a href=#14 id=14 data-nosnippet>14</a>/// Specifically, this means that this struct has fields
+<a href=#15 id=15 data-nosnippet>15</a>/// which correspond to the primary key of `Parent`.
+<a href=#16 id=16 data-nosnippet>16</a>/// This implies that a foreign key relationship exists on the tables.
+<a href=#17 id=17 data-nosnippet>17</a>///
+<a href=#18 id=18 data-nosnippet>18</a>/// This trait is not capable of supporting composite foreign keys
+<a href=#19 id=19 data-nosnippet>19</a></span><span class="kw">pub trait </span><a href="../../../diesel/associations/trait.BelongsTo.html">BelongsTo</a>&lt;Parent&gt; {
+<a href=#20 id=20 data-nosnippet>20</a>    <span class="doccomment">/// The foreign key of this struct
+<a href=#21 id=21 data-nosnippet>21</a>    </span><span class="kw">type </span>ForeignKey: <a href="https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html">Hash</a> + <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html">::std::cmp::Eq</a>;
+<a href=#22 id=22 data-nosnippet>22</a>    <span class="doccomment">/// The database column representing the foreign key
+<a href=#23 id=23 data-nosnippet>23</a>    /// of the table this struct represents
+<a href=#24 id=24 data-nosnippet>24</a>    </span><span class="kw">type </span>ForeignKeyColumn: <a href="../query_source/mod.rs.html#47-53">Column</a>;
+<a href=#25 id=25 data-nosnippet>25</a>
+<a href=#26 id=26 data-nosnippet>26</a>    <span class="doccomment">/// Returns the foreign key for `self`
+<a href=#27 id=27 data-nosnippet>27</a>    </span><span class="kw">fn </span>foreign_key(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><span class="self">Self</span>::ForeignKey&gt;;
+<a href=#28 id=28 data-nosnippet>28</a>    <span class="doccomment">/// Returns the foreign key column of this struct's table
+<a href=#29 id=29 data-nosnippet>29</a>    </span><span class="kw">fn </span>foreign_key_column() -&gt; <span class="self">Self</span>::ForeignKeyColumn;
+<a href=#30 id=30 data-nosnippet>30</a>}
+<a href=#31 id=31 data-nosnippet>31</a>
+<a href=#32 id=32 data-nosnippet>32</a><span class="doccomment">/// The `grouped_by` function groups records by their parent.
+<a href=#33 id=33 data-nosnippet>33</a>///
+<a href=#34 id=34 data-nosnippet>34</a>/// `grouped_by` is called on a `Vec&lt;Child&gt;` with a `&amp;[Parent]`.
+<a href=#35 id=35 data-nosnippet>35</a>/// The return value will be `Vec&lt;Vec&lt;Child&gt;&gt;` indexed to match their parent.
+<a href=#36 id=36 data-nosnippet>36</a>/// Or to put it another way, the returned data can be passed to `zip`,
+<a href=#37 id=37 data-nosnippet>37</a>/// and it will be combined with its parent.
+<a href=#38 id=38 data-nosnippet>38</a>/// This function does not generate a `GROUP BY` SQL statement,
+<a href=#39 id=39 data-nosnippet>39</a>/// as it operates on data structures already loaded from the database
+<a href=#40 id=40 data-nosnippet>40</a>///
+<a href=#41 id=41 data-nosnippet>41</a>/// **Child** refers to the "many" part of a "one to many" relationship. It "belongs to" its parent
+<a href=#42 id=42 data-nosnippet>42</a>/// **Parent** refers to the "one" part of a "one to many" relationship and can "have many" children.
+<a href=#43 id=43 data-nosnippet>43</a>/// The child always has a foreign key, which refers to its parent's primary key.
+<a href=#44 id=44 data-nosnippet>44</a>/// In the following relationship, User has many Posts,
+<a href=#45 id=45 data-nosnippet>45</a>/// so User is the parent and Posts are children.
+<a href=#46 id=46 data-nosnippet>46</a>///
+<a href=#47 id=47 data-nosnippet>47</a>/// # Unrelated Rows
+<a href=#48 id=48 data-nosnippet>48</a>///
+<a href=#49 id=49 data-nosnippet>49</a>/// When using [`GroupedBy::grouped_by`], if the child rows were not queried
+<a href=#50 id=50 data-nosnippet>50</a>/// using the provided parent rows, it is not guaranteed a parent row
+<a href=#51 id=51 data-nosnippet>51</a>/// will be found for a given child row.
+<a href=#52 id=52 data-nosnippet>52</a>/// This is possible, if the foreign key in the relationship is nullable,
+<a href=#53 id=53 data-nosnippet>53</a>/// or if a child row's parent was not present in the provided slice,
+<a href=#54 id=54 data-nosnippet>54</a>/// in which case, unrelated child rows will be discarded.
+<a href=#55 id=55 data-nosnippet>55</a>///
+<a href=#56 id=56 data-nosnippet>56</a>/// If discarding these rows is undesirable, it may be preferable to use
+<a href=#57 id=57 data-nosnippet>57</a>/// [`GroupedBy::try_grouped_by`].
+<a href=#58 id=58 data-nosnippet>58</a>///
+<a href=#59 id=59 data-nosnippet>59</a>/// # Handling Duplicate Parent Rows
+<a href=#60 id=60 data-nosnippet>60</a>///
+<a href=#61 id=61 data-nosnippet>61</a>/// Both [`GroupedBy::grouped_by`] and [`GroupedBy::try_grouped_by`]
+<a href=#62 id=62 data-nosnippet>62</a>/// expect all of the elements of `parents` to produce a unique value
+<a href=#63 id=63 data-nosnippet>63</a>/// when calling [`Identifiable::id`].
+<a href=#64 id=64 data-nosnippet>64</a>/// If this is not true, child rows may be added to an unexpected index.
+<a href=#65 id=65 data-nosnippet>65</a>///
+<a href=#66 id=66 data-nosnippet>66</a>/// As a result, it is recommended to use [`QueryDsl::distinct`]
+<a href=#67 id=67 data-nosnippet>67</a>/// or [`slice::sort`] and [`Vec::dedup`],
+<a href=#68 id=68 data-nosnippet>68</a>/// to ensure the elements of `parents` are unique.
+<a href=#69 id=69 data-nosnippet>69</a>///
+<a href=#70 id=70 data-nosnippet>70</a>/// # Example
+<a href=#71 id=71 data-nosnippet>71</a>///
+<a href=#72 id=72 data-nosnippet>72</a>/// ```rust
+<a href=#73 id=73 data-nosnippet>73</a>/// # include!("../doctest_setup.rs");
+<a href=#74 id=74 data-nosnippet>74</a>/// # use schema::{posts, users};
+<a href=#75 id=75 data-nosnippet>75</a>/// #
+<a href=#76 id=76 data-nosnippet>76</a>/// # #[derive(Identifiable, Queryable, PartialEq, Debug)]
+<a href=#77 id=77 data-nosnippet>77</a>/// # pub struct User {
+<a href=#78 id=78 data-nosnippet>78</a>/// #     id: i32,
+<a href=#79 id=79 data-nosnippet>79</a>/// #     name: String,
+<a href=#80 id=80 data-nosnippet>80</a>/// # }
+<a href=#81 id=81 data-nosnippet>81</a>/// #
+<a href=#82 id=82 data-nosnippet>82</a>/// # #[derive(Debug, PartialEq)]
+<a href=#83 id=83 data-nosnippet>83</a>/// # #[derive(Identifiable, Queryable, Associations)]
+<a href=#84 id=84 data-nosnippet>84</a>/// # #[diesel(belongs_to(User))]
+<a href=#85 id=85 data-nosnippet>85</a>/// # pub struct Post {
+<a href=#86 id=86 data-nosnippet>86</a>/// #     id: i32,
+<a href=#87 id=87 data-nosnippet>87</a>/// #     user_id: i32,
+<a href=#88 id=88 data-nosnippet>88</a>/// #     title: String,
+<a href=#89 id=89 data-nosnippet>89</a>/// # }
+<a href=#90 id=90 data-nosnippet>90</a>/// #
+<a href=#91 id=91 data-nosnippet>91</a>/// # fn main() {
+<a href=#92 id=92 data-nosnippet>92</a>/// #     run_test();
+<a href=#93 id=93 data-nosnippet>93</a>/// # }
+<a href=#94 id=94 data-nosnippet>94</a>/// #
+<a href=#95 id=95 data-nosnippet>95</a>/// # fn run_test() -&gt; QueryResult&lt;()&gt; {
+<a href=#96 id=96 data-nosnippet>96</a>/// #     let connection = &amp;mut establish_connection();
+<a href=#97 id=97 data-nosnippet>97</a>/// let users = users::table.load::&lt;User&gt;(connection)?;
+<a href=#98 id=98 data-nosnippet>98</a>/// let posts = Post::belonging_to(&amp;users)
+<a href=#99 id=99 data-nosnippet>99</a>///     .load::&lt;Post&gt;(connection)?
+<a href=#100 id=100 data-nosnippet>100</a>///     .grouped_by(&amp;users);
+<a href=#101 id=101 data-nosnippet>101</a>/// let data = users.into_iter().zip(posts).collect::&lt;Vec&lt;_&gt;&gt;();
+<a href=#102 id=102 data-nosnippet>102</a>///
+<a href=#103 id=103 data-nosnippet>103</a>/// let expected_data = vec![
+<a href=#104 id=104 data-nosnippet>104</a>///     (
+<a href=#105 id=105 data-nosnippet>105</a>///         User {
+<a href=#106 id=106 data-nosnippet>106</a>///             id: 1,
+<a href=#107 id=107 data-nosnippet>107</a>///             name: "Sean".into(),
+<a href=#108 id=108 data-nosnippet>108</a>///         },
+<a href=#109 id=109 data-nosnippet>109</a>///         vec![
+<a href=#110 id=110 data-nosnippet>110</a>///             Post {
+<a href=#111 id=111 data-nosnippet>111</a>///                 id: 1,
+<a href=#112 id=112 data-nosnippet>112</a>///                 user_id: 1,
+<a href=#113 id=113 data-nosnippet>113</a>///                 title: "My first post".into(),
+<a href=#114 id=114 data-nosnippet>114</a>///             },
+<a href=#115 id=115 data-nosnippet>115</a>///             Post {
+<a href=#116 id=116 data-nosnippet>116</a>///                 id: 2,
+<a href=#117 id=117 data-nosnippet>117</a>///                 user_id: 1,
+<a href=#118 id=118 data-nosnippet>118</a>///                 title: "About Rust".into(),
+<a href=#119 id=119 data-nosnippet>119</a>///             },
+<a href=#120 id=120 data-nosnippet>120</a>///         ],
+<a href=#121 id=121 data-nosnippet>121</a>///     ),
+<a href=#122 id=122 data-nosnippet>122</a>///     (
+<a href=#123 id=123 data-nosnippet>123</a>///         User {
+<a href=#124 id=124 data-nosnippet>124</a>///             id: 2,
+<a href=#125 id=125 data-nosnippet>125</a>///             name: "Tess".into(),
+<a href=#126 id=126 data-nosnippet>126</a>///         },
+<a href=#127 id=127 data-nosnippet>127</a>///         vec![Post {
+<a href=#128 id=128 data-nosnippet>128</a>///             id: 3,
+<a href=#129 id=129 data-nosnippet>129</a>///             user_id: 2,
+<a href=#130 id=130 data-nosnippet>130</a>///             title: "My first post too".into(),
+<a href=#131 id=131 data-nosnippet>131</a>///         }],
+<a href=#132 id=132 data-nosnippet>132</a>///     ),
+<a href=#133 id=133 data-nosnippet>133</a>/// ];
+<a href=#134 id=134 data-nosnippet>134</a>///
+<a href=#135 id=135 data-nosnippet>135</a>/// assert_eq!(expected_data, data);
+<a href=#136 id=136 data-nosnippet>136</a>/// #     Ok(())
+<a href=#137 id=137 data-nosnippet>137</a>/// # }
+<a href=#138 id=138 data-nosnippet>138</a>/// ```
+<a href=#139 id=139 data-nosnippet>139</a>///
+<a href=#140 id=140 data-nosnippet>140</a>/// See [the module documentation] for more examples
+<a href=#141 id=141 data-nosnippet>141</a>///
+<a href=#142 id=142 data-nosnippet>142</a>/// [the module documentation]: super
+<a href=#143 id=143 data-nosnippet>143</a></span><span class="kw">pub trait </span><a href="../../../diesel/associations/trait.GroupedBy.html">GroupedBy</a>&lt;<span class="lifetime">'a</span>, Parent&gt;: <a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html">IntoIterator</a> + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a> {
+<a href=#144 id=144 data-nosnippet>144</a>    <span class="doccomment">/// See the trait documentation.
+<a href=#145 id=145 data-nosnippet>145</a>    </span><span class="kw">fn </span>grouped_by(<span class="self">self</span>, parents: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Parent]) -&gt; <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="self">Self</span>::Item&gt;&gt;;
+<a href=#146 id=146 data-nosnippet>146</a>
+<a href=#147 id=147 data-nosnippet>147</a>    <span class="doccomment">/// A fallible alternative to [`GroupedBy::grouped_by`].
+<a href=#148 id=148 data-nosnippet>148</a>    ///
+<a href=#149 id=149 data-nosnippet>149</a>    /// If any child record could not be grouped,
+<a href=#150 id=150 data-nosnippet>150</a>    /// either because of a `NULL` foreign key,
+<a href=#151 id=151 data-nosnippet>151</a>    /// or a parent record with a matching key could not be found,
+<a href=#152 id=152 data-nosnippet>152</a>    /// this function should return `Err`,
+<a href=#153 id=153 data-nosnippet>153</a>    /// with all successfully grouped records, as well as any ungrouped records.
+<a href=#154 id=154 data-nosnippet>154</a>    ///
+<a href=#155 id=155 data-nosnippet>155</a>    /// # Errors
+<a href=#156 id=156 data-nosnippet>156</a>    ///
+<a href=#157 id=157 data-nosnippet>157</a>    /// If a parent record could not be found for any of the child records,
+<a href=#158 id=158 data-nosnippet>158</a>    /// this function should return the `TryGroupedByError`.
+<a href=#159 id=159 data-nosnippet>159</a>    /// Every supplied record should be contained in the returned error,
+<a href=#160 id=160 data-nosnippet>160</a>    /// either in the `grouped` field, if it was successfully grouped,
+<a href=#161 id=161 data-nosnippet>161</a>    /// or the `ungrouped` field, if it was not possible to associate
+<a href=#162 id=162 data-nosnippet>162</a>    /// with a parent record.
+<a href=#163 id=163 data-nosnippet>163</a>    ///
+<a href=#164 id=164 data-nosnippet>164</a>    /// # Examples
+<a href=#165 id=165 data-nosnippet>165</a>    ///
+<a href=#166 id=166 data-nosnippet>166</a>    /// ```rust
+<a href=#167 id=167 data-nosnippet>167</a>    /// # include!("../doctest_setup.rs");
+<a href=#168 id=168 data-nosnippet>168</a>    /// # use diesel::associations::TryGroupedByError;
+<a href=#169 id=169 data-nosnippet>169</a>    /// # use schema::{posts, users};
+<a href=#170 id=170 data-nosnippet>170</a>    /// #
+<a href=#171 id=171 data-nosnippet>171</a>    /// # #[derive(Identifiable, Queryable, PartialEq, Debug)]
+<a href=#172 id=172 data-nosnippet>172</a>    /// # pub struct User {
+<a href=#173 id=173 data-nosnippet>173</a>    /// #     id: i32,
+<a href=#174 id=174 data-nosnippet>174</a>    /// #     name: String,
+<a href=#175 id=175 data-nosnippet>175</a>    /// # }
+<a href=#176 id=176 data-nosnippet>176</a>    /// #
+<a href=#177 id=177 data-nosnippet>177</a>    /// # #[derive(Debug, PartialEq)]
+<a href=#178 id=178 data-nosnippet>178</a>    /// # #[derive(Identifiable, Queryable, Associations)]
+<a href=#179 id=179 data-nosnippet>179</a>    /// # #[diesel(belongs_to(User))]
+<a href=#180 id=180 data-nosnippet>180</a>    /// # pub struct Post {
+<a href=#181 id=181 data-nosnippet>181</a>    /// #     id: i32,
+<a href=#182 id=182 data-nosnippet>182</a>    /// #     user_id: i32,
+<a href=#183 id=183 data-nosnippet>183</a>    /// #     title: String,
+<a href=#184 id=184 data-nosnippet>184</a>    /// # }
+<a href=#185 id=185 data-nosnippet>185</a>    /// #
+<a href=#186 id=186 data-nosnippet>186</a>    /// # fn main() {
+<a href=#187 id=187 data-nosnippet>187</a>    /// #     run_test();
+<a href=#188 id=188 data-nosnippet>188</a>    /// # }
+<a href=#189 id=189 data-nosnippet>189</a>    /// #
+<a href=#190 id=190 data-nosnippet>190</a>    /// # fn run_test() -&gt; QueryResult&lt;()&gt; {
+<a href=#191 id=191 data-nosnippet>191</a>    /// #     let connection = &amp;mut establish_connection();
+<a href=#192 id=192 data-nosnippet>192</a>    /// let users = users::table.load::&lt;User&gt;(connection)?;
+<a href=#193 id=193 data-nosnippet>193</a>    /// let mut posts = Post::belonging_to(&amp;users).load::&lt;Post&gt;(connection)?;
+<a href=#194 id=194 data-nosnippet>194</a>    /// posts.push(Post {
+<a href=#195 id=195 data-nosnippet>195</a>    ///     id: 9,
+<a href=#196 id=196 data-nosnippet>196</a>    ///     user_id: 42,
+<a href=#197 id=197 data-nosnippet>197</a>    ///     title: "A post returned from another query".into(),
+<a href=#198 id=198 data-nosnippet>198</a>    /// });
+<a href=#199 id=199 data-nosnippet>199</a>    /// let TryGroupedByError {
+<a href=#200 id=200 data-nosnippet>200</a>    ///     grouped, ungrouped, ..
+<a href=#201 id=201 data-nosnippet>201</a>    /// } = posts.try_grouped_by(&amp;users).unwrap_err();
+<a href=#202 id=202 data-nosnippet>202</a>    ///
+<a href=#203 id=203 data-nosnippet>203</a>    /// let grouped_data = users.into_iter().zip(grouped).collect::&lt;Vec&lt;_&gt;&gt;();
+<a href=#204 id=204 data-nosnippet>204</a>    ///
+<a href=#205 id=205 data-nosnippet>205</a>    /// let expected_grouped_data = vec![
+<a href=#206 id=206 data-nosnippet>206</a>    ///     (
+<a href=#207 id=207 data-nosnippet>207</a>    ///         User {
+<a href=#208 id=208 data-nosnippet>208</a>    ///             id: 1,
+<a href=#209 id=209 data-nosnippet>209</a>    ///             name: "Sean".into(),
+<a href=#210 id=210 data-nosnippet>210</a>    ///         },
+<a href=#211 id=211 data-nosnippet>211</a>    ///         vec![
+<a href=#212 id=212 data-nosnippet>212</a>    ///             Post {
+<a href=#213 id=213 data-nosnippet>213</a>    ///                 id: 1,
+<a href=#214 id=214 data-nosnippet>214</a>    ///                 user_id: 1,
+<a href=#215 id=215 data-nosnippet>215</a>    ///                 title: "My first post".into(),
+<a href=#216 id=216 data-nosnippet>216</a>    ///             },
+<a href=#217 id=217 data-nosnippet>217</a>    ///             Post {
+<a href=#218 id=218 data-nosnippet>218</a>    ///                 id: 2,
+<a href=#219 id=219 data-nosnippet>219</a>    ///                 user_id: 1,
+<a href=#220 id=220 data-nosnippet>220</a>    ///                 title: "About Rust".into(),
+<a href=#221 id=221 data-nosnippet>221</a>    ///             },
+<a href=#222 id=222 data-nosnippet>222</a>    ///         ],
+<a href=#223 id=223 data-nosnippet>223</a>    ///     ),
+<a href=#224 id=224 data-nosnippet>224</a>    ///     (
+<a href=#225 id=225 data-nosnippet>225</a>    ///         User {
+<a href=#226 id=226 data-nosnippet>226</a>    ///             id: 2,
+<a href=#227 id=227 data-nosnippet>227</a>    ///             name: "Tess".into(),
+<a href=#228 id=228 data-nosnippet>228</a>    ///         },
+<a href=#229 id=229 data-nosnippet>229</a>    ///         vec![Post {
+<a href=#230 id=230 data-nosnippet>230</a>    ///             id: 3,
+<a href=#231 id=231 data-nosnippet>231</a>    ///             user_id: 2,
+<a href=#232 id=232 data-nosnippet>232</a>    ///             title: "My first post too".into(),
+<a href=#233 id=233 data-nosnippet>233</a>    ///         }],
+<a href=#234 id=234 data-nosnippet>234</a>    ///     ),
+<a href=#235 id=235 data-nosnippet>235</a>    /// ];
+<a href=#236 id=236 data-nosnippet>236</a>    ///
+<a href=#237 id=237 data-nosnippet>237</a>    /// let expected_ungrouped_data = vec![Post {
+<a href=#238 id=238 data-nosnippet>238</a>    ///     id: 9,
+<a href=#239 id=239 data-nosnippet>239</a>    ///     user_id: 42,
+<a href=#240 id=240 data-nosnippet>240</a>    ///     title: "A post returned from another query".into(),
+<a href=#241 id=241 data-nosnippet>241</a>    /// }];
+<a href=#242 id=242 data-nosnippet>242</a>    ///
+<a href=#243 id=243 data-nosnippet>243</a>    /// assert_eq!(expected_grouped_data, grouped_data);
+<a href=#244 id=244 data-nosnippet>244</a>    /// assert_eq!(expected_ungrouped_data, ungrouped);
+<a href=#245 id=245 data-nosnippet>245</a>    /// #     Ok(())
+<a href=#246 id=246 data-nosnippet>246</a>    /// # }
+<a href=#247 id=247 data-nosnippet>247</a>    /// ```
+<a href=#248 id=248 data-nosnippet>248</a>    </span><span class="kw">fn </span>try_grouped_by(
+<a href=#249 id=249 data-nosnippet>249</a>        <span class="self">self</span>,
+<a href=#250 id=250 data-nosnippet>250</a>        parents: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Parent],
+<a href=#251 id=251 data-nosnippet>251</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="self">Self</span>::Item&gt;&gt;, <a href="#271-278">TryGroupedByError</a>&lt;<span class="self">Self</span>::Item&gt;&gt; {
+<a href=#252 id=252 data-nosnippet>252</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a class="self" href="#249">self</a>.<a href="#145">grouped_by</a>(<a href="#250">parents</a>))
+<a href=#253 id=253 data-nosnippet>253</a>    }
+<a href=#254 id=254 data-nosnippet>254</a>}
+<a href=#255 id=255 data-nosnippet>255</a>
+<a href=#256 id=256 data-nosnippet>256</a><span class="doccomment">/// A type of error which can be returned when attempting to group
+<a href=#257 id=257 data-nosnippet>257</a>/// a list of records.
+<a href=#258 id=258 data-nosnippet>258</a>///
+<a href=#259 id=259 data-nosnippet>259</a>/// If a child record has a nullable foreign key, or is being grouped
+<a href=#260 id=260 data-nosnippet>260</a>/// using a different relationship to the one that was used to query it,
+<a href=#261 id=261 data-nosnippet>261</a>/// it may not be possible to find a parent record it should be grouped by.
+<a href=#262 id=262 data-nosnippet>262</a>///
+<a href=#263 id=263 data-nosnippet>263</a>/// When encountering these missing relationships,
+<a href=#264 id=264 data-nosnippet>264</a>/// it may still be possible to group remaining records,
+<a href=#265 id=265 data-nosnippet>265</a>/// but would affect the contents of the returned values.
+<a href=#266 id=266 data-nosnippet>266</a>/// By extracting the contents of this struct, it is still possible
+<a href=#267 id=267 data-nosnippet>267</a>/// to use these resulting groups, as well as any records
+<a href=#268 id=268 data-nosnippet>268</a>/// that could not be grouped.
+<a href=#269 id=269 data-nosnippet>269</a></span><span class="expansion"><input id=expand-269 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;Child: ::core::fmt::Debug&gt; ::core::fmt::Debug <span class="kw">for
+    </span>TryGroupedByError&lt;Child&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field2_finish(f,
+            <span class="string">"TryGroupedByError"</span>, <span class="string">"grouped"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.grouped, <span class="string">"ungrouped"</span>,
+            &amp;&amp;<span class="self">self</span>.ungrouped)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;Child: ::core::clone::Clone&gt; ::core::clone::Clone <span class="kw">for
+    </span>TryGroupedByError&lt;Child&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; TryGroupedByError&lt;Child&gt; {
+        TryGroupedByError {
+            grouped: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.grouped),
+            ungrouped: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.ungrouped),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;Child: ::core::cmp::PartialEq&gt; ::core::cmp::PartialEq <span class="kw">for
+    </span>TryGroupedByError&lt;Child&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>TryGroupedByError&lt;Child&gt;) -&gt; bool {
+        <span class="self">self</span>.grouped == other.grouped &amp;&amp; <span class="self">self</span>.ungrouped == other.ungrouped
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;Child: ::core::cmp::PartialOrd&gt; ::core::cmp::PartialOrd <span class="kw">for
+    </span>TryGroupedByError&lt;Child&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>partial_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>TryGroupedByError&lt;Child&gt;)
+        -&gt; ::core::option::Option&lt;::core::cmp::Ordering&gt; {
+        <span class="kw">match </span>::core::cmp::PartialOrd::partial_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>.grouped,
+                <span class="kw-2">&amp;</span>other.grouped) {
+            ::core::option::Option::Some(::core::cmp::Ordering::Equal) =&gt;
+                ::core::cmp::PartialOrd::partial_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>.ungrouped,
+                    <span class="kw-2">&amp;</span>other.ungrouped),
+            cmp =&gt; cmp,
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialOrd.html">PartialOrd</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;Child: ::core::cmp::Eq&gt; ::core::cmp::Eq <span class="kw">for </span>TryGroupedByError&lt;Child&gt; {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_receiver_is_total_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Vec&lt;Vec&lt;Child&gt;&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Vec&lt;Child&gt;&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;Child: ::core::cmp::Ord&gt; ::core::cmp::Ord <span class="kw">for </span>TryGroupedByError&lt;Child&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>TryGroupedByError&lt;Child&gt;) -&gt; ::core::cmp::Ordering {
+        <span class="kw">match </span>::core::cmp::Ord::cmp(<span class="kw-2">&amp;</span><span class="self">self</span>.grouped, <span class="kw-2">&amp;</span>other.grouped) {
+            ::core::cmp::Ordering::Equal =&gt;
+                ::core::cmp::Ord::cmp(<span class="kw-2">&amp;</span><span class="self">self</span>.ungrouped, <span class="kw-2">&amp;</span>other.ungrouped),
+            cmp =&gt; cmp,
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Ord.html">Ord</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;Child: ::core::hash::Hash&gt; ::core::hash::Hash <span class="kw">for
+    </span>TryGroupedByError&lt;Child&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>hash&lt;__H: ::core::hash::Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>__H) {
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.grouped, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.ungrouped, state)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/hash/macros/derive.Hash.html">Hash</a></span></span></span><span class="attr">)]
+<a href=#270 id=270 data-nosnippet>270</a>#[non_exhaustive]
+<a href=#271 id=271 data-nosnippet>271</a></span><span class="kw">pub struct </span><a href="../../../diesel/associations/struct.TryGroupedByError.html">TryGroupedByError</a>&lt;Child&gt; {
+<a href=#272 id=272 data-nosnippet>272</a>    <span class="doccomment">/// The collection of records which were successfully indexed
+<a href=#273 id=273 data-nosnippet>273</a>    /// against a parent record.
+<a href=#274 id=274 data-nosnippet>274</a>    </span><span class="kw">pub </span>grouped: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;Child&gt;&gt;,
+<a href=#275 id=275 data-nosnippet>275</a>    <span class="doccomment">/// The collection of records that could not be indexed
+<a href=#276 id=276 data-nosnippet>276</a>    /// against a parent record.
+<a href=#277 id=277 data-nosnippet>277</a>    </span><span class="kw">pub </span>ungrouped: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;Child&gt;,
+<a href=#278 id=278 data-nosnippet>278</a>}
+<a href=#279 id=279 data-nosnippet>279</a>
+<a href=#280 id=280 data-nosnippet>280</a><span class="kw">type </span>Id&lt;T&gt; = &lt;T <span class="kw">as </span>Identifiable&gt;::<a href="mod.rs.html#450">Id</a>;
+<a href=#281 id=281 data-nosnippet>281</a>
+<a href=#282 id=282 data-nosnippet>282</a><span class="kw">impl</span>&lt;Child&gt; <a href="#271-278">TryGroupedByError</a>&lt;Child&gt; {
+<a href=#283 id=283 data-nosnippet>283</a>    <span class="doccomment">/// Creates a `TryGroupedByError`.
+<a href=#284 id=284 data-nosnippet>284</a>    ///
+<a href=#285 id=285 data-nosnippet>285</a>    /// This is generally used by methods like [`GroupedBy::try_grouped_by`].
+<a href=#286 id=286 data-nosnippet>286</a>    </span><span class="kw">pub fn </span>new(grouped: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;Child&gt;&gt;, ungrouped: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;Child&gt;) -&gt; <span class="self">Self </span>{
+<a href=#287 id=287 data-nosnippet>287</a>        <span class="self">Self </span>{ <a href="#286">grouped</a>, <a href="#286">ungrouped</a> }
+<a href=#288 id=288 data-nosnippet>288</a>    }
+<a href=#289 id=289 data-nosnippet>289</a>}
+<a href=#290 id=290 data-nosnippet>290</a>
+<a href=#291 id=291 data-nosnippet>291</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, Parent: <span class="lifetime">'a</span>, Child, Iter&gt; <a href="#143-254">GroupedBy</a>&lt;<span class="lifetime">'a</span>, Parent&gt; <span class="kw">for </span>Iter
+<a href=#292 id=292 data-nosnippet>292</a><span class="kw">where
+<a href=#293 id=293 data-nosnippet>293</a>    </span>Iter: <a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html">IntoIterator</a>&lt;Item = Child&gt;,
+<a href=#294 id=294 data-nosnippet>294</a>    Child: <a href="#19-30">BelongsTo</a>&lt;Parent&gt;,
+<a href=#295 id=295 data-nosnippet>295</a>    <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent: <a href="mod.rs.html#444-463">Identifiable</a>,
+<a href=#296 id=296 data-nosnippet>296</a>    <a href="#280">Id</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent&gt;: <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html">Borrow</a>&lt;Child::ForeignKey&gt;,
+<a href=#297 id=297 data-nosnippet>297</a>{
+<a href=#298 id=298 data-nosnippet>298</a>    <span class="kw">fn </span>grouped_by(<span class="self">self</span>, parents: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Parent]) -&gt; <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;Child&gt;&gt; {
+<a href=#299 id=299 data-nosnippet>299</a>        <span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html">std::collections::HashMap</a>;
+<a href=#300 id=300 data-nosnippet>300</a>        <span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/iter/index.html">std::iter</a>;
+<a href=#301 id=301 data-nosnippet>301</a>
+<a href=#302 id=302 data-nosnippet>302</a>        <span class="kw">let </span><span class="kw-2">mut </span>grouped: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="kw">_</span>&gt; = iter::<a href="https://doc.rust-lang.org/nightly/core/iter/sources/repeat_with/fn.repeat_with.html">repeat_with</a>(<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>::<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.new">new</a>).<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.take">take</a>(<a href="#298">parents</a>.<a href="https://doc.rust-lang.org/nightly/core/foreigntype.slice.html#method.len">len</a>()).<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>();
+<a href=#303 id=303 data-nosnippet>303</a>
+<a href=#304 id=304 data-nosnippet>304</a>        <span class="kw">let </span>id_indices: <a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html">HashMap</a>&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt; = <a href="#298">parents</a>
+<a href=#305 id=305 data-nosnippet>305</a>            .<a href="https://doc.rust-lang.org/nightly/core/foreigntype.slice.html#method.iter">iter</a>()
+<a href=#306 id=306 data-nosnippet>306</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.enumerate">enumerate</a>()
+<a href=#307 id=307 data-nosnippet>307</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(|(i, u)| (<a href="#307">u</a>.<a href="mod.rs.html#462">id</a>(), <a href="#307">i</a>))
+<a href=#308 id=308 data-nosnippet>308</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>();
+<a href=#309 id=309 data-nosnippet>309</a>
+<a href=#310 id=310 data-nosnippet>310</a>        <a class="self" href="#298">self</a>.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>()
+<a href=#311 id=311 data-nosnippet>311</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.filter_map">filter_map</a>(|child| {
+<a href=#312 id=312 data-nosnippet>312</a>                <span class="kw">let </span>fk = <a href="#311">child</a>.<a href="#27">foreign_key</a>()<span class="question-mark">?</span>;
+<a href=#313 id=313 data-nosnippet>313</a>                <span class="kw">let </span>i = <a href="#304">id_indices</a>.<a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html#method.get">get</a>(<a href="#312">fk</a>)<span class="question-mark">?</span>;
+<a href=#314 id=314 data-nosnippet>314</a>
+<a href=#315 id=315 data-nosnippet>315</a>                <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>((<a href="#313">i</a>, <a href="#311">child</a>))
+<a href=#316 id=316 data-nosnippet>316</a>            })
+<a href=#317 id=317 data-nosnippet>317</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.for_each">for_each</a>(|(i, child)| <a href="#302">grouped</a>[<span class="kw-2">*</span><a href="#317">i</a>].<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.push">push</a>(<a href="#317">child</a>));
+<a href=#318 id=318 data-nosnippet>318</a>
+<a href=#319 id=319 data-nosnippet>319</a>        <a href="#302">grouped</a>
+<a href=#320 id=320 data-nosnippet>320</a>    }
+<a href=#321 id=321 data-nosnippet>321</a>
+<a href=#322 id=322 data-nosnippet>322</a>    <span class="kw">fn </span>try_grouped_by(
+<a href=#323 id=323 data-nosnippet>323</a>        <span class="self">self</span>,
+<a href=#324 id=324 data-nosnippet>324</a>        parents: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Parent],
+<a href=#325 id=325 data-nosnippet>325</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;Child&gt;&gt;, <a href="#271-278">TryGroupedByError</a>&lt;Child&gt;&gt; {
+<a href=#326 id=326 data-nosnippet>326</a>        <span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html">std::collections::HashMap</a>;
+<a href=#327 id=327 data-nosnippet>327</a>        <span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/iter/index.html">std::iter</a>;
+<a href=#328 id=328 data-nosnippet>328</a>
+<a href=#329 id=329 data-nosnippet>329</a>        <span class="kw">let </span><span class="kw-2">mut </span>grouped: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="kw">_</span>&gt; = iter::<a href="https://doc.rust-lang.org/nightly/core/iter/sources/repeat_with/fn.repeat_with.html">repeat_with</a>(<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>::<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.new">new</a>).<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.take">take</a>(<a href="#324">parents</a>.<a href="https://doc.rust-lang.org/nightly/core/foreigntype.slice.html#method.len">len</a>()).<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>();
+<a href=#330 id=330 data-nosnippet>330</a>        <span class="kw">let </span><span class="kw-2">mut </span>ungrouped: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="kw">_</span>&gt; = <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>::<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.new">new</a>();
+<a href=#331 id=331 data-nosnippet>331</a>
+<a href=#332 id=332 data-nosnippet>332</a>        <span class="kw">let </span>id_indices: <a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html">HashMap</a>&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt; = <a href="#324">parents</a>
+<a href=#333 id=333 data-nosnippet>333</a>            .<a href="https://doc.rust-lang.org/nightly/core/foreigntype.slice.html#method.iter">iter</a>()
+<a href=#334 id=334 data-nosnippet>334</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.enumerate">enumerate</a>()
+<a href=#335 id=335 data-nosnippet>335</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(|(i, u)| (<a href="#335">u</a>.<a href="mod.rs.html#462">id</a>(), <a href="#335">i</a>))
+<a href=#336 id=336 data-nosnippet>336</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>();
+<a href=#337 id=337 data-nosnippet>337</a>
+<a href=#338 id=338 data-nosnippet>338</a>        <span class="kw">for </span>child <span class="kw">in </span><span class="self">self </span>{
+<a href=#339 id=339 data-nosnippet>339</a>            child
+<a href=#340 id=340 data-nosnippet>340</a>                .foreign_key()
+<a href=#341 id=341 data-nosnippet>341</a>                .and_then(|i| id_indices.get(i))
+<a href=#342 id=342 data-nosnippet>342</a>                .map_or(<span class="kw-2">&amp;mut </span>ungrouped, |i| <span class="kw-2">&amp;mut </span>grouped[<span class="kw-2">*</span>i])
+<a href=#343 id=343 data-nosnippet>343</a>                .push(child);
+<a href=#344 id=344 data-nosnippet>344</a>        }
+<a href=#345 id=345 data-nosnippet>345</a>
+<a href=#346 id=346 data-nosnippet>346</a>        <span class="kw">if </span><a href="#330">ungrouped</a>.<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.is_empty">is_empty</a>() {
+<a href=#347 id=347 data-nosnippet>347</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#329">grouped</a>)
+<a href=#348 id=348 data-nosnippet>348</a>        } <span class="kw">else </span>{
+<a href=#349 id=349 data-nosnippet>349</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="#271-278">TryGroupedByError</a>::<a href="#286-288">new</a>(<a href="#329">grouped</a>, <a href="#330">ungrouped</a>))
+<a href=#350 id=350 data-nosnippet>350</a>        }
+<a href=#351 id=351 data-nosnippet>351</a>    }
+<a href=#352 id=352 data-nosnippet>352</a>}
+<a href=#353 id=353 data-nosnippet>353</a>
+<a href=#354 id=354 data-nosnippet>354</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, Parent, Child&gt; <a href="../query_dsl/belonging_to_dsl.rs.html#51-57">BelongingToDsl</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent&gt; <span class="kw">for </span>Child
+<a href=#355 id=355 data-nosnippet>355</a><span class="kw">where
+<a href=#356 id=356 data-nosnippet>356</a>    </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent: <a href="mod.rs.html#444-463">Identifiable</a>,
+<a href=#357 id=357 data-nosnippet>357</a>    Child: <a href="mod.rs.html#419-425">HasTable</a> + <a href="#19-30">BelongsTo</a>&lt;Parent&gt;,
+<a href=#358 id=358 data-nosnippet>358</a>    <a href="#280">Id</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent&gt;: <a href="../expression/mod.rs.html#227-238">AsExpression</a>&lt;&lt;Child::ForeignKeyColumn <span class="kw">as </span>Expression&gt;::<a href="../expression/mod.rs.html#131">SqlType</a>&gt;,
+<a href=#359 id=359 data-nosnippet>359</a>    Child::Table: <a href="../query_dsl/filter_dsl.rs.html#12-18">FilterDsl</a>&lt;<a href="../expression/helper_types.rs.html#23">Eq</a>&lt;Child::ForeignKeyColumn, <a href="#280">Id</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent&gt;&gt;&gt;,
+<a href=#360 id=360 data-nosnippet>360</a>    Child::ForeignKeyColumn: <a href="../expression_methods/global_expression_methods.rs.html#9-583">ExpressionMethods</a>,
+<a href=#361 id=361 data-nosnippet>361</a>    &lt;Child::ForeignKeyColumn <span class="kw">as </span>Expression&gt;::<a href="../expression/mod.rs.html#131">SqlType</a>: <a href="../sql_types/mod.rs.html#671-682">SqlType</a>,
+<a href=#362 id=362 data-nosnippet>362</a>{
+<a href=#363 id=363 data-nosnippet>363</a>    <span class="kw">type </span>Output = <a href="../lib.rs.html#410">FindBy</a>&lt;Child::Table, Child::ForeignKeyColumn, <a href="#280">Id</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent&gt;&gt;;
+<a href=#364 id=364 data-nosnippet>364</a>
+<a href=#365 id=365 data-nosnippet>365</a>    <span class="kw">fn </span>belonging_to(parent: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent) -&gt; <span class="self">Self</span>::Output {
+<a href=#366 id=366 data-nosnippet>366</a>        FilterDsl::<a href="../query_dsl/filter_dsl.rs.html#17">filter</a>(Child::<a href="mod.rs.html#424">table</a>(), Child::<a href="#29">foreign_key_column</a>().<a href="../expression_methods/global_expression_methods.rs.html#70-76">eq</a>(<a href="#365">parent</a>.<a href="mod.rs.html#462">id</a>()))
+<a href=#367 id=367 data-nosnippet>367</a>    }
+<a href=#368 id=368 data-nosnippet>368</a>}
+<a href=#369 id=369 data-nosnippet>369</a>
+<a href=#370 id=370 data-nosnippet>370</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, Parent, Child&gt; <a href="../query_dsl/belonging_to_dsl.rs.html#51-57">BelongingToDsl</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Parent]&gt; <span class="kw">for </span>Child
+<a href=#371 id=371 data-nosnippet>371</a><span class="kw">where
+<a href=#372 id=372 data-nosnippet>372</a>    </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent: <a href="mod.rs.html#444-463">Identifiable</a>,
+<a href=#373 id=373 data-nosnippet>373</a>    Child: <a href="mod.rs.html#419-425">HasTable</a> + <a href="#19-30">BelongsTo</a>&lt;Parent&gt;,
+<a href=#374 id=374 data-nosnippet>374</a>    <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="#280">Id</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent&gt;&gt;: <a href="../expression/array_comparison.rs.html#204-214">AsInExpression</a>&lt;&lt;Child::ForeignKeyColumn <span class="kw">as </span>Expression&gt;::<a href="../expression/mod.rs.html#131">SqlType</a>&gt;,
+<a href=#375 id=375 data-nosnippet>375</a>    &lt;Child <span class="kw">as </span>HasTable&gt;::<a href="mod.rs.html#421">Table</a>: <a href="../query_dsl/filter_dsl.rs.html#12-18">FilterDsl</a>&lt;<a href="../expression/helper_types.rs.html#34">EqAny</a>&lt;Child::ForeignKeyColumn, <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="#280">Id</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent&gt;&gt;&gt;&gt;,
+<a href=#376 id=376 data-nosnippet>376</a>    Child::ForeignKeyColumn: <a href="../expression_methods/global_expression_methods.rs.html#9-583">ExpressionMethods</a>,
+<a href=#377 id=377 data-nosnippet>377</a>    &lt;Child::ForeignKeyColumn <span class="kw">as </span>Expression&gt;::<a href="../expression/mod.rs.html#131">SqlType</a>: <a href="../sql_types/mod.rs.html#671-682">SqlType</a>,
+<a href=#378 id=378 data-nosnippet>378</a>{
+<a href=#379 id=379 data-nosnippet>379</a>    <span class="kw">type </span>Output = <a href="../lib.rs.html#407">Filter</a>&lt;Child::Table, <a href="../expression/helper_types.rs.html#34">EqAny</a>&lt;Child::ForeignKeyColumn, <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="#280">Id</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent&gt;&gt;&gt;&gt;;
+<a href=#380 id=380 data-nosnippet>380</a>
+<a href=#381 id=381 data-nosnippet>381</a>    <span class="kw">fn </span>belonging_to(parents: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Parent]) -&gt; <span class="self">Self</span>::Output {
+<a href=#382 id=382 data-nosnippet>382</a>        <span class="kw">let </span>ids = <a href="#381">parents</a>.<a href="https://doc.rust-lang.org/nightly/core/foreigntype.slice.html#method.iter">iter</a>().<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(Identifiable::<a href="mod.rs.html#462">id</a>).collect::&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="kw">_</span>&gt;&gt;();
+<a href=#383 id=383 data-nosnippet>383</a>        FilterDsl::<a href="../query_dsl/filter_dsl.rs.html#17">filter</a>(Child::<a href="mod.rs.html#424">table</a>(), Child::<a href="#29">foreign_key_column</a>().<a href="../expression_methods/global_expression_methods.rs.html#150-156">eq_any</a>(<a href="#382">ids</a>))
+<a href=#384 id=384 data-nosnippet>384</a>    }
+<a href=#385 id=385 data-nosnippet>385</a>}
+<a href=#386 id=386 data-nosnippet>386</a>
+<a href=#387 id=387 data-nosnippet>387</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, Parent, Child&gt; <a href="../query_dsl/belonging_to_dsl.rs.html#51-57">BelongingToDsl</a>&lt;(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Parent], <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Parent])&gt; <span class="kw">for </span>Child
+<a href=#388 id=388 data-nosnippet>388</a><span class="kw">where
+<a href=#389 id=389 data-nosnippet>389</a>    </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent: <a href="mod.rs.html#444-463">Identifiable</a>,
+<a href=#390 id=390 data-nosnippet>390</a>    Child: <a href="mod.rs.html#419-425">HasTable</a> + <a href="#19-30">BelongsTo</a>&lt;Parent&gt;,
+<a href=#391 id=391 data-nosnippet>391</a>    <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="#280">Id</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent&gt;&gt;: <a href="../expression/array_comparison.rs.html#204-214">AsInExpression</a>&lt;&lt;Child::ForeignKeyColumn <span class="kw">as </span>Expression&gt;::<a href="../expression/mod.rs.html#131">SqlType</a>&gt;,
+<a href=#392 id=392 data-nosnippet>392</a>    &lt;Child <span class="kw">as </span>HasTable&gt;::<a href="mod.rs.html#421">Table</a>: <a href="../query_dsl/filter_dsl.rs.html#12-18">FilterDsl</a>&lt;<a href="../expression/helper_types.rs.html#34">EqAny</a>&lt;Child::ForeignKeyColumn, <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="#280">Id</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent&gt;&gt;&gt;&gt;,
+<a href=#393 id=393 data-nosnippet>393</a>    Child::ForeignKeyColumn: <a href="../expression_methods/global_expression_methods.rs.html#9-583">ExpressionMethods</a>,
+<a href=#394 id=394 data-nosnippet>394</a>    &lt;Child::ForeignKeyColumn <span class="kw">as </span>Expression&gt;::<a href="../expression/mod.rs.html#131">SqlType</a>: <a href="../sql_types/mod.rs.html#671-682">SqlType</a>,
+<a href=#395 id=395 data-nosnippet>395</a>{
+<a href=#396 id=396 data-nosnippet>396</a>    <span class="kw">type </span>Output = <a href="../lib.rs.html#407">Filter</a>&lt;Child::Table, <a href="../expression/helper_types.rs.html#34">EqAny</a>&lt;Child::ForeignKeyColumn, <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="#280">Id</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Parent&gt;&gt;&gt;&gt;;
+<a href=#397 id=397 data-nosnippet>397</a>
+<a href=#398 id=398 data-nosnippet>398</a>    <span class="kw">fn </span>belonging_to(parents: (<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Parent], <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Parent])) -&gt; <span class="self">Self</span>::Output {
+<a href=#399 id=399 data-nosnippet>399</a>        <span class="kw">let </span>ids = <a href="#398">parents</a>
+<a href=#400 id=400 data-nosnippet>400</a>            .<span class="number">0
+<a href=#401 id=401 data-nosnippet>401</a>            </span>.<a href="https://doc.rust-lang.org/nightly/core/foreigntype.slice.html#method.iter">iter</a>()
+<a href=#402 id=402 data-nosnippet>402</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.chain">chain</a>(<a href="#398">parents</a>.<span class="number">1</span>.<a href="https://doc.rust-lang.org/nightly/core/foreigntype.slice.html#method.iter">iter</a>())
+<a href=#403 id=403 data-nosnippet>403</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(Identifiable::<a href="mod.rs.html#462">id</a>)
+<a href=#404 id=404 data-nosnippet>404</a>            .collect::&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="kw">_</span>&gt;&gt;();
+<a href=#405 id=405 data-nosnippet>405</a>        FilterDsl::<a href="../query_dsl/filter_dsl.rs.html#17">filter</a>(Child::<a href="mod.rs.html#424">table</a>(), Child::<a href="#29">foreign_key_column</a>().<a href="../expression_methods/global_expression_methods.rs.html#150-156">eq_any</a>(<a href="#399">ids</a>))
+<a href=#406 id=406 data-nosnippet>406</a>    }
+<a href=#407 id=407 data-nosnippet>407</a>}
+<a href=#408 id=408 data-nosnippet>408</a>
+<a href=#409 id=409 data-nosnippet>409</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, Parent, Child&gt; <a href="../query_dsl/belonging_to_dsl.rs.html#51-57">BelongingToDsl</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;Parent&gt;&gt; <span class="kw">for </span>Child
+<a href=#410 id=410 data-nosnippet>410</a><span class="kw">where
+<a href=#411 id=411 data-nosnippet>411</a>    </span>Child: <a href="../query_dsl/belonging_to_dsl.rs.html#51-57">BelongingToDsl</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Parent]&gt;,
+<a href=#412 id=412 data-nosnippet>412</a>{
+<a href=#413 id=413 data-nosnippet>413</a>    <span class="kw">type </span>Output = Child::Output;
+<a href=#414 id=414 data-nosnippet>414</a>
+<a href=#415 id=415 data-nosnippet>415</a>    <span class="kw">fn </span>belonging_to(parents: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;Parent&gt;) -&gt; <span class="self">Self</span>::Output {
+<a href=#416 id=416 data-nosnippet>416</a>        <span class="self">Self</span>::<a href="../query_dsl/belonging_to_dsl.rs.html#56">belonging_to</a>(<span class="kw-2">&amp;**</span><a href="#415">parents</a>)
+<a href=#417 id=417 data-nosnippet>417</a>    }
+<a href=#418 id=418 data-nosnippet>418</a>}
+</code></pre></div></section></main></body></html>

@@ -1,0 +1,381 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bigdecimal-0.4.10/src/arithmetic/pow.rs`."><title>pow.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="bigdecimal" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../static.files/storage-f9617a14.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">bigdecimal/arithmetic/</div>pow.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! pow implementation
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a></span><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/num/nonzero/type.NonZeroU64.html">stdlib::num::NonZeroU64</a>;
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span>crate::<span class="kw-2">*</span>;
+<a href=#6 id=6 data-nosnippet>6</a>
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">use </span><a href="mod.rs.html#41-43"><span class="kw">super</span>::log10</a>;
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span><span class="kw">super</span>::multiplication::{
+<a href=#9 id=9 data-nosnippet>9</a>    <a href="multiplication.rs.html#32-45">multiply_decimals_with_context</a>,
+<a href=#10 id=10 data-nosnippet>10</a>    <a href="multiplication.rs.html#291-426">multiply_slices_with_prec_into_p19_z</a>,
+<a href=#11 id=11 data-nosnippet>11</a>};
+<a href=#12 id=12 data-nosnippet>12</a>
+<a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span>bigdigit::digitvec::{<a href="../bigdigit/digitvec.rs.html#20-24">DigitVec</a>, <a href="../bigdigit/digitvec.rs.html#728-732">DigitSlice</a>};
+<a href=#14 id=14 data-nosnippet>14</a><span class="kw">use </span>bigdigit::radix::{<a href="../bigdigit/radix.rs.html#15-238">RadixType</a>, <a href="../bigdigit/radix.rs.html#265-279">RadixPowerOfTen</a>, <a href="../bigdigit/radix.rs.html#262">RADIX_u64</a>, <a href="../bigdigit/radix.rs.html#254">RADIX_10p19_u64</a>};
+<a href=#15 id=15 data-nosnippet>15</a><span class="kw">use </span>bigdigit::endian::{<a href="../bigdigit/endian.rs.html#18-121">Endianness</a>, <a href="../bigdigit/endian.rs.html#130">LittleEndian</a>};
+<a href=#16 id=16 data-nosnippet>16</a>
+<a href=#17 id=17 data-nosnippet>17</a><span class="kw">use </span><a href="multiplication.rs.html#623-679">arithmetic::multiplication::mul_scaled_slices_truncating_into</a>;
+<a href=#18 id=18 data-nosnippet>18</a>
+<a href=#19 id=19 data-nosnippet>19</a>
+<a href=#20 id=20 data-nosnippet>20</a><span class="doccomment">/// Compute bd**exp using exponentiation by squaring algorithm, while maintaining the
+<a href=#21 id=21 data-nosnippet>21</a>/// precision specified in ctx (the number of digits would otherwise explode).
+<a href=#22 id=22 data-nosnippet>22</a>///
+<a href=#23 id=23 data-nosnippet>23</a>/// Algorithm comes from https://en.wikipedia.org/wiki/Exponentiation_by_squaring
+<a href=#24 id=24 data-nosnippet>24</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>impl_powi_with_context&lt;<span class="lifetime">'a</span>&gt;(
+<a href=#25 id=25 data-nosnippet>25</a>    bd: <span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html">Into</a>&lt;<a href="../lib.rs.html#1253-1257">BigDecimalRef</a>&lt;<span class="lifetime">'a</span>&gt;&gt;,
+<a href=#26 id=26 data-nosnippet>26</a>    exp: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>,
+<a href=#27 id=27 data-nosnippet>27</a>    ctx: <span class="kw-2">&amp;</span><a href="../context.rs.html#32-37">Context</a>,
+<a href=#28 id=28 data-nosnippet>28</a>) -&gt; <a href="../lib.rs.html#211-215">BigDecimal</a> {
+<a href=#29 id=29 data-nosnippet>29</a>    <a href="#34-57">powi_with_context</a>(<a href="#25">bd</a>.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html#tymethod.into">into</a>(), <a href="#26">exp</a>, <a href="#27">ctx</a>)
+<a href=#30 id=30 data-nosnippet>30</a>}
+<a href=#31 id=31 data-nosnippet>31</a>
+<a href=#32 id=32 data-nosnippet>32</a><span class="doccomment">/// Calculate BigDecimalRef `bd` to power of signed integer, using context
+<a href=#33 id=33 data-nosnippet>33</a>/// to set precision
+<a href=#34 id=34 data-nosnippet>34</a></span><span class="kw">fn </span>powi_with_context(
+<a href=#35 id=35 data-nosnippet>35</a>    bd: <a href="../lib.rs.html#1253-1257">BigDecimalRef</a>,
+<a href=#36 id=36 data-nosnippet>36</a>    exp: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>,
+<a href=#37 id=37 data-nosnippet>37</a>    ctx: <span class="kw-2">&amp;</span><a href="../context.rs.html#32-37">Context</a>,
+<a href=#38 id=38 data-nosnippet>38</a>) -&gt; <a href="../lib.rs.html#211-215">BigDecimal</a> {
+<a href=#39 id=39 data-nosnippet>39</a>    <span class="kw">match </span><a href="#36">exp</a>.<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#tymethod.cmp">cmp</a>(<span class="kw-2">&amp;</span><span class="number">0</span>) {
+<a href=#40 id=40 data-nosnippet>40</a>        Ordering::<a href="https://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html#variant.Equal">Equal</a> =&gt; <a href="../lib.rs.html#211-215">BigDecimal</a>::<a href="../../../bigdecimal/trait.One.html">one</a>(),
+<a href=#41 id=41 data-nosnippet>41</a>        Ordering::<a href="https://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html#variant.Greater">Greater</a> =&gt; <a href="#65-218">pow_u64_with_context</a>(<a href="#35">bd</a>, <a href="#36">exp</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>, <a href="#37">ctx</a>),
+<a href=#42 id=42 data-nosnippet>42</a>        Ordering::<a href="https://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html#variant.Less">Less</a> =&gt; {
+<a href=#43 id=43 data-nosnippet>43</a>            <span class="kw">if </span><a href="#36">exp</a> == -<span class="number">1 </span>{
+<a href=#44 id=44 data-nosnippet>44</a>                <span class="kw">return </span><a href="#35">bd</a>.<a href="../lib.rs.html#1393-1404">inverse_with_context</a>(<span class="kw-2">&amp;</span><a href="#37">ctx</a>);
+<a href=#45 id=45 data-nosnippet>45</a>            }
+<a href=#46 id=46 data-nosnippet>46</a>            <span class="comment">// create truncating "double wide" context for inverting
+<a href=#47 id=47 data-nosnippet>47</a>            </span><span class="kw">let </span>inv_ctx = <a href="../context.rs.html#32-37">Context</a>::<a href="../context.rs.html#74-79">new_truncating</a>(
+<a href=#48 id=48 data-nosnippet>48</a>                (<a href="#37">ctx</a>.<a href="../context.rs.html#82-84">precision</a>().<a href="https://doc.rust-lang.org/nightly/core/num/nonzero/struct.NonZero.html#method.get">get</a>() * <span class="number">2</span>)
+<a href=#49 id=49 data-nosnippet>49</a>                .<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#method.max">max</a>((<a href="#35">bd</a>.digits.<a href="../../../num_bigint/biguint/struct.BigUint.html#method.bits">bits</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.f64.html">f64</a> * <a href="https://doc.rust-lang.org/nightly/core/f64/consts/constant.LOG10_2.html">LOG10_2</a> * <span class="number">2.0</span>).<a href="https://doc.rust-lang.org/nightly/std/foreigntype.f64.html#method.ceil">ceil</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>)
+<a href=#50 id=50 data-nosnippet>50</a>                .<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#method.max">max</a>(<span class="number">38</span>) <span class="comment">// always at least 2 u64 'big-digits' wide
+<a href=#51 id=51 data-nosnippet>51</a>            </span>);
+<a href=#52 id=52 data-nosnippet>52</a>            <span class="kw">let </span>inverted_bd = <a href="#35">bd</a>.<a href="../lib.rs.html#1393-1404">inverse_with_context</a>(<span class="kw-2">&amp;</span><a href="#47">inv_ctx</a>);
+<a href=#53 id=53 data-nosnippet>53</a>            <span class="comment">// requested context when taking the power of inverted value
+<a href=#54 id=54 data-nosnippet>54</a>            </span><a href="#65-218">pow_u64_with_context</a>(<a href="#52">inverted_bd</a>.<a href="../lib.rs.html#243-246">to_ref</a>(), <a href="#266-268">unsigned_abs</a>(<a href="#36">exp</a>), <span class="kw-2">&amp;</span><a href="#37">ctx</a>)
+<a href=#55 id=55 data-nosnippet>55</a>        }
+<a href=#56 id=56 data-nosnippet>56</a>    }
+<a href=#57 id=57 data-nosnippet>57</a>}
+<a href=#58 id=58 data-nosnippet>58</a>
+<a href=#59 id=59 data-nosnippet>59</a>
+<a href=#60 id=60 data-nosnippet>60</a><span class="doccomment">/// Calculate BigDecimalRef `bd` to power of positive integer, using context
+<a href=#61 id=61 data-nosnippet>61</a>/// to set precision
+<a href=#62 id=62 data-nosnippet>62</a>///
+<a href=#63 id=63 data-nosnippet>63</a>/// The case where exp==0 (therefore result is 1) must be handled
+<a href=#64 id=64 data-nosnippet>64</a>/// before calling this pow impl
+<a href=#65 id=65 data-nosnippet>65</a></span><span class="kw">fn </span>pow_u64_with_context(
+<a href=#66 id=66 data-nosnippet>66</a>    bd: <a href="../lib.rs.html#1253-1257">BigDecimalRef</a>,
+<a href=#67 id=67 data-nosnippet>67</a>    exp: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>,
+<a href=#68 id=68 data-nosnippet>68</a>    ctx: <span class="kw-2">&amp;</span><a href="../context.rs.html#32-37">Context</a>,
+<a href=#69 id=69 data-nosnippet>69</a>) -&gt; <a href="../lib.rs.html#211-215">BigDecimal</a> {
+<a href=#70 id=70 data-nosnippet>70</a>    <span class="kw">type </span>R = <a href="../bigdigit/radix.rs.html#254">RADIX_10p19_u64</a>;
+<a href=#71 id=71 data-nosnippet>71</a>
+<a href=#72 id=72 data-nosnippet>72</a><span class="expansion"><input id=expand-72 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">    <span class=expanded><span class="kw">if </span><span class="bool-val">true </span>{
+    <span class="kw">match </span>(<span class="kw-2">&amp;</span>exp, <span class="kw-2">&amp;</span><span class="number">0</span>) {
+        (left_val, right_val) =&gt; {
+            <span class="kw">if </span><span class="kw-2">*</span>left_val == <span class="kw-2">*</span>right_val {
+                <span class="kw">let </span>kind = ::core::panicking::AssertKind::Ne;
+                ::core::panicking::assert_failed(kind, <span class="kw-2">&amp;*</span>left_val,
+                    <span class="kw-2">&amp;*</span>right_val, ::core::option::Option::None);
+            }
+        }
+    };
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.debug_assert_ne.html">debug_assert_ne!</a>(exp, <span class="number">0</span>)</span></span>;
+<a href=#73 id=73 data-nosnippet>73</a>
+<a href=#74 id=74 data-nosnippet>74</a>    <span class="kw">if </span><a href="#67">exp</a> == <span class="number">1 </span>{
+<a href=#75 id=75 data-nosnippet>75</a>        <span class="kw">return </span><a href="#68">ctx</a>.<a href="../context.rs.html#97-100">round_decimal_ref</a>(<a href="#66">bd</a>);
+<a href=#76 id=76 data-nosnippet>76</a>    }
+<a href=#77 id=77 data-nosnippet>77</a>
+<a href=#78 id=78 data-nosnippet>78</a>    <span class="comment">// bd^exp guaranteed to fit within precision: use roundless pow
+<a href=#79 id=79 data-nosnippet>79</a>    </span><span class="kw">if </span>(<a href="#66">bd</a>.digits.<a href="../../../num_bigint/biguint/struct.BigUint.html#method.bits">bits</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.f64.html">f64</a> * <a href="#67">exp</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.f64.html">f64</a>) &lt; (<a href="#68">ctx</a>.<a href="../context.rs.html#82-84">precision</a>().<a href="https://doc.rust-lang.org/nightly/core/num/nonzero/struct.NonZero.html#method.get">get</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.f64.html">f64</a> * <a href="https://doc.rust-lang.org/nightly/core/f64/consts/constant.LOG2_10.html">LOG2_10</a>) {
+<a href=#80 id=80 data-nosnippet>80</a>        <span class="kw">return </span><a href="#222-253">pow_u64_no_context</a>(<a href="#66">bd</a>, <a href="#67">exp</a>);
+<a href=#81 id=81 data-nosnippet>81</a>    }
+<a href=#82 id=82 data-nosnippet>82</a>
+<a href=#83 id=83 data-nosnippet>83</a>    <span class="kw">let </span><span class="kw-2">mut </span>tmp = <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>::<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.new">new</a>();
+<a href=#84 id=84 data-nosnippet>84</a>    <span class="kw">let </span>bd_as_base10p19 = <a href="../bigdigit/digitvec.rs.html#20-24">DigitVec</a>::<a href="../bigdigit/digitvec.rs.html#365-375">from_biguint_using_tmp</a>(<a href="#66">bd</a>.digits, <span class="kw-2">&amp;mut </span><a href="#83">tmp</a>);
+<a href=#85 id=85 data-nosnippet>85</a><span class="expansion"><input id=expand-85 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">    <span class=expanded><span class="kw">if </span><span class="bool-val">true </span>{
+    <span class="kw">match </span>(<span class="kw-2">&amp;</span>tmp.len(), <span class="kw-2">&amp;</span><span class="number">0</span>) {
+        (left_val, right_val) =&gt; {
+            <span class="kw">if </span>!(<span class="kw-2">*</span>left_val == <span class="kw-2">*</span>right_val) {
+                <span class="kw">let </span>kind = ::core::panicking::AssertKind::Eq;
+                ::core::panicking::assert_failed(kind, <span class="kw-2">&amp;*</span>left_val,
+                    <span class="kw-2">&amp;*</span>right_val, ::core::option::Option::None);
+            }
+        }
+    };
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.debug_assert_eq.html">debug_assert_eq!</a>(tmp.len(), <span class="number">0</span>)</span></span>;
+<a href=#86 id=86 data-nosnippet>86</a>
+<a href=#87 id=87 data-nosnippet>87</a>    <span class="kw">let </span><span class="kw-2">mut </span>prec = <a href="#278-285">RunningPrecision</a>::<a href="#289-326">new</a>(
+<a href=#88 id=88 data-nosnippet>88</a>        <a href="#84">bd_as_base10p19</a>.<a href="../bigdigit/digitvec.rs.html#100-102">as_digit_slice</a>(),
+<a href=#89 id=89 data-nosnippet>89</a>        <a href="https://doc.rust-lang.org/nightly/core/num/nonzero/type.NonZeroU64.html">NonZeroU64</a>::<a href="https://doc.rust-lang.org/nightly/core/num/nonzero/struct.NonZero.html#method.new">new</a>(<a href="#67">exp</a>).<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap">unwrap</a>(),
+<a href=#90 id=90 data-nosnippet>90</a>        <a href="#68">ctx</a>.<a href="../context.rs.html#82-84">precision</a>(),
+<a href=#91 id=91 data-nosnippet>91</a>    );
+<a href=#92 id=92 data-nosnippet>92</a>
+<a href=#93 id=93 data-nosnippet>93</a>    <span class="comment">// Count the number of multiplications we're going to perform, one per "1" binary digit
+<a href=#94 id=94 data-nosnippet>94</a>    // in exp, and the number of times we can divide exp by 2.
+<a href=#95 id=95 data-nosnippet>95</a>    </span><span class="kw">let </span><span class="kw-2">mut </span>n = <a href="#67">exp</a>;
+<a href=#96 id=96 data-nosnippet>96</a>
+<a href=#97 id=97 data-nosnippet>97</a>    <span class="comment">// factor product into bdⁿ =&gt; bdˣ·bdʸ where x is largest
+<a href=#98 id=98 data-nosnippet>98</a>    // power of two which fits into 'n'
+<a href=#99 id=99 data-nosnippet>99</a>    </span><span class="kw">let </span>final_x_pow = <span class="number">1 </span>&lt;&lt; (<span class="number">63 </span>- <a href="#95">n</a>.<a href="https://doc.rust-lang.org/nightly/core/foreigntype.num.html#method.leading_zeros">leading_zeros</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>);
+<a href=#100 id=100 data-nosnippet>100</a>    <span class="kw">let </span>final_y_pow = <a href="#95">n</a> - <a href="#99">final_x_pow</a>;
+<a href=#101 id=101 data-nosnippet>101</a>
+<a href=#102 id=102 data-nosnippet>102</a>    <span class="comment">// if final_y_pow == 0, then 'y' digits is never used and
+<a href=#103 id=103 data-nosnippet>103</a>    // we will use x*x as final multiplication, otherwise
+<a href=#104 id=104 data-nosnippet>104</a>    // final product is x*y
+<a href=#105 id=105 data-nosnippet>105</a>    </span><span class="kw">let </span>final_x_times_y = <a href="#100">final_y_pow !</a>= <span class="number">0</span>;
+<a href=#106 id=106 data-nosnippet>106</a>
+<a href=#107 id=107 data-nosnippet>107</a>    <span class="kw">let </span><span class="kw-2">mut </span>y_vec = <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>::<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.new">new</a>();
+<a href=#108 id=108 data-nosnippet>108</a>    <span class="kw">if </span><a href="#105">final_x_times_y</a> {
+<a href=#109 id=109 data-nosnippet>109</a>        <a href="#107">y_vec</a>.<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.reserve">reserve</a>(<a href="#84">bd_as_base10p19</a>.<a href="../bigdigit/digitvec.rs.html#54-56">len</a>());
+<a href=#110 id=110 data-nosnippet>110</a>        <a href="#107">y_vec</a>.<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.push">push</a>(<span class="number">1</span>);
+<a href=#111 id=111 data-nosnippet>111</a>    } <span class="kw">else </span>{
+<a href=#112 id=112 data-nosnippet>112</a>        <span class="comment">// no final multiplication by y, so decrease number of squarings
+<a href=#113 id=113 data-nosnippet>113</a>        // by one so we do (x/2 * x/2) rather than (x * 1)
+<a href=#114 id=114 data-nosnippet>114</a>        </span><a href="#95">n</a> &gt;&gt;= <span class="number">1</span>;
+<a href=#115 id=115 data-nosnippet>115</a>    }
+<a href=#116 id=116 data-nosnippet>116</a>
+<a href=#117 id=117 data-nosnippet>117</a>    <span class="kw">let </span><span class="kw-2">mut </span>digits_x = <a href="../lib.rs.html#1542-1545">WithScale</a> {
+<a href=#118 id=118 data-nosnippet>118</a>        value: <a href="#84">bd_as_base10p19</a>,
+<a href=#119 id=119 data-nosnippet>119</a>        scale: <span class="number">0</span>,
+<a href=#120 id=120 data-nosnippet>120</a>    };
+<a href=#121 id=121 data-nosnippet>121</a>    <span class="kw">let </span><span class="kw-2">mut </span>digits_y = <a href="../lib.rs.html#1542-1545">WithScale</a> {
+<a href=#122 id=122 data-nosnippet>122</a>        value: <a href="../bigdigit/digitvec.rs.html#20-24">DigitVec</a>::<a href="../bigdigit/digitvec.rs.html#39-46">from_vec</a>(<a href="#107">y_vec</a>),
+<a href=#123 id=123 data-nosnippet>123</a>        scale: <span class="number">0</span>,
+<a href=#124 id=124 data-nosnippet>124</a>    };
+<a href=#125 id=125 data-nosnippet>125</a>    <span class="comment">// temporary storage for results of multiplications
+<a href=#126 id=126 data-nosnippet>126</a>    </span><span class="kw">let </span><span class="kw-2">mut </span>prod = <a href="../lib.rs.html#1542-1545">WithScale</a> {
+<a href=#127 id=127 data-nosnippet>127</a>        value: <a href="../bigdigit/digitvec.rs.html#20-24">DigitVec</a>::<a href="../bigdigit/digitvec.rs.html#39-46">from_vec</a>(<a href="#83">tmp</a>),
+<a href=#128 id=128 data-nosnippet>128</a>        scale: <span class="number">0</span>,
+<a href=#129 id=129 data-nosnippet>129</a>    };
+<a href=#130 id=130 data-nosnippet>130</a>
+<a href=#131 id=131 data-nosnippet>131</a>    <span class="comment">// tracks if skipped insignificant digits are zero for final rounding
+<a href=#132 id=132 data-nosnippet>132</a>    </span><span class="kw">let </span><span class="kw-2">mut </span>trailing_zeros = <span class="bool-val">true</span>;
+<a href=#133 id=133 data-nosnippet>133</a>
+<a href=#134 id=134 data-nosnippet>134</a>    <span class="kw">while </span>n &gt; <span class="number">1 </span>{
+<a href=#135 id=135 data-nosnippet>135</a>        <span class="kw">if </span>n % <span class="number">2 </span>== <span class="number">1 </span>{
+<a href=#136 id=136 data-nosnippet>136</a>            <span class="comment">// 'prod' is now product y * x, swap with 'y'
+<a href=#137 id=137 data-nosnippet>137</a>            </span><span class="kw">let </span>skipped_bigdigit_count = mul_scaled_slices_truncating_into(
+<a href=#138 id=138 data-nosnippet>138</a>                <span class="kw-2">&amp;mut </span>prod,
+<a href=#139 id=139 data-nosnippet>139</a>                digits_y.as_digit_slice(),
+<a href=#140 id=140 data-nosnippet>140</a>                digits_x.as_digit_slice(),
+<a href=#141 id=141 data-nosnippet>141</a>                prec.next(),
+<a href=#142 id=142 data-nosnippet>142</a>            );
+<a href=#143 id=143 data-nosnippet>143</a>
+<a href=#144 id=144 data-nosnippet>144</a>            trailing_zeros = trailing_zeros
+<a href=#145 id=145 data-nosnippet>145</a>                &amp;&amp; {
+<a href=#146 id=146 data-nosnippet>146</a>                    <span class="kw">let </span>skipped = skipped_bigdigit_count.saturating_sub(digits_y.value.len() - <span class="number">1</span>);
+<a href=#147 id=147 data-nosnippet>147</a>                    digits_x.value.least_n_are_zero(skipped)
+<a href=#148 id=148 data-nosnippet>148</a>                }
+<a href=#149 id=149 data-nosnippet>149</a>                &amp;&amp; {
+<a href=#150 id=150 data-nosnippet>150</a>                    <span class="kw">let </span>skipped = skipped_bigdigit_count.saturating_sub(digits_x.value.len() - <span class="number">1</span>);
+<a href=#151 id=151 data-nosnippet>151</a>                    digits_y.value.least_n_are_zero(skipped)
+<a href=#152 id=152 data-nosnippet>152</a>                };
+<a href=#153 id=153 data-nosnippet>153</a>
+<a href=#154 id=154 data-nosnippet>154</a>            <span class="comment">// now 'digits_y &lt;- prod = digits_y * digits_x'
+<a href=#155 id=155 data-nosnippet>155</a>            </span>stdlib::mem::swap(<span class="kw-2">&amp;mut </span>prod, <span class="kw-2">&amp;mut </span>digits_y);
+<a href=#156 id=156 data-nosnippet>156</a>        }
+<a href=#157 id=157 data-nosnippet>157</a>        <span class="comment">// TODO: optimized algorithm for squaring a scaled digitslice to requested precision
+<a href=#158 id=158 data-nosnippet>158</a>        </span><span class="kw">let </span>skipped_bigdigits = mul_scaled_slices_truncating_into(
+<a href=#159 id=159 data-nosnippet>159</a>            <span class="kw-2">&amp;mut </span>prod,
+<a href=#160 id=160 data-nosnippet>160</a>            digits_x.as_digit_slice(),
+<a href=#161 id=161 data-nosnippet>161</a>            digits_x.as_digit_slice(),
+<a href=#162 id=162 data-nosnippet>162</a>            prec.next(),
+<a href=#163 id=163 data-nosnippet>163</a>        );
+<a href=#164 id=164 data-nosnippet>164</a>        <span class="comment">// detect if truncated digits were non-zero
+<a href=#165 id=165 data-nosnippet>165</a>        </span>trailing_zeros = trailing_zeros
+<a href=#166 id=166 data-nosnippet>166</a>            &amp;&amp; {
+<a href=#167 id=167 data-nosnippet>167</a>                <span class="kw">let </span>skipped = skipped_bigdigits.saturating_sub(digits_x.value.len() - <span class="number">1</span>);
+<a href=#168 id=168 data-nosnippet>168</a>                digits_x.value.least_n_are_zero(skipped)
+<a href=#169 id=169 data-nosnippet>169</a>            };
+<a href=#170 id=170 data-nosnippet>170</a>
+<a href=#171 id=171 data-nosnippet>171</a>        <span class="comment">// digits_x &lt;- prod = digits_x * digits_x
+<a href=#172 id=172 data-nosnippet>172</a>        </span>stdlib::mem::swap(<span class="kw-2">&amp;mut </span>prod, <span class="kw-2">&amp;mut </span>digits_x);
+<a href=#173 id=173 data-nosnippet>173</a>
+<a href=#174 id=174 data-nosnippet>174</a>        <span class="comment">// shift lowest bit out of multiplication counter
+<a href=#175 id=175 data-nosnippet>175</a>        </span>n &gt;&gt;= <span class="number">1</span>;
+<a href=#176 id=176 data-nosnippet>176</a>    }
+<a href=#177 id=177 data-nosnippet>177</a>
+<a href=#178 id=178 data-nosnippet>178</a>    <span class="kw">let </span>sign = <span class="kw">if </span><a href="#67">exp</a> % <span class="number">2 </span>== <span class="number">0 </span>{
+<a href=#179 id=179 data-nosnippet>179</a>        Sign::<a href="../../../num_bigint/bigint/enum.Sign.html#variant.Plus">Plus</a>
+<a href=#180 id=180 data-nosnippet>180</a>    } <span class="kw">else </span>{
+<a href=#181 id=181 data-nosnippet>181</a>        <a href="#66">bd</a>.<a href="../lib.rs.html#1317-1319">sign</a>()
+<a href=#182 id=182 data-nosnippet>182</a>    };
+<a href=#183 id=183 data-nosnippet>183</a>    <span class="kw">let </span>rounding = <span class="kw">crate</span>::rounding::<a href="../rounding.rs.html#261-266">NonDigitRoundingData</a> {
+<a href=#184 id=184 data-nosnippet>184</a>        mode: <a href="#68">ctx</a>.<a href="../context.rs.html#87-89">rounding_mode</a>(),
+<a href=#185 id=185 data-nosnippet>185</a>        sign: <a href="#178">sign</a>,
+<a href=#186 id=186 data-nosnippet>186</a>    };
+<a href=#187 id=187 data-nosnippet>187</a>
+<a href=#188 id=188 data-nosnippet>188</a>    <a href="#126">prod</a>.value.<a href="../bigdigit/digitvec.rs.html#59-61">clear</a>();
+<a href=#189 id=189 data-nosnippet>189</a>    <a href="#126">prod</a>.scale = <span class="number">0</span>;
+<a href=#190 id=190 data-nosnippet>190</a>
+<a href=#191 id=191 data-nosnippet>191</a>    <span class="kw">let </span>x_slice = <a href="#117">digits_x</a>.value.<a href="../bigdigit/digitvec.rs.html#100-102">as_digit_slice</a>();
+<a href=#192 id=192 data-nosnippet>192</a>
+<a href=#193 id=193 data-nosnippet>193</a>    <span class="kw">let </span>y_slice = <span class="kw">if </span><a href="#105">final_x_times_y</a> {
+<a href=#194 id=194 data-nosnippet>194</a>        <a href="#121">digits_y</a>.value.<a href="../bigdigit/digitvec.rs.html#100-102">as_digit_slice</a>()
+<a href=#195 id=195 data-nosnippet>195</a>    } <span class="kw">else </span>{
+<a href=#196 id=196 data-nosnippet>196</a>        <span class="comment">// raised to a power-of-two: y-slice was never touched so
+<a href=#197 id=197 data-nosnippet>197</a>        // we reuse x-slice here for final multiplication
+<a href=#198 id=198 data-nosnippet>198</a></span><span class="expansion"><input id=expand-198 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span><span class="bool-val">true </span>{
+    <span class="kw">match </span>(<span class="kw-2">&amp;</span>digits_y.value.digits.capacity(), <span class="kw-2">&amp;</span><span class="number">0</span>) {
+        (left_val, right_val) =&gt; {
+            <span class="kw">if </span>!(<span class="kw-2">*</span>left_val == <span class="kw-2">*</span>right_val) {
+                <span class="kw">let </span>kind = ::core::panicking::AssertKind::Eq;
+                ::core::panicking::assert_failed(kind, <span class="kw-2">&amp;*</span>left_val,
+                    <span class="kw-2">&amp;*</span>right_val, ::core::option::Option::None);
+            }
+        }
+    };
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.debug_assert_eq.html">debug_assert_eq!</a>(digits_y.value.digits.capacity(), <span class="number">0</span>)</span></span>;
+<a href=#199 id=199 data-nosnippet>199</a>        <a href="#121">digits_y</a>.scale = <a href="#117">digits_x</a>.scale;
+<a href=#200 id=200 data-nosnippet>200</a>        <a href="#191">x_slice</a>
+<a href=#201 id=201 data-nosnippet>201</a>    };
+<a href=#202 id=202 data-nosnippet>202</a>
+<a href=#203 id=203 data-nosnippet>203</a>    <a href="multiplication.rs.html#291-426">multiply_slices_with_prec_into_p19_z</a>(
+<a href=#204 id=204 data-nosnippet>204</a>        <span class="kw-2">&amp;mut </span><a href="#126">prod</a>,
+<a href=#205 id=205 data-nosnippet>205</a>        <a href="#191">x_slice</a>,
+<a href=#206 id=206 data-nosnippet>206</a>        <a href="#193">y_slice</a>,
+<a href=#207 id=207 data-nosnippet>207</a>        <a href="#68">ctx</a>.<a href="../context.rs.html#82-84">precision</a>(),
+<a href=#208 id=208 data-nosnippet>208</a>        <a href="#183">rounding</a>,
+<a href=#209 id=209 data-nosnippet>209</a>        <a href="#132">trailing_zeros</a>,
+<a href=#210 id=210 data-nosnippet>210</a>    );
+<a href=#211 id=211 data-nosnippet>211</a>
+<a href=#212 id=212 data-nosnippet>212</a>    <span class="kw">let </span><span class="kw-2">mut </span>scale = <a href="#66">bd</a>.scale * <a href="#67">exp</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a> + <a href="#126">prod</a>.scale;
+<a href=#213 id=213 data-nosnippet>213</a>    <a href="#212">scale</a> += (<a href="#117">digits_x</a>.scale + <a href="#121">digits_y</a>.scale) * <a href="#70">R</a>::<a href="../bigdigit/radix.rs.html#266">DIGITS</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>;
+<a href=#214 id=214 data-nosnippet>214</a>
+<a href=#215 id=215 data-nosnippet>215</a>    <span class="kw">let </span>int_val = <a href="../../../num_bigint/bigint/struct.BigInt.html">BigInt</a>::<a href="../../../num_bigint/bigint/struct.BigInt.html#method.from_biguint">from_biguint</a>(<a href="#178">sign</a>, <a href="#126">prod</a>.value.<a href="../bigdigit/digitvec.rs.html#463-494">into_biguint</a>());
+<a href=#216 id=216 data-nosnippet>216</a>
+<a href=#217 id=217 data-nosnippet>217</a>    <a href="../lib.rs.html#211-215">BigDecimal</a>::<a href="../lib.rs.html#224-226">new</a>(<a href="#215">int_val</a>, <a href="#212">scale</a>)
+<a href=#218 id=218 data-nosnippet>218</a>}
+<a href=#219 id=219 data-nosnippet>219</a>
+<a href=#220 id=220 data-nosnippet>220</a><span class="doccomment">/// Simple implementation of exponentiation-by-squaring,
+<a href=#221 id=221 data-nosnippet>221</a>/// with no precision/rounding involved
+<a href=#222 id=222 data-nosnippet>222</a></span><span class="kw">fn </span>pow_u64_no_context(bd: <a href="../lib.rs.html#1253-1257">BigDecimalRef</a>, exp: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>) -&gt; <a href="../lib.rs.html#211-215">BigDecimal</a> {
+<a href=#223 id=223 data-nosnippet>223</a><span class="expansion"><input id=expand-223 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">    <span class=expanded><span class="kw">if </span><span class="bool-val">true </span>{
+    <span class="kw">match </span>(<span class="kw-2">&amp;</span>exp, <span class="kw-2">&amp;</span><span class="number">0</span>) {
+        (left_val, right_val) =&gt; {
+            <span class="kw">if </span><span class="kw-2">*</span>left_val == <span class="kw-2">*</span>right_val {
+                <span class="kw">let </span>kind = ::core::panicking::AssertKind::Ne;
+                ::core::panicking::assert_failed(kind, <span class="kw-2">&amp;*</span>left_val,
+                    <span class="kw-2">&amp;*</span>right_val, ::core::option::Option::None);
+            }
+        }
+    };
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.debug_assert_ne.html">debug_assert_ne!</a>(exp, <span class="number">0</span>)</span></span>;
+<a href=#224 id=224 data-nosnippet>224</a>    <span class="kw">if </span><a href="#222">exp</a> == <span class="number">1 </span>{
+<a href=#225 id=225 data-nosnippet>225</a>        <span class="kw">return </span><a href="#222">bd</a>.<a href="../lib.rs.html#1261-1266">to_owned</a>();
+<a href=#226 id=226 data-nosnippet>226</a>    }
+<a href=#227 id=227 data-nosnippet>227</a>
+<a href=#228 id=228 data-nosnippet>228</a>    <span class="kw">let </span><span class="kw-2">mut </span>x = <a href="#222">bd</a>.digits.<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>();
+<a href=#229 id=229 data-nosnippet>229</a>    <span class="kw">let </span><span class="kw-2">mut </span>y: <a href="../../../num_bigint/biguint/struct.BigUint.html">BigUint</a> = <span class="number">1u8</span>.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html#tymethod.into">into</a>();
+<a href=#230 id=230 data-nosnippet>230</a>
+<a href=#231 id=231 data-nosnippet>231</a>    <span class="kw">let </span><span class="kw-2">mut </span>n = <a href="#222">exp</a>;
+<a href=#232 id=232 data-nosnippet>232</a>    <span class="kw">while </span>n &gt; <span class="number">1 </span>{
+<a href=#233 id=233 data-nosnippet>233</a>        <span class="kw">if </span>n % <span class="number">2 </span>== <span class="number">1 </span>{
+<a href=#234 id=234 data-nosnippet>234</a>            y <span class="kw-2">*</span>= <span class="kw-2">&amp;</span>x;
+<a href=#235 id=235 data-nosnippet>235</a>        }
+<a href=#236 id=236 data-nosnippet>236</a>        x = x.pow(<span class="number">2u8</span>);
+<a href=#237 id=237 data-nosnippet>237</a>        n &gt;&gt;= <span class="number">1</span>;
+<a href=#238 id=238 data-nosnippet>238</a>    }
+<a href=#239 id=239 data-nosnippet>239</a>
+<a href=#240 id=240 data-nosnippet>240</a>    <span class="comment">// final product
+<a href=#241 id=241 data-nosnippet>241</a>    </span><span class="kw">let </span>p = <a href="#228">x</a> * <a href="#229">y</a>;
+<a href=#242 id=242 data-nosnippet>242</a>
+<a href=#243 id=243 data-nosnippet>243</a>    <span class="kw">let </span>sign = <span class="kw">if </span><a href="#222">exp</a> % <span class="number">2 </span>== <span class="number">0 </span>{
+<a href=#244 id=244 data-nosnippet>244</a>        Sign::<a href="../../../num_bigint/bigint/enum.Sign.html#variant.Plus">Plus</a>
+<a href=#245 id=245 data-nosnippet>245</a>    } <span class="kw">else </span>{
+<a href=#246 id=246 data-nosnippet>246</a>        <a href="#222">bd</a>.<a href="../lib.rs.html#1317-1319">sign</a>()
+<a href=#247 id=247 data-nosnippet>247</a>    };
+<a href=#248 id=248 data-nosnippet>248</a>
+<a href=#249 id=249 data-nosnippet>249</a>    <span class="kw">let </span>scale = <a href="#222">bd</a>.scale * <a href="#222">exp</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>;
+<a href=#250 id=250 data-nosnippet>250</a>    <span class="kw">let </span>int_val = <a href="../../../num_bigint/bigint/struct.BigInt.html">BigInt</a>::<a href="../../../num_bigint/bigint/struct.BigInt.html#method.from_biguint">from_biguint</a>(<a href="#243">sign</a>, <a href="#241">p</a>);
+<a href=#251 id=251 data-nosnippet>251</a>
+<a href=#252 id=252 data-nosnippet>252</a>    <a href="../lib.rs.html#211-215">BigDecimal</a>::<a href="../lib.rs.html#224-226">new</a>(<a href="#250">int_val</a>, <a href="#249">scale</a>)
+<a href=#253 id=253 data-nosnippet>253</a>}
+<a href=#254 id=254 data-nosnippet>254</a>
+<a href=#255 id=255 data-nosnippet>255</a><span class="attr">#[cfg(not(has_unsigned_abs))]
+<a href=#256 id=256 data-nosnippet>256</a></span><span class="kw">fn </span>unsigned_abs(n: i64) -&gt; u64 {
+<a href=#257 id=257 data-nosnippet>257</a>    <span class="kw">if </span><span class="macro">n !</span>= i64::MIN {
+<a href=#258 id=258 data-nosnippet>258</a>        n.abs() <span class="kw">as </span>u64
+<a href=#259 id=259 data-nosnippet>259</a>    } <span class="kw">else </span>{
+<a href=#260 id=260 data-nosnippet>260</a>        (i64::MIN <span class="kw">as </span>i128).abs() <span class="kw">as </span>u64
+<a href=#261 id=261 data-nosnippet>261</a>    }
+<a href=#262 id=262 data-nosnippet>262</a>}
+<a href=#263 id=263 data-nosnippet>263</a>
+<a href=#264 id=264 data-nosnippet>264</a><span class="attr">#[cfg(has_unsigned_abs)]
+<a href=#265 id=265 data-nosnippet>265</a>#[allow(clippy::incompatible_msrv)]
+<a href=#266 id=266 data-nosnippet>266</a></span><span class="kw">fn </span>unsigned_abs(n: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a> {
+<a href=#267 id=267 data-nosnippet>267</a>    <a href="#266">n</a>.<a href="https://doc.rust-lang.org/nightly/core/foreigntype.num.html#method.unsigned_abs">unsigned_abs</a>()
+<a href=#268 id=268 data-nosnippet>268</a>}
+<a href=#269 id=269 data-nosnippet>269</a>
+<a href=#270 id=270 data-nosnippet>270</a><span class="doccomment">/// Struct housing the 'margin' information for calculating the required
+<a href=#271 id=271 data-nosnippet>271</a>/// precision while doing sequential multiplications for pow
+<a href=#272 id=272 data-nosnippet>272</a>///
+<a href=#273 id=273 data-nosnippet>273</a>/// Currently uses a naive scheme: calculating the widest required
+<a href=#274 id=274 data-nosnippet>274</a>/// margin, and multiplying the number of multiplications by that width.
+<a href=#275 id=275 data-nosnippet>275</a>/// Then we linearly decrease the margin so we end up near the requested
+<a href=#276 id=276 data-nosnippet>276</a>/// precision by the time we get to the final product.
+<a href=#277 id=277 data-nosnippet>277</a>///
+<a href=#278 id=278 data-nosnippet>278</a></span><span class="kw">struct </span>RunningPrecision {
+<a href=#279 id=279 data-nosnippet>279</a>    <span class="doccomment">/// Minimum precision
+<a href=#280 id=280 data-nosnippet>280</a>    </span>min: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>,
+<a href=#281 id=281 data-nosnippet>281</a>    <span class="doccomment">/// Current margin
+<a href=#282 id=282 data-nosnippet>282</a>    </span>margin: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>,
+<a href=#283 id=283 data-nosnippet>283</a>    <span class="doccomment">/// number of digits to decrease each time `next()` is called
+<a href=#284 id=284 data-nosnippet>284</a>    </span>margin_per_mul: <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>,
+<a href=#285 id=285 data-nosnippet>285</a>}
+<a href=#286 id=286 data-nosnippet>286</a>
+<a href=#287 id=287 data-nosnippet>287</a><span class="kw">impl </span><a href="#278-285">RunningPrecision</a> {
+<a href=#288 id=288 data-nosnippet>288</a>    <span class="doccomment">/// Create from requiring 'prec' digits of precision of digits^exp
+<a href=#289 id=289 data-nosnippet>289</a>    </span><span class="kw">fn </span>new&lt;<span class="lifetime">'a</span>, R: <a href="../bigdigit/radix.rs.html#265-279">RadixPowerOfTen</a>, E: <a href="../bigdigit/endian.rs.html#18-121">Endianness</a>&gt;(
+<a href=#290 id=290 data-nosnippet>290</a>        digits: <a href="../bigdigit/digitvec.rs.html#728-732">DigitSlice</a>&lt;<span class="lifetime">'a</span>, R, E&gt;,
+<a href=#291 id=291 data-nosnippet>291</a>        exp: <a href="https://doc.rust-lang.org/nightly/core/num/nonzero/type.NonZeroU64.html">NonZeroU64</a>,
+<a href=#292 id=292 data-nosnippet>292</a>        prec: <a href="https://doc.rust-lang.org/nightly/core/num/nonzero/type.NonZeroU64.html">NonZeroU64</a>,
+<a href=#293 id=293 data-nosnippet>293</a>    ) -&gt; <span class="self">Self </span>{
+<a href=#294 id=294 data-nosnippet>294</a>        <span class="comment">// number of big-digits required to fit requested precision, plus a few
+<a href=#295 id=295 data-nosnippet>295</a>        // extra for guaranteed rounding digits
+<a href=#296 id=296 data-nosnippet>296</a>        </span><span class="kw">let </span>prec_bigdigit_count = R::<a href="../bigdigit/radix.rs.html#269-272">divceil_digit_count</a>(<a href="#292">prec</a>.<a href="https://doc.rust-lang.org/nightly/core/num/nonzero/struct.NonZero.html#method.get">get</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a> + <span class="number">3</span>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>;
+<a href=#297 id=297 data-nosnippet>297</a>
+<a href=#298 id=298 data-nosnippet>298</a>        <span class="comment">// length of 'digits' in big digits (floating-point)
+<a href=#299 id=299 data-nosnippet>299</a>        </span><span class="kw">let </span>digit_count_f = <a href="#290">digits</a>.<a href="../bigdigit/digitvec.rs.html#819-825">count_decimal_digits</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.f64.html">f64</a> ;
+<a href=#300 id=300 data-nosnippet>300</a>
+<a href=#301 id=301 data-nosnippet>301</a>        <span class="kw">let </span>count_squarings = <span class="number">63 </span>- <a href="#291">exp</a>.<a href="https://doc.rust-lang.org/nightly/core/num/nonzero/struct.NonZero.html#method.get">get</a>().<a href="https://doc.rust-lang.org/nightly/core/foreigntype.num.html#method.leading_zeros">leading_zeros</a>();
+<a href=#302 id=302 data-nosnippet>302</a>        <span class="kw">let </span>count_non_squarings = <a href="#291">exp</a>.<a href="https://doc.rust-lang.org/nightly/core/num/nonzero/struct.NonZero.html#method.get">get</a>().<a href="https://doc.rust-lang.org/nightly/core/foreigntype.num.html#method.count_ones">count_ones</a>() - <span class="number">1</span>;
+<a href=#303 id=303 data-nosnippet>303</a>        <span class="comment">// total number of multiplications
+<a href=#304 id=304 data-nosnippet>304</a>        </span><span class="kw">let </span>muls = (<a href="#302">count_non_squarings</a> + <a href="#301">count_squarings</a>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>;
+<a href=#305 id=305 data-nosnippet>305</a>
+<a href=#306 id=306 data-nosnippet>306</a>        <span class="comment">// aⁿ =&gt; aˣ·aʸ, n = x+y
+<a href=#307 id=307 data-nosnippet>307</a>        </span><span class="kw">let </span>max_partial_pow = {
+<a href=#308 id=308 data-nosnippet>308</a>            <span class="kw">let </span>x = <span class="number">1 </span>&lt;&lt; <a href="#301">count_squarings</a>;
+<a href=#309 id=309 data-nosnippet>309</a>            <span class="kw">let </span>y = <a href="#291">exp</a>.<a href="https://doc.rust-lang.org/nightly/core/num/nonzero/struct.NonZero.html#method.get">get</a>() - <a href="#308">x</a>;
+<a href=#310 id=310 data-nosnippet>310</a>            (<a href="#308">x</a> / <span class="number">2</span>).<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#method.max">max</a>(<a href="#309">y</a>)
+<a href=#311 id=311 data-nosnippet>311</a>        };
+<a href=#312 id=312 data-nosnippet>312</a>
+<a href=#313 id=313 data-nosnippet>313</a>        <span class="comment">// number of digits of multiplicand in the final product
+<a href=#314 id=314 data-nosnippet>314</a>        </span><span class="kw">let </span>max_width_digits_f = <a href="#299">digit_count_f</a> * <a href="#307">max_partial_pow</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.f64.html">f64</a>;
+<a href=#315 id=315 data-nosnippet>315</a>
+<a href=#316 id=316 data-nosnippet>316</a>        <span class="comment">// length in digits of kmaximum sum of digits
+<a href=#317 id=317 data-nosnippet>317</a>        </span><span class="kw">let </span>diag_sum_digit_len = <span class="number">2.0 </span>* <a href="mod.rs.html#41-43">log10</a>(R::<a href="../bigdigit/radix.rs.html#69-71">max</a>().<a href="../../../bigdecimal/trait.ToPrimitive.html">to_f64</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap">unwrap</a>()) + <a href="mod.rs.html#41-43">log10</a>(<a href="#314">max_width_digits_f</a>);
+<a href=#318 id=318 data-nosnippet>318</a>        <span class="kw">let </span>diag_sum_bigdigit_len = R::<a href="../bigdigit/radix.rs.html#269-272">divceil_digit_count</a>(<a href="#317">diag_sum_digit_len</a>.<a href="https://doc.rust-lang.org/nightly/std/foreigntype.f64.html#method.ceil">ceil</a>() <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>) <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>;
+<a href=#319 id=319 data-nosnippet>319</a>        <span class="kw">let </span>margin_per_mul = <a href="#318">diag_sum_bigdigit_len</a> + <span class="number">1</span>;
+<a href=#320 id=320 data-nosnippet>320</a>
+<a href=#321 id=321 data-nosnippet>321</a>        <span class="self">Self </span>{
+<a href=#322 id=322 data-nosnippet>322</a>            min: <a href="#296">prec_bigdigit_count</a>,
+<a href=#323 id=323 data-nosnippet>323</a>            margin: (<a href="#304">muls</a> + <span class="number">1</span>) * <a href="#319">margin_per_mul</a>,
+<a href=#324 id=324 data-nosnippet>324</a>            margin_per_mul: <a href="#319">margin_per_mul</a>,
+<a href=#325 id=325 data-nosnippet>325</a>        }
+<a href=#326 id=326 data-nosnippet>326</a>    }
+<a href=#327 id=327 data-nosnippet>327</a>
+<a href=#328 id=328 data-nosnippet>328</a>    <span class="doccomment">/// update margin and return precision
+<a href=#329 id=329 data-nosnippet>329</a>    </span><span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a> {
+<a href=#330 id=330 data-nosnippet>330</a>        <a class="self" href="#329">self</a>.margin = <a class="self" href="#329">self</a>.margin.<a href="https://doc.rust-lang.org/nightly/core/foreigntype.num.html#method.saturating_sub">saturating_sub</a>(<a class="self" href="#329">self</a>.margin_per_mul);
+<a href=#331 id=331 data-nosnippet>331</a>        <a class="self" href="#329">self</a>.margin + <a class="self" href="#329">self</a>.min
+<a href=#332 id=332 data-nosnippet>332</a>    }
+<a href=#333 id=333 data-nosnippet>333</a>}
+<a href=#334 id=334 data-nosnippet>334</a>
+<a href=#335 id=335 data-nosnippet>335</a><span class="attr">#[cfg(test)]
+<a href=#336 id=336 data-nosnippet>336</a></span><span class="kw">mod </span>test {
+<a href=#337 id=337 data-nosnippet>337</a>    <span class="kw">use </span>super::<span class="kw-2">*</span>;
+<a href=#338 id=338 data-nosnippet>338</a>
+<a href=#339 id=339 data-nosnippet>339</a>    <span class="macro">include!</span>(<span class="string">"pow.tests.rs"</span>);
+<a href=#340 id=340 data-nosnippet>340</a>}
+</code></pre></div></section></main></body></html>

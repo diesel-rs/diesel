@@ -1,0 +1,55 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Extracts JSON sub-object at the specified path. (This is functionally equivalent to the #&#62; operator, but writing the path out as a variadic list can be more convenient in some cases.)"><title>json_extract_path_2 in diesel::pg::expression::functions - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">json_extract_path_2</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../../diesel/index.html">diesel</a><span class="version">2.3.6</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">json_<wbr>extract_<wbr>path_<wbr>2</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li><li><a href="#variadic-functions" title="Variadic functions">Variadic functions</a><ul><li><a href="#controlling-the-generation-of-variadic-function-variants" title="Controlling the generation of variadic function variants">Controlling the generation of variadic function variants</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>pg::<wbr>expression::<wbr>functions</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../../index.html">diesel</a>::<wbr><a href="../../index.html">pg</a>::<wbr><a href="../index.html">expression</a>::<wbr><a href="index.html">functions</a></div><h1>Function <span class="fn">json_<wbr>extract_<wbr>path_<wbr>2</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../../src/diesel/pg/expression/functions.rs.html#19">Source</a> </span></div><pre class="rust item-decl"><code>pub fn json_extract_path_2&lt;J: JsonOrNullableJson + <a class="trait" href="../../../sql_types/trait.SingleValue.html" title="trait diesel::sql_types::SingleValue">SingleValue</a>, T1: <a class="trait" href="../../../sql_types/trait.SingleValue.html" title="trait diesel::sql_types::SingleValue">SingleValue</a>, T2: <a class="trait" href="../../../sql_types/trait.SingleValue.html" title="trait diesel::sql_types::SingleValue">SingleValue</a>, json, text_1, text_2&gt;(
+    json: json,
+    text_1: text_1,
+    text_2: text_2,
+) -&gt; <a class="type" href="type.json_extract_path_2.html" title="type diesel::pg::expression::functions::json_extract_path_2">json_extract_path_2</a>&lt;J, T1, T2, json, text_1, text_2&gt;<div class="where">where
+    json: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;J&gt;,
+    text_1: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;T1&gt;,
+    text_2: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;T2&gt;,</div></code></pre><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>postgres_backend</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Extracts JSON sub-object at the specified path. (This is functionally equivalent to the #&gt; operator, but writing the path out as a variadic list can be more convenient in some cases.)</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>expected = <span class="prelude-val">Some</span>(<span class="macro">json!</span>({<span class="string">"f5"</span>:<span class="number">99</span>, <span class="string">"f6"</span>:<span class="string">"foo"</span>}));
+<span class="kw">let </span>result = diesel::select(json_extract_path_1::&lt;Json, Text, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+    <span class="macro">json!</span>({<span class="string">"f2"</span>:{<span class="string">"f3"</span>:<span class="number">1</span>},<span class="string">"f4"</span>:{<span class="string">"f5"</span>:<span class="number">99</span>,<span class="string">"f6"</span>:<span class="string">"foo"</span>}}),
+    <span class="string">"f4"</span>,
+))
+.get_result::&lt;<span class="prelude-ty">Option</span>&lt;serde_json::Value&gt;&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(expected, result);
+
+<span class="kw">let </span>expected = <span class="prelude-val">Some</span>(<span class="macro">json!</span>(<span class="string">"foo"</span>));
+<span class="kw">let </span>result = diesel::select(json_extract_path_2::&lt;Json, Text, Text, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+    <span class="macro">json!</span>({<span class="string">"f2"</span>:{<span class="string">"f3"</span>:<span class="number">1</span>},<span class="string">"f4"</span>:{<span class="string">"f5"</span>:<span class="number">99</span>,<span class="string">"f6"</span>:<span class="string">"foo"</span>}}),
+    <span class="string">"f4"</span>,
+    <span class="string">"f6"
+</span>))
+.get_result::&lt;<span class="prelude-ty">Option</span>&lt;serde_json::Value&gt;&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(expected, result);
+
+<span class="kw">let </span>result = diesel::select(json_extract_path_1::&lt;Nullable&lt;Json&gt;, Text, <span class="kw">_</span>, <span class="kw">_</span>&gt;(None::&lt;serde_json::Value&gt;, <span class="string">"f4"</span>))
+.get_result::&lt;<span class="prelude-ty">Option</span>&lt;serde_json::Value&gt;&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(None::&lt;serde_json::Value&gt;, result);
+
+<span class="kw">let </span>result = diesel::select(json_extract_path_2::&lt;Json, Nullable&lt;Text&gt;, Text, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(<span class="macro">json!</span>({<span class="string">"f2"</span>:{<span class="string">"f3"</span>:<span class="number">1</span>},<span class="string">"f4"</span>:{<span class="string">"f5"</span>:<span class="number">99</span>,<span class="string">"f6"</span>:<span class="string">"foo"</span>}}), None::&lt;String&gt;, <span class="string">"f6"</span>))
+.get_result::&lt;<span class="prelude-ty">Option</span>&lt;serde_json::Value&gt;&gt;(connection)<span class="question-mark">?</span>;
+
+
+<span class="macro">assert_eq!</span>(None::&lt;serde_json::Value&gt;, result);
+</code></pre></div><h2 id="variadic-functions"><a class="doc-anchor" href="#variadic-functions">§</a>Variadic functions</h2>
+<p>This function is variadic in SQL, so there’s a family of functions
+on a diesel side:</p>
+<p><code>json_extract_path_0</code>, <code>json_extract_path_1</code>, … <code>json_extract_path_n</code></p>
+<p>Here, the postfix number indicates repetitions of variadic arguments.
+To use this function, the appropriate version with the correct
+argument count must be selected.</p>
+<h3 id="controlling-the-generation-of-variadic-function-variants"><a class="doc-anchor" href="#controlling-the-generation-of-variadic-function-variants">§</a>Controlling the generation of variadic function variants</h3>
+<p>By default, only variants with 0, 1, and 2 repetitions of variadic
+arguments are generated. To generate more variants, set the
+<code>DIESEL_VARIADIC_FUNCTION_ARGS</code> environment variable to the desired
+number of variants.</p>
+<p>For a greater convenience this environment variable can also be set
+in a <code>.cargo/config.toml</code> file as described in the
+<a href="https://doc.rust-lang.org/cargo/reference/config.html#env">cargo documentation</a>.</p>
+</div></details></section></div></main></body></html>

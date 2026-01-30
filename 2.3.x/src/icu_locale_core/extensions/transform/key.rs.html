@@ -1,0 +1,290 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_locale_core-2.1.1/src/extensions/transform/key.rs`."><title>key.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="icu_locale_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../static.files/storage-f9617a14.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">icu_locale_core/extensions/transform/</div>key.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// This file is part of ICU4X. For terms of use, please see the file
+<a href=#2 id=2 data-nosnippet>2</a>// called LICENSE at the top level of the ICU4X source tree
+<a href=#3 id=3 data-nosnippet>3</a>// (online at: https://github.com/unicode-org/icu4x/blob/main/LICENSE ).
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a></span><span class="expansion"><input id=expand-5 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[repr(transparent)]
+#[doc = <span class="string">r" A key used in a list of [`Fields`](super::Fields)."</span>]
+#[doc = <span class="string">r""</span>]
+#[doc = <span class="string">r" The key has to be a two ASCII characters long, with the first"</span>]
+#[doc = <span class="string">r" character being alphabetic, and the second being a number."</span>]
+#[doc = <span class="string">r""</span>]
+#[doc = <span class="string">r" # Examples"</span>]
+#[doc = <span class="string">r""</span>]
+#[doc = <span class="string">r" ```"</span>]
+#[doc = <span class="string">r" use icu::locale::extensions::transform::Key;"</span>]
+#[doc = <span class="string">r""</span>]
+#[doc = <span class="string">r#" let key1: Key = "k0".parse().expect("Failed to parse a Key.");"#</span>]
+#[doc = <span class="string">r""</span>]
+#[doc = <span class="string">r#" assert_eq!(key1.as_str(), "k0");"#</span>]
+#[doc = <span class="string">r" ```"</span>]
+</span><span class="kw">pub struct </span>Key(tinystr::TinyAsciiStr&lt;<span class="number">2</span>&gt;);
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>Key {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Key"</span>, &amp;&amp;<span class="self">self</span>.<span class="number">0</span>)
+    }
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>Key { }
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>Key {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>Key) -&gt; bool { <span class="self">self</span>.<span class="number">0 </span>== other.<span class="number">0 </span>}
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>Key {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_receiver_is_total_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;tinystr::TinyAsciiStr&lt;<span class="number">2</span>&gt;&gt;;
+    }
+}
+<span class="attr">#[automatically_derived]
+#[doc(hidden)]
+</span><span class="kw">unsafe impl </span>::core::clone::TrivialClone <span class="kw">for </span>Key { }
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>Key {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Key {
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;tinystr::TinyAsciiStr&lt;<span class="number">2</span>&gt;&gt;;
+        <span class="kw-2">*</span><span class="self">self
+    </span>}
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::hash::Hash <span class="kw">for </span>Key {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>hash&lt;__H: ::core::hash::Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>__H) {
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, state)
+    }
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::PartialOrd <span class="kw">for </span>Key {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>partial_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>Key)
+        -&gt; ::core::option::Option&lt;::core::cmp::Ordering&gt; {
+        ::core::cmp::PartialOrd::partial_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span>other.<span class="number">0</span>)
+    }
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::Ord <span class="kw">for </span>Key {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>Key) -&gt; ::core::cmp::Ordering {
+        ::core::cmp::Ord::cmp(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span>other.<span class="number">0</span>)
+    }
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>Key { }
+<span class="kw">impl </span>Key {
+    <span class="doccomment">/// A constructor which takes a str slice, parses it and
+    </span><span class="attr">#[doc = <span class="string">"produces a well-formed [`Key`]."</span>]
+    </span><span class="doccomment">///
+    /// # Examples
+    ///
+    /// ```
+    </span><span class="attr">#[doc = <span class="string">"use icu_locale_core::extensions :: transform ::Key;"</span>]
+    </span><span class="doccomment">///
+    </span><span class="attr">#[doc = <span class="string">"assert!(Key::try_from_str(\"k0\").is_ok());"</span>]
+    #[doc = <span class="string">"assert!(Key::try_from_str(\"\").is_err());"</span>]
+    </span><span class="doccomment">/// ```
+    </span><span class="attr">#[inline]
+    </span><span class="kw">pub const fn </span>try_from_str(s: <span class="kw-2">&amp;</span>str)
+        -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="kw">crate</span>::parser::errors::ParseError&gt; {
+        <span class="self">Self</span>::try_from_utf8(s.as_bytes())
+    }
+    <span class="doccomment">/// See [`Self::try_from_str`]
+    </span><span class="kw">pub const fn </span>try_from_utf8(code_units: <span class="kw-2">&amp;</span>[u8])
+        -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="kw">crate</span>::parser::errors::ParseError&gt; {
+        <span class="kw">if </span>code_units.len() &lt; <span class="number">2 </span>|| code_units.len() &gt; <span class="number">2 </span>{
+            <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="kw">crate</span>::parser::errors::ParseError::InvalidExtension);
+        }
+        <span class="kw">match </span>tinystr::TinyAsciiStr::try_from_utf8(code_units) {
+            <span class="prelude-val">Ok</span>(s) <span class="kw">if
+                </span>s.all_bytes()[<span class="number">0</span>].is_ascii_alphabetic() &amp;&amp;
+                    s.all_bytes()[<span class="number">1</span>].is_ascii_digit() =&gt;
+                <span class="prelude-val">Ok</span>(<span class="self">Self</span>(s.to_ascii_lowercase())),
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(<span class="kw">crate</span>::parser::errors::ParseError::InvalidExtension),
+        }
+    }
+    <span class="attr">#[doc = <span class="string">"Safely creates a [`Key`] from its raw format"</span>]
+    </span><span class="doccomment">/// as returned by [`Self::into_raw`]. Unlike [`Self::try_from_utf8`],
+    /// this constructor only takes normalized values.
+    </span><span class="kw">pub const fn </span>try_from_raw(raw: [u8; <span class="number">2</span>])
+        -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="kw">crate</span>::parser::errors::ParseError&gt; {
+        <span class="kw">if let </span><span class="prelude-val">Ok</span>(s) = tinystr::TinyAsciiStr::&lt;<span class="number">2</span>&gt;::try_from_raw(raw) {
+            <span class="kw">if </span>s.len() &gt;= <span class="number">2 </span>&amp;&amp;
+                    (s.all_bytes()[<span class="number">0</span>].is_ascii_lowercase() &amp;&amp;
+                        s.all_bytes()[<span class="number">1</span>].is_ascii_digit()) {
+                <span class="prelude-val">Ok</span>(<span class="self">Self</span>(s))
+            } <span class="kw">else </span>{
+                <span class="prelude-val">Err</span>(<span class="kw">crate</span>::parser::errors::ParseError::InvalidExtension)
+            }
+        } <span class="kw">else </span>{ <span class="prelude-val">Err</span>(<span class="kw">crate</span>::parser::errors::ParseError::InvalidExtension) }
+    }
+    <span class="attr">#[doc = <span class="string">"Unsafely creates a [`Key`] from its raw format"</span>]
+    </span><span class="doccomment">/// as returned by [`Self::into_raw`]. Unlike [`Self::try_from_utf8`],
+    /// this constructor only takes normalized values.
+    ///
+    /// # Safety
+    ///
+    /// This function is safe iff [`Self::try_from_raw`] returns an `Ok`. This is the case
+    /// for inputs that are correctly normalized.
+    </span><span class="kw">pub const unsafe fn </span>from_raw_unchecked(v: [u8; <span class="number">2</span>]) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>(tinystr::TinyAsciiStr::from_utf8_unchecked(v))
+    }
+    <span class="doccomment">/// Deconstructs into a raw format to be consumed by
+    /// [`from_raw_unchecked`](Self::from_raw_unchecked()) or
+    /// [`try_from_raw`](Self::try_from_raw()).
+    </span><span class="kw">pub const fn </span>into_raw(<span class="self">self</span>) -&gt; [u8; <span class="number">2</span>] { <span class="kw-2">*</span><span class="self">self</span>.<span class="number">0</span>.all_bytes() }
+    <span class="attr">#[inline]
+    </span><span class="doccomment">/// A helper function for displaying as a `&amp;str`.
+    </span><span class="kw">pub const fn </span>as_str(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>str { <span class="self">self</span>.<span class="number">0</span>.as_str() }
+    <span class="attr">#[doc(hidden)]
+    </span><span class="kw">pub const fn </span>to_tinystr(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; tinystr::TinyAsciiStr&lt;<span class="number">2</span>&gt; { <span class="self">self</span>.<span class="number">0 </span>}
+    <span class="doccomment">/// Compare with BCP-47 bytes.
+    ///
+    /// The return value is equivalent to what would happen if you first converted
+    /// `self` to a BCP-47 string and then performed a byte comparison.
+    ///
+    /// This function is case-sensitive and results in a *total order*, so it is appropriate for
+    /// binary search. The only argument producing [`Ordering::Equal`](core::cmp::Ordering::Equal)
+    /// is `self.as_str().as_bytes()`.
+    </span><span class="attr">#[inline]
+    </span><span class="kw">pub fn </span>strict_cmp(<span class="self">self</span>, other: <span class="kw-2">&amp;</span>[u8]) -&gt; core::cmp::Ordering {
+        <span class="self">self</span>.as_str().as_bytes().cmp(other)
+    }
+    <span class="doccomment">/// Compare with a potentially unnormalized BCP-47 string.
+    ///
+    /// The return value is equivalent to what would happen if you first parsed the
+    /// BCP-47 string and then performed a structural comparison.
+    ///
+    </span><span class="attr">#[inline]
+    </span><span class="kw">pub fn </span>normalizing_eq(<span class="self">self</span>, other: <span class="kw-2">&amp;</span>str) -&gt; bool {
+        <span class="self">self</span>.as_str().eq_ignore_ascii_case(other)
+    }
+}
+<span class="kw">impl </span>core::str::FromStr <span class="kw">for </span>Key {
+    <span class="kw">type </span><span class="prelude-val">Err </span>= <span class="kw">crate</span>::parser::errors::ParseError;
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Err&gt; { <span class="self">Self</span>::try_from_str(s) }
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'l</span>&gt; From&lt;<span class="kw-2">&amp;</span><span class="lifetime">'l </span>Key&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'l </span>str {
+    <span class="kw">fn </span>from(input: <span class="kw-2">&amp;</span><span class="lifetime">'l </span>Key) -&gt; <span class="self">Self </span>{ input.as_str() }
+}
+<span class="kw">impl </span>From&lt;Key&gt; <span class="kw">for </span>tinystr::TinyAsciiStr&lt;<span class="number">2</span>&gt; {
+    <span class="kw">fn </span>from(input: Key) -&gt; <span class="self">Self </span>{ input.to_tinystr() }
+}
+<span class="kw">impl </span>writeable::Writeable <span class="kw">for </span>Key {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>write_to&lt;W: core::fmt::Write + <span class="question-mark">?</span>Sized&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, sink: <span class="kw-2">&amp;mut </span>W)
+        -&gt; core::fmt::Result {
+        sink.write_str(<span class="self">self</span>.as_str())
+    }
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>writeable_length_hint(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; writeable::LengthHint {
+        writeable::LengthHint::exact(<span class="self">self</span>.<span class="number">0</span>.len())
+    }
+    <span class="kw">fn </span>writeable_borrow(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt; { <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="number">0</span>.as_str()) }
+}
+<span class="doccomment">/// This trait is implemented for compatibility with [`fmt!`](alloc::fmt).
+/// To create a string, [`Writeable::write_to_string`] is usually more efficient.
+</span><span class="kw">impl </span>core::fmt::Display <span class="kw">for </span>Key {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>core::fmt::Formatter) -&gt; core::fmt::Result {
+        ::writeable::Writeable::write_to(<span class="kw-2">&amp;</span><span class="self">self</span>, f)
+    }
+}
+<span class="attr">#[doc =
+<span class="string">"A macro allowing for compile-time construction of valid [`Key`] subtags."</span>]
+</span><span class="doccomment">///
+/// # Examples
+///
+/// Parsing errors don't have to be handled at runtime:
+/// ```
+/// assert_eq!(
+</span><span class="attr">#[doc = <span class="string">"  icu_locale_core::extensions::transform::key!(\"k0\"),"</span>]
+#[doc =
+<span class="string">"  \"k0\".parse::&lt;icu_locale_core::extensions::transform::Key&gt;().unwrap()"</span>]
+</span><span class="doccomment">/// );
+/// ```
+///
+/// Invalid input is a compile failure:
+/// ```compile_fail,E0080
+</span><span class="attr">#[doc = <span class="string">"icu_locale_core::extensions::transform::key!(\"\");"</span>]
+</span><span class="doccomment">/// ```
+///
+</span><span class="attr">#[doc = <span class="string">"[`Key`]: crate::extensions::transform::Key"</span>]
+#[macro_export]
+#[doc(hidden)]
+</span><span class="macro">macro_rules!</span> extensions_transform_key {
+    (<span class="macro-nonterminal">$string </span>: literal) =&gt;
+    {
+        <span class="kw">const
+        </span>{
+            <span class="kw">use crate </span>:: extensions :: transform :: Key; <span class="kw">match </span>Key ::
+            try_from_utf8(<span class="macro-nonterminal">$string</span>.as_bytes())
+            {
+                <span class="prelude-val">Ok</span>(r) =&gt; r, <span class="kw">_ </span>=&gt; <span class="macro">panic!
+</span>                (<span class="macro">concat!
+</span>                (<span class="string">"Invalid "</span>, <span class="macro">stringify!</span> (extensions), <span class="string">"::"</span>, <span class="macro">stringify!
+</span>                (transform), <span class="string">"::"</span>, <span class="macro">stringify!</span> (Key), <span class="string">": "</span>, <span class="macro-nonterminal">$string</span>)),
+            }
+        }
+    };
+}
+<span class="attr">#[doc(inline)]
+</span><span class="kw">pub use </span>extensions_transform_key <span class="kw">as </span>key;
+<span class="kw">unsafe impl </span>zerovec::ule::ULE <span class="kw">for </span>Key {
+    <span class="kw">fn </span>validate_bytes(bytes: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;(), zerovec::ule::UleError&gt; {
+        <span class="kw">let </span>it = bytes.chunks_exact(core::mem::size_of::&lt;<span class="self">Self</span>&gt;());
+        <span class="kw">if </span>!it.remainder().is_empty() {
+            <span class="kw">return </span><span class="prelude-val">Err</span>(zerovec::ule::UleError::length::&lt;<span class="self">Self</span>&gt;(bytes.len()));
+        }
+        <span class="kw">for </span>v <span class="kw">in </span>it {
+            <span class="kw">let </span><span class="kw-2">mut </span>a = [<span class="number">0</span>; core::mem::size_of::&lt;<span class="self">Self</span>&gt;()];
+            a.copy_from_slice(v);
+            <span class="kw">if </span><span class="self">Self</span>::try_from_raw(a).is_err() {
+                <span class="kw">return </span><span class="prelude-val">Err</span>(zerovec::ule::UleError::parse::&lt;<span class="self">Self</span>&gt;());
+            }
+        }
+        <span class="prelude-val">Ok</span>(())
+    }
+}
+<span class="kw">impl </span>zerovec::ule::NicheBytes&lt;<span class="number">2</span>&gt; <span class="kw">for </span>Key {
+    <span class="kw">const </span>NICHE_BIT_PATTERN: [u8; <span class="number">2</span>] =
+        &lt;tinystr::TinyAsciiStr&lt;<span class="number">2</span>&gt;&gt;::NICHE_BIT_PATTERN;
+}
+<span class="kw">impl </span>zerovec::ule::AsULE <span class="kw">for </span>Key {
+    <span class="kw">type </span>ULE = <span class="self">Self</span>;
+    <span class="kw">fn </span>to_unaligned(<span class="self">self</span>) -&gt; <span class="self">Self</span>::ULE { <span class="self">self </span>}
+    <span class="kw">fn </span>from_unaligned(unaligned: <span class="self">Self</span>::ULE) -&gt; <span class="self">Self </span>{ unaligned }
+}</span><span class="original"><a href="../../helpers.rs.html#5-333">impl_tinystr_subtag!</a>(
+<a href=#6 id=6 data-nosnippet>6</a>    <span class="doccomment">/// A key used in a list of [`Fields`](super::Fields).
+<a href=#7 id=7 data-nosnippet>7</a>    ///
+<a href=#8 id=8 data-nosnippet>8</a>    /// The key has to be a two ASCII characters long, with the first
+<a href=#9 id=9 data-nosnippet>9</a>    /// character being alphabetic, and the second being a number.
+<a href=#10 id=10 data-nosnippet>10</a>    ///
+<a href=#11 id=11 data-nosnippet>11</a>    /// # Examples
+<a href=#12 id=12 data-nosnippet>12</a>    ///
+<a href=#13 id=13 data-nosnippet>13</a>    /// ```
+<a href=#14 id=14 data-nosnippet>14</a>    /// use icu::locale::extensions::transform::Key;
+<a href=#15 id=15 data-nosnippet>15</a>    ///
+<a href=#16 id=16 data-nosnippet>16</a>    /// let key1: Key = "k0".parse().expect("Failed to parse a Key.");
+<a href=#17 id=17 data-nosnippet>17</a>    ///
+<a href=#18 id=18 data-nosnippet>18</a>    /// assert_eq!(key1.as_str(), "k0");
+<a href=#19 id=19 data-nosnippet>19</a>    /// ```
+<a href=#20 id=20 data-nosnippet>20</a>    </span><a href="#5-32">Key</a>,
+<a href=#21 id=21 data-nosnippet>21</a>    extensions::transform,
+<a href=#22 id=22 data-nosnippet>22</a>    key,
+<a href=#23 id=23 data-nosnippet>23</a>    <a href="../../../../icu_locale_core/extensions/transform/macro.key.html">extensions_transform_key</a>,
+<a href=#24 id=24 data-nosnippet>24</a>    <span class="number">2</span>..=<span class="number">2</span>,
+<a href=#25 id=25 data-nosnippet>25</a>    s,
+<a href=#26 id=26 data-nosnippet>26</a>    s.all_bytes()[<span class="number">0</span>].is_ascii_alphabetic() &amp;&amp; s.all_bytes()[<span class="number">1</span>].is_ascii_digit(),
+<a href=#27 id=27 data-nosnippet>27</a>    s.to_ascii_lowercase(),
+<a href=#28 id=28 data-nosnippet>28</a>    s.all_bytes()[<span class="number">0</span>].is_ascii_lowercase() &amp;&amp; s.all_bytes()[<span class="number">1</span>].is_ascii_digit(),
+<a href=#29 id=29 data-nosnippet>29</a>    InvalidExtension,
+<a href=#30 id=30 data-nosnippet>30</a>    [<span class="string">"k0"</span>],
+<a href=#31 id=31 data-nosnippet>31</a>    [<span class="string">""</span>, <span class="string">"k"</span>, <span class="string">"0k"</span>, <span class="string">"k12"</span>],
+<a href=#32 id=32 data-nosnippet>32</a>)</span></span>;
+</code></pre></div></section></main></body></html>

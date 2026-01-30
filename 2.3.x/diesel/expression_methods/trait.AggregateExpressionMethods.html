@@ -1,0 +1,66 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Expression methods to build aggregate function expressions"><title>AggregateExpressionMethods in diesel::expression_methods - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">AggregateExpressionMethods</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.3.6</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Aggregate<wbr>Expression<wbr>Methods</a></h2><h3><a href="#provided-methods">Provided Methods</a></h3><ul class="block"><li><a href="#method.aggregate_all" title="aggregate_all">aggregate_all</a></li><li><a href="#method.aggregate_distinct" title="aggregate_distinct">aggregate_distinct</a></li><li><a href="#method.aggregate_filter" title="aggregate_filter">aggregate_filter</a></li><li><a href="#method.aggregate_order" title="aggregate_order">aggregate_order</a></li></ul><h3><a href="#dyn-compatibility">Dyn Compatibility</a></h3><h3><a href="#implementors">Implementors</a></h3></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>expression_<wbr>methods</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">diesel</a>::<wbr><a href="index.html">expression_methods</a></div><h1>Trait <span class="trait">Aggregate<wbr>Expression<wbr>Methods</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/diesel/expression/functions/aggregate_expressions.rs.html#162-318">Source</a> </span></div><pre class="rust item-decl"><code>pub trait AggregateExpressionMethods: <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> {
+    // Provided methods
+    fn <a href="#method.aggregate_distinct" class="fn">aggregate_distinct</a>(self) -&gt; <a class="type" href="../dsl/type.AggregateDistinct.html" title="type diesel::dsl::AggregateDistinct">AggregateDistinct</a>&lt;Self&gt;
+       <span class="where">where Self: DistinctDsl</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.aggregate_all" class="fn">aggregate_all</a>(self) -&gt; <a class="type" href="../dsl/type.AggregateAll.html" title="type diesel::dsl::AggregateAll">AggregateAll</a>&lt;Self&gt;
+       <span class="where">where Self: AllDsl</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.aggregate_filter" class="fn">aggregate_filter</a>&lt;P&gt;(self, f: P) -&gt; <a class="type" href="../dsl/type.AggregateFilter.html" title="type diesel::dsl::AggregateFilter">AggregateFilter</a>&lt;Self, P&gt;
+       <span class="where">where P: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Bool.html" title="struct diesel::sql_types::Bool">Bool</a>&gt;,
+             Self: FilterDsl&lt;P::<a class="associatedtype" href="../expression/trait.AsExpression.html#associatedtype.Expression" title="type diesel::expression::AsExpression::Expression">Expression</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.aggregate_order" class="fn">aggregate_order</a>&lt;O&gt;(self, o: O) -&gt; <a class="type" href="../dsl/type.AggregateOrder.html" title="type diesel::dsl::AggregateOrder">AggregateOrder</a>&lt;Self, O&gt;
+       <span class="where">where Self: OrderAggregateDsl&lt;O&gt;</span> { ... }
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Expression methods to build aggregate function expressions</p>
+</div></details><h2 id="provided-methods" class="section-header">Provided Methods<a href="#provided-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="method.aggregate_distinct" class="method"><a class="src rightside" href="../../src/diesel/expression/functions/aggregate_expressions.rs.html#193-198">Source</a><h4 class="code-header">fn <a href="#method.aggregate_distinct" class="fn">aggregate_distinct</a>(self) -&gt; <a class="type" href="../dsl/type.AggregateDistinct.html" title="type diesel::dsl::AggregateDistinct">AggregateDistinct</a>&lt;Self&gt;<div class="where">where
+    Self: DistinctDsl,</div></h4></section></summary><div class="docblock"><p><code>DISTINCT</code> modifier for aggregate functions</p>
+<p>This modifies the aggregate function call to only
+include distinct items</p>
+<h5 id="example"><a class="doc-anchor" href="#example">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>without_distinct = posts
+    .select(dsl::count(user_id))
+    .get_result::&lt;i64&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>with_distinct = posts
+    .select(dsl::count(user_id).aggregate_distinct())
+    .get_result::&lt;i64&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="number">3</span>, without_distinct);
+<span class="macro">assert_eq!</span>(<span class="number">2</span>, with_distinct);</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.aggregate_all" class="method"><a class="src rightside" href="../../src/diesel/expression/functions/aggregate_expressions.rs.html#230-235">Source</a><h4 class="code-header">fn <a href="#method.aggregate_all" class="fn">aggregate_all</a>(self) -&gt; <a class="type" href="../dsl/type.AggregateAll.html" title="type diesel::dsl::AggregateAll">AggregateAll</a>&lt;Self&gt;<div class="where">where
+    Self: AllDsl,</div></h4></section></summary><div class="docblock"><p><code>ALL</code> modifier for aggregate functions</p>
+<p>This modifies the aggregate function call to include
+all items. This is the default behaviour.</p>
+<h5 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>without_all = posts
+    .select(dsl::count(user_id))
+    .get_result::&lt;i64&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>with_all = posts
+    .select(dsl::count(user_id).aggregate_all())
+    .get_result::&lt;i64&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="number">3</span>, without_all);
+<span class="macro">assert_eq!</span>(<span class="number">3</span>, with_all);</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.aggregate_filter" class="method"><a class="src rightside" href="../../src/diesel/expression/functions/aggregate_expressions.rs.html#270-276">Source</a><h4 class="code-header">fn <a href="#method.aggregate_filter" class="fn">aggregate_filter</a>&lt;P&gt;(self, f: P) -&gt; <a class="type" href="../dsl/type.AggregateFilter.html" title="type diesel::dsl::AggregateFilter">AggregateFilter</a>&lt;Self, P&gt;<div class="where">where
+    P: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../sql_types/struct.Bool.html" title="struct diesel::sql_types::Bool">Bool</a>&gt;,
+    Self: FilterDsl&lt;P::<a class="associatedtype" href="../expression/trait.AsExpression.html#associatedtype.Expression" title="type diesel::expression::AsExpression::Expression">Expression</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Add an aggregate function filter</p>
+<p>This function modifies an aggregate function
+call to use only items matching the provided
+filter</p>
+<h5 id="example-2"><a class="doc-anchor" href="#example-2">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>without_filter = posts
+    .select(dsl::count(user_id))
+    .get_result::&lt;i64&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>with_filter = posts
+    .select(dsl::count(user_id).aggregate_filter(title.like(<span class="string">"%first post%"</span>)))
+    .get_result::&lt;i64&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="number">3</span>, without_filter);
+<span class="macro">assert_eq!</span>(<span class="number">2</span>, with_filter);</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.aggregate_order" class="method"><a class="src rightside" href="../../src/diesel/expression/functions/aggregate_expressions.rs.html#312-317">Source</a><h4 class="code-header">fn <a href="#method.aggregate_order" class="fn">aggregate_order</a>&lt;O&gt;(self, o: O) -&gt; <a class="type" href="../dsl/type.AggregateOrder.html" title="type diesel::dsl::AggregateOrder">AggregateOrder</a>&lt;Self, O&gt;<div class="where">where
+    Self: OrderAggregateDsl&lt;O&gt;,</div></h4></section></summary><div class="docblock"><p>Add an aggregate function order</p>
+<p>This function orders the items passed into an
+aggregate function</p>
+<p>For sqlite this is only supported starting with SQLite 3.44</p>
+<h5 id="example-3"><a class="doc-anchor" href="#example-3">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// This example is not meaningful yet,
+// modify it as soon as we support more
+// meaningful functions here
+</span><span class="kw">let </span>res = posts
+    .select(dsl::count(user_id).aggregate_order(title))
+    .get_result::&lt;i64&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="number">3</span>, res);</code></pre></div></div></details></div><h2 id="dyn-compatibility" class="section-header">Dyn Compatibility<a href="#dyn-compatibility" class="anchor">§</a></h2><div class="dyn-compatibility-info"><p>This trait is <b>not</b> <a href="https://doc.rust-lang.org/nightly/reference/items/traits.html#dyn-compatibility">dyn compatible</a>.</p><p><i>In older versions of Rust, dyn compatibility was called "object safety", so this trait is not object safe.</i></p></div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"><div class="negative-marker"></div><section id="impl-AggregateExpressionMethods-for-T" class="impl"><a class="src rightside" href="../../src/diesel/expression/functions/aggregate_expressions.rs.html#320">Source</a><a href="#impl-AggregateExpressionMethods-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="trait.AggregateExpressionMethods.html" title="trait diesel::expression_methods::AggregateExpressionMethods">AggregateExpressionMethods</a> for T</h3></section></div><script src="../../trait.impl/diesel/expression/functions/aggregate_expressions/trait.AggregateExpressionMethods.js" async></script></section></div></main></body></html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/clap_builder-4.5.54/src/builder/arg_predicate.rs`."><title>arg_predicate.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="clap_builder" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../static.files/storage-f9617a14.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">clap_builder/builder/</div>arg_predicate.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><a href="os_str.rs.html#14-16"><span class="kw">crate</span>::builder::OsStr</a>;
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a><span class="doccomment">/// Operations to perform on argument values
+<a href=#4 id=4 data-nosnippet>4</a>///
+<a href=#5 id=5 data-nosnippet>5</a>/// These do not apply to [`ValueSource::DefaultValue`][crate::parser::ValueSource::DefaultValue]
+<a href=#6 id=6 data-nosnippet>6</a></span><span class="expansion"><input id=expand-6 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>ArgPredicate {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ArgPredicate {
+        <span class="kw">match </span><span class="self">self </span>{
+            ArgPredicate::IsPresent =&gt; ArgPredicate::IsPresent,
+            ArgPredicate::Equals(__self_0) =&gt;
+                ArgPredicate::Equals(::core::clone::Clone::clone(__self_0)),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>ArgPredicate {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">match </span><span class="self">self </span>{
+            ArgPredicate::IsPresent =&gt;
+                ::core::fmt::Formatter::write_str(f, <span class="string">"IsPresent"</span>),
+            ArgPredicate::Equals(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Equals"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>ArgPredicate {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>ArgPredicate) -&gt; bool {
+        <span class="kw">let </span>__self_discr = ::core::intrinsics::discriminant_value(<span class="self">self</span>);
+        <span class="kw">let </span>__arg1_discr = ::core::intrinsics::discriminant_value(other);
+        __self_discr == __arg1_discr &amp;&amp;
+            <span class="kw">match </span>(<span class="self">self</span>, other) {
+                (ArgPredicate::Equals(__self_0),
+                    ArgPredicate::Equals(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                <span class="kw">_ </span>=&gt; <span class="bool-val">true</span>,
+            }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>ArgPredicate {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_receiver_is_total_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;OsStr&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span></span></span><span class="attr">)]
+<a href=#7 id=7 data-nosnippet>7</a>#[cfg_attr(feature = <span class="string">"unstable-v5"</span>, non_exhaustive)]
+<a href=#8 id=8 data-nosnippet>8</a></span><span class="kw">pub enum </span><a href="../../../clap_builder/builder/enum.ArgPredicate.html">ArgPredicate</a> {
+<a href=#9 id=9 data-nosnippet>9</a>    <span class="doccomment">/// Is the argument present?
+<a href=#10 id=10 data-nosnippet>10</a>    </span>IsPresent,
+<a href=#11 id=11 data-nosnippet>11</a>    <span class="doccomment">/// Does the argument match the specified value?
+<a href=#12 id=12 data-nosnippet>12</a>    </span>Equals(<a href="os_str.rs.html#14-16">OsStr</a>),
+<a href=#13 id=13 data-nosnippet>13</a>}
+<a href=#14 id=14 data-nosnippet>14</a>
+<a href=#15 id=15 data-nosnippet>15</a><span class="kw">impl</span>&lt;S: <a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html">Into</a>&lt;<a href="os_str.rs.html#14-16">OsStr</a>&gt;&gt; <a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html">From</a>&lt;S&gt; <span class="kw">for </span><a href="#8-13">ArgPredicate</a> {
+<a href=#16 id=16 data-nosnippet>16</a>    <span class="kw">fn </span>from(other: S) -&gt; <span class="self">Self </span>{
+<a href=#17 id=17 data-nosnippet>17</a>        <span class="self">Self</span>::<a href="#12">Equals</a>(<a href="#16">other</a>.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html#tymethod.into">into</a>())
+<a href=#18 id=18 data-nosnippet>18</a>    }
+<a href=#19 id=19 data-nosnippet>19</a>}
+</code></pre></div></section></main></body></html>

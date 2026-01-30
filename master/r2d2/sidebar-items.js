@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["event"],"struct":["Builder","Error","Extensions","LoggingErrorHandler","NopConnectionCustomizer","NopErrorHandler","Pool","PooledConnection","State"],"trait":["CustomizeConnection","HandleError","ManageConnection"]};

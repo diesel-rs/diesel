@@ -1,0 +1,34 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Implements `Queryable` for types that correspond to a single SQL type. The type must implement `FromSql`."><title>FromSqlRow in diesel_derives - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel_derives" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc derive"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">FromSqlRow</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel_derives/index.html">diesel_<wbr>derives</a><span class="version">2.3.7</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">From<wbr>SqlRow</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#expanded-code" title="Expanded Code">Expanded Code</a><ul><li><a href="#input" title="Input">Input</a></li><li><a href="#expanded-code-1" title="Expanded Code">Expanded Code</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate diesel_<wbr>derives</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">diesel_derives</a></div><h1>Derive Macro <span class="derive">From<wbr>SqlRow</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/diesel_derives/lib.rs.html#266-268">Source</a> </span></div><pre class="rust item-decl"><code>#[derive(FromSqlRow)]
+{
+    <span class="comment">// Attributes available to this derive:</span>
+    #[diesel]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Implements <code>Queryable</code> for types that correspond to a single SQL type. The type must implement <code>FromSql</code>.</p>
+<p>This derive is mostly useful to implement support deserializing
+into rust types not supported by Diesel itself.</p>
+<p>There are no options or special considerations needed for this derive.</p>
+<h2 id="expanded-code"><a class="doc-anchor" href="#expanded-code">§</a>Expanded Code</h2><details>
+<summary> Expanded Code </summary>
+<h5 id="input"><a class="doc-anchor" href="#input">§</a>Input</h5>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(FromSqlRow)]
+</span><span class="kw">enum </span>Foo {
+    Bar,
+    Baz,
+}
+</code></pre></div><h5 id="expanded-code-1"><a class="doc-anchor" href="#expanded-code-1">§</a>Expanded Code</h5><div class="warning">Expanded code might use diesel internal API's and is only shown for educational purpose</div>
+<p>The macro expands the input to the following Rust code:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">const _</span>: () = {
+    <span class="kw">use </span>diesel;
+    <span class="kw">impl</span>&lt;__DB, __ST&gt; diesel::deserialize::Queryable&lt;__ST, __DB&gt; <span class="kw">for </span>Foo
+    <span class="kw">where
+        </span>__DB: diesel::backend::Backend,
+        __ST: diesel::sql_types::SingleValue,
+        <span class="self">Self</span>: diesel::deserialize::FromSql&lt;__ST, __DB&gt;,
+    {
+        <span class="kw">type </span>Row = <span class="self">Self</span>;
+        <span class="kw">fn </span>build(row: <span class="self">Self</span>) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+            diesel::deserialize::Result::Ok(row)
+        }
+    }
+};</code></pre></div></details></div></details></section></div></main></body></html>

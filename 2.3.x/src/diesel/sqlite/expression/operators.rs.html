@@ -1,0 +1,329 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `diesel/src/sqlite/expression/operators.rs`."><title>operators.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../static.files/storage-f9617a14.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">diesel/sqlite/expression/</div>operators.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-1"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><a href="../../sql_types/mod.rs.html#44"><span class="kw">crate</span>::sql_types::Bool</a>;
+<a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span><a href="../backend.rs.html#10"><span class="kw">crate</span>::sqlite::Sqlite</a>;
+<a href=#3 id=3 data-nosnippet>3</a>
+<a href=#4 id=4 data-nosnippet>4</a><span class="expansion"><input id=expand-4 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[doc(hidden)]
+</span><span class="kw">pub struct </span>Is&lt;T, U&gt; {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) left: T,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) right: U,
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;T: ::core::fmt::Debug, U: ::core::fmt::Debug&gt; ::core::fmt::Debug <span class="kw">for
+    </span>Is&lt;T, U&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field2_finish(f, <span class="string">"Is"</span>, <span class="string">"left"</span>,
+            <span class="kw-2">&amp;</span><span class="self">self</span>.left, <span class="string">"right"</span>, &amp;&amp;<span class="self">self</span>.right)
+    }
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;T: ::core::clone::Clone, U: ::core::clone::Clone&gt; ::core::clone::Clone
+    <span class="kw">for </span>Is&lt;T, U&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Is&lt;T, U&gt; {
+        Is {
+            left: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.left),
+            right: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.right),
+        }
+    }
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;T: ::core::marker::Copy, U: ::core::marker::Copy&gt; ::core::marker::Copy
+    <span class="kw">for </span>Is&lt;T, U&gt; {
+}
+<span class="kw">const _</span>: () =
+    {
+        <span class="kw">use </span>diesel;
+        <span class="attr">#[allow(non_camel_case_types)]
+        </span><span class="kw">impl</span>&lt;T: diesel::query_builder::QueryId,
+            U: diesel::query_builder::QueryId&gt; diesel::query_builder::QueryId
+            <span class="kw">for </span>Is&lt;T, U&gt; {
+            <span class="kw">type </span>QueryId =
+                Is&lt;&lt;T <span class="kw">as </span>diesel::query_builder::QueryId&gt;::QueryId,
+                &lt;U <span class="kw">as </span>diesel::query_builder::QueryId&gt;::QueryId&gt;;
+            <span class="kw">const </span>HAS_STATIC_QUERY_ID: bool =
+                &lt;T <span class="kw">as </span>diesel::query_builder::QueryId&gt;::HAS_STATIC_QUERY_ID &amp;&amp;
+                        &lt;U <span class="kw">as </span>diesel::query_builder::QueryId&gt;::HAS_STATIC_QUERY_ID
+                    &amp;&amp; <span class="bool-val">true</span>;
+            <span class="kw">const </span>IS_WINDOW_FUNCTION: bool =
+                &lt;T <span class="kw">as </span>diesel::query_builder::QueryId&gt;::IS_WINDOW_FUNCTION ||
+                        &lt;U <span class="kw">as </span>diesel::query_builder::QueryId&gt;::IS_WINDOW_FUNCTION ||
+                    <span class="bool-val">false</span>;
+        }
+    };
+<span class="kw">const _</span>: () =
+    {
+        <span class="kw">use </span>diesel;
+        <span class="kw">use </span>diesel::internal::derives::numeric_ops <span class="kw">as </span>ops;
+        <span class="kw">use </span>diesel::expression::{Expression, AsExpression};
+        <span class="kw">use </span>diesel::sql_types::ops::{Add, Sub, Mul, Div};
+        <span class="kw">use </span>diesel::sql_types::{SqlType, SingleValue};
+        <span class="kw">impl</span>&lt;T, U, __Rhs&gt; ::std::ops::Add&lt;__Rhs&gt; <span class="kw">for </span>Is&lt;T, U&gt; <span class="kw">where
+            </span><span class="self">Self</span>: Expression, <span class="self">Self</span>: Expression,
+            &lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType: Add,
+            &lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Add&gt;::Rhs: SqlType +
+            SingleValue,
+            __Rhs: AsExpression&lt;&lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Add&gt;::Rhs&gt; {
+            <span class="kw">type </span>Output = ops::Add&lt;<span class="self">Self</span>, __Rhs::Expression&gt;;
+            <span class="kw">fn </span>add(<span class="self">self</span>, rhs: __Rhs) -&gt; <span class="self">Self</span>::Output {
+                ops::Add::new(<span class="self">self</span>, rhs.as_expression())
+            }
+        }
+        <span class="kw">impl</span>&lt;T, U, __Rhs&gt; ::std::ops::Sub&lt;__Rhs&gt; <span class="kw">for </span>Is&lt;T, U&gt; <span class="kw">where
+            </span><span class="self">Self</span>: Expression, <span class="self">Self</span>: Expression,
+            &lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType: Sub,
+            &lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Sub&gt;::Rhs: SqlType +
+            SingleValue,
+            __Rhs: AsExpression&lt;&lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Sub&gt;::Rhs&gt; {
+            <span class="kw">type </span>Output = ops::Sub&lt;<span class="self">Self</span>, __Rhs::Expression&gt;;
+            <span class="kw">fn </span>sub(<span class="self">self</span>, rhs: __Rhs) -&gt; <span class="self">Self</span>::Output {
+                ops::Sub::new(<span class="self">self</span>, rhs.as_expression())
+            }
+        }
+        <span class="kw">impl</span>&lt;T, U, __Rhs&gt; ::std::ops::Mul&lt;__Rhs&gt; <span class="kw">for </span>Is&lt;T, U&gt; <span class="kw">where
+            </span><span class="self">Self</span>: Expression, <span class="self">Self</span>: Expression,
+            &lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType: Mul,
+            &lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Mul&gt;::Rhs: SqlType +
+            SingleValue,
+            __Rhs: AsExpression&lt;&lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Mul&gt;::Rhs&gt; {
+            <span class="kw">type </span>Output = ops::Mul&lt;<span class="self">Self</span>, __Rhs::Expression&gt;;
+            <span class="kw">fn </span>mul(<span class="self">self</span>, rhs: __Rhs) -&gt; <span class="self">Self</span>::Output {
+                ops::Mul::new(<span class="self">self</span>, rhs.as_expression())
+            }
+        }
+        <span class="kw">impl</span>&lt;T, U, __Rhs&gt; ::std::ops::Div&lt;__Rhs&gt; <span class="kw">for </span>Is&lt;T, U&gt; <span class="kw">where
+            </span><span class="self">Self</span>: Expression, <span class="self">Self</span>: Expression,
+            &lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType: Div,
+            &lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Div&gt;::Rhs: SqlType +
+            SingleValue,
+            __Rhs: AsExpression&lt;&lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Div&gt;::Rhs&gt; {
+            <span class="kw">type </span>Output = ops::Div&lt;<span class="self">Self</span>, __Rhs::Expression&gt;;
+            <span class="kw">fn </span>div(<span class="self">self</span>, rhs: __Rhs) -&gt; <span class="self">Self</span>::Output {
+                ops::Div::new(<span class="self">self</span>, rhs.as_expression())
+            }
+        }
+    };
+<span class="kw">const _</span>: () =
+    {
+        <span class="kw">use </span>diesel;
+        <span class="kw">impl</span>&lt;T, U, __GroupByClause&gt;
+            diesel::expression::ValidGrouping&lt;__GroupByClause&gt; <span class="kw">for </span>Is&lt;T, U&gt;
+            <span class="kw">where </span>T: diesel::expression::ValidGrouping&lt;__GroupByClause&gt;,
+            U: diesel::expression::ValidGrouping&lt;__GroupByClause&gt;,
+            &lt;T <span class="kw">as
+            </span>diesel::expression::ValidGrouping&lt;__GroupByClause&gt;&gt;::IsAggregate: diesel::expression::MixedAggregates&lt;&lt;U
+            <span class="kw">as
+            </span>diesel::expression::ValidGrouping&lt;__GroupByClause&gt;&gt;::IsAggregate&gt;
+            {
+            <span class="kw">type </span>IsAggregate =
+                &lt;&lt;T <span class="kw">as
+                </span>diesel::expression::ValidGrouping&lt;__GroupByClause&gt;&gt;::IsAggregate
+                <span class="kw">as
+                </span>diesel::expression::MixedAggregates&lt;&lt;U <span class="kw">as
+                </span>diesel::expression::ValidGrouping&lt;__GroupByClause&gt;&gt;::IsAggregate&gt;&gt;::Output;
+        }
+    };
+<span class="kw">impl</span>&lt;T, U&gt; Is&lt;T, U&gt; {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(left: T, right: U) -&gt; <span class="self">Self </span>{ Is { left, right } }
+}
+<span class="kw">impl</span>&lt;T, U, QS&gt; <span class="kw">crate</span>::expression::SelectableExpression&lt;QS&gt; <span class="kw">for </span>Is&lt;T, U&gt; <span class="kw">where
+    </span>Is&lt;T, U&gt;: <span class="kw">crate</span>::expression::AppearsOnTable&lt;QS&gt;,
+    T: <span class="kw">crate</span>::expression::SelectableExpression&lt;QS&gt;,
+    U: <span class="kw">crate</span>::expression::SelectableExpression&lt;QS&gt; {}
+<span class="kw">impl</span>&lt;T, U, QS&gt; <span class="kw">crate</span>::expression::AppearsOnTable&lt;QS&gt; <span class="kw">for </span>Is&lt;T, U&gt; <span class="kw">where
+    </span>Is&lt;T, U&gt;: <span class="kw">crate</span>::expression::Expression,
+    T: <span class="kw">crate</span>::expression::AppearsOnTable&lt;QS&gt;,
+    U: <span class="kw">crate</span>::expression::AppearsOnTable&lt;QS&gt; {}
+<span class="kw">impl</span>&lt;T, U&gt; <span class="kw">crate</span>::expression::Expression <span class="kw">for </span>Is&lt;T, U&gt; <span class="kw">where
+    </span>T: <span class="kw">crate</span>::expression::Expression, U: <span class="kw">crate</span>::expression::Expression,
+    &lt;T <span class="kw">as </span><span class="kw">crate</span>::expression::Expression&gt;::SqlType: <span class="kw">crate</span>::sql_types::SqlType,
+    &lt;U <span class="kw">as </span><span class="kw">crate</span>::expression::Expression&gt;::SqlType: <span class="kw">crate</span>::sql_types::SqlType {
+    <span class="kw">type </span>SqlType = Bool;
+}
+<span class="kw">impl</span>&lt;T, U&gt; <span class="kw">crate</span>::query_builder::QueryFragment&lt;Sqlite&gt; <span class="kw">for </span>Is&lt;T, U&gt; <span class="kw">where
+    </span>T: <span class="kw">crate</span>::query_builder::QueryFragment&lt;Sqlite&gt;,
+    U: <span class="kw">crate</span>::query_builder::QueryFragment&lt;Sqlite&gt; {
+    <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+        <span class="kw-2">mut </span>out: <span class="kw">crate</span>::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, Sqlite&gt;)
+        -&gt; <span class="kw">crate</span>::result::QueryResult&lt;()&gt; {
+        <span class="self">self</span>.left.walk_ast(out.reborrow())<span class="question-mark">?</span>;
+        out.push_sql(<span class="string">" IS "</span>);
+        <span class="self">self</span>.right.walk_ast(out.reborrow())<span class="question-mark">?</span>;
+        ;
+        <span class="prelude-val">Ok</span>(())
+    }
+}
+<span class="kw">impl</span>&lt;S, T, U&gt; <span class="kw">crate</span>::internal::operators_macro::FieldAliasMapper&lt;S&gt; <span class="kw">for
+    </span>Is&lt;T, U&gt; <span class="kw">where </span>S: <span class="kw">crate</span>::query_source::AliasSource,
+    T: <span class="kw">crate</span>::internal::operators_macro::FieldAliasMapper&lt;S&gt;,
+    U: <span class="kw">crate</span>::internal::operators_macro::FieldAliasMapper&lt;S&gt; {
+    <span class="kw">type </span>Out =
+        Is&lt;&lt;T <span class="kw">as </span><span class="kw">crate</span>::internal::operators_macro::FieldAliasMapper&lt;S&gt;&gt;::Out,
+        &lt;U <span class="kw">as </span><span class="kw">crate</span>::internal::operators_macro::FieldAliasMapper&lt;S&gt;&gt;::Out&gt;;
+    <span class="kw">fn </span>map(<span class="self">self</span>, alias: <span class="kw-2">&amp;</span><span class="kw">crate</span>::query_source::Alias&lt;S&gt;) -&gt; <span class="self">Self</span>::Out {
+        Is { left: <span class="self">self</span>.left.map(alias), right: <span class="self">self</span>.right.map(alias) }
+    }
+}</span><span class="original"><a href="../../expression/operators.rs.html#267-377">__diesel_infix_operator!</a>(<a href="#4">Is</a>, <span class="string">" IS "</span>, ConstantNullability <a href="../../sql_types/mod.rs.html#44">Bool</a>, backend: Sqlite)</span></span>;
+<a href=#5 id=5 data-nosnippet>5</a><span class="expansion"><input id=expand-5 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[doc(hidden)]
+</span><span class="kw">pub struct </span>IsNot&lt;T, U&gt; {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) left: T,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) right: U,
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;T: ::core::fmt::Debug, U: ::core::fmt::Debug&gt; ::core::fmt::Debug <span class="kw">for
+    </span>IsNot&lt;T, U&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field2_finish(f, <span class="string">"IsNot"</span>, <span class="string">"left"</span>,
+            <span class="kw-2">&amp;</span><span class="self">self</span>.left, <span class="string">"right"</span>, &amp;&amp;<span class="self">self</span>.right)
+    }
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;T: ::core::clone::Clone, U: ::core::clone::Clone&gt; ::core::clone::Clone
+    <span class="kw">for </span>IsNot&lt;T, U&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; IsNot&lt;T, U&gt; {
+        IsNot {
+            left: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.left),
+            right: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.right),
+        }
+    }
+}
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;T: ::core::marker::Copy, U: ::core::marker::Copy&gt; ::core::marker::Copy
+    <span class="kw">for </span>IsNot&lt;T, U&gt; {
+}
+<span class="kw">const _</span>: () =
+    {
+        <span class="kw">use </span>diesel;
+        <span class="attr">#[allow(non_camel_case_types)]
+        </span><span class="kw">impl</span>&lt;T: diesel::query_builder::QueryId,
+            U: diesel::query_builder::QueryId&gt; diesel::query_builder::QueryId
+            <span class="kw">for </span>IsNot&lt;T, U&gt; {
+            <span class="kw">type </span>QueryId =
+                IsNot&lt;&lt;T <span class="kw">as </span>diesel::query_builder::QueryId&gt;::QueryId,
+                &lt;U <span class="kw">as </span>diesel::query_builder::QueryId&gt;::QueryId&gt;;
+            <span class="kw">const </span>HAS_STATIC_QUERY_ID: bool =
+                &lt;T <span class="kw">as </span>diesel::query_builder::QueryId&gt;::HAS_STATIC_QUERY_ID &amp;&amp;
+                        &lt;U <span class="kw">as </span>diesel::query_builder::QueryId&gt;::HAS_STATIC_QUERY_ID
+                    &amp;&amp; <span class="bool-val">true</span>;
+            <span class="kw">const </span>IS_WINDOW_FUNCTION: bool =
+                &lt;T <span class="kw">as </span>diesel::query_builder::QueryId&gt;::IS_WINDOW_FUNCTION ||
+                        &lt;U <span class="kw">as </span>diesel::query_builder::QueryId&gt;::IS_WINDOW_FUNCTION ||
+                    <span class="bool-val">false</span>;
+        }
+    };
+<span class="kw">const _</span>: () =
+    {
+        <span class="kw">use </span>diesel;
+        <span class="kw">use </span>diesel::internal::derives::numeric_ops <span class="kw">as </span>ops;
+        <span class="kw">use </span>diesel::expression::{Expression, AsExpression};
+        <span class="kw">use </span>diesel::sql_types::ops::{Add, Sub, Mul, Div};
+        <span class="kw">use </span>diesel::sql_types::{SqlType, SingleValue};
+        <span class="kw">impl</span>&lt;T, U, __Rhs&gt; ::std::ops::Add&lt;__Rhs&gt; <span class="kw">for </span>IsNot&lt;T, U&gt; <span class="kw">where
+            </span><span class="self">Self</span>: Expression, <span class="self">Self</span>: Expression,
+            &lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType: Add,
+            &lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Add&gt;::Rhs: SqlType +
+            SingleValue,
+            __Rhs: AsExpression&lt;&lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Add&gt;::Rhs&gt; {
+            <span class="kw">type </span>Output = ops::Add&lt;<span class="self">Self</span>, __Rhs::Expression&gt;;
+            <span class="kw">fn </span>add(<span class="self">self</span>, rhs: __Rhs) -&gt; <span class="self">Self</span>::Output {
+                ops::Add::new(<span class="self">self</span>, rhs.as_expression())
+            }
+        }
+        <span class="kw">impl</span>&lt;T, U, __Rhs&gt; ::std::ops::Sub&lt;__Rhs&gt; <span class="kw">for </span>IsNot&lt;T, U&gt; <span class="kw">where
+            </span><span class="self">Self</span>: Expression, <span class="self">Self</span>: Expression,
+            &lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType: Sub,
+            &lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Sub&gt;::Rhs: SqlType +
+            SingleValue,
+            __Rhs: AsExpression&lt;&lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Sub&gt;::Rhs&gt; {
+            <span class="kw">type </span>Output = ops::Sub&lt;<span class="self">Self</span>, __Rhs::Expression&gt;;
+            <span class="kw">fn </span>sub(<span class="self">self</span>, rhs: __Rhs) -&gt; <span class="self">Self</span>::Output {
+                ops::Sub::new(<span class="self">self</span>, rhs.as_expression())
+            }
+        }
+        <span class="kw">impl</span>&lt;T, U, __Rhs&gt; ::std::ops::Mul&lt;__Rhs&gt; <span class="kw">for </span>IsNot&lt;T, U&gt; <span class="kw">where
+            </span><span class="self">Self</span>: Expression, <span class="self">Self</span>: Expression,
+            &lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType: Mul,
+            &lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Mul&gt;::Rhs: SqlType +
+            SingleValue,
+            __Rhs: AsExpression&lt;&lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Mul&gt;::Rhs&gt; {
+            <span class="kw">type </span>Output = ops::Mul&lt;<span class="self">Self</span>, __Rhs::Expression&gt;;
+            <span class="kw">fn </span>mul(<span class="self">self</span>, rhs: __Rhs) -&gt; <span class="self">Self</span>::Output {
+                ops::Mul::new(<span class="self">self</span>, rhs.as_expression())
+            }
+        }
+        <span class="kw">impl</span>&lt;T, U, __Rhs&gt; ::std::ops::Div&lt;__Rhs&gt; <span class="kw">for </span>IsNot&lt;T, U&gt; <span class="kw">where
+            </span><span class="self">Self</span>: Expression, <span class="self">Self</span>: Expression,
+            &lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType: Div,
+            &lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Div&gt;::Rhs: SqlType +
+            SingleValue,
+            __Rhs: AsExpression&lt;&lt;&lt;<span class="self">Self </span><span class="kw">as </span>Expression&gt;::SqlType <span class="kw">as </span>Div&gt;::Rhs&gt; {
+            <span class="kw">type </span>Output = ops::Div&lt;<span class="self">Self</span>, __Rhs::Expression&gt;;
+            <span class="kw">fn </span>div(<span class="self">self</span>, rhs: __Rhs) -&gt; <span class="self">Self</span>::Output {
+                ops::Div::new(<span class="self">self</span>, rhs.as_expression())
+            }
+        }
+    };
+<span class="kw">const _</span>: () =
+    {
+        <span class="kw">use </span>diesel;
+        <span class="kw">impl</span>&lt;T, U, __GroupByClause&gt;
+            diesel::expression::ValidGrouping&lt;__GroupByClause&gt; <span class="kw">for </span>IsNot&lt;T, U&gt;
+            <span class="kw">where </span>T: diesel::expression::ValidGrouping&lt;__GroupByClause&gt;,
+            U: diesel::expression::ValidGrouping&lt;__GroupByClause&gt;,
+            &lt;T <span class="kw">as
+            </span>diesel::expression::ValidGrouping&lt;__GroupByClause&gt;&gt;::IsAggregate: diesel::expression::MixedAggregates&lt;&lt;U
+            <span class="kw">as
+            </span>diesel::expression::ValidGrouping&lt;__GroupByClause&gt;&gt;::IsAggregate&gt;
+            {
+            <span class="kw">type </span>IsAggregate =
+                &lt;&lt;T <span class="kw">as
+                </span>diesel::expression::ValidGrouping&lt;__GroupByClause&gt;&gt;::IsAggregate
+                <span class="kw">as
+                </span>diesel::expression::MixedAggregates&lt;&lt;U <span class="kw">as
+                </span>diesel::expression::ValidGrouping&lt;__GroupByClause&gt;&gt;::IsAggregate&gt;&gt;::Output;
+        }
+    };
+<span class="kw">impl</span>&lt;T, U&gt; IsNot&lt;T, U&gt; {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(left: T, right: U) -&gt; <span class="self">Self </span>{ IsNot { left, right } }
+}
+<span class="kw">impl</span>&lt;T, U, QS&gt; <span class="kw">crate</span>::expression::SelectableExpression&lt;QS&gt; <span class="kw">for </span>IsNot&lt;T, U&gt;
+    <span class="kw">where </span>IsNot&lt;T, U&gt;: <span class="kw">crate</span>::expression::AppearsOnTable&lt;QS&gt;,
+    T: <span class="kw">crate</span>::expression::SelectableExpression&lt;QS&gt;,
+    U: <span class="kw">crate</span>::expression::SelectableExpression&lt;QS&gt; {}
+<span class="kw">impl</span>&lt;T, U, QS&gt; <span class="kw">crate</span>::expression::AppearsOnTable&lt;QS&gt; <span class="kw">for </span>IsNot&lt;T, U&gt; <span class="kw">where
+    </span>IsNot&lt;T, U&gt;: <span class="kw">crate</span>::expression::Expression,
+    T: <span class="kw">crate</span>::expression::AppearsOnTable&lt;QS&gt;,
+    U: <span class="kw">crate</span>::expression::AppearsOnTable&lt;QS&gt; {}
+<span class="kw">impl</span>&lt;T, U&gt; <span class="kw">crate</span>::expression::Expression <span class="kw">for </span>IsNot&lt;T, U&gt; <span class="kw">where
+    </span>T: <span class="kw">crate</span>::expression::Expression, U: <span class="kw">crate</span>::expression::Expression,
+    &lt;T <span class="kw">as </span><span class="kw">crate</span>::expression::Expression&gt;::SqlType: <span class="kw">crate</span>::sql_types::SqlType,
+    &lt;U <span class="kw">as </span><span class="kw">crate</span>::expression::Expression&gt;::SqlType: <span class="kw">crate</span>::sql_types::SqlType {
+    <span class="kw">type </span>SqlType = Bool;
+}
+<span class="kw">impl</span>&lt;T, U&gt; <span class="kw">crate</span>::query_builder::QueryFragment&lt;Sqlite&gt; <span class="kw">for </span>IsNot&lt;T, U&gt; <span class="kw">where
+    </span>T: <span class="kw">crate</span>::query_builder::QueryFragment&lt;Sqlite&gt;,
+    U: <span class="kw">crate</span>::query_builder::QueryFragment&lt;Sqlite&gt; {
+    <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+        <span class="kw-2">mut </span>out: <span class="kw">crate</span>::query_builder::AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, Sqlite&gt;)
+        -&gt; <span class="kw">crate</span>::result::QueryResult&lt;()&gt; {
+        <span class="self">self</span>.left.walk_ast(out.reborrow())<span class="question-mark">?</span>;
+        out.push_sql(<span class="string">" IS NOT "</span>);
+        <span class="self">self</span>.right.walk_ast(out.reborrow())<span class="question-mark">?</span>;
+        ;
+        <span class="prelude-val">Ok</span>(())
+    }
+}
+<span class="kw">impl</span>&lt;S, T, U&gt; <span class="kw">crate</span>::internal::operators_macro::FieldAliasMapper&lt;S&gt; <span class="kw">for
+    </span>IsNot&lt;T, U&gt; <span class="kw">where </span>S: <span class="kw">crate</span>::query_source::AliasSource,
+    T: <span class="kw">crate</span>::internal::operators_macro::FieldAliasMapper&lt;S&gt;,
+    U: <span class="kw">crate</span>::internal::operators_macro::FieldAliasMapper&lt;S&gt; {
+    <span class="kw">type </span>Out =
+        IsNot&lt;&lt;T <span class="kw">as
+        </span><span class="kw">crate</span>::internal::operators_macro::FieldAliasMapper&lt;S&gt;&gt;::Out,
+        &lt;U <span class="kw">as </span><span class="kw">crate</span>::internal::operators_macro::FieldAliasMapper&lt;S&gt;&gt;::Out&gt;;
+    <span class="kw">fn </span>map(<span class="self">self</span>, alias: <span class="kw-2">&amp;</span><span class="kw">crate</span>::query_source::Alias&lt;S&gt;) -&gt; <span class="self">Self</span>::Out {
+        IsNot { left: <span class="self">self</span>.left.map(alias), right: <span class="self">self</span>.right.map(alias) }
+    }
+}</span><span class="original"><a href="../../expression/operators.rs.html#267-377">__diesel_infix_operator!</a>(<a href="#5">IsNot</a>, <span class="string">" IS NOT "</span>, ConstantNullability <a href="../../sql_types/mod.rs.html#44">Bool</a>, backend: Sqlite)</span></span>;
+</code></pre></div></section></main></body></html>

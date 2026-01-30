@@ -1,0 +1,1398 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `diesel/src/pg/types/record.rs`."><title>record.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../static.files/storage-f9617a14.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">diesel/pg/types/</div>record.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span>byteorder::<span class="kw-2">*</span>;
+<a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/num/nonzero/type.NonZeroU32.html">core::num::NonZeroU32</a>;
+<a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/std/io/trait.Write.html">std::io::Write</a>;
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><span class="kw">crate</span>::deserialize::{<a class="self" href="../../lib.rs.html#312">self</a>, <a href="../../deserialize.rs.html#457-475">FromSql</a>, <a href="../../../../diesel/deserialize/derive.Queryable.html">Queryable</a>};
+<a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span><span class="kw">crate</span>::expression::{
+<a href=#7 id=7 data-nosnippet>7</a>    <a href="../../expression/mod.rs.html#322">AppearsOnTable</a>, <a href="../../../../diesel/expression/derive.AsExpression.html">AsExpression</a>, <a href="../../expression/mod.rs.html#133-136">Expression</a>, <a href="../../expression/mod.rs.html#351">SelectableExpression</a>, <a href="../../expression/mod.rs.html#139">TypedExpressionType</a>,
+<a href=#8 id=8 data-nosnippet>8</a>    <a href="../../../../diesel/expression/derive.ValidGrouping.html">ValidGrouping</a>,
+<a href=#9 id=9 data-nosnippet>9</a>};
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span><span class="kw">crate</span>::pg::{<a href="../backend.rs.html#14">Pg</a>, <a href="../value.rs.html#8-11">PgValue</a>};
+<a href=#11 id=11 data-nosnippet>11</a><span class="kw">use </span><a href="../../query_builder/bind_collector.rs.html#191"><span class="kw">crate</span>::query_builder::bind_collector::ByteWrapper</a>;
+<a href=#12 id=12 data-nosnippet>12</a><span class="kw">use </span><span class="kw">crate</span>::query_builder::{<a href="../../query_builder/ast_pass.rs.html#25-34">AstPass</a>, <a href="../../query_builder/mod.rs.html#228-298">QueryFragment</a>, <a href="../../../../diesel/query_builder/derive.QueryId.html">QueryId</a>};
+<a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span><a href="../../result.rs.html#288"><span class="kw">crate</span>::result::QueryResult</a>;
+<a href=#14 id=14 data-nosnippet>14</a><span class="kw">use </span><span class="kw">crate</span>::serialize::{<a class="self" href="../../lib.rs.html#324">self</a>, <a href="../../serialize.rs.html#22-31">IsNull</a>, <a href="../../serialize.rs.html#35-42">Output</a>, <a href="../../serialize.rs.html#322-325">ToSql</a>, <a href="../serialize/write_tuple.rs.html#39-42">WriteTuple</a>};
+<a href=#15 id=15 data-nosnippet>15</a><span class="kw">use </span><span class="kw">crate</span>::sql_types::{<a href="../../sql_types/mod.rs.html#577-583">HasSqlType</a>, <a href="mod.rs.html#302">Record</a>, <a href="../../../../diesel/sql_types/derive.SqlType.html">SqlType</a>};
+<a href=#16 id=16 data-nosnippet>16</a>
+<a href=#17 id=17 data-nosnippet>17</a><span class="macro">macro_rules!</span> tuple_impls {
+<a href=#18 id=18 data-nosnippet>18</a>    ($(
+<a href=#19 id=19 data-nosnippet>19</a>        <span class="macro-nonterminal">$Tuple</span>:tt {
+<a href=#20 id=20 data-nosnippet>20</a>            $((<span class="macro-nonterminal">$idx</span>:tt) -&gt; <span class="macro-nonterminal">$T</span>:ident, <span class="macro-nonterminal">$ST</span>:ident, <span class="macro-nonterminal">$TT</span>:ident,)+
+<a href=#21 id=21 data-nosnippet>21</a>        }
+<a href=#22 id=22 data-nosnippet>22</a>    )+) =&gt; {$(
+<a href=#23 id=23 data-nosnippet>23</a>        <span class="attr">#[cfg(feature = <span class="string">"postgres_backend"</span>)]
+<a href=#24 id=24 data-nosnippet>24</a>        </span><span class="kw">impl</span>&lt;$(<span class="macro-nonterminal">$T</span>,)+ $(<span class="macro-nonterminal">$ST</span>,)+&gt; FromSql&lt;Record&lt;($(<span class="macro-nonterminal">$ST</span>,)+)&gt;, Pg&gt; <span class="kw">for </span>($(<span class="macro-nonterminal">$T</span>,)+)
+<a href=#25 id=25 data-nosnippet>25</a>        <span class="kw">where
+<a href=#26 id=26 data-nosnippet>26</a>            </span>$(<span class="macro-nonterminal">$T</span>: FromSql&lt;<span class="macro-nonterminal">$ST</span>, Pg&gt;,)+
+<a href=#27 id=27 data-nosnippet>27</a>        {
+<a href=#28 id=28 data-nosnippet>28</a>            <span class="comment">// Yes, we're relying on the order of evaluation of subexpressions
+<a href=#29 id=29 data-nosnippet>29</a>            // but the only other option would be to use `mem::uninitialized`
+<a href=#30 id=30 data-nosnippet>30</a>            // and `ptr::write`.
+<a href=#31 id=31 data-nosnippet>31</a>            </span><span class="attr">#[allow(clippy::mixed_read_write_in_expression)]
+<a href=#32 id=32 data-nosnippet>32</a>            </span><span class="kw">fn </span>from_sql(value: <a href="../value.rs.html#8-11">PgValue</a>&lt;<span class="lifetime">'_</span>&gt;) -&gt; deserialize::<a href="../../deserialize.rs.html#14">Result</a>&lt;<span class="self">Self</span>&gt; {
+<a href=#33 id=33 data-nosnippet>33</a>                <span class="kw">let </span><span class="kw-2">mut </span>bytes = value.as_bytes();
+<a href=#34 id=34 data-nosnippet>34</a>                <span class="kw">let </span>num_elements = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+<a href=#35 id=35 data-nosnippet>35</a>
+<a href=#36 id=36 data-nosnippet>36</a>                <span class="kw">if </span><span class="macro">num_elements !</span>= <span class="macro-nonterminal">$Tuple </span>{
+<a href=#37 id=37 data-nosnippet>37</a>                    <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">format!</span>(
+<a href=#38 id=38 data-nosnippet>38</a>                        <span class="string">"Expected a tuple of {} elements, got {}"</span>,
+<a href=#39 id=39 data-nosnippet>39</a>                        <span class="macro-nonterminal">$Tuple</span>,
+<a href=#40 id=40 data-nosnippet>40</a>                        num_elements,
+<a href=#41 id=41 data-nosnippet>41</a>                    ).into());
+<a href=#42 id=42 data-nosnippet>42</a>                }
+<a href=#43 id=43 data-nosnippet>43</a>
+<a href=#44 id=44 data-nosnippet>44</a>                <span class="kw">let </span>result = ($({
+<a href=#45 id=45 data-nosnippet>45</a>                    <span class="comment">// We could in theory validate the OID here, but that
+<a href=#46 id=46 data-nosnippet>46</a>                    // ignores cases like text vs varchar where the
+<a href=#47 id=47 data-nosnippet>47</a>                    // representation is the same and we don't care which we
+<a href=#48 id=48 data-nosnippet>48</a>                    // got.
+<a href=#49 id=49 data-nosnippet>49</a>                    </span><span class="kw">let </span>oid = NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+<a href=#50 id=50 data-nosnippet>50</a>                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+<a href=#51 id=51 data-nosnippet>51</a>
+<a href=#52 id=52 data-nosnippet>52</a>                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+<a href=#53 id=53 data-nosnippet>53</a>                        <span class="macro-nonterminal">$T::from_nullable_sql</span>(<span class="prelude-val">None</span>)<span class="question-mark">?
+<a href=#54 id=54 data-nosnippet>54</a>                    </span>} <span class="kw">else </span>{
+<a href=#55 id=55 data-nosnippet>55</a>                        <span class="kw">let </span>(elem_bytes, new_bytes) = bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+<a href=#56 id=56 data-nosnippet>56</a>                        bytes = new_bytes;
+<a href=#57 id=57 data-nosnippet>57</a>                        <span class="macro-nonterminal">$T::from_sql</span>(PgValue::new_internal(
+<a href=#58 id=58 data-nosnippet>58</a>                            elem_bytes,
+<a href=#59 id=59 data-nosnippet>59</a>                            <span class="kw-2">&amp;</span>oid,
+<a href=#60 id=60 data-nosnippet>60</a>                        ))<span class="question-mark">?
+<a href=#61 id=61 data-nosnippet>61</a>                    </span>}
+<a href=#62 id=62 data-nosnippet>62</a>                },)+);
+<a href=#63 id=63 data-nosnippet>63</a>
+<a href=#64 id=64 data-nosnippet>64</a>                <span class="kw">if </span>bytes.is_empty() {
+<a href=#65 id=65 data-nosnippet>65</a>                    <span class="prelude-val">Ok</span>(result)
+<a href=#66 id=66 data-nosnippet>66</a>                } <span class="kw">else </span>{
+<a href=#67 id=67 data-nosnippet>67</a>                    <span class="prelude-val">Err</span>(<span class="string">"Received too many bytes. This tuple likely contains \
+<a href=#68 id=68 data-nosnippet>68</a>                        an element of the wrong SQL type."</span>.into())
+<a href=#69 id=69 data-nosnippet>69</a>                }
+<a href=#70 id=70 data-nosnippet>70</a>            }
+<a href=#71 id=71 data-nosnippet>71</a>        }
+<a href=#72 id=72 data-nosnippet>72</a>
+<a href=#73 id=73 data-nosnippet>73</a>        <span class="attr">#[cfg(feature = <span class="string">"postgres_backend"</span>)]
+<a href=#74 id=74 data-nosnippet>74</a>        </span><span class="kw">impl</span>&lt;$(<span class="macro-nonterminal">$T</span>,)+ $(<span class="macro-nonterminal">$ST</span>,)+&gt; Queryable&lt;Record&lt;($(<span class="macro-nonterminal">$ST</span>,)+)&gt;, Pg&gt; <span class="kw">for </span>($(<span class="macro-nonterminal">$T</span>,)+)
+<a href=#75 id=75 data-nosnippet>75</a>        <span class="kw">where </span><span class="self">Self</span>: FromSql&lt;Record&lt;($(<span class="macro-nonterminal">$ST</span>,)+)&gt;, Pg&gt;
+<a href=#76 id=76 data-nosnippet>76</a>        {
+<a href=#77 id=77 data-nosnippet>77</a>            <span class="kw">type </span>Row = <span class="self">Self</span>;
+<a href=#78 id=78 data-nosnippet>78</a>
+<a href=#79 id=79 data-nosnippet>79</a>            <span class="kw">fn </span>build(row: <span class="self">Self</span>::Row) -&gt; deserialize::<a href="../../deserialize.rs.html#14">Result</a>&lt;<span class="self">Self</span>&gt; {
+<a href=#80 id=80 data-nosnippet>80</a>                <span class="prelude-val">Ok</span>(row)
+<a href=#81 id=81 data-nosnippet>81</a>            }
+<a href=#82 id=82 data-nosnippet>82</a>        }
+<a href=#83 id=83 data-nosnippet>83</a>
+<a href=#84 id=84 data-nosnippet>84</a>        <span class="attr">#[cfg(feature = <span class="string">"postgres_backend"</span>)]
+<a href=#85 id=85 data-nosnippet>85</a>        </span><span class="kw">impl</span>&lt;$(<span class="macro-nonterminal">$T</span>,)+ $(<span class="macro-nonterminal">$ST</span>,)+&gt; AsExpression&lt;Record&lt;($(<span class="macro-nonterminal">$ST</span>,)+)&gt;&gt; <span class="kw">for </span>($(<span class="macro-nonterminal">$T</span>,)+)
+<a href=#86 id=86 data-nosnippet>86</a>        <span class="kw">where
+<a href=#87 id=87 data-nosnippet>87</a>            </span>$(<span class="macro-nonterminal">$ST</span>: SqlType + TypedExpressionType,)+
+<a href=#88 id=88 data-nosnippet>88</a>            $(<span class="macro-nonterminal">$T</span>: AsExpression&lt;<span class="macro-nonterminal">$ST</span>&gt;,)+
+<a href=#89 id=89 data-nosnippet>89</a>            <a href="#137">PgTuple</a>&lt;($(<span class="macro-nonterminal">$T::Expression</span>,)+)&gt;: Expression&lt;SqlType = Record&lt;($(<span class="macro-nonterminal">$ST</span>,)+)&gt;&gt;,
+<a href=#90 id=90 data-nosnippet>90</a>        {
+<a href=#91 id=91 data-nosnippet>91</a>            <span class="kw">type </span>Expression = <a href="#137">PgTuple</a>&lt;($(<span class="macro-nonterminal">$T::Expression</span>,)+)&gt;;
+<a href=#92 id=92 data-nosnippet>92</a>
+<a href=#93 id=93 data-nosnippet>93</a>            <span class="kw">fn </span>as_expression(<span class="self">self</span>) -&gt; <span class="self">Self</span>::Expression {
+<a href=#94 id=94 data-nosnippet>94</a>                PgTuple(($(
+<a href=#95 id=95 data-nosnippet>95</a>                    <span class="self">self</span>.<span class="macro-nonterminal">$idx</span>.as_expression(),
+<a href=#96 id=96 data-nosnippet>96</a>                )+))
+<a href=#97 id=97 data-nosnippet>97</a>            }
+<a href=#98 id=98 data-nosnippet>98</a>        }
+<a href=#99 id=99 data-nosnippet>99</a>
+<a href=#100 id=100 data-nosnippet>100</a>        <span class="attr">#[cfg(feature = <span class="string">"postgres_backend"</span>)]
+<a href=#101 id=101 data-nosnippet>101</a>        </span><span class="kw">impl</span>&lt;$(<span class="macro-nonterminal">$T</span>,)+ $(<span class="macro-nonterminal">$ST</span>,)+&gt; WriteTuple&lt;($(<span class="macro-nonterminal">$ST</span>,)+)&gt; <span class="kw">for </span>($(<span class="macro-nonterminal">$T</span>,)+)
+<a href=#102 id=102 data-nosnippet>102</a>        <span class="kw">where
+<a href=#103 id=103 data-nosnippet>103</a>            </span>$(<span class="macro-nonterminal">$T</span>: ToSql&lt;<span class="macro-nonterminal">$ST</span>, Pg&gt;,)+
+<a href=#104 id=104 data-nosnippet>104</a>            $(<a href="../backend.rs.html#14">Pg</a>: HasSqlType&lt;<span class="macro-nonterminal">$ST</span>&gt;),+
+<a href=#105 id=105 data-nosnippet>105</a>        {
+<a href=#106 id=106 data-nosnippet>106</a>            <span class="kw">fn </span>write_tuple(<span class="kw-2">&amp;</span><span class="self">self</span>, out: <span class="kw-2">&amp;mut </span><a href="../../serialize.rs.html#35-42">Output</a>&lt;<span class="lifetime">'_</span>, <span class="lifetime">'_</span>, Pg&gt;) -&gt; serialize::<a href="../../serialize.rs.html#18">Result</a> {
+<a href=#107 id=107 data-nosnippet>107</a>                <span class="kw">let </span><span class="kw-2">mut </span>buffer = Vec::new();
+<a href=#108 id=108 data-nosnippet>108</a>                out.write_i32::&lt;NetworkEndian&gt;(<span class="macro-nonterminal">$Tuple</span>)<span class="question-mark">?</span>;
+<a href=#109 id=109 data-nosnippet>109</a>
+<a href=#110 id=110 data-nosnippet>110</a>                $(
+<a href=#111 id=111 data-nosnippet>111</a>                    <span class="kw">let </span>oid = &lt;Pg <span class="kw">as </span>HasSqlType&lt;<span class="macro-nonterminal">$ST</span>&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+<a href=#112 id=112 data-nosnippet>112</a>                    out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+<a href=#113 id=113 data-nosnippet>113</a>                    <span class="kw">let </span>is_null = {
+<a href=#114 id=114 data-nosnippet>114</a>                        <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer = Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer), out.metadata_lookup());
+<a href=#115 id=115 data-nosnippet>115</a>                        <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="macro-nonterminal">$idx</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+<a href=#116 id=116 data-nosnippet>116</a>                        is_null
+<a href=#117 id=117 data-nosnippet>117</a>                    };
+<a href=#118 id=118 data-nosnippet>118</a>
+<a href=#119 id=119 data-nosnippet>119</a>                    <span class="kw">if let </span>IsNull::No = is_null {
+<a href=#120 id=120 data-nosnippet>120</a>                        out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+<a href=#121 id=121 data-nosnippet>121</a>                        out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+<a href=#122 id=122 data-nosnippet>122</a>                        buffer.clear();
+<a href=#123 id=123 data-nosnippet>123</a>                    } <span class="kw">else </span>{
+<a href=#124 id=124 data-nosnippet>124</a>                        out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>;
+<a href=#125 id=125 data-nosnippet>125</a>                    }
+<a href=#126 id=126 data-nosnippet>126</a>                )+
+<a href=#127 id=127 data-nosnippet>127</a>
+<a href=#128 id=128 data-nosnippet>128</a>                <span class="prelude-val">Ok</span>(IsNull::No)
+<a href=#129 id=129 data-nosnippet>129</a>            }
+<a href=#130 id=130 data-nosnippet>130</a>        }
+<a href=#131 id=131 data-nosnippet>131</a>    )+}
+<a href=#132 id=132 data-nosnippet>132</a>}
+<a href=#133 id=133 data-nosnippet>133</a>
+<a href=#134 id=134 data-nosnippet>134</a><span class="expansion"><input id=expand-134 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="kw">impl</span>&lt;T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16,
+    T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31,
+    ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8, ST9, ST10, ST11, ST12, ST13,
+    ST14, ST15, ST16, ST17, ST18, ST19, ST20, ST21, ST22, ST23, ST24, ST25,
+    ST26, ST27, ST28, ST29, ST30, ST31&gt;
+    FromSql&lt;Record&lt;(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8, ST9, ST10,
+    ST11, ST12, ST13, ST14, ST15, ST16, ST17, ST18, ST19, ST20, ST21, ST22,
+    ST23, ST24, ST25, ST26, ST27, ST28, ST29, ST30, ST31)&gt;, Pg&gt; <span class="kw">for
+    </span>(T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16,
+    T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31)
+    <span class="kw">where </span>T: FromSql&lt;ST, Pg&gt;, T1: FromSql&lt;ST1, Pg&gt;, T2: FromSql&lt;ST2, Pg&gt;,
+    T3: FromSql&lt;ST3, Pg&gt;, T4: FromSql&lt;ST4, Pg&gt;, T5: FromSql&lt;ST5, Pg&gt;,
+    T6: FromSql&lt;ST6, Pg&gt;, T7: FromSql&lt;ST7, Pg&gt;, T8: FromSql&lt;ST8, Pg&gt;,
+    T9: FromSql&lt;ST9, Pg&gt;, T10: FromSql&lt;ST10, Pg&gt;, T11: FromSql&lt;ST11, Pg&gt;,
+    T12: FromSql&lt;ST12, Pg&gt;, T13: FromSql&lt;ST13, Pg&gt;, T14: FromSql&lt;ST14, Pg&gt;,
+    T15: FromSql&lt;ST15, Pg&gt;, T16: FromSql&lt;ST16, Pg&gt;, T17: FromSql&lt;ST17, Pg&gt;,
+    T18: FromSql&lt;ST18, Pg&gt;, T19: FromSql&lt;ST19, Pg&gt;, T20: FromSql&lt;ST20, Pg&gt;,
+    T21: FromSql&lt;ST21, Pg&gt;, T22: FromSql&lt;ST22, Pg&gt;, T23: FromSql&lt;ST23, Pg&gt;,
+    T24: FromSql&lt;ST24, Pg&gt;, T25: FromSql&lt;ST25, Pg&gt;, T26: FromSql&lt;ST26, Pg&gt;,
+    T27: FromSql&lt;ST27, Pg&gt;, T28: FromSql&lt;ST28, Pg&gt;, T29: FromSql&lt;ST29, Pg&gt;,
+    T30: FromSql&lt;ST30, Pg&gt;, T31: FromSql&lt;ST31, Pg&gt; {
+    <span class="attr">#[allow(clippy :: mixed_read_write_in_expression)]
+    </span><span class="kw">fn </span>from_sql(value: PgValue&lt;<span class="lifetime">'_</span>&gt;) -&gt; deserialize::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>bytes = value.as_bytes();
+        <span class="kw">let </span>num_elements = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+        <span class="kw">if </span><span class="macro">num_elements !</span>= <span class="number">32i32 </span>{
+            <span class="kw">return </span><span class="prelude-val">Err</span>(::alloc::__export::must_use({
+                                ::alloc::fmt::format(<span class="macro">format_args!</span>(<span class="string">"Expected a tuple of {0} elements, got {1}"</span>,
+                                        <span class="number">32i32</span>, num_elements))
+                            }).into());
+        }
+        <span class="kw">let </span>result =
+            ({
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T1::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T1::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T2::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T2::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T3::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T3::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T4::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T4::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T5::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T5::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T6::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T6::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T7::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T7::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T8::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T8::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T9::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T9::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T10::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T10::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T11::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T11::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T12::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T12::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T13::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T13::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T14::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T14::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T15::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T15::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T16::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T16::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T17::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T17::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T18::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T18::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T19::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T19::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T20::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T20::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T21::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T21::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T22::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T22::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T23::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T23::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T24::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T24::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T25::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T25::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T26::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T26::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T27::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T27::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T28::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T28::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T29::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T29::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T30::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T30::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                },
+                {
+                    <span class="kw">let </span>oid =
+                        NonZeroU32::new(bytes.read_u32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>).expect(<span class="string">"Oid's aren't zero"</span>);
+                    <span class="kw">let </span>num_bytes = bytes.read_i32::&lt;NetworkEndian&gt;()<span class="question-mark">?</span>;
+                    <span class="kw">if </span>num_bytes == -<span class="number">1 </span>{
+                        T31::from_nullable_sql(<span class="prelude-val">None</span>)<span class="question-mark">?
+                    </span>} <span class="kw">else </span>{
+                        <span class="kw">let </span>(elem_bytes, new_bytes) =
+                            bytes.split_at(num_bytes.try_into()<span class="question-mark">?</span>);
+                        bytes = new_bytes;
+                        T31::from_sql(PgValue::new_internal(elem_bytes, <span class="kw-2">&amp;</span>oid))<span class="question-mark">?
+                    </span>}
+                });
+        <span class="kw">if </span>bytes.is_empty() {
+            <span class="prelude-val">Ok</span>(result)
+        } <span class="kw">else </span>{
+            <span class="prelude-val">Err</span>(<span class="string">"Received too many bytes. This tuple likely contains \
+                        an element of the wrong SQL type."</span>.into())
+        }
+    }
+}
+<span class="kw">impl</span>&lt;T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16,
+    T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31,
+    ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8, ST9, ST10, ST11, ST12, ST13,
+    ST14, ST15, ST16, ST17, ST18, ST19, ST20, ST21, ST22, ST23, ST24, ST25,
+    ST26, ST27, ST28, ST29, ST30, ST31&gt;
+    Queryable&lt;Record&lt;(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8, ST9, ST10,
+    ST11, ST12, ST13, ST14, ST15, ST16, ST17, ST18, ST19, ST20, ST21, ST22,
+    ST23, ST24, ST25, ST26, ST27, ST28, ST29, ST30, ST31)&gt;, Pg&gt; <span class="kw">for
+    </span>(T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16,
+    T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31)
+    <span class="kw">where
+    </span><span class="self">Self</span>: FromSql&lt;Record&lt;(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8, ST9,
+    ST10, ST11, ST12, ST13, ST14, ST15, ST16, ST17, ST18, ST19, ST20, ST21,
+    ST22, ST23, ST24, ST25, ST26, ST27, ST28, ST29, ST30, ST31)&gt;, Pg&gt; {
+    <span class="kw">type </span>Row = <span class="self">Self</span>;
+    <span class="kw">fn </span>build(row: <span class="self">Self</span>::Row) -&gt; deserialize::Result&lt;<span class="self">Self</span>&gt; { <span class="prelude-val">Ok</span>(row) }
+}
+<span class="kw">impl</span>&lt;T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16,
+    T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31,
+    ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8, ST9, ST10, ST11, ST12, ST13,
+    ST14, ST15, ST16, ST17, ST18, ST19, ST20, ST21, ST22, ST23, ST24, ST25,
+    ST26, ST27, ST28, ST29, ST30, ST31&gt;
+    AsExpression&lt;Record&lt;(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8, ST9,
+    ST10, ST11, ST12, ST13, ST14, ST15, ST16, ST17, ST18, ST19, ST20, ST21,
+    ST22, ST23, ST24, ST25, ST26, ST27, ST28, ST29, ST30, ST31)&gt;&gt; <span class="kw">for
+    </span>(T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16,
+    T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31)
+    <span class="kw">where </span>ST: SqlType + TypedExpressionType, ST1: SqlType +
+    TypedExpressionType, ST2: SqlType + TypedExpressionType, ST3: SqlType +
+    TypedExpressionType, ST4: SqlType + TypedExpressionType, ST5: SqlType +
+    TypedExpressionType, ST6: SqlType + TypedExpressionType, ST7: SqlType +
+    TypedExpressionType, ST8: SqlType + TypedExpressionType, ST9: SqlType +
+    TypedExpressionType, ST10: SqlType + TypedExpressionType, ST11: SqlType +
+    TypedExpressionType, ST12: SqlType + TypedExpressionType, ST13: SqlType +
+    TypedExpressionType, ST14: SqlType + TypedExpressionType, ST15: SqlType +
+    TypedExpressionType, ST16: SqlType + TypedExpressionType, ST17: SqlType +
+    TypedExpressionType, ST18: SqlType + TypedExpressionType, ST19: SqlType +
+    TypedExpressionType, ST20: SqlType + TypedExpressionType, ST21: SqlType +
+    TypedExpressionType, ST22: SqlType + TypedExpressionType, ST23: SqlType +
+    TypedExpressionType, ST24: SqlType + TypedExpressionType, ST25: SqlType +
+    TypedExpressionType, ST26: SqlType + TypedExpressionType, ST27: SqlType +
+    TypedExpressionType, ST28: SqlType + TypedExpressionType, ST29: SqlType +
+    TypedExpressionType, ST30: SqlType + TypedExpressionType, ST31: SqlType +
+    TypedExpressionType, T: AsExpression&lt;ST&gt;, T1: AsExpression&lt;ST1&gt;,
+    T2: AsExpression&lt;ST2&gt;, T3: AsExpression&lt;ST3&gt;, T4: AsExpression&lt;ST4&gt;,
+    T5: AsExpression&lt;ST5&gt;, T6: AsExpression&lt;ST6&gt;, T7: AsExpression&lt;ST7&gt;,
+    T8: AsExpression&lt;ST8&gt;, T9: AsExpression&lt;ST9&gt;, T10: AsExpression&lt;ST10&gt;,
+    T11: AsExpression&lt;ST11&gt;, T12: AsExpression&lt;ST12&gt;, T13: AsExpression&lt;ST13&gt;,
+    T14: AsExpression&lt;ST14&gt;, T15: AsExpression&lt;ST15&gt;, T16: AsExpression&lt;ST16&gt;,
+    T17: AsExpression&lt;ST17&gt;, T18: AsExpression&lt;ST18&gt;, T19: AsExpression&lt;ST19&gt;,
+    T20: AsExpression&lt;ST20&gt;, T21: AsExpression&lt;ST21&gt;, T22: AsExpression&lt;ST22&gt;,
+    T23: AsExpression&lt;ST23&gt;, T24: AsExpression&lt;ST24&gt;, T25: AsExpression&lt;ST25&gt;,
+    T26: AsExpression&lt;ST26&gt;, T27: AsExpression&lt;ST27&gt;, T28: AsExpression&lt;ST28&gt;,
+    T29: AsExpression&lt;ST29&gt;, T30: AsExpression&lt;ST30&gt;, T31: AsExpression&lt;ST31&gt;,
+    PgTuple&lt;(T::Expression, T1::Expression, T2::Expression, T3::Expression,
+    T4::Expression, T5::Expression, T6::Expression, T7::Expression,
+    T8::Expression, T9::Expression, T10::Expression, T11::Expression,
+    T12::Expression, T13::Expression, T14::Expression, T15::Expression,
+    T16::Expression, T17::Expression, T18::Expression, T19::Expression,
+    T20::Expression, T21::Expression, T22::Expression, T23::Expression,
+    T24::Expression, T25::Expression, T26::Expression, T27::Expression,
+    T28::Expression, T29::Expression, T30::Expression,
+    T31::Expression)&gt;: Expression&lt;SqlType =
+    Record&lt;(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8, ST9, ST10, ST11, ST12,
+    ST13, ST14, ST15, ST16, ST17, ST18, ST19, ST20, ST21, ST22, ST23, ST24,
+    ST25, ST26, ST27, ST28, ST29, ST30, ST31)&gt;&gt; {
+    <span class="kw">type </span>Expression =
+        PgTuple&lt;(T::Expression, T1::Expression, T2::Expression,
+        T3::Expression, T4::Expression, T5::Expression, T6::Expression,
+        T7::Expression, T8::Expression, T9::Expression, T10::Expression,
+        T11::Expression, T12::Expression, T13::Expression, T14::Expression,
+        T15::Expression, T16::Expression, T17::Expression, T18::Expression,
+        T19::Expression, T20::Expression, T21::Expression, T22::Expression,
+        T23::Expression, T24::Expression, T25::Expression, T26::Expression,
+        T27::Expression, T28::Expression, T29::Expression, T30::Expression,
+        T31::Expression)&gt;;
+    <span class="kw">fn </span>as_expression(<span class="self">self</span>) -&gt; <span class="self">Self</span>::Expression {
+        PgTuple((<span class="self">self</span>.<span class="number">0</span>.as_expression(), <span class="self">self</span>.<span class="number">1</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">2</span>.as_expression(), <span class="self">self</span>.<span class="number">3</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">4</span>.as_expression(), <span class="self">self</span>.<span class="number">5</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">6</span>.as_expression(), <span class="self">self</span>.<span class="number">7</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">8</span>.as_expression(), <span class="self">self</span>.<span class="number">9</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">10</span>.as_expression(), <span class="self">self</span>.<span class="number">11</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">12</span>.as_expression(), <span class="self">self</span>.<span class="number">13</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">14</span>.as_expression(), <span class="self">self</span>.<span class="number">15</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">16</span>.as_expression(), <span class="self">self</span>.<span class="number">17</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">18</span>.as_expression(), <span class="self">self</span>.<span class="number">19</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">20</span>.as_expression(), <span class="self">self</span>.<span class="number">21</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">22</span>.as_expression(), <span class="self">self</span>.<span class="number">23</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">24</span>.as_expression(), <span class="self">self</span>.<span class="number">25</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">26</span>.as_expression(), <span class="self">self</span>.<span class="number">27</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">28</span>.as_expression(), <span class="self">self</span>.<span class="number">29</span>.as_expression(),
+                <span class="self">self</span>.<span class="number">30</span>.as_expression(), <span class="self">self</span>.<span class="number">31</span>.as_expression()))
+    }
+}
+<span class="kw">impl</span>&lt;T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16,
+    T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31,
+    ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8, ST9, ST10, ST11, ST12, ST13,
+    ST14, ST15, ST16, ST17, ST18, ST19, ST20, ST21, ST22, ST23, ST24, ST25,
+    ST26, ST27, ST28, ST29, ST30, ST31&gt;
+    WriteTuple&lt;(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8, ST9, ST10, ST11,
+    ST12, ST13, ST14, ST15, ST16, ST17, ST18, ST19, ST20, ST21, ST22, ST23,
+    ST24, ST25, ST26, ST27, ST28, ST29, ST30, ST31)&gt; <span class="kw">for
+    </span>(T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16,
+    T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31)
+    <span class="kw">where </span>T: ToSql&lt;ST, Pg&gt;, T1: ToSql&lt;ST1, Pg&gt;, T2: ToSql&lt;ST2, Pg&gt;,
+    T3: ToSql&lt;ST3, Pg&gt;, T4: ToSql&lt;ST4, Pg&gt;, T5: ToSql&lt;ST5, Pg&gt;,
+    T6: ToSql&lt;ST6, Pg&gt;, T7: ToSql&lt;ST7, Pg&gt;, T8: ToSql&lt;ST8, Pg&gt;,
+    T9: ToSql&lt;ST9, Pg&gt;, T10: ToSql&lt;ST10, Pg&gt;, T11: ToSql&lt;ST11, Pg&gt;,
+    T12: ToSql&lt;ST12, Pg&gt;, T13: ToSql&lt;ST13, Pg&gt;, T14: ToSql&lt;ST14, Pg&gt;,
+    T15: ToSql&lt;ST15, Pg&gt;, T16: ToSql&lt;ST16, Pg&gt;, T17: ToSql&lt;ST17, Pg&gt;,
+    T18: ToSql&lt;ST18, Pg&gt;, T19: ToSql&lt;ST19, Pg&gt;, T20: ToSql&lt;ST20, Pg&gt;,
+    T21: ToSql&lt;ST21, Pg&gt;, T22: ToSql&lt;ST22, Pg&gt;, T23: ToSql&lt;ST23, Pg&gt;,
+    T24: ToSql&lt;ST24, Pg&gt;, T25: ToSql&lt;ST25, Pg&gt;, T26: ToSql&lt;ST26, Pg&gt;,
+    T27: ToSql&lt;ST27, Pg&gt;, T28: ToSql&lt;ST28, Pg&gt;, T29: ToSql&lt;ST29, Pg&gt;,
+    T30: ToSql&lt;ST30, Pg&gt;, T31: ToSql&lt;ST31, Pg&gt;, Pg: HasSqlType&lt;ST&gt;,
+    Pg: HasSqlType&lt;ST1&gt;, Pg: HasSqlType&lt;ST2&gt;, Pg: HasSqlType&lt;ST3&gt;,
+    Pg: HasSqlType&lt;ST4&gt;, Pg: HasSqlType&lt;ST5&gt;, Pg: HasSqlType&lt;ST6&gt;,
+    Pg: HasSqlType&lt;ST7&gt;, Pg: HasSqlType&lt;ST8&gt;, Pg: HasSqlType&lt;ST9&gt;,
+    Pg: HasSqlType&lt;ST10&gt;, Pg: HasSqlType&lt;ST11&gt;, Pg: HasSqlType&lt;ST12&gt;,
+    Pg: HasSqlType&lt;ST13&gt;, Pg: HasSqlType&lt;ST14&gt;, Pg: HasSqlType&lt;ST15&gt;,
+    Pg: HasSqlType&lt;ST16&gt;, Pg: HasSqlType&lt;ST17&gt;, Pg: HasSqlType&lt;ST18&gt;,
+    Pg: HasSqlType&lt;ST19&gt;, Pg: HasSqlType&lt;ST20&gt;, Pg: HasSqlType&lt;ST21&gt;,
+    Pg: HasSqlType&lt;ST22&gt;, Pg: HasSqlType&lt;ST23&gt;, Pg: HasSqlType&lt;ST24&gt;,
+    Pg: HasSqlType&lt;ST25&gt;, Pg: HasSqlType&lt;ST26&gt;, Pg: HasSqlType&lt;ST27&gt;,
+    Pg: HasSqlType&lt;ST28&gt;, Pg: HasSqlType&lt;ST29&gt;, Pg: HasSqlType&lt;ST30&gt;,
+    Pg: HasSqlType&lt;ST31&gt; {
+    <span class="kw">fn </span>write_tuple(<span class="kw-2">&amp;</span><span class="self">self</span>, out: <span class="kw-2">&amp;mut </span>Output&lt;<span class="lifetime">'_</span>, <span class="lifetime">'_</span>, Pg&gt;) -&gt; serialize::Result {
+        <span class="kw">let </span><span class="kw-2">mut </span>buffer = Vec::new();
+        out.write_i32::&lt;NetworkEndian&gt;(<span class="number">32i32</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">0</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST1&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">1</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST2&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">2</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST3&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">3</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST4&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">4</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST5&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">5</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST6&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">6</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST7&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">7</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST8&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">8</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST9&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">9</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST10&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">10</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST11&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">11</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST12&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">12</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST13&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">13</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST14&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">14</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST15&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">15</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST16&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">16</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST17&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">17</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST18&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">18</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST19&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">19</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST20&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">20</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST21&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">21</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST22&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">22</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST23&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">23</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST24&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">24</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST25&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">25</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST26&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">26</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST27&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">27</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST28&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">28</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST29&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">29</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST30&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">30</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="kw">let </span>oid =
+            &lt;Pg <span class="kw">as </span>HasSqlType&lt;ST31&gt;&gt;::metadata(out.metadata_lookup()).oid()<span class="question-mark">?</span>;
+        out.write_u32::&lt;NetworkEndian&gt;(oid)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_null =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>temp_buffer =
+                    Output::new(ByteWrapper(<span class="kw-2">&amp;mut </span>buffer),
+                        out.metadata_lookup());
+                <span class="kw">let </span>is_null = <span class="self">self</span>.<span class="number">31</span>.to_sql(<span class="kw-2">&amp;mut </span>temp_buffer)<span class="question-mark">?</span>;
+                is_null
+            };
+        <span class="kw">if let </span>IsNull::No = is_null {
+            out.write_i32::&lt;NetworkEndian&gt;(buffer.len().try_into()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            out.write_all(<span class="kw-2">&amp;</span>buffer)<span class="question-mark">?</span>;
+            buffer.clear();
+        } <span class="kw">else </span>{ out.write_i32::&lt;NetworkEndian&gt;(-<span class="number">1</span>)<span class="question-mark">?</span>; }
+        <span class="prelude-val">Ok</span>(IsNull::No)
+    }
+}</span><span class="original"><span class="macro">diesel_derives::__diesel_for_each_tuple!</span>(tuple_impls)</span></span>;
+<a href=#135 id=135 data-nosnippet>135</a>
+<a href=#136 id=136 data-nosnippet>136</a><span class="expansion"><input id=expand-136 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;T: ::core::fmt::Debug&gt; ::core::fmt::Debug <span class="kw">for </span>PgTuple&lt;T&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"PgTuple"</span>,
+            &amp;&amp;<span class="self">self</span>.<span class="number">0</span>)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;T: ::core::clone::Clone&gt; ::core::clone::Clone <span class="kw">for </span>PgTuple&lt;T&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PgTuple&lt;T&gt; {
+        PgTuple(::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>))
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;T: ::core::marker::Copy&gt; ::core::marker::Copy <span class="kw">for </span>PgTuple&lt;T&gt; { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="kw">const _</span>: () =
+    {
+        <span class="kw">use </span>diesel;
+        <span class="attr">#[allow(non_camel_case_types)]
+        </span><span class="kw">impl</span>&lt;T: diesel::query_builder::QueryId&gt; diesel::query_builder::QueryId
+            <span class="kw">for </span>PgTuple&lt;T&gt; {
+            <span class="kw">type </span>QueryId =
+                PgTuple&lt;&lt;T <span class="kw">as </span>diesel::query_builder::QueryId&gt;::QueryId&gt;;
+            <span class="kw">const </span>HAS_STATIC_QUERY_ID: bool =
+                &lt;T <span class="kw">as </span>diesel::query_builder::QueryId&gt;::HAS_STATIC_QUERY_ID &amp;&amp;
+                    <span class="bool-val">true</span>;
+            <span class="kw">const </span>IS_WINDOW_FUNCTION: bool =
+                &lt;T <span class="kw">as </span>diesel::query_builder::QueryId&gt;::IS_WINDOW_FUNCTION ||
+                    <span class="bool-val">false</span>;
+        }
+    };</span><span class="original"><a href="../../../../diesel/query_builder/derive.QueryId.html">QueryId</a></span>, <span class=expanded><span class="kw">const _</span>: () =
+    {
+        <span class="kw">use </span>diesel;
+        <span class="kw">impl</span>&lt;T, __GroupByClause&gt;
+            diesel::expression::ValidGrouping&lt;__GroupByClause&gt; <span class="kw">for </span>PgTuple&lt;T&gt;
+            <span class="kw">where </span>T: diesel::expression::ValidGrouping&lt;__GroupByClause&gt; {
+            <span class="kw">type </span>IsAggregate =
+                &lt;T <span class="kw">as
+                </span>diesel::expression::ValidGrouping&lt;__GroupByClause&gt;&gt;::IsAggregate;
+        }
+    };</span><span class="original"><a href="../../../../diesel/expression/derive.ValidGrouping.html">ValidGrouping</a></span></span></span><span class="attr">)]
+<a href=#137 id=137 data-nosnippet>137</a></span><span class="kw">pub struct </span>PgTuple&lt;T&gt;(T);
+<a href=#138 id=138 data-nosnippet>138</a>
+<a href=#139 id=139 data-nosnippet>139</a><span class="kw">impl</span>&lt;T&gt; <a href="../../query_builder/mod.rs.html#228-298">QueryFragment</a>&lt;<a href="../backend.rs.html#14">Pg</a>&gt; <span class="kw">for </span><a href="#137">PgTuple</a>&lt;T&gt;
+<a href=#140 id=140 data-nosnippet>140</a><span class="kw">where
+<a href=#141 id=141 data-nosnippet>141</a>    </span>T: <a href="../../query_builder/mod.rs.html#228-298">QueryFragment</a>&lt;<a href="../backend.rs.html#14">Pg</a>&gt;,
+<a href=#142 id=142 data-nosnippet>142</a>{
+<a href=#143 id=143 data-nosnippet>143</a>    <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>, <span class="kw-2">mut </span>out: <a href="../../query_builder/ast_pass.rs.html#25-34">AstPass</a>&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, <a href="../backend.rs.html#14">Pg</a>&gt;) -&gt; <a href="../../result.rs.html#288">QueryResult</a>&lt;()&gt; {
+<a href=#144 id=144 data-nosnippet>144</a>        <a href="#143">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<span class="string">"ROW("</span>);
+<a href=#145 id=145 data-nosnippet>145</a>        <a class="self" href="#143">self</a>.<span class="number">0</span>.<a href="../../query_builder/mod.rs.html#234">walk_ast</a>(<a href="#143">out</a>.<a href="../../query_builder/ast_pass.rs.html#119-141">reborrow</a>())<span class="question-mark">?</span>;
+<a href=#146 id=146 data-nosnippet>146</a>        <a href="#143">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<span class="string">")"</span>);
+<a href=#147 id=147 data-nosnippet>147</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#148 id=148 data-nosnippet>148</a>    }
+<a href=#149 id=149 data-nosnippet>149</a>}
+<a href=#150 id=150 data-nosnippet>150</a>
+<a href=#151 id=151 data-nosnippet>151</a><span class="kw">impl</span>&lt;T&gt; <a href="../../expression/mod.rs.html#133-136">Expression</a> <span class="kw">for </span><a href="#137">PgTuple</a>&lt;T&gt;
+<a href=#152 id=152 data-nosnippet>152</a><span class="kw">where
+<a href=#153 id=153 data-nosnippet>153</a>    </span>T: <a href="../../expression/mod.rs.html#133-136">Expression</a>,
+<a href=#154 id=154 data-nosnippet>154</a>    T::SqlType: <span class="lifetime">'static</span>,
+<a href=#155 id=155 data-nosnippet>155</a>{
+<a href=#156 id=156 data-nosnippet>156</a>    <span class="kw">type </span>SqlType = <a href="mod.rs.html#302">Record</a>&lt;T::SqlType&gt;;
+<a href=#157 id=157 data-nosnippet>157</a>}
+<a href=#158 id=158 data-nosnippet>158</a>
+<a href=#159 id=159 data-nosnippet>159</a><span class="kw">impl</span>&lt;T, QS&gt; <a href="../../expression/mod.rs.html#351">SelectableExpression</a>&lt;QS&gt; <span class="kw">for </span><a href="#137">PgTuple</a>&lt;T&gt;
+<a href=#160 id=160 data-nosnippet>160</a><span class="kw">where
+<a href=#161 id=161 data-nosnippet>161</a>    </span>T: <a href="../../expression/mod.rs.html#351">SelectableExpression</a>&lt;QS&gt;,
+<a href=#162 id=162 data-nosnippet>162</a>    <span class="self">Self</span>: <a href="../../expression/mod.rs.html#322">AppearsOnTable</a>&lt;QS&gt;,
+<a href=#163 id=163 data-nosnippet>163</a>{
+<a href=#164 id=164 data-nosnippet>164</a>}
+<a href=#165 id=165 data-nosnippet>165</a>
+<a href=#166 id=166 data-nosnippet>166</a><span class="kw">impl</span>&lt;T, QS&gt; <a href="../../expression/mod.rs.html#322">AppearsOnTable</a>&lt;QS&gt; <span class="kw">for </span><a href="#137">PgTuple</a>&lt;T&gt;
+<a href=#167 id=167 data-nosnippet>167</a><span class="kw">where
+<a href=#168 id=168 data-nosnippet>168</a>    </span>T: <a href="../../expression/mod.rs.html#322">AppearsOnTable</a>&lt;QS&gt;,
+<a href=#169 id=169 data-nosnippet>169</a>    <span class="self">Self</span>: <a href="../../expression/mod.rs.html#133-136">Expression</a>,
+<a href=#170 id=170 data-nosnippet>170</a>{
+<a href=#171 id=171 data-nosnippet>171</a>}
+<a href=#172 id=172 data-nosnippet>172</a>
+<a href=#173 id=173 data-nosnippet>173</a><span class="attr">#[cfg(test)]
+<a href=#174 id=174 data-nosnippet>174</a></span><span class="kw">mod </span>tests {
+<a href=#175 id=175 data-nosnippet>175</a>    <span class="kw">use </span>super::<span class="kw-2">*</span>;
+<a href=#176 id=176 data-nosnippet>176</a>    <span class="kw">use </span><span class="kw">crate</span>::dsl::sql;
+<a href=#177 id=177 data-nosnippet>177</a>    <span class="kw">use </span><span class="kw">crate</span>::prelude::<span class="kw-2">*</span>;
+<a href=#178 id=178 data-nosnippet>178</a>    <span class="kw">use </span><span class="kw">crate</span>::sql_types::<span class="kw-2">*</span>;
+<a href=#179 id=179 data-nosnippet>179</a>    <span class="kw">use </span><span class="kw">crate</span>::test_helpers::<span class="kw-2">*</span>;
+<a href=#180 id=180 data-nosnippet>180</a>
+<a href=#181 id=181 data-nosnippet>181</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#182 id=182 data-nosnippet>182</a>    </span><span class="kw">fn </span>record_deserializes_correctly() {
+<a href=#183 id=183 data-nosnippet>183</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>pg_connection();
+<a href=#184 id=184 data-nosnippet>184</a>
+<a href=#185 id=185 data-nosnippet>185</a>        <span class="kw">let </span>tup =
+<a href=#186 id=186 data-nosnippet>186</a>            sql::&lt;Record&lt;(Integer, Text)&gt;&gt;(<span class="string">"SELECT (1, 'hi')"</span>).get_result::&lt;(i32, String)&gt;(conn);
+<a href=#187 id=187 data-nosnippet>187</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>((<span class="number">1</span>, String::from(<span class="string">"hi"</span>))), tup);
+<a href=#188 id=188 data-nosnippet>188</a>
+<a href=#189 id=189 data-nosnippet>189</a>        <span class="kw">let </span>tup = sql::&lt;Record&lt;(Record&lt;(Integer, Text)&gt;, Integer)&gt;&gt;(<span class="string">"SELECT ((2, 'bye'), 3)"</span>)
+<a href=#190 id=190 data-nosnippet>190</a>            .get_result::&lt;((i32, String), i32)&gt;(conn);
+<a href=#191 id=191 data-nosnippet>191</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(((<span class="number">2</span>, String::from(<span class="string">"bye"</span>)), <span class="number">3</span>)), tup);
+<a href=#192 id=192 data-nosnippet>192</a>
+<a href=#193 id=193 data-nosnippet>193</a>        <span class="kw">let </span>tup = sql::&lt;
+<a href=#194 id=194 data-nosnippet>194</a>            Record&lt;(
+<a href=#195 id=195 data-nosnippet>195</a>                Record&lt;(Nullable&lt;Integer&gt;, Nullable&lt;Text&gt;)&gt;,
+<a href=#196 id=196 data-nosnippet>196</a>                Nullable&lt;Integer&gt;,
+<a href=#197 id=197 data-nosnippet>197</a>            )&gt;,
+<a href=#198 id=198 data-nosnippet>198</a>        &gt;(<span class="string">"SELECT ((4, NULL), NULL)"</span>)
+<a href=#199 id=199 data-nosnippet>199</a>        .get_result::&lt;((<span class="prelude-ty">Option</span>&lt;i32&gt;, <span class="prelude-ty">Option</span>&lt;String&gt;), <span class="prelude-ty">Option</span>&lt;i32&gt;)&gt;(conn);
+<a href=#200 id=200 data-nosnippet>200</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(((<span class="prelude-val">Some</span>(<span class="number">4</span>), <span class="prelude-val">None</span>), <span class="prelude-val">None</span>)), tup);
+<a href=#201 id=201 data-nosnippet>201</a>
+<a href=#202 id=202 data-nosnippet>202</a>        <span class="kw">let </span>tup = sql::&lt;Record&lt;(Integer,)&gt;&gt;(<span class="string">"SELECT ROW(1)"</span>).get_result::&lt;(i32,)&gt;(conn);
+<a href=#203 id=203 data-nosnippet>203</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>((<span class="number">1</span>,)), tup);
+<a href=#204 id=204 data-nosnippet>204</a>    }
+<a href=#205 id=205 data-nosnippet>205</a>
+<a href=#206 id=206 data-nosnippet>206</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#207 id=207 data-nosnippet>207</a>    </span><span class="kw">fn </span>record_kinda_sorta_not_really_serializes_correctly() {
+<a href=#208 id=208 data-nosnippet>208</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>pg_connection();
+<a href=#209 id=209 data-nosnippet>209</a>
+<a href=#210 id=210 data-nosnippet>210</a>        <span class="kw">let </span>tup = sql::&lt;Record&lt;(Integer, Text)&gt;&gt;(<span class="string">"(1, 'hi')"</span>);
+<a href=#211 id=211 data-nosnippet>211</a>        <span class="kw">let </span>res = <span class="kw">crate</span>::select(tup.eq((<span class="number">1</span>, <span class="string">"hi"</span>))).get_result(conn);
+<a href=#212 id=212 data-nosnippet>212</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="bool-val">true</span>), res);
+<a href=#213 id=213 data-nosnippet>213</a>
+<a href=#214 id=214 data-nosnippet>214</a>        <span class="kw">let </span>tup = sql::&lt;Record&lt;(Record&lt;(Integer, Text)&gt;, Integer)&gt;&gt;(<span class="string">"((2, 'bye'::text), 3)"</span>);
+<a href=#215 id=215 data-nosnippet>215</a>        <span class="kw">let </span>res = <span class="kw">crate</span>::select(tup.eq(((<span class="number">2</span>, <span class="string">"bye"</span>), <span class="number">3</span>))).get_result(conn);
+<a href=#216 id=216 data-nosnippet>216</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="bool-val">true</span>), res);
+<a href=#217 id=217 data-nosnippet>217</a>
+<a href=#218 id=218 data-nosnippet>218</a>        <span class="kw">let </span>tup = sql::&lt;Record&lt;(Integer,)&gt;&gt;(<span class="string">"ROW(3)"</span>);
+<a href=#219 id=219 data-nosnippet>219</a>        <span class="kw">let </span>res = <span class="kw">crate</span>::select(tup.eq((<span class="number">3</span>,))).get_result(conn);
+<a href=#220 id=220 data-nosnippet>220</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="bool-val">true</span>), res);
+<a href=#221 id=221 data-nosnippet>221</a>
+<a href=#222 id=222 data-nosnippet>222</a>        <span class="kw">let </span>tup = sql::&lt;
+<a href=#223 id=223 data-nosnippet>223</a>            Record&lt;(
+<a href=#224 id=224 data-nosnippet>224</a>                Record&lt;(Nullable&lt;Integer&gt;, Nullable&lt;Text&gt;)&gt;,
+<a href=#225 id=225 data-nosnippet>225</a>                Nullable&lt;Integer&gt;,
+<a href=#226 id=226 data-nosnippet>226</a>            )&gt;,
+<a href=#227 id=227 data-nosnippet>227</a>        &gt;(<span class="string">"((4, NULL::text), NULL::int4)"</span>);
+<a href=#228 id=228 data-nosnippet>228</a>        <span class="kw">let </span>res = <span class="kw">crate</span>::select(tup.is_not_distinct_from(((<span class="prelude-val">Some</span>(<span class="number">4</span>), None::&lt;<span class="kw-2">&amp;</span>str&gt;), None::&lt;i32&gt;)))
+<a href=#229 id=229 data-nosnippet>229</a>            .get_result(conn);
+<a href=#230 id=230 data-nosnippet>230</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="bool-val">true</span>), res);
+<a href=#231 id=231 data-nosnippet>231</a>    }
+<a href=#232 id=232 data-nosnippet>232</a>
+<a href=#233 id=233 data-nosnippet>233</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#234 id=234 data-nosnippet>234</a>    </span><span class="kw">fn </span>serializing_named_composite_types() {
+<a href=#235 id=235 data-nosnippet>235</a>        <span class="attr">#[derive(SqlType, QueryId, Debug, Clone, Copy)]
+<a href=#236 id=236 data-nosnippet>236</a>        #[diesel(postgres_type(name = <span class="string">"my_type"</span>))]
+<a href=#237 id=237 data-nosnippet>237</a>        </span><span class="kw">struct </span>MyType;
+<a href=#238 id=238 data-nosnippet>238</a>
+<a href=#239 id=239 data-nosnippet>239</a>        <span class="attr">#[derive(Debug, AsExpression)]
+<a href=#240 id=240 data-nosnippet>240</a>        #[diesel(sql_type = MyType)]
+<a href=#241 id=241 data-nosnippet>241</a>        </span><span class="kw">struct </span>MyStruct&lt;<span class="lifetime">'a</span>&gt;(i32, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str);
+<a href=#242 id=242 data-nosnippet>242</a>
+<a href=#243 id=243 data-nosnippet>243</a>        <span class="kw">impl </span>ToSql&lt;MyType, Pg&gt; <span class="kw">for </span>MyStruct&lt;<span class="lifetime">'_</span>&gt; {
+<a href=#244 id=244 data-nosnippet>244</a>            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>, out: <span class="kw-2">&amp;mut </span>Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, Pg&gt;) -&gt; serialize::Result {
+<a href=#245 id=245 data-nosnippet>245</a>                WriteTuple::&lt;(Integer, Text)&gt;::write_tuple(<span class="kw-2">&amp;</span>(<span class="self">self</span>.<span class="number">0</span>, <span class="self">self</span>.<span class="number">1</span>), out)
+<a href=#246 id=246 data-nosnippet>246</a>            }
+<a href=#247 id=247 data-nosnippet>247</a>        }
+<a href=#248 id=248 data-nosnippet>248</a>
+<a href=#249 id=249 data-nosnippet>249</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>pg_connection();
+<a href=#250 id=250 data-nosnippet>250</a>
+<a href=#251 id=251 data-nosnippet>251</a>        <span class="kw">crate</span>::sql_query(<span class="string">"CREATE TYPE my_type AS (i int4, t text)"</span>)
+<a href=#252 id=252 data-nosnippet>252</a>            .execute(conn)
+<a href=#253 id=253 data-nosnippet>253</a>            .unwrap();
+<a href=#254 id=254 data-nosnippet>254</a>        <span class="kw">let </span>sql = sql::&lt;Bool&gt;(<span class="string">"(1, 'hi')::my_type = "</span>).bind::&lt;MyType, <span class="kw">_</span>&gt;(MyStruct(<span class="number">1</span>, <span class="string">"hi"</span>));
+<a href=#255 id=255 data-nosnippet>255</a>        <span class="kw">let </span>res = <span class="kw">crate</span>::select(sql).get_result(conn);
+<a href=#256 id=256 data-nosnippet>256</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="bool-val">true</span>), res);
+<a href=#257 id=257 data-nosnippet>257</a>    }
+<a href=#258 id=258 data-nosnippet>258</a>}
+</code></pre></div></section></main></body></html>

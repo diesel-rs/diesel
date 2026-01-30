@@ -1,0 +1,127 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Helper trait used when boxing expressions."><title>BoxableExpression in diesel::prelude - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (e3181b091 2024-04-18)" data-channel="nightly" data-search-js="search-5b46ae87cc198d72.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-e32f0c247825364d.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.1.6</span></h2></div><h2 class="location"><a href="#">BoxableExpression</a></h2><div class="sidebar-elems"><section><h3><a href="#trait-implementations">Trait Implementations</a></h3><ul class="block trait-implementation"><li><a href="#impl-QueryId-for-dyn+BoxableExpression%3CQS,+DB,+GB,+IsAggregate,+SqlType+=+ST%3E">QueryId</a></li><li><a href="#impl-ValidGrouping%3CGB%3E-for-dyn+BoxableExpression%3CQS,+DB,+GB,+IsAggregate,+SqlType+=+ST%3E">ValidGrouping&lt;GB&gt;</a></li></ul><h3><a href="#implementors">Implementors</a></h3></section><h2><a href="index.html">In diesel::prelude</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../diesel/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Trait <a href="../index.html">diesel</a>::<wbr><a href="index.html">prelude</a>::<wbr><a class="trait" href="#">BoxableExpression</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel/expression/mod.rs.html#974-982">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub trait BoxableExpression&lt;QS, DB, GB = <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>, IsAggregate = <a class="struct" href="../expression/is_aggregate/struct.No.html" title="struct diesel::expression::is_aggregate::No">No</a>&gt;<div class="where">where
+    DB: <a class="trait" href="../backend/trait.Backend.html" title="trait diesel::backend::Backend">Backend</a>,
+    Self: <a class="trait" href="trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a> + <a class="trait" href="trait.SelectableExpression.html" title="trait diesel::prelude::SelectableExpression">SelectableExpression</a>&lt;QS&gt; + <a class="trait" href="../query_builder/trait.QueryFragment.html" title="trait diesel::query_builder::QueryFragment">QueryFragment</a>&lt;DB&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a>,</div>{ }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Helper trait used when boxing expressions.</p>
+<p>In Rust you cannot create a trait object with more than one trait.
+This type has all of the additional traits you would want when using
+<code>Box&lt;Expression&gt;</code> as a single trait object.</p>
+<p>By default <code>BoxableExpression</code> is not usable in queries that have a custom
+group by clause. Setting the generic parameters <code>GB</code> and <code>IsAggregate</code> allows
+to configure the expression to be used with a specific group by clause.</p>
+<p>This is typically used as the return type of a function.
+For cases where you want to dynamically construct a query,
+<a href="trait.QueryDsl.html#method.into_boxed" title="method diesel::prelude::QueryDsl::into_boxed">boxing the query</a> is usually more ergonomic.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2><h3 id="usage-without-group-by-clause"><a class="doc-anchor" href="#usage-without-group-by-clause">§</a>Usage without group by clause</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::sql_types::Bool;
+
+<span class="kw">enum </span>Search {
+    Id(i32),
+    Name(String),
+}
+
+<span class="kw">type </span>DB = diesel::sqlite::Sqlite;
+
+<span class="kw">fn </span>find_user(search: Search) -&gt; Box&lt;<span class="kw">dyn </span>BoxableExpression&lt;users::table, DB, SqlType = Bool&gt;&gt; {
+    <span class="kw">match </span>search {
+        Search::Id(id) =&gt; Box::new(users::id.eq(id)),
+        Search::Name(name) =&gt; Box::new(users::name.eq(name)),
+    }
+}
+
+<span class="kw">let </span>user_one = users::table
+    .filter(find_user(Search::Id(<span class="number">1</span>)))
+    .first(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>((<span class="number">1</span>, String::from(<span class="string">"Sean"</span>)), user_one);
+
+<span class="kw">let </span>tess = users::table
+    .filter(find_user(Search::Name(<span class="string">"Tess"</span>.into())))
+    .first(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>((<span class="number">2</span>, String::from(<span class="string">"Tess"</span>)), tess);</code></pre></div>
+<h3 id="allow-usage-with-group-by-clause"><a class="doc-anchor" href="#allow-usage-with-group-by-clause">§</a>Allow usage with group by clause</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">use </span>diesel::sql_types::Text;
+<span class="kw">use </span>diesel::dsl;
+<span class="kw">use </span>diesel::expression::ValidGrouping;
+
+<span class="kw">enum </span>NameOrConst {
+    Name,
+    Const(String),
+}
+
+<span class="kw">type </span>DB = diesel::sqlite::Sqlite;
+
+<span class="kw">fn </span>selection&lt;GB&gt;(
+    selection: NameOrConst
+) -&gt; Box&lt;
+    <span class="kw">dyn </span>BoxableExpression&lt;
+        users::table,
+        DB,
+        GB,
+        &lt;users::name <span class="kw">as </span>ValidGrouping&lt;GB&gt;&gt;::IsAggregate,
+        SqlType = Text
+    &gt;
+&gt;
+<span class="kw">where
+    </span>users::name: BoxableExpression&lt;
+            users::table,
+            DB,
+            GB,
+            &lt;users::name <span class="kw">as </span>ValidGrouping&lt;GB&gt;&gt;::IsAggregate,
+            SqlType = Text
+        &gt; + ValidGrouping&lt;GB&gt;,
+{
+    <span class="kw">match </span>selection {
+        NameOrConst::Name =&gt; Box::new(users::name),
+        NameOrConst::Const(name) =&gt; Box::new(name.into_sql::&lt;Text&gt;()),
+    }
+}
+
+<span class="kw">let </span>user_one = users::table
+    .select(selection(NameOrConst::Name))
+    .first::&lt;String&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(String::from(<span class="string">"Sean"</span>), user_one);
+
+<span class="kw">let </span>with_name = users::table
+    .group_by(users::name)
+    .select(selection(NameOrConst::Const(<span class="string">"Jane Doe"</span>.into())))
+    .first::&lt;String&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(String::from(<span class="string">"Jane Doe"</span>), with_name);</code></pre></div>
+<h3 id="more-advanced-query-source"><a class="doc-anchor" href="#more-advanced-query-source">§</a>More advanced query source</h3>
+<p>This example is a bit contrived, but in general, if you want to for example filter based on
+different criteria on a joined table, you can use <code>InnerJoinQuerySource</code> and
+<code>LeftJoinQuerySource</code> in the QS parameter of <code>BoxableExpression</code>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::sql_types::Bool;
+<span class="kw">use </span>diesel::dsl::InnerJoinQuerySource;
+
+<span class="kw">enum </span>UserPostFilter {
+    User(i32),
+    Post(i32),
+}
+
+<span class="kw">type </span>DB = diesel::sqlite::Sqlite;
+
+<span class="kw">fn </span>filter_user_posts(
+    filter: UserPostFilter,
+) -&gt; Box&lt;<span class="kw">dyn </span>BoxableExpression&lt;InnerJoinQuerySource&lt;users::table, posts::table&gt;, DB, SqlType = Bool&gt;&gt;
+{
+    <span class="kw">match </span>filter {
+        UserPostFilter::User(user_id) =&gt; Box::new(users::id.eq(user_id)),
+        UserPostFilter::Post(post_id) =&gt; Box::new(posts::id.eq(post_id)),
+    }
+}
+
+<span class="kw">let </span>post_by_user_one = users::table
+    .inner_join(posts::table)
+    .filter(filter_user_posts(UserPostFilter::User(<span class="number">2</span>)))
+    .select((posts::title, users::name))
+    .first::&lt;(String, String)&gt;(conn)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(
+    (<span class="string">"My first post too"</span>.to_string(), <span class="string">"Tess"</span>.to_string()),
+    post_by_user_one
+);</code></pre></div>
+</div></details><h2 id="trait-implementations" class="section-header">Trait Implementations<a href="#trait-implementations" class="anchor">§</a></h2><div id="trait-implementations-list"><details class="toggle implementors-toggle" open><summary><section id="impl-QueryId-for-dyn+BoxableExpression%3CQS,+DB,+GB,+IsAggregate,+SqlType+=+ST%3E" class="impl"><a class="src rightside" href="../../src/diesel/expression/mod.rs.html#996-1002">source</a><a href="#impl-QueryId-for-dyn+BoxableExpression%3CQS,+DB,+GB,+IsAggregate,+SqlType+=+ST%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'a, QS, ST, DB, GB, IsAggregate&gt; <a class="trait" href="../query_builder/trait.QueryId.html" title="trait diesel::query_builder::QueryId">QueryId</a> for dyn <a class="trait" href="trait.BoxableExpression.html" title="trait diesel::prelude::BoxableExpression">BoxableExpression</a>&lt;QS, DB, GB, IsAggregate, SqlType = ST&gt; + 'a</h3></section></summary><div class="impl-items"><details class="toggle" open><summary><section id="associatedtype.QueryId" class="associatedtype trait-impl"><a href="#associatedtype.QueryId" class="anchor">§</a><h4 class="code-header">type <a href="../query_builder/trait.QueryId.html#associatedtype.QueryId" class="associatedtype">QueryId</a> = <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a></h4></section></summary><div class='docblock'>A type which uniquely represents <code>Self</code> in a SQL query. <a href="../query_builder/trait.QueryId.html#associatedtype.QueryId">Read more</a></div></details><details class="toggle" open><summary><section id="associatedconstant.HAS_STATIC_QUERY_ID" class="associatedconstant trait-impl"><a class="src rightside" href="../../src/diesel/expression/mod.rs.html#1001">source</a><a href="#associatedconstant.HAS_STATIC_QUERY_ID" class="anchor">§</a><h4 class="code-header">const <a href="../query_builder/trait.QueryId.html#associatedconstant.HAS_STATIC_QUERY_ID" class="constant">HAS_STATIC_QUERY_ID</a>: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a> = false</h4></section></summary><div class='docblock'>Can the SQL generated by <code>Self</code> be uniquely identified by its type? <a href="../query_builder/trait.QueryId.html#associatedconstant.HAS_STATIC_QUERY_ID">Read more</a></div></details><details class="toggle method-toggle" open><summary><section id="method.query_id" class="method trait-impl"><a class="src rightside" href="../../src/diesel/query_builder/query_id.rs.html#59-65">source</a><a href="#method.query_id" class="anchor">§</a><h4 class="code-header">fn <a href="../query_builder/trait.QueryId.html#method.query_id" class="fn">query_id</a>() -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="https://doc.rust-lang.org/nightly/core/any/struct.TypeId.html" title="struct core::any::TypeId">TypeId</a>&gt;</h4></section></summary><div class='docblock'>Returns the type id of <code>Self::QueryId</code> if <code>Self::HAS_STATIC_QUERY_ID</code>.
+Returns <code>None</code> otherwise. <a href="../query_builder/trait.QueryId.html#method.query_id">Read more</a></div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-ValidGrouping%3CGB%3E-for-dyn+BoxableExpression%3CQS,+DB,+GB,+IsAggregate,+SqlType+=+ST%3E" class="impl"><a class="src rightside" href="../../src/diesel/expression/mod.rs.html#1004-1008">source</a><a href="#impl-ValidGrouping%3CGB%3E-for-dyn+BoxableExpression%3CQS,+DB,+GB,+IsAggregate,+SqlType+=+ST%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'a, QS, ST, DB, GB, IsAggregate&gt; <a class="trait" href="../expression/trait.ValidGrouping.html" title="trait diesel::expression::ValidGrouping">ValidGrouping</a>&lt;GB&gt; for dyn <a class="trait" href="trait.BoxableExpression.html" title="trait diesel::prelude::BoxableExpression">BoxableExpression</a>&lt;QS, DB, GB, IsAggregate, SqlType = ST&gt; + 'a</h3></section></summary><div class="impl-items"><details class="toggle" open><summary><section id="associatedtype.IsAggregate" class="associatedtype trait-impl"><a href="#associatedtype.IsAggregate" class="anchor">§</a><h4 class="code-header">type <a href="../expression/trait.ValidGrouping.html#associatedtype.IsAggregate" class="associatedtype">IsAggregate</a> = IsAggregate</h4></section></summary><div class='docblock'>Is this expression aggregate? <a href="../expression/trait.ValidGrouping.html#associatedtype.IsAggregate">Read more</a></div></details></div></details></div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"><section id="impl-BoxableExpression%3CQS,+DB,+GB,+IsAggregate%3E-for-T" class="impl"><a class="src rightside" href="../../src/diesel/expression/mod.rs.html#984-994">source</a><a href="#impl-BoxableExpression%3CQS,+DB,+GB,+IsAggregate%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;QS, T, DB, GB, IsAggregate&gt; <a class="trait" href="trait.BoxableExpression.html" title="trait diesel::prelude::BoxableExpression">BoxableExpression</a>&lt;QS, DB, GB, IsAggregate&gt; for T<div class="where">where
+    DB: <a class="trait" href="../backend/trait.Backend.html" title="trait diesel::backend::Backend">Backend</a>,
+    T: <a class="trait" href="trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a> + <a class="trait" href="trait.SelectableExpression.html" title="trait diesel::prelude::SelectableExpression">SelectableExpression</a>&lt;QS&gt; + <a class="trait" href="../expression/trait.ValidGrouping.html" title="trait diesel::expression::ValidGrouping">ValidGrouping</a>&lt;GB&gt; + <a class="trait" href="../query_builder/trait.QueryFragment.html" title="trait diesel::query_builder::QueryFragment">QueryFragment</a>&lt;DB&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a>,
+    T::<a class="associatedtype" href="../expression/trait.ValidGrouping.html#associatedtype.IsAggregate" title="type diesel::expression::ValidGrouping::IsAggregate">IsAggregate</a>: <a class="trait" href="../expression/trait.MixedAggregates.html" title="trait diesel::expression::MixedAggregates">MixedAggregates</a>&lt;IsAggregate, Output = IsAggregate&gt;,</div></h3></section></div><script src="../../trait.impl/diesel/expression/trait.BoxableExpression.js" async></script></section></div></main></body></html>

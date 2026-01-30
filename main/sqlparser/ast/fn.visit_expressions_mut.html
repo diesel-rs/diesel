@@ -1,0 +1,47 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Invokes the provided closure iteratively with a mutable reference to all expressions present in `v`."><title>visit_expressions_mut in sqlparser::ast - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="sqlparser" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">visit_expressions_mut</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../sqlparser/index.html">sqlparser</a><span class="version">0.59.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">visit_<wbr>expressions_<wbr>mut</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a><ul><li><a href="#remove-all-select-limits-in-sub-queries" title="Remove all select limits in sub-queries">Remove all select limits in sub-queries</a></li><li><a href="#wrap-column-name-in-function-call" title="Wrap column name in function call">Wrap column name in function call</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In sqlparser::<wbr>ast</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">sqlparser</a>::<wbr><a href="index.html">ast</a></div><h1>Function <span class="fn">visit_<wbr>expressions_<wbr>mut</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/sqlparser/ast/visitor.rs.html#571-578">Source</a> </span></div><pre class="rust item-decl"><code>pub fn visit_expressions_mut&lt;V, E, F&gt;(v: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut V</a>, f: F) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/ops/control_flow/enum.ControlFlow.html" title="enum core::ops::control_flow::ControlFlow">ControlFlow</a>&lt;E&gt;<div class="where">where
+    V: <a class="trait" href="trait.VisitMut.html" title="trait sqlparser::ast::VisitMut">VisitMut</a>,
+    F: <a class="trait" href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnMut.html" title="trait core::ops::function::FnMut">FnMut</a>(&amp;mut <a class="enum" href="enum.Expr.html" title="enum sqlparser::ast::Expr">Expr</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/ops/control_flow/enum.ControlFlow.html" title="enum core::ops::control_flow::ControlFlow">ControlFlow</a>&lt;E&gt;,</div></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Invokes the provided closure iteratively with a mutable reference to all expressions
+present in <code>v</code>.</p>
+<p>This performs a depth-first search, so if the closure mutates the expression</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2><h3 id="remove-all-select-limits-in-sub-queries"><a class="doc-anchor" href="#remove-all-select-limits-in-sub-queries">§</a>Remove all select limits in sub-queries</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>sql = <span class="string">"SELECT (SELECT y FROM z LIMIT 9) FROM t LIMIT 3"</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>statements = Parser::parse_sql(<span class="kw-2">&amp;</span>GenericDialect{}, sql).unwrap();
+
+<span class="comment">// Remove all select limits in sub-queries
+</span>visit_expressions_mut(<span class="kw-2">&amp;mut </span>statements, |expr| {
+  <span class="kw">if let </span>Expr::Subquery(q) = expr {
+     q.limit_clause = <span class="prelude-val">None</span>;
+  }
+  ControlFlow::&lt;()&gt;::Continue(())
+});
+
+<span class="macro">assert_eq!</span>(statements[<span class="number">0</span>].to_string(), <span class="string">"SELECT (SELECT y FROM z) FROM t LIMIT 3"</span>);</code></pre></div><h3 id="wrap-column-name-in-function-call"><a class="doc-anchor" href="#wrap-column-name-in-function-call">§</a>Wrap column name in function call</h3>
+<p>This demonstrates how to effectively replace an expression with another more complicated one
+that references the original. This example avoids unnecessary allocations by using the
+<a href="https://doc.rust-lang.org/nightly/core/mem/index.html" title="mod core::mem"><code>std::mem</code></a> family of functions.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>sql = <span class="string">"SELECT x, y FROM t"</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>statements = Parser::parse_sql(<span class="kw-2">&amp;</span>GenericDialect{}, sql).unwrap();
+
+visit_expressions_mut(<span class="kw-2">&amp;mut </span>statements, |expr| {
+  <span class="kw">if </span><span class="macro">matches!</span>(expr, Expr::Identifier(col_name) <span class="kw">if </span>col_name.value == <span class="string">"x"</span>) {
+    <span class="kw">let </span>old_expr = std::mem::replace(expr, Expr::value(Value::Null));
+    <span class="kw-2">*</span>expr = Expr::Function(Function {
+          name: ObjectName::from(<span class="macro">vec!</span>[Ident::new(<span class="string">"f"</span>)]),
+          uses_odbc_syntax: <span class="bool-val">false</span>,
+          args: FunctionArguments::List(FunctionArgumentList {
+              duplicate_treatment: <span class="prelude-val">None</span>,
+              args: <span class="macro">vec!</span>[FunctionArg::Unnamed(FunctionArgExpr::Expr(old_expr))],
+              clauses: <span class="macro">vec!</span>[],
+          }),
+          null_treatment: <span class="prelude-val">None</span>,
+          filter: <span class="prelude-val">None</span>,
+          over: <span class="prelude-val">None</span>,
+          parameters: FunctionArguments::None,
+          within_group: <span class="macro">vec!</span>[],
+     });
+  }
+  ControlFlow::&lt;()&gt;::Continue(())
+});
+
+<span class="macro">assert_eq!</span>(statements[<span class="number">0</span>].to_string(), <span class="string">"SELECT f(x), y FROM t"</span>);</code></pre></div></div></details></section></div></main></body></html>

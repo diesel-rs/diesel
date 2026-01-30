@@ -1,0 +1,422 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerovec-derive-0.11.2/src/ule.rs`."><title>ule.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="zerovec_derive" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-f9617a14.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">zerovec_derive/</div>ule.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// This file is part of ICU4X. For terms of use, please see the file
+<a href=#2 id=2 data-nosnippet>2</a>// called LICENSE at the top level of the ICU4X source tree
+<a href=#3 id=3 data-nosnippet>3</a>// (online at: https://github.com/unicode-org/icu4x/blob/main/LICENSE ).
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a></span><span class="kw">use </span><a href="https://docs.rs/proc-macro2/1.0.106/proc_macro2/struct.TokenStream.html">proc_macro2::TokenStream</a> <span class="kw">as </span>TokenStream2;
+<a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span><a href="https://docs.rs/quote/1.0.44/quote/macro.quote.html">quote::quote</a>;
+<a href=#7 id=7 data-nosnippet>7</a>
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span><span class="kw">crate</span>::utils::{<a class="self" href="lib.rs.html#12">self</a>, <a href="utils.rs.html#135-139">FieldInfo</a>};
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span><a href="https://docs.rs/syn/2.0.114/syn/spanned/trait.Spanned.html">syn::spanned::Spanned</a>;
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span>syn::{<a href="https://docs.rs/syn/2.0.114/syn/derive/enum.Data.html">Data</a>, <a href="https://docs.rs/syn/2.0.114/syn/derive/struct.DeriveInput.html">DeriveInput</a>, <a href="https://docs.rs/syn/2.0.114/syn/error/struct.Error.html">Error</a>};
+<a href=#11 id=11 data-nosnippet>11</a>
+<a href=#12 id=12 data-nosnippet>12</a><span class="kw">pub fn </span>derive_impl(input: <span class="kw-2">&amp;</span><a href="https://docs.rs/syn/2.0.114/syn/derive/struct.DeriveInput.html">DeriveInput</a>) -&gt; <a href="https://docs.rs/proc-macro2/1.0.106/proc_macro2/struct.TokenStream.html">TokenStream2</a> {
+<a href=#13 id=13 data-nosnippet>13</a>    <span class="kw">if </span>!utils::<a href="utils.rs.html#15-20">ReprInfo</a>::<a href="utils.rs.html#23-41">compute</a>(<span class="kw-2">&amp;</span><a href="#12">input</a>.attrs).<a href="utils.rs.html#43-45">cpacked_or_transparent</a>() {
+<a href=#14 id=14 data-nosnippet>14</a>        <span class="kw">return </span><a href="https://docs.rs/syn/2.0.114/syn/error/struct.Error.html">Error</a>::<a href="https://docs.rs/syn/2.0.114/syn/error/struct.Error.html#method.new">new</a>(
+<a href=#15 id=15 data-nosnippet>15</a>            <a href="#12">input</a>.<a href="https://docs.rs/syn/2.0.114/syn/spanned/trait.Spanned.html#tymethod.span">span</a>(),
+<a href=#16 id=16 data-nosnippet>16</a>            <span class="string">"derive(ULE) must be applied to a #[repr(C, packed)] or #[repr(transparent)] type"</span>,
+<a href=#17 id=17 data-nosnippet>17</a>        )
+<a href=#18 id=18 data-nosnippet>18</a>        .<a href="https://docs.rs/syn/2.0.114/syn/error/struct.Error.html#method.to_compile_error">to_compile_error</a>();
+<a href=#19 id=19 data-nosnippet>19</a>    }
+<a href=#20 id=20 data-nosnippet>20</a>    <span class="kw">if </span><a href="#12">input</a>.generics.<a href="https://docs.rs/syn/2.0.114/syn/generics/struct.Generics.html#method.type_params">type_params</a>().<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#tymethod.next">next</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.is_some">is_some</a>()
+<a href=#21 id=21 data-nosnippet>21</a>        || <a href="#12">input</a>.generics.<a href="https://docs.rs/syn/2.0.114/syn/generics/struct.Generics.html#method.lifetimes">lifetimes</a>().<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#tymethod.next">next</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.is_some">is_some</a>()
+<a href=#22 id=22 data-nosnippet>22</a>        || <a href="#12">input</a>.generics.<a href="https://docs.rs/syn/2.0.114/syn/generics/struct.Generics.html#method.const_params">const_params</a>().<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#tymethod.next">next</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.is_some">is_some</a>()
+<a href=#23 id=23 data-nosnippet>23</a>    {
+<a href=#24 id=24 data-nosnippet>24</a>        <span class="kw">return </span><a href="https://docs.rs/syn/2.0.114/syn/error/struct.Error.html">Error</a>::<a href="https://docs.rs/syn/2.0.114/syn/error/struct.Error.html#method.new">new</a>(
+<a href=#25 id=25 data-nosnippet>25</a>            <a href="#12">input</a>.generics.<a href="https://docs.rs/syn/2.0.114/syn/spanned/trait.Spanned.html#tymethod.span">span</a>(),
+<a href=#26 id=26 data-nosnippet>26</a>            <span class="string">"derive(ULE) must be applied to a struct without any generics"</span>,
+<a href=#27 id=27 data-nosnippet>27</a>        )
+<a href=#28 id=28 data-nosnippet>28</a>        .<a href="https://docs.rs/syn/2.0.114/syn/error/struct.Error.html#method.to_compile_error">to_compile_error</a>();
+<a href=#29 id=29 data-nosnippet>29</a>    }
+<a href=#30 id=30 data-nosnippet>30</a>    <span class="kw">let </span>struc = <span class="kw">if let </span>Data::<a href="https://docs.rs/syn/2.0.114/syn/derive/enum.Data.html#variant.Struct">Struct</a>(<span class="kw-2">ref </span>s) = <a href="#12">input</a>.data {
+<a href=#31 id=31 data-nosnippet>31</a>        <span class="kw">if </span><a href="#30">s</a>.fields.<a href="https://docs.rs/syn/2.0.114/syn/data/enum.Fields.html#method.iter">iter</a>().<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#tymethod.next">next</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.is_none">is_none</a>() {
+<a href=#32 id=32 data-nosnippet>32</a>            <span class="kw">return </span><a href="https://docs.rs/syn/2.0.114/syn/error/struct.Error.html">Error</a>::<a href="https://docs.rs/syn/2.0.114/syn/error/struct.Error.html#method.new">new</a>(
+<a href=#33 id=33 data-nosnippet>33</a>                <a href="#12">input</a>.<a href="https://docs.rs/syn/2.0.114/syn/spanned/trait.Spanned.html#tymethod.span">span</a>(),
+<a href=#34 id=34 data-nosnippet>34</a>                <span class="string">"derive(ULE) must be applied to a non-empty struct"</span>,
+<a href=#35 id=35 data-nosnippet>35</a>            )
+<a href=#36 id=36 data-nosnippet>36</a>            .<a href="https://docs.rs/syn/2.0.114/syn/error/struct.Error.html#method.to_compile_error">to_compile_error</a>();
+<a href=#37 id=37 data-nosnippet>37</a>        }
+<a href=#38 id=38 data-nosnippet>38</a>        <a href="#30">s</a>
+<a href=#39 id=39 data-nosnippet>39</a>    } <span class="kw">else </span>{
+<a href=#40 id=40 data-nosnippet>40</a>        <span class="kw">return </span><a href="https://docs.rs/syn/2.0.114/syn/error/struct.Error.html">Error</a>::<a href="https://docs.rs/syn/2.0.114/syn/error/struct.Error.html#method.new">new</a>(<a href="#12">input</a>.<a href="https://docs.rs/syn/2.0.114/syn/spanned/trait.Spanned.html#tymethod.span">span</a>(), <span class="string">"derive(ULE) must be applied to a struct"</span>)
+<a href=#41 id=41 data-nosnippet>41</a>            .<a href="https://docs.rs/syn/2.0.114/syn/error/struct.Error.html#method.to_compile_error">to_compile_error</a>();
+<a href=#42 id=42 data-nosnippet>42</a>    };
+<a href=#43 id=43 data-nosnippet>43</a>
+<a href=#44 id=44 data-nosnippet>44</a>    <span class="kw">let </span>fields = <a href="utils.rs.html#135-139">FieldInfo</a>::<a href="utils.rs.html#142-146">make_list</a>(<a href="#30">struc</a>.fields.<a href="https://docs.rs/syn/2.0.114/syn/data/enum.Fields.html#method.iter">iter</a>());
+<a href=#45 id=45 data-nosnippet>45</a>    <span class="kw">let </span>(validators, remaining_offset) = <a href="#82-96">generate_ule_validators</a>(<span class="kw-2">&amp;</span><a href="#44">fields</a>);
+<a href=#46 id=46 data-nosnippet>46</a>
+<a href=#47 id=47 data-nosnippet>47</a>    <span class="kw">let </span>name = <span class="kw-2">&amp;</span><a href="#12">input</a>.ident;
+<a href=#48 id=48 data-nosnippet>48</a>
+<a href=#49 id=49 data-nosnippet>49</a>    <span class="comment">// Safety (based on the safety checklist on the ULE trait):
+<a href=#50 id=50 data-nosnippet>50</a>    //  1. #name does not include any uninitialized or padding bytes.
+<a href=#51 id=51 data-nosnippet>51</a>    //     (achieved by enforcing #[repr(transparent)] or #[repr(C, packed)] on a struct of only ULE types)
+<a href=#52 id=52 data-nosnippet>52</a>    //  2. #name is aligned to 1 byte.
+<a href=#53 id=53 data-nosnippet>53</a>    //     (achieved by enforcing #[repr(transparent)] or #[repr(C, packed)] on a struct of only ULE types)
+<a href=#54 id=54 data-nosnippet>54</a>    //  3. The impl of validate_bytes() returns an error if any byte is not valid.
+<a href=#55 id=55 data-nosnippet>55</a>    //  4. The impl of validate_bytes() returns an error if there are extra bytes.
+<a href=#56 id=56 data-nosnippet>56</a>    //  5. The other ULE methods use the default impl.
+<a href=#57 id=57 data-nosnippet>57</a>    //  6. [This impl does not enforce the non-safety equality constraint, it is up to the user to do so, ideally via a custom derive]
+<a href=#58 id=58 data-nosnippet>58</a></span><span class="expansion"><input id=expand-58 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">    <span class=expanded>{
+    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"unsafe"</span>);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"impl"</span>);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"zerovec"</span>);
+    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"ule"</span>);
+    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"ULE"</span>);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"for"</span>);
+    ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>name, <span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+        ::quote::__private::Delimiter::Brace,
+        {
+            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+            ::quote::__private::push_pound(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                ::quote::__private::Delimiter::Bracket,
+                {
+                    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"inline"</span>);
+                    _s
+                });
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"fn"</span>);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"validate_bytes"</span>);
+            ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                ::quote::__private::Delimiter::Parenthesis,
+                {
+                    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"bytes"</span>);
+                    ::quote::__private::push_colon(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_and(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                        ::quote::__private::Delimiter::Bracket,
+                        {
+                            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"u8"</span>);
+                            _s
+                        });
+                    _s
+                });
+            ::quote::__private::push_rarrow(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Result"</span>);
+            ::quote::__private::push_lt(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                ::quote::__private::Delimiter::Parenthesis,
+                ::quote::__private::TokenStream::new());
+            ::quote::__private::push_comma(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"zerovec"</span>);
+            ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"ule"</span>);
+            ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"UleError"</span>);
+            ::quote::__private::push_gt(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                ::quote::__private::Delimiter::Brace,
+                {
+                    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"const"</span>);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"SIZE"</span>);
+                    ::quote::__private::push_colon(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"usize"</span>);
+                    ::quote::__private::push_eq(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"core"</span>);
+                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"mem"</span>);
+                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"size_of"</span>);
+                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_lt(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>name, <span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_gt(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                        ::quote::__private::Delimiter::Parenthesis,
+                        ::quote::__private::TokenStream::new());
+                    ::quote::__private::push_semi(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_pound(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                        ::quote::__private::Delimiter::Bracket,
+                        {
+                            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"expect"</span>);
+                            ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                                ::quote::__private::Delimiter::Parenthesis,
+                                {
+                                    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"clippy"</span>);
+                                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"modulo_one"</span>);
+                                    _s
+                                });
+                            _s
+                        });
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"if"</span>);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"bytes"</span>);
+                    ::quote::__private::push_dot(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"len"</span>);
+                    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                        ::quote::__private::Delimiter::Parenthesis,
+                        ::quote::__private::TokenStream::new());
+                    ::quote::__private::push_rem(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"SIZE"</span>);
+                    ::quote::__private::push_ne(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::parse(<span class="kw-2">&amp;mut </span>_s, <span class="string">"0"</span>);
+                    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                        ::quote::__private::Delimiter::Brace,
+                        {
+                            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"return"</span>);
+                            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Err"</span>);
+                            ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                                ::quote::__private::Delimiter::Parenthesis,
+                                {
+                                    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"zerovec"</span>);
+                                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"ule"</span>);
+                                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"UleError"</span>);
+                                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"length"</span>);
+                                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                                    ::quote::__private::push_lt(<span class="kw-2">&amp;mut </span>_s);
+                                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Self"</span>);
+                                    ::quote::__private::push_gt(<span class="kw-2">&amp;mut </span>_s);
+                                    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                                        ::quote::__private::Delimiter::Parenthesis,
+                                        {
+                                            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                                            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"bytes"</span>);
+                                            ::quote::__private::push_dot(<span class="kw-2">&amp;mut </span>_s);
+                                            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"len"</span>);
+                                            ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                                                ::quote::__private::Delimiter::Parenthesis,
+                                                ::quote::__private::TokenStream::new());
+                                            _s
+                                        });
+                                    _s
+                                });
+                            ::quote::__private::push_semi(<span class="kw-2">&amp;mut </span>_s);
+                            _s
+                        });
+                    ::quote::__private::push_pound(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                        ::quote::__private::Delimiter::Bracket,
+                        {
+                            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"expect"</span>);
+                            ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                                ::quote::__private::Delimiter::Parenthesis,
+                                {
+                                    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"clippy"</span>);
+                                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"indexing_slicing"</span>);
+                                    _s
+                                });
+                            _s
+                        });
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"for"</span>);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"chunk"</span>);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"in"</span>);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"bytes"</span>);
+                    ::quote::__private::push_dot(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"chunks_exact"</span>);
+                    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                        ::quote::__private::Delimiter::Parenthesis,
+                        {
+                            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"SIZE"</span>);
+                            _s
+                        });
+                    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                        ::quote::__private::Delimiter::Brace,
+                        {
+                            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                            ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>validators, <span class="kw-2">&amp;mut </span>_s);
+                            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"debug_assert_eq"</span>);
+                            ::quote::__private::push_bang(<span class="kw-2">&amp;mut </span>_s);
+                            ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                                ::quote::__private::Delimiter::Parenthesis,
+                                {
+                                    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                                    ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>remaining_offset, <span class="kw-2">&amp;mut </span>_s);
+                                    ::quote::__private::push_comma(<span class="kw-2">&amp;mut </span>_s);
+                                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"SIZE"</span>);
+                                    _s
+                                });
+                            ::quote::__private::push_semi(<span class="kw-2">&amp;mut </span>_s);
+                            _s
+                        });
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Ok"</span>);
+                    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                        ::quote::__private::Delimiter::Parenthesis,
+                        {
+                            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                            ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                                ::quote::__private::Delimiter::Parenthesis,
+                                ::quote::__private::TokenStream::new());
+                            _s
+                        });
+                    _s
+                });
+            _s
+        });
+    _s
+}</span><span class="original"><a href="https://docs.rs/quote/1.0.44/quote/macro.quote.html">quote!</a> {
+<a href=#59 id=59 data-nosnippet>59</a>        <span class="kw">unsafe impl </span>zerovec::ule::ULE <span class="kw">for </span>#name {
+<a href=#60 id=60 data-nosnippet>60</a>            <span class="attr">#[inline]
+<a href=#61 id=61 data-nosnippet>61</a>            </span><span class="kw">fn </span>validate_bytes(bytes: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;(), zerovec::ule::UleError&gt; {
+<a href=#62 id=62 data-nosnippet>62</a>                <span class="kw">const </span>SIZE: usize = ::core::mem::size_of::&lt;#name&gt;();
+<a href=#63 id=63 data-nosnippet>63</a>                <span class="attr">#[expect(clippy::modulo_one)]
+<a href=#64 id=64 data-nosnippet>64</a>                </span><span class="kw">if </span>bytes.len() % <span class="macro">SIZE !</span>= <span class="number">0 </span>{
+<a href=#65 id=65 data-nosnippet>65</a>                    <span class="kw">return </span><span class="prelude-val">Err</span>(zerovec::ule::UleError::length::&lt;<span class="self">Self</span>&gt;(bytes.len()));
+<a href=#66 id=66 data-nosnippet>66</a>                }
+<a href=#67 id=67 data-nosnippet>67</a>                <span class="comment">// Validate the bytes
+<a href=#68 id=68 data-nosnippet>68</a>                </span><span class="attr">#[expect(clippy::indexing_slicing)] </span><span class="comment">// We're slicing a chunk of known size
+<a href=#69 id=69 data-nosnippet>69</a>                </span><span class="kw">for </span>chunk <span class="kw">in </span>bytes.chunks_exact(SIZE) {
+<a href=#70 id=70 data-nosnippet>70</a>                    #validators
+<a href=#71 id=71 data-nosnippet>71</a>                    <span class="macro">debug_assert_eq!</span>(#remaining_offset, SIZE);
+<a href=#72 id=72 data-nosnippet>72</a>                }
+<a href=#73 id=73 data-nosnippet>73</a>                <span class="prelude-val">Ok</span>(())
+<a href=#74 id=74 data-nosnippet>74</a>            }
+<a href=#75 id=75 data-nosnippet>75</a>        }
+<a href=#76 id=76 data-nosnippet>76</a>    }</span></span>
+<a href=#77 id=77 data-nosnippet>77</a>}
+<a href=#78 id=78 data-nosnippet>78</a>
+<a href=#79 id=79 data-nosnippet>79</a><span class="doccomment">/// Given an slice over ULE struct fields, returns code validating that a slice variable `bytes` contains valid instances of those ULE types
+<a href=#80 id=80 data-nosnippet>80</a>/// in order, plus the byte offset of any remaining unvalidated bytes. ULE types should not have any remaining bytes, but VarULE types will since
+<a href=#81 id=81 data-nosnippet>81</a>/// the last field is the unsized one.
+<a href=#82 id=82 data-nosnippet>82</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>generate_ule_validators(
+<a href=#83 id=83 data-nosnippet>83</a>    fields: <span class="kw-2">&amp;</span>[<a href="utils.rs.html#135-139">FieldInfo</a>],
+<a href=#84 id=84 data-nosnippet>84</a>    <span class="comment">// (validators, remaining_offset)
+<a href=#85 id=85 data-nosnippet>85</a></span>) -&gt; (<a href="https://docs.rs/proc-macro2/1.0.106/proc_macro2/struct.TokenStream.html">TokenStream2</a>, syn::<a href="https://docs.rs/proc-macro2/1.0.106/proc_macro2/struct.Ident.html">Ident</a>) {
+<a href=#86 id=86 data-nosnippet>86</a>    utils::<a href="utils.rs.html#98-132">generate_per_field_offsets</a>(<a href="#83">fields</a>, <span class="bool-val">false</span>, |field, prev_offset_ident, size_ident| {
+<a href=#87 id=87 data-nosnippet>87</a>        <span class="kw">let </span>ty = <span class="kw-2">&amp;</span><a href="#86">field</a>.field.ty;
+<a href=#88 id=88 data-nosnippet>88</a><span class="expansion"><input id=expand-88 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded>{
+    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"if"</span>);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"let"</span>);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Some"</span>);
+    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+        ::quote::__private::Delimiter::Parenthesis,
+        {
+            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"bytes"</span>);
+            _s
+        });
+    ::quote::__private::push_eq(<span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"bytes"</span>);
+    ::quote::__private::push_dot(<span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"get"</span>);
+    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+        ::quote::__private::Delimiter::Parenthesis,
+        {
+            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+            ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>prev_offset_ident, <span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_dot2(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>prev_offset_ident, <span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_add(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>size_ident, <span class="kw-2">&amp;mut </span>_s);
+            _s
+        });
+    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+        ::quote::__private::Delimiter::Brace,
+        {
+            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+            ::quote::__private::push_lt(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>ty, <span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"as"</span>);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"zerovec"</span>);
+            ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"ule"</span>);
+            ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"ULE"</span>);
+            ::quote::__private::push_gt(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"validate_bytes"</span>);
+            ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                ::quote::__private::Delimiter::Parenthesis,
+                {
+                    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"bytes"</span>);
+                    _s
+                });
+            ::quote::__private::push_question(<span class="kw-2">&amp;mut </span>_s);
+            ::quote::__private::push_semi(<span class="kw-2">&amp;mut </span>_s);
+            _s
+        });
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"else"</span>);
+    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+        ::quote::__private::Delimiter::Brace,
+        {
+            <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"return"</span>);
+            ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Err"</span>);
+            ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                ::quote::__private::Delimiter::Parenthesis,
+                {
+                    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"zerovec"</span>);
+                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"ule"</span>);
+                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"UleError"</span>);
+                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"parse"</span>);
+                    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_lt(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"Self"</span>);
+                    ::quote::__private::push_gt(<span class="kw-2">&amp;mut </span>_s);
+                    ::quote::__private::push_group(<span class="kw-2">&amp;mut </span>_s,
+                        ::quote::__private::Delimiter::Parenthesis,
+                        ::quote::__private::TokenStream::new());
+                    _s
+                });
+            ::quote::__private::push_semi(<span class="kw-2">&amp;mut </span>_s);
+            _s
+        });
+    _s
+}</span><span class="original"><a href="https://docs.rs/quote/1.0.44/quote/macro.quote.html">quote!</a> {
+<a href=#89 id=89 data-nosnippet>89</a>            <span class="kw">if let </span><span class="prelude-val">Some</span>(bytes) = bytes.get(#prev_offset_ident .. #prev_offset_ident + #size_ident) {
+<a href=#90 id=90 data-nosnippet>90</a>                &lt;#ty <span class="kw">as </span>zerovec::ule::ULE&gt;::validate_bytes(bytes)<span class="question-mark">?</span>;
+<a href=#91 id=91 data-nosnippet>91</a>            } <span class="kw">else </span>{
+<a href=#92 id=92 data-nosnippet>92</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(zerovec::ule::UleError::parse::&lt;<span class="self">Self</span>&gt;());
+<a href=#93 id=93 data-nosnippet>93</a>            }
+<a href=#94 id=94 data-nosnippet>94</a>        }</span></span>
+<a href=#95 id=95 data-nosnippet>95</a>    })
+<a href=#96 id=96 data-nosnippet>96</a>}
+<a href=#97 id=97 data-nosnippet>97</a>
+<a href=#98 id=98 data-nosnippet>98</a><span class="doccomment">/// Make corresponding ULE fields for each field
+<a href=#99 id=99 data-nosnippet>99</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>make_ule_fields(fields: <span class="kw-2">&amp;</span>[<a href="utils.rs.html#135-139">FieldInfo</a>]) -&gt; <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="https://docs.rs/proc-macro2/1.0.106/proc_macro2/struct.TokenStream.html">TokenStream2</a>&gt; {
+<a href=#100 id=100 data-nosnippet>100</a>    <a href="#99">fields</a>
+<a href=#101 id=101 data-nosnippet>101</a>        .<a href="https://doc.rust-lang.org/nightly/core/foreigntype.slice.html#method.iter">iter</a>()
+<a href=#102 id=102 data-nosnippet>102</a>        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(|f| {
+<a href=#103 id=103 data-nosnippet>103</a>            <span class="kw">let </span>ty = <span class="kw-2">&amp;</span><a href="#102">f</a>.field.ty;
+<a href=#104 id=104 data-nosnippet>104</a><span class="expansion"><input id=expand-104 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <span class="kw">let </span>ty = <span class=expanded>{
+    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+    ::quote::__private::push_lt(<span class="kw-2">&amp;mut </span>_s);
+    ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>ty, <span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"as"</span>);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"zerovec"</span>);
+    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"ule"</span>);
+    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"AsULE"</span>);
+    ::quote::__private::push_gt(<span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_colon2(<span class="kw-2">&amp;mut </span>_s);
+    ::quote::__private::push_ident(<span class="kw-2">&amp;mut </span>_s, <span class="string">"ULE"</span>);
+    _s
+}</span><span class="original"><a href="https://docs.rs/quote/1.0.44/quote/macro.quote.html">quote!</a>(&lt;#ty <span class="kw">as </span>zerovec::ule::AsULE&gt;::ULE)</span></span>;
+<a href=#105 id=105 data-nosnippet>105</a>            <span class="kw">let </span>setter = <a href="#102">f</a>.<a href="utils.rs.html#168-174">setter</a>();
+<a href=#106 id=106 data-nosnippet>106</a>            <span class="kw">let </span>vis = <span class="kw-2">&amp;</span><a href="#102">f</a>.field.vis;
+<a href=#107 id=107 data-nosnippet>107</a><span class="expansion"><input id=expand-107 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <span class=expanded>{
+    <span class="kw">let </span><span class="kw-2">mut </span>_s = ::quote::__private::TokenStream::new();
+    ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>vis, <span class="kw-2">&amp;mut </span>_s);
+    ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>setter, <span class="kw-2">&amp;mut </span>_s);
+    ::quote::ToTokens::to_tokens(<span class="kw-2">&amp;</span>ty, <span class="kw-2">&amp;mut </span>_s);
+    _s
+}</span><span class="original"><a href="https://docs.rs/quote/1.0.44/quote/macro.quote.html">quote!</a>(#vis #setter #ty)</span></span>
+<a href=#108 id=108 data-nosnippet>108</a>        })
+<a href=#109 id=109 data-nosnippet>109</a>        .collect::&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="kw">_</span>&gt;&gt;()
+<a href=#110 id=110 data-nosnippet>110</a>}
+</code></pre></div></section></main></body></html>

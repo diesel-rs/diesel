@@ -1,0 +1,88 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="SQL Parser for Rust"><title>sqlparser - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="sqlparser" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../static.files/storage-f9617a14.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate sqlparser</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../sqlparser/index.html">sqlparser</a><span class="version">0.59.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#sql-parser-for-rust" title="SQL Parser for Rust">SQL Parser for Rust</a></li><li><a href="#example-parsing-sql-text" title="Example parsing SQL text">Example parsing SQL text</a></li><li><a href="#creating-sql-text-from-ast" title="Creating SQL text from AST">Creating SQL text from AST</a></li><li><a href="#pretty-printing" title="Pretty Printing">Pretty Printing</a></li><li><a href="#source-spans" title="Source Spans">Source Spans</a><ul><li><a href="#migration-guide" title="Migration Guide">Migration Guide</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>sqlparser</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/sqlparser/lib.rs.html#18-179">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="sql-parser-for-rust"><a class="doc-anchor" href="#sql-parser-for-rust">§</a>SQL Parser for Rust</h2>
+<p>This crate provides an ANSI:SQL 2011 lexer and parser that can parse SQL
+into an Abstract Syntax Tree (<a href="ast/index.html" title="mod sqlparser::ast"><code>AST</code></a>). See the <a href="https://crates.io/crates/sqlparser">sqlparser crates.io page</a>
+for more information.</p>
+<p>For more information:</p>
+<ol>
+<li><a href="parser/struct.Parser.html#method.parse_sql" title="associated function sqlparser::parser::Parser::parse_sql"><code>Parser::parse_sql</code></a> and <a href="parser/struct.Parser.html#method.new" title="associated function sqlparser::parser::Parser::new"><code>Parser::new</code></a> for the Parsing API</li>
+<li><a href="ast/index.html" title="mod sqlparser::ast"><code>ast</code></a> for the AST structure</li>
+<li><a href="dialect/trait.Dialect.html" title="trait sqlparser::dialect::Dialect"><code>Dialect</code></a> for supported SQL dialects</li>
+<li><a href="ast/trait.Spanned.html" title="trait sqlparser::ast::Spanned"><code>Spanned</code></a> for source text locations (see “Source Spans” below for details)</li>
+</ol>
+<h2 id="example-parsing-sql-text"><a class="doc-anchor" href="#example-parsing-sql-text">§</a>Example parsing SQL text</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>sqlparser::dialect::GenericDialect;
+<span class="kw">use </span>sqlparser::parser::Parser;
+
+<span class="kw">let </span>dialect = GenericDialect {}; <span class="comment">// or AnsiDialect
+
+</span><span class="kw">let </span>sql = <span class="string">"SELECT a, b, 123, myfunc(b) \
+           FROM table_1 \
+           WHERE a &gt; b AND b &lt; 100 \
+           ORDER BY a DESC, b"</span>;
+
+<span class="kw">let </span>ast = Parser::parse_sql(<span class="kw-2">&amp;</span>dialect, sql).unwrap();
+
+<span class="macro">println!</span>(<span class="string">"AST: {:?}"</span>, ast);</code></pre></div><h2 id="creating-sql-text-from-ast"><a class="doc-anchor" href="#creating-sql-text-from-ast">§</a>Creating SQL text from AST</h2>
+<p>This crate allows users to recover the original SQL text (with comments
+removed, normalized whitespace and identifier capitalization), which is
+useful for tools that analyze and manipulate SQL.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>sql = <span class="string">"SELECT a FROM table_1"</span>;
+
+<span class="comment">// parse to a Vec&lt;Statement&gt;
+</span><span class="kw">let </span>ast = Parser::parse_sql(<span class="kw-2">&amp;</span>GenericDialect, sql).unwrap();
+
+<span class="comment">// The original SQL text can be generated from the AST
+</span><span class="macro">assert_eq!</span>(ast[<span class="number">0</span>].to_string(), sql);</code></pre></div><h2 id="pretty-printing"><a class="doc-anchor" href="#pretty-printing">§</a>Pretty Printing</h2>
+<p>SQL statements can be pretty-printed with proper indentation and line breaks using the alternate flag (<code>{:#}</code>):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>sql = <span class="string">"SELECT a, b FROM table_1"</span>;
+<span class="kw">let </span>ast = Parser::parse_sql(<span class="kw-2">&amp;</span>GenericDialect, sql).unwrap();
+
+<span class="comment">// Pretty print with indentation and line breaks
+</span><span class="kw">let </span>pretty_sql = <span class="macro">format!</span>(<span class="string">"{:#}"</span>, ast[<span class="number">0</span>]);
+<span class="macro">assert_eq!</span>(pretty_sql, <span class="string">r#"
+SELECT
+  a,
+  b
+FROM
+  table_1
+"#</span>.trim());</code></pre></div><h2 id="source-spans"><a class="doc-anchor" href="#source-spans">§</a>Source Spans</h2>
+<p>Starting with version  <code>0.53.0</code> sqlparser introduced source spans to the
+AST. This feature provides source information for syntax errors, enabling
+better error messages. See <a href="https://github.com/apache/datafusion-sqlparser-rs/issues/1548">issue #1548</a> for more information and the
+<a href="ast/trait.Spanned.html" title="trait sqlparser::ast::Spanned"><code>Spanned</code></a> trait to access the spans.</p>
+<h3 id="migration-guide"><a class="doc-anchor" href="#migration-guide">§</a>Migration Guide</h3>
+<p>For the next few releases, we will be incrementally adding source spans to the
+AST nodes, trying to minimize the impact on existing users. Some breaking
+changes are inevitable, and the following is a summary of the changes:</p>
+<h5 id="new-fields-for-spans-must-be-added-to-any-existing-pattern-matches"><a class="doc-anchor" href="#new-fields-for-spans-must-be-added-to-any-existing-pattern-matches">§</a>New fields for spans (must be added to any existing pattern matches)</h5>
+<p>The primary change is that new fields will be added to AST nodes to store the source <code>Span</code> or <code>TokenWithLocation</code>.</p>
+<p>This will require</p>
+<ol>
+<li>Adding new fields to existing pattern matches.</li>
+<li>Filling in the proper span information when constructing AST nodes.</li>
+</ol>
+<p>For example, since <code>Ident</code> now stores a <code>Span</code>, to construct an <code>Ident</code> you
+must provide now provide one:</p>
+<p>Previously:</p>
+<div class="example-wrap"><pre class="language-text"><code># use sqlparser::ast::Ident;
+Ident {
+    value: &quot;name&quot;.into(),
+    quote_style: None,
+}</code></pre></div>
+<p>Now</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>Ident {
+    value: <span class="string">"name"</span>.into(),
+    quote_style: <span class="prelude-val">None</span>,
+    span: Span::empty(),
+};</code></pre></div>
+<p>Similarly, when pattern matching on <code>Ident</code>, you must now account for the
+<code>span</code> field.</p>
+<h5 id="misc"><a class="doc-anchor" href="#misc">§</a>Misc.</h5>
+<ul>
+<li><a href="tokenizer/type.TokenWithLocation.html" title="type sqlparser::tokenizer::TokenWithLocation"><code>TokenWithLocation</code></a> stores a full <code>Span</code>, rather than just a source location.
+Users relying on <code>token.location</code> should use <code>token.location.start</code> instead.</li>
+</ul>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="ast/index.html" title="mod sqlparser::ast">ast</a></dt><dd>SQL Abstract Syntax Tree (AST) types</dd><dt><a class="mod" href="dialect/index.html" title="mod sqlparser::dialect">dialect</a></dt><dt><a class="mod" href="keywords/index.html" title="mod sqlparser::keywords">keywords</a></dt><dd>This module defines:</dd><dt><a class="mod" href="parser/index.html" title="mod sqlparser::parser">parser</a></dt><dd>SQL Parser</dd><dt><a class="mod" href="tokenizer/index.html" title="mod sqlparser::tokenizer">tokenizer</a></dt><dd>SQL Tokenizer</dd></dl></section></div></main></body></html>

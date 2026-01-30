@@ -1,0 +1,189 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `diesel/src/type_impls/json.rs`."><title>json.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../static.files/storage-f9617a14.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">diesel/type_impls/</div>json.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="attr">#![allow(dead_code)]
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a></span><span class="kw">use </span><a href="../../../diesel/deserialize/derive.FromSqlRow.html"><span class="kw">crate</span>::deserialize::FromSqlRow</a>;
+<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span><a href="../../../diesel/expression/derive.AsExpression.html"><span class="kw">crate</span>::expression::AsExpression</a>;
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><a href="../sql_types/mod.rs.html#402"><span class="kw">crate</span>::sql_types::Json</a>;
+<a href=#6 id=6 data-nosnippet>6</a><span class="attr">#[cfg(any(feature = <span class="string">"postgres_backend"</span>, feature = <span class="string">"__sqlite-shared"</span>))]
+<a href=#7 id=7 data-nosnippet>7</a></span><span class="kw">use </span><a href="../sql_types/mod.rs.html#527"><span class="kw">crate</span>::sql_types::Jsonb</a>;
+<a href=#8 id=8 data-nosnippet>8</a>
+<a href=#9 id=9 data-nosnippet>9</a><span class="expansion"><input id=expand-9 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="kw">const _</span>: () =
+    {
+        <span class="kw">use </span>diesel;
+        <span class="kw">impl</span>&lt;<span class="lifetime">'__expr</span>&gt; diesel::expression::AsExpression&lt;Json&gt; <span class="kw">for
+            </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr </span>serde_json::Value {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;Json, <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;Json&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'__expr</span>&gt;
+            diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;Json&gt;&gt;
+            <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr </span>serde_json::Value {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;diesel::sql_types::Nullable&lt;Json&gt;,
+                <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;Json&gt;&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'__expr</span>, <span class="lifetime">'__expr2</span>&gt; diesel::expression::AsExpression&lt;Json&gt; <span class="kw">for
+            </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr2 </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr </span>serde_json::Value {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;Json, <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;Json&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'__expr</span>, <span class="lifetime">'__expr2</span>&gt;
+            diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;Json&gt;&gt;
+            <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr2 </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr </span>serde_json::Value {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;diesel::sql_types::Nullable&lt;Json&gt;,
+                <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;Json&gt;&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="kw">impl</span>&lt;__DB&gt;
+            diesel::serialize::ToSql&lt;diesel::sql_types::Nullable&lt;Json&gt;, __DB&gt;
+            <span class="kw">for </span>serde_json::Value <span class="kw">where </span>__DB: diesel::backend::Backend,
+            <span class="self">Self</span>: diesel::serialize::ToSql&lt;Json, __DB&gt; {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'__b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'__b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'__b</span>, <span class="lifetime">'_</span>, __DB&gt;)
+                -&gt; diesel::serialize::Result {
+                diesel::serialize::ToSql::&lt;Json, __DB&gt;::to_sql(<span class="self">self</span>, out)
+            }
+        }
+        <span class="kw">impl </span>diesel::expression::AsExpression&lt;Json&gt; <span class="kw">for </span>serde_json::Value {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;Json, <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;Json&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="kw">impl </span>diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;Json&gt;&gt;
+            <span class="kw">for </span>serde_json::Value {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;diesel::sql_types::Nullable&lt;Json&gt;,
+                <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;Json&gt;&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'__expr</span>&gt; diesel::expression::AsExpression&lt;Jsonb&gt; <span class="kw">for
+            </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr </span>serde_json::Value {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;Jsonb, <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;Jsonb&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'__expr</span>&gt;
+            diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;Jsonb&gt;&gt;
+            <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr </span>serde_json::Value {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;diesel::sql_types::Nullable&lt;Jsonb&gt;,
+                <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;Jsonb&gt;&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'__expr</span>, <span class="lifetime">'__expr2</span>&gt; diesel::expression::AsExpression&lt;Jsonb&gt; <span class="kw">for
+            </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr2 </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr </span>serde_json::Value {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;Jsonb, <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;Jsonb&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'__expr</span>, <span class="lifetime">'__expr2</span>&gt;
+            diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;Jsonb&gt;&gt;
+            <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr2 </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr </span>serde_json::Value {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;diesel::sql_types::Nullable&lt;Jsonb&gt;,
+                <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;Jsonb&gt;&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="kw">impl</span>&lt;__DB&gt;
+            diesel::serialize::ToSql&lt;diesel::sql_types::Nullable&lt;Jsonb&gt;, __DB&gt;
+            <span class="kw">for </span>serde_json::Value <span class="kw">where </span>__DB: diesel::backend::Backend,
+            <span class="self">Self</span>: diesel::serialize::ToSql&lt;Jsonb, __DB&gt; {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'__b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'__b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'__b</span>, <span class="lifetime">'_</span>, __DB&gt;)
+                -&gt; diesel::serialize::Result {
+                diesel::serialize::ToSql::&lt;Jsonb, __DB&gt;::to_sql(<span class="self">self</span>, out)
+            }
+        }
+        <span class="kw">impl </span>diesel::expression::AsExpression&lt;Jsonb&gt; <span class="kw">for </span>serde_json::Value {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;Jsonb, <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;Jsonb&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="kw">impl </span>diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;Jsonb&gt;&gt;
+            <span class="kw">for </span>serde_json::Value {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;diesel::sql_types::Nullable&lt;Jsonb&gt;,
+                <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;Jsonb&gt;&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+    };</span><span class="original"><a href="../../../diesel/expression/derive.AsExpression.html">AsExpression</a></span>, <span class=expanded><span class="kw">const _</span>: () =
+    {
+        <span class="kw">use </span>diesel;
+        <span class="kw">impl</span>&lt;__DB, __ST&gt; diesel::deserialize::Queryable&lt;__ST, __DB&gt; <span class="kw">for
+            </span>serde_json::Value <span class="kw">where </span>__DB: diesel::backend::Backend,
+            __ST: diesel::sql_types::SingleValue,
+            <span class="self">Self</span>: diesel::deserialize::FromSql&lt;__ST, __DB&gt; {
+            <span class="kw">type </span>Row = <span class="self">Self</span>;
+            <span class="kw">fn </span>build(row: <span class="self">Self</span>) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                diesel::deserialize::Result::Ok(row)
+            }
+        }
+    };</span><span class="original"><a href="../../../diesel/deserialize/derive.FromSqlRow.html">FromSqlRow</a></span></span></span><span class="attr">)]
+<a href=#10 id=10 data-nosnippet>10</a>#[diesel(foreign_derive)]
+<a href=#11 id=11 data-nosnippet>11</a>#[diesel(sql_type = Json)]
+<a href=#12 id=12 data-nosnippet>12</a>#[cfg_attr(any(feature = <span class="string">"postgres_backend"</span>, feature = <span class="string">"__sqlite-shared"</span>), diesel(sql_type = Jsonb))]
+<a href=#13 id=13 data-nosnippet>13</a></span><span class="kw">struct </span>SerdeJsonValueProxy(serde_json::<a href="../../../serde_json/value/enum.Value.html">Value</a>);
+</code></pre></div></section></main></body></html>

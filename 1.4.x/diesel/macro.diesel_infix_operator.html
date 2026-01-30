@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Useful for libraries adding support for new SQL types. Apps should never need to call this."><meta name="keywords" content="rust, rustlang, rust-lang, diesel_infix_operator"><title>diesel_infix_operator in diesel - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../ayu.css" disabled ><script id="default-settings" ></script><script src="../storage.js"></script><script src="../crates.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="alternate icon" type="image/png" href="../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../diesel/index.html'><div class='logo-container rust-logo'><img src='../rust-logo.png' alt='logo'></div></a><div class="sidebar-elems"><h2 class="location">Other items in<br><a href="index.html">diesel</a></h2><div id="sidebar-vars" data-name="diesel_infix_operator" data-ty="macro" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input"name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../wheel.svg"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Macro <a href="index.html">diesel</a>::<wbr><a class="macro" href="#">diesel_infix_operator</a><button id="copy-path" onclick="copy_path(this)" title="copy path"><img src="../clipboard.svg" width="19" height="18" alt="Copy item import" title="Copy item import to clipboard"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../src/diesel/expression/operators.rs.html#213-247" title="goto source code">[src]</a></span></h1><div class="docblock type-decl"><div class="example-wrap"><pre class="rust macro">
+<span class="macro">macro_rules!</span> <span class="ident">diesel_infix_operator</span> {
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span> : <span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">operator</span> : <span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> { ... };
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span> : <span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">operator</span> : <span class="ident">expr</span>, <span class="ident">backend</span> : <span class="macro-nonterminal">$</span><span class="macro-nonterminal">backend</span> : <span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> { ... };
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span> : <span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">operator</span> : <span class="ident">expr</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">return_ty</span> : <span class="ident">tt</span>) :: <span class="kw-2">*</span>) <span class="op">=</span><span class="op">&gt;</span> { ... };
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span> : <span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">operator</span> : <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">return_ty</span> : <span class="ident">ty</span>, <span class="ident">backend</span> : <span class="macro-nonterminal">$</span><span class="macro-nonterminal">backend</span> : <span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> { ... };
+}</pre></div>
+</div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Useful for libraries adding support for new SQL types. Apps should never
+need to call this.</p>
+<p>This will create a new type with the given name. It will implement all
+methods needed to be used as an expression in Diesel, placing the given
+SQL between the two elements. The third argument specifies the SQL type
+that the operator returns. If it is not given, the type will be assumed
+to be <code>Bool</code>.</p>
+<p>If the operator is specific to a single backend, you can specify this by
+adding <code>backend: Pg</code> or similar as the last argument.</p>
+<p>It should be noted that the generated impls will not constrain the SQL
+types of the arguments. You should ensure that they are of the right
+type in your function which constructs the operator.</p>
+<p>Typically you would not expose the type that this generates directly. You’d
+expose a function (or trait) used to construct the expression, and a helper
+type which represents the return type of that function. See the source of
+<code>diesel::expression::expression_methods</code> and
+<code>diesel::expression::helper_types</code> for real world examples of this.</p>
+<h1 id="examples" class="section-header"><a href="#examples">Examples</a></h1><h1 id="possible-invocations" class="section-header"><a href="#possible-invocations">Possible invocations</a></h1>
+<div class='information'><div class='tooltip ignore'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered ignore">
+<span class="comment">// The SQL type will be boolean. The backend will not be constrained</span>
+<span class="macro">diesel_infix_operator!</span>(<span class="ident">Matches</span>, <span class="string">&quot; @@ &quot;</span>);
+
+<span class="comment">// Queries which try to execute `Contains` on a backend other than Pg</span>
+<span class="comment">// will fail to compile</span>
+<span class="macro">diesel_infix_operator!</span>(<span class="ident">Contains</span>, <span class="string">&quot; @&gt; &quot;</span>, <span class="ident">backend</span>: <span class="ident">Pg</span>);
+
+<span class="comment">// The type of `Concat` will be `TsVector` rather than Bool</span>
+<span class="macro">diesel_infix_operator!</span>(<span class="ident">Concat</span>, <span class="string">&quot; || &quot;</span>, <span class="ident">TsVector</span>);
+
+<span class="comment">// It is perfectly fine to have multiple operators with the same SQL.</span>
+<span class="comment">// Diesel will ensure that the queries are always unambiguous in which</span>
+<span class="comment">// operator applies</span>
+<span class="macro">diesel_infix_operator!</span>(<span class="ident">Or</span>, <span class="string">&quot; || &quot;</span>, <span class="ident">TsQuery</span>);
+
+<span class="comment">// Specifying both the return types and the backend</span>
+<span class="macro">diesel_infix_operator!</span>(<span class="ident">And</span>, <span class="string">&quot; &amp;&amp; &quot;</span>, <span class="ident">TsQuery</span>, <span class="ident">backend</span>: <span class="ident">Pg</span>);</pre></div>
+<h2 id="example-usage" class="section-header"><a href="#example-usage">Example usage</a></h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="macro">diesel_infix_operator!</span>(<span class="ident">MyEq</span>, <span class="string">&quot; = &quot;</span>);
+
+<span class="kw">use</span> <span class="ident">diesel::expression::AsExpression</span>;
+
+<span class="comment">// Normally you would put this on a trait instead</span>
+<span class="kw">fn</span> <span class="ident">my_eq</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">U</span><span class="op">&gt;</span>(<span class="ident">left</span>: <span class="ident">T</span>, <span class="ident">right</span>: <span class="ident">U</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">MyEq</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">U::Expression</span><span class="op">&gt;</span> <span class="kw">where</span>
+    <span class="ident">T</span>: <span class="ident">Expression</span>,
+    <span class="ident">U</span>: <span class="ident">AsExpression</span><span class="op">&lt;</span><span class="ident">T::SqlType</span><span class="op">&gt;</span>,
+{
+    <span class="ident">MyEq::new</span>(<span class="ident">left</span>, <span class="ident">right</span>.<span class="ident">as_expression</span>())
+}
+
+<span class="kw">let</span> <span class="ident">users_with_name</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">select</span>(<span class="ident">id</span>).<span class="ident">filter</span>(<span class="ident">my_eq</span>(<span class="ident">name</span>, <span class="string">&quot;Sean&quot;</span>));
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="number">1</span>), <span class="ident">users_with_name</span>.<span class="ident">first</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>));</pre></div>
+</div></details></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../" data-current-crate="diesel" data-search-index-js="../search-index.js" data-search-js="../search.js"></div>
+    <script src="../main.js"></script>
+</body></html>

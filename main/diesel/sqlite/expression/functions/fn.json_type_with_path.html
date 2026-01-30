@@ -1,0 +1,47 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="The json_type(X,P) function returns the “type” of the element in X that is selected by path P. If the path P in json_type(X,P) selects an element that does not exist in X, then this function returns NULL."><title>json_type_with_path in diesel::sqlite::expression::functions - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">json_type_with_path</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../../diesel/index.html">diesel</a><span class="version">2.3.6</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">json_<wbr>type_<wbr>with_<wbr>path</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>sqlite::<wbr>expression::<wbr>functions</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../../index.html">diesel</a>::<wbr><a href="../../index.html">sqlite</a>::<wbr><a href="../index.html">expression</a>::<wbr><a href="index.html">functions</a></div><h1>Function <span class="fn">json_<wbr>type_<wbr>with_<wbr>path</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../../src/diesel/sqlite/expression/functions.rs.html#16">Source</a> </span></div><pre class="rust item-decl"><code>pub fn json_type_with_path&lt;J: JsonOrNullableJsonOrJsonbOrNullableJsonb + <a class="trait" href="../../../sql_types/trait.SingleValue.html" title="trait diesel::sql_types::SingleValue">SingleValue</a>, j, path&gt;(
+    j: j,
+    path: path,
+) -&gt; <a class="type" href="type.json_type_with_path.html" title="type diesel::sqlite::expression::functions::json_type_with_path">json_type_with_path</a>&lt;J, j, path&gt;<div class="where">where
+    j: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;J&gt;,
+    path: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;<a class="struct" href="../../../sql_types/struct.Text.html" title="struct diesel::sql_types::Text">Text</a>&gt;,</div></code></pre><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>__sqlite-shared</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>The json_type(X,P) function returns the “type” of the element in X that is selected by path P.
+If the path P in json_type(X,P) selects an element that does not exist in X, then this function returns NULL.</p>
+<p>This function requires at least SQLite 3.38 or newer</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>json_value = <span class="macro">json!</span>({<span class="string">"a"</span>: [<span class="number">2</span>, <span class="number">3.5</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>, null, <span class="string">"x"</span>]});
+
+<span class="kw">let </span>result = diesel::select(json_type_with_path::&lt;Json, <span class="kw">_</span>, <span class="kw">_</span>&gt;(json_value.clone(), <span class="string">"$.a"</span>))
+    .get_result::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="string">"array"</span>.to_string()), result);
+
+<span class="kw">let </span>result = diesel::select(json_type_with_path::&lt;Json, <span class="kw">_</span>, <span class="kw">_</span>&gt;(json_value.clone(), <span class="string">"$.a[0]"</span>))
+    .get_result::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="string">"integer"</span>.to_string()), result);
+
+<span class="kw">let </span>result = diesel::select(json_type_with_path::&lt;Json, <span class="kw">_</span>, <span class="kw">_</span>&gt;(json_value.clone(), <span class="string">"$.a[1]"</span>))
+    .get_result::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="string">"real"</span>.to_string()), result);
+
+<span class="kw">let </span>result = diesel::select(json_type_with_path::&lt;Json, <span class="kw">_</span>, <span class="kw">_</span>&gt;(json_value.clone(), <span class="string">"$.a[2]"</span>))
+    .get_result::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="string">"true"</span>.to_string()), result);
+
+<span class="kw">let </span>result = diesel::select(json_type_with_path::&lt;Json, <span class="kw">_</span>, <span class="kw">_</span>&gt;(json_value.clone(), <span class="string">"$.a[6]"</span>))
+    .get_result::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">None</span>, result);
+
+<span class="kw">let </span>result = diesel::select(json_type_with_path::&lt;Jsonb, <span class="kw">_</span>, <span class="kw">_</span>&gt;(json_value.clone(), <span class="string">"$.a"</span>))
+    .get_result::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="string">"array"</span>.to_string()), result);
+
+<span class="kw">let </span>result = diesel::select(json_type_with_path::&lt;Nullable&lt;Json&gt;, <span class="kw">_</span>, <span class="kw">_</span>&gt;(None::&lt;serde_json::Value&gt;, <span class="string">"$.a"</span>))
+    .get_result::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">None</span>, result);
+</code></pre></div></div></details></section></div></main></body></html>

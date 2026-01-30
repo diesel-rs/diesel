@@ -1,0 +1,214 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Declare a sql function for use in your code."><title>define_sql_function in diesel::expression::functions - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-bbd8d786.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (39052daf9 2026-01-22)" data-channel="nightly" data-search-js="search-86d08462.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">define_sql_function</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../diesel/index.html">diesel</a><span class="version">2.3.6</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">define_<wbr>sql_<wbr>function</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#adding-doc-comments" title="Adding Doc Comments">Adding Doc Comments</a></li><li><a href="#special-attributes" title="Special Attributes">Special Attributes</a></li><li><a href="#expanded-code" title="Expanded Code">Expanded Code</a><ul><li><a href="#input" title="Input">Input</a></li><li><a href="#expanded-code-1" title="Expanded Code">Expanded Code</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>expression::<wbr>functions</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">diesel</a>::<wbr><a href="../index.html">expression</a>::<wbr><a href="index.html">functions</a></div><h1>Macro <span class="macro">define_<wbr>sql_<wbr>function</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/diesel_derives/lib.rs.html#1193">Source</a> </span></div><pre class="rust item-decl"><code>define_sql_function!() { <span class="comment">/* proc-macro */</span> }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Declare a sql function for use in your code.</p>
+<p>Diesel only provides support for a very small number of SQL functions.
+This macro enables you to add additional functions from the SQL standard,
+as well as any custom functions your application might have.</p>
+<p>This is a legacy variant of the [<code>#[declare_sql_function]</code>] attribute macro, which
+should be preferred instead. It will generate the same code as the attribute macro
+and also it will accept the same syntax as the other macro.</p>
+<p>The syntax for this macro is very similar to that of a normal Rust function,
+except the argument and return types will be the SQL types being used.
+Typically, these types will come from <a href="../diesel/sql_types/index.html"><code>diesel::sql_types</code></a></p>
+<p>This macro will generate two items. A function with the name that you’ve
+given, and a module with a helper type representing the return type of your
+function. For example, this invocation:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="macro">define_sql_function!</span>(<span class="kw">fn </span>lower(x: Text) -&gt; Text);</code></pre></div>
+<p>will generate this code:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">pub fn </span>lower&lt;X&gt;(x: X) -&gt; lower&lt;X&gt; {
+    ...
+}
+
+<span class="kw">pub type </span>lower&lt;X&gt; = ...;</code></pre></div>
+<p>Most attributes given to this macro will be put on the generated function
+(including doc comments).</p>
+<h2 id="adding-doc-comments"><a class="doc-anchor" href="#adding-doc-comments">§</a>Adding Doc Comments</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::sql_types::Text;
+
+<span class="macro">define_sql_function!</span> {
+    <span class="doccomment">/// Represents the `canon_crate_name` SQL function, created in
+    /// migration ....
+    </span><span class="kw">fn </span>canon_crate_name(a: Text) -&gt; Text;
+}
+
+<span class="kw">let </span>target_name = <span class="string">"diesel"</span>;
+crates.filter(canon_crate_name(name).eq(canon_crate_name(target_name)));
+<span class="comment">// This will generate the following SQL
+// SELECT * FROM crates WHERE canon_crate_name(crates.name) = canon_crate_name($1)</span></code></pre></div><h2 id="special-attributes"><a class="doc-anchor" href="#special-attributes">§</a>Special Attributes</h2>
+<p>There are a handful of special attributes that Diesel will recognize. They
+are:</p>
+<ul>
+<li><code>#[aggregate]</code>
+<ul>
+<li>Indicates that this is an aggregate function, and that <code>NonAggregate</code>
+shouldn’t be implemented.</li>
+</ul>
+</li>
+<li><code>#[sql_name = "name"]</code>
+<ul>
+<li>The SQL to be generated is different from the Rust name of the function.
+This can be used to represent functions which can take many argument
+types, or to capitalize function names.</li>
+</ul>
+</li>
+</ul>
+<h2 id="expanded-code"><a class="doc-anchor" href="#expanded-code">§</a>Expanded Code</h2><details>
+<summary> Expanded Code </summary>
+<h5 id="input"><a class="doc-anchor" href="#input">§</a>Input</h5>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="macro">define_sql_function!</span> {
+    <span class="kw">fn </span>lower(input : Text) -&gt; Text;
+}
+</code></pre></div><h5 id="expanded-code-1"><a class="doc-anchor" href="#expanded-code-1">§</a>Expanded Code</h5><div class="warning">Expanded code might use diesel internal API's and is only shown for educational purpose</div>
+<p>The macro expands the input to the following Rust code:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="attr">#[allow(non_camel_case_types)]
+</span><span class="kw">pub fn </span>lower&lt;input&gt;(input: input) -&gt; lower&lt;input&gt;
+<span class="kw">where
+    </span>input: diesel::expression::AsExpression&lt;Text&gt;,
+{
+    lower_utils::lower {
+        input: input.as_expression(),
+    }
+}
+<span class="attr">#[allow(non_camel_case_types, non_snake_case)]
+</span><span class="doccomment">///The return type of [`lower()`](fn@lower)
+</span><span class="kw">pub type </span>lower&lt;input&gt; = lower_utils::lower&lt;
+    &lt;input <span class="kw">as </span>diesel::expression::AsExpression&lt;Text&gt;&gt;::Expression,
+&gt;;
+<span class="attr">#[doc(hidden)]
+#[allow(non_camel_case_types, non_snake_case, unused_imports)]
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>lower_utils {
+    <span class="kw">use </span>diesel::{<span class="self">self</span>, QueryResult};
+    <span class="kw">use </span>diesel::expression::{
+        AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping,
+    };
+    <span class="kw">use </span>diesel::query_builder::{QueryFragment, AstPass};
+    <span class="kw">use </span>diesel::sql_types::<span class="kw-2">*</span>;
+    <span class="kw">use </span>diesel::internal::sql_functions::<span class="kw-2">*</span>;
+    <span class="kw">use </span>super::<span class="kw-2">*</span>;
+    <span class="attr">#[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+    #[derive(diesel::sql_types::DieselNumericOps)]
+    </span><span class="kw">pub struct </span>lower&lt;input&gt; {
+        <span class="kw">pub</span>(<span class="kw">super</span>) input: input,
+    }
+    <span class="doccomment">///The return type of [`lower()`](fn@lower)
+    </span><span class="kw">pub type </span>HelperType&lt;input&gt; = lower&lt;&lt;input <span class="kw">as </span>AsExpression&lt;Text&gt;&gt;::Expression&gt;;
+    <span class="kw">impl</span>&lt;input&gt; Expression <span class="kw">for </span>lower&lt;input&gt;
+    <span class="kw">where
+        </span>(input): Expression,
+    {
+        <span class="kw">type </span>SqlType = Text;
+    }
+    <span class="kw">impl</span>&lt;input, __DieselInternal&gt; SelectableExpression&lt;__DieselInternal&gt; <span class="kw">for </span>lower&lt;input&gt;
+    <span class="kw">where
+        </span>input: SelectableExpression&lt;__DieselInternal&gt;,
+        <span class="self">Self</span>: AppearsOnTable&lt;__DieselInternal&gt;,
+    {}
+    <span class="kw">impl</span>&lt;input, __DieselInternal&gt; AppearsOnTable&lt;__DieselInternal&gt; <span class="kw">for </span>lower&lt;input&gt;
+    <span class="kw">where
+        </span>input: AppearsOnTable&lt;__DieselInternal&gt;,
+        <span class="self">Self</span>: Expression,
+    {}
+    <span class="kw">impl</span>&lt;input, __DieselInternal&gt; FunctionFragment&lt;__DieselInternal&gt; <span class="kw">for </span>lower&lt;input&gt;
+    <span class="kw">where
+        </span>__DieselInternal: diesel::backend::Backend,
+        input: QueryFragment&lt;__DieselInternal&gt;,
+    {
+        <span class="kw">const </span>FUNCTION_NAME: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str = <span class="string">"lower"</span>;
+        <span class="attr">#[allow(unused_assignments)]
+        </span><span class="kw">fn </span>walk_arguments&lt;<span class="lifetime">'__b</span>&gt;(
+            <span class="kw-2">&amp;</span><span class="lifetime">'__b </span><span class="self">self</span>,
+            <span class="kw-2">mut </span>out: AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'__b</span>, __DieselInternal&gt;,
+        ) -&gt; QueryResult&lt;()&gt; {
+            <span class="kw">let </span><span class="kw-2">mut </span>needs_comma = <span class="bool-val">false</span>;
+            <span class="kw">if </span>!<span class="self">self</span>.input.is_noop(out.backend())<span class="question-mark">? </span>{
+                <span class="kw">if </span>needs_comma {
+                    out.push_sql(<span class="string">", "</span>);
+                }
+                <span class="self">self</span>.input.walk_ast(out.reborrow())<span class="question-mark">?</span>;
+                needs_comma = <span class="bool-val">true</span>;
+            }
+            <span class="prelude-val">Ok</span>(())
+        }
+    }
+    <span class="kw">impl</span>&lt;input, __DieselInternal&gt; QueryFragment&lt;__DieselInternal&gt; <span class="kw">for </span>lower&lt;input&gt;
+    <span class="kw">where
+        </span>__DieselInternal: diesel::backend::Backend,
+        input: QueryFragment&lt;__DieselInternal&gt;,
+    {
+        <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'__b</span>&gt;(
+            <span class="kw-2">&amp;</span><span class="lifetime">'__b </span><span class="self">self</span>,
+            <span class="kw-2">mut </span>out: AstPass&lt;<span class="lifetime">'_</span>, <span class="lifetime">'__b</span>, __DieselInternal&gt;,
+        ) -&gt; QueryResult&lt;()&gt; {
+            out.push_sql(&lt;<span class="self">Self </span><span class="kw">as </span>FunctionFragment&lt;__DieselInternal&gt;&gt;::FUNCTION_NAME);
+            out.push_sql(<span class="string">"("</span>);
+            <span class="self">self</span>.walk_arguments(out.reborrow())<span class="question-mark">?</span>;
+            out.push_sql(<span class="string">")"</span>);
+            <span class="prelude-val">Ok</span>(())
+        }
+    }
+    <span class="attr">#[derive(ValidGrouping)]
+    </span><span class="kw">pub struct </span>__Derived&lt;input&gt;(input);
+    <span class="kw">impl</span>&lt;input, __DieselInternal&gt; ValidGrouping&lt;__DieselInternal&gt; <span class="kw">for </span>lower&lt;input&gt;
+    <span class="kw">where
+        </span>__Derived&lt;input&gt;: ValidGrouping&lt;__DieselInternal&gt;,
+    {
+        <span class="kw">type </span>IsAggregate = &lt;__Derived&lt;
+            input,
+        &gt; <span class="kw">as </span>ValidGrouping&lt;__DieselInternal&gt;&gt;::IsAggregate;
+    }
+    <span class="kw">use </span>diesel::sqlite::{Sqlite, SqliteConnection};
+    <span class="kw">use </span>diesel::serialize::ToSql;
+    <span class="kw">use </span>diesel::deserialize::{FromSqlRow, StaticallySizedRow};
+    <span class="attr">#[allow(dead_code)]
+    </span><span class="doccomment">/// Registers an implementation for this function on the given connection
+    ///
+    /// This function must be called for every `SqliteConnection` before
+    /// this SQL function can be used on SQLite. The implementation must be
+    /// deterministic (returns the same result given the same arguments). If
+    /// the function is nondeterministic, call
+    /// `register_nondeterministic_impl` instead.
+    </span><span class="kw">pub fn </span>register_impl&lt;F, Ret, input&gt;(
+        conn: <span class="kw-2">&amp;mut </span>SqliteConnection,
+        f: F,
+    ) -&gt; QueryResult&lt;()&gt;
+    <span class="kw">where
+        </span>F: Fn(input) -&gt; Ret + std::panic::UnwindSafe + Send + <span class="lifetime">'static</span>,
+        (input,): FromSqlRow&lt;(Text,), Sqlite&gt; + StaticallySizedRow&lt;(Text,), Sqlite&gt;,
+        Ret: ToSql&lt;Text, Sqlite&gt;,
+    {
+        conn.register_sql_function::&lt;
+                (Text,),
+                Text,
+                <span class="kw">_</span>,
+                <span class="kw">_</span>,
+                <span class="kw">_</span>,
+            &gt;(<span class="string">"lower"</span>, <span class="bool-val">true</span>, <span class="kw">move </span>|(input,)| f(input))
+    }
+    <span class="attr">#[allow(dead_code)]
+    </span><span class="doccomment">/// Registers an implementation for this function on the given connection
+    ///
+    /// This function must be called for every `SqliteConnection` before
+    /// this SQL function can be used on SQLite.
+    /// `register_nondeterministic_impl` should only be used if your
+    /// function can return different results with the same arguments (e.g.
+    /// `random`). If your function is deterministic, you should call
+    /// `register_impl` instead.
+    </span><span class="kw">pub fn </span>register_nondeterministic_impl&lt;F, Ret, input&gt;(
+        conn: <span class="kw-2">&amp;mut </span>SqliteConnection,
+        <span class="kw-2">mut </span>f: F,
+    ) -&gt; QueryResult&lt;()&gt;
+    <span class="kw">where
+        </span>F: FnMut(input) -&gt; Ret + std::panic::UnwindSafe + Send + <span class="lifetime">'static</span>,
+        (input,): FromSqlRow&lt;(Text,), Sqlite&gt; + StaticallySizedRow&lt;(Text,), Sqlite&gt;,
+        Ret: ToSql&lt;Text, Sqlite&gt;,
+    {
+        conn.register_sql_function::&lt;
+                (Text,),
+                Text,
+                <span class="kw">_</span>,
+                <span class="kw">_</span>,
+                <span class="kw">_</span>,
+            &gt;(<span class="string">"lower"</span>, <span class="bool-val">false</span>, <span class="kw">move </span>|(input,)| f(input))
+    }
+}</code></pre></div></details></div></details></section></div></main></body></html>

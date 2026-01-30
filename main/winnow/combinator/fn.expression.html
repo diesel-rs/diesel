@@ -1,0 +1,49 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Parses an expression based on operator precedence."><title>expression in winnow::combinator - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="winnow" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0-nightly (842bd5be2 2026-01-29)" data-channel="nightly" data-search-js="search-fb33671b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-f9617a14.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-12f88f4f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">expression</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../winnow/index.html">winnow</a><span class="version">0.7.14</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">expression</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In winnow::<wbr>combinator</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">winnow</a>::<wbr><a href="index.html">combinator</a></div><h1>Function <span class="fn">expression</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/winnow/combinator/expression.rs.html#74-100">Source</a> </span></div><pre class="rust item-decl"><code>pub fn expression&lt;I, ParseOperand, O, E&gt;(
+    parse_operand: ParseOperand,
+) -&gt; <a class="struct" href="struct.Expression.html" title="struct winnow::combinator::Expression">Expression</a>&lt;I, O, ParseOperand, impl <a class="trait" href="../trait.Parser.html" title="trait winnow::Parser">Parser</a>&lt;I, <a class="struct" href="struct.Prefix.html" title="struct winnow::combinator::Prefix">Prefix</a>&lt;I, O, E&gt;, E&gt;, impl <a class="trait" href="../trait.Parser.html" title="trait winnow::Parser">Parser</a>&lt;I, <a class="struct" href="struct.Postfix.html" title="struct winnow::combinator::Postfix">Postfix</a>&lt;I, O, E&gt;, E&gt;, impl <a class="trait" href="../trait.Parser.html" title="trait winnow::Parser">Parser</a>&lt;I, <a class="enum" href="enum.Infix.html" title="enum winnow::combinator::Infix">Infix</a>&lt;I, O, E&gt;, E&gt;, E&gt;<div class="where">where
+    I: <a class="trait" href="../stream/trait.Stream.html" title="trait winnow::stream::Stream">Stream</a> + <a class="trait" href="../stream/trait.StreamIsPartial.html" title="trait winnow::stream::StreamIsPartial">StreamIsPartial</a>,
+    ParseOperand: <a class="trait" href="../trait.Parser.html" title="trait winnow::Parser">Parser</a>&lt;I, O, E&gt;,
+    E: <a class="trait" href="../error/trait.ParserError.html" title="trait winnow::error::ParserError">ParserError</a>&lt;I&gt;,</div></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Parses an expression based on operator precedence.</p>
+<p>It uses a Pratt parsing algorithm, where operators are
+associated with a binding power. The higher the power,
+the more tightly an operator will bind to its operands.</p>
+<p>This method returns an <a href="struct.Expression.html" title="struct winnow::combinator::Expression"><code>Expression</code></a>, which configures
+the Pratt parser.</p>
+<p>Each operator type is configured with <a href="struct.Prefix.html" title="struct winnow::combinator::Prefix"><code>Prefix</code></a>, <a href="struct.Postfix.html" title="struct winnow::combinator::Postfix"><code>Postfix</code></a>,
+and <a href="enum.Infix.html" title="enum winnow::combinator::Infix"><code>Infix</code></a>. These describe the operator’s binding power,
+a function that applies the operator to its operand, and the
+operator’s associativity (infix only).</p>
+<p>For a more full-featured example, look at the [C-style Expression][crate::_topic::arithmetic#c-style-expression]
+topic.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<p>Parsing a simple arithmetic expression without parenthesis.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>winnow::combinator::expression;
+<span class="kw">use </span>winnow::combinator::{Prefix, Postfix, Infix};
+
+<span class="kw">fn </span>parser&lt;<span class="lifetime">'i</span>&gt;() -&gt; <span class="kw">impl </span>Parser&lt;<span class="kw-2">&amp;</span><span class="lifetime">'i </span>str, i32, ContextError&gt; {
+    <span class="kw">move </span>|i: <span class="kw-2">&amp;mut &amp;</span>str| {
+        <span class="kw">use </span>Infix::<span class="kw-2">*</span>;
+        expression(digit1.parse_to::&lt;i32&gt;()) <span class="comment">// operands are 32-bit integers
+            </span>.prefix(<span class="macro">dispatch!</span> {any;
+                <span class="string">'-' </span>=&gt; Prefix(<span class="number">12</span>, |<span class="kw">_</span>, a: i32| <span class="prelude-val">Ok</span>(-a)),
+                <span class="kw">_ </span>=&gt; fail,
+            })
+            .infix(<span class="macro">dispatch!</span> {any;
+                <span class="string">'+' </span>=&gt; Left(<span class="number">5</span>, |<span class="kw">_</span>, a, b| <span class="prelude-val">Ok</span>(a + b)),
+                <span class="string">'-' </span>=&gt; Left(<span class="number">5</span>, |<span class="kw">_</span>, a, b| <span class="prelude-val">Ok</span>(a - b)),
+                <span class="string">'*' </span>=&gt; Left(<span class="number">7</span>, |<span class="kw">_</span>, a, b| <span class="prelude-val">Ok</span>(a * b)),
+                <span class="string">'/' </span>=&gt; Left(<span class="number">7</span>, |<span class="kw">_</span>, a: i32, b| <span class="prelude-val">Ok</span>(a.checked_div(b).unwrap_or_default())),
+                <span class="kw">_ </span>=&gt; fail,
+            })
+            .postfix(<span class="macro">dispatch!</span> {any;
+                <span class="string">'!' </span>=&gt; Postfix(<span class="number">15</span>, |<span class="kw">_</span>, a| <span class="kw">if </span>a &lt; <span class="number">1 </span>{ <span class="prelude-val">Ok</span>(<span class="number">1</span>) } <span class="kw">else </span>{ <span class="prelude-val">Ok</span>((<span class="number">1</span>..=a).fold(<span class="number">1</span>, |acc, a| acc<span class="kw-2">*</span>a)) }),
+                <span class="kw">_ </span>=&gt; fail,
+            })
+            .parse_next(i)
+    }
+}
+
+<span class="macro">assert_eq!</span>(parser().parse(<span class="string">"1+1"</span>), <span class="prelude-val">Ok</span>(<span class="number">2</span>));
+<span class="macro">assert_eq!</span>(parser().parse(<span class="string">"0!"</span>), <span class="prelude-val">Ok</span>(<span class="number">1</span>));
+<span class="macro">assert_eq!</span>(parser().parse(<span class="string">"-1*5*2*10+30/3!"</span>), <span class="prelude-val">Ok</span>(-<span class="number">95</span>));</code></pre></div></div></details></section></div></main></body></html>
