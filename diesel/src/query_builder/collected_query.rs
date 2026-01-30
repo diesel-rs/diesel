@@ -2,6 +2,7 @@ use super::{AstPass, MoveableBindCollector, Query, QueryFragment, QueryId};
 use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::result::QueryResult;
 use crate::sql_types::Untyped;
+use alloc::string::String;
 
 #[derive(Debug)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]

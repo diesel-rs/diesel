@@ -555,3 +555,24 @@ jobs:
       - name: Run cargo semver-checks
         run: |
           cargo xtask semver-checks
+  Sqlite-no-std:
+    name: Sqlite (no-std)
+    runs-on: ubuntu-latest
+    needs: [rustfmt_and_clippy]
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
+        with:
+          toolchain: stable
+          targets: riscv32imac-unknown-none-elf
+      - name: Install cross compiler
+        run: |
+          curl -L https://github.com/nycu-arclab/riscv32-toolchain/releases/download/v14.2.0/riscv32-unknown-elf-gcc-14.2.0-linux.tar.gz -o riscv32-toolchain-linux.tar.gz
+          tar -xzvf riscv32-toolchain-linux.tar.gz -C /opt
+      - name: Check if diesel builds for no-std targets
+        run: |
+          cd examples/sqlite/embedded
+          rustup target add riscv32imac-unknown-none-elf
+          LIBSQLITE3_FLAGS="-DSQLITE_SMALL_STACK=1 -DSQLITE_THREADSAFE=0 -DSQLITE_OS_OTHER=1 -DSQLITE_OMIT_LOCALTIME=1 -USQLITE_ENABLE_FTS3 -UQLITE_ENABLE_DBSTAT_VTAB -UDSQLITE_ENABLE_JSON1 -USQLITE_ENABLE_FTS5 -USQLITE_ENABLE_STAT4 -DSQLITE_ENABLE_MEMSYS3=1" TARGET_CC=/opt/riscv/bin/riscv32-unknown-elf-gcc cargo build --target riscv32imac-unknown-none-elf

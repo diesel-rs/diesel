@@ -10,7 +10,7 @@ const _: () = {
     use diesel::expression::{Expression, AsExpression};
     use diesel::sql_types::ops::{Add, Sub, Mul, Div};
     use diesel::sql_types::{SqlType, SingleValue};
-    impl<__Rhs> ::std::ops::Add<__Rhs> for NumericColumn
+    impl<__Rhs> ::core::ops::Add<__Rhs> for NumericColumn
     where
         Self: Expression,
         Self: Expression,
@@ -23,7 +23,7 @@ const _: () = {
             ops::Add::new(self, rhs.as_expression())
         }
     }
-    impl<__Rhs> ::std::ops::Sub<__Rhs> for NumericColumn
+    impl<__Rhs> ::core::ops::Sub<__Rhs> for NumericColumn
     where
         Self: Expression,
         Self: Expression,
@@ -36,7 +36,7 @@ const _: () = {
             ops::Sub::new(self, rhs.as_expression())
         }
     }
-    impl<__Rhs> ::std::ops::Mul<__Rhs> for NumericColumn
+    impl<__Rhs> ::core::ops::Mul<__Rhs> for NumericColumn
     where
         Self: Expression,
         Self: Expression,
@@ -49,7 +49,7 @@ const _: () = {
             ops::Mul::new(self, rhs.as_expression())
         }
     }
-    impl<__Rhs> ::std::ops::Div<__Rhs> for NumericColumn
+    impl<__Rhs> ::core::ops::Div<__Rhs> for NumericColumn
     where
         Self: Expression,
         Self: Expression,

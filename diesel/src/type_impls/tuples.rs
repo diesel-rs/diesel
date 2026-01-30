@@ -15,6 +15,7 @@ use crate::result::QueryResult;
 use crate::row::*;
 use crate::sql_types::{HasSqlType, IntoNullable, Nullable, OneIsNullable, SqlType};
 use crate::util::{TupleAppend, TupleSize};
+use alloc::vec::Vec;
 
 impl<T> TupleSize for T
 where

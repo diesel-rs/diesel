@@ -1,0 +1,33 @@
+[package]
+name = "esp32c6_diesel_example"
+version = "0.3.0"
+edition = "2024"
+license = "MIT OR APACHE-2"
+
+[profile.release]
+debug = true
+
+[profile.dev]
+opt-level = 3
+
+[dependencies]
+# device setup
+esp-alloc = "0.9"
+esp-backtrace = { version = "0.18", features = ["esp32c6", "panic-handler", "println"] }
+esp-hal = { version = "1.0", features = ["esp32c6", "unstable"] }
+esp-println = { version = "0.16", features = ["esp32c6"] }
+esp-bootloader-esp-idf = { version = "0.2.0", features = ["esp32c6"] }
+# diesel with the no-std target
+diesel = { version = "2.3.0", path = "../../../diesel/", default-features = false, features = ["sqlite-no-std"] }
+# libsqlite to have a bundled build for the target
+# This requires additonally
+# * Setting the right config flags LIBSQLITE3_FLAGS="-DSQLITE_SMALL_STACK=1 -DSQLITE_THREADSAFE=0 -DSQLITE_OS_OTHER=1 -DSQLITE_OMIT_LOCALTIME=1 -USQLITE_ENABLE_FTS3 -UQLITE_ENABLE_DBSTAT_VTAB -UDSQLITE_ENABLE_JSON1 -USQLITE_ENABLE_FTS5 -USQLITE_ENABLE_STAT4 -DSQLITE_ENABLE_MEMSYS3=1"
+# * Setting a cross compiler like riscv32-unknown-elf-gcc as `TARGET_CC`
+libsqlite3-sys = { version = "0.36.0", features = ["bundled"] }
+# a simple memory vfs implementation
+# real world applications might likely want a more complex VFS
+rsqlite-vfs = "0.1"
+# a stub libc with the symbols required by sqlite
+tinyrlibc = "0.5"
+
+[workspace]

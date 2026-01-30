@@ -81,7 +81,7 @@ insta = "1.21"
 [features]
 default = ["postgres", "sqlite", "mysql"]
 postgres = ["diesel/postgres", "uses_information_schema"]
-sqlite = ["diesel/sqlite"]
+sqlite = ["diesel/sqlite", "diesel/std"]
 mysql = ["diesel/mysql", "uses_information_schema"]
 sqlite-bundled = ["sqlite", "dep:libsqlite3-sys", "libsqlite3-sys/bundled"]
 postgres-bundled = ["postgres", "dep:pq-sys", "pq-sys/bundled", "dep:openssl-sys"]

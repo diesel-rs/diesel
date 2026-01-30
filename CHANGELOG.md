@@ -15,6 +15,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ### Changed
 
 * The minimal supported Rust version is now 1.88.0
+* Add support for libsqlite3-sys 0.36
+* Add support for no-std environments using the SQLite backend
 
 ## [2.3.6] 2026-01-23
 

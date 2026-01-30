@@ -5,9 +5,9 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
-use std::cell::Ref;
-use std::ptr::NonNull;
-use std::{slice, str};
+use core::cell::Ref;
+use core::ptr::NonNull;
+use core::{slice, str};
 
 use crate::sqlite::SqliteType;
 

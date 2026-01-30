@@ -2,8 +2,8 @@ use super::MysqlType;
 use super::types::date_and_time::MysqlTime;
 
 use crate::deserialize;
-use std::error::Error;
-use std::mem::MaybeUninit;
+use core::error::Error;
+use core::mem::MaybeUninit;
 
 /// Raw mysql value as received from the database
 #[derive(Clone, Debug)]
@@ -49,14 +49,14 @@ impl<'a> MysqlValue<'a> {
                 // the type from newer libmysqlclient
                 self.too_short_buffer(
                     #[cfg(feature = "mysql")]
-                    std::mem::size_of::<mysqlclient_sys::MYSQL_TIME>(),
+                    core::mem::size_of::<mysqlclient_sys::MYSQL_TIME>(),
                     #[cfg(not(feature = "mysql"))]
-                    std::mem::size_of::<MysqlTime>(),
+                    core::mem::size_of::<MysqlTime>(),
                     "timestamp",
                 )?;
                 // To ensure we copy the right number of bytes we need to make sure to copy not more bytes than needed
                 // for `MysqlTime` and not more bytes than inside of the buffer
-                let len = std::cmp::min(std::mem::size_of::<MysqlTime>(), self.raw.len());
+                let len = core::cmp::min(core::mem::size_of::<MysqlTime>(), self.raw.len());
                 // Zero is a valid pattern for this type so we are fine with initializing all fields to zero
                 // If the provided byte buffer is too short we just use 0 as default value
                 let mut out = MaybeUninit::<MysqlTime>::zeroed();
@@ -76,7 +76,7 @@ impl<'a> MysqlValue<'a> {
                     // This type is correctly aligned and we ensure that we do not copy more bytes than are there
                     // We are also sure that these ptr do not overlap as they are completely different
                     // instances
-                    std::ptr::copy_nonoverlapping(
+                    core::ptr::copy_nonoverlapping(
                         self.raw.as_ptr(),
                         out.as_mut_ptr() as *mut u8,
                         len,

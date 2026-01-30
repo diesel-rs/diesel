@@ -136,7 +136,10 @@ pub use crate::pg::query_builder::tablesample::{Tablesample, TablesampleMethod};
 pub(crate) use self::bind_collector::ByteWrapper;
 use crate::backend::Backend;
 use crate::result::QueryResult;
-use std::error::Error;
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::error::Error;
 
 pub(crate) use self::private::NotSpecialized;
 

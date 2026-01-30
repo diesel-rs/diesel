@@ -3,8 +3,9 @@ extern crate url;
 
 use self::percent_encoding::percent_decode;
 use self::url::{Host, Url};
+use alloc::ffi::CString;
+use core::ffi::CStr;
 use std::collections::HashMap;
-use std::ffi::{CStr, CString};
 
 use crate::result::{ConnectionError, ConnectionResult};
 

@@ -43,15 +43,15 @@ where
 {
 }
 
-impl<Left, Right, Kind> std::fmt::Debug for Join<Left, Right, Kind>
+impl<Left, Right, Kind> core::fmt::Debug for Join<Left, Right, Kind>
 where
     Left: QuerySource,
-    FromClause<Left>: std::fmt::Debug,
+    FromClause<Left>: core::fmt::Debug,
     Right: QuerySource,
-    FromClause<Right>: std::fmt::Debug,
-    Kind: std::fmt::Debug,
+    FromClause<Right>: core::fmt::Debug,
+    Kind: core::fmt::Debug,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("Join")
             .field("left", &self.left)
             .field("right", &self.right)

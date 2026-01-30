@@ -1,7 +1,8 @@
 use crate::connection::Connection;
 use crate::result::{Error, QueryResult};
-use std::borrow::Cow;
-use std::num::NonZeroU32;
+use alloc::borrow::Cow;
+use alloc::boxed::Box;
+use core::num::NonZeroU32;
 
 /// Manages the internal transaction state for a connection.
 ///
@@ -346,9 +347,9 @@ where
         let transaction_depth = transaction_state.transaction_depth();
         let start_transaction_sql = match transaction_depth {
             None => Cow::from("BEGIN"),
-            Some(transaction_depth) => {
-                Cow::from(format!("SAVEPOINT diesel_savepoint_{transaction_depth}"))
-            }
+            Some(transaction_depth) => Cow::from(alloc::format!(
+                "SAVEPOINT diesel_savepoint_{transaction_depth}"
+            )),
         };
         let instrumentation_depth =
             NonZeroU32::new(transaction_depth.map_or(0, NonZeroU32::get).wrapping_add(1));
@@ -378,7 +379,7 @@ where
                 match in_transaction.transaction_depth.get() {
                     1 => (Cow::Borrowed("ROLLBACK"), true),
                     depth_gt1 => (
-                        Cow::Owned(format!(
+                        Cow::Owned(alloc::format!(
                             "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
                             depth_gt1 - 1
                         )),
@@ -466,7 +467,7 @@ where
                 (Cow::Borrowed("COMMIT"), true)
             }
             Some(transaction_depth) => (
-                Cow::Owned(format!(
+                Cow::Owned(alloc::format!(
                     "RELEASE SAVEPOINT diesel_savepoint_{}",
                     transaction_depth.get() - 1
                 )),
@@ -738,7 +739,7 @@ mod test {
     }
 
     #[diesel_test_helper::test]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn sqlite_transaction_is_rolled_back_upon_syntax_error() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
@@ -1047,7 +1048,7 @@ mod test {
     }
 
     #[diesel_test_helper::test]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn sqlite_transaction_is_rolled_back_upon_deferred_constraint_failure() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;

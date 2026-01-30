@@ -30,6 +30,7 @@ use crate::query_dsl::*;
 use crate::query_source::QuerySource;
 use crate::query_source::joins::{Join, JoinOn, JoinTo};
 use crate::sql_types::{BigInt, BoolOrNullableBool};
+use alloc::boxed::Box;
 
 impl<F, D, W, O, LOf, G, H, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, D, W, O, LOf, G, H, LC>

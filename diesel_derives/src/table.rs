@@ -468,7 +468,7 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
 
             impl<S, C> diesel::internal::table_macro::FieldAliasMapperAssociatedTypesDisjointnessTrick<Self, S, C> for #query_source_ident
             where
-                S: diesel::query_source::AliasSource<Target = Self> + ::std::clone::Clone,
+                S: diesel::query_source::AliasSource<Target = Self> + ::core::clone::Clone,
                 C: diesel::query_source::QueryRelationField<QueryRelation = Self>,
             {
                 type Out = diesel::query_source::AliasedField<S, C>;
@@ -759,7 +759,7 @@ fn generate_op_impl(op: &str, tpe: &syn::Ident) -> TokenStream {
     let fn_name = syn::Ident::new(&op.to_lowercase(), tpe.span());
     let op = syn::Ident::new(op, tpe.span());
     quote::quote! {
-        impl<Rhs> ::std::ops::#op<Rhs> for #tpe
+        impl<Rhs> ::core::ops::#op<Rhs> for #tpe
         where
             Rhs: diesel::expression::AsExpression<
                 <<#tpe as diesel::Expression>::SqlType as diesel::sql_types::ops::#op>::Rhs,

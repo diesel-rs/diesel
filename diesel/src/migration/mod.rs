@@ -7,13 +7,17 @@ use crate::expression::AsExpression;
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
 use crate::sql_types::Text;
-use std::borrow::Cow;
-use std::error::Error;
-use std::fmt::Display;
+use alloc::borrow::Cow;
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::error::Error;
+use core::fmt::Display;
 
 /// A specialized result type representing the result of
 /// a migration operation
-pub type Result<T> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
+pub type Result<T> = core::result::Result<T, Box<dyn Error + Send + Sync>>;
 
 /// A migration version identifier
 ///
@@ -75,7 +79,7 @@ impl<'a> From<&'a String> for MigrationVersion<'a> {
 }
 
 impl Display for MigrationVersion<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.0.as_ref())
     }
 }
@@ -214,7 +218,7 @@ impl MigrationConnection for crate::mysql::MysqlConnection {
     }
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 impl MigrationConnection for crate::sqlite::SqliteConnection {
     fn setup(&mut self) -> QueryResult<usize> {
         use crate::RunQueryDsl;

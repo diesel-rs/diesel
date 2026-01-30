@@ -3,6 +3,7 @@ use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::expression::Expression;
 use crate::expression::helper_types::{Asc, Desc};
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
+use alloc::string::ToString;
 
 /// The `positional_order_by` method
 ///

@@ -48,10 +48,10 @@ impl FailedToLookupTypeError {
     }
 }
 
-impl std::error::Error for FailedToLookupTypeError {}
+impl core::error::Error for FailedToLookupTypeError {}
 
-impl std::fmt::Display for FailedToLookupTypeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for FailedToLookupTypeError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         if let Some(schema) = self.0.schema.as_ref() {
             write!(
                 f,
@@ -101,14 +101,14 @@ impl PgTypeMetadata {
     /// The [OID] of `T`
     ///
     /// [OID]: https://www.postgresql.org/docs/current/static/datatype-oid.html
-    pub fn oid(&self) -> Result<u32, impl std::error::Error + Send + Sync + use<>> {
+    pub fn oid(&self) -> Result<u32, impl core::error::Error + Send + Sync + use<>> {
         self.0.as_ref().map(|i| i.oid).map_err(Clone::clone)
     }
 
     /// The [OID] of `T[]`
     ///
     /// [OID]: https://www.postgresql.org/docs/current/static/datatype-oid.html
-    pub fn array_oid(&self) -> Result<u32, impl std::error::Error + Send + Sync + use<>> {
+    pub fn array_oid(&self) -> Result<u32, impl core::error::Error + Send + Sync + use<>> {
         self.0.as_ref().map(|i| i.array_oid).map_err(Clone::clone)
     }
 }

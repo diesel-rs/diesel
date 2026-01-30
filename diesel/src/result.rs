@@ -1,8 +1,11 @@
 //! Errors, type aliases, and functions related to working with `Result`.
 
-use std::error::Error as StdError;
-use std::ffi::NulError;
-use std::fmt::{self, Display};
+use alloc::boxed::Box;
+use alloc::ffi::NulError;
+use alloc::string::String;
+use alloc::string::ToString;
+use core::error::Error as StdError;
+use core::fmt::{self, Display};
 
 #[derive(Debug)]
 #[allow(clippy::enum_variant_names)]
@@ -529,7 +532,7 @@ pub struct DeserializeFieldError {
 
 impl DeserializeFieldError {
     #[cold]
-    pub(crate) fn new<'a, F, DB>(field: F, error: Box<dyn std::error::Error + Send + Sync>) -> Self
+    pub(crate) fn new<'a, F, DB>(field: F, error: Box<dyn core::error::Error + Send + Sync>) -> Self
     where
         DB: crate::backend::Backend,
         F: crate::row::Field<'a, DB>,

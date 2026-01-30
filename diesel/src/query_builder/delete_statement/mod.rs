@@ -41,14 +41,14 @@ where
     }
 }
 
-impl<T, U, Ret> std::fmt::Debug for DeleteStatement<T, U, Ret>
+impl<T, U, Ret> core::fmt::Debug for DeleteStatement<T, U, Ret>
 where
     T: QuerySource,
-    FromClause<T>: std::fmt::Debug,
-    U: std::fmt::Debug,
-    Ret: std::fmt::Debug,
+    FromClause<T>: core::fmt::Debug,
+    U: core::fmt::Debug,
+    Ret: core::fmt::Debug,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("DeleteStatement")
             .field("from_clause", &self.from_clause)
             .field("where_clause", &self.where_clause)

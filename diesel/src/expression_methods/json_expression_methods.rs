@@ -4,7 +4,7 @@ use crate::expression::operators::RetrieveAsTextJson;
 use crate::sql_types::SqlType;
 
 /// PostgreSQL specific methods present on JSON and JSONB expressions.
-#[cfg(any(feature = "postgres_backend", feature = "sqlite"))]
+#[cfg(any(feature = "postgres_backend", feature = "__sqlite-shared"))]
 pub trait AnyJsonExpressionMethods: Expression + Sized {
     /// Creates a `->>` expression JSON.
     ///
@@ -130,6 +130,7 @@ pub(crate) mod private {
     use crate::Expression;
     use crate::expression::IntoSql;
     use crate::sql_types::{Integer, Json, Jsonb, Nullable, Text};
+    use alloc::string::String;
 
     pub trait Sealed {}
 

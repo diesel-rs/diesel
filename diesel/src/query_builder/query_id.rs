@@ -1,5 +1,6 @@
 use super::QueryFragment;
-use std::any::{Any, TypeId};
+use alloc::boxed::Box;
+use core::any::{Any, TypeId};
 
 /// Uniquely identifies queries by their type for the purpose of prepared
 /// statement caching.
