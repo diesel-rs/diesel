@@ -4,7 +4,7 @@ extern crate dotenvy;
 use crate::prelude::*;
 
 cfg_if! {
-    if #[cfg(feature = "sqlite")] {
+    if #[cfg(feature = "__sqlite-shared")] {
         pub type TestConnection = SqliteConnection;
 
         pub fn connection() -> TestConnection {

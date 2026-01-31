@@ -1,14 +1,14 @@
+use super::IsWindowFunction;
+use super::NoFrame;
+use super::WindowFunctionFragment;
 use super::aggregate_filter::{Filter, NoFilter};
 use super::aggregate_order::NoOrder;
 use super::partition_by::NoPartition;
 use super::prefix::NoPrefix;
-use super::IsWindowFunction;
-use super::NoFrame;
-use super::WindowFunctionFragment;
 use super::{AggregateExpression, IsAggregateFunction};
+use crate::QueryResult;
 use crate::query_builder::QueryFragment;
 use crate::query_builder::{AstPass, QueryId};
-use crate::QueryResult;
 
 /// Only aggregate functions allow to use filter
 pub(super) trait ValidAggregateFilterForWindow<Fn, Window> {}

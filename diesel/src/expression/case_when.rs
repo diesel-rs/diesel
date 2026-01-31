@@ -1,5 +1,5 @@
 use crate::expression::grouped::Grouped;
-use crate::expression::{helper_types, Expression};
+use crate::expression::{Expression, helper_types};
 use crate::sql_types::{BoolOrNullableBool, SqlType};
 use diesel_derives::{DieselNumericOps, QueryId, ValidGrouping};
 

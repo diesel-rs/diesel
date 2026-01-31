@@ -2,16 +2,16 @@
 extern crate pq_sys;
 
 use self::pq_sys::*;
-use std::ffi::CStr;
-use std::num::NonZeroU32;
-use std::os::raw as libc;
-use std::rc::Rc;
-use std::{slice, str};
+use alloc::rc::Rc;
+use core::ffi as libc;
+use core::ffi::CStr;
+use core::num::NonZeroU32;
+use core::{slice, str};
 
 use super::raw::{RawConnection, RawResult};
 use super::row::PgRow;
 use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
-use std::cell::OnceCell;
+use core::cell::OnceCell;
 
 #[allow(missing_debug_implementations)]
 pub struct PgResult {

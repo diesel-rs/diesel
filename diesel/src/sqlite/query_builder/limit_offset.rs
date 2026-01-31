@@ -4,6 +4,7 @@ use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
 use crate::query_builder::{AstPass, IntoBoxedClause, QueryFragment};
 use crate::result::QueryResult;
 use crate::sqlite::Sqlite;
+use alloc::boxed::Box;
 
 impl QueryFragment<Sqlite> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
     fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {

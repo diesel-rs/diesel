@@ -135,7 +135,7 @@ pub trait MigrationHarness<DB: Backend> {
     /// Types implementing this trait should call [`Migration::run`] internally and record
     /// that a specific migration version was executed afterwards.
     fn run_migration(&mut self, migration: &dyn Migration<DB>)
-        -> Result<MigrationVersion<'static>>;
+    -> Result<MigrationVersion<'static>>;
 
     /// Revert a single migration
     ///
@@ -154,11 +154,7 @@ impl<C, DB> MigrationHarness<DB> for C
 where
     DB: Backend + diesel::internal::migrations::DieselReserveSpecialization,
     C: Connection<Backend = DB> + MigrationConnection + 'static,
-    __diesel_schema_migrations::table: methods::BoxedDsl<
-        'static,
-        DB,
-        Output = __diesel_schema_migrations::BoxedQuery<'static, DB>,
-    >,
+    __diesel_schema_migrations::table: methods::BoxedDsl<'static, DB, Output = __diesel_schema_migrations::BoxedQuery<'static, DB>>,
     __diesel_schema_migrations::BoxedQuery<'static, DB, VarChar>:
         methods::LoadQuery<'static, C, MigrationVersion<'static>>,
     diesel::internal::migrations::DefaultValues: QueryFragment<DB>,

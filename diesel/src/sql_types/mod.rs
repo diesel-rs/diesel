@@ -491,7 +491,7 @@ pub struct Json;
 /// #         name VARCHAR NOT NULL,
 /// #         address JSONB NOT NULL
 /// #     )").execute(connection)?;
-/// # #[cfg(feature = "sqlite")]
+/// # #[cfg(feature = "__sqlite-shared")]
 /// #     diesel::sql_query("CREATE TABLE contacts (
 /// #         id INT PRIMARY KEY,
 /// #         name TEXT NOT NULL,
@@ -558,7 +558,7 @@ pub use crate::pg::sql_types::*;
 pub use crate::mysql::sql_types::{Datetime, Unsigned};
 
 #[doc(inline)]
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 pub use crate::sqlite::sql_types::Timestamptz as TimestamptzSqlite;
 
 /// Indicates that a SQL type exists for a backend.
@@ -774,9 +774,11 @@ pub mod is_nullable {
     pub type MaybeNullable<N, T> = <N as MaybeNullableType<T>>::Out;
 
     /// Represents the output type of [`OneIsNullable`]
+    pub type OneNullable<T1, T2> = <T1 as OneIsNullable<T2>>::Out;
+
+    /// Represents the output type of [`OneIsNullable`]
     /// for two given SQL types
-    pub type IsOneNullable<S1, S2> =
-        <IsSqlTypeNullable<S1> as OneIsNullable<IsSqlTypeNullable<S2>>>::Out;
+    pub type IsOneNullable<S1, S2> = OneNullable<IsSqlTypeNullable<S1>, IsSqlTypeNullable<S2>>;
 
     /// Represents the output type of [`AllAreNullable`]
     /// for two given SQL types

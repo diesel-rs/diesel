@@ -1,10 +1,10 @@
 #![allow(unsafe_code)] // module uses ffi
+use core::ffi as libc;
+use core::mem::MaybeUninit;
+use core::mem::{self, ManuallyDrop};
+use core::ops::Index;
+use core::ptr::NonNull;
 use mysqlclient_sys as ffi;
-use std::mem::MaybeUninit;
-use std::mem::{self, ManuallyDrop};
-use std::ops::Index;
-use std::os::raw as libc;
-use std::ptr::NonNull;
 
 use super::stmt::{MysqlFieldMetadata, StatementUse};
 use crate::mysql::connection::stmt::StatementMetadata;
@@ -66,7 +66,7 @@ impl OutputBinds {
         let data = metadata
             .fields()
             .iter()
-            .zip(types.iter().copied().chain(std::iter::repeat(None)))
+            .zip(types.iter().copied().chain(core::iter::repeat(None)))
             .map(|(field, tpe)| BindData::for_output(tpe, field))
             .collect();
 
@@ -187,7 +187,7 @@ impl Clone for BindData {
                 // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
                 // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
-                std::slice::from_raw_parts(
+                core::slice::from_raw_parts(
                     ptr.as_ptr(),
                     self.length.try_into().expect("usize is at least 32bit"),
                 )
@@ -211,7 +211,7 @@ impl Clone for BindData {
 impl Drop for BindData {
     fn drop(&mut self) {
         if let Some(bytes) = self.bytes {
-            std::mem::drop(unsafe {
+            core::mem::drop(unsafe {
                 // We know that this buffer was allocated by a vector, so constructing a vector from it is fine
                 // We know the correct capacity here
                 // We use 0 as length to prevent situations where the length is already updated but
@@ -429,11 +429,16 @@ impl BindData {
             let length = if let Some(length) = known_buffer_size_for_ffi_type(self.tpe) {
                 debug_assert!(
                     length <= self.capacity
-                    && <usize as TryFrom<_>>::try_from(self.length).expect("32bit integer fits in a usize")  <= self.capacity,
+                        && <usize as TryFrom<_>>::try_from(self.length)
+                            .expect("32bit integer fits in a usize")
+                            <= self.capacity,
                     "Libmysqlclient reported a larger size for a fixed size buffer without setting the truncated flag. \n\
                      This is a bug somewhere. Please open an issue with reproduction steps at \
                      https://github.com/diesel-rs/diesel/issues/new \n\
-                     Calculated Length: {length}, Buffer Capacity: {}, Reported Length {}, Type: {:?}", self.capacity, self.length, self.tpe
+                     Calculated Length: {length}, Buffer Capacity: {}, Reported Length {}, Type: {:?}",
+                    self.capacity,
+                    self.length,
+                    self.tpe
                 );
                 length
             } else {
@@ -444,7 +449,9 @@ impl BindData {
                 "Got a buffer size larger than the underlying allocation. \n\
                  If you see this message, please open an issue at https://github.com/diesel-rs/diesel/issues/new.\n\
                  Such an issue should contain exact reproduction steps how to trigger this message\n\
-                 Length: {length}, Capacity: {}, Type: {:?}", self.capacity, self.tpe
+                 Length: {length}, Capacity: {}, Type: {:?}",
+                self.capacity,
+                self.tpe
             );
 
             let slice = unsafe {
@@ -455,7 +462,7 @@ impl BindData {
                 // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
                 // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
-                std::slice::from_raw_parts(data.as_ptr(), length)
+                core::slice::from_raw_parts(data.as_ptr(), length)
             };
             Some(MysqlValue::new_internal(slice, tpe))
         }
@@ -466,7 +473,7 @@ impl BindData {
     }
 
     fn update_buffer_length(&mut self) {
-        use std::cmp::min;
+        use core::cmp::min;
 
         let actual_bytes_in_buffer = min(
             self.capacity,
@@ -489,7 +496,7 @@ impl BindData {
             addr_of_mut!((*ptr).buffer).write(
                 self.bytes
                     .map(|p| p.as_ptr())
-                    .unwrap_or(std::ptr::null_mut()) as *mut libc::c_void,
+                    .unwrap_or(core::ptr::null_mut()) as *mut libc::c_void,
             );
             addr_of_mut!((*ptr).buffer_length).write(self.capacity as libc::c_ulong);
             addr_of_mut!((*ptr).length).write(&mut self.length);
@@ -779,7 +786,7 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
 
 fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
     use self::ffi::enum_field_types as t;
-    use std::mem::size_of;
+    use core::mem::size_of;
 
     match tpe {
         t::MYSQL_TYPE_TINY => Some(1),
@@ -1247,9 +1254,9 @@ mod tests {
         assert!(!polygon_col.flags.contains(Flags::ENUM_FLAG));
         assert!(!polygon_col.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(
-                to_value::<Text, String>(polygon_col).unwrap(),
-                "MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))"
-            );
+            to_value::<Text, String>(polygon_col).unwrap(),
+            "MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))"
+        );
 
         let geometry_collection = &results[32].0;
         assert_eq!(

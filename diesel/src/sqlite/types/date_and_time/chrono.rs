@@ -82,7 +82,7 @@ fn parse_julian(julian_days: f64) -> Option<NaiveDateTime> {
     NaiveDateTime::from_timestamp_opt(seconds, nanos)
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "chrono"))]
 impl FromSql<Date, Sqlite> for NaiveDate {
     fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value
@@ -91,7 +91,7 @@ impl FromSql<Date, Sqlite> for NaiveDate {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "chrono"))]
 impl ToSql<Date, Sqlite> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         out.set_value(self.format(DATE_FORMAT).to_string());
@@ -99,7 +99,7 @@ impl ToSql<Date, Sqlite> for NaiveDate {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "chrono"))]
 impl FromSql<Time, Sqlite> for NaiveTime {
     fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
@@ -114,7 +114,7 @@ impl FromSql<Time, Sqlite> for NaiveTime {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "chrono"))]
 impl ToSql<Time, Sqlite> for NaiveTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         out.set_value(self.format(ENCODE_TIME_FORMAT).to_string());
@@ -122,7 +122,7 @@ impl ToSql<Time, Sqlite> for NaiveTime {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "chrono"))]
 impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
     fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
@@ -132,10 +132,10 @@ impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
                 }
             }
 
-            if let Ok(julian_days) = text.parse::<f64>() {
-                if let Some(timestamp) = parse_julian(julian_days) {
-                    return Ok(timestamp);
-                }
+            if let Ok(julian_days) = text.parse::<f64>()
+                && let Some(timestamp) = parse_julian(julian_days)
+            {
+                return Ok(timestamp);
             }
 
             Err(format!("Invalid datetime {text}").into())
@@ -143,7 +143,7 @@ impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "chrono"))]
 impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         out.set_value(self.format(ENCODE_NAIVE_DATETIME_FORMAT).to_string());
@@ -151,7 +151,7 @@ impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "chrono"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
@@ -161,10 +161,10 @@ impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
                 }
             }
 
-            if let Ok(julian_days) = text.parse::<f64>() {
-                if let Some(timestamp) = parse_julian(julian_days) {
-                    return Ok(timestamp);
-                }
+            if let Ok(julian_days) = text.parse::<f64>()
+                && let Some(timestamp) = parse_julian(julian_days)
+            {
+                return Ok(timestamp);
             }
 
             Err(format!("Invalid datetime {text}").into())
@@ -172,7 +172,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "chrono"))]
 impl ToSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         out.set_value(self.format(ENCODE_NAIVE_DATETIME_FORMAT).to_string());
@@ -180,7 +180,7 @@ impl ToSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "chrono"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Utc> {
     fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         // First try to parse the timezone
@@ -203,7 +203,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Utc> {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "chrono"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Local> {
     fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         // First try to parse the timezone
@@ -226,7 +226,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Local> {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "chrono"))]
 impl<TZ: TimeZone> ToSql<TimestamptzSqlite, Sqlite> for DateTime<TZ> {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         // Converting to UTC ensures consistency

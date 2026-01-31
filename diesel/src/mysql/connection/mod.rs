@@ -4,10 +4,11 @@ mod stmt;
 mod url;
 
 use self::raw::RawConnection;
-use self::stmt::iterator::StatementIterator;
 use self::stmt::Statement;
+use self::stmt::iterator::StatementIterator;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
+use crate::RunQueryDsl;
 use crate::connection::instrumentation::{DebugQuery, DynInstrumentation, StrQueryHelper};
 use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
@@ -15,7 +16,6 @@ use crate::expression::QueryMetadata;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::*;
-use crate::RunQueryDsl;
 
 #[cfg(feature = "mysql")]
 #[allow(missing_debug_implementations, missing_copy_implementations)]
@@ -291,12 +291,12 @@ impl crate::r2d2::R2D2Connection for MysqlConnection {
 impl MultiConnectionHelper for MysqlConnection {
     fn to_any<'a>(
         lookup: &mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup,
-    ) -> &mut (dyn std::any::Any + 'a) {
+    ) -> &mut (dyn core::any::Any + 'a) {
         lookup
     }
 
     fn from_any(
-        lookup: &mut dyn std::any::Any,
+        lookup: &mut dyn core::any::Any,
     ) -> Option<&mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup> {
         lookup.downcast_mut()
     }

@@ -25,19 +25,19 @@ mod print_schema;
 mod query_helper;
 
 use clap::ArgMatches;
-use clap_complete::{generate, Shell};
+use clap_complete::{Shell, generate};
 use database::InferConnection;
-use diesel::backend::Backend;
 use diesel::Connection;
+use diesel::backend::Backend;
 use diesel_migrations::{FileBasedMigrations, HarnessWithOutput, MigrationHarness};
 use similar_asserts::SimpleDiff;
 use std::error::Error;
 use std::io::stdout;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
+use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::EnvFilter;
 
 use self::config::Config;
 pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
@@ -116,19 +116,18 @@ fn create_migrations_dir(matches: &ArgMatches) -> Result<PathBuf, crate::errors:
         // This is a cleanup code for migrating from an
         // older version of diesel_cli that set a `.gitkeep` instead of a `.keep` file.
         // TODO: remove this after a few releases
-        if let Ok(read_dir) = fs::read_dir(&dir) {
-            if let Some(dir_entry) =
+        if let Ok(read_dir) = fs::read_dir(&dir)
+            && let Some(dir_entry) =
                 read_dir
                     .filter_map(|entry| entry.ok())
                     .find(|entry| match entry.file_type() {
                         Ok(file_type) => file_type.is_file() && entry.file_name() == ".gitkeep",
                         Err(_) => false,
                     })
-            {
-                fs::remove_file(dir_entry.path()).unwrap_or_else(|err| {
-                    eprintln!("WARNING: Unable to delete existing `migrations/.gitkeep`:\n{err}")
-                });
-            }
+        {
+            fs::remove_file(dir_entry.path()).unwrap_or_else(|err| {
+                eprintln!("WARNING: Unable to delete existing `migrations/.gitkeep`:\n{err}")
+            });
         }
     } else {
         create_migrations_directory(&dir)?;

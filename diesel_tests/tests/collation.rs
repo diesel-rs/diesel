@@ -87,7 +87,7 @@ fn custom_collation() {
 #[cfg(feature = "postgres")]
 fn postgres_collations() {
     use crate::schema::users::dsl::*;
-    use diesel::collation::{Posix, C};
+    use diesel::collation::{C, Posix};
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 

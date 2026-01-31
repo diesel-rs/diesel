@@ -1,4 +1,4 @@
-use std::ops::Add;
+use core::ops::Add;
 
 use crate::deserialize::{self, Defaultable, FromSql, FromSqlRow};
 use crate::expression::AsExpression;

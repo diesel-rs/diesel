@@ -1,5 +1,5 @@
-use super::expand_with;
 use super::AttributeMacro;
+use super::expand_with;
 
 #[test]
 pub(crate) fn diesel_public_if_1() {

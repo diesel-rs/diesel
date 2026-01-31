@@ -13,14 +13,17 @@ use crate::result::{DatabaseErrorKind, Error, QueryResult};
 use crate::row::{Field, PartialRow, Row, RowIndex, RowSealed};
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
+use crate::sqlite::SqliteValue;
 use crate::sqlite::connection::bind_collector::InternalSqliteBindValue;
 use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
-use crate::sqlite::SqliteValue;
-use std::cell::{Ref, RefCell};
-use std::marker::PhantomData;
-use std::mem::ManuallyDrop;
-use std::ops::DerefMut;
-use std::rc::Rc;
+use alloc::boxed::Box;
+use alloc::rc::Rc;
+use alloc::string::ToString;
+use alloc::vec::Vec;
+use core::cell::{Ref, RefCell};
+use core::marker::PhantomData;
+use core::mem::ManuallyDrop;
+use core::ops::DerefMut;
 
 pub(super) fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     conn: &RawConnection,
@@ -29,7 +32,7 @@ pub(super) fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     mut f: F,
 ) -> QueryResult<()>
 where
-    F: FnMut(&RawConnection, Args) -> Ret + std::panic::UnwindSafe + Send + 'static,
+    F: FnMut(&RawConnection, Args) -> Ret + core::panic::UnwindSafe + Send + 'static,
     Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
@@ -57,7 +60,7 @@ pub(super) fn register_noargs<RetSqlType, Ret, F>(
     mut f: F,
 ) -> QueryResult<()>
 where
-    F: FnMut() -> Ret + std::panic::UnwindSafe + Send + 'static,
+    F: FnMut() -> Ret + core::panic::UnwindSafe + Send + 'static,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
@@ -70,7 +73,7 @@ pub(super) fn register_aggregate<ArgsSqlType, RetSqlType, Args, Ret, A>(
     fn_name: &str,
 ) -> QueryResult<()>
 where
-    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + std::panic::UnwindSafe,
+    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + core::panic::UnwindSafe,
     Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
@@ -136,16 +139,14 @@ struct FunctionRow<'a> {
 impl Drop for FunctionRow<'_> {
     #[allow(unsafe_code)] // manual drop calls
     fn drop(&mut self) {
-        if let Some(args) = Rc::get_mut(&mut self.args) {
-            if let PrivateSqliteRow::Duplicated { column_names, .. } =
+        if let Some(args) = Rc::get_mut(&mut self.args)
+            && let PrivateSqliteRow::Duplicated { column_names, .. } =
                 DerefMut::deref_mut(RefCell::get_mut(args))
-            {
-                if Rc::strong_count(column_names) == 1 {
-                    // According the https://doc.rust-lang.org/std/mem/struct.ManuallyDrop.html#method.drop
-                    // it's fine to just drop the values here
-                    unsafe { std::ptr::drop_in_place(column_names as *mut _) }
-                }
-            }
+            && Rc::strong_count(column_names) == 1
+        {
+            // According the https://doc.rust-lang.org/std/mem/struct.ManuallyDrop.html#method.drop
+            // it's fine to just drop the values here
+            unsafe { core::ptr::drop_in_place(column_names as *mut _) }
         }
     }
 }
@@ -183,7 +184,7 @@ impl FunctionRow<'_> {
             args: Rc::new(RefCell::new(ManuallyDrop::new(
                 PrivateSqliteRow::Duplicated {
                     values: args,
-                    column_names: Rc::from(vec![None; lengths]),
+                    column_names: Rc::from(alloc::vec![None; lengths]),
                 },
             ))),
             marker: PhantomData,
@@ -217,7 +218,7 @@ impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
         })
     }
 
-    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
+    fn partial_row(&self, range: core::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
         PartialRow::new(self, range)
     }
 }
@@ -254,7 +255,7 @@ impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {
 
     fn value(&self) -> Option<<Sqlite as Backend>::RawValue<'_>> {
         SqliteValue::new(
-            Ref::map(Ref::clone(&self.args), |drop| std::ops::Deref::deref(drop)),
+            Ref::map(Ref::clone(&self.args), |drop| core::ops::Deref::deref(drop)),
             self.col_idx,
         )
     }

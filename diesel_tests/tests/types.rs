@@ -995,7 +995,7 @@ fn mysql_numeric_bigdecimal_from_sql() {
 
     // Some non standard values:
     let query = "cast(18446744073709551616 as decimal)"; // 2^64; doesn't fit in u64
-                                                         // It is mysql, it will trim it even in strict mode
+    // It is mysql, it will trim it even in strict mode
     let expected_value: BigDecimal = "9999999999.00"
         .parse()
         .expect("Could not parse to a BigDecimal");
@@ -1394,7 +1394,7 @@ where
     select(sql::<T>(sql_str)).first(connection).unwrap()
 }
 
-use diesel::expression::{is_aggregate, AsExpression, SqlLiteral, ValidGrouping};
+use diesel::expression::{AsExpression, SqlLiteral, ValidGrouping, is_aggregate};
 use diesel::query_builder::{QueryFragment, QueryId};
 use std::fmt::Debug;
 
@@ -1464,9 +1464,11 @@ fn test_range_from_sql() {
     );
 
     let query = "SELECT '[2,1)'::int4range";
-    assert!(sql::<Range<Int4>>(query)
-        .load::<(Bound<i32>, Bound<i32>)>(connection)
-        .is_err());
+    assert!(
+        sql::<Range<Int4>>(query)
+            .load::<(Bound<i32>, Bound<i32>)>(connection)
+            .is_err()
+    );
 
     let query = "'empty'::int4range";
     let expected_value = (Bound::Excluded(0), Bound::Excluded(0));

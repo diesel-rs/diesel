@@ -1,7 +1,7 @@
 //! The MySQL backend
 
-use super::query_builder::MysqlQueryBuilder;
 use super::MysqlValue;
+use super::query_builder::MysqlQueryBuilder;
 use crate::backend::sql_dialect::on_conflict_clause::SupportsOnConflictClause;
 use crate::backend::*;
 use crate::internal::derives::multiconnection::sql_dialect;

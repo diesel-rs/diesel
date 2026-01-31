@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::parse_quote;
 use syn::DeriveInput;
+use syn::parse_quote;
 
 use crate::util::wrap_in_dummy_mod;
 
@@ -28,7 +28,7 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
         use diesel::sql_types::ops::{Add, Sub, Mul, Div};
         use diesel::sql_types::{SqlType, SingleValue};
 
-        impl #impl_generics ::std::ops::Add<__Rhs> for #struct_name #ty_generics
+        impl #impl_generics ::core::ops::Add<__Rhs> for #struct_name #ty_generics
         #where_clause
             Self: Expression,
             <Self as Expression>::SqlType: Add,
@@ -42,7 +42,7 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
             }
         }
 
-        impl #impl_generics ::std::ops::Sub<__Rhs> for #struct_name #ty_generics
+        impl #impl_generics ::core::ops::Sub<__Rhs> for #struct_name #ty_generics
         #where_clause
             Self: Expression,
             <Self as Expression>::SqlType: Sub,
@@ -56,7 +56,7 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
             }
         }
 
-        impl #impl_generics ::std::ops::Mul<__Rhs> for #struct_name #ty_generics
+        impl #impl_generics ::core::ops::Mul<__Rhs> for #struct_name #ty_generics
         #where_clause
             Self: Expression,
             <Self as Expression>::SqlType: Mul,
@@ -70,7 +70,7 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
             }
         }
 
-        impl #impl_generics ::std::ops::Div<__Rhs> for #struct_name #ty_generics
+        impl #impl_generics ::core::ops::Div<__Rhs> for #struct_name #ty_generics
         #where_clause
             Self: Expression,
             <Self as Expression>::SqlType: Div,

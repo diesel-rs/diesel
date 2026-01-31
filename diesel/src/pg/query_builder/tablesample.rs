@@ -6,7 +6,7 @@ use crate::query_source::{QueryRelation, QuerySource, TableNotEqual};
 use crate::result::QueryResult;
 use crate::sql_types::{Double, SmallInt};
 use crate::{JoinTo, SelectableExpression, Table};
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 #[doc(hidden)]
 pub trait TablesampleMethod: Clone {
@@ -172,7 +172,6 @@ impl<S, TSM> Table for Tablesample<S, TSM>
 where
     S: Table + Clone + AsQuery,
     TSM: TablesampleMethod,
-
     <S as Table>::PrimaryKey: SelectableExpression<Tablesample<S, TSM>>,
     <S as Table>::AllColumns: SelectableExpression<Tablesample<S, TSM>>,
     <S as QuerySource>::DefaultSelection:

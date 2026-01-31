@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "std"), no_std)]
 //! # Diesel
 //!
 //! Diesel is an ORM and query builder designed to reduce the boilerplate for database interactions.
@@ -156,6 +157,8 @@
 //!   [dependencies]
 //!   libsqlite3-sys = { version = "0.29", features = ["bundled"] }
 //!   ```
+//! - `sqlite-no-std` A diesel sqlite backend for no-std environments. This is mostly the same as the `sqlite` backend,
+//!   but it doesn't enable the `std` feature flag
 //! - `postgres`: This feature enables the diesel postgres backend. This features implies `postgres_backend`
 //!   Enabling this feature requires a compatible copy of `libpq` for your target architecture.
 //!   Alternatively, you can add `pq-sys` with the `bundled` feature as a dependency to your
@@ -222,11 +225,16 @@
 //!   explicitly opts out the stability guarantee given by diesel. This feature overrides the `with-deprecated`.
 //!   Note that this may also remove items that are not shown as `#[deprecated]` in our documentation, due to
 //!   various bugs in rustdoc. It can be used to check if you depend on any such hidden `#[deprecated]` item.
+//! - `std`: This features enables usage of the rust standard library. When disabled Diesel will only use the `core`
+//!   and `alloc` crate instead. If this feature is disabled it is required to enable the `hashbrown` feature.
+//! - `hashbrown`: This feature enables an optional dependency on the hashbrown crate. It's required for usage in `no_std`
+//!   environments.
 //!
 //! By default the following features are enabled:
 //!
 //! - `with-deprecated`
 //! - `32-column-tables`
+//! - `std`
 
 #![cfg_attr(feature = "unstable", feature(trait_alias))]
 #![cfg_attr(feature = "unstable", feature(strict_provenance_lints))]
@@ -268,9 +276,19 @@
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss
 )]
+#![cfg_attr(
+    not(test),
+    warn(clippy::std_instead_of_alloc, clippy::std_instead_of_core)
+)]
 #![deny(unsafe_code)]
 #![cfg_attr(test, allow(clippy::unwrap_used))]
 
+// the no-std version needs hashbrown
+#[cfg(all(not(feature = "hashbrown"), not(feature = "std")))]
+compile_error!("The hashbrown feature is required for no-std support");
+
+extern crate alloc;
+extern crate core;
 extern crate diesel_derives;
 
 #[macro_use]
@@ -314,7 +332,7 @@ pub mod row;
 pub mod mysql;
 #[cfg(feature = "postgres_backend")]
 pub mod pg;
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 pub mod sqlite;
 
 #[macro_use]
@@ -377,7 +395,7 @@ pub mod helper_types {
     //! `users.filter(first_name.eq("John")).order(last_name.asc()).limit(10)` would
     //! be `Limit<Order<FindBy<users, first_name, &str>, Asc<last_name>>>`
     use super::query_builder::combination_clause::{self, CombinationClause};
-    use super::query_builder::{locking_clause as lock, AsQuery};
+    use super::query_builder::{AsQuery, locking_clause as lock};
     use super::query_dsl::methods::*;
     use super::query_dsl::*;
     use super::query_source::{aliasing, joins};
@@ -765,11 +783,11 @@ pub mod prelude {
     #[doc(inline)]
     pub use crate::macros::prelude::*;
     #[doc(inline)]
-    pub use crate::query_builder::has_query::HasQuery;
-    #[doc(inline)]
     pub use crate::query_builder::AsChangeset;
     #[doc(inline)]
     pub use crate::query_builder::DecoratableTarget;
+    #[doc(inline)]
+    pub use crate::query_builder::has_query::HasQuery;
     #[doc(inline)]
     pub use crate::query_dsl::{
         BelongingToDsl, CombineDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl,
@@ -792,13 +810,13 @@ pub mod prelude {
     #[cfg(feature = "mysql")]
     #[doc(inline)]
     pub use crate::mysql::MysqlConnection;
-    #[doc(inline)]
-    #[cfg(feature = "postgres_backend")]
-    pub use crate::pg::query_builder::copy::ExecuteCopyFromDsl;
     #[cfg(feature = "postgres")]
     #[doc(inline)]
     pub use crate::pg::PgConnection;
-    #[cfg(feature = "sqlite")]
+    #[doc(inline)]
+    #[cfg(feature = "postgres_backend")]
+    pub use crate::pg::query_builder::copy::ExecuteCopyFromDsl;
+    #[cfg(feature = "__sqlite-shared")]
     #[doc(inline)]
     pub use crate::sqlite::SqliteConnection;
 }

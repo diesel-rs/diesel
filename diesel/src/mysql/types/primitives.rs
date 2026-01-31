@@ -1,10 +1,10 @@
+use crate::Queryable;
 use crate::deserialize::{self, FromSql};
 use crate::mysql::{Mysql, MysqlValue, NumericRepresentation};
 use crate::result::Error::DeserializationError;
 use crate::sql_types::{BigInt, Binary, Double, Float, Integer, SmallInt, Text};
-use crate::Queryable;
-use std::error::Error;
-use std::str::{self, FromStr};
+use core::error::Error;
+use core::str::{self, FromStr};
 
 fn decimal_to_integer<T>(bytes: &[u8]) -> deserialize::Result<T>
 where

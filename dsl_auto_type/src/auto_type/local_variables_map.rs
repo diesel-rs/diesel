@@ -48,7 +48,7 @@ impl<'a> LocalVariablesMap<'a, '_> {
                             return Err(syn::Error::new(
                                 type_ascription.span(),
                                 "auto_type: unexpected double type ascription",
-                            ))
+                            ));
                         }
                     }),
                     local_init_expression,
@@ -81,16 +81,15 @@ impl<'a> LocalVariablesMap<'a, '_> {
                 );
             }
             syn::Pat::Tuple(pat_tuple) => {
-                if let Some(type_ascription) = type_ascription {
-                    if let Type::Tuple(type_tuple) = type_ascription {
-                        if pat_tuple.elems.len() != type_tuple.elems.len() {
-                            return Err(syn::Error::new(
-                                type_ascription.span(),
-                                "auto_type: tuple let assignment and its \
+                if let Some(type_ascription) = type_ascription
+                    && let Type::Tuple(type_tuple) = type_ascription
+                    && pat_tuple.elems.len() != type_tuple.elems.len()
+                {
+                    return Err(syn::Error::new(
+                        type_ascription.span(),
+                        "auto_type: tuple let assignment and its \
                                     type ascription have different number of elements",
-                            ));
-                        }
-                    }
+                    ));
                 }
                 for (i, pat) in pat_tuple.elems.iter().enumerate() {
                     self.process_pat(

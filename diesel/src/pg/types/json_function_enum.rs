@@ -1,4 +1,4 @@
-use std::error::Error;
+use core::error::Error;
 use std::io::Write;
 
 use crate::pg::Pg;

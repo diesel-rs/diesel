@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream, Peek, Result};
 use syn::token::Eq;
-use syn::{parenthesized, parse_quote, Data, DeriveInput, GenericArgument, Ident, Type};
+use syn::{Data, DeriveInput, GenericArgument, Ident, Type, parenthesized, parse_quote};
 
 use crate::model::Model;
 

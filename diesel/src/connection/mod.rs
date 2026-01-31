@@ -3,7 +3,7 @@
 pub(crate) mod instrumentation;
 #[cfg(all(
     not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
-    any(feature = "sqlite", feature = "postgres", feature = "mysql")
+    any(feature = "__sqlite-shared", feature = "postgres", feature = "mysql")
 ))]
 pub(crate) mod statement_cache;
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
@@ -15,12 +15,14 @@ use crate::expression::QueryMetadata;
 use crate::query_builder::{Query, QueryFragment, QueryId};
 use crate::result::*;
 use crate::sql_types::TypeMetadata;
-use std::fmt::Debug;
+use core::fmt::Debug;
 
+#[cfg(feature = "std")]
+#[doc(inline)]
+pub use self::instrumentation::set_default_instrumentation;
 #[doc(inline)]
 pub use self::instrumentation::{
-    get_default_instrumentation, set_default_instrumentation, DebugQuery, Instrumentation,
-    InstrumentationEvent,
+    DebugQuery, Instrumentation, InstrumentationEvent, get_default_instrumentation,
 };
 #[doc(inline)]
 pub use self::transaction_manager::{
@@ -41,7 +43,7 @@ pub use self::instrumentation::{DynInstrumentation, StrQueryHelper};
 
 #[cfg(all(
     not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
-    any(feature = "sqlite", feature = "postgres", feature = "mysql")
+    any(feature = "__sqlite-shared", feature = "postgres", feature = "mysql")
 ))]
 pub(crate) use self::private::MultiConnectionHelper;
 
@@ -477,26 +479,26 @@ pub trait WithMetadataLookup: Connection {
 /// this trait won't help you much. Normally you should only
 /// need to use this trait if you are interacting with a connection
 /// passed to a [`Migration`](../migration/trait.Migration.html)
-pub trait BoxableConnection<DB: Backend>: SimpleConnection + std::any::Any {
+pub trait BoxableConnection<DB: Backend>: SimpleConnection + core::any::Any {
     /// Maps the current connection to `std::any::Any`
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    fn as_any(&self) -> &dyn std::any::Any;
+    fn as_any(&self) -> &dyn core::any::Any;
 
     #[doc(hidden)]
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
+    fn as_any_mut(&mut self) -> &mut dyn core::any::Any;
 }
 
 impl<C> BoxableConnection<C::Backend> for C
 where
-    C: Connection + std::any::Any,
+    C: Connection + core::any::Any,
 {
-    fn as_any(&self) -> &dyn std::any::Any {
+    fn as_any(&self) -> &dyn core::any::Any {
         self
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+    fn as_any_mut(&mut self) -> &mut dyn core::any::Any {
         self
     }
 }
@@ -581,11 +583,11 @@ pub(crate) mod private {
         /// Convert the lookup type to any
         fn to_any<'a>(
             lookup: &mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup,
-        ) -> &mut (dyn std::any::Any + 'a);
+        ) -> &mut (dyn core::any::Any + 'a);
 
         /// Get the lookup type from any
         fn from_any(
-            lookup: &mut dyn std::any::Any,
+            lookup: &mut dyn core::any::Any,
         ) -> Option<&mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup>;
     }
 

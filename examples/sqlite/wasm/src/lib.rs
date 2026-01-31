@@ -6,9 +6,9 @@ use std::sync::Once;
 
 use crate::models::{NewPost, Post};
 use diesel::prelude::*;
-use diesel_migrations::embed_migrations;
 use diesel_migrations::EmbeddedMigrations;
 use diesel_migrations::MigrationHarness;
+use diesel_migrations::embed_migrations;
 use wasm_bindgen::prelude::*;
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
@@ -52,14 +52,14 @@ pub fn establish_connection() -> SqliteConnection {
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 #[wasm_bindgen(js_name = installOpfsSahpool)]
 pub async fn install_opfs_sahpool() {
-    use sqlite_wasm_vfs::sahpool::{install, OpfsSAHPoolCfg};
+    use sqlite_wasm_vfs::sahpool::{OpfsSAHPoolCfg, install};
     install(&OpfsSAHPoolCfg::default(), false).await.unwrap();
 }
 
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 #[wasm_bindgen(js_name = installRelaxedIdb)]
 pub async fn install_relaxed_idb() {
-    use sqlite_wasm_vfs::relaxed_idb::{install, RelaxedIdbCfg};
+    use sqlite_wasm_vfs::relaxed_idb::{RelaxedIdbCfg, install};
     install(&RelaxedIdbCfg::default(), false).await.unwrap();
 }
 

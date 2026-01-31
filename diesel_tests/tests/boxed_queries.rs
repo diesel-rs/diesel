@@ -194,12 +194,12 @@ fn can_box_query_having_with_boxable_expression() {
 
     let expr: Box<
         dyn BoxableExpression<
-            users::table,
-            crate::schema::TestBackend,
-            users::id,
-            is_aggregate::Yes,
-            SqlType = _,
-        >,
+                users::table,
+                crate::schema::TestBackend,
+                users::id,
+                is_aggregate::Yes,
+                SqlType = _,
+            >,
     > = Box::new(count(users::id).eq(1)) as _;
 
     use diesel::dsl::count;
@@ -214,12 +214,12 @@ fn can_box_query_having_with_boxable_expression() {
 
     let expr: Box<
         dyn BoxableExpression<
-            users::table,
-            crate::schema::TestBackend,
-            users::id,
-            is_aggregate::Yes,
-            SqlType = _,
-        >,
+                users::table,
+                crate::schema::TestBackend,
+                users::id,
+                is_aggregate::Yes,
+                SqlType = _,
+            >,
     > = Box::new(count(users::id).eq(1)) as _;
 
     let data = users::table

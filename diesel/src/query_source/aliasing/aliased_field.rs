@@ -5,7 +5,7 @@ use super::{Alias, AliasSource};
 use crate::backend::Backend;
 use crate::dsl;
 use crate::expression::{
-    is_aggregate, AppearsOnTable, AsExpression, Expression, SelectableExpression, ValidGrouping,
+    AppearsOnTable, AsExpression, Expression, SelectableExpression, ValidGrouping, is_aggregate,
 };
 use crate::expression_methods::{EqAll, ExpressionMethods};
 use crate::query_builder::{AstPass, FromClause, QueryFragment, QueryId, SelectStatement};
@@ -13,7 +13,7 @@ use crate::query_source::{AppearsInFromClause, Once, QueryRelationField, QuerySo
 use crate::result::QueryResult;
 use crate::sql_types;
 
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 #[derive(Debug, Clone, Copy, DieselNumericOps)]
 /// Represents an aliased field (column) within diesel's query builder

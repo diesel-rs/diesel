@@ -3,8 +3,9 @@ extern crate url;
 
 use self::percent_encoding::percent_decode;
 use self::url::{Host, Url};
+use alloc::ffi::CString;
+use core::ffi::CStr;
 use std::collections::HashMap;
-use std::ffi::{CStr, CString};
 
 use crate::result::{ConnectionError, ConnectionResult};
 
@@ -252,7 +253,7 @@ mod tests {
 
     #[diesel_test_helper::test]
     fn userinfo_should_be_percent_decode() {
-        use self::percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
+        use self::percent_encoding::{AsciiSet, CONTROLS, utf8_percent_encode};
         const USERINFO_ENCODE_SET: &AsciiSet = &CONTROLS
             .add(b' ')
             .add(b'"')
@@ -340,8 +341,8 @@ mod tests {
         assert_eq!(CString::new(ssl_ca).unwrap(), conn_opts.ssl_ca.unwrap());
 
         let url_with_unix_str_and_ssl_ca = format!(
-        "mysql://{username}:{password}@localhost?unix_socket=/var/run/mysqld.sock&ssl_ca={ssl_ca}"
-    );
+            "mysql://{username}:{password}@localhost?unix_socket=/var/run/mysqld.sock&ssl_ca={ssl_ca}"
+        );
 
         let conn_opts2 = ConnectionOptions::parse(url_with_unix_str_and_ssl_ca.as_str()).unwrap();
         assert_eq!(None, conn_opts2.host);
@@ -364,8 +365,8 @@ mod tests {
         assert_eq!(CString::new(ssl_cert).unwrap(), conn_opts.ssl_cert.unwrap());
 
         let url_with_unix_str_and_ssl_cert = format!(
-        "mysql://{username}:{password}@localhost?unix_socket=/var/run/mysqld.sock&ssl_cert={ssl_cert}"
-    );
+            "mysql://{username}:{password}@localhost?unix_socket=/var/run/mysqld.sock&ssl_cert={ssl_cert}"
+        );
 
         let conn_opts2 = ConnectionOptions::parse(url_with_unix_str_and_ssl_cert.as_str()).unwrap();
         assert_eq!(None, conn_opts2.host);
@@ -391,8 +392,8 @@ mod tests {
         assert_eq!(CString::new(ssl_key).unwrap(), conn_opts.ssl_key.unwrap());
 
         let url_with_unix_str_and_ssl_key = format!(
-        "mysql://{username}:{password}@localhost?unix_socket=/var/run/mysqld.sock&ssl_key={ssl_key}"
-    );
+            "mysql://{username}:{password}@localhost?unix_socket=/var/run/mysqld.sock&ssl_key={ssl_key}"
+        );
 
         let conn_opts2 = ConnectionOptions::parse(url_with_unix_str_and_ssl_key.as_str()).unwrap();
         assert_eq!(None, conn_opts2.host);
