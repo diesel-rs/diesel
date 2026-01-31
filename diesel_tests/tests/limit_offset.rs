@@ -13,7 +13,7 @@ fn limit() {
     let expected_data = vec![("Sean".to_string(), None::<String>)];
     let actual_data: Vec<_> = users
         .select((name, hair_color))
-        .order(id)
+        .order(name)
         .limit(1)
         .load(connection)
         .unwrap();
@@ -31,7 +31,7 @@ fn offset() {
         .unwrap();
 
     let expected_data = vec![("Tess".to_string(), None::<String>)];
-    let q = users.select((name, hair_color)).order(id).offset(1);
+    let q = users.select((name, hair_color)).order(name).offset(1);
     let actual_data: Vec<_> = q.load(connection).unwrap();
     assert_eq!(expected_data, actual_data);
 }
@@ -45,10 +45,10 @@ fn limit_offset() {
         .execute(connection)
         .unwrap();
 
-    let expected_data = vec![("Ruby".to_string(), None::<String>)];
+    let expected_data = vec![("Tess".to_string(), None::<String>)];
     let q = users
         .select((name, hair_color))
-        .order(id)
+        .order(name)
         .limit(1)
         .offset(2);
     let actual_data: Vec<_> = q.load(connection).unwrap();
@@ -68,7 +68,7 @@ fn boxed_limit() {
     let actual_data: Vec<_> = users
         .into_boxed()
         .select((name, hair_color))
-        .order(id)
+        .order(name)
         .limit(1)
         .load(connection)
         .unwrap();
@@ -78,7 +78,7 @@ fn boxed_limit() {
         .select((name, hair_color))
         .limit(1)
         .into_boxed()
-        .order(id)
+        .order(name)
         .load(connection)
         .unwrap();
     assert_eq!(expected_data, actual_data);
@@ -98,7 +98,7 @@ fn boxed_offset() {
     let actual_data: Vec<_> = users
         .select((name, hair_color))
         .into_boxed()
-        .order(id)
+        .order(name)
         .offset(1)
         .load(connection)
         .unwrap();
@@ -110,7 +110,7 @@ fn boxed_offset() {
             .select((name, hair_color))
             .offset(1)
             .into_boxed()
-            .order(id)
+            .order(name)
             .load(connection)
             .unwrap();
         assert_eq!(expected_data, actual_data);
@@ -126,12 +126,12 @@ fn boxed_limit_offset() {
         .execute(connection)
         .unwrap();
 
-    let expected_data = vec![("Ruby".to_string(), None::<String>)];
+    let expected_data = vec![("Tess".to_string(), None::<String>)];
 
     let actual_data: Vec<_> = users
         .into_boxed()
         .select((name, hair_color))
-        .order(id)
+        .order(name)
         .limit(1)
         .offset(2)
         .load(connection)
@@ -143,7 +143,7 @@ fn boxed_limit_offset() {
         .limit(1)
         .offset(2)
         .into_boxed()
-        .order(id)
+        .order(name)
         .load(connection)
         .unwrap();
     assert_eq!(expected_data, actual_data);
@@ -152,7 +152,7 @@ fn boxed_limit_offset() {
         .select((name, hair_color))
         .limit(1)
         .into_boxed()
-        .order(id)
+        .order(name)
         .offset(2)
         .load(connection)
         .unwrap();
@@ -164,7 +164,7 @@ fn boxed_limit_offset() {
             .select((name, hair_color))
             .offset(2)
             .into_boxed()
-            .order(id)
+            .order(name)
             .limit(1)
             .load(connection)
             .unwrap();
