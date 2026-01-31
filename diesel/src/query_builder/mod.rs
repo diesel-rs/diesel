@@ -81,16 +81,15 @@ pub use self::offset_clause::{NoOffsetClause, OffsetClause};
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::order_clause::{NoOrderClause, OrderClause};
 
-pub use self::insert_statement::UndecoratedInsertRecord;
-#[diesel_derives::__diesel_public_if(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-)]
-pub(crate) use self::insert_statement::ValuesClause;
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
 #[doc(inline)]
 pub(crate) use self::insert_statement::batch_insert::BatchInsert;
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::insert_statement::{UndecoratedInsertRecord, ValuesClause};
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]

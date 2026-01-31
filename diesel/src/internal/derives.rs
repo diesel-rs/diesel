@@ -2,8 +2,6 @@
 pub mod insertable {
     #[doc(hidden)]
     pub use crate::query_builder::insert_statement::UndecoratedInsertRecord;
-    #[doc(hidden)]
-    pub(crate) use crate::query_builder::insert_statement::private::Sealed;
 }
 
 #[doc(hidden)]
