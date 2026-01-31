@@ -32,7 +32,7 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
     /// See [`update`](crate::update()) for usage examples, or [the update
     /// guide](https://diesel.rs/guides/all-about-updates/) for a more exhaustive
     /// set of examples.
-    pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset>
+    pub fn set<V>(self, values: V) -> crate::dsl::Set<Self, V>
     where
         T: Table,
         V: changeset::AsChangeset<Target = T>,

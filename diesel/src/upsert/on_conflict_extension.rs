@@ -305,10 +305,7 @@ where
     ///
     /// [`on_constraint`]: ../upsert/fn.on_constraint.html
     /// [`do_update`]: crate::upsert::IncompleteOnConflict::do_update()
-    pub fn on_conflict<Target>(
-        self,
-        target: Target,
-    ) -> IncompleteOnConflict<InsertStatement<T, U::ValueClause, Op, Ret>, ConflictTarget<Target>>
+    pub fn on_conflict<Target>(self, target: Target) -> crate::dsl::OnConflict<Self, Target>
     where
         ConflictTarget<Target>: OnConflictTarget<T>,
     {
@@ -406,17 +403,13 @@ impl<T: QuerySource, U, Op, Ret, Target>
     ///
     /// [`on_conflict_do_nothing`]: crate::query_builder::InsertStatement::on_conflict_do_nothing()
     /// [`on_conflict`]: crate::query_builder::InsertStatement::on_conflict()
-    pub fn do_nothing(
-        self,
-    ) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing<T>>, Op, Ret> {
+    pub fn do_nothing(self) -> crate::dsl::DoNothing<Self> {
         let target = self.target;
         self.stmt.replace_values(|values| {
             OnConflictValues::new(values, target, DoNothing::new(), NoWhereClause)
         })
     }
-}
 
-impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// Used to create a query in the form `ON CONFLICT (...) DO UPDATE ... [WHERE ...]`
     ///
     /// Call `.set` on the result of this function with the changes you want to
@@ -705,7 +698,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// # #[cfg(feature = "mysql")]
     /// # fn main() {}
     /// ```
-    pub fn do_update(self) -> IncompleteDoUpdate<Stmt, Target> {
+    pub fn do_update(self) -> crate::dsl::DoUpdate<Self> {
         IncompleteDoUpdate {
             stmt: self.stmt,
             target: self.target,
@@ -726,10 +719,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// See [`do_update`] for usage examples.
     ///
     /// [`do_update`]: IncompleteOnConflict::do_update()
-    pub fn set<Changes>(
-        self,
-        changes: Changes,
-    ) -> InsertStatement<T, OnConflictValues<U, Target, DoUpdate<Changes::Changeset, T>>, Op, Ret>
+    pub fn set<Changes>(self, changes: Changes) -> crate::dsl::Set<Self, Changes>
     where
         T: QuerySource,
         Changes: AsChangeset<Target = T>,
