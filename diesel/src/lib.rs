@@ -729,12 +729,35 @@ pub mod helper_types {
     >;
 
     /// Represents the return type of
-    /// [`UpdateStatement::set()`](crate::query_builder::UpdateStatement::set)
-    pub type Set<U, V> = crate::query_builder::UpdateStatement<
-        <U as crate::query_builder::update_statement::UpdateAutoTypeHelper>::Table,
-        <U as crate::query_builder::update_statement::UpdateAutoTypeHelper>::Where,
-        <V as crate::AsChangeset>::Changeset,
+    /// [`IncompleteOnConflict::do_nothing()`](crate::upsert::IncompleteOnConflict::do_nothing)
+    pub type DoNothing<I> = crate::query_builder::InsertStatement<
+        <I as crate::upsert::OnConflictHelper>::Table,
+        crate::query_builder::upsert::on_conflict_clause::OnConflictValues<
+            <I as crate::upsert::OnConflictHelper>::Values,
+            <I as crate::upsert::OnConflictHelper>::Target,
+            crate::query_builder::upsert::on_conflict_actions::DoNothing<
+                <I as crate::upsert::OnConflictHelper>::Table,
+            >,
+        >,
+        <I as crate::upsert::OnConflictHelper>::Op,
+        <I as crate::upsert::OnConflictHelper>::Ret,
     >;
+
+    /// Represents the return type of
+    /// [`IncompleteOnConflict::do_update()`](crate::upsert::IncompleteOnConflict::do_update)
+    pub type DoUpdate<I> = crate::upsert::IncompleteDoUpdate<
+        crate::query_builder::InsertStatement<
+            <I as crate::upsert::OnConflictHelper>::Table,
+            <I as crate::upsert::OnConflictHelper>::Values,
+            <I as crate::upsert::OnConflictHelper>::Op,
+            <I as crate::upsert::OnConflictHelper>::Ret,
+        >,
+        <I as crate::upsert::OnConflictHelper>::Target,
+    >;
+
+    /// Represents the return type of
+    /// [`UpdateStatement::set()`](crate::query_builder::UpdateStatement::set)
+    pub type Set<U, V> = <U as crate::query_builder::update_statement::SetAutoTypeHelper<V>>::Out;
 
     /// Represents the return type of
     /// [`InsertStatement::returning`](crate::query_builder::InsertStatement::returning),

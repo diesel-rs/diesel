@@ -1,4 +1,5 @@
 use crate::expression::Expression;
+use crate::query_builder::update_statement::SetAutoTypeHelper;
 use crate::query_builder::upsert::into_conflict_clause::IntoConflictValueClause;
 use crate::query_builder::upsert::on_conflict_actions::*;
 use crate::query_builder::upsert::on_conflict_clause::*;
@@ -338,6 +339,60 @@ where
 pub struct IncompleteOnConflict<Stmt, Target> {
     stmt: Stmt,
     target: Target,
+}
+
+/// Helper trait for `#[auto_type]`
+///
+/// This trait allows extracting the internal types of a `IncompleteOnConflict`
+/// struct, which is needed to define the `DoNothing` and `DoUpdate` type aliases
+/// in `diesel::dsl`.
+#[allow(unreachable_pub)]
+pub trait OnConflictHelper {
+    /// The table on which the `INSERT` statement acts
+    type Table;
+    /// The `VALUES` clause of the `INSERT` statement
+    type Values;
+    /// The conflict target (e.g., column or constraint) specified in the `ON CONFLICT` clause
+    type Target;
+    /// The SQL definition of the insert operation
+    type Op;
+    /// The `RETURNING` clause of the statement
+    type Ret;
+}
+
+impl<T, U, Op, Ret, Target> OnConflictHelper
+    for IncompleteOnConflict<InsertStatement<T, U, Op, Ret>, Target>
+where
+    T: QuerySource,
+{
+    type Table = T;
+    type Values = U;
+    type Target = Target;
+    type Op = Op;
+    type Ret = Ret;
+}
+
+impl<Stmt, Target, Changes> SetAutoTypeHelper<Changes> for IncompleteDoUpdate<Stmt, Target>
+where
+    Stmt: crate::query_builder::insert_statement::InsertAutoTypeHelper,
+    <Stmt as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Table: QuerySource,
+    Changes: AsChangeset<
+        Target = <Stmt as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Table,
+    >,
+{
+    type Out = InsertStatement<
+        <Stmt as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Table,
+        OnConflictValues<
+            <Stmt as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Values,
+            Target,
+            DoUpdate<
+                Changes::Changeset,
+                <Stmt as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Table,
+            >,
+        >,
+        <Stmt as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Op,
+        <Stmt as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Ret,
+    >;
 }
 
 impl<T: QuerySource, U, Op, Ret, Target>
