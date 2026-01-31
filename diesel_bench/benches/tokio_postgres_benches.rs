@@ -1,8 +1,11 @@
+use super::consts::postgres::{
+    CLEANUP_QUERIES, MEDIUM_COMPLEX_QUERY_BY_ID, MEDIUM_COMPLEX_QUERY_BY_NAME,
+};
 use super::Bencher;
-use std::collections::HashMap;
-use tokio_postgres::{types::ToSql, Client, NoTls};
-use tokio::runtime::Runtime;
 use futures_util::stream::StreamExt;
+use std::collections::HashMap;
+use tokio::runtime::Runtime;
+use tokio_postgres::{types::ToSql, Client, NoTls};
 
 const NO_PARAMS: Vec<&dyn ToSql> = Vec::new();
 
@@ -30,7 +33,9 @@ async fn connection() -> Client {
     let connection_url = dotenvy::var("POSTGRES_DATABASE_URL")
         .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    let (client, connection) = tokio_postgres::connect(&connection_url, NoTls).await.unwrap();
+    let (client, connection) = tokio_postgres::connect(&connection_url, NoTls)
+        .await
+        .unwrap();
 
     // The connection object performs the actual communication with the database,
     // so spawn it off to run on its own.
@@ -40,18 +45,9 @@ async fn connection() -> Client {
         }
     });
 
-    client
-        .execute("TRUNCATE TABLE comments CASCADE", &[])
-        .await
-        .unwrap();
-    client
-        .execute("TRUNCATE TABLE posts CASCADE", &[])
-        .await
-        .unwrap();
-    client
-        .execute("TRUNCATE TABLE users CASCADE", &[])
-        .await
-        .unwrap();
+    for query in CLEANUP_QUERIES {
+        client.execute(*query, &[]).await.unwrap();
+    }
 
     client
 }
@@ -102,7 +98,7 @@ pub fn bench_trivial_query_by_id(b: &mut Bencher, size: usize) {
                 .await
                 .unwrap()
                 .map(|row| {
-		    let row = row.unwrap();
+                    let row = row.unwrap();
                     User {
                         id: row.get(0),
                         name: row.get(1),
@@ -110,7 +106,7 @@ pub fn bench_trivial_query_by_id(b: &mut Bencher, size: usize) {
                     }
                 })
                 .collect::<Vec<_>>()
-		.await
+                .await
         })
     })
 }
@@ -135,7 +131,7 @@ pub fn bench_trivial_query_by_name(b: &mut Bencher, size: usize) {
                 .await
                 .unwrap()
                 .map(|row| {
-		    let row = row.unwrap();
+                    let row = row.unwrap();
                     User {
                         id: row.get("id"),
                         name: row.get("name"),
@@ -143,7 +139,7 @@ pub fn bench_trivial_query_by_name(b: &mut Bencher, size: usize) {
                     }
                 })
                 .collect::<Vec<_>>()
-		.await
+                .await
         })
     })
 }
@@ -157,13 +153,7 @@ pub fn bench_medium_complex_query_by_id(b: &mut Bencher, size: usize) {
         })
         .await;
 
-        let query = client
-            .prepare(
-                "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
-                 FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = $1",
-            )
-            .await
-            .unwrap();
+        let query = client.prepare(MEDIUM_COMPLEX_QUERY_BY_ID).await.unwrap();
         (client, query)
     });
 
@@ -174,7 +164,7 @@ pub fn bench_medium_complex_query_by_id(b: &mut Bencher, size: usize) {
                 .await
                 .unwrap()
                 .map(|row| {
-		    let row = row.unwrap();
+                    let row = row.unwrap();
                     let user = User {
                         id: row.get(0),
                         name: row.get(1),
@@ -193,7 +183,7 @@ pub fn bench_medium_complex_query_by_id(b: &mut Bencher, size: usize) {
                     (user, post)
                 })
                 .collect::<Vec<_>>()
-		.await
+                .await
         })
     })
 }
@@ -204,15 +194,10 @@ pub fn bench_medium_complex_query_by_name(b: &mut Bencher, size: usize) {
         let client = connection().await;
         insert_users(size, &client, |i| {
             Some(if i % 2 == 0 { "black" } else { "brown" }.into())
-        }).await;
+        })
+        .await;
 
-        let query = client
-            .prepare(
-                "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, p.user_id, p.title, p.body \
-                 FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = $1",
-            )
-            .await
-            .unwrap();
+        let query = client.prepare(MEDIUM_COMPLEX_QUERY_BY_NAME).await.unwrap();
         (client, query)
     });
 
@@ -223,7 +208,7 @@ pub fn bench_medium_complex_query_by_name(b: &mut Bencher, size: usize) {
                 .await
                 .unwrap()
                 .map(|row| {
-		    let row = row.unwrap();
+                    let row = row.unwrap();
                     let user = User {
                         id: row.get("myuser_id"),
                         name: row.get("name"),
@@ -242,7 +227,7 @@ pub fn bench_medium_complex_query_by_name(b: &mut Bencher, size: usize) {
                     (user, post)
                 })
                 .collect::<Vec<_>>()
-		.await
+                .await
         })
     })
 }
@@ -280,7 +265,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
             .unwrap()
             .map(|row| row.unwrap().get::<&str, i32>("id"))
             .collect::<Vec<i32>>()
-	    .await;
+            .await;
 
         let data = user_ids
             .iter()
@@ -316,7 +301,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
             .unwrap()
             .map(|row| row.unwrap().get::<&str, i32>("id"))
             .collect::<Vec<i32>>()
-	    .await;
+            .await;
 
         let data = all_posts
             .iter()
@@ -358,7 +343,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                 .await
                 .unwrap()
                 .map(|row| {
-		    let row = row.unwrap();
+                    let row = row.unwrap();
                     User {
                         id: row.get("id"),
                         name: row.get("name"),
@@ -366,7 +351,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                     }
                 })
                 .collect::<Vec<_>>()
-		.await;
+                .await;
 
             let mut posts_query =
                 String::from("SELECT id, title, user_id, body FROM posts WHERE user_id IN(");
@@ -387,7 +372,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                 .await
                 .unwrap()
                 .map(|row| {
-		    let row = row.unwrap();
+                    let row = row.unwrap();
                     Post {
                         id: row.get("id"),
                         user_id: row.get("user_id"),
@@ -396,7 +381,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                     }
                 })
                 .collect::<Vec<_>>()
-		.await;
+                .await;
 
             let mut comments_query =
                 String::from("SELECT id, post_id, text FROM comments WHERE post_id IN(");
@@ -417,7 +402,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                 .await
                 .unwrap()
                 .map(|row| {
-		    let row = row.unwrap();
+                    let row = row.unwrap();
                     Comment {
                         id: row.get("id"),
                         post_id: row.get("post_id"),
@@ -425,7 +410,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                     }
                 })
                 .collect::<Vec<_>>()
-		.await;
+                .await;
 
             let mut posts = posts
                 .into_iter()

@@ -1,3 +1,6 @@
+use super::consts::mysql::{
+    CLEANUP_QUERIES, MEDIUM_COMPLEX_QUERY_BY_ID, MEDIUM_COMPLEX_QUERY_BY_NAME,
+};
 use super::Bencher;
 use rust_mysql::params::Params;
 use rust_mysql::prelude::*;
@@ -28,14 +31,13 @@ fn connection() -> Conn {
     let connection_url = dotenvy::var("MYSQL_DATABASE_URL")
         .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    let opts = OptsBuilder::from_opts(Opts::from_url(&connection_url).unwrap())
-        .prefer_socket(false);
+    let opts =
+        OptsBuilder::from_opts(Opts::from_url(&connection_url).unwrap()).prefer_socket(false);
     let mut conn = Conn::new(opts).unwrap();
 
-    conn.query_drop("SET FOREIGN_KEY_CHECKS = 0;").unwrap();
-    conn.query_drop("TRUNCATE TABLE comments").unwrap();
-    conn.query_drop("TRUNCATE TABLE posts").unwrap();
-    conn.query_drop("TRUNCATE TABLE users").unwrap();
+    for query in CLEANUP_QUERIES {
+        conn.query_drop(query).unwrap();
+    }
 
     conn
 }
@@ -100,12 +102,7 @@ pub fn bench_medium_complex_query_by_id(b: &mut Bencher, size: usize) {
         Some(if i % 2 == 0 { "black" } else { "brown" }.into())
     });
 
-    let query = conn
-        .prep(
-            "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
-             FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = ?",
-        )
-        .unwrap();
+    let query = conn.prep(MEDIUM_COMPLEX_QUERY_BY_ID).unwrap();
 
     b.iter(|| {
         conn.exec_map(
@@ -140,12 +137,7 @@ pub fn bench_medium_complex_query_by_name(b: &mut Bencher, size: usize) {
         Some(if i % 2 == 0 { "black" } else { "brown" }.into())
     });
 
-    let query = conn
-        .prep(
-            "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, p.user_id, p.title, p.body \
-             FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = ?",
-        )
-        .unwrap();
+    let query = conn.prep(MEDIUM_COMPLEX_QUERY_BY_NAME).unwrap();
 
     b.iter(|| {
         conn.exec_map(

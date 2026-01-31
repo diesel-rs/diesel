@@ -1,3 +1,4 @@
+use super::consts;
 use super::Bencher;
 use sqlx::*;
 use std::collections::HashMap;
@@ -82,18 +83,9 @@ fn connection() -> (Runtime, Connection) {
 
     let conn = runtime.block_on(async {
         let mut conn = sqlx::PgConnection::connect(&connection_url).await.unwrap();
-        sqlx::query("TRUNCATE TABLE comments CASCADE;")
-            .execute(&mut conn)
-            .await
-            .unwrap();
-        sqlx::query("TRUNCATE TABLE posts CASCADE;")
-            .execute(&mut conn)
-            .await
-            .unwrap();
-        sqlx::query("TRUNCATE TABLE users CASCADE;")
-            .execute(&mut conn)
-            .await
-            .unwrap();
+        for query in consts::postgres::CLEANUP_QUERIES {
+            sqlx::query(query).execute(&mut conn).await.unwrap();
+        }
         conn
     });
 
@@ -118,26 +110,9 @@ fn connection() -> (Runtime, Connection) {
         let mut conn = sqlx::MySqlConnection::connect(&connection_url)
             .await
             .unwrap();
-        sqlx::query("SET FOREIGN_KEY_CHECKS = 0;")
-            .execute(&mut conn)
-            .await
-            .unwrap();
-        sqlx::query("TRUNCATE TABLE comments;")
-            .execute(&mut conn)
-            .await
-            .unwrap();
-        sqlx::query("TRUNCATE TABLE posts;")
-            .execute(&mut conn)
-            .await
-            .unwrap();
-        sqlx::query("TRUNCATE TABLE users;")
-            .execute(&mut conn)
-            .await
-            .unwrap();
-        sqlx::query("SET FOREIGN_KEY_CHECKS = 1;")
-            .execute(&mut conn)
-            .await
-            .unwrap();
+        for query in consts::mysql::CLEANUP_QUERIES {
+            sqlx::query(query).execute(&mut conn).await.unwrap();
+        }
         conn
     });
 

@@ -1,3 +1,4 @@
+mod consts;
 #[cfg(feature = "diesel-async")]
 mod diesel_async_benches;
 mod diesel_benches;

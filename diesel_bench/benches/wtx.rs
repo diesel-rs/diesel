@@ -1,10 +1,11 @@
-use crate::Bencher;
+use super::consts;
+use super::Bencher;
 use std::{collections::HashMap, fmt::Write};
 use tokio::{net::TcpStream, runtime::Runtime};
 use wtx::{
     database::{Executor, Record},
     misc::{Either, UriRef, Wrapper},
-    rng::{ChaCha20, SeedableRng}
+    rng::{ChaCha20, SeedableRng},
 };
 
 #[cfg(feature = "mysql")]
@@ -182,15 +183,14 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
             10_000 => insert_users::<10_000>(&mut conn, hair_color_callback).await,
             _ => unimplemented!(),
         }
+        #[cfg(feature = "postgres")]
         let stmt_hash = conn
-            .prepare(
-                #[cfg(feature = "postgres")]
-                "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
-                FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = $1",
-                #[cfg(feature = "mysql")]
-                "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
-                FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = ?",
-            )
+            .prepare(consts::postgres::MEDIUM_COMPLEX_QUERY_BY_ID)
+            .await
+            .unwrap();
+        #[cfg(feature = "mysql")]
+        let stmt_hash = conn
+            .prepare(consts::mysql::MEDIUM_COMPLEX_QUERY_BY_ID)
             .await
             .unwrap();
         (conn, stmt_hash)
@@ -274,28 +274,26 @@ async fn connection() -> LocalExecutor<wtx::Error, ExecutorBuffer, TcpStream> {
         .expect("DATABASE_URL must be set in order to run tests");
     let uri = UriRef::new(url.as_str());
     let mut rng = ChaCha20::from_os().unwrap();
-    let stream = TcpStream::connect(uri.hostname_with_implied_port()).await.unwrap();
+    let stream = TcpStream::connect(uri.hostname_with_implied_port())
+        .await
+        .unwrap();
     stream.set_nodelay(true).unwrap();
     #[cfg(feature = "postgres")]
     let buffer = ExecutorBuffer::with_capacity((512, 8192, 512, 32), 32, &mut rng).unwrap();
     #[cfg(feature = "mysql")]
     let buffer = ExecutorBuffer::with_capacity((512, 512, 8192, 512, 32), 32, &mut rng).unwrap();
-    let mut conn = LocalExecutor::connect(
-        &Config::from_uri(&uri).unwrap(),
-        buffer,
-        &mut rng,
-        stream,
-    )
-    .await
-    .unwrap();
-    conn.execute_ignored(
-        #[cfg(feature = "postgres")]
-        "TRUNCATE TABLE comments CASCADE;TRUNCATE TABLE posts CASCADE;TRUNCATE TABLE users CASCADE",
-        #[cfg(feature = "mysql")]
-        "SET FOREIGN_KEY_CHECKS = 0;DELETE FROM comments;DELETE FROM posts;DELETE FROM users;SET FOREIGN_KEY_CHECKS = 1;",
-    )
-    .await
-    .unwrap();
+    let mut conn =
+        LocalExecutor::connect(&Config::from_uri(&uri).unwrap(), buffer, &mut rng, stream)
+            .await
+            .unwrap();
+    #[cfg(feature = "postgres")]
+    conn.execute_ignored(&consts::postgres::CLEANUP_QUERIES.join(";"))
+        .await
+        .unwrap();
+    #[cfg(feature = "mysql")]
+    conn.execute_ignored(&consts::mysql::CLEANUP_QUERIES.join(";"))
+        .await
+        .unwrap();
     conn
 }
 
