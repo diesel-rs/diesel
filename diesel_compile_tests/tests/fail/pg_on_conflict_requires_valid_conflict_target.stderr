@@ -32,9 +32,9 @@ note: `users::table` is defined in module `crate::users` of the current crate
 note: required by a bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
    --> DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
     |
-LL |     pub fn on_conflict<Target>(
+LL |     pub fn on_conflict<Target>(self, target: Target) -> crate::dsl::OnConflict<Self, Target>
     |            ----------- required by a bound in this associated function
-...
+LL |     where
 LL |         ConflictTarget<Target>: OnConflictTarget<T>,
     |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
     = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -62,17 +62,16 @@ help: the trait `Column` is not implemented for `lower_utils::lower<posts::colum
               pg::metadata_lookup::pg_type::columns::typnamespace
               posts::columns::id
             and N others
-    = note: required for `ConflictTarget<lower<title>>` to implement `OnConflictTarget<table>`
+    = note: required for `ConflictTarget<lower_utils::lower<posts::columns::title>>` to implement `OnConflictTarget<users::table>`
 note: required by a bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
    --> DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
     |
-LL |     pub fn on_conflict<Target>(
+LL |     pub fn on_conflict<Target>(self, target: Target) -> crate::dsl::OnConflict<Self, Target>
     |            ----------- required by a bound in this associated function
-...
+LL |     where
 LL |         ConflictTarget<Target>: OnConflictTarget<T>,
     |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
- 
-        = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+    = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `&str: Column` is not satisfied
    --> tests/fail/pg_on_conflict_requires_valid_conflict_target.rs:51:22
@@ -92,12 +91,12 @@ error[E0277]: the trait bound `&str: Column` is not satisfied
               pg::metadata_lookup::pg_type::columns::typnamespace
               posts::columns::id
             and N others
-    = note: required for `ConflictTarget<&str>` to implement `OnConflictTarget<table>`
+    = note: required for `ConflictTarget<&str>` to implement `OnConflictTarget<users::table>`
 note: required by a bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
    --> DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
     |
-LL |     pub fn on_conflict<Target>(
+LL |     pub fn on_conflict<Target>(self, target: Target) -> crate::dsl::OnConflict<Self, Target>
     |            ----------- required by a bound in this associated function
-...
+LL |     where
 LL |         ConflictTarget<Target>: OnConflictTarget<T>,
     |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`

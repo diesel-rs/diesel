@@ -1,4 +1,5 @@
 use crate::expression::Expression;
+use crate::query_builder::update_statement::SetAutoTypeHelper;
 use crate::query_builder::upsert::into_conflict_clause::IntoConflictValueClause;
 use crate::query_builder::upsert::on_conflict_actions::*;
 use crate::query_builder::upsert::on_conflict_clause::*;
@@ -304,16 +305,13 @@ where
     ///
     /// [`on_constraint`]: ../upsert/fn.on_constraint.html
     /// [`do_update`]: crate::upsert::IncompleteOnConflict::do_update()
-    pub fn on_conflict<Target>(
-        self,
-        target: Target,
-    ) -> IncompleteOnConflict<InsertStatement<T, U::ValueClause, Op, Ret>, ConflictTarget<Target>>
+    pub fn on_conflict<Target>(self, target: Target) -> crate::dsl::OnConflict<Self, Target>
     where
         ConflictTarget<Target>: OnConflictTarget<T>,
     {
         IncompleteOnConflict {
             stmt: self.replace_values(IntoConflictValueClause::into_value_clause),
-            target: ConflictTarget(target),
+            target: ConflictTarget::new(target),
         }
     }
 }
@@ -340,6 +338,60 @@ pub struct IncompleteOnConflict<Stmt, Target> {
     target: Target,
 }
 
+/// Helper trait for `#[auto_type]`
+///
+/// This trait allows extracting the internal types of a `IncompleteOnConflict`
+/// struct, which is needed to define the `DoNothing` and `DoUpdate` type aliases
+/// in `diesel::dsl`.
+#[allow(unreachable_pub)]
+pub trait OnConflictHelper {
+    /// The table on which the `INSERT` statement acts
+    type Table;
+    /// The `VALUES` clause of the `INSERT` statement
+    type Values;
+    /// The conflict target (e.g., column or constraint) specified in the `ON CONFLICT` clause
+    type Target;
+    /// The SQL definition of the insert operation
+    type Op;
+    /// The `RETURNING` clause of the statement
+    type Ret;
+}
+
+impl<T, U, Op, Ret, Target> OnConflictHelper
+    for IncompleteOnConflict<InsertStatement<T, U, Op, Ret>, Target>
+where
+    T: QuerySource,
+{
+    type Table = T;
+    type Values = U;
+    type Target = Target;
+    type Op = Op;
+    type Ret = Ret;
+}
+
+impl<Stmt, Target, Changes> SetAutoTypeHelper<Changes> for IncompleteDoUpdate<Stmt, Target>
+where
+    Stmt: crate::query_builder::insert_statement::InsertAutoTypeHelper,
+    <Stmt as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Table: QuerySource,
+    Changes: AsChangeset<
+        Target = <Stmt as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Table,
+    >,
+{
+    type Out = InsertStatement<
+        <Stmt as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Table,
+        OnConflictValues<
+            <Stmt as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Values,
+            Target,
+            DoUpdate<
+                Changes::Changeset,
+                <Stmt as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Table,
+            >,
+        >,
+        <Stmt as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Op,
+        <Stmt as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Ret,
+    >;
+}
+
 impl<T: QuerySource, U, Op, Ret, Target>
     IncompleteOnConflict<InsertStatement<T, U, Op, Ret>, Target>
 {
@@ -351,17 +403,13 @@ impl<T: QuerySource, U, Op, Ret, Target>
     ///
     /// [`on_conflict_do_nothing`]: crate::query_builder::InsertStatement::on_conflict_do_nothing()
     /// [`on_conflict`]: crate::query_builder::InsertStatement::on_conflict()
-    pub fn do_nothing(
-        self,
-    ) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing<T>>, Op, Ret> {
+    pub fn do_nothing(self) -> crate::dsl::DoNothing<Self> {
         let target = self.target;
         self.stmt.replace_values(|values| {
             OnConflictValues::new(values, target, DoNothing::new(), NoWhereClause)
         })
     }
-}
 
-impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// Used to create a query in the form `ON CONFLICT (...) DO UPDATE ... [WHERE ...]`
     ///
     /// Call `.set` on the result of this function with the changes you want to
@@ -650,7 +698,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// # #[cfg(feature = "mysql")]
     /// # fn main() {}
     /// ```
-    pub fn do_update(self) -> IncompleteDoUpdate<Stmt, Target> {
+    pub fn do_update(self) -> crate::dsl::DoUpdate<Self> {
         IncompleteDoUpdate {
             stmt: self.stmt,
             target: self.target,
@@ -671,10 +719,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// See [`do_update`] for usage examples.
     ///
     /// [`do_update`]: IncompleteOnConflict::do_update()
-    pub fn set<Changes>(
-        self,
-        changes: Changes,
-    ) -> InsertStatement<T, OnConflictValues<U, Target, DoUpdate<Changes::Changeset, T>>, Op, Ret>
+    pub fn set<Changes>(self, changes: Changes) -> crate::dsl::Set<Self, Changes>
     where
         T: QuerySource,
         Changes: AsChangeset<Target = T>,

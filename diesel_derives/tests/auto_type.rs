@@ -731,3 +731,27 @@ fn window_functions2() -> _ {
         nth_value(users::id, 1_i32).over(),
     )
 }
+
+#[auto_type]
+fn test_upsert_on_conflict() -> _ {
+    insert_into(users::table)
+        .values(users::id.eq(42_i32))
+        .on_conflict(users::id)
+}
+
+#[auto_type]
+fn test_upsert_do_nothing() -> _ {
+    insert_into(users::table)
+        .values(users::id.eq(42_i32))
+        .on_conflict(users::id)
+        .do_nothing()
+}
+
+#[auto_type]
+fn test_upsert_do_update() -> _ {
+    insert_into(users::table)
+        .values(users::id.eq(42_i32))
+        .on_conflict(users::id)
+        .do_update()
+        .set(users::name.eq("foo"))
+}

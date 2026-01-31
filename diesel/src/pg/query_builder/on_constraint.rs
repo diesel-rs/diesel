@@ -77,7 +77,7 @@ impl QueryFragment<Pg, crate::pg::backend::PgOnConflictClause>
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         out.push_sql(" ON CONSTRAINT ");
-        out.push_identifier(self.0.constraint_name)?;
+        out.push_identifier(self.target().constraint_name)?;
         Ok(())
     }
 }

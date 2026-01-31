@@ -477,7 +477,9 @@ where
 }
 
 mod private {
+    use super::InsertStatement;
     use crate::QueryResult;
+    use crate::QuerySource;
     use crate::backend::{Backend, DieselReserveSpecialization};
     use crate::query_builder::{AstPass, QueryFragment, QueryId};
 
@@ -551,10 +553,24 @@ mod private {
     pub trait InsertAutoTypeHelper {
         type Table;
         type Op;
+        type Values;
+        type Ret;
     }
 
     impl<T, Op> InsertAutoTypeHelper for crate::query_builder::IncompleteInsertStatement<T, Op> {
         type Table = T;
         type Op = Op;
+        type Values = ();
+        type Ret = crate::query_builder::returning_clause::NoReturningClause;
+    }
+
+    impl<T, U, Op, Ret> InsertAutoTypeHelper for InsertStatement<T, U, Op, Ret>
+    where
+        T: QuerySource,
+    {
+        type Table = T;
+        type Op = Op;
+        type Values = U;
+        type Ret = Ret;
     }
 }
