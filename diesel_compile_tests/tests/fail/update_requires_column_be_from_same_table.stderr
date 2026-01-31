@@ -29,7 +29,7 @@ LL |     let command = update(users).set(posts::title.eq("Hello"));
 note: required by a bound in `UpdateStatement::<T, U>::set`
   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
    |
-LL |     pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset>
+LL |     pub fn set<V>(self, values: V) -> crate::dsl::Set<Self, V>
    |            --- required by a bound in this associated function
 ...
 LL |         V: changeset::AsChangeset<Target = T>,
