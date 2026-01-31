@@ -48,10 +48,6 @@ impl<T> ConflictTarget<T> {
     pub(crate) fn new(target: T) -> Self {
         ConflictTarget(target)
     }
-    /// Returns a reference to the inner target.
-    pub(crate) fn target(&self) -> &T {
-        &self.0
-    }
 }
 
 impl<DB, T> QueryFragment<DB> for ConflictTarget<T>
