@@ -57,6 +57,8 @@ where
     }
 }
 
+impl<Select, Columns> super::private::Sealed for InsertFromSelect<Select, Columns> {}
+
 impl<Select, Columns> UndecoratedInsertRecord<Columns::Table> for InsertFromSelect<Select, Columns>
 where
     Columns: ColumnList + Expression,

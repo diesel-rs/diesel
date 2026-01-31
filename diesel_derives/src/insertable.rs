@@ -19,7 +19,15 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         .map(|table_name| derive_into_single_table(&item, &model, table_name))
         .collect::<Result<Vec<_>>>()?;
 
+    let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
+    let struct_name = &item.ident;
+
+    let sealed_impl = quote! {
+        impl #impl_generics diesel::internal::derives::insertable::Sealed for #struct_name #ty_generics #where_clause {}
+    };
+
     Ok(wrap_in_dummy_mod(quote! {
+        #sealed_impl
         #(#tokens)*
     }))
 }
