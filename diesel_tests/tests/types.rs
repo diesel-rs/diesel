@@ -794,14 +794,14 @@ fn pg_ndim_array_from_sql_non_one_lower_bound() {
 
     let ndarray =
         query_single_value::<Array<Bool>, NdArray<bool>>("'[0:0][0:2]={{t, f, t}}'::bool[]");
-        assert_eq!(vec![1, 3], ndarray.dims);
-        assert_eq!(vec![true, false, true], ndarray.data);
+    assert_eq!(vec![1, 3], ndarray.dims);
+    assert_eq!(vec![true, false, true], ndarray.data);
     query_single_value::<Array<Bool>, NdArray<bool>>("'[1:1][1:3]={{t, f, t}}'::bool[]");
-        assert_eq!(vec![1, 3], ndarray.dims);
-        assert_eq!(vec![true, false, true], ndarray.data);
+    assert_eq!(vec![1, 3], ndarray.dims);
+    assert_eq!(vec![true, false, true], ndarray.data);
     query_single_value::<Array<Bool>, NdArray<bool>>("'[3:3][2:4]={{t, f, t}}'::bool[]");
-        assert_eq!(vec![1, 3], ndarray.dims);
-        assert_eq!(vec![true, false, true], ndarray.data);
+    assert_eq!(vec![1, 3], ndarray.dims);
+    assert_eq!(vec![true, false, true], ndarray.data);
 }
 
 #[diesel_test_helper::test]
