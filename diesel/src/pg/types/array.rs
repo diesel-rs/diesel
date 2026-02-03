@@ -2,11 +2,20 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use core::fmt;
 use std::io::Write;
 
-use crate::deserialize::{self, FromSql};
+use crate::deserialize::{self, FromSql, FromSqlRow};
 use crate::pg::{Pg, PgTypeMetadata, PgValue};
 use crate::query_builder::bind_collector::ByteWrapper;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Array, HasSqlType, Nullable};
+
+#[cfg(feature = "postgres_backend")]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, AsExpression, FromSqlRow)]
+#[diesel(sql_type = Array<T>)]
+// Ignoring lower-bounds (TODO better documentation)
+pub struct NdArray<T> {
+    pub dims: Vec<usize>,
+    pub data: Vec<T>, // flattened, row-major
+}
 
 #[cfg(feature = "postgres_backend")]
 impl<T> HasSqlType<Array<T>> for Pg
@@ -55,6 +64,52 @@ where
                 }
             })
             .collect()
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl<T, ST> FromSql<Array<ST>, Pg> for NdArray<T>
+where
+    T: FromSql<ST, Pg>,
+{
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+        let mut bytes = value.as_bytes();
+        let num_dimensions = bytes.read_i32::<NetworkEndian>()?;
+        let has_null = bytes.read_i32::<NetworkEndian>()? != 0;
+        let _oid = bytes.read_i32::<NetworkEndian>()?;
+
+        if num_dimensions == 0 {
+            return Ok(NdArray {
+                dims: Vec::new(),
+                data: Vec::new(),
+            });
+        }
+
+        if num_dimensions != 2 {
+            return Err("only two-dimensional arrays are supported for NdArray".into());
+        }
+
+        let num_elements_dim1 = bytes.read_i32::<NetworkEndian>()?;
+        let _lower_bound_dim1 = bytes.read_i32::<NetworkEndian>()?;
+
+        let num_elements_dim2 = bytes.read_i32::<NetworkEndian>()?;
+        let _lower_bound_dim2 = bytes.read_i32::<NetworkEndian>()?;
+
+        let ndims = vec![num_elements_dim1 as usize, num_elements_dim2 as usize];
+
+        let data = (0..num_elements_dim1 * num_elements_dim2)
+            .map(|_| -> deserialize::Result<T> {
+                let elem_size = bytes.read_i32::<NetworkEndian>()?;
+                if has_null && elem_size == -1 {
+                    T::from_nullable_sql(None)
+                } else {
+                    let (elem_bytes, new_bytes) = bytes.split_at(elem_size.try_into()?);
+                    bytes = new_bytes;
+                    T::from_sql(PgValue::new_internal(elem_bytes, &value))
+                }
+            })
+            .collect::<deserialize::Result<Vec<T>>>()?;
+        Ok(NdArray { dims: ndims, data })
     }
 }
 

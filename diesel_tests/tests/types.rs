@@ -737,6 +737,39 @@ fn pg_array_from_sql() {
     );
 }
 
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_ndim_array_from_sql() {
+    use diesel::data_types::NdArray;
+
+    let ndarray =
+        query_single_value::<Array<Bool>, NdArray<bool>>("ARRAY[ARRAY['t', 'f', 't']]::bool[]");
+    assert_eq!(vec![1, 3], ndarray.dims);
+    assert_eq!(vec![true, false, true], ndarray.data);
+    let ndarray = query_single_value::<Array<Bool>, NdArray<bool>>(
+        "ARRAY[ARRAY['t', 'f'], ARRAY['f', 't']]::bool[]",
+    );
+    assert_eq!(vec![2, 2], ndarray.dims);
+    assert_eq!(vec![true, false, false, true], ndarray.data);
+    let ndarray =
+        query_single_value::<Array<Integer>, NdArray<i32>>("ARRAY[ARRAY[1], ARRAY[2], ARRAY[3]]");
+    assert_eq!(vec![3, 1], ndarray.dims);
+    assert_eq!(vec![1, 2, 3], ndarray.data);
+    let ndarray = query_single_value::<Array<VarChar>, NdArray<String>>(
+        "ARRAY[ARRAY['Hello', 'world'], ARRAY['', 'world']]",
+    );
+    assert_eq!(vec![2, 2], ndarray.dims);
+    assert_eq!(
+        ndarray.data,
+        vec![
+            "Hello".to_string(),
+            "world".to_string(),
+            "".to_string(),
+            "world".to_string()
+        ],
+    );
+}
+
 #[cfg(feature = "postgres")]
 #[diesel_test_helper::test]
 fn pg_array_from_sql_non_one_lower_bound() {
@@ -752,6 +785,23 @@ fn pg_array_from_sql_non_one_lower_bound() {
         vec![true, false, true],
         query_single_value::<Array<Bool>, Vec<bool>>("'[2:4]={t, f, t}'::bool[]")
     );
+}
+
+#[cfg(feature = "postgres")]
+#[diesel_test_helper::test]
+fn pg_ndim_array_from_sql_non_one_lower_bound() {
+    use diesel::data_types::NdArray;
+
+    let ndarray =
+        query_single_value::<Array<Bool>, NdArray<bool>>("'[0:0][0:2]={{t, f, t}}'::bool[]");
+        assert_eq!(vec![1, 3], ndarray.dims);
+        assert_eq!(vec![true, false, true], ndarray.data);
+    query_single_value::<Array<Bool>, NdArray<bool>>("'[1:1][1:3]={{t, f, t}}'::bool[]");
+        assert_eq!(vec![1, 3], ndarray.dims);
+        assert_eq!(vec![true, false, true], ndarray.data);
+    query_single_value::<Array<Bool>, NdArray<bool>>("'[3:3][2:4]={{t, f, t}}'::bool[]");
+        assert_eq!(vec![1, 3], ndarray.dims);
+        assert_eq!(vec![true, false, true], ndarray.data);
 }
 
 #[diesel_test_helper::test]
@@ -791,6 +841,22 @@ fn pg_array_containing_null() {
         Some("world".to_string()),
     ];
     assert_eq!(expected, data);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_ndim_array_containing_null() {
+    use diesel::data_types::NdArray;
+
+    let query = "ARRAY[ARRAY['Hello', '', NULL, 'world']]";
+    let ndarray = query_single_value::<Array<Nullable<VarChar>>, NdArray<Option<String>>>(query);
+    let expected = vec![
+        Some("Hello".to_string()),
+        Some("".to_string()),
+        None,
+        Some("world".to_string()),
+    ];
+    assert_eq!(expected, ndarray.data);
 }
 
 #[diesel_test_helper::test]
