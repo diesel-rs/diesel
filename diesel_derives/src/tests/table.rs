@@ -144,7 +144,9 @@ pub(crate) fn table_with_column_feature_gate_type_check() {
     );
     // Gated variant should have (id, name, created_at,)
     assert!(
-        generated_str.contains("pub const all_columns : (id , name , created_at ,) = (id , name , created_at ,)"),
+        generated_str.contains(
+            "pub const all_columns : (id , name , created_at ,) = (id , name , created_at ,)"
+        ),
         "Gated all_columns should include created_at"
     );
 
@@ -197,19 +199,24 @@ pub(crate) fn table_with_multiple_feature_gated_columns_type_check() {
 
     // Verify all 4 cfg combinations are present
     assert!(
-        generated_str.contains("# [cfg (all (not (feature = \"test_chrono\") , not (feature = \"test_uuid\")))]"),
+        generated_str.contains(
+            "# [cfg (all (not (feature = \"test_chrono\") , not (feature = \"test_uuid\")))]"
+        ),
         "Should have cfg guard for neither feature enabled"
     );
     assert!(
-        generated_str.contains("# [cfg (all (feature = \"test_chrono\" , not (feature = \"test_uuid\")))]"),
+        generated_str
+            .contains("# [cfg (all (feature = \"test_chrono\" , not (feature = \"test_uuid\")))]"),
         "Should have cfg guard for only chrono enabled"
     );
     assert!(
-        generated_str.contains("# [cfg (all (not (feature = \"test_chrono\") , feature = \"test_uuid\"))]"),
+        generated_str
+            .contains("# [cfg (all (not (feature = \"test_chrono\") , feature = \"test_uuid\"))]"),
         "Should have cfg guard for only uuid enabled"
     );
     assert!(
-        generated_str.contains("# [cfg (all (feature = \"test_chrono\" , feature = \"test_uuid\"))]"),
+        generated_str
+            .contains("# [cfg (all (feature = \"test_chrono\" , feature = \"test_uuid\"))]"),
         "Should have cfg guard for both features enabled"
     );
 
@@ -231,7 +238,9 @@ pub(crate) fn table_with_multiple_feature_gated_columns_type_check() {
     );
     // Both features: (id, name, created_at, updated_at, user_uuid,)
     assert!(
-        generated_str.contains("pub const all_columns : (id , name , created_at , updated_at , user_uuid ,)"),
+        generated_str.contains(
+            "pub const all_columns : (id , name , created_at , updated_at , user_uuid ,)"
+        ),
         "Both features: all_columns should include all columns"
     );
 
@@ -249,7 +258,8 @@ pub(crate) fn table_with_multiple_feature_gated_columns_type_check() {
         "Only uuid: SqlType should include Uuid"
     );
     assert!(
-        generated_str.contains("pub type SqlType = (Integer , Text , Timestamp , Timestamp , Uuid ,) ;"),
+        generated_str
+            .contains("pub type SqlType = (Integer , Text , Timestamp , Timestamp , Uuid ,) ;"),
         "Both features: SqlType should include all types"
     );
 
@@ -267,7 +277,8 @@ pub(crate) fn table_with_multiple_feature_gated_columns_type_check() {
         "Only uuid: AllColumns should include uuid column"
     );
     assert!(
-        generated_str.contains("type AllColumns = (id , name , created_at , updated_at , user_uuid ,) ;"),
+        generated_str
+            .contains("type AllColumns = (id , name , created_at , updated_at , user_uuid ,) ;"),
         "Both features: AllColumns should include all columns"
     );
 }
@@ -295,7 +306,153 @@ pub(crate) fn table_with_feature_gate_valid_grouping_star_check() {
     );
     // Gated: (id, name, extra,)
     assert!(
-        generated_str.contains("(id , name , extra ,) : diesel :: expression :: ValidGrouping < __GB >"),
+        generated_str
+            .contains("(id , name , extra ,) : diesel :: expression :: ValidGrouping < __GB >"),
         "Gated ValidGrouping for star should use (id, name, extra)"
+    );
+}
+
+/// Tests that complex cfg conditions are parsed and propagated correctly.
+///
+/// This verifies that cfg conditions beyond simple `#[cfg(feature = "x")]` work:
+/// - `#[cfg(all(feature = "a", feature = "b"))]` - requires both features
+/// - `#[cfg(any(feature = "a", feature = "b"))]` - requires either feature
+/// - `#[cfg(not(feature = "a"))]` - requires feature to be disabled
+/// - `#[cfg(all(feature = "a", not(feature = "b")))]` - complex combination
+///
+/// The macro should preserve these conditions exactly as specified on the column,
+/// propagating them to all generated trait implementations.
+#[test]
+pub(crate) fn table_with_complex_feature_gates() {
+    let input = quote::quote! {
+        users {
+            id -> Integer,
+            name -> Text,
+            #[cfg(all(feature = "postgres", feature = "chrono"))]
+            pg_created_at -> Timestamptz,
+            #[cfg(any(feature = "sqlite", feature = "mysql"))]
+            simple_created_at -> Timestamp,
+            #[cfg(not(feature = "production"))]
+            debug_info -> Text,
+            #[cfg(all(feature = "advanced", not(feature = "lite")))]
+            advanced_field -> Text,
+        }
+    };
+
+    let generated = crate::table_proc_inner(input);
+    let generated_str = generated.to_string();
+
+    // Verify that the complex cfg conditions are preserved in column definitions
+    // all(feature = "postgres", feature = "chrono")
+    assert!(
+        generated_str.contains("# [cfg (all (feature = \"postgres\" , feature = \"chrono\"))]"),
+        "Should preserve all(feature, feature) cfg condition"
+    );
+
+    // any(feature = "sqlite", feature = "mysql")
+    assert!(
+        generated_str.contains("# [cfg (any (feature = \"sqlite\" , feature = \"mysql\"))]"),
+        "Should preserve any(feature, feature) cfg condition"
+    );
+
+    // not(feature = "production")
+    assert!(
+        generated_str.contains("# [cfg (not (feature = \"production\"))]"),
+        "Should preserve not(feature) cfg condition"
+    );
+
+    // all(feature = "advanced", not(feature = "lite"))
+    assert!(
+        generated_str.contains("# [cfg (all (feature = \"advanced\" , not (feature = \"lite\")))]"),
+        "Should preserve all(feature, not(feature)) cfg condition"
+    );
+
+    // Verify the column structs are generated with their cfg attributes
+    assert!(
+        generated_str.contains("pub struct pg_created_at"),
+        "pg_created_at column struct should be generated"
+    );
+    assert!(
+        generated_str.contains("pub struct simple_created_at"),
+        "simple_created_at column struct should be generated"
+    );
+    assert!(
+        generated_str.contains("pub struct debug_info"),
+        "debug_info column struct should be generated"
+    );
+    assert!(
+        generated_str.contains("pub struct advanced_field"),
+        "advanced_field column struct should be generated"
+    );
+
+    // Verify that Expression impl for each column has the cfg attribute
+    // (checking that trait impls are properly gated)
+    assert!(
+        generated_str.contains("# [cfg (all (feature = \"postgres\" , feature = \"chrono\"))] impl diesel :: expression :: Expression for pg_created_at"),
+        "Expression impl for pg_created_at should have cfg guard"
+    );
+    assert!(
+        generated_str.contains("# [cfg (any (feature = \"sqlite\" , feature = \"mysql\"))] impl diesel :: expression :: Expression for simple_created_at"),
+        "Expression impl for simple_created_at should have cfg guard"
+    );
+    assert!(
+        generated_str.contains("# [cfg (not (feature = \"production\"))] impl diesel :: expression :: Expression for debug_info"),
+        "Expression impl for debug_info should have cfg guard"
+    );
+    assert!(
+        generated_str.contains("# [cfg (all (feature = \"advanced\" , not (feature = \"lite\")))] impl diesel :: expression :: Expression for advanced_field"),
+        "Expression impl for advanced_field should have cfg guard"
+    );
+
+    // Verify combinatorial variants exist for the aggregate types
+    // There are 4 distinct cfg groups, so there should be 2^4 = 16 variants
+    // We'll just check that some key combinations exist
+
+    // Base case: no features enabled (only id, name)
+    assert!(
+        generated_str.contains("pub const all_columns : (id , name ,) = (id , name ,)"),
+        "Base all_columns should have only non-gated columns"
+    );
+
+    // Check that the combinatorial cfg conditions include not() wrappers for disabled groups
+    // For example, when all features are disabled:
+    assert!(
+        generated_str.contains("not (all (feature = \"postgres\" , feature = \"chrono\"))"),
+        "Combinatorial cfg should include negated complex conditions"
+    );
+    assert!(
+        generated_str.contains("not (any (feature = \"sqlite\" , feature = \"mysql\"))"),
+        "Combinatorial cfg should include negated any() conditions"
+    );
+}
+
+/// Tests that IsContainedInGroupBy impls between columns with complex cfg conditions
+/// include cfg attributes from both columns.
+#[test]
+pub(crate) fn table_with_complex_feature_gates_cross_column_impls() {
+    let input = quote::quote! {
+        users {
+            id -> Integer,
+            #[cfg(all(feature = "a", feature = "b"))]
+            col_ab -> Text,
+            #[cfg(any(feature = "c", feature = "d"))]
+            col_cd -> Text,
+        }
+    };
+
+    let generated = crate::table_proc_inner(input);
+    let generated_str = generated.to_string();
+
+    // The IsContainedInGroupBy impl between col_ab and col_cd should have both cfg conditions
+    // This ensures the impl only exists when both columns are available.
+    // Note: The order of cfg attributes follows the order columns appear in the impl
+    // (left column's cfg attrs come first, then right column's cfg attrs)
+    assert!(
+        generated_str.contains("# [cfg (any (feature = \"c\" , feature = \"d\"))] # [cfg (all (feature = \"a\" , feature = \"b\"))] impl diesel :: expression :: IsContainedInGroupBy < col_cd > for col_ab"),
+        "IsContainedInGroupBy<col_cd> for col_ab should have cfg attrs from both columns"
+    );
+    assert!(
+        generated_str.contains("# [cfg (any (feature = \"c\" , feature = \"d\"))] # [cfg (all (feature = \"a\" , feature = \"b\"))] impl diesel :: expression :: IsContainedInGroupBy < col_ab > for col_cd"),
+        "IsContainedInGroupBy<col_ab> for col_cd should have cfg attrs from both columns"
     );
 }
