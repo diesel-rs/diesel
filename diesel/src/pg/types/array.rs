@@ -85,8 +85,12 @@ where
             });
         }
 
+        if num_dimensions == 1 {
+            return Err("trying to deserialize one-dimensional postgres array into NdArray<T>, use Vec<T> instead".into());
+        }
+
         if num_dimensions != 2 {
-            return Err("only two-dimensional arrays are supported for NdArray".into());
+            return Err("currently only two-dimensional arrays are supported for NdArray<T>".into());
         }
 
         let num_elements_dim1 = bytes.read_i32::<NetworkEndian>()?;

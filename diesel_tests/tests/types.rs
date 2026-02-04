@@ -861,6 +861,31 @@ fn pg_ndim_array_containing_null() {
 
 #[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
+fn pg_empty_array_from_sql() {
+    use diesel::data_types::NdArray;
+
+    let res = query_single_value::<Array<Nullable<VarChar>>, Vec<Option<String>>>("ARRAY[]::text[]");
+    assert_eq!(Vec::<Option<String>>::new(), res);
+
+    let ndarray = query_single_value::<Array<Nullable<VarChar>>, NdArray<Option<String>>>("ARRAY[ARRAY[]]::text[]");
+    assert_eq!(Vec::<usize>::new(), ndarray.dims);
+    assert_eq!(Vec::<Option<String>>::new(), ndarray.data);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_nullable_array_from_sql() {
+    use diesel::data_types::NdArray;
+
+    let res = query_single_value::<Nullable<Array<Integer>>, Option<Vec<i32>>>("NULL::int4[]");
+    assert_eq!(None, res);
+
+    let ndarray = query_single_value::<Nullable<Array<Integer>>, Option<NdArray<i32>>>("NULL::int4[][]");
+    assert_eq!(None, ndarray);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
 fn timestamp_from_sql() {
     use diesel::data_types::PgTimestamp;
 
@@ -1818,6 +1843,43 @@ fn citext_fields() {
         .unwrap();
 
     assert_eq!(lowercase_in_db, Some("lowercase_value".to_string()));
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn deserialize_wrong_dimension_pg_array_into_ndarray_gives_error() {
+    use diesel::sql_types::{Array, Bool};
+    use diesel::data_types::NdArray;
+
+    let conn = &mut connection();
+
+    diesel::sql_query(
+        "CREATE TABLE test_table(\
+                       bool_array BOOLEAN[], \
+                       float_array FLOAT4[] \
+                       )",
+    )
+    .execute(conn)
+    .unwrap();
+    diesel::sql_query("INSERT INTO test_table VALUES('{true, false}', '{{{1.0, 2.0}}}')")
+        .execute(conn)
+        .unwrap();
+
+    let res = diesel::dsl::sql::<Array<Bool>>("SELECT bool_array FROM test_table").get_result::<NdArray<bool>>(conn);
+    assert!(res.is_err());
+    assert_eq!(
+        res.unwrap_err().to_string(),
+        "Error deserializing field 'bool_array': \
+         trying to deserialize one-dimensional postgres array into NdArray<T>, use Vec<T> instead"
+    );
+
+    let res = diesel::dsl::sql::<Array<Float>>("SELECT float_array FROM test_table").get_result::<NdArray<f32>>(conn);
+    assert!(res.is_err());
+    assert_eq!(
+        res.unwrap_err().to_string(),
+        "Error deserializing field 'float_array': \
+         currently only two-dimensional arrays are supported for NdArray<T>"
+    );
 }
 
 #[diesel_test_helper::test]
