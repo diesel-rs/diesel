@@ -104,9 +104,18 @@ where
         let num_elements_dim2 = bytes.read_i32::<NetworkEndian>()?;
         let _lower_bound_dim2 = bytes.read_i32::<NetworkEndian>()?;
 
-        let ndims = vec![num_elements_dim1 as usize, num_elements_dim2 as usize];
+        // This error should never occur as Postgres arrays won't have negative dimensions
+        let dim1: usize = num_elements_dim1
+            .try_into()
+            .map_err(|_| "array dimension length must be positive")?;
 
-        let data = (0..num_elements_dim1 * num_elements_dim2)
+        let dim2: usize = num_elements_dim2
+            .try_into()
+            .map_err(|_| "array dimension length must be positive")?;
+
+        let ndims = vec![dim1, dim2];
+
+        let data = (0..dim1 * dim2)
             .map(|_| -> deserialize::Result<T> {
                 let elem_size = bytes.read_i32::<NetworkEndian>()?;
                 if has_null && elem_size == -1 {
