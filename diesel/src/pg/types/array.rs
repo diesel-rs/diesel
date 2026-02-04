@@ -11,10 +11,12 @@ use crate::sql_types::{Array, HasSqlType, Nullable};
 #[cfg(feature = "postgres_backend")]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, AsExpression, FromSqlRow)]
 #[diesel(sql_type = Array<T>)]
-// Ignoring lower-bounds (TODO better documentation)
+/// Postgres allows multi-dimensional arrays of at most 6 dimensions. Internally they are stored as a flattened
+/// representation with the dimension information encoded in the header. This struct represents a
+/// multi-dimensional array with elements of type `T` as opposed to Vec<T> which can be used for 1d-arrays.
 pub struct NdArray<T> {
     pub dims: Vec<usize>,
-    pub data: Vec<T>, // flattened, row-major
+    pub data: Vec<T>,
 }
 
 #[cfg(feature = "postgres_backend")]
@@ -90,9 +92,12 @@ where
         }
 
         if num_dimensions != 2 {
-            return Err("currently only two-dimensional arrays are supported for NdArray<T>".into());
+            return Err(
+                "currently only two-dimensional arrays are supported for NdArray<T>".into(),
+            );
         }
 
+        // This is very hardcoded for two-dimensional arrays for now but can easily be adapted to be dynamic later
         let num_elements_dim1 = bytes.read_i32::<NetworkEndian>()?;
         let _lower_bound_dim1 = bytes.read_i32::<NetworkEndian>()?;
 
