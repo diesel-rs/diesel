@@ -1,6 +1,6 @@
 use super::find_project_root;
 use crate::infer_schema_internals::TableName;
-use crate::print_schema::{self, ColumnSorting, DocConfig};
+use crate::print_schema::{self, AllowTablesToAppearInSameQueryConfig, ColumnSorting, DocConfig};
 use clap::ArgMatches;
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
@@ -37,16 +37,14 @@ fn get_values_with_indices<'a, T: Clone + Send + Sync + 'static>(
 }
 
 impl Config {
-    pub fn file_path(matches: &ArgMatches) -> PathBuf {
-        matches
-            .get_one::<PathBuf>("CONFIG_FILE")
-            .cloned()
+    pub fn file_path(config_file: Option<PathBuf>) -> PathBuf {
+        config_file
             .or_else(|| env::var_os("DIESEL_CONFIG_FILE").map(PathBuf::from))
             .unwrap_or_else(|| find_project_root().unwrap_or_default().join("diesel.toml"))
     }
 
-    pub fn read(matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
-        let path = Self::file_path(matches);
+    pub fn read(config_file: Option<std::path::PathBuf>) -> Result<Self, crate::errors::Error> {
+        let path = Self::file_path(config_file);
 
         if path.exists() {
             let content = fs::read_to_string(&path)
@@ -69,15 +67,21 @@ impl Config {
         }
     }
 
-    pub fn set_filter(mut self, matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
+    pub fn set_filter(
+        mut self,
+        matches: &ArgMatches,
+        table_names: Vec<String>,
+        only_tables: bool,
+        except_tables: bool,
+    ) -> Result<Self, crate::errors::Error> {
         if self.print_schema.has_multiple_schema {
             let selected_schema_keys =
-                get_values_with_indices::<String>(matches, "schema-key")?.unwrap_or_default();
+                get_values_with_indices::<String>(matches, "SCHEMA_KEY")?.unwrap_or_default();
             let table_names_with_indices =
-                get_values_with_indices::<String>(matches, "table-name")?;
-            let only_tables_with_indices = get_values_with_indices::<bool>(matches, "only-tables")?;
+                get_values_with_indices::<String>(matches, "TABLE_NAME")?;
+            let only_tables_with_indices = get_values_with_indices::<bool>(matches, "ONLY_TABLES")?;
             let except_tables_with_indices =
-                get_values_with_indices::<bool>(matches, "except-tables")?;
+                get_values_with_indices::<bool>(matches, "EXCEPT_TABLES")?;
 
             for (key, boundary) in selected_schema_keys.values().map(|k| k.as_str()).zip(
                 selected_schema_keys
@@ -137,44 +141,63 @@ impl Config {
                 .all_configs
                 .entry("default".to_string())
                 .or_default()
-                .set_filter(matches)?;
+                .set_filter(table_names, only_tables, except_tables)?;
         }
         Ok(self)
     }
 
-    pub fn update_config(mut self, matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
+    pub fn update_config(
+        mut self,
+        matches: &ArgMatches,
+        schema: Vec<String>,
+        include_views: bool,
+        experimental_infer_nullable_for_views: bool,
+        with_docs: bool,
+        with_docs_config: Vec<DocConfig>,
+        allow_tables_to_appear_in_same_query_config: Vec<AllowTablesToAppearInSameQueryConfig>,
+        column_sorting: Vec<ColumnSorting>,
+        patch_file: Vec<PathBuf>,
+        import_types: Vec<String>,
+        except_custom_type_definitions: Vec<String>,
+        no_generate_missing_sql_type_definitions: bool,
+        custom_type_derives: Vec<String>,
+        pg_domains_as_custom_types: Vec<String>,
+        sqlite_integer_primary_key_is_bigint: Vec<bool>,
+    ) -> Result<Self, crate::errors::Error> {
         if self.print_schema.has_multiple_schema {
             if let Some(selected_schema_keys) =
-                get_values_with_indices::<String>(matches, "schema-key")?
+                get_values_with_indices::<String>(matches, "SCHEMA_KEY")?
             {
-                let schema_with_indices = get_values_with_indices::<String>(matches, "schema")?;
-                let with_docs_with_indices = get_values_with_indices::<bool>(matches, "with-docs")?;
+                let schema_with_indices = get_values_with_indices::<String>(matches, "SCHEMA")?;
+                let with_docs_with_indices = get_values_with_indices::<bool>(matches, "WITH_DOCS")?;
                 let with_docs_config_with_indices =
-                    get_values_with_indices::<String>(matches, "with-docs-config")?;
+                    get_values_with_indices::<String>(matches, "WITH_DOCS_CONFIG")?;
                 let allow_tables_to_appear_in_same_query_config_with_indices =
                     get_values_with_indices::<String>(
                         matches,
-                        "allow-tables-to-appear-in-same-query-config",
+                        "ALLOW_TABLES_TO_APPEAR_IN_SAME_QUERY_CONFIG",
                     )?;
                 let patch_file_with_indices =
-                    get_values_with_indices::<PathBuf>(matches, "patch-file")?;
+                    get_values_with_indices::<PathBuf>(matches, "PATCH_FILE")?;
                 let column_sorting_with_indices =
-                    get_values_with_indices::<String>(matches, "column-sorting")?;
+                    get_values_with_indices::<String>(matches, "COLUMN_SORTING")?;
                 let import_types_with_indices =
-                    get_values_with_indices::<String>(matches, "import-types")?;
-                let generate_custom_type_definitions_with_indices =
-                    get_values_with_indices::<bool>(matches, "generate-custom-type-definitions")?;
+                    get_values_with_indices::<String>(matches, "IMPORT_TYPES")?;
+                let generate_custom_type_definitions_with_indices = get_values_with_indices::<bool>(
+                    matches,
+                    "NO_GENERATE_CUSTOM_TYPE_DEFINITIONS",
+                )?;
                 let custom_type_derives_with_indices =
-                    get_values_with_indices::<String>(matches, "custom-type-derives")?;
+                    get_values_with_indices::<String>(matches, "CUSTOM_TYPE_DERIVES")?;
                 let sqlite_integer_primary_key_is_bigint_with_indices =
                     get_values_with_indices::<bool>(
                         matches,
-                        "sqlite-integer-primary-key-is-bigint",
+                        "SQLITE_INTEGER_PRIMARY_KEY_IS_BIGINT",
                     )?;
                 let except_custom_type_definitions_with_indices =
                     get_values_with_indices::<Vec<Regex>>(
                         matches,
-                        "except-custom-type-definitions",
+                        "EXCEPT_CUSTOM_TYPE_DEFINITIONS",
                     )?;
 
                 for (key, boundary) in selected_schema_keys.values().map(|k| k.as_str()).zip(
@@ -212,9 +235,9 @@ impl Config {
                             DocConfig::DatabaseCommentsFallbackToAutoGeneratedDocComment;
                     }
                     // todo: that's not correct yet
-                    print_schema.include_views |= matches.get_flag("include-views");
+                    print_schema.include_views |= include_views;
                     print_schema.experimental_infer_nullable_for_views |=
-                        matches.get_flag("experimental_infer_nullable_for_views");
+                        experimental_infer_nullable_for_views;
 
                     if let Some(doc_config) = with_docs_config_with_indices
                         .as_ref()
@@ -320,84 +343,56 @@ impl Config {
                 Entry::Vacant(entry) => entry.insert(PrintSchema::default()),
                 Entry::Occupied(entry) => entry.into_mut(),
             };
-            if let Some(schema_name) = matches.get_one::<String>("schema") {
+            if let Some(schema_name) = schema.first() {
                 config.schema = Some(schema_name.to_owned())
             }
-            config.include_views |= matches.get_flag("include-views");
-            config.experimental_infer_nullable_for_views |=
-                matches.get_flag("experimental_infer_nullable_for_views");
-            if matches.get_flag("with-docs") {
+            config.include_views |= include_views;
+            config.experimental_infer_nullable_for_views |= experimental_infer_nullable_for_views;
+            if with_docs {
                 config.with_docs = DocConfig::DatabaseCommentsFallbackToAutoGeneratedDocComment;
             }
-            if let Some(doc_config) = matches.get_one::<String>("with-docs-config") {
-                config.with_docs = doc_config.parse().map_err(|_| {
-                    crate::errors::Error::UnsupportedFeature(format!(
-                        "Invalid documentation config mode: {doc_config}"
-                    ))
-                })?;
+
+            if let Some(docs_config) = with_docs_config.first() {
+                config.with_docs = docs_config.to_owned();
             }
 
             if let Some(allow_tables_to_appear_in_same_query_config) =
-                matches.get_one::<String>("allow-tables-to-appear-in-same-query-config")
+                allow_tables_to_appear_in_same_query_config.first()
             {
                 config.allow_tables_to_appear_in_same_query_config =
-                    allow_tables_to_appear_in_same_query_config
-                        .parse()
-                        .map_err(|_| {
-                            crate::errors::Error::UnsupportedFeature(format!(
-                                "Invalid `allow_tables_to_appear_in_same_query!` config \
-                                mode: {allow_tables_to_appear_in_same_query_config}"
-                            ))
-                        })?;
+                    allow_tables_to_appear_in_same_query_config.to_owned();
             }
 
-            if let Some(sorting) = matches.get_one::<String>("column-sorting") {
-                match sorting as &str {
-                    "ordinal_position" => config.column_sorting = ColumnSorting::OrdinalPosition,
-                    "name" => config.column_sorting = ColumnSorting::Name,
-                    _ => {
-                        return Err(crate::errors::Error::UnsupportedFeature(format!(
-                            "Invalid column sorting mode: {sorting}"
-                        )));
-                    }
-                }
+            if let Some(sorting) = column_sorting.first() {
+                config.column_sorting = sorting.to_owned();
             }
 
-            if let Some(path) = matches.get_one::<PathBuf>("patch-file") {
-                config.patch_file = Some(path.clone());
+            if let Some(path) = patch_file.first() {
+                config.patch_file = Some(path.to_owned());
             }
 
-            if let Some(types) = matches.get_many("import-types") {
-                let types = types.cloned().collect();
-                config.import_types = Some(types);
-            }
+            config.import_types = Some(import_types);
 
-            if let Some(except_rules) = matches.get_many("except-custom-type-definitions") {
-                let regexes: Vec<String> = except_rules.cloned().collect();
-                config.except_custom_type_definitions = regexes
-                    .into_iter()
-                    .map(|x| regex::Regex::new(&x).map(Into::into))
-                    .collect::<Result<Vec<Regex>, _>>()?;
-            }
+            config.except_custom_type_definitions = except_custom_type_definitions
+                .into_iter()
+                .map(|x| regex::Regex::new(&x).map(Into::into))
+                .collect::<Result<Vec<Regex>, _>>()?;
 
-            if matches.get_flag("generate-custom-type-definitions") {
+            if no_generate_missing_sql_type_definitions {
                 config.generate_missing_sql_type_definitions = Some(false);
             }
 
-            if let Some(derives) = matches.get_many("custom-type-derives") {
-                let derives = derives.cloned().collect();
-                config.custom_type_derives = Some(derives);
-            }
+            config.custom_type_derives = Some(custom_type_derives);
 
-            if let Some(domains) = matches.get_many::<String>("pg-domains-as-custom-types") {
-                config.pg_domains_as_custom_types = domains
-                    .into_iter()
-                    .map(|x| regex::Regex::new(x).map(Into::into))
-                    .collect::<Result<Vec<Regex>, _>>()?;
-            }
+            config.pg_domains_as_custom_types = pg_domains_as_custom_types
+                .into_iter()
+                .map(|x| regex::Regex::new(&x).map(Into::into))
+                .collect::<Result<Vec<Regex>, _>>()?;
 
-            if matches.get_flag("sqlite-integer-primary-key-is-bigint") {
-                config.sqlite_integer_primary_key_is_bigint = Some(true);
+            if let Some(&last_val) = sqlite_integer_primary_key_is_bigint.last() {
+                if last_val {
+                    config.sqlite_integer_primary_key_is_bigint = Some(true);
+                }
             }
         }
         Ok(self)
@@ -535,24 +530,20 @@ impl PrintSchema {
         }
     }
 
-    pub fn set_filter(&mut self, matches: &ArgMatches) -> Result<(), crate::errors::Error> {
-        let table_names = matches
-            .get_many::<String>("table-name")
-            .unwrap_or_default()
+    pub fn set_filter(
+        &mut self,
+        table_names: Vec<String>,
+        only_tables: bool,
+        except_tables: bool,
+    ) -> Result<(), crate::errors::Error> {
+        let table_names = table_names
+            .iter()
             .map(|table_name_regex| regex::Regex::new(table_name_regex).map(Into::into))
             .collect::<Result<Vec<Regex>, _>>()?;
 
-        if matches
-            .try_get_one::<bool>("only-tables")?
-            .copied()
-            .unwrap_or(false)
-        {
+        if only_tables {
             self.filter = Filtering::OnlyTables(table_names)
-        } else if matches
-            .try_get_one::<bool>("except-tables")?
-            .copied()
-            .unwrap_or(false)
-        {
+        } else if except_tables {
             self.filter = Filtering::ExceptTables(table_names)
         }
         Ok(())
@@ -617,22 +608,22 @@ impl<'de> Deserialize<'de> for Filtering {
                 let mut except_tables = None::<Vec<Regex>>;
                 while let Some(key) = map.next_key::<String>()? {
                     match &key as &str {
-                        "only_tables" => {
+                        "ONLY_TABLES" => {
                             if only_tables.is_some() {
-                                return Err(de::Error::duplicate_field("only_tables"));
+                                return Err(de::Error::duplicate_field("ONLY_TABLES"));
                             }
                             only_tables = Some(map.next_value()?);
                         }
-                        "except_tables" => {
+                        "EXCEPT_TABLES" => {
                             if except_tables.is_some() {
-                                return Err(de::Error::duplicate_field("except_tables"));
+                                return Err(de::Error::duplicate_field("EXCEPT_TABLES"));
                             }
                             except_tables = Some(map.next_value()?);
                         }
                         _ => {
                             return Err(de::Error::unknown_field(
                                 &key,
-                                &["only_tables", "except_tables"],
+                                &["ONLY_TABLES", "EXCEPT_TABLES"],
                             ));
                         }
                     }
@@ -641,7 +632,7 @@ impl<'de> Deserialize<'de> for Filtering {
                     (Some(t), None) => Ok(Filtering::OnlyTables(t)),
                     (None, Some(t)) => Ok(Filtering::ExceptTables(t)),
                     (None, None) => Ok(Filtering::None),
-                    _ => Err(de::Error::duplicate_field("only_tables except_tables")),
+                    _ => Err(de::Error::duplicate_field("ONLY_TABLES EXCEPT_TABLES")),
                 }
             }
         }

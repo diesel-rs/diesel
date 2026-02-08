@@ -1,6 +1,6 @@
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 use super::query_helper;
-use clap::ArgMatches;
+use clap::{ArgAction, Args, Subcommand};
 use diesel::connection::InstrumentationEvent;
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;
@@ -11,6 +11,42 @@ use std::env;
 #[cfg(feature = "postgres")]
 use std::fs::{self};
 use std::path::Path;
+
+#[derive(Debug, Args)]
+pub struct DatabaseArgs {
+    /// The location of your migration directory. By default this
+    /// will look for a directory called `migrations` in the
+    /// current directory and its parents.
+    #[arg(id = "MIGRATION_DIRECTORY", long = "migration-dir", value_parser = clap::value_parser!(std::path::PathBuf), global = true)]
+    pub migration_dir: Option<std::path::PathBuf>,
+
+    #[command(subcommand)]
+    pub command: DatabaseCommand,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum DatabaseCommand {
+    /// Creates the database specified in your DATABASE_URL, and
+    /// then runs any existing migrations.
+    Setup {
+        /// Don't generate the default migration.
+        #[arg(id = "NO_DEFAULT_MIGRATION", long = "no-default-migration", action = ArgAction::SetTrue)]
+        no_default_migration: bool,
+    },
+
+    /// Resets your database by dropping the database specified
+    /// in your DATABASE_URL and then running `diesel database
+    /// setup`.
+    Reset {
+        /// Don't generate the default migration.
+        #[arg(id = "NO_DEFAULT_MIGRATION", long = "no-default-migration", action = ArgAction::SetTrue)]
+        no_default_migration: bool,
+    },
+
+    /// Drops the database specified in your DATABASE_URL.
+    #[command(hide = true)]
+    Drop,
+}
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Backend {
@@ -111,8 +147,8 @@ pub enum InferConnection {
 }
 
 impl InferConnection {
-    pub fn from_matches(matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
-        let database_url = database_url(matches)?;
+    pub fn from_maybe_url(url: Option<String>) -> Result<Self, crate::errors::Error> {
+        let database_url = database_url(url)?;
         Self::from_url(database_url)
     }
 
@@ -148,23 +184,69 @@ impl InferConnection {
     }
 }
 
-pub fn reset_database(
-    args: &ArgMatches,
-    migrations_dir: &Path,
+#[tracing::instrument]
+pub fn run_setup_command(
+    database_url: Option<String>,
+    migration_dir: Option<std::path::PathBuf>,
+    config_file: Option<std::path::PathBuf>,
+    no_default_migration: bool,
 ) -> Result<(), crate::errors::Error> {
-    drop_database(&database_url(args)?)?;
-    setup_database(args, migrations_dir)
+    let migrations_dir = crate::create_migrations_dir(migration_dir, config_file.clone())?;
+    crate::create_config_file(config_file, &migrations_dir)?;
+
+    setup_database(database_url, &migrations_dir, no_default_migration)?;
+    Ok(())
+}
+
+#[tracing::instrument]
+pub fn run_database_command(
+    args: DatabaseArgs,
+    config_file: Option<std::path::PathBuf>,
+    database_url: Option<String>,
+    locked_schema: bool,
+) -> Result<(), crate::errors::Error> {
+    match args.command {
+        DatabaseCommand::Setup {
+            no_default_migration,
+        } => {
+            let migrations_dir =
+                crate::migrations::migrations_dir(args.migration_dir, config_file.clone())?;
+            setup_database(database_url.clone(), &migrations_dir, no_default_migration)?;
+            crate::regenerate_schema_if_file_specified(config_file, database_url, locked_schema)?;
+        }
+        DatabaseCommand::Reset {
+            no_default_migration,
+        } => {
+            let migrations_dir =
+                crate::migrations::migrations_dir(args.migration_dir, config_file.clone())?;
+            reset_database(database_url.clone(), &migrations_dir, no_default_migration)?;
+            crate::regenerate_schema_if_file_specified(config_file, database_url, locked_schema)?;
+        }
+        DatabaseCommand::Drop => crate::database::drop_database_command(database_url)?,
+    }
+
+    Ok(())
+}
+
+pub fn reset_database(
+    db_url: Option<String>,
+    migrations_dir: &Path,
+    no_default_migration: bool,
+) -> Result<(), crate::errors::Error> {
+    drop_database(&database_url(db_url.clone())?)?;
+    setup_database(db_url, migrations_dir, no_default_migration)
 }
 
 pub fn setup_database(
-    args: &ArgMatches,
+    db_url: Option<String>,
     migrations_dir: &Path,
+    no_default_migration: bool,
 ) -> Result<(), crate::errors::Error> {
-    let database_url = database_url(args)?;
+    let database_url = database_url(db_url)?;
 
     create_database_if_needed(&database_url)?;
 
-    let default_migrations = !args.get_flag("NO_DEFAULT_MIGRATION");
+    let default_migrations = !no_default_migration;
 
     if default_migrations {
         create_default_migration_if_needed(&database_url, migrations_dir)?;
@@ -174,8 +256,8 @@ pub fn setup_database(
     Ok(())
 }
 
-pub fn drop_database_command(args: &ArgMatches) -> Result<(), crate::errors::Error> {
-    drop_database(&database_url(args)?)
+pub fn drop_database_command(db_url: Option<String>) -> Result<(), crate::errors::Error> {
+    drop_database(&database_url(db_url)?)
 }
 
 /// Creates the database specified in the connection url. It returns an error
@@ -411,10 +493,8 @@ pub fn schema_table_exists(database_url: &str) -> Result<bool, crate::errors::Er
     .map_err(Into::into)
 }
 
-pub fn database_url(matches: &ArgMatches) -> Result<String, crate::errors::Error> {
-    matches
-        .get_one::<String>("DATABASE_URL")
-        .cloned()
+pub fn database_url(database_url: Option<String>) -> Result<String, crate::errors::Error> {
+    database_url
         .or_else(|| env::var("DATABASE_URL").ok())
         .ok_or(crate::errors::Error::DatabaseUrlMissing)
 }

@@ -1,4 +1,3 @@
-use clap::ArgMatches;
 use diesel::QueryResult;
 use diesel::backend::Backend;
 use diesel::query_builder::QueryBuilder;
@@ -28,10 +27,13 @@ fn compatible_type_list() -> HashMap<&'static str, Vec<&'static str>> {
 #[tracing::instrument]
 pub fn generate_sql_based_on_diff_schema(
     mut config: PrintSchema,
-    matches: &ArgMatches,
+    database_url: Option<String>,
     schema_file_path: &Path,
+    table_name: Vec<String>,
+    only_tables: bool,
+    except_tables: bool,
 ) -> Result<(String, String), crate::errors::Error> {
-    config.set_filter(matches)?;
+    config.set_filter(table_name, only_tables, except_tables)?;
 
     let project_root = crate::find_project_root()?;
 
@@ -44,7 +46,7 @@ pub fn generate_sql_based_on_diff_schema(
     let mut tables_from_schema = SchemaCollector::default();
 
     tables_from_schema.visit_file(&syn_file);
-    let mut conn = InferConnection::from_matches(matches)?;
+    let mut conn = InferConnection::from_maybe_url(database_url)?;
 
     let foreign_keys =
         crate::infer_schema_internals::load_foreign_key_constraints(&mut conn, None)?;
