@@ -5,28 +5,28 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
+use alloc::ffi::{CString, NulError};
+use alloc::string::{String, ToString};
 use core::any::Any;
 use core::cell::{Cell, RefCell};
-
-use super::update_hook::{ChangeHookDispatcher, SqliteChangeEvent, SqliteChangeOp};
+use core::ffi as libc;
+use core::ffi::CStr;
+use core::ptr::NonNull;
+use core::{mem, ptr, slice, str};
 
 use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::limits::SqliteLimit;
 use super::serialized_database::SerializedDatabase;
 use super::stmt::ensure_sqlite_ok;
+use super::update_hook::{ChangeHookDispatcher, SqliteChangeEvent, SqliteChangeOp};
 use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::FromSqlRow;
 use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
-use alloc::borrow::ToOwned;
-use alloc::boxed::Box;
-use alloc::ffi::{CString, NulError};
-use alloc::string::{String, ToString};
-use core::ffi as libc;
-use core::ptr::NonNull;
-use core::{mem, ptr, slice, str};
 
 /// For use in FFI function, which cannot unwind.
 /// Print the message, ask to open an issue at Github and [`abort`](std::process::abort).
@@ -490,9 +490,7 @@ unsafe extern "C" fn update_hook_trampoline(
     table_name: *const libc::c_char,
     rowid: ffi::sqlite3_int64,
 ) {
-    use std::panic::{catch_unwind, AssertUnwindSafe};
-
-    let result = catch_unwind(AssertUnwindSafe(|| {
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
         let hooks = &*(user_data as *const RefCell<ChangeHookDispatcher>);
 
         let db_name = CStr::from_ptr(db_name).to_str().unwrap_or_else(|_| {
@@ -526,9 +524,7 @@ unsafe extern "C" fn commit_hook_trampoline<F>(user_data: *mut libc::c_void) -> 
 where
     F: FnMut() -> bool,
 {
-    use std::panic::{catch_unwind, AssertUnwindSafe};
-
-    let result = catch_unwind(AssertUnwindSafe(|| {
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
         let f = &mut *(user_data as *mut F);
         f()
     }));
@@ -551,9 +547,7 @@ unsafe extern "C" fn rollback_hook_trampoline<F>(user_data: *mut libc::c_void)
 where
     F: FnMut(),
 {
-    use std::panic::{catch_unwind, AssertUnwindSafe};
-
-    let result = catch_unwind(AssertUnwindSafe(|| {
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
         let f = &mut *(user_data as *mut F);
         f();
     }));
@@ -577,13 +571,16 @@ unsafe extern "C" fn wal_hook_trampoline<F>(
 where
     F: FnMut(&str, i32),
 {
-    use std::panic::{catch_unwind, AssertUnwindSafe};
-
-    let result = catch_unwind(AssertUnwindSafe(|| {
-        let f = &mut *(user_data as *mut F);
-        let db_name_str = CStr::from_ptr(db_name).to_str().unwrap_or_else(|_| {
-            assert_fail!("sqlite3_wal_hook delivered invalid UTF-8 for db_name. ");
-        });
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
+        // SAFETY: `user_data` is a valid pointer to `F` stored in
+        // `RawConnection::wal_hook`, guaranteed by the caller contract.
+        let f = unsafe { &mut *(user_data as *mut F) };
+        // SAFETY: `db_name` is a valid C string provided by SQLite.
+        let db_name_str = unsafe { CStr::from_ptr(db_name) }
+            .to_str()
+            .unwrap_or_else(|_| {
+                assert_fail!("sqlite3_wal_hook delivered invalid UTF-8 for db_name. ");
+            });
         f(db_name_str, n_pages);
     }));
 

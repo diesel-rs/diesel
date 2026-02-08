@@ -8,7 +8,7 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
-use std::ops::{BitAnd, BitOr};
+use core::ops::{BitAnd, BitOr};
 
 /// A bitmask of SQLite change operations used for filtering which events
 /// a hook should receive.
@@ -341,7 +341,10 @@ mod tests {
         assert_eq!(SqliteChangeOp::Insert.to_ops(), SqliteChangeOps::INSERT);
         assert_eq!(SqliteChangeOp::Update.to_ops(), SqliteChangeOps::UPDATE);
         assert_eq!(SqliteChangeOp::Delete.to_ops(), SqliteChangeOps::DELETE);
-        assert_eq!(SqliteChangeOp::Unknown(999).to_ops(), SqliteChangeOps::UNKNOWN);
+        assert_eq!(
+            SqliteChangeOp::Unknown(999).to_ops(),
+            SqliteChangeOps::UNKNOWN
+        );
     }
 
     #[test]
