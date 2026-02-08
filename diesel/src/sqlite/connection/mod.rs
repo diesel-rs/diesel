@@ -37,6 +37,7 @@ use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::{HasSqlType, TypeMetadata};
 use crate::sqlite::Sqlite;
+use alloc::boxed::Box;
 use alloc::string::String;
 use core::ffi as libc;
 use core::num::NonZeroI64;
@@ -3471,8 +3472,14 @@ mod tests {
 
     // ---------------------------------------------------------------
     // WAL hook tests
+    //
+    // Gated out on WASM because these tests need a file-backed database
+    // (WAL mode does not work with `:memory:`), and `tempfile::tempdir()`
+    // panics on WASM due to the lack of a filesystem. The WAL *API* itself
+    // is not feature-gated — only these tests are.
     // ---------------------------------------------------------------
 
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     /// Helper: create a file-backed connection (WAL requires a real file).
     fn wal_connection() -> (SqliteConnection, tempfile::TempDir) {
         let dir = tempfile::tempdir().unwrap();
@@ -3481,6 +3488,7 @@ mod tests {
         (conn, dir)
     }
 
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     #[diesel_test_helper::test]
     fn on_wal_fires_in_wal_mode() {
         use std::sync::{Arc, Mutex};
@@ -3515,6 +3523,7 @@ mod tests {
         assert!(recorded.last().unwrap().1 > 0, "n_pages should be positive");
     }
 
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     #[diesel_test_helper::test]
     fn replacing_wal_hook_drops_old() {
         use std::sync::{Arc, Mutex};
@@ -3558,6 +3567,7 @@ mod tests {
         assert!(*new_count.lock().unwrap() > 0, "new WAL hook should fire");
     }
 
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     #[diesel_test_helper::test]
     fn remove_wal_hook_disables_callback() {
         use std::sync::{Arc, Mutex};
@@ -3586,6 +3596,7 @@ mod tests {
         assert_eq!(*count.lock().unwrap(), 0);
     }
 
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     #[diesel_test_helper::test]
     fn wal_hook_does_not_fire_in_default_journal_mode() {
         use std::sync::{Arc, Mutex};

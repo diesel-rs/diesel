@@ -8,6 +8,9 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::vec::Vec;
 use core::ops::{BitAnd, BitOr};
 
 /// A bitmask of SQLite change operations used for filtering which events
