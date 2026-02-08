@@ -29,8 +29,9 @@ fuzz_target!(|data: &[u8]| {
         let _sanitized_column = column_name.replace([';', '\0', '\n', '\r'], "");
 
         // Test numeric limits (potential for integer overflow)
-        let limit = input.limit_value.abs().min(1000000);
-        let offset = input.offset_value.abs().min(1000000);
+        // Use saturating_abs to handle i64::MIN without panicking
+        let limit = input.limit_value.saturating_abs().min(1000000);
+        let offset = input.offset_value.saturating_abs().min(1000000);
 
         // Test that these values don't cause panics or overflows
         let _ = limit.checked_add(offset);
