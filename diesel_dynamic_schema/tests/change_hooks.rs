@@ -25,17 +25,14 @@ fn establish_connection() -> SqliteConnection {
 fn on_change_works_with_dynamic_schema() {
     let conn = &mut establish_connection();
 
-    diesel::sql_query(
-        "CREATE TABLE items (id INTEGER PRIMARY KEY, name TEXT NOT NULL)",
-    )
-    .execute(conn)
-    .unwrap();
+    diesel::sql_query("CREATE TABLE items (id INTEGER PRIMARY KEY, name TEXT NOT NULL)")
+        .execute(conn)
+        .unwrap();
 
     let items = table("items");
     let name = items.column::<Text, _>("name");
 
-    let events: Arc<Mutex<Vec<(SqliteChangeOp, String, i64)>>> =
-        Arc::new(Mutex::new(Vec::new()));
+    let events: Arc<Mutex<Vec<(SqliteChangeOp, String, i64)>>> = Arc::new(Mutex::new(Vec::new()));
     let events_hook = events.clone();
 
     conn.on_change(SqliteChangeOps::ALL, move |ev: SqliteChangeEvent<'_>| {
@@ -83,14 +80,11 @@ fn on_change_works_with_dynamic_schema() {
 fn on_change_ops_filter_with_dynamic_schema() {
     let conn = &mut establish_connection();
 
-    diesel::sql_query(
-        "CREATE TABLE widgets (id INTEGER PRIMARY KEY, label TEXT NOT NULL)",
-    )
-    .execute(conn)
-    .unwrap();
+    diesel::sql_query("CREATE TABLE widgets (id INTEGER PRIMARY KEY, label TEXT NOT NULL)")
+        .execute(conn)
+        .unwrap();
 
-    let events: Arc<Mutex<Vec<(SqliteChangeOp, String)>>> =
-        Arc::new(Mutex::new(Vec::new()));
+    let events: Arc<Mutex<Vec<(SqliteChangeOp, String)>>> = Arc::new(Mutex::new(Vec::new()));
     let events_hook = events.clone();
 
     conn.on_change(
