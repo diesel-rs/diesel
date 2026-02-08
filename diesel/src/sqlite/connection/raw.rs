@@ -484,13 +484,17 @@ unsafe extern "C" fn update_hook_trampoline(
         let hooks = unsafe { &*(user_data as *const RefCell<ChangeHookDispatcher>) };
 
         // SAFETY: `db_name` is a valid C string provided by SQLite.
-        let db_name = unsafe { CStr::from_ptr(db_name) }.to_str().unwrap_or_else(|_| {
-            assert_fail!("sqlite3_update_hook delivered invalid UTF-8 for db_name. ");
-        });
+        let db_name = unsafe { CStr::from_ptr(db_name) }
+            .to_str()
+            .unwrap_or_else(|_| {
+                assert_fail!("sqlite3_update_hook delivered invalid UTF-8 for db_name. ");
+            });
         // SAFETY: `table_name` is a valid C string provided by SQLite.
-        let table_name = unsafe { CStr::from_ptr(table_name) }.to_str().unwrap_or_else(|_| {
-            assert_fail!("sqlite3_update_hook delivered invalid UTF-8 for table_name. ");
-        });
+        let table_name = unsafe { CStr::from_ptr(table_name) }
+            .to_str()
+            .unwrap_or_else(|_| {
+                assert_fail!("sqlite3_update_hook delivered invalid UTF-8 for table_name. ");
+            });
 
         let event = SqliteChangeEvent {
             op: SqliteChangeOp::from_ffi(op),
