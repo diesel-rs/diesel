@@ -5,6 +5,11 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
+use core::any::Any;
+use core::cell::{Cell, RefCell};
+
+use super::update_hook::{ChangeHookDispatcher, SqliteChangeEvent, SqliteChangeOp};
+
 use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::serialized_database::SerializedDatabase;
 use super::stmt::ensure_sqlite_ok;
@@ -39,6 +44,21 @@ macro_rules! assert_fail {
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub(super) struct RawConnection {
     pub(super) internal_connection: NonNull<ffi::sqlite3>,
+    /// Hook dispatcher for sqlite3_update_hook callbacks. The C trampoline
+    /// dispatches events directly to registered hooks during sqlite3_step().
+    /// Uses RefCell because the C callback needs mutable access while the
+    /// connection may be immutably borrowed.
+    pub(super) change_hooks: RefCell<ChangeHookDispatcher>,
+    /// Tracks whether the C-level update hook is currently installed, to
+    /// avoid redundant FFI calls.
+    update_hook_registered: Cell<bool>,
+    /// Boxed closure for the commit hook. Stored to keep the closure alive
+    /// for the duration of the hook registration. Type-erased via `dyn Any`.
+    commit_hook: Option<Box<dyn Any + Send>>,
+    /// Boxed closure for the rollback hook.
+    rollback_hook: Option<Box<dyn Any + Send>>,
+    /// Boxed closure for the WAL hook.
+    wal_hook: Option<Box<dyn Any + Send>>,
 }
 
 impl RawConnection {
@@ -60,6 +80,11 @@ impl RawConnection {
                 let conn_pointer = unsafe { NonNull::new_unchecked(conn_pointer) };
                 Ok(RawConnection {
                     internal_connection: conn_pointer,
+                    change_hooks: RefCell::new(ChangeHookDispatcher::new()),
+                    update_hook_registered: Cell::new(false),
+                    commit_hook: None,
+                    rollback_hook: None,
+                    wal_hook: None,
                 })
             }
             err_code => {
@@ -325,11 +350,252 @@ impl RawConnection {
             _pd: core::marker::PhantomData,
         })
     }
+    /// Registers the C-level `sqlite3_update_hook` if not already registered.
+    ///
+    /// The hook dispatches events directly to registered hooks in
+    /// `self.change_hooks` during `sqlite3_step()`.
+    /// This is a no-op if the hook is already installed.
+    pub(super) fn register_raw_update_hook(&self) {
+        if !self.update_hook_registered.get() {
+            unsafe {
+                ffi::sqlite3_update_hook(
+                    self.internal_connection.as_ptr(),
+                    Some(update_hook_trampoline),
+                    &self.change_hooks as *const RefCell<ChangeHookDispatcher> as *mut libc::c_void,
+                );
+            }
+            self.update_hook_registered.set(true);
+        }
+    }
+
+    /// Unregisters the C-level `sqlite3_update_hook`.
+    pub(super) fn unregister_raw_update_hook(&self) {
+        if self.update_hook_registered.get() {
+            unsafe {
+                ffi::sqlite3_update_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
+            }
+            self.update_hook_registered.set(false);
+        }
+    }
+
+    /// Sets a commit hook. Only one can be active at a time; the previous
+    /// hook (if any) is replaced.
+    ///
+    /// The callback returns `true` to convert the commit into a rollback,
+    /// or `false` to allow the commit to proceed.
+    pub(super) fn set_commit_hook<F>(&mut self, hook: F)
+    where
+        F: FnMut() -> bool + Send + 'static,
+    {
+        let boxed: Box<F> = Box::new(hook);
+        let ptr = &*boxed as *const F as *mut libc::c_void;
+        unsafe {
+            ffi::sqlite3_commit_hook(
+                self.internal_connection.as_ptr(),
+                Some(commit_hook_trampoline::<F>),
+                ptr,
+            );
+        }
+        // The old Box (if any) is dropped here after SQLite has already
+        // switched to the new callback, preventing use-after-free.
+        self.commit_hook = Some(boxed);
+    }
+
+    /// Removes the commit hook.
+    pub(super) fn remove_commit_hook(&mut self) {
+        unsafe {
+            ffi::sqlite3_commit_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
+        }
+        self.commit_hook = None;
+    }
+
+    /// Sets a rollback hook. Only one can be active at a time.
+    pub(super) fn set_rollback_hook<F>(&mut self, hook: F)
+    where
+        F: FnMut() + Send + 'static,
+    {
+        let boxed: Box<F> = Box::new(hook);
+        let ptr = &*boxed as *const F as *mut libc::c_void;
+        unsafe {
+            ffi::sqlite3_rollback_hook(
+                self.internal_connection.as_ptr(),
+                Some(rollback_hook_trampoline::<F>),
+                ptr,
+            );
+        }
+        self.rollback_hook = Some(boxed);
+    }
+
+    /// Removes the rollback hook.
+    pub(super) fn remove_rollback_hook(&mut self) {
+        unsafe {
+            ffi::sqlite3_rollback_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
+        }
+        self.rollback_hook = None;
+    }
+
+    /// Sets a WAL hook. Only one can be active at a time.
+    ///
+    /// The callback receives the database name (e.g. `"main"`) and the
+    /// number of pages currently in the WAL file.
+    pub(super) fn set_wal_hook<F>(&mut self, hook: F)
+    where
+        F: FnMut(&str, i32) + Send + 'static,
+    {
+        let boxed: Box<F> = Box::new(hook);
+        let ptr = &*boxed as *const F as *mut libc::c_void;
+        unsafe {
+            ffi::sqlite3_wal_hook(
+                self.internal_connection.as_ptr(),
+                Some(wal_hook_trampoline::<F>),
+                ptr,
+            );
+        }
+        self.wal_hook = Some(boxed);
+    }
+
+    /// Removes the WAL hook.
+    pub(super) fn remove_wal_hook(&mut self) {
+        unsafe {
+            ffi::sqlite3_wal_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
+        }
+        self.wal_hook = None;
+    }
+}
+
+/// C trampoline for `sqlite3_update_hook`.
+///
+/// # Safety
+///
+/// `user_data` must be a valid pointer to `RefCell<ChangeHookDispatcher>`
+/// that outlives the hook registration. This is guaranteed because the
+/// `RefCell` is a field of `RawConnection` and the hook is unregistered
+/// before the connection is dropped.
+unsafe extern "C" fn update_hook_trampoline(
+    user_data: *mut libc::c_void,
+    op: libc::c_int,
+    db_name: *const libc::c_char,
+    table_name: *const libc::c_char,
+    rowid: ffi::sqlite3_int64,
+) {
+    use std::panic::{catch_unwind, AssertUnwindSafe};
+
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        let hooks = &*(user_data as *const RefCell<ChangeHookDispatcher>);
+
+        let db_name = CStr::from_ptr(db_name).to_str().unwrap_or_else(|_| {
+            assert_fail!("sqlite3_update_hook delivered invalid UTF-8 for db_name. ");
+        });
+        let table_name = CStr::from_ptr(table_name).to_str().unwrap_or_else(|_| {
+            assert_fail!("sqlite3_update_hook delivered invalid UTF-8 for table_name. ");
+        });
+
+        let event = SqliteChangeEvent {
+            op: SqliteChangeOp::from_ffi(op),
+            db_name,
+            table_name,
+            rowid,
+        };
+
+        hooks.borrow_mut().dispatch(event);
+    }));
+
+    if result.is_err() {
+        assert_fail!("Panic in sqlite3_update_hook trampoline. ");
+    }
+}
+
+/// C trampoline for `sqlite3_commit_hook`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` stored in `RawConnection::commit_hook`.
+unsafe extern "C" fn commit_hook_trampoline<F>(user_data: *mut libc::c_void) -> libc::c_int
+where
+    F: FnMut() -> bool,
+{
+    use std::panic::{catch_unwind, AssertUnwindSafe};
+
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        let f = &mut *(user_data as *mut F);
+        f()
+    }));
+
+    match result {
+        Ok(true) => 1,  // convert commit to rollback
+        Ok(false) => 0, // proceed with commit
+        Err(_) => {
+            assert_fail!("Panic in sqlite3_commit_hook trampoline. ");
+        }
+    }
+}
+
+/// C trampoline for `sqlite3_rollback_hook`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` stored in `RawConnection::rollback_hook`.
+unsafe extern "C" fn rollback_hook_trampoline<F>(user_data: *mut libc::c_void)
+where
+    F: FnMut(),
+{
+    use std::panic::{catch_unwind, AssertUnwindSafe};
+
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        let f = &mut *(user_data as *mut F);
+        f();
+    }));
+
+    if result.is_err() {
+        assert_fail!("Panic in sqlite3_rollback_hook trampoline. ");
+    }
+}
+
+/// C trampoline for `sqlite3_wal_hook`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` stored in `RawConnection::wal_hook`.
+unsafe extern "C" fn wal_hook_trampoline<F>(
+    user_data: *mut libc::c_void,
+    _db: *mut ffi::sqlite3,
+    db_name: *const libc::c_char,
+    n_pages: libc::c_int,
+) -> libc::c_int
+where
+    F: FnMut(&str, i32),
+{
+    use std::panic::{catch_unwind, AssertUnwindSafe};
+
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        let f = &mut *(user_data as *mut F);
+        let db_name_str = CStr::from_ptr(db_name).to_str().unwrap_or_else(|_| {
+            assert_fail!("sqlite3_wal_hook delivered invalid UTF-8 for db_name. ");
+        });
+        f(db_name_str, n_pages);
+    }));
+
+    if result.is_err() {
+        assert_fail!("Panic in sqlite3_wal_hook trampoline. ");
+    }
+
+    ffi::SQLITE_OK
 }
 
 impl Drop for RawConnection {
     fn drop(&mut self) {
         use crate::util::std_compat::panicking;
+
+        self.unregister_raw_update_hook();
+
+        // Unregister commit/rollback hooks before closing so the
+        // Box'd closures are not dangling during sqlite3_close.
+        unsafe {
+            ffi::sqlite3_commit_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
+            ffi::sqlite3_rollback_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
+            ffi::sqlite3_wal_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
+        }
+        // The Option<Box<dyn Any>> fields drop automatically after this.
 
         let close_result = unsafe { ffi::sqlite3_close(self.internal_connection.as_ptr()) };
         if close_result != ffi::SQLITE_OK {
@@ -400,6 +666,11 @@ extern "C" fn run_custom_function<F, Ret, RetSqlType>(
         // Drop impl of `RawConnection` as this would close the connection
         Some(conn) => mem::ManuallyDrop::new(RawConnection {
             internal_connection: conn,
+            change_hooks: RefCell::new(ChangeHookDispatcher::new()),
+            update_hook_registered: Cell::new(false),
+            commit_hook: None,
+            rollback_hook: None,
+            wal_hook: None,
         }),
         None => {
             unsafe { context_error_str(ctx, NULL_CONN_ERR) };
@@ -421,6 +692,10 @@ extern "C" fn run_custom_function<F, Ret, RetSqlType>(
     // We need this to move the reference into the catch_unwind part
     // this is sound as `F` itself and the stored string is `UnwindSafe`
     let callback = core::panic::AssertUnwindSafe(&mut data_ptr.callback);
+    // conn contains Box<dyn Any + Send> fields which are not UnwindSafe.
+    // This is safe because the ManuallyDrop wrapper ensures we never run
+    // the RawConnection Drop, and we only read through conn in the closure.
+    let conn = core::panic::AssertUnwindSafe(conn);
 
     let result = crate::util::std_compat::catch_unwind(move || {
         let _ = &callback;
@@ -697,4 +972,196 @@ where
 extern "C" fn destroy_boxed<F>(data: *mut libc::c_void) {
     let ptr = data as *mut F;
     unsafe { core::mem::drop(Box::from_raw(ptr)) };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::update_hook::{SqliteChangeOp, SqliteChangeOps};
+    use super::*;
+    use std::sync::{Arc, Mutex};
+
+    fn test_connection() -> RawConnection {
+        RawConnection::establish(":memory:").expect("failed to establish :memory: connection")
+    }
+
+    #[test]
+    fn insert_event_dispatched_directly() {
+        let conn = test_connection();
+        conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .unwrap();
+
+        let fired = Arc::new(Mutex::new(Vec::new()));
+        let f2 = fired.clone();
+
+        conn.change_hooks.borrow_mut().add(
+            Some("t"),
+            SqliteChangeOps::INSERT,
+            Box::new(move |e| {
+                f2.lock().unwrap().push((e.op, e.rowid));
+            }),
+        );
+
+        conn.register_raw_update_hook();
+        conn.exec("INSERT INTO t VALUES (1)").unwrap();
+
+        let events = fired.lock().unwrap();
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].0, SqliteChangeOp::Insert);
+        assert_eq!(events[0].1, 1);
+    }
+
+    #[test]
+    fn consecutive_inserts_dispatch_immediately() {
+        let conn = test_connection();
+        conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .unwrap();
+
+        let fired = Arc::new(Mutex::new(Vec::new()));
+        let f2 = fired.clone();
+
+        conn.change_hooks.borrow_mut().add(
+            Some("t"),
+            SqliteChangeOps::INSERT,
+            Box::new(move |e| {
+                f2.lock().unwrap().push(e.rowid);
+            }),
+        );
+
+        conn.register_raw_update_hook();
+        conn.exec("INSERT INTO t VALUES (2); INSERT INTO t VALUES (3)")
+            .unwrap();
+
+        let events = fired.lock().unwrap();
+        assert_eq!(events.len(), 2);
+        assert_eq!(events[0], 2);
+        assert_eq!(events[1], 3);
+    }
+
+    #[test]
+    fn update_event() {
+        let conn = test_connection();
+        conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT)")
+            .unwrap();
+        conn.exec("INSERT INTO t VALUES (1, 'a')").unwrap();
+
+        let fired = Arc::new(Mutex::new(Vec::new()));
+        let f2 = fired.clone();
+
+        conn.change_hooks.borrow_mut().add(
+            Some("t"),
+            SqliteChangeOps::ALL,
+            Box::new(move |e| {
+                f2.lock().unwrap().push((e.op, e.rowid));
+            }),
+        );
+
+        conn.register_raw_update_hook();
+        conn.exec("UPDATE t SET v = 'b' WHERE id = 1").unwrap();
+
+        let events = fired.lock().unwrap();
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].0, SqliteChangeOp::Update);
+        assert_eq!(events[0].1, 1);
+    }
+
+    #[test]
+    fn delete_event() {
+        let conn = test_connection();
+        conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .unwrap();
+        conn.exec("INSERT INTO t VALUES (1)").unwrap();
+
+        let fired = Arc::new(Mutex::new(Vec::new()));
+        let f2 = fired.clone();
+
+        conn.change_hooks.borrow_mut().add(
+            Some("t"),
+            SqliteChangeOps::ALL,
+            Box::new(move |e| {
+                f2.lock().unwrap().push((e.op, e.rowid));
+            }),
+        );
+
+        conn.register_raw_update_hook();
+        conn.exec("DELETE FROM t WHERE id = 1").unwrap();
+
+        let events = fired.lock().unwrap();
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].0, SqliteChangeOp::Delete);
+        assert_eq!(events[0].1, 1);
+    }
+
+    #[test]
+    fn unregister_stops_events() {
+        let conn = test_connection();
+        conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .unwrap();
+
+        let fired = Arc::new(Mutex::new(Vec::new()));
+        let f2 = fired.clone();
+
+        conn.change_hooks.borrow_mut().add(
+            Some("t"),
+            SqliteChangeOps::INSERT,
+            Box::new(move |e| {
+                f2.lock().unwrap().push(e.rowid);
+            }),
+        );
+
+        conn.register_raw_update_hook();
+        conn.exec("INSERT INTO t VALUES (1)").unwrap();
+        assert_eq!(fired.lock().unwrap().len(), 1);
+
+        conn.unregister_raw_update_hook();
+        conn.exec("INSERT INTO t VALUES (2)").unwrap();
+        assert_eq!(fired.lock().unwrap().len(), 1); // still 1
+    }
+
+    #[test]
+    fn re_register_after_unregister_resumes() {
+        let conn = test_connection();
+        conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .unwrap();
+
+        let fired = Arc::new(Mutex::new(Vec::new()));
+        let f2 = fired.clone();
+
+        conn.change_hooks.borrow_mut().add(
+            Some("t"),
+            SqliteChangeOps::INSERT,
+            Box::new(move |e| {
+                f2.lock().unwrap().push(e.rowid);
+            }),
+        );
+
+        conn.register_raw_update_hook();
+        conn.exec("INSERT INTO t VALUES (1)").unwrap();
+        assert_eq!(fired.lock().unwrap().len(), 1);
+
+        conn.unregister_raw_update_hook();
+        conn.exec("INSERT INTO t VALUES (2)").unwrap();
+        assert_eq!(fired.lock().unwrap().len(), 1);
+
+        conn.register_raw_update_hook();
+        conn.exec("INSERT INTO t VALUES (3)").unwrap();
+        let events = fired.lock().unwrap();
+        assert_eq!(events.len(), 2);
+        assert_eq!(events[1], 3);
+    }
+
+    #[test]
+    fn drop_does_not_panic() {
+        let conn = test_connection();
+        conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .unwrap();
+
+        conn.change_hooks
+            .borrow_mut()
+            .add(Some("t"), SqliteChangeOps::INSERT, Box::new(|_| {}));
+
+        conn.register_raw_update_hook();
+        conn.exec("INSERT INTO t VALUES (1)").unwrap();
+        drop(conn);
+        // If we get here, drop succeeded without panic.
+    }
 }
