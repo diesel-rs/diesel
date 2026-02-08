@@ -491,12 +491,16 @@ unsafe extern "C" fn update_hook_trampoline(
     rowid: ffi::sqlite3_int64,
 ) {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
-        let hooks = &*(user_data as *const RefCell<ChangeHookDispatcher>);
+        // SAFETY: `user_data` points to the `RefCell<ChangeHookDispatcher>` field
+        // of `RawConnection`, guaranteed by the caller contract.
+        let hooks = unsafe { &*(user_data as *const RefCell<ChangeHookDispatcher>) };
 
-        let db_name = CStr::from_ptr(db_name).to_str().unwrap_or_else(|_| {
+        // SAFETY: `db_name` is a valid C string provided by SQLite.
+        let db_name = unsafe { CStr::from_ptr(db_name) }.to_str().unwrap_or_else(|_| {
             assert_fail!("sqlite3_update_hook delivered invalid UTF-8 for db_name. ");
         });
-        let table_name = CStr::from_ptr(table_name).to_str().unwrap_or_else(|_| {
+        // SAFETY: `table_name` is a valid C string provided by SQLite.
+        let table_name = unsafe { CStr::from_ptr(table_name) }.to_str().unwrap_or_else(|_| {
             assert_fail!("sqlite3_update_hook delivered invalid UTF-8 for table_name. ");
         });
 
@@ -525,7 +529,8 @@ where
     F: FnMut() -> bool,
 {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
-        let f = &mut *(user_data as *mut F);
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::commit_hook`.
+        let f = unsafe { &mut *(user_data as *mut F) };
         f()
     }));
 
@@ -548,7 +553,8 @@ where
     F: FnMut(),
 {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
-        let f = &mut *(user_data as *mut F);
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::rollback_hook`.
+        let f = unsafe { &mut *(user_data as *mut F) };
         f();
     }));
 
