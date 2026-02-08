@@ -3475,8 +3475,20 @@ mod tests {
     //
     // Gated out on WASM because these tests need a file-backed database
     // (WAL mode does not work with `:memory:`), and `tempfile::tempdir()`
-    // panics on WASM due to the lack of a filesystem. The WAL *API* itself
-    // is not feature-gated — only these tests are.
+    // panics on WASM due to the lack of a filesystem.
+    //
+    // The WAL *API* itself (`on_wal`, `remove_wal_hook`) is available on
+    // all platforms, including WASM. In principle WAL could work on WASM
+    // with the `sahpool` VFS (OPFS-backed), but that VFS is only usable
+    // inside a Dedicated Worker context. The default `memory` VFS has no
+    // persistent storage, and `relaxed-idb` (IndexedDB) does not provide
+    // the file-level I/O (WAL/SHM sidecar files) that WAL mode requires.
+    // Additionally, `sqlite-wasm-rs` compiles SQLite with
+    // `-DSQLITE_THREADSAFE=0` and none of its VFS backends support
+    // multiple connections, further limiting WAL's utility on WASM.
+    //
+    // Testing WAL on specific WASM VFS backends is better suited for
+    // downstream integration tests.
     // ---------------------------------------------------------------
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
