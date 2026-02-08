@@ -187,11 +187,11 @@ impl InferConnection {
 #[tracing::instrument]
 pub fn run_setup_command(
     database_url: Option<String>,
-    migration_dir: Option<std::path::PathBuf>,
+    migrations_dir: Option<std::path::PathBuf>,
     config_file: Option<std::path::PathBuf>,
     no_default_migration: bool,
 ) -> Result<(), crate::errors::Error> {
-    let migrations_dir = crate::create_migrations_dir(migration_dir, config_file.clone())?;
+    let migrations_dir = crate::create_migrations_dir(migrations_dir, config_file.clone())?;
     crate::create_config_file(config_file, &migrations_dir)?;
 
     setup_database(database_url, &migrations_dir, no_default_migration)?;

@@ -69,7 +69,8 @@ fn inner_main() -> Result<(), crate::errors::Error> {
 
     let cli = Cli::command();
     let matches = cli.get_matches();
-    let cli = Cli::from_arg_matches(&matches).unwrap();
+    let cli =
+        Cli::from_arg_matches(&matches).expect("Failed to construct CLI arguments from ArgMatches");
 
     let database_url = cli.database_url;
     let config_file = cli.config_file;

@@ -16,39 +16,39 @@ const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 pub struct PrintSchemaArgs {
     /// The name of the schema.
     #[arg(id = "SCHEMA", long = "schema", short = 's', num_args = 1, action = ArgAction::Append)]
-    schema: Vec<String>,
+    pub schema: Vec<String>,
 
     /// Table names to filter.
     #[arg(id = "TABLE_NAME", num_args = 1.., action = ArgAction::Append, index = 1)]
-    table_name: Vec<String>,
+    pub table_name: Vec<String>,
 
     /// Include views in the generated schema
     #[arg(id = "INCLUDE_VIEWS", long = "include-views", action = ArgAction::SetTrue)]
-    include_views: bool,
+    pub include_views: bool,
 
     /// UNSTABLE: Infer nullability for view fields
     #[arg(id = "EXPERIMENTAL_INFER_NULLABLE_FOR_VIEWS", long = "experimental-infer-nullable-for-views", action = ArgAction::SetFalse)]
-    experimental_infer_nullable_for_views: bool,
+    pub experimental_infer_nullable_for_views: bool,
 
     /// Only include tables from table-name that matches regexp.
     #[arg(id = "ONLY_TABLES", long = "only-tables", short = '0', action = ArgAction::SetFalse,  value_parser = clap::value_parser!(bool))]
-    only_tables: bool,
+    pub only_tables: bool,
 
     /// Exclude tables from table-name that matches regex.
     #[arg(id = "EXCEPT_TABLES", long = "except-tables", short = 'e', action = ArgAction::SetFalse,  value_parser = clap::value_parser!(bool))]
-    except_tables: bool,
+    pub except_tables: bool,
 
     /// Render documentation comments for tables and columns.
     #[arg(id = "WITH_DOCS", long = "with-docs", action = ArgAction::SetFalse, value_parser = clap::value_parser!(bool))]
-    with_docs: bool,
+    pub with_docs: bool,
 
     /// Render documentation comments for tables and columns.
     #[arg(id = "WITH_DOCS_CONFIG", long = "with-docs-config", action = ArgAction::Append, value_enum, num_args = 1)]
-    with_docs_config: Vec<DocConfig>,
+    pub with_docs_config: Vec<DocConfig>,
 
     /// Group tables in allow_tables_to_appear_in_same_query!().
     #[arg(id = "ALLOW_TABLES_TO_APPEAR_IN_SAME_QUERY_CONFIG", long = "allow-tables-to-appear-in-same-query-config", action = ArgAction::Append, value_enum, num_args = 1)]
-    allow_tables_to_appear_in_same_query_config: Vec<AllowTablesToAppearInSameQueryConfig>,
+    pub allow_tables_to_appear_in_same_query_config: Vec<AllowTablesToAppearInSameQueryConfig>,
 
     /// Sort order for table columns.
     #[arg(
@@ -58,19 +58,19 @@ pub struct PrintSchemaArgs {
         value_enum,
         num_args = 1,
     )]
-    column_sorting: Vec<ColumnSorting>,
+    pub column_sorting: Vec<ColumnSorting>,
 
     /// A unified diff file to be applied to the final schema.
     #[arg(id = "PATCH_FILE", long = "patch-file", action = ArgAction::Append, value_parser = clap::value_parser!(std::path::PathBuf), num_args = 1)]
-    patch_file: Vec<std::path::PathBuf>,
+    pub patch_file: Vec<std::path::PathBuf>,
 
     /// A list of types to import for every table, separated by commas.
     #[arg(id = "IMPORT_TYPES", long = "import-types", action = ArgAction::Append, value_parser , num_args = 1, number_of_values = 1)]
-    import_types: Vec<String>,
+    pub import_types: Vec<String>,
 
     /// Generate SQL type definitions for types not provided by diesel
     #[arg(id = "NO_GENERATE_CUSTOM_TYPE_DEFINITIONS", long = "no-generate-missing-sql-type-definitions", action = ArgAction::SetFalse, value_parser = clap::value_parser!(bool))]
-    no_generate_missing_sql_type_definitions: bool,
+    pub no_generate_missing_sql_type_definitions: bool,
 
     /// A list of regexes to filter the custom types definitions generated
     #[arg(
@@ -79,7 +79,7 @@ pub struct PrintSchemaArgs {
         num_args = 1..,
         action = clap::ArgAction::Append
     )]
-    except_custom_type_definitions: Vec<String>,
+    pub except_custom_type_definitions: Vec<String>,
 
     /// A list of derives to implement for every automatically generated SqlType in the schema, separated by commas.
     #[arg(
@@ -88,7 +88,7 @@ pub struct PrintSchemaArgs {
         num_args = 1..,
         action = clap::ArgAction::Append,
     )]
-    custom_type_derives: Vec<String>,
+    pub custom_type_derives: Vec<String>,
 
     /// A regex to distinguish domain names to generate custom types for instead of relying on underlying type.
     #[arg(
@@ -97,7 +97,7 @@ pub struct PrintSchemaArgs {
             num_args = 1..,
             action = clap::ArgAction::Append
         )]
-    pg_domains_as_custom_types: Vec<String>,
+    pub pg_domains_as_custom_types: Vec<String>,
 
     /// Select schema key from diesel.toml, use 'default' for print_schema without key.
     #[arg(
@@ -106,7 +106,7 @@ pub struct PrintSchemaArgs {
             action = clap::ArgAction::Append,
             default_values_t = vec!["default".to_string()]
         )]
-    schema_key: Vec<String>,
+    pub schema_key: Vec<String>,
 
     /// For SQLite 3.37 and above, detect `INTEGER PRIMARY KEY` columns as `BigInt`,
     /// when the table isn't declared with `WITHOUT ROWID`.
@@ -120,7 +120,7 @@ pub struct PrintSchemaArgs {
         default_missing_value = "true",
         value_parser = clap::value_parser!(bool),
     )]
-    sqlite_integer_primary_key_is_bigint: Vec<bool>,
+    pub sqlite_integer_primary_key_is_bigint: Vec<bool>,
 }
 
 #[tracing::instrument]
@@ -135,28 +135,12 @@ pub fn run_infer_schema(
     let mut conn = InferConnection::from_maybe_url(database_url)?;
     let root_config = Config::read(config_file)?
         .set_filter(
-            &matches,
-            args.table_name,
+            matches,
+            args.table_name.clone(),
             args.only_tables,
             args.except_tables,
         )?
-        .update_config(
-            &matches,
-            args.schema,
-            args.include_views,
-            args.experimental_infer_nullable_for_views,
-            args.with_docs,
-            args.with_docs_config,
-            args.allow_tables_to_appear_in_same_query_config,
-            args.column_sorting,
-            args.patch_file,
-            args.import_types,
-            args.except_custom_type_definitions,
-            args.no_generate_missing_sql_type_definitions,
-            args.custom_type_derives,
-            args.pg_domains_as_custom_types,
-            args.sqlite_integer_primary_key_is_bigint,
-        )?
+        .update_config(matches, args)?
         .print_schema;
     for config in root_config.all_configs.values() {
         run_print_schema(&mut conn, config, &mut stdout())?;
