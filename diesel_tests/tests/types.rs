@@ -751,10 +751,20 @@ fn pg_ndim_array_from_sql() {
     );
     assert_eq!(vec![2, 2], ndarray.dims);
     assert_eq!(vec![true, false, false, true], ndarray.data);
-    let ndarray =
-        query_single_value::<Array<Integer>, NdArray<i32>>("ARRAY[ARRAY[1], ARRAY[2], ARRAY[3]]");
-    assert_eq!(vec![3, 1], ndarray.dims);
+    let ndarray = query_single_value::<Array<Integer>, NdArray<i32>>("'{{{1, 2, 3}}}'::int[]");
+    assert_eq!(vec![1, 1, 3], ndarray.dims);
     assert_eq!(vec![1, 2, 3], ndarray.data);
+    let ndarray = query_single_value::<Array<Integer>, NdArray<i32>>("'{{{1}, {2}, {3}}}'::int[]");
+    assert_eq!(vec![1, 3, 1], ndarray.dims);
+    assert_eq!(vec![1, 2, 3], ndarray.data);
+    let ndarray = query_single_value::<Array<Integer>, NdArray<i32>>(
+        "'{{{1, 2}, {3, 4}, {5, 6}},{{3, 4}, {5, 6}, {7, 8}},{{5, 6}, {7, 8}, {9, 10}}}'::int[]",
+    );
+    assert_eq!(vec![3, 3, 2], ndarray.dims);
+    assert_eq!(
+        vec![1, 2, 3, 4, 5, 6, 3, 4, 5, 6, 7, 8, 5, 6, 7, 8, 9, 10],
+        ndarray.data
+    );
     let ndarray = query_single_value::<Array<VarChar>, NdArray<String>>(
         "ARRAY[ARRAY['Hello', 'world'], ARRAY['', 'world']]",
     );

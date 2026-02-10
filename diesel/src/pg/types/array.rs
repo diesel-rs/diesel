@@ -91,31 +91,23 @@ where
             return Err("trying to deserialize one-dimensional postgres array into NdArray<T>, use Vec<T> instead".into());
         }
 
-        if num_dimensions != 2 {
-            return Err(
-                "currently only two-dimensional arrays are supported for NdArray<T>".into(),
-            );
+        let mut dims = Vec::with_capacity(num_dimensions as usize);
+        let mut num_elements: i32;
+
+        for _ in 0..num_dimensions {
+            num_elements = bytes.read_i32::<NetworkEndian>()?;
+            let _lower_bound = bytes.read_i32::<NetworkEndian>()?;
+
+            let dim: usize = num_elements
+                .try_into()
+                .map_err(|_| "array dimension length must be positive")?;
+            dims.push(dim);
         }
 
-        // This is very hardcoded for two-dimensional arrays for now but can easily be adapted to be dynamic later
-        let num_elements_dim1 = bytes.read_i32::<NetworkEndian>()?;
-        let _lower_bound_dim1 = bytes.read_i32::<NetworkEndian>()?;
+        println!("ndims: {dims:?}");
+        println!("total num elements: {}", dims.iter().product::<usize>());
 
-        let num_elements_dim2 = bytes.read_i32::<NetworkEndian>()?;
-        let _lower_bound_dim2 = bytes.read_i32::<NetworkEndian>()?;
-
-        // This error should never occur as Postgres arrays won't have negative dimensions
-        let dim1: usize = num_elements_dim1
-            .try_into()
-            .map_err(|_| "array dimension length must be positive")?;
-
-        let dim2: usize = num_elements_dim2
-            .try_into()
-            .map_err(|_| "array dimension length must be positive")?;
-
-        let ndims = vec![dim1, dim2];
-
-        let data = (0..dim1 * dim2)
+        let data = (0..dims.iter().product::<usize>())
             .map(|_| -> deserialize::Result<T> {
                 let elem_size = bytes.read_i32::<NetworkEndian>()?;
                 if has_null && elem_size == -1 {
@@ -127,7 +119,7 @@ where
                 }
             })
             .collect::<deserialize::Result<Vec<T>>>()?;
-        Ok(NdArray { dims: ndims, data })
+        Ok(NdArray { dims, data })
     }
 }
 
