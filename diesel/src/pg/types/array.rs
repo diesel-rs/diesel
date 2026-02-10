@@ -91,10 +91,14 @@ where
             return Err("trying to deserialize one-dimensional postgres array into NdArray<T>, use Vec<T> instead".into());
         }
 
-        let mut dims = Vec::with_capacity(num_dimensions as usize);
+        let num_dims: usize = num_dimensions
+                .try_into()
+                .map_err(|_| "number of dimensions must be positive")?;
+
+        let mut dims = Vec::with_capacity(num_dims as usize);
         let mut num_elements: i32;
 
-        for _ in 0..num_dimensions {
+        for _ in 0..num_dims {
             num_elements = bytes.read_i32::<NetworkEndian>()?;
             let _lower_bound = bytes.read_i32::<NetworkEndian>()?;
 
@@ -103,9 +107,6 @@ where
                 .map_err(|_| "array dimension length must be positive")?;
             dims.push(dim);
         }
-
-        println!("ndims: {dims:?}");
-        println!("total num elements: {}", dims.iter().product::<usize>());
 
         let data = (0..dims.iter().product::<usize>())
             .map(|_| -> deserialize::Result<T> {
