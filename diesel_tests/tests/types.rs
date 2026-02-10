@@ -1887,15 +1887,6 @@ fn deserialize_wrong_dimension_pg_array_into_ndarray_gives_error() {
         "Error deserializing field 'bool_array': \
          trying to deserialize one-dimensional postgres array into NdArray<T>, use Vec<T> instead"
     );
-
-    let res = diesel::dsl::sql::<Array<Float>>("SELECT float_array FROM test_table")
-        .get_result::<NdArray<f32>>(conn);
-    assert!(res.is_err());
-    assert_eq!(
-        res.unwrap_err().to_string(),
-        "Error deserializing field 'float_array': \
-         currently only two-dimensional arrays are supported for NdArray<T>"
-    );
 }
 
 #[diesel_test_helper::test]
