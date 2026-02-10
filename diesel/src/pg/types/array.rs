@@ -95,7 +95,7 @@ where
             .try_into()
             .map_err(|_| "number of dimensions must be positive")?;
 
-        let mut dims = Vec::with_capacity(num_dims as usize);
+        let mut dims = Vec::with_capacity(num_dims);
         let mut num_elements: i32;
 
         for _ in 0..num_dims {
