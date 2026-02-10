@@ -2,61 +2,64 @@
 name = "diesel-fuzz"
 version = "0.0.0"
 publish = false
-edition = "2024"
+edition = "2021"
 
 [package.metadata]
 cargo-fuzz = true
 
 [dependencies]
-libfuzzer-sys = { version = "0.4", features = ["arbitrary-derive"] }
-arbitrary = { version = "1", features = ["derive"] }
+libfuzzer-sys = "0.4"
 serde_json = "1.0"
+ipnetwork = "0.21"
 
 [dependencies.diesel]
 path = "../diesel"
-features = ["sqlite", "returning_clauses_for_sqlite_3_35"]
-
-[dependencies.diesel_migrations]
-path = "../diesel_migrations"
+features = [
+    "postgres_backend",
+    "serde_json",
+    "numeric",
+    "network-address",
+    "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+]
 
 [[bin]]
-name = "fuzz_deserialize_sqlite"
-path = "fuzz_targets/fuzz_deserialize_sqlite.rs"
+name = "fuzz_pg_numeric"
+path = "fuzz_targets/fuzz_pg_numeric.rs"
 test = false
 doc = false
 bench = false
 
 [[bin]]
-name = "fuzz_deserialize_postgres"
-path = "fuzz_targets/fuzz_deserialize_postgres.rs"
+name = "fuzz_pg_array"
+path = "fuzz_targets/fuzz_pg_array.rs"
 test = false
 doc = false
 bench = false
 
 [[bin]]
-name = "fuzz_serialize_sqlite"
-path = "fuzz_targets/fuzz_serialize_sqlite.rs"
+name = "fuzz_pg_range"
+path = "fuzz_targets/fuzz_pg_range.rs"
 test = false
 doc = false
 bench = false
 
 [[bin]]
-name = "fuzz_migration_parser"
-path = "fuzz_targets/fuzz_migration_parser.rs"
+name = "fuzz_pg_record"
+path = "fuzz_targets/fuzz_pg_record.rs"
 test = false
 doc = false
 bench = false
 
 [[bin]]
-name = "fuzz_query_builder"
-path = "fuzz_targets/fuzz_query_builder.rs"
+name = "fuzz_pg_jsonb"
+path = "fuzz_targets/fuzz_pg_jsonb.rs"
 test = false
 doc = false
 bench = false
 
 [[bin]]
-name = "fuzz_json_deserialize"
-path = "fuzz_targets/fuzz_json_deserialize.rs"
+name = "fuzz_pg_network"
+path = "fuzz_targets/fuzz_pg_network.rs"
 test = false
 doc = false
 bench = false
