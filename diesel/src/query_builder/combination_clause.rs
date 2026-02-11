@@ -21,6 +21,7 @@ use crate::query_builder::order_clause::{NoOrderClause, OrderClause};
 use crate::query_builder::{AsQuery, AstPass, Query, QueryFragment, QueryId, SelectQuery};
 use crate::query_dsl::methods::*;
 use crate::query_dsl::positional_order_dsl::{IntoPositionalOrderExpr, PositionalOrderDsl};
+use crate::query_dsl::SupportRunQueryDsl;
 use crate::sql_types::BigInt;
 use crate::{CombineDsl, Insertable, QueryDsl, QueryResult, RunQueryDsl, Table};
 
@@ -100,6 +101,11 @@ where
 }
 
 impl<Combinator, Rule, Source, Rhs, O, LOf, Conn> RunQueryDsl<Conn>
+    for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
+{
+}
+
+impl<Combinator, Rule, Source, Rhs, O, LOf> SupportRunQueryDsl
     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 {
 }

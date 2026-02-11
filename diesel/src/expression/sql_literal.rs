@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use crate::expression::*;
 use crate::query_builder::*;
-use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::{RunQueryDsl, SupportRunQueryDsl};
 use crate::result::QueryResult;
 use crate::sql_types::DieselNumericOps;
 
@@ -186,6 +186,8 @@ where
 
 impl<ST, T, Conn> RunQueryDsl<Conn> for SqlLiteral<ST, T> {}
 
+impl<ST, T> SupportRunQueryDsl for SqlLiteral<ST, T> {}
+
 impl<QS, ST, T> SelectableExpression<QS> for SqlLiteral<ST, T> where Self: Expression {}
 
 impl<QS, ST, T> AppearsOnTable<QS> for SqlLiteral<ST, T> where Self: Expression {}
@@ -367,6 +369,8 @@ impl<QS, Query, Value> SelectableExpression<QS> for UncheckedBind<Query, Value> 
 impl<QS, Query, Value> AppearsOnTable<QS> for UncheckedBind<Query, Value> where Self: Expression {}
 
 impl<Query, Value, Conn> RunQueryDsl<Conn> for UncheckedBind<Query, Value> {}
+
+impl<Query, Value> SupportRunQueryDsl for UncheckedBind<Query, Value> {}
 
 mod private {
     use crate::backend::{Backend, DieselReserveSpecialization};

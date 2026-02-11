@@ -17,7 +17,7 @@ use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::expression::{Expression, NonAggregate, SelectableExpression};
 use crate::query_builder::*;
-use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::{RunQueryDsl, SupportRunQueryDsl};
 use crate::query_source::{Column, Table};
 use crate::{insertable::*, QuerySource};
 use std::marker::PhantomData;
@@ -272,6 +272,8 @@ where
 }
 
 impl<T: QuerySource, U, Op, Ret, Conn> RunQueryDsl<Conn> for InsertStatement<T, U, Op, Ret> {}
+
+impl<T: QuerySource, U, Op, Ret> SupportRunQueryDsl for InsertStatement<T, U, Op, Ret> {}
 
 impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
     /// Specify what expression is returned after execution of the `insert`.

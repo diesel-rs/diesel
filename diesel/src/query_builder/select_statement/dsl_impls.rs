@@ -580,6 +580,11 @@ impl<F, S, D, W, O, LOf, G, H, LC, Conn> RunQueryDsl<Conn>
 {
 }
 
+impl<F, S, D, W, O, LOf, G, H, LC> SupportRunQueryDsl
+    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+{
+}
+
 impl<F, S, D, W, O, LOf, G, H, LC, Tab> Insertable<Tab>
     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
