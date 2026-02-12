@@ -867,12 +867,19 @@ unsafe extern "C" fn trace_trampoline<F>(
 where
     F: FnMut(SqliteTraceEvent<'_>),
 {
+    // Define constants to avoid cast_sign_loss warnings in match guards.
+    // These are compile-time constants so the conversion is verified at build time.
+    const TRACE_STMT: libc::c_uint = ffi::SQLITE_TRACE_STMT as libc::c_uint;
+    const TRACE_PROFILE: libc::c_uint = ffi::SQLITE_TRACE_PROFILE as libc::c_uint;
+    const TRACE_ROW: libc::c_uint = ffi::SQLITE_TRACE_ROW as libc::c_uint;
+    const TRACE_CLOSE: libc::c_uint = ffi::SQLITE_TRACE_CLOSE as libc::c_uint;
+
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
         // SAFETY: `user_data` points to a live `F` in `RawConnection::trace_hook`.
         let f = unsafe { &mut *(user_data as *mut F) };
 
         let event = match event_code {
-            ffi::SQLITE_TRACE_STMT => {
+            TRACE_STMT => {
                 // p = sqlite3_stmt*, x = const char* (unexpanded SQL)
                 let stmt_ptr = p as *mut ffi::sqlite3_stmt;
                 let sql_ptr = x as *const libc::c_char;
@@ -892,7 +899,7 @@ where
                 };
                 SqliteTraceEvent::Statement { sql, readonly }
             }
-            ffi::SQLITE_TRACE_PROFILE => {
+            TRACE_PROFILE => {
                 // p = sqlite3_stmt*, x = int64* (nanoseconds)
                 let stmt_ptr = p as *mut ffi::sqlite3_stmt;
                 // Get the SQL and readonly status from the statement
@@ -927,8 +934,8 @@ where
                     readonly,
                 }
             }
-            ffi::SQLITE_TRACE_ROW => SqliteTraceEvent::Row,
-            ffi::SQLITE_TRACE_CLOSE => SqliteTraceEvent::Close,
+            TRACE_ROW => SqliteTraceEvent::Row,
+            TRACE_CLOSE => SqliteTraceEvent::Close,
             _ => {
                 // Unknown trace event - ignore
                 return;

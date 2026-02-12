@@ -1570,10 +1570,10 @@ impl SqliteConnection {
     /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
     /// conn.on_trace(SqliteTraceFlags::STMT | SqliteTraceFlags::PROFILE, |event| {
     ///     match event {
-    ///         SqliteTraceEvent::Statement { sql } => {
-    ///             println!("Executing: {}", sql);
+    ///         SqliteTraceEvent::Statement { sql, readonly } => {
+    ///             println!("Executing ({}): {}", if readonly { "read" } else { "write" }, sql);
     ///         }
-    ///         SqliteTraceEvent::Profile { sql, duration_ns } => {
+    ///         SqliteTraceEvent::Profile { sql, duration_ns, .. } => {
     ///             println!("{} took {} ns", sql, duration_ns);
     ///         }
     ///         _ => {}
