@@ -4,6 +4,7 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
+mod authorizer;
 mod bind_collector;
 mod functions;
 mod owned_row;
@@ -14,12 +15,15 @@ pub(in crate::sqlite) mod sqlite_blob;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
+mod trace;
 mod update_hook;
 
+pub use self::authorizer::{AuthorizerAction, AuthorizerContext, AuthorizerDecision};
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
 pub use self::bind_collector::SqliteBindValue;
 pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
+pub use self::trace::{SqliteTraceEvent, SqliteTraceFlags};
 pub use self::update_hook::{ChangeHookId, SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps};
 
 use self::raw::RawConnection;
@@ -1324,6 +1328,261 @@ impl SqliteConnection {
     /// ```
     pub fn remove_wal_hook(&mut self) {
         self.raw_connection.remove_wal_hook();
+    }
+
+    /// Registers a progress handler for long-running query interruption.
+    /// Added in SQLite 3.0.0 (June 2004).
+    ///
+    /// The callback is invoked periodically during long-running SQL queries.
+    /// `n` is the approximate number of VM instructions between callbacks.
+    /// **Suggested minimum**: 1000 (at N=1, overhead is ~1.5μs per callback).
+    ///
+    /// Return `true` to interrupt the query (causes `SQLITE_INTERRUPT`),
+    /// or `false` to continue.
+    ///
+    /// Only one progress handler can be active at a time per connection.
+    /// Registering a new one replaces the previous.
+    ///
+    /// **Callback restriction**: The callback must not use the database
+    /// connection. Since SQLite 3.41.0, the handler may also fire during
+    /// `sqlite3_prepare()` for complex queries.
+    ///
+    /// Panics in the callback abort the process.
+    ///
+    /// See: [`sqlite3_progress_handler`](https://sqlite.org/c3ref/progress_handler.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use diesel::prelude::*;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// use std::sync::atomic::{AtomicBool, Ordering};
+    /// use std::sync::Arc;
+    ///
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// let cancelled = Arc::new(AtomicBool::new(false));
+    /// let cancelled_clone = cancelled.clone();
+    ///
+    /// conn.on_progress(1000, move || {
+    ///     cancelled_clone.load(Ordering::Relaxed)
+    /// });
+    ///
+    /// // Later: remove the handler
+    /// conn.remove_progress_handler();
+    /// ```
+    pub fn on_progress<F>(&mut self, n: i32, hook: F)
+    where
+        F: FnMut() -> bool + Send + 'static,
+    {
+        self.raw_connection.set_progress_handler(n, hook);
+    }
+
+    /// Removes the progress handler.
+    ///
+    /// See [`on_progress`](Self::on_progress) for usage example.
+    pub fn remove_progress_handler(&mut self) {
+        self.raw_connection.remove_progress_handler();
+    }
+
+    /// Registers a custom busy handler for lock contention.
+    /// Added in SQLite 3.0.0 (June 2004).
+    ///
+    /// The callback receives the retry count (starting from 0) and returns
+    /// `true` to retry, `false` to abort (returns `SQLITE_BUSY` to caller).
+    ///
+    /// **Warning**: Setting this clears any `busy_timeout` previously set.
+    /// Conversely, calling `set_busy_timeout` clears this handler.
+    ///
+    /// Only one busy handler can be active at a time per connection.
+    ///
+    /// **Callback restriction**: The callback must not use the database
+    /// connection. If the callback modifies the database, behavior is
+    /// undefined. SQLite may return `SQLITE_BUSY` instead of calling the
+    /// handler to prevent deadlocks.
+    ///
+    /// Panics in the callback abort the process.
+    ///
+    /// See: [`sqlite3_busy_handler`](https://sqlite.org/c3ref/busy_handler.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use diesel::prelude::*;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// use std::thread;
+    /// use std::time::Duration;
+    ///
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.on_busy(|retry_count| {
+    ///     if retry_count < 5 {
+    ///         thread::sleep(Duration::from_millis(100));
+    ///         true // retry
+    ///     } else {
+    ///         false // give up
+    ///     }
+    /// });
+    ///
+    /// // Later: remove the handler
+    /// conn.remove_busy_handler();
+    /// ```
+    pub fn on_busy<F>(&mut self, hook: F)
+    where
+        F: FnMut(i32) -> bool + Send + 'static,
+    {
+        self.raw_connection.set_busy_handler(hook);
+    }
+
+    /// Removes the custom busy handler.
+    ///
+    /// See [`on_busy`](Self::on_busy) for usage example.
+    pub fn remove_busy_handler(&mut self) {
+        self.raw_connection.remove_busy_handler();
+    }
+
+    /// Sets a simple timeout-based busy handler.
+    /// Added in SQLite 3.0.0 (June 2004).
+    ///
+    /// When a table is locked, SQLite will sleep and retry until `ms`
+    /// milliseconds have elapsed. Pass 0 to disable (return `SQLITE_BUSY`
+    /// immediately).
+    ///
+    /// **Note**: Setting this clears any custom [`on_busy`](Self::on_busy)
+    /// handler. Conversely, calling `on_busy` clears this timeout.
+    ///
+    /// For most use cases, this is simpler than a custom busy handler.
+    ///
+    /// See: [`sqlite3_busy_timeout`](https://sqlite.org/c3ref/busy_timeout.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use diesel::prelude::*;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// // Wait up to 5 seconds for locked tables
+    /// conn.set_busy_timeout(5000);
+    /// ```
+    pub fn set_busy_timeout(&mut self, ms: i32) {
+        self.raw_connection.set_busy_timeout(ms);
+    }
+
+    /// Registers an authorizer callback for SQL compilation access control.
+    /// Added in SQLite 3.0.0 (June 2004).
+    ///
+    /// The callback is invoked during `sqlite3_prepare()` (statement
+    /// compilation) to control access to database objects. It receives
+    /// an [`AuthorizerContext`] describing the operation and returns an
+    /// [`AuthorizerDecision`].
+    ///
+    /// **Security Note**: The authorizer is only called during statement
+    /// compilation, NOT during execution. It cannot prevent all attack
+    /// vectors (e.g., CVE-2015-3659 showed bypasses via fts3_tokenizer).
+    /// Use it as defense-in-depth, not as a sole security mechanism.
+    ///
+    /// **Schema changes**: The authorizer may be re-invoked during
+    /// `sqlite3_step()` if schema changes trigger statement recompilation.
+    ///
+    /// **Callback restriction**: The callback must not modify the database
+    /// connection.
+    ///
+    /// Only one authorizer can be active at a time per connection.
+    /// Panics in the callback abort the process.
+    ///
+    /// See: [`sqlite3_set_authorizer`](https://sqlite.org/c3ref/set_authorizer.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use diesel::prelude::*;
+    /// use diesel::sqlite::{
+    ///     SqliteConnection, AuthorizerContext, AuthorizerDecision, AuthorizerAction,
+    /// };
+    ///
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.on_authorize(|ctx| {
+    ///     match ctx.action {
+    ///         AuthorizerAction::Delete => AuthorizerDecision::Deny,
+    ///         AuthorizerAction::DropTable | AuthorizerAction::DropIndex => {
+    ///             AuthorizerDecision::Deny
+    ///         }
+    ///         _ => AuthorizerDecision::Allow,
+    ///     }
+    /// });
+    ///
+    /// // Later: remove the authorizer
+    /// conn.remove_authorizer();
+    /// ```
+    pub fn on_authorize<F>(&mut self, hook: F)
+    where
+        F: FnMut(AuthorizerContext<'_>) -> AuthorizerDecision + Send + 'static,
+    {
+        self.raw_connection.set_authorizer(hook);
+    }
+
+    /// Removes the authorizer callback.
+    ///
+    /// See [`on_authorize`](Self::on_authorize) for usage example.
+    pub fn remove_authorizer(&mut self) {
+        self.raw_connection.remove_authorizer();
+    }
+
+    /// Registers a trace callback for SQL execution monitoring.
+    /// Added in SQLite 3.14.0 (2016-08-08).
+    ///
+    /// The callback receives events based on the provided [`SqliteTraceFlags`]
+    /// mask. Available event types:
+    ///
+    /// - `STMT` — Statement start (receives SQL text)
+    /// - `PROFILE` — Statement complete (receives SQL text and elapsed time)
+    /// - `ROW` — Each row returned (no data, very frequent!)
+    /// - `CLOSE` — Connection close
+    ///
+    /// **Performance Warning**: `SQLITE_TRACE_ROW` fires for EVERY row
+    /// returned by a query. For large result sets, this can significantly
+    /// impact performance. Prefer `STMT` and `PROFILE` for most logging
+    /// use cases.
+    ///
+    /// Only one trace callback can be active at a time per connection.
+    /// Registering a new one replaces the previous.
+    ///
+    /// Panics in the callback abort the process.
+    ///
+    /// See: [`sqlite3_trace_v2`](https://sqlite.org/c3ref/trace_v2.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use diesel::prelude::*;
+    /// use diesel::sqlite::{SqliteConnection, SqliteTraceFlags, SqliteTraceEvent};
+    ///
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.on_trace(SqliteTraceFlags::STMT | SqliteTraceFlags::PROFILE, |event| {
+    ///     match event {
+    ///         SqliteTraceEvent::Statement { sql } => {
+    ///             println!("Executing: {}", sql);
+    ///         }
+    ///         SqliteTraceEvent::Profile { sql, duration_ns } => {
+    ///             println!("{} took {} ns", sql, duration_ns);
+    ///         }
+    ///         _ => {}
+    ///     }
+    /// });
+    ///
+    /// // Later: remove the trace callback
+    /// conn.remove_trace();
+    /// ```
+    pub fn on_trace<F>(&mut self, mask: SqliteTraceFlags, hook: F)
+    where
+        F: FnMut(SqliteTraceEvent<'_>) + Send + 'static,
+    {
+        self.raw_connection.set_trace(mask, hook);
+    }
+
+    /// Removes the trace callback.
+    ///
+    /// See [`on_trace`](Self::on_trace) for usage example.
+    pub fn remove_trace(&mut self) {
+        self.raw_connection.remove_trace();
     }
 
     /// Serialize the current SQLite database into a byte buffer.
