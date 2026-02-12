@@ -874,6 +874,7 @@ where
         let event = match event_code {
             ffi::SQLITE_TRACE_STMT => {
                 // p = sqlite3_stmt*, x = const char* (unexpanded SQL)
+                let stmt_ptr = p as *mut ffi::sqlite3_stmt;
                 let sql_ptr = x as *const libc::c_char;
                 if sql_ptr.is_null() {
                     return;
@@ -884,17 +885,22 @@ where
                         assert_fail!("sqlite3_trace_v2 STMT delivered invalid UTF-8. ");
                     }
                 };
-                SqliteTraceEvent::Statement { sql }
+                let readonly = if stmt_ptr.is_null() {
+                    false
+                } else {
+                    unsafe { ffi::sqlite3_stmt_readonly(stmt_ptr) != 0 }
+                };
+                SqliteTraceEvent::Statement { sql, readonly }
             }
             ffi::SQLITE_TRACE_PROFILE => {
                 // p = sqlite3_stmt*, x = int64* (nanoseconds)
                 let stmt_ptr = p as *mut ffi::sqlite3_stmt;
-                // Get the expanded SQL from the statement
-                let sql = if stmt_ptr.is_null() {
-                    ""
+                // Get the SQL and readonly status from the statement
+                let (sql, readonly) = if stmt_ptr.is_null() {
+                    ("", false)
                 } else {
                     let sql_ptr = unsafe { ffi::sqlite3_sql(stmt_ptr) };
-                    if sql_ptr.is_null() {
+                    let sql = if sql_ptr.is_null() {
                         ""
                     } else {
                         match unsafe { CStr::from_ptr(sql_ptr) }.to_str() {
@@ -903,17 +909,23 @@ where
                                 assert_fail!("sqlite3_trace_v2 PROFILE delivered invalid UTF-8. ");
                             }
                         }
-                    }
+                    };
+                    let readonly = unsafe { ffi::sqlite3_stmt_readonly(stmt_ptr) != 0 };
+                    (sql, readonly)
                 };
 
                 let duration_ns = if x.is_null() {
                     0
                 } else {
-                    // x is a pointer to sqlite3_int64 (i64)
-                    unsafe { *(x as *const ffi::sqlite3_int64) as u64 }
+                    // x is a pointer to sqlite3_int64 (i64), but duration is always non-negative
+                    unsafe { (*(x as *const ffi::sqlite3_int64)).cast_unsigned() }
                 };
 
-                SqliteTraceEvent::Profile { sql, duration_ns }
+                SqliteTraceEvent::Profile {
+                    sql,
+                    duration_ns,
+                    readonly,
+                }
             }
             ffi::SQLITE_TRACE_ROW => SqliteTraceEvent::Row,
             ffi::SQLITE_TRACE_CLOSE => SqliteTraceEvent::Close,
@@ -1699,7 +1711,7 @@ mod tests {
         let s2 = statements.clone();
 
         conn.set_trace(SqliteTraceFlags::STMT, move |event| {
-            if let super::super::trace::SqliteTraceEvent::Statement { sql } = event {
+            if let super::super::trace::SqliteTraceEvent::Statement { sql, .. } = event {
                 s2.lock().unwrap().push(sql.to_owned());
             }
         });
@@ -1727,7 +1739,10 @@ mod tests {
         let p2 = profiles.clone();
 
         conn.set_trace(SqliteTraceFlags::PROFILE, move |event| {
-            if let SqliteTraceEvent::Profile { sql, duration_ns } = event {
+            if let SqliteTraceEvent::Profile {
+                sql, duration_ns, ..
+            } = event
+            {
                 p2.lock().unwrap().push((sql.to_owned(), duration_ns));
             }
         });

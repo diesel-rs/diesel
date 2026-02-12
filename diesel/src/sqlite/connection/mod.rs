@@ -1597,6 +1597,64 @@ impl SqliteConnection {
         self.raw_connection.remove_trace();
     }
 
+    /// Registers a callback for read-only statement execution (SELECT, read-only PRAGMA, etc.).
+    ///
+    /// This is a convenience wrapper around [`on_trace`](Self::on_trace) that filters for
+    /// read-only statements only. Fires once per statement, not per row.
+    ///
+    /// # How it works
+    ///
+    /// Uses [`sqlite3_stmt_readonly`](https://sqlite.org/c3ref/stmt_readonly.html) to determine
+    /// if a statement is read-only, which is more reliable than string matching.
+    ///
+    /// # What counts as read-only
+    ///
+    /// - `SELECT` statements (including `WITH ... SELECT`)
+    /// - Read-only `PRAGMA` statements (e.g., `PRAGMA table_info(t)`)
+    ///
+    /// # What does NOT count as read-only
+    ///
+    /// - `INSERT`, `UPDATE`, `DELETE` statements
+    /// - `CREATE`, `DROP`, `ALTER` statements
+    /// - `WITH ... INSERT/UPDATE/DELETE ... RETURNING` (the outer statement modifies data)
+    /// - Write `PRAGMA` statements (e.g., `PRAGMA foreign_keys = ON`)
+    ///
+    /// # Edge cases (not detected)
+    ///
+    /// - User-defined functions that modify the database via a separate connection
+    ///   are **not** detected; the statement itself is still considered read-only
+    /// - Virtual tables with write side effects are **not** detected
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use diesel::prelude::*;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    ///
+    /// conn.on_read(|sql| {
+    ///     println!("Read query executed: {}", sql);
+    /// });
+    /// ```
+    ///
+    /// # Note
+    ///
+    /// This replaces any existing trace callback. If you need both `on_read` and
+    /// custom tracing, use [`on_trace`](Self::on_trace) directly and check the
+    /// `readonly` field on [`SqliteTraceEvent::Statement`].
+    pub fn on_read<F>(&mut self, mut hook: F)
+    where
+        F: FnMut(&str) + Send + 'static,
+    {
+        self.on_trace(SqliteTraceFlags::STMT, move |event| {
+            if let SqliteTraceEvent::Statement { sql, readonly } = event {
+                if readonly {
+                    hook(sql);
+                }
+            }
+        });
+    }
+
     /// Serialize the current SQLite database into a byte buffer.
     ///
     /// The serialized data is identical to the data that would be written to disk if the database
