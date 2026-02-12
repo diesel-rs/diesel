@@ -1635,10 +1635,10 @@ impl SqliteConnection {
         F: FnMut(&str) + Send + 'static,
     {
         self.on_trace(SqliteTraceFlags::STMT, move |event| {
-            if let SqliteTraceEvent::Statement { sql, readonly } = event {
-                if readonly {
-                    hook(sql);
-                }
+            if let SqliteTraceEvent::Statement { sql, readonly } = event
+                && readonly
+            {
+                hook(sql);
             }
         });
     }
