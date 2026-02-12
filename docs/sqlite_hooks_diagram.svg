@@ -1,0 +1,228 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 420" font-family="Inter,system-ui,sans-serif">
+  <defs>
+    <filter id="sh" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arr" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <!-- Icons -->
+    <symbol id="i-shield" viewBox="0 0 512 512"><path d="M256 0c4.6 0 9.2 1 13.4 2.9L457.7 82.8c22 9.3 38.4 31 38.3 57.2c-.5 99.2-41.3 280.7-213.6 363.2c-16.7 8-36.1 8-52.8 0C57.3 420.7 16.5 239.2 16 140c-.1-26.2 16.3-47.9 38.3-57.2L242.7 2.9C246.8 1 251.4 0 256 0z"/></symbol>
+    <symbol id="i-code" viewBox="0 0 640 512"><path d="M392.8 1.2c-17-4.9-34.7 5-39.6 22l-128 448c-4.9 17 5 34.7 22 39.6s34.7-5 39.6-22l128-448c4.9-17-5-34.7-22-39.6zM177.9 166.9c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3l112 112c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L89.4 304l88.5-88.5c12.5-12.5 12.5-32.8 0-45.3zm284.3 0c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L505.4 304l-88.5 88.5c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l112-112c12.5-12.5 12.5-32.8 0-45.3l-112-112z"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 448 512"><path d="M349.4 44.6c5.9-13.7 1.5-29.7-10.6-38.5s-28.6-8-39.9 1.8l-256 224c-10 8.8-13.6 22.9-8.9 35.3S50.7 288 64 288H175.5L98.6 467.4c-5.9 13.7-1.5 29.7 10.6 38.5s28.6 8 39.9-1.8l256-224c10-8.8 13.6-22.9 8.9-35.3s-16.6-20.7-30-20.7H272.5L349.4 44.6z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 448 512"><path d="M144 144v48H304V144c0-44.2-35.8-80-80-80s-80 35.8-80 80zM80 192V144C80 64.5 144.5 0 224 0s144 64.5 144 144v48h16c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V256c0-35.3 28.7-64 64-64H80z"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 512 512"><path d="M125.7 160H176c17.7 0 32 14.3 32 32s-14.3 32-32 32H48c-17.7 0-32-14.3-32-32V64c0-17.7 14.3-32 32-32s32 14.3 32 32v51.2L97.6 97.6c87.5-87.5 229.3-87.5 316.8 0s87.5 229.3 0 316.8s-229.3 87.5-316.8 0c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0c62.5 62.5 163.8 62.5 226.3 0s62.5-163.8 0-226.3s-163.8-62.5-226.3 0L125.7 160z"/></symbol>
+    <symbol id="i-hdd" viewBox="0 0 512 512"><path d="M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V280.4c-17-15.2-39.4-24.4-64-24.4H64c-24.6 0-47 9.2-64 24.4V96zM64 288H448c35.3 0 64 28.7 64 64v64c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V352c0-35.3 28.7-64 64-64zM320 416a32 32 0 1 0 0-64 32 32 0 1 0 0 64zm128-32a32 32 0 1 0-64 0 32 32 0 1 0 64 0z"/></symbol>
+  </defs>
+
+  <rect width="600" height="420" fill="#fafbfc"/>
+
+  <!-- Header -->
+  <rect width="600" height="34" fill="url(#hdr)"/>
+  <text x="300" y="23" text-anchor="middle" font-size="14" font-weight="700" fill="#fff" letter-spacing="0.5">SQLite Hooks Lifecycle &#x2014; Diesel</text>
+
+  <!-- ==================== SEQUENCE DIAGRAM ==================== -->
+  <!-- Actors -->
+  <rect x="18" y="46" width="36" height="16" rx="3" fill="#fef3c7" stroke="#fcd34d" stroke-width="0.8"/>
+  <text x="36" y="57" text-anchor="middle" font-size="7.5" font-weight="600" fill="#92400e">App</text>
+  <rect x="68" y="46" width="40" height="16" rx="3" fill="#dbeafe" stroke="#93c5fd" stroke-width="0.8"/>
+  <text x="88" y="57" text-anchor="middle" font-size="7.5" font-weight="600" fill="#1e40af">SQLite</text>
+
+  <!-- Lifelines -->
+  <line x1="36" y1="62" x2="36" y2="300" stroke="#d4d4d8" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <line x1="88" y1="62" x2="88" y2="300" stroke="#d4d4d8" stroke-width="0.5" stroke-dasharray="3,2"/>
+
+  <!-- Phase labels -->
+  <text x="36" y="72" text-anchor="middle" font-size="6" font-weight="600" fill="#94a3b8">PREPARE</text>
+  <text x="36" y="112" text-anchor="middle" font-size="6" font-weight="600" fill="#94a3b8">EXECUTE</text>
+  <text x="36" y="175" text-anchor="middle" font-size="6" font-weight="600" fill="#94a3b8">ROWS</text>
+  <text x="36" y="230" text-anchor="middle" font-size="6" font-weight="600" fill="#94a3b8">COMMIT</text>
+  <text x="36" y="275" text-anchor="middle" font-size="6" font-weight="600" fill="#94a3b8">CLOSE</text>
+
+  <!-- VM bar -->
+  <rect x="84" y="129" width="8" height="64" rx="2" fill="#dbeafe" stroke="#93c5fd" stroke-width="0.5"/>
+  <text x="88" y="161" text-anchor="middle" font-size="4" fill="#3b82f6" transform="rotate(-90 88 161)">VM</text>
+
+  <!-- ==================== EVENT ARROWS ==================== -->
+  <circle cx="88" cy="80" r="2.5" fill="#dc2626"/>
+  <path d="M91,80 L155,80" stroke="#dc2626" stroke-width="1" fill="none"/>
+
+  <circle cx="88" cy="100" r="2.5" fill="#3b82f6"/>
+  <path d="M91,100 L380,100" stroke="#3b82f6" stroke-width="1" fill="none"/>
+
+  <circle cx="88" cy="134" r="2.5" fill="#059669"/>
+  <path d="M91,134 L155,134" stroke="#059669" stroke-width="1" fill="none"/>
+
+  <circle cx="88" cy="156" r="2.5" fill="#d97706"/>
+  <path d="M91,156 L380,156" stroke="#d97706" stroke-width="1" stroke-dasharray="3,2" fill="none"/>
+
+  <circle cx="88" cy="188" r="2.5" fill="#0d9488"/>
+  <path d="M91,188 L155,188" stroke="#0d9488" stroke-width="1" fill="none"/>
+
+  <circle cx="88" cy="210" r="2.5" fill="#e11d48"/>
+  <path d="M91,210 L380,210" stroke="#e11d48" stroke-width="1" fill="none"/>
+
+  <circle cx="88" cy="250" r="2.5" fill="#db2777"/>
+  <path d="M91,250 L155,250" stroke="#db2777" stroke-width="1" stroke-dasharray="3,2" fill="none"/>
+
+  <circle cx="88" cy="264" r="2.5" fill="#0891b2"/>
+  <path d="M91,264 L380,264" stroke="#0891b2" stroke-width="1" stroke-dasharray="3,2" fill="none"/>
+
+  <!-- ==================== CARDS ==================== -->
+
+  <!-- 1. on_authorize — A y=67 h=48 -->
+  <g filter="url(#sh)">
+    <rect x="155" y="67" width="195" height="48" rx="5" fill="#fff" stroke="#fca5a5" stroke-width="1"/>
+  </g>
+  <rect x="156" y="68" width="193" height="18" rx="4" fill="#fef2f2"/>
+  <use href="#i-shield" width="9" height="9" x="161" y="72" fill="#dc2626"/>
+  <text x="174" y="80" font-size="9" font-weight="700" fill="#b91c1c">on_authorize</text>
+  <text x="174" y="86" font-size="4.5" font-family="monospace" fill="#94a3b8">sqlite3_set_authorizer</text>
+  <rect x="260" y="70" width="38" height="10" rx="5" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.4"/>
+  <text x="279" y="78" text-anchor="middle" font-size="5" fill="#64748b">3.0 (2004)</text>
+  <rect x="300" y="70" width="44" height="10" rx="5" fill="#dcfce7" stroke="#86efac" stroke-width="0.4"/>
+  <text x="322" y="78" text-anchor="middle" font-size="5" font-weight="600" fill="#16a34a">WASM &#x2713;</text>
+  <text x="161" y="100" font-size="7" fill="#475569">Controls which SQL operations are allowed.</text>
+  <text x="161" y="109" font-size="7" fill="#475569">Can permit, block, or redact columns.</text>
+
+  <!-- 2. on_trace — B y=87 h=50 -->
+  <g filter="url(#sh)">
+    <rect x="380" y="87" width="195" height="50" rx="5" fill="#fff" stroke="#93c5fd" stroke-width="1"/>
+  </g>
+  <rect x="381" y="88" width="193" height="18" rx="4" fill="#eff6ff"/>
+  <use href="#i-code" width="9" height="9" x="386" y="92" fill="#3b82f6"/>
+  <text x="399" y="100" font-size="9" font-weight="700" fill="#1d4ed8">on_trace</text>
+  <text x="399" y="106" font-size="4.5" font-family="monospace" fill="#94a3b8">sqlite3_trace_v2</text>
+  <rect x="480" y="90" width="42" height="10" rx="5" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.4"/>
+  <text x="501" y="98" text-anchor="middle" font-size="5" fill="#64748b">3.14 (2016)</text>
+  <rect x="524" y="90" width="44" height="10" rx="5" fill="#dcfce7" stroke="#86efac" stroke-width="0.4"/>
+  <text x="546" y="98" text-anchor="middle" font-size="5" font-weight="600" fill="#16a34a">WASM &#x2713;</text>
+  <text x="386" y="120" font-size="7" fill="#475569">SQL profiling: STMT | PROFILE | ROW | CLOSE</text>
+  <text x="386" y="130" font-size="6" fill="#64748b">Expanded SQL, timing, rows, stmt finalization</text>
+
+  <!-- 3. on_progress — A y=121 h=48 -->
+  <g filter="url(#sh)">
+    <rect x="155" y="121" width="195" height="48" rx="5" fill="#fff" stroke="#6ee7b7" stroke-width="1"/>
+  </g>
+  <rect x="156" y="122" width="193" height="18" rx="4" fill="#ecfdf5"/>
+  <use href="#i-bolt" width="9" height="9" x="161" y="126" fill="#059669"/>
+  <text x="174" y="134" font-size="9" font-weight="700" fill="#047857">on_progress(n)</text>
+  <text x="174" y="140" font-size="4.5" font-family="monospace" fill="#94a3b8">sqlite3_progress_handler</text>
+  <rect x="260" y="124" width="38" height="10" rx="5" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.4"/>
+  <text x="279" y="132" text-anchor="middle" font-size="5" fill="#64748b">3.0 (2004)</text>
+  <rect x="300" y="124" width="44" height="10" rx="5" fill="#dcfce7" stroke="#86efac" stroke-width="0.4"/>
+  <text x="322" y="132" text-anchor="middle" font-size="5" font-weight="600" fill="#16a34a">WASM &#x2713;</text>
+  <text x="161" y="154" font-size="7" fill="#475569">Checked every N VM instructions.</text>
+  <text x="161" y="163" font-size="7" fill="#475569">Return true to cancel query.</text>
+
+  <!-- 4. on_busy — B y=143 h=48 -->
+  <g filter="url(#sh)">
+    <rect x="380" y="143" width="195" height="48" rx="5" fill="#fff" stroke="#fcd34d" stroke-width="1"/>
+  </g>
+  <rect x="381" y="144" width="193" height="18" rx="4" fill="#fffbeb"/>
+  <use href="#i-lock" width="9" height="9" x="386" y="148" fill="#d97706"/>
+  <text x="399" y="156" font-size="9" font-weight="700" fill="#b45309">on_busy</text>
+  <text x="399" y="162" font-size="4.5" font-family="monospace" fill="#94a3b8">sqlite3_busy_handler</text>
+  <rect x="480" y="146" width="38" height="10" rx="5" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.4"/>
+  <text x="499" y="154" text-anchor="middle" font-size="5" fill="#64748b">3.0 (2004)</text>
+  <rect x="524" y="146" width="44" height="10" rx="5" fill="#dcfce7" stroke="#86efac" stroke-width="0.4"/>
+  <text x="546" y="154" text-anchor="middle" font-size="5" font-weight="600" fill="#16a34a">WASM &#x2713;</text>
+  <text x="386" y="176" font-size="7" fill="#475569">Called when database is locked.</text>
+  <text x="386" y="185" font-size="7" fill="#475569">Return true to retry. Alt: set_busy_timeout.</text>
+
+  <!-- 5. on_change — A y=175 h=56 -->
+  <g filter="url(#sh)">
+    <rect x="155" y="175" width="195" height="56" rx="5" fill="#fff" stroke="#5eead4" stroke-width="1"/>
+  </g>
+  <rect x="156" y="176" width="193" height="18" rx="4" fill="#f0fdfa"/>
+  <use href="#i-pencil" width="9" height="9" x="161" y="180" fill="#0d9488"/>
+  <text x="174" y="188" font-size="9" font-weight="700" fill="#0f766e">on_change</text>
+  <text x="174" y="194" font-size="4.5" font-family="monospace" fill="#94a3b8">sqlite3_update_hook</text>
+  <rect x="260" y="178" width="38" height="10" rx="5" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.4"/>
+  <text x="279" y="186" text-anchor="middle" font-size="5" fill="#64748b">3.0 (2004)</text>
+  <rect x="300" y="178" width="44" height="10" rx="5" fill="#dcfce7" stroke="#86efac" stroke-width="0.4"/>
+  <text x="322" y="186" text-anchor="middle" font-size="5" font-weight="600" fill="#16a34a">WASM &#x2713;</text>
+  <text x="161" y="208" font-size="7" fill="#475569">Fires on INSERT, UPDATE, or DELETE.</text>
+  <text x="161" y="217" font-size="7" fill="#475569">Provides: table, rowid, operation type.</text>
+  <text x="161" y="226" font-size="7" fill="#475569">Helpers: on_insert, on_update, on_delete</text>
+
+  <!-- 6. on_commit — B y=197 h=48 -->
+  <g filter="url(#sh)">
+    <rect x="380" y="197" width="195" height="48" rx="5" fill="#fff" stroke="#fda4af" stroke-width="1"/>
+  </g>
+  <rect x="381" y="198" width="193" height="18" rx="4" fill="#fff1f2"/>
+  <use href="#i-check" width="9" height="9" x="386" y="202" fill="#e11d48"/>
+  <text x="399" y="210" font-size="9" font-weight="700" fill="#be123c">on_commit</text>
+  <text x="399" y="216" font-size="4.5" font-family="monospace" fill="#94a3b8">sqlite3_commit_hook</text>
+  <rect x="480" y="200" width="38" height="10" rx="5" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.4"/>
+  <text x="499" y="208" text-anchor="middle" font-size="5" fill="#64748b">3.0 (2004)</text>
+  <rect x="524" y="200" width="44" height="10" rx="5" fill="#dcfce7" stroke="#86efac" stroke-width="0.4"/>
+  <text x="546" y="208" text-anchor="middle" font-size="5" font-weight="600" fill="#16a34a">WASM &#x2713;</text>
+  <text x="386" y="230" font-size="7" fill="#475569">Runs just before transaction commits.</text>
+  <text x="386" y="239" font-size="7" fill="#475569">Return true to force rollback instead.</text>
+
+  <!-- 7. on_rollback — A y=237 h=48 -->
+  <g filter="url(#sh)">
+    <rect x="155" y="237" width="195" height="48" rx="5" fill="#fff" stroke="#f9a8d4" stroke-width="1"/>
+  </g>
+  <rect x="156" y="238" width="193" height="18" rx="4" fill="#fdf2f8"/>
+  <use href="#i-undo" width="9" height="9" x="161" y="242" fill="#db2777"/>
+  <text x="174" y="250" font-size="9" font-weight="700" fill="#be185d">on_rollback</text>
+  <text x="174" y="256" font-size="4.5" font-family="monospace" fill="#94a3b8">sqlite3_rollback_hook</text>
+  <rect x="260" y="240" width="38" height="10" rx="5" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.4"/>
+  <text x="279" y="248" text-anchor="middle" font-size="5" fill="#64748b">3.0 (2004)</text>
+  <rect x="300" y="240" width="44" height="10" rx="5" fill="#dcfce7" stroke="#86efac" stroke-width="0.4"/>
+  <text x="322" y="248" text-anchor="middle" font-size="5" font-weight="600" fill="#16a34a">WASM &#x2713;</text>
+  <text x="161" y="270" font-size="7" fill="#475569">Called after transaction rolls back.</text>
+  <text x="161" y="279" font-size="7" fill="#475569">Use to invalidate caches or reset state.</text>
+
+  <!-- 8. on_wal — B y=251 h=48 -->
+  <g filter="url(#sh)">
+    <rect x="380" y="251" width="195" height="48" rx="5" fill="#fff" stroke="#67e8f9" stroke-width="1"/>
+  </g>
+  <rect x="381" y="252" width="193" height="18" rx="4" fill="#ecfeff"/>
+  <use href="#i-hdd" width="9" height="9" x="386" y="256" fill="#0891b2"/>
+  <text x="399" y="264" font-size="9" font-weight="700" fill="#0e7490">on_wal</text>
+  <text x="399" y="270" font-size="4.5" font-family="monospace" fill="#94a3b8">sqlite3_wal_hook</text>
+  <rect x="480" y="254" width="38" height="10" rx="5" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.4"/>
+  <text x="499" y="262" text-anchor="middle" font-size="5" fill="#64748b">3.7 (2010)</text>
+  <rect x="524" y="254" width="44" height="10" rx="5" fill="#fef3c7" stroke="#fcd34d" stroke-width="0.4"/>
+  <text x="546" y="262" text-anchor="middle" font-size="5" font-weight="600" fill="#d97706">filesystem</text>
+  <text x="386" y="284" font-size="7" fill="#475569">Fires when WAL data is written to disk.</text>
+  <text x="386" y="293" font-size="7" fill="#475569">Use for manual checkpoint scheduling.</text>
+
+  <!-- ==================== LEGEND ==================== -->
+  <g filter="url(#sh)">
+    <rect x="16" y="310" width="568" height="88" rx="5" fill="#fff" stroke="#e2e8f0" stroke-width="0.8"/>
+  </g>
+  <rect x="17" y="311" width="566" height="12" rx="4" fill="#f8fafc"/>
+  <text x="300" y="320" text-anchor="middle" font-size="7" font-weight="700" fill="#334155">Legend &amp; Constraints</text>
+
+  <!-- Query type info -->
+  <text x="24" y="334" font-size="6" font-weight="600" fill="#475569">Fires on SELECT:</text>
+  <text x="100" y="334" font-size="6" fill="#16a34a" font-weight="600">on_authorize, on_trace, on_progress</text>
+  <text x="280" y="334" font-size="6" fill="#64748b">(+ on_busy if DB locked)</text>
+
+  <text x="24" y="345" font-size="6" font-weight="600" fill="#475569">Fires on WRITE only:</text>
+  <text x="115" y="345" font-size="6" fill="#dc2626" font-weight="600">on_change, on_commit, on_rollback, on_wal</text>
+  <text x="320" y="345" font-size="6" fill="#64748b">(INSERT, UPDATE, DELETE)</text>
+
+  <!-- Arrow styles -->
+  <text x="24" y="358" font-size="6" font-weight="600" fill="#475569">Arrow styles:</text>
+  <line x1="80" y1="355" x2="105" y2="355" stroke="#475569" stroke-width="1"/>
+  <text x="110" y="358" font-size="6" fill="#475569">Always fires</text>
+  <line x1="170" y1="355" x2="195" y2="355" stroke="#475569" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="200" y="358" font-size="6" fill="#475569">Conditional (on_busy: locked, on_rollback: rollback, on_wal: WAL mode)</text>
+
+  <!-- Constraints -->
+  <text x="24" y="371" font-size="5.5" fill="#64748b">SQLite restriction: callbacks cannot use the invoking connection. Use find_by_rowid() after callback returns.</text>
+  <text x="24" y="381" font-size="5.5" fill="#64748b">Safety: panics in callbacks are caught but abort the process (no safe recovery across FFI).</text>
+
+  <!-- Footer -->
+  <text x="300" y="410" text-anchor="middle" font-size="6" fill="#cbd5e1">Diesel SQLite Hooks &#x00B7; Created on 2026-02-12</text>
+</svg>
