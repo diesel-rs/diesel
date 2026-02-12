@@ -79,6 +79,21 @@ pub enum SqliteTraceEvent<'a> {
     Statement {
         /// The SQL text of the statement.
         sql: &'a str,
+        /// Whether the statement is read-only (SELECT, read-only PRAGMA, etc.).
+        ///
+        /// Determined by [`sqlite3_stmt_readonly`](https://sqlite.org/c3ref/stmt_readonly.html).
+        ///
+        /// # Edge cases
+        ///
+        /// - Returns `true` for `SELECT` statements
+        /// - Returns `true` for read-only `PRAGMA` (e.g., `PRAGMA table_info(t)`)
+        /// - Returns `false` for `INSERT`, `UPDATE`, `DELETE`, `CREATE`, etc.
+        /// - Returns `false` for `WITH ... INSERT/UPDATE/DELETE ... RETURNING`
+        /// - User-defined functions that modify the database via a separate
+        ///   connection are **not** detected; the statement itself is still
+        ///   considered read-only
+        /// - Virtual tables with side effects are **not** detected
+        readonly: bool,
     },
 
     /// A prepared statement has finished executing.
@@ -89,6 +104,10 @@ pub enum SqliteTraceEvent<'a> {
         sql: &'a str,
         /// Time taken in nanoseconds.
         duration_ns: u64,
+        /// Whether the statement is read-only (SELECT, read-only PRAGMA, etc.).
+        ///
+        /// See [`SqliteTraceEvent::Statement::readonly`] for edge cases.
+        readonly: bool,
     },
 
     /// A row has been returned from a query.
