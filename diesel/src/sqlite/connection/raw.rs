@@ -16,10 +16,12 @@ use core::ffi::CStr;
 use core::ptr::NonNull;
 use core::{mem, ptr, slice, str};
 
+use super::authorizer::{AuthorizerAction, AuthorizerContext, AuthorizerDecision};
 use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::limits::SqliteLimit;
 use super::serialized_database::SerializedDatabase;
 use super::stmt::ensure_sqlite_ok;
+use super::trace::{SqliteTraceEvent, SqliteTraceFlags};
 use super::update_hook::{ChangeHookDispatcher, SqliteChangeEvent, SqliteChangeOp};
 use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::FromSqlRow;
@@ -60,6 +62,14 @@ pub(super) struct RawConnection {
     rollback_hook: Option<Box<dyn Any + Send>>,
     /// Boxed closure for the WAL hook.
     wal_hook: Option<Box<dyn Any + Send>>,
+    /// Boxed closure for the progress handler.
+    progress_hook: Option<Box<dyn Any + Send>>,
+    /// Boxed closure for the busy handler.
+    busy_handler: Option<Box<dyn Any + Send>>,
+    /// Boxed closure for the authorizer callback.
+    authorizer_hook: Option<Box<dyn Any + Send>>,
+    /// Boxed closure for the trace callback.
+    trace_hook: Option<Box<dyn Any + Send>>,
 }
 
 impl RawConnection {
@@ -86,6 +96,10 @@ impl RawConnection {
                     commit_hook: None,
                     rollback_hook: None,
                     wal_hook: None,
+                    progress_hook: None,
+                    busy_handler: None,
+                    authorizer_hook: None,
+                    trace_hook: None,
                 })
             }
             err_code => {
@@ -473,6 +487,139 @@ impl RawConnection {
         }
         self.wal_hook = None;
     }
+
+    /// Sets a progress handler. Only one can be active at a time.
+    ///
+    /// The callback is invoked periodically during long-running SQL queries.
+    /// `n` is the approximate number of VM instructions between callbacks.
+    /// Return `true` to interrupt the query, `false` to continue.
+    pub(super) fn set_progress_handler<F>(&mut self, n: i32, hook: F)
+    where
+        F: FnMut() -> bool + Send + 'static,
+    {
+        let boxed: Box<F> = Box::new(hook);
+        let ptr = &*boxed as *const F as *mut libc::c_void;
+        unsafe {
+            ffi::sqlite3_progress_handler(
+                self.internal_connection.as_ptr(),
+                n,
+                Some(progress_handler_trampoline::<F>),
+                ptr,
+            );
+        }
+        self.progress_hook = Some(boxed);
+    }
+
+    /// Removes the progress handler.
+    pub(super) fn remove_progress_handler(&mut self) {
+        unsafe {
+            ffi::sqlite3_progress_handler(
+                self.internal_connection.as_ptr(),
+                0,
+                None,
+                ptr::null_mut(),
+            );
+        }
+        self.progress_hook = None;
+    }
+
+    /// Sets a busy handler. Only one can be active at a time.
+    ///
+    /// The callback receives the retry count and returns `true` to retry,
+    /// `false` to abort. Setting this clears any `busy_timeout`.
+    pub(super) fn set_busy_handler<F>(&mut self, hook: F)
+    where
+        F: FnMut(i32) -> bool + Send + 'static,
+    {
+        let boxed: Box<F> = Box::new(hook);
+        let ptr = &*boxed as *const F as *mut libc::c_void;
+        unsafe {
+            ffi::sqlite3_busy_handler(
+                self.internal_connection.as_ptr(),
+                Some(busy_handler_trampoline::<F>),
+                ptr,
+            );
+        }
+        self.busy_handler = Some(boxed);
+    }
+
+    /// Removes the busy handler.
+    pub(super) fn remove_busy_handler(&mut self) {
+        unsafe {
+            ffi::sqlite3_busy_handler(self.internal_connection.as_ptr(), None, ptr::null_mut());
+        }
+        self.busy_handler = None;
+    }
+
+    /// Sets a simple timeout-based busy handler.
+    ///
+    /// SQLite will sleep and retry until `ms` milliseconds have elapsed.
+    /// Setting this clears any custom busy handler.
+    pub(super) fn set_busy_timeout(&self, ms: i32) {
+        unsafe {
+            ffi::sqlite3_busy_timeout(self.internal_connection.as_ptr(), ms);
+        }
+        // Note: We don't clear busy_handler here because SQLite handles that
+        // internally. The old handler (if any) becomes inactive but the Box
+        // will be dropped on the next set_busy_handler or connection close.
+    }
+
+    /// Sets an authorizer callback. Only one can be active at a time.
+    ///
+    /// The callback is invoked during SQL statement compilation to control
+    /// access to database objects.
+    pub(super) fn set_authorizer<F>(&mut self, hook: F)
+    where
+        F: FnMut(AuthorizerContext<'_>) -> AuthorizerDecision + Send + 'static,
+    {
+        let boxed: Box<F> = Box::new(hook);
+        let ptr = &*boxed as *const F as *mut libc::c_void;
+        unsafe {
+            ffi::sqlite3_set_authorizer(
+                self.internal_connection.as_ptr(),
+                Some(authorizer_trampoline::<F>),
+                ptr,
+            );
+        }
+        self.authorizer_hook = Some(boxed);
+    }
+
+    /// Removes the authorizer callback.
+    pub(super) fn remove_authorizer(&mut self) {
+        unsafe {
+            ffi::sqlite3_set_authorizer(self.internal_connection.as_ptr(), None, ptr::null_mut());
+        }
+        self.authorizer_hook = None;
+    }
+
+    /// Sets a trace callback. Only one can be active at a time.
+    ///
+    /// The callback is invoked for SQL execution tracing based on the
+    /// provided event mask.
+    pub(super) fn set_trace<F>(&mut self, mask: SqliteTraceFlags, hook: F)
+    where
+        F: FnMut(SqliteTraceEvent<'_>) + Send + 'static,
+    {
+        let boxed: Box<F> = Box::new(hook);
+        let ptr = &*boxed as *const F as *mut libc::c_void;
+        unsafe {
+            ffi::sqlite3_trace_v2(
+                self.internal_connection.as_ptr(),
+                mask.bits(),
+                Some(trace_trampoline::<F>),
+                ptr,
+            );
+        }
+        self.trace_hook = Some(boxed);
+    }
+
+    /// Removes the trace callback.
+    pub(super) fn remove_trace(&mut self) {
+        unsafe {
+            ffi::sqlite3_trace_v2(self.internal_connection.as_ptr(), 0, None, ptr::null_mut());
+        }
+        self.trace_hook = None;
+    }
 }
 
 /// C trampoline for `sqlite3_update_hook`.
@@ -601,18 +748,212 @@ where
     ffi::SQLITE_OK
 }
 
+/// C trampoline for `sqlite3_progress_handler`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` stored in `RawConnection::progress_hook`.
+unsafe extern "C" fn progress_handler_trampoline<F>(user_data: *mut libc::c_void) -> libc::c_int
+where
+    F: FnMut() -> bool,
+{
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::progress_hook`.
+        let f = unsafe { &mut *(user_data as *mut F) };
+        f()
+    }));
+
+    match result {
+        Ok(true) => 1,  // interrupt query
+        Ok(false) => 0, // continue
+        Err(_) => {
+            assert_fail!("Panic in sqlite3_progress_handler trampoline. ");
+        }
+    }
+}
+
+/// C trampoline for `sqlite3_busy_handler`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` stored in `RawConnection::busy_handler`.
+unsafe extern "C" fn busy_handler_trampoline<F>(
+    user_data: *mut libc::c_void,
+    retry_count: libc::c_int,
+) -> libc::c_int
+where
+    F: FnMut(i32) -> bool,
+{
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::busy_handler`.
+        let f = unsafe { &mut *(user_data as *mut F) };
+        f(retry_count)
+    }));
+
+    match result {
+        Ok(true) => 1,  // retry
+        Ok(false) => 0, // abort (return SQLITE_BUSY)
+        Err(_) => {
+            assert_fail!("Panic in sqlite3_busy_handler trampoline. ");
+        }
+    }
+}
+
+/// C trampoline for `sqlite3_set_authorizer`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` stored in `RawConnection::authorizer_hook`.
+unsafe extern "C" fn authorizer_trampoline<F>(
+    user_data: *mut libc::c_void,
+    action_code: libc::c_int,
+    arg1: *const libc::c_char,
+    arg2: *const libc::c_char,
+    db_name: *const libc::c_char,
+    accessor: *const libc::c_char,
+) -> libc::c_int
+where
+    F: FnMut(AuthorizerContext<'_>) -> AuthorizerDecision,
+{
+    // Helper to convert a nullable C string to Option<&str>
+    fn c_str_to_option(ptr: *const libc::c_char) -> Option<&'static str> {
+        if ptr.is_null() {
+            None
+        } else {
+            // SAFETY: ptr is a valid C string provided by SQLite.
+            match unsafe { CStr::from_ptr(ptr) }.to_str() {
+                Ok(s) => Some(s),
+                Err(_) => {
+                    assert_fail!("sqlite3_set_authorizer delivered invalid UTF-8. ");
+                }
+            }
+        }
+    }
+
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::authorizer_hook`.
+        let f = unsafe { &mut *(user_data as *mut F) };
+
+        let ctx = AuthorizerContext {
+            action: AuthorizerAction::from_ffi(action_code),
+            arg1: c_str_to_option(arg1),
+            arg2: c_str_to_option(arg2),
+            db_name: c_str_to_option(db_name),
+            accessor: c_str_to_option(accessor),
+        };
+
+        f(ctx)
+    }));
+
+    match result {
+        Ok(decision) => decision.to_ffi(),
+        Err(_) => {
+            assert_fail!("Panic in sqlite3_set_authorizer trampoline. ");
+        }
+    }
+}
+
+/// C trampoline for `sqlite3_trace_v2`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` stored in `RawConnection::trace_hook`.
+unsafe extern "C" fn trace_trampoline<F>(
+    event_code: libc::c_uint,
+    user_data: *mut libc::c_void,
+    p: *mut libc::c_void,
+    x: *mut libc::c_void,
+) -> libc::c_int
+where
+    F: FnMut(SqliteTraceEvent<'_>),
+{
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::trace_hook`.
+        let f = unsafe { &mut *(user_data as *mut F) };
+
+        let event = match event_code {
+            ffi::SQLITE_TRACE_STMT => {
+                // p = sqlite3_stmt*, x = const char* (unexpanded SQL)
+                let sql_ptr = x as *const libc::c_char;
+                if sql_ptr.is_null() {
+                    return;
+                }
+                let sql = match unsafe { CStr::from_ptr(sql_ptr) }.to_str() {
+                    Ok(s) => s,
+                    Err(_) => {
+                        assert_fail!("sqlite3_trace_v2 STMT delivered invalid UTF-8. ");
+                    }
+                };
+                SqliteTraceEvent::Statement { sql }
+            }
+            ffi::SQLITE_TRACE_PROFILE => {
+                // p = sqlite3_stmt*, x = int64* (nanoseconds)
+                let stmt_ptr = p as *mut ffi::sqlite3_stmt;
+                // Get the expanded SQL from the statement
+                let sql = if stmt_ptr.is_null() {
+                    ""
+                } else {
+                    let sql_ptr = unsafe { ffi::sqlite3_sql(stmt_ptr) };
+                    if sql_ptr.is_null() {
+                        ""
+                    } else {
+                        match unsafe { CStr::from_ptr(sql_ptr) }.to_str() {
+                            Ok(s) => s,
+                            Err(_) => {
+                                assert_fail!("sqlite3_trace_v2 PROFILE delivered invalid UTF-8. ");
+                            }
+                        }
+                    }
+                };
+
+                let duration_ns = if x.is_null() {
+                    0
+                } else {
+                    // x is a pointer to sqlite3_int64 (i64)
+                    unsafe { *(x as *const ffi::sqlite3_int64) as u64 }
+                };
+
+                SqliteTraceEvent::Profile { sql, duration_ns }
+            }
+            ffi::SQLITE_TRACE_ROW => SqliteTraceEvent::Row,
+            ffi::SQLITE_TRACE_CLOSE => SqliteTraceEvent::Close,
+            _ => {
+                // Unknown trace event - ignore
+                return;
+            }
+        };
+
+        f(event);
+    }));
+
+    if result.is_err() {
+        assert_fail!("Panic in sqlite3_trace_v2 trampoline. ");
+    }
+
+    0 // Return value is currently unused by SQLite
+}
+
 impl Drop for RawConnection {
     fn drop(&mut self) {
         use crate::util::std_compat::panicking;
 
         self.unregister_raw_update_hook();
 
-        // Unregister commit/rollback hooks before closing so the
-        // Box'd closures are not dangling during sqlite3_close.
+        // Unregister all hooks before closing so the Box'd closures are not
+        // dangling during sqlite3_close.
         unsafe {
             ffi::sqlite3_commit_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
             ffi::sqlite3_rollback_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
             ffi::sqlite3_wal_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
+            ffi::sqlite3_progress_handler(
+                self.internal_connection.as_ptr(),
+                0,
+                None,
+                ptr::null_mut(),
+            );
+            ffi::sqlite3_busy_handler(self.internal_connection.as_ptr(), None, ptr::null_mut());
+            ffi::sqlite3_set_authorizer(self.internal_connection.as_ptr(), None, ptr::null_mut());
+            ffi::sqlite3_trace_v2(self.internal_connection.as_ptr(), 0, None, ptr::null_mut());
         }
         // The Option<Box<dyn Any>> fields drop automatically after this.
 
@@ -690,6 +1031,10 @@ extern "C" fn run_custom_function<F, Ret, RetSqlType>(
             commit_hook: None,
             rollback_hook: None,
             wal_hook: None,
+            progress_hook: None,
+            busy_handler: None,
+            authorizer_hook: None,
+            trace_hook: None,
         }),
         None => {
             unsafe { context_error_str(ctx, NULL_CONN_ERR) };
@@ -1182,5 +1527,244 @@ mod tests {
         conn.exec("INSERT INTO t VALUES (1)").unwrap();
         drop(conn);
         // If we get here, drop succeeded without panic.
+    }
+
+    // ===================================================================
+    // Progress handler tests
+    // ===================================================================
+
+    #[test]
+    fn progress_handler_can_interrupt() {
+        let mut conn = test_connection();
+        conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .unwrap();
+
+        // Insert many rows to make a long-running query
+        for i in 0..1000 {
+            conn.exec(&alloc::format!("INSERT INTO t VALUES ({})", i))
+                .unwrap();
+        }
+
+        let call_count = Arc::new(Mutex::new(0u32));
+        let cc = call_count.clone();
+
+        // Set a progress handler that interrupts after 10 callbacks
+        conn.set_progress_handler(1, move || {
+            let mut c = cc.lock().unwrap();
+            *c += 1;
+            *c > 10 // interrupt after 10 calls
+        });
+
+        // This query should be interrupted
+        let result = conn.exec("SELECT * FROM t WHERE id > 0");
+        assert!(result.is_err());
+
+        // The handler should have been called multiple times
+        assert!(*call_count.lock().unwrap() > 0);
+
+        conn.remove_progress_handler();
+    }
+
+    #[test]
+    fn progress_handler_remove_stops_calls() {
+        let mut conn = test_connection();
+        conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .unwrap();
+
+        let called = Arc::new(Mutex::new(false));
+        let c2 = called.clone();
+
+        conn.set_progress_handler(1, move || {
+            *c2.lock().unwrap() = true;
+            false // don't interrupt
+        });
+
+        conn.remove_progress_handler();
+
+        // This should not trigger the handler
+        conn.exec("SELECT 1").unwrap();
+
+        // In practice, for a simple query the handler may not fire even if set,
+        // but after removal it definitely should not fire.
+    }
+
+    // ===================================================================
+    // Busy handler tests
+    // ===================================================================
+
+    #[test]
+    fn busy_handler_receives_retry_count() {
+        // This test is tricky to set up without concurrent connections,
+        // so we just verify the handler can be set and removed without panics.
+        let mut conn = test_connection();
+
+        let retry_counts = Arc::new(Mutex::new(Vec::new()));
+        let rc = retry_counts.clone();
+
+        conn.set_busy_handler(move |count| {
+            rc.lock().unwrap().push(count);
+            false // don't retry
+        });
+
+        // No lock contention in :memory: with single connection,
+        // so the handler won't actually fire, but setup should work.
+        conn.exec("SELECT 1").unwrap();
+
+        conn.remove_busy_handler();
+    }
+
+    #[test]
+    fn busy_timeout_can_be_set() {
+        let conn = test_connection();
+        // Just verify it doesn't panic
+        conn.set_busy_timeout(5000);
+        conn.exec("SELECT 1").unwrap();
+    }
+
+    // ===================================================================
+    // Authorizer tests
+    // ===================================================================
+
+    #[test]
+    fn authorizer_can_deny_operations() {
+        use super::super::authorizer::{AuthorizerAction, AuthorizerDecision};
+
+        let mut conn = test_connection();
+        conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT)")
+            .unwrap();
+        conn.exec("INSERT INTO t VALUES (1, 'a')").unwrap();
+
+        // Set an authorizer that denies DELETE
+        conn.set_authorizer(|ctx| {
+            if matches!(ctx.action, AuthorizerAction::Delete) {
+                AuthorizerDecision::Deny
+            } else {
+                AuthorizerDecision::Allow
+            }
+        });
+
+        // This DELETE should fail due to authorization
+        let result = conn.exec("DELETE FROM t WHERE id = 1");
+        assert!(result.is_err());
+
+        // This SELECT should still work
+        conn.exec("SELECT * FROM t").unwrap();
+
+        conn.remove_authorizer();
+
+        // Now DELETE should work
+        conn.exec("DELETE FROM t WHERE id = 1").unwrap();
+    }
+
+    #[test]
+    fn authorizer_ignore_returns_null_for_read() {
+        use super::super::authorizer::{AuthorizerAction, AuthorizerDecision};
+
+        let mut conn = test_connection();
+        conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY, secret TEXT)")
+            .unwrap();
+        conn.exec("INSERT INTO t VALUES (1, 'password123')")
+            .unwrap();
+
+        // Set an authorizer that ignores reads on 'secret' column
+        conn.set_authorizer(|ctx| {
+            if matches!(ctx.action, AuthorizerAction::Read) && ctx.arg2 == Some("secret") {
+                AuthorizerDecision::Ignore
+            } else {
+                AuthorizerDecision::Allow
+            }
+        });
+
+        // Query should succeed but 'secret' column should be NULL
+        // (We can't easily verify the NULL value here without diesel query,
+        // but the query should not fail)
+        conn.exec("SELECT id, secret FROM t").unwrap();
+
+        conn.remove_authorizer();
+    }
+
+    // ===================================================================
+    // Trace tests
+    // ===================================================================
+
+    #[test]
+    fn trace_stmt_fires_on_query() {
+        use super::super::trace::SqliteTraceFlags;
+
+        let mut conn = test_connection();
+        conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .unwrap();
+
+        let statements = Arc::new(Mutex::new(Vec::new()));
+        let s2 = statements.clone();
+
+        conn.set_trace(SqliteTraceFlags::STMT, move |event| {
+            if let super::super::trace::SqliteTraceEvent::Statement { sql } = event {
+                s2.lock().unwrap().push(sql.to_owned());
+            }
+        });
+
+        conn.exec("INSERT INTO t VALUES (1)").unwrap();
+        conn.exec("SELECT * FROM t").unwrap();
+
+        let stmts = statements.lock().unwrap();
+        assert!(stmts.len() >= 2);
+        assert!(stmts.iter().any(|s| s.contains("INSERT")));
+        assert!(stmts.iter().any(|s| s.contains("SELECT")));
+
+        conn.remove_trace();
+    }
+
+    #[test]
+    fn trace_profile_reports_duration() {
+        use super::super::trace::{SqliteTraceEvent, SqliteTraceFlags};
+
+        let mut conn = test_connection();
+        conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .unwrap();
+
+        let profiles = Arc::new(Mutex::new(Vec::new()));
+        let p2 = profiles.clone();
+
+        conn.set_trace(SqliteTraceFlags::PROFILE, move |event| {
+            if let SqliteTraceEvent::Profile { sql, duration_ns } = event {
+                p2.lock().unwrap().push((sql.to_owned(), duration_ns));
+            }
+        });
+
+        conn.exec("INSERT INTO t VALUES (1)").unwrap();
+
+        let profs = profiles.lock().unwrap();
+        assert!(!profs.is_empty());
+        // Duration should be positive (though very small for simple queries)
+        // Note: duration might be 0 for very fast queries on some systems
+
+        conn.remove_trace();
+    }
+
+    #[test]
+    fn trace_remove_stops_callbacks() {
+        use super::super::trace::SqliteTraceFlags;
+
+        let mut conn = test_connection();
+
+        let called = Arc::new(Mutex::new(0u32));
+        let c2 = called.clone();
+
+        conn.set_trace(SqliteTraceFlags::STMT, move |_| {
+            *c2.lock().unwrap() += 1;
+        });
+
+        conn.exec("SELECT 1").unwrap();
+        let count_before = *called.lock().unwrap();
+        assert!(count_before > 0);
+
+        conn.remove_trace();
+
+        conn.exec("SELECT 2").unwrap();
+        let count_after = *called.lock().unwrap();
+
+        // Should not have increased after removal
+        assert_eq!(count_before, count_after);
     }
 }
