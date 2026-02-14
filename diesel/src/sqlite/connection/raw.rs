@@ -1690,6 +1690,57 @@ mod tests {
         conn.remove_authorizer();
     }
 
+    #[test]
+    fn is_schema_modifying_blocks_create_allows_dml() {
+        use super::super::authorizer::AuthorizerDecision;
+
+        let mut conn = test_connection();
+
+        // First create a table without the authorizer
+        conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT)")
+            .unwrap();
+        conn.exec("INSERT INTO t VALUES (1, 'a')").unwrap();
+
+        // Set an authorizer that denies schema-modifying operations
+        conn.set_authorizer(|ctx| {
+            if ctx.action.is_schema_modifying() {
+                AuthorizerDecision::Deny
+            } else {
+                AuthorizerDecision::Allow
+            }
+        });
+
+        // CREATE TABLE should fail
+        let result = conn.exec("CREATE TABLE t2 (id INTEGER PRIMARY KEY)");
+        assert!(result.is_err());
+
+        // CREATE INDEX should fail
+        let result = conn.exec("CREATE INDEX idx_v ON t(v)");
+        assert!(result.is_err());
+
+        // DROP TABLE should fail
+        let result = conn.exec("DROP TABLE t");
+        assert!(result.is_err());
+
+        // SELECT should work
+        conn.exec("SELECT * FROM t").unwrap();
+
+        // INSERT should work
+        conn.exec("INSERT INTO t VALUES (2, 'b')").unwrap();
+
+        // UPDATE should work
+        conn.exec("UPDATE t SET v = 'c' WHERE id = 1").unwrap();
+
+        // DELETE should work
+        conn.exec("DELETE FROM t WHERE id = 2").unwrap();
+
+        conn.remove_authorizer();
+
+        // After removing authorizer, CREATE TABLE should work
+        conn.exec("CREATE TABLE t2 (id INTEGER PRIMARY KEY)")
+            .unwrap();
+    }
+
     // ===================================================================
     // Trace tests
     // ===================================================================
