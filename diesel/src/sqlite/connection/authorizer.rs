@@ -90,6 +90,50 @@ pub enum AuthorizerAction {
 }
 
 impl AuthorizerAction {
+    /// Returns `true` if this action modifies the database schema.
+    ///
+    /// Schema-modifying actions include creating, dropping, or altering
+    /// tables, indexes, triggers, views, and virtual tables.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::sqlite::AuthorizerAction;
+    ///
+    /// assert!(AuthorizerAction::CreateTable.is_schema_modifying());
+    /// assert!(AuthorizerAction::DropIndex.is_schema_modifying());
+    /// assert!(AuthorizerAction::AlterTable.is_schema_modifying());
+    ///
+    /// assert!(!AuthorizerAction::Select.is_schema_modifying());
+    /// assert!(!AuthorizerAction::Insert.is_schema_modifying());
+    /// assert!(!AuthorizerAction::Update.is_schema_modifying());
+    /// assert!(!AuthorizerAction::Delete.is_schema_modifying());
+    /// ```
+    pub fn is_schema_modifying(&self) -> bool {
+        matches!(
+            self,
+            Self::CreateIndex
+                | Self::CreateTable
+                | Self::CreateTempIndex
+                | Self::CreateTempTable
+                | Self::CreateTempTrigger
+                | Self::CreateTempView
+                | Self::CreateTrigger
+                | Self::CreateView
+                | Self::CreateVTable
+                | Self::DropIndex
+                | Self::DropTable
+                | Self::DropTempIndex
+                | Self::DropTempTable
+                | Self::DropTempTrigger
+                | Self::DropTempView
+                | Self::DropTrigger
+                | Self::DropView
+                | Self::DropVTable
+                | Self::AlterTable
+        )
+    }
+
     /// Converts an FFI action code to the Rust enum variant.
     pub(crate) fn from_ffi(code: i32) -> Self {
         match code {
